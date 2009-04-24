@@ -1,0 +1,6 @@
+include AUTHORS
+include README
+include MANIFEST.in
+include LICENSE
+include Changelog
+recursive-include crunchy *
