@@ -1,7 +1,6 @@
 from carrot.connection import DjangoAMQPConnection
 from crunchy.messaging import TaskPublisher, TaskConsumer
 from crunchy.registry import tasks
-from crunchy.discovery import autodiscover
 
 
 def delay_task(task_name, **kwargs):
