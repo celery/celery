@@ -22,14 +22,23 @@ class TaskRegistry(UserDict):
     def autodiscover(self):
         discovery.autodiscover()
 
-    def register(self, task_name, task_func):
+    def register(self, task, task_name=None):
+        is_class = False
+        if hasattr(task, "run"):
+            is_class = True
+            task_name = task.name
         if task_name in self.data:
             raise self.AlreadyRegistered(
                     "Task with name %s is already registered." % task_name)
-        
-        self.data[task_name] = task_func
+       
+        if is_class:
+            self.data[task_name] = task() # instantiate Task class
+        else:
+            self.data[task_name] = task
 
     def unregister(self, task_name):
+        if hasattr(task_name, "run"):
+            task_name = task_name.name
         if task_name not in self.data:
             raise self.NotRegistered(
                     "Task with name %s is not registered." % task_name)

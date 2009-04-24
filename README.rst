@@ -57,7 +57,7 @@ Defining tasks
     >>> def do_something(some_arg, **kwargs):
     ...     logger = setup_logger(**kwargs)
     ...     logger.info("Did something: %s" % some_arg)
-    >>> task.register("do_something", some_arg=do_something) 
+    >>> task.register(do_something, "do_something") 
 
 *Note* Task functions only supports keyword arguments.
 
@@ -65,7 +65,7 @@ Tell the crunch daemon to run a task
 -------------------------------------
 
     >>> from crunchy.task import delay_task
-    >>> delay_task("do_something", "foo bar baz")
+    >>> delay_task("do_something", some_arg="foo bar baz")
 
 
 Running the crunch daemon
@@ -111,7 +111,7 @@ Then you can add new tasks in your applications ``tasks.py`` module,
         clicks_for_url.save()
         logger.info("Incremented click count for %s (not at %d)" % (
                         for_url, clicks_for_url.clicks)
-    tasks.register("increment_click", increment_click)
+    tasks.register(increment_click, "increment_click")
 
 License
 =======
