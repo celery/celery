@@ -58,8 +58,8 @@ class TaskDaemon(object):
             raise UnknownTask(task_name)
 
         task_func = self.task_registry[task_name]
-        task_func_params = {"loglevel": self.loglevel,
-                            "logfile": self.logfile}
+        task_func_params = {"logfile": self.logfile,
+                            "loglevel": self.loglevel}
         task_func_params.update(message_data)
 
         #try:
