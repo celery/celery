@@ -34,11 +34,11 @@ LOG_LEVELS = {
     "FATAL": logging.FATAL,
 }
 
-LOG_FORMAT = getattr(settings, "DJANGOFEEDS_DAEMON_LOG_FORMAT",
+LOG_FORMAT = getattr(settings, "CRUNCHD_DAEMON_LOG_FORMAT",
                             DEFAULT_LOG_FMT)
-DAEMON_LOG_FILE = getattr(settings, "DJANGOFEEDS_LOG_FILE",
+DAEMON_LOG_FILE = getattr(settings, "CRUNCHD_LOG_FILE",
                             DEFAULT_DAEMON_LOG_FILE)
-DAEMON_LOG_LEVEL = LOG_LEVELS[getattr(settings, "DJANGOFEEDS_DAEMON_LOG_LEVEL",
+DAEMON_LOG_LEVEL = LOG_LEVELS[getattr(settings, "CRUNCHD_DAEMON_LOG_LEVEL",
                                DEFAULT_DAEMON_LOG_LEVEL).upper()]
 
 QUEUE_WAKEUP_AFTER = getattr(settings, "CRUNCHD_QUEUE_WAKEUP_AFTER",

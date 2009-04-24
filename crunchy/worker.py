@@ -22,7 +22,7 @@ class UnknownTask(Exception):
 
 
 class TaskDaemon(object):
-    """Refreshes feed_urls in the queue using a process pool.
+    """Executes tasks waiting in the task queue.
 
     ``concurrency`` is the number of simultaneous processes.
     """
