@@ -1,0 +1,142 @@
+#! /bin/sh
+
+### BEGIN INIT INFO
+# Provides:		crunchd
+# Required-Start:	
+# Required-Stop:	
+# Default-Start:	2 3 4 5
+# Default-Stop:		1
+# Short-Description:	crunchy task worker daemon
+### END INIT INFO
+
+set -e
+
+VIRTUALENV=/opt/Opal/current
+DJANGO_PROJECT_DIR=/opt/Opal/release/opal
+DJANGO_SETTINGS_MODULE=settings
+CRUNCHD_PID_FILE="/var/run/crunchd.pid"
+CRUNCHD_LOG_FILE="/var/log/crunchd.log"
+CRUNCHD_LOG_LEVEL="INFO"
+CRUNCHD="crunchd"
+
+export DJANGO_SETTINGS_MODULE
+
+# /etc/init.d/ssh: start and stop the crunchy task worker daemon.
+
+test -x "$CRUNCHD" || exit 0
+
+if test -f /etc/default/crunchd; then
+    . /etc/default/crunchd
+fi
+
+
+. /lib/lsb/init-functions
+
+chdir $DJANGO_PROJECT_DIR
+
+CRUNCHD_OPTS="-f $CRUNCHD_LOG_FILE -l $CRUNCHD_LOG_LEVEL -p \
+                    $CRUNCHD_PID_FILE -d"
+
+if [ -n "$2" ]; then
+    CRUNCHD_OPTS="$CRUNCHD_OPTS $2"
+fi
+
+# Are we running from init?
+run_by_init() {
+    ([ "$previous" ] && [ "$runlevel" ]) || [ "$runlevel" = S ]
+}
+
+
+check_dev_null() {
+    if [ ! -c /dev/null ]; then
+	if [ "$1" = log_end_msg ]; then
+	    log_end_msg 1 || true
+	fi
+	if ! run_by_init; then
+	    log_action_msg "/dev/null is not a character device!"
+	fi
+	exit 1
+    fi
+}
+
+
+export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
+if [ ! -n "$VIRTUALENV" ]; then
+    . "$VIRTUALENV/current/bin/activate"
+    export PATH="$VIRTUALENV/current/bin:$PATH"
+fi
+
+
+case "$1" in
+  start)
+	check_dev_null
+	log_daemon_msg "Starting crunchy task worker server" "crunchd"
+	if start-stop-daemon --start --quiet --oknodo --pidfile $CRUNCHD_PID_FILE --exec $CRUNCHD -- $CRUNCHD_OPTS; then
+	    log_end_msg 0
+	else
+	    log_end_msg 1
+	fi
+	;;
+  stop)
+	log_daemon_msg "Stopping crunchy task worker server" "crunchd"
+	if start-stop-daemon --stop --quiet --oknodo --pidfile $CRUNCHD_PID_FILE; then log_end_msg 0
+	else
+	    log_end_msg 1
+	fi
+	;;
+
+  reload|force-reload)
+    echo "Use start+stop"
+	;;
+
+  restart)
+	log_daemon_msg "Restarting crunchgy task worker server" "crunchd"
+	start-stop-daemon --stop --quiet --oknodo --retry 30 --pidfile $CRUNCHD_PID_FILE
+	check_for_no_start log_end_msg
+	check_dev_null log_end_msg
+	if start-stop-daemon --start --quiet --oknodo --pidfile $CRUNCHD_PID_FILE --exec $CRUNCHD -- $CRUNCHD_OPTS; then
+	    log_end_msg 0
+	else
+	    log_end_msg 1
+	fi
+	;;
+
+  try-restart)
+	log_daemon_msg "Restarting crunchy task worker server" "crunchd"
+	set +e
+	start-stop-daemon --stop --quiet --retry 30 --pidfile $CRUNCHD_PID_FILE
+	RET="$?"
+	set -e
+	case $RET in
+	    0)
+		# old daemon stopped
+		check_dev_null log_end_msg
+		if start-stop-daemon --start --quiet --oknodo --pidfile $CRUNCHD_PID_FILE --exec $CRUNCHD -- $CRUNCHD_OPTS; then
+		    log_end_msg 0
+		else
+		    log_end_msg 1
+		fi
+		;;
+	    1)
+		# daemon not running
+		log_progress_msg "(not running)"
+		log_end_msg 0
+		;;
+	    *)
+		# failed to stop
+		log_progress_msg "(failed to stop)"
+		log_end_msg 1
+		;;
+	esac
+	;;
+
+  status)
+	status_of_proc -p $CRUNCHD_PID_FILE $CRUNCHD crunchd && exit 0 || exit $?
+	;;
+
+  *)
+	log_action_msg "Usage: /etc/init.d/crunchd {start|stop|force-reload|restart|try-restart|status}"
+	exit 1
+esac
+
+exit 0
