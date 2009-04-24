@@ -5,10 +5,10 @@ from crunchy.discovery import autodiscover
 
 
 def delay_task(task_name, **kwargs):
-    #if task_name not in tasks:
-    #    raise tasks.NotRegistered(
-    #            "Task with name %s not registered in the task registry." % (
-    #                task_name))
+    if task_name not in tasks:
+        raise tasks.NotRegistered(
+                "Task with name %s not registered in the task registry." % (
+                    task_name))
     publisher = TaskPublisher(connection=DjangoAMQPConnection)
     task_id = publisher.delay_task(task_name, **kwargs)
     publisher.close()
