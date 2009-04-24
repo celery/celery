@@ -1,0 +1,10 @@
+.DS_Store
+*.pyc
+*~
+.*.sw[po]
+dist/
+*.egg-info
+doc/__build/*
+build/
+pip-log.txt
+.directory
