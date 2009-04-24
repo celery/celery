@@ -111,6 +111,7 @@ Then you can add new tasks in your applications ``tasks.py`` module,
         clicks_for_url.save()
         logger.info("Incremented click count for %s (not at %d)" % (
                         for_url, clicks_for_url.clicks)
+    tasks.register("increment_click", increment_click)
 
 License
 =======
