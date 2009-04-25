@@ -58,6 +58,7 @@ class TaskExecutedTask(Task):
         logger.info("Task %s[%s] executed successfully." % (task_id, task_name))
 tasks.register(TaskExecutedTask)
         
+
 class TestTask(Task):
     name = "crunchy-test-task"
 
