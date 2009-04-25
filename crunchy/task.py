@@ -47,8 +47,8 @@ class Task(object):
         return TaskConsumer(connection=DjangoAMQPConnection)
 
     @classmethod
-    def delay(cls):
-        return delay_task(cls.name)
+    def delay(cls, **kwargs):
+        return delay_task(cls.name, **kwargs)
 class TestTask(Task):
     name = "crunchy-test-task"
 
