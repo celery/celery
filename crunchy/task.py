@@ -34,10 +34,6 @@ class Task(object):
     def run(self, **kwargs):
         raise NotImplementedError("Tasks must define a run method.")
 
-    def after(self, task_id):
-        """This method is called when the task is sucessfully executed."""
-        pass
-
     def get_logger(self, **kwargs):
         """Get a process-aware logger object."""
         return setup_logger(**kwargs)
@@ -50,14 +46,6 @@ class Task(object):
         """Get a crunchy task message consumer."""
         return TaskConsumer(connection=DjangoAMQPConnection)
 
-class TaskExecutedTask(Task):
-    name = "crunchy-task-executed"
-
-    def run(self, task_id, task_name, **kwargs):
-        logger = self.get_logger(**kwargs)
-        logger.info("Task %s[%s] executed successfully." % (task_id, task_name))
-tasks.register(TaskExecutedTask)
-        
 
 class TestTask(Task):
     name = "crunchy-test-task"
