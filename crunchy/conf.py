@@ -21,7 +21,7 @@ DEFAULT_LOG_FMT = '[%(asctime)s: %(levelname)s/%(processName)s] %(message)s'
 DEFAULT_DAEMON_LOG_LEVEL = "INFO"
 
 # Default log file
-DEFAULT_DAEMON_LOG_FILE = "refreshd.log"
+DEFAULT_DAEMON_LOG_FILE = "crunchd.log"
 
 # Table of loglevels to constants for use in settings.py.
 LOG_LEVELS = {
