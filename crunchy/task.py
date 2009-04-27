@@ -14,6 +14,7 @@ def delay_task(task_name, **kwargs):
     publisher.close()
     return task_id
 
+
 def discard_all():
     consumer = TaskConsumer(connection=DjangoAMQPConnection)
     discarded_count = consumer.discard_all()
@@ -62,15 +63,6 @@ class PeriodicTask(Task):
                     "Periodic tasks must have a run_every attribute")
         super(PeriodicTask, self).__init__()
 
-
-class TestPeriodicTask(PeriodicTask):
-    name = "crunchy-test-periodic-task"
-    run_every = 20
-    
-    def run(self, **kwargs):
-        logger = setup_logger(**kwargs)
-        logger.info("Running periodic task foo!")
-tasks.register(TestPeriodicTask)
 
 class TestTask(Task):
     name = "crunchy-test-task"
