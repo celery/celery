@@ -1,0 +1,22 @@
+From: andre.roberge@gmail.com
+Subject: Request for name change
+Date: April 25, 2009 6:02:51 PM GMT+02:00
+To: askh@opera.com
+
+
+Hi,
+
+I saw that you created a Python program named crunchy.
+There is already a program with that name (http://code.google.com/p/crunchy)
+that has been in development for more about 4 years.
+A co-developer and myself have given talks on Crunchy for each of the
+past three years at Pycon ... so it is getting well known in the community.
+
+I have not yet created an egg for it as I was waiting for 1.0 final ...
+So your program name would create some serious problems for distribution.
+
+Would you mind changing the name of your program?    
+
+Regards,
+
+André
