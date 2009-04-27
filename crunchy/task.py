@@ -23,6 +23,7 @@ def discard_all():
 
 class Task(object):
     name = None
+    type = "regular"
 
     def __init__(self):
         if not self.name:
@@ -49,6 +50,28 @@ class Task(object):
     @classmethod
     def delay(cls, **kwargs):
         return delay_task(cls.name, **kwargs)
+
+
+class PeriodicTask(Task):
+    run_every = 86400
+    type = "periodic"
+
+    def __init__(self):
+        if not self.run_every:
+            raise NotImplementedError(
+                    "Periodic tasks must have a run_every attribute")
+        super(PeriodicTask, self).__init__()
+
+
+class TestPeriodicTask(PeriodicTask):
+    name = "crunchy-test-periodic-task"
+    run_every = 20
+    
+    def run(self, **kwargs):
+        logger = setup_logger(**kwargs)
+        logger.info("Running periodic task foo!")
+tasks.register(TestPeriodicTask)
+
 class TestTask(Task):
     name = "crunchy-test-task"
 

@@ -113,6 +113,29 @@ Then you can add new tasks in your applications ``tasks.py`` module,
                         for_url, clicks_for_url.clicks)
     tasks.register(increment_click, "increment_click")
 
+
+Periodic Tasks
+---------------
+
+Periodic tasks are tasks that are run every ``n`` seconds. They don't
+support extra arguments. Here's an example of a periodic task:
+
+
+    >>> from crunchy.task import tasks, PeriodicTask
+    >>> class MyPeriodicTask(PeriodicTask):
+    ...     name = "foo.my-periodic-task"
+    ...     run_every = 30 # seconds
+    ...
+    ...     def run(self, **kwargs):
+    ...         logger = self.get_logger(**kwargs)
+    ...         logger.info("Running periodic task!")
+    ...
+    >>> tasks.register(MyPeriodicTask)
+
+
+For periodic tasks to work you need to add crunchy to ``INSTALLED_APPS``,
+and issue a ``syncdb``.
+
 License
 =======
 

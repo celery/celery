@@ -34,6 +34,7 @@ class TaskRegistry(UserDict):
         if is_class:
             self.data[task_name] = task() # instantiate Task class
         else:
+            task.type = "regular"
             self.data[task_name] = task
 
     def unregister(self, task_name):
@@ -47,6 +48,20 @@ class TaskRegistry(UserDict):
     def get_all(self):
         """Get all task types."""
         return self.data
+
+    def filter_types(self, type):
+        """Return all tasks of a specific type."""
+        return dict([(task_name, task)
+                        for task_name, task in self.data.items()
+                            if task.type == type])
+
+    def get_all_regular(self):
+        """Get all regular task types."""
+        return self.filter_types(type="regular")
+
+    def get_all_periodic(self):
+        """Get all periodic task types."""
+        return self.filter_types(type="periodic")
 
     def get_task(self, task_name):
         """Get task by name."""

@@ -5,6 +5,7 @@ from crunchy.conf import QUEUE_WAKEUP_AFTER, EMPTY_MSG_EMIT_EVERY
 from crunchy.log import setup_logger
 from crunchy.registry import tasks
 from crunchy.process import ProcessQueue
+from crunchy.models import PeriodicTaskMeta
 import multiprocessing
 import simplejson
 import traceback
@@ -72,12 +73,17 @@ class TaskDaemon(object):
         message.ack()
         return result, task_name, task_id
 
+    def run_periodic_tasks(self):
+        for task in PeriodicTaskMeta.objects.get_waiting_tasks():
+            task.delay()
+
     def run(self):
         results = ProcessQueue(self.concurrency, logger=self.logger,
                 done_msg="Task %(name)s[%(id)s] processed: %(return_value)s")
         last_empty_emit = None
 
         while True:
+            self.run_periodic_tasks()
             try:
                 result, task_name, task_id = self.fetch_next_task()
             except EmptyQueue:
@@ -88,8 +94,8 @@ class TaskDaemon(object):
                 time.sleep(self.queue_wakeup_after)
                 continue
             except UnknownTask, e:
-                self.logger.info("Unknown task %s requeued and ignored." % (
-                                    task_name))
+                self.logger.info("Unknown task requeued and ignored: %s" % (
+                                    e))
                 continue
             #except Exception, e:
             #    self.logger.critical("Raised %s: %s\n%s" % (

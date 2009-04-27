@@ -2,8 +2,14 @@ from carrot.messaging import Publisher, Consumer
 import uuid
 
 
+class NoProcessConsumer(Consumer):
+    
+    def receive(self, message_data, message):
+        raise NotImplementedError(
+                "Don't use process_next() or wait() with the TaskConsumer!")
+
+
 class TaskPublisher(Publisher):
-    queue = "crunchy"
     exchange = "crunchy"
     routing_key = "crunchy"
 
@@ -16,11 +22,7 @@ class TaskPublisher(Publisher):
         return task_id
 
 
-class TaskConsumer(Consumer):
+class TaskConsumer(NoProcessConsumer):
     queue = "crunchy"
     exchange = "crunchy"
     routing_key = "crunchy"
-
-    def receive(self, message_data, message):
-        raise NotImplementedError(
-                "Don't use process_next() or wait() with the TaskConsumer!")
