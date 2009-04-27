@@ -2,6 +2,7 @@ from carrot.connection import DjangoAMQPConnection
 from celery.log import setup_logger
 from celery.registry import tasks
 from celery.messaging import TaskPublisher, TaskConsumer
+from django.core.cache import cache
 
 
 def delay_task(task_name, **kwargs):
@@ -20,6 +21,22 @@ def discard_all():
     discarded_count = consumer.discard_all()
     consumer.close()
     return discarded_count
+
+
+def gen_task_done_cache_key(task_id):
+    return "celery-task-done-marker-%s" % task_id
+
+
+def mark_as_done(task_id, result):
+    if result is None:
+        result = True
+    cache_key = gen_task_done_cache_key(task_id)
+    cache.set(cache_key, result)
+
+
+def is_done(task_id):
+    cache_key = gen_task_done_cache_key(task_id)
+    return cache.get(cache_key)
 
 
 class Task(object):
