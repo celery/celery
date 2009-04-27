@@ -60,7 +60,7 @@ check_dev_null() {
 
 
 export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
-if [ ! -n "$VIRTUALENV" ]; then
+if [ ! -z "$VIRTUALENV" ]; then
     . "$VIRTUALENV/bin/activate"
     export PATH="$VIRTUALENV/bin:$PATH"
     CELERYD="$VIRTUALENV/bin/$CELERYD"
