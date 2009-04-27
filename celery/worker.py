@@ -1,11 +1,11 @@
 from carrot.connection import DjangoAMQPConnection
-from crunchy.messaging import TaskConsumer
-from crunchy.conf import DAEMON_CONCURRENCY, DAEMON_LOG_FILE
-from crunchy.conf import QUEUE_WAKEUP_AFTER, EMPTY_MSG_EMIT_EVERY
-from crunchy.log import setup_logger
-from crunchy.registry import tasks
-from crunchy.process import ProcessQueue
-from crunchy.models import PeriodicTaskMeta
+from celery.messaging import TaskConsumer
+from celery.conf import DAEMON_CONCURRENCY, DAEMON_LOG_FILE
+from celery.conf import QUEUE_WAKEUP_AFTER, EMPTY_MSG_EMIT_EVERY
+from celery.log import setup_logger
+from celery.registry import tasks
+from celery.process import ProcessQueue
+from celery.models import PeriodicTaskMeta
 import multiprocessing
 import simplejson
 import traceback
@@ -50,8 +50,8 @@ class TaskDaemon(object):
             raise EmptyQueue()
 
         message_data = simplejson.loads(message.body)
-        task_name = message_data.pop("crunchTASK")
-        task_id = message_data.pop("crunchID")
+        task_name = message_data.pop("celeryTASK")
+        task_id = message_data.pop("celeryID")
         self.logger.info("Got task from broker: %s[%s]" % (
                             task_name, task_id))
         if task_name not in self.task_registry:

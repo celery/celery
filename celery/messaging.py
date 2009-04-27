@@ -10,19 +10,19 @@ class NoProcessConsumer(Consumer):
 
 
 class TaskPublisher(Publisher):
-    exchange = "crunchy"
-    routing_key = "crunchy"
+    exchange = "celery"
+    routing_key = "celery"
 
     def delay_task(self, task_name, **kwargs):
         task_id = uuid.uuid4()
         message_data = dict(kwargs)
-        message_data["crunchTASK"] = task_name
-        message_data["crunchID"] = str(task_id)
+        message_data["celeryTASK"] = task_name
+        message_data["celeryID"] = str(task_id)
         self.send(message_data)
         return task_id
 
 
 class TaskConsumer(NoProcessConsumer):
-    queue = "crunchy"
-    exchange = "crunchy"
-    routing_key = "crunchy"
+    queue = "celery"
+    exchange = "celery"
+    routing_key = "celery"

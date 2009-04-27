@@ -1,4 +1,4 @@
-from crunchy import discovery
+from celery import discovery
 from UserDict import UserDict
 
 

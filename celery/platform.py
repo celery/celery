@@ -40,7 +40,7 @@ class PIDFile(object):
                    sys.stderr.write("Stale pidfile exists. removing it.\n")
                    self.remove()
             else:
-                raise SystemExit("crunchd is already running.")
+                raise SystemExit("celeryd is already running.")
 
     def remove(self):
         os.unlink(self.pidfile)

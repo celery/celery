@@ -10,7 +10,7 @@ except ImportError:
     use_setuptools()
     from setuptools import setup, find_packages
 
-import crunchy
+import celery
 
 install_requires = ["carrot", "django"]
 py_version_info = sys.version_info
@@ -21,15 +21,15 @@ if (py_major_version == 2 and py_minor_version <=5) or py_major_version < 2:
     install_requires.append("multiprocessing")    
 
 setup(
-    name='crunchy',
-    version=crunchy.__version__,
-    description=crunchy.__doc__,
-    author=crunchy.__author__,
-    author_email=crunchy.__contact__,
-    url=crunchy.__homepage__,
+    name='celery',
+    version=celery.__version__,
+    description=celery.__doc__,
+    author=celery.__author__,
+    author_email=celery.__contact__,
+    url=celery.__homepage__,
     platforms=["any"],
     packages=find_packages(exclude=['ez_setup']),
-    scripts=["crunchy/bin/crunchd"],
+    scripts=["celery/bin/celeryd"],
     install_requires=[
         'simplejson',
         'carrot',

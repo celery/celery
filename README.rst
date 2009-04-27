@@ -1,5 +1,5 @@
 ============================================
-crunchy - Distributed Task Queue for Django.
+celery - Distributed Task Queue for Django.
 ============================================
 
 :Authors:
@@ -9,22 +9,22 @@ crunchy - Distributed Task Queue for Django.
 Introduction
 ------------
 
-``crunchy`` is a distributed task queue framework for Django.
+``celery`` is a distributed task queue framework for Django.
 More information will follow.
 
 Installation
 =============
 
-You can install ``crunchy`` either via the Python Package Index (PyPI)
+You can install ``celery`` either via the Python Package Index (PyPI)
 or from source.
 
 To install using ``pip``,::
 
-    $ pip install crunchy
+    $ pip install celery
 
 To install using ``easy_install``,::
 
-    $ easy_install crunchy
+    $ easy_install celery
 
 If you have downloaded a source tarball you can install it
 by doing the following,::
@@ -41,7 +41,7 @@ Have to write a cool tutorial, but here is some simple usage info.
 and you need to have the amqp server setup in your settings file, as described
 in the `carrot distribution README`_.
 
-*Note* If you're running ``SQLite`` as the database backend, ``crunchd`` will
+*Note* If you're running ``SQLite`` as the database backend, ``celeryd`` will
 only be able to process one message at a time, this because ``SQLite`` doesn't
 allow concurrent writes.
 
@@ -52,8 +52,8 @@ allow concurrent writes.
 Defining tasks
 --------------
 
-    >>> from crunchy.task import tasks
-    >>> from crunchy.log import setup_logger
+    >>> from celery.task import tasks
+    >>> from celery.log import setup_logger
     >>> def do_something(some_arg, **kwargs):
     ...     logger = setup_logger(**kwargs)
     ...     logger.info("Did something: %s" % some_arg)
@@ -61,20 +61,20 @@ Defining tasks
 
 *Note* Task functions only supports keyword arguments.
 
-Tell the crunch daemon to run a task
+Tell the celery daemon to run a task
 -------------------------------------
 
-    >>> from crunchy.task import delay_task
+    >>> from celery.task import delay_task
     >>> delay_task("do_something", some_arg="foo bar baz")
 
 
-Running the crunch daemon
+Running the celery daemon
 --------------------------
 
 ::
 
     $ cd mydjangoproject
-    $ env DJANGO_SETTINGS_MODULE=settings crunchd
+    $ env DJANGO_SETTINGS_MODULE=settings celeryd
     [....]
     [2009-04-23 17:44:05,115: INFO/Process-1] Did something: foo bar baz
     [2009-04-23 17:44:05,118: INFO/MainProcess] Waiting for queue.
@@ -85,14 +85,14 @@ Running the crunch daemon
 Autodiscovery of tasks
 -----------------------
 
-``crunchy`` has an autodiscovery feature like the Django Admin, that
+``celery`` has an autodiscovery feature like the Django Admin, that
 automatically loads any ``tasks.py`` module in the applications listed
 in ``settings.INSTALLED_APPS``.
 
 A good place to add this command could be in your ``urls.py``,
 ::
 
-    from crunchy.task import tasks
+    from celery.task import tasks
     tasks.autodiscover()
 
 
@@ -100,8 +100,8 @@ A good place to add this command could be in your ``urls.py``,
 Then you can add new tasks in your applications ``tasks.py`` module,
 ::
 
-    from crunchy.task import tasks
-    from crunchy.log import setup_logger
+    from celery.task import tasks
+    from celery.log import setup_logger
     from clickcounter.models import ClickCount
 
     def increment_click(for_url, **kwargs):
@@ -121,7 +121,7 @@ Periodic tasks are tasks that are run every ``n`` seconds. They don't
 support extra arguments. Here's an example of a periodic task:
 
 
-    >>> from crunchy.task import tasks, PeriodicTask
+    >>> from celery.task import tasks, PeriodicTask
     >>> class MyPeriodicTask(PeriodicTask):
     ...     name = "foo.my-periodic-task"
     ...     run_every = 30 # seconds
@@ -133,7 +133,7 @@ support extra arguments. Here's an example of a periodic task:
     >>> tasks.register(MyPeriodicTask)
 
 
-For periodic tasks to work you need to add crunchy to ``INSTALLED_APPS``,
+For periodic tasks to work you need to add ``celery`` to ``INSTALLED_APPS``,
 and issue a ``syncdb``.
 
 License

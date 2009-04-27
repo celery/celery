@@ -2,7 +2,7 @@ import multiprocessing
 import os
 import time
 import logging
-from crunchy.conf import LOG_FORMAT, DAEMON_LOG_LEVEL
+from celery.conf import LOG_FORMAT, DAEMON_LOG_LEVEL
 
 
 def setup_logger(loglevel=DAEMON_LOG_LEVEL, logfile=None, format=LOG_FORMAT):

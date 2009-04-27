@@ -1,6 +1,6 @@
 from django.db import models
-from crunchy.registry import tasks
-from crunchy.managers import PeriodicTaskManager
+from celery.registry import tasks
+from celery.managers import PeriodicTaskManager
 from django.utils.translation import ugettext_lazy as _
 
 

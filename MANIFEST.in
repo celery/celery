@@ -3,4 +3,4 @@ include README.rst
 include MANIFEST.in
 include LICENSE
 include Changelog
-recursive-include crunchy *
+recursive-include celery *

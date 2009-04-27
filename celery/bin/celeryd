@@ -3,13 +3,13 @@ import os
 import sys
 sys.path.append(os.getcwd())
 from django.conf import settings
-from crunchy.platform import PIDFile, daemonize, remove_pidfile
-from crunchy.log import setup_logger
-from crunchy.conf import LOG_LEVELS, DAEMON_LOG_FILE, DAEMON_LOG_LEVEL
-from crunchy.conf import DAEMON_CONCURRENCY, DAEMON_PID_FILE
-from crunchy.conf import QUEUE_WAKEUP_AFTER
-from crunchy import discovery
-from crunchy.worker import TaskDaemon
+from celery.platform import PIDFile, daemonize, remove_pidfile
+from celery.log import setup_logger
+from celery.conf import LOG_LEVELS, DAEMON_LOG_FILE, DAEMON_LOG_LEVEL
+from celery.conf import DAEMON_CONCURRENCY, DAEMON_PID_FILE
+from celery.conf import QUEUE_WAKEUP_AFTER
+from celery import discovery
+from celery.worker import TaskDaemon
 import traceback
 import optparse
 import atexit
@@ -25,7 +25,7 @@ def main(concurrency=DAEMON_CONCURRENCY, daemon=False,
                 UserWarning)
         concurrency = 1
     if daemon:
-        sys.stderr.write("Launching crunchd in the background...\n")
+        sys.stderr.write("Launching celeryd in the background...\n")
         pidfile_handler = PIDFile(pidfile)
         pidfile_handler.check()
         daemonize(pidfile=pidfile_handler)
@@ -34,15 +34,15 @@ def main(concurrency=DAEMON_CONCURRENCY, daemon=False,
         logfile = None # log to stderr when not running as daemon.
 
     discovery.autodiscover()
-    crunchd = TaskDaemon(concurrency=concurrency,
+    celeryd = TaskDaemon(concurrency=concurrency,
                                loglevel=loglevel,
                                logfile=logfile,
                                queue_wakeup_after=queue_wakeup_after)
     try:
-        crunchd.run()
+        celeryd.run()
     except Exception, e:
         raise
-        emergency_error(logfile, "crunchd raised exception %s: %s\n%s" % (
+        emergency_error(logfile, "celeryd raised exception %s: %s\n%s" % (
                             e.__class__, e, traceback.format_exc()))
 
 

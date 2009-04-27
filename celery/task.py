@@ -1,7 +1,7 @@
 from carrot.connection import DjangoAMQPConnection
-from crunchy.log import setup_logger
-from crunchy.registry import tasks
-from crunchy.messaging import TaskPublisher, TaskConsumer
+from celery.log import setup_logger
+from celery.registry import tasks
+from celery.messaging import TaskPublisher, TaskConsumer
 
 
 def delay_task(task_name, **kwargs):
@@ -41,11 +41,11 @@ class Task(object):
         return setup_logger(**kwargs)
 
     def get_publisher(self):
-        """Get a crunchy task message publisher."""
+        """Get a celery task message publisher."""
         return TaskPublisher(connection=DjangoAMQPConnection)
 
     def get_consumer(self):
-        """Get a crunchy task message consumer."""
+        """Get a celery task message consumer."""
         return TaskConsumer(connection=DjangoAMQPConnection)
 
     @classmethod
@@ -65,7 +65,7 @@ class PeriodicTask(Task):
 
 
 class TestTask(Task):
-    name = "crunchy-test-task"
+    name = "celery-test-task"
 
     def run(self, some_arg, **kwargs):
         logger = self.get_logger(**kwargs)

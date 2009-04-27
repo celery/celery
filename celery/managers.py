@@ -1,5 +1,5 @@
 from django.db import models
-from crunchy.registry import tasks
+from celery.registry import tasks
 from datetime import datetime, timedelta
 
 
