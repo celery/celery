@@ -23,5 +23,5 @@ class ProcessQueue(UserList):
                         "name": task_name,
                         "id": task_id,
                         "return_value": ret_value})
-                    mark_as_done(task_id)
+                    mark_as_done(task_id, ret_value)
             self.data = []
