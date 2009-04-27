@@ -122,9 +122,10 @@ support extra arguments. Here's an example of a periodic task:
 
 
     >>> from celery.task import tasks, PeriodicTask
+    >>> from datetime import timedelta
     >>> class MyPeriodicTask(PeriodicTask):
     ...     name = "foo.my-periodic-task"
-    ...     run_every = 30 # seconds
+    ...     run_every = timedelta(seconds=30)
     ...
     ...     def run(self, **kwargs):
     ...         logger = self.get_logger(**kwargs)

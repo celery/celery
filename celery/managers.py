@@ -10,7 +10,8 @@ class PeriodicTaskManager(models.Manager):
         waiting = []
         for task_name, task in periodic_tasks.items():
             task_meta, created = self.get_or_create(name=task_name)
-            run_at = task_meta.last_run_at + timedelta(seconds=task.run_every)
+            # task_run.every must be a timedelta object.
+            run_at = task_meta.last_run_at + task.run_every
             if datetime.now() > run_at:
                 waiting.append(task_meta)
         return waiting

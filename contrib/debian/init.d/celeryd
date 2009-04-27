@@ -92,7 +92,6 @@ case "$1" in
   restart)
 	log_daemon_msg "Restarting celery task worker server" "celeryd"
 	start-stop-daemon --stop --quiet --oknodo --retry 30 --pidfile $CELERYD_PID_FILE
-	check_for_no_start log_end_msg
 	check_dev_null log_end_msg
 	if start-stop-daemon --start --quiet --oknodo --pidfile $CELERYD_PID_FILE --exec $CELERYD -- $CELERYD_OPTS; then
 	    log_end_msg 0

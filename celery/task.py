@@ -3,6 +3,7 @@ from celery.log import setup_logger
 from celery.registry import tasks
 from celery.messaging import TaskPublisher, TaskConsumer
 from django.core.cache import cache
+from datetime import timedelta
 
 
 def delay_task(task_name, **kwargs):
@@ -71,13 +72,18 @@ class Task(object):
 
 
 class PeriodicTask(Task):
-    run_every = 86400
+    run_every = timedelta(days=1)
     type = "periodic"
 
     def __init__(self):
         if not self.run_every:
             raise NotImplementedError(
                     "Periodic tasks must have a run_every attribute")
+
+        # If run_every is a integer, convert it to timedelta seconds.
+        if isinstance(self.run_every, int):
+            self.run_every = timedelta(seconds=self.run_every)
+
         super(PeriodicTask, self).__init__()
 
 
