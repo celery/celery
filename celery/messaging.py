@@ -14,10 +14,10 @@ class TaskPublisher(Publisher):
     routing_key = "celery"
 
     def delay_task(self, task_name, **kwargs):
-        task_id = uuid.uuid4()
+        task_id = str(uuid.uuid4())
         message_data = dict(kwargs)
         message_data["celeryTASK"] = task_name
-        message_data["celeryID"] = str(task_id)
+        message_data["celeryID"] = task_id
         self.send(message_data)
         return task_id
 
