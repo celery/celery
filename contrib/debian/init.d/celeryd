@@ -20,6 +20,7 @@ CELERYD_LOG_LEVEL="INFO"
 CELERYD="celeryd"
 
 export DJANGO_SETTINGS_MODULE
+export DJANGO_PROJECT_DIR
 
 # /etc/init.d/ssh: start and stop the celery task worker daemon.
 
@@ -30,7 +31,7 @@ fi
 
 . /lib/lsb/init-functions
 
-chdir $DJANGO_PROJECT_DIR
+cd $DJANGO_PROJECT_DIR
 
 CELERYD_OPTS="-f $CELERYD_LOG_FILE -l $CELERYD_LOG_LEVEL -p \
                     $CELERYD_PID_FILE -d"
@@ -60,8 +61,9 @@ check_dev_null() {
 
 export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
 if [ ! -n "$VIRTUALENV" ]; then
-    . "$VIRTUALENV/current/bin/activate"
-    export PATH="$VIRTUALENV/current/bin:$PATH"
+    . "$VIRTUALENV/bin/activate"
+    export PATH="$VIRTUALENV/bin:$PATH"
+    CELERYD="$VIRTUALENV/bin/$CELERYD"
 fi
 
 
