@@ -8,7 +8,7 @@ if django_project_dir:
 
 from django.conf import settings
 from celery.platform import PIDFile, daemonize, remove_pidfile
-from celery.log import setup_logger
+from celery.log import setup_logger, emergency_error
 from celery.conf import LOG_LEVELS, DAEMON_LOG_FILE, DAEMON_LOG_LEVEL
 from celery.conf import DAEMON_CONCURRENCY, DAEMON_PID_FILE
 from celery.conf import QUEUE_WAKEUP_AFTER
