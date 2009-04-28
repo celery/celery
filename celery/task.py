@@ -4,6 +4,7 @@ from celery.registry import tasks
 from celery.messaging import TaskPublisher, TaskConsumer
 from django.core.cache import cache
 from datetime import timedelta
+import uuid
 import traceback
 
 __all__ = ["delay_task", "discard_all", "gen_task_done_cache_key",
@@ -81,6 +82,51 @@ class Task(object):
     @classmethod
     def delay(cls, **kwargs):
         return delay_task(cls.name, **kwargs)
+
+
+class TaskSet(object):
+    """A task containing several subtasks, making it possible
+    to track how many, or when all of the tasks are completed.
+    
+    Example Usage
+    --------------
+
+        >>> from djangofeeds.tasks import RefreshFeedTask
+        >>> taskset = TaskSet(RefreshFeedTask, args=[
+        ...                 {"feed_url": "http://cnn.com/rss"},
+        ...                 {"feed_url": "http://bbc.com/rss"},
+        ...                 {"feed_url": "http://xkcd.com/rss"}])
+
+        >>> taskset_id = taskset.delay()
+        
+
+    """
+
+    def __init__(self, task, args):
+        """``task`` can be either a fully qualified task name, or a task
+        class, args is a list of arguments for the subtasks.
+        """
+
+        try:
+            task_name = task.name
+        except AttributeError:
+            task_name = task
+
+        self.task_name = task_name
+        self.arguments = args
+        self.total = len(args)
+
+    def run(self):
+        taskset_id = str(uuid.uuid4())
+        publisher = TaskPublisher(connection=DjangoAMQPConnection)
+        subtask_ids = []
+        for arg in self.arguments:
+            subtask_id = publisher.delay_task_in_set(task_name=self.task_name,
+                                                     taskset_id=taskset_id,
+                                                     task_kwargs=arg)
+            subtask_ids.append(subtask_id) 
+        publisher.close()
+        return taskset_id, subtask_ids
 
 
 class PeriodicTask(Task):
