@@ -30,6 +30,7 @@ setup(
     platforms=["any"],
     packages=find_packages(exclude=['ez_setup']),
     scripts=["celery/bin/celeryd"],
+    zip_safe=False,
     install_requires=[
         'simplejson',
         'carrot',
