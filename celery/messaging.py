@@ -1,6 +1,8 @@
 from carrot.messaging import Publisher, Consumer
 import uuid
 
+__all__ = ["NoProcessConsumer", "TaskPublisher", "TaskConsumer"]
+
 
 class NoProcessConsumer(Consumer):
     

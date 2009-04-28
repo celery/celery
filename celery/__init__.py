@@ -5,3 +5,7 @@ __author__ = "Ask Solem"
 __contact__ = "askh@opera.com"
 __homepage__ = "http://github.com/ask/celery/"
 __docformat__ = "restructuredtext"
+
+__all__ = ["bin", "conf", "discovery", "log", "managers",
+           "messaging", "models", "platform", "process",
+           "registry", "task", "urls", "views", "worker"]

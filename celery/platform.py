@@ -3,6 +3,8 @@ import sys
 import errno
 import resource
 
+__all__ = ["PIDFile", "remove_pidfile", "daemonize"]
+
 # File mode creation mask of the daemon.
 # No point in changing this, as we don't really create any files.
 DAEMON_UMASK = 0

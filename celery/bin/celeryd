@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import os
 import sys
+sys.path.append(os.getcwd())
 django_project_dir = os.environ.get("DJANGO_PROJECT_DIR")
 if django_project_dir:
     sys.path.append(django_project_dir)

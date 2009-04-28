@@ -2,6 +2,8 @@ from django.db import models
 from celery.registry import tasks
 from datetime import datetime, timedelta
 
+__all__ = ["PeriodicTaskManager"]
+
 
 class PeriodicTaskManager(models.Manager):
 

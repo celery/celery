@@ -4,6 +4,8 @@ import time
 import logging
 from celery.conf import LOG_FORMAT, DAEMON_LOG_LEVEL
 
+__all__ = ["setup_logger", "emergency_error"]
+
 
 def setup_logger(loglevel=DAEMON_LOG_LEVEL, logfile=None, format=LOG_FORMAT):
     """Setup the ``multiprocessing`` logger. If ``logfile`` is not specified,

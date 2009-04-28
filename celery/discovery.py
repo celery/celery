@@ -2,6 +2,8 @@ import imp
 from django.conf import settings
 from django.core import exceptions
 
+__all__ = ["autodiscover", "tasks_for_app", "find_related_module"]
+
 
 def autodiscover():
     """Include tasks for all applications in settings.INSTALLED_APPS."""
