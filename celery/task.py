@@ -4,6 +4,7 @@ from celery.registry import tasks
 from celery.messaging import TaskPublisher, TaskConsumer
 from django.core.cache import cache
 from datetime import timedelta
+import traceback
 
 __all__ = ["delay_task", "discard_all", "gen_task_done_cache_key",
            "mark_as_done", "is_done", "Task", "PeriodicTask", "TestTask"]
@@ -52,7 +53,15 @@ class Task(object):
             raise NotImplementedError("Tasks must define a name attribute.")
 
     def __call__(self, **kwargs):
-        return self.run(**kwargs)
+        try:
+            retval = self.run(**kwargs)
+        except Exception, e:
+            logger = self.get_logger(**kwargs)
+            logger.critical("Task got exception %s: %s\n%s" % (
+                                e.__class__, e, traceback.format_exc()))
+            return
+        else:
+            return retval
 
     def run(self, **kwargs):
         raise NotImplementedError("Tasks must define a run method.")
