@@ -68,9 +68,9 @@ class TaskDaemon(object):
         except Exception, error:
             self.logger.critical("Worker got exception %s: %s\n%s" % (
                 error.__class__, error, traceback.format_exc()))
-        else:
-            message.ack()
+            return 
 
+        message.ack()
         return result, task_name, task_id
 
     def run_periodic_tasks(self):
@@ -86,6 +86,10 @@ class TaskDaemon(object):
             self.run_periodic_tasks()
             try:
                 result, task_name, task_id = self.fetch_next_task()
+            except ValueError:
+                # fetch_next_task didn't return a r/name/id tuple,
+                # probably because it got an exception.
+                continue
             except EmptyQueue:
                 if not last_empty_emit or \
                         time.time() > last_empty_emit + EMPTY_MSG_EMIT_EVERY:
