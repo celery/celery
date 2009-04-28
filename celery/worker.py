@@ -63,14 +63,14 @@ class TaskDaemon(object):
                             "loglevel": self.loglevel}
         task_func_params.update(message_data)
 
-        #try:
-        result = self.pool.apply_async(task_func, [], task_func_params)
-        #except:
-        #    message.reject()
-        #    raise
+        try:
+            result = self.pool.apply_async(task_func, [], task_func_params)
+        except Exception, error:
+            self.logger.critical("Worker got exception %s: %s\n%s" % (
+                error.__class__, error, traceback.format_exc()))
+        else:
+            message.ack()
 
-
-        message.ack()
         return result, task_name, task_id
 
     def run_periodic_tasks(self):
@@ -97,9 +97,9 @@ class TaskDaemon(object):
                 self.logger.info("Unknown task requeued and ignored: %s" % (
                                     e))
                 continue
-            #except Exception, e:
-            #    self.logger.critical("Raised %s: %s\n%s" % (
-            #                 e.__class__, e, traceback.format_exc()))
-            #    continue
+            except Exception, e:
+                self.logger.critical("Message queue raised %s: %s\n%s" % (
+                             e.__class__, e, traceback.format_exc()))
+                continue
            
             results.add(result, task_name, task_id)
