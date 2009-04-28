@@ -45,7 +45,6 @@ def main(concurrency=DAEMON_CONCURRENCY, daemon=False,
     try:
         celeryd.run()
     except Exception, e:
-        raise
         emergency_error(logfile, "celeryd raised exception %s: %s\n%s" % (
                             e.__class__, e, traceback.format_exc()))
 

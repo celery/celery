@@ -94,8 +94,7 @@ class TaskDaemon(object):
                 time.sleep(self.queue_wakeup_after)
                 continue
             except UnknownTask, e:
-                self.logger.info("Unknown task requeued and ignored: %s" % (
-                                    e))
+                self.logger.info("Unknown task ignored: %s" % (e))
                 continue
             except Exception, e:
                 self.logger.critical("Message queue raised %s: %s\n%s" % (
