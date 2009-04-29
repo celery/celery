@@ -49,7 +49,8 @@ QUEUE_WAKEUP_AFTER = getattr(settings, "CELERYD_QUEUE_WAKEUP_AFTER",
                                 DEFAULT_QUEUE_WAKEUP_AFTER)
 EMPTY_MSG_EMIT_EVERY = getattr(settings, "CELERYD_EMPTY_MSG_EMIT_EVERY",
                                 DEFAULT_EMPTY_MSG_EMIT_EVERY)
-DAEMON_PID_FILE = getattr("settings", "CELERYD_PID_FILE",
+DAEMON_PID_FILE = getattr(settings, "CELERYD_PID_FILE",
                             DEFAULT_DAEMON_PID_FILE)
-DAEMON_CONCURRENCY = getattr("settings", "CELERYD_CONCURRENCY",
+DAEMON_CONCURRENCY = getattr(settings, "CELERYD_CONCURRENCY",
                                 DEFAULT_DAEMON_CONCURRENCY)
+
