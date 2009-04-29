@@ -1,9 +1,23 @@
 from django.db import models
 from celery.registry import tasks
-from celery.managers import PeriodicTaskManager
+from celery.managers import TaskManager, PeriodicTaskManager
 from django.utils.translation import ugettext_lazy as _
 
-__all__ = ["PeriodicTaskMeta"]
+__all__ = ["TaskMeta", "PeriodicTaskMeta"]
+
+
+class TaskMeta(models.Model):
+    task_id = models.CharField(_(u"task id"), max_length=255, unique=True)
+    is_done = models.BooleanField(_(u"is done"), default=False)
+    date_done = models.DateTimeField(_(u"done at"), auto_add=True)
+    objects = TaskManager()
+
+    class Meta:
+        verbose_name = _(u"task meta")
+        verbose_name_plural = _(u"task meta")
+
+    def __unicode__(self):
+        return u"<Task: %s done:%s>" % (self.task_id, self.is_done)
 
 
 class PeriodicTaskMeta(models.Model):

@@ -1,6 +1,8 @@
 from django.conf import settings
 import logging
 
+DEFAULT_TASK_META_USE_DB = False
+
 # The number of processes to work simultaneously at processing the queue.
 DEFAULT_DAEMON_CONCURRENCY = 10
 
@@ -34,6 +36,8 @@ LOG_LEVELS = {
     "FATAL": logging.FATAL,
 }
 
+TASK_META_USE_DB = getattr(settings, "CELERY_TASK_META_USE_DB",
+                            DEFAULT_TASK_META_USE_DB)
 LOG_FORMAT = getattr(settings, "CELERYD_DAEMON_LOG_FORMAT",
                             DEFAULT_LOG_FMT)
 DAEMON_LOG_FILE = getattr(settings, "CELERYD_LOG_FILE",

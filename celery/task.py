@@ -1,7 +1,9 @@
 from carrot.connection import DjangoAMQPConnection
 from celery.log import setup_logger
+from celery.conf import TASK_META_USE_DB
 from celery.registry import tasks
 from celery.messaging import TaskPublisher, TaskConsumer
+from celery.models import TaskMeta
 from django.core.cache import cache
 from datetime import timedelta
 import uuid
@@ -36,13 +38,19 @@ def gen_task_done_cache_key(task_id):
 def mark_as_done(task_id, result):
     if result is None:
         result = True
-    cache_key = gen_task_done_cache_key(task_id)
-    cache.set(cache_key, result)
+    if TASK_META_USE_DB:
+        TaskMeta.objects.mark_as_done(task_id)
+    else:
+        cache_key = gen_task_done_cache_key(task_id)
+        cache.set(cache_key, result)
 
 
 def is_done(task_id):
-    cache_key = gen_task_done_cache_key(task_id)
-    return cache.get(cache_key)
+    if TASK_META_USE_DB:
+        return TaskMeta.objects.is_done(task_id)
+    else:
+        cache_key = gen_task_done_cache_key(task_id)
+        return cache.get(cache_key)
 
 
 class Task(object):
@@ -146,13 +154,21 @@ class PeriodicTask(Task):
 
 
 class TestTask(Task):
-    name = "celery-test-task"
+    name = "celery.test_task"
 
     def run(self, some_arg, **kwargs):
         logger = self.get_logger(**kwargs)
         logger.info("TestTask got some_arg=%s" % some_arg)
-
-    def after(self, task_id):
-        logger = self.get_logger(**kwargs)
-        logger.info("TestTask with id %s was successfully executed." % task_id)
 tasks.register(TestTask)
+
+
+class DeleteExpiredTaskMetaTask(PeriodicTask):
+    name = "celery.delete_expired_task_meta"
+    run_every = timedelta(days=1)
+
+    def run(self, **kwargs):
+        logger = self.get_logger(**kwargs)
+        logger.info("Deleting expired task meta objects...")
+        TaskMeta.objects.delete_expired()
+if TASK_META_USE_DB:
+    tasks.register(DeleteExpiredTaskMetaTask)
