@@ -23,9 +23,11 @@ AMQP_VHOST = "celery"
 AMQP_USER = "celery"
 AMQP_PASSWORD = "celery"
 
-AMQP_EXCHANGE = "testcelery"
-AMQP_ROUTING_KEY = "testcelery"
-AMQP_CONSUMER_QUEUE = "testcelery"
+CELERY_AMQP_EXCHANGE = "testcelery"
+CELERY_AMQP_ROUTING_KEY = "testcelery"
+CELERY_AMQP_CONSUMER_QUEUE = "testcelery"
+
+CELERY_TASK_META_USE_DB = True
 
 MANAGERS = ADMINS
 
