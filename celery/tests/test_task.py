@@ -3,9 +3,11 @@ import unittest
 from celery import task
 from celery import registry
 
+
 # Task run functions can't be closures/lambdas, as they're pickled.
 def return_True(self, **kwargs):
     return True
+
 
 class TestCeleryTasks(unittest.TestCase):
 
