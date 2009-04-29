@@ -32,6 +32,7 @@ class TaskPublisher(Publisher):
         if part_of_set:
             message_data["celeryTASKSET"] = part_of_set
         self.send(message_data)
+        return task_id
 
 
 class TaskConsumer(NoProcessConsumer):
