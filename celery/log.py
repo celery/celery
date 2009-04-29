@@ -16,7 +16,10 @@ def setup_logger(loglevel=DAEMON_LOG_LEVEL, logfile=None, format=LOG_FORMAT,
     """
     logger = multiprocessing.get_logger()
     if logfile:
-        log_file_handler = logging.FileHandler(logfile)
+        if hasattr(logfile, "write"):
+            log_file_handler = logging.StreamHandler(logfile)
+        else:
+            log_file_handler = logging.FileHandler(logfile)
         formatter = logging.Formatter(format)
         log_file_handler.setFormatter(formatter)
         logger.addHandler(log_file_handler)
@@ -27,9 +30,15 @@ def setup_logger(loglevel=DAEMON_LOG_LEVEL, logfile=None, format=LOG_FORMAT,
 
 
 def emergency_error(logfile, message):
-    logfh = open(logfile, "a")
+    logfh_needs_to_close = False
+    if hasattr(logfile, "write"):
+        logfh = logfile
+    else:
+        logfh = open(logfile, "a")
+        logfh_needs_to_close = True
     logfh.write("[%(asctime)s: FATAL/%(pid)d]: %(message)s\n" % {
                     "asctime": time.asctime(),
                     "pid": os.getpid(),
                     "message": message})
-    logfh.close()
+    if logfh_needs_to_close:
+        logfh.close()
