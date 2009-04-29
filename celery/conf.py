@@ -70,4 +70,4 @@ AMQP_EXCHANGE = getattr(settings, "CELERY_AMQP_EXCHANGE",
 AMQP_ROUTING_KEY = getattr(settings, "CELERY_AMQP_ROUTING_KEY",
                             DEFAULT_AMQP_ROUTING_KEY)
 AMQP_CONSUMER_QUEUE = getattr(settings, "CELERY_AMQP_CONSUMER_QUEUE",
-                            DEFAULT_AMQP_CONSUMER_KEY)
+                            DEFAULT_AMQP_CONSUMER_QUEUE)
