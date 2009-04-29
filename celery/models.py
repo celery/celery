@@ -9,7 +9,7 @@ __all__ = ["TaskMeta", "PeriodicTaskMeta"]
 class TaskMeta(models.Model):
     task_id = models.CharField(_(u"task id"), max_length=255, unique=True)
     is_done = models.BooleanField(_(u"is done"), default=False)
-    date_done = models.DateTimeField(_(u"done at"), auto_add=True)
+    date_done = models.DateTimeField(_(u"done at"), auto_now=True)
     objects = TaskManager()
 
     class Meta:
