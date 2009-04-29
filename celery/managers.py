@@ -15,7 +15,8 @@ class TaskManager(models.Manager):
         return self.get_task(task_id).is_done
 
     def get_all_expired(self):
-        return self.filter(date_done__lt=datetime.now() - timedelta(days=5))
+        return self.filter(date_done__lt=datetime.now() - timedelta(days=5),
+                           is_done=True)
 
     def delete_expired(self):
         self.get_all_expired().delete()
