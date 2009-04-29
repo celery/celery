@@ -1,6 +1,17 @@
 from django.conf import settings
 import logging
 
+# The default AMQP exchange key.
+DEFAULT_AMQP_EXCHANGE = "celery"
+
+# The default AMQP routing key
+DEFAULT_AMQP_ROUTING_KEY = "celery"
+
+# The default AMQP consumer queue.
+DEFAULT_AMQP_CONSUMER_QUEUE = "celery"
+
+# If True, task meta information (like is_done) is saved to the database
+# instead of using the Django cache framework.
 DEFAULT_TASK_META_USE_DB = False
 
 # The number of processes to work simultaneously at processing the queue.
@@ -54,3 +65,9 @@ DAEMON_PID_FILE = getattr(settings, "CELERYD_PID_FILE",
 DAEMON_CONCURRENCY = getattr(settings, "CELERYD_CONCURRENCY",
                                 DEFAULT_DAEMON_CONCURRENCY)
 
+AMQP_EXCHANGE = getattr(settings, "CELERY_AMQP_EXCHANGE",
+                            DEFAULT_AMQP_EXCHANGE)
+AMQP_ROUTING_KEY = getattr(settings, "CELERY_AMQP_ROUTING_KEY",
+                            DEFAULT_AMQP_ROUTING_KEY)
+AMQP_CONSUMER_QUEUE = getattr(settings, "CELERY_AMQP_CONSUMER_QUEUE",
+                            DEFAULT_AMQP_CONSUMER_KEY)

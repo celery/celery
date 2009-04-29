@@ -1,4 +1,5 @@
 from carrot.messaging import Publisher, Consumer
+from celery import conf
 import uuid
 
 __all__ = ["NoProcessConsumer", "TaskPublisher", "TaskConsumer"]
@@ -12,8 +13,8 @@ class NoProcessConsumer(Consumer):
 
 
 class TaskPublisher(Publisher):
-    exchange = "celery"
-    routing_key = "celery"
+    exchange = conf.AMQP_EXCHANGE
+    routing_key = conf.AMQP_ROUTING_KEY
 
     def delay_task(self, task_name, **task_kwargs):
         return self._delay_task(task_name=task_name, extra_data=task_kwargs)
@@ -34,6 +35,6 @@ class TaskPublisher(Publisher):
 
 
 class TaskConsumer(NoProcessConsumer):
-    queue = "celery"
-    exchange = "celery"
-    routing_key = "celery"
+    queue = conf.AMQP_CONSUMER_QUEUE
+    exchange = conf.AMQP_EXCHANGE
+    routing_key = conf.AMQP_ROUTING_KEY
