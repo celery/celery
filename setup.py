@@ -32,6 +32,7 @@ setup(
     scripts=["celery/bin/celeryd"],
     zip_safe=False,
     install_requires=[
+        'django-unittest-depth',
         'simplejson',
         'carrot',
         'django',
