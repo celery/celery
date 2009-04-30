@@ -2,5 +2,8 @@ include AUTHORS
 include README.rst
 include MANIFEST.in
 include LICENSE
+include TODO
 include Changelog
 recursive-include celery *
+recursive-include docs *
+recursive-include testproj *
