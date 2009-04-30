@@ -3,8 +3,6 @@ from celery.registry import tasks
 from celery.managers import TaskManager, PeriodicTaskManager
 from django.utils.translation import ugettext_lazy as _
 
-__all__ = ["TaskMeta", "PeriodicTaskMeta"]
-
 
 class TaskMeta(models.Model):
     task_id = models.CharField(_(u"task id"), max_length=255, unique=True)

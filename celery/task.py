@@ -9,9 +9,6 @@ from datetime import timedelta
 import uuid
 import traceback
 
-__all__ = ["delay_task", "discard_all", "gen_task_done_cache_key",
-           "mark_as_done", "is_done", "Task", "PeriodicTask", "TestTask"]
-
 
 def delay_task(task_name, **kwargs):
     if task_name not in tasks:

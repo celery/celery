@@ -2,8 +2,6 @@ from carrot.messaging import Publisher, Consumer
 from celery import conf
 import uuid
 
-__all__ = ["NoProcessConsumer", "TaskPublisher", "TaskConsumer"]
-
 
 class NoProcessConsumer(Consumer):
     

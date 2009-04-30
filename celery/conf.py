@@ -47,6 +47,7 @@ LOG_LEVELS = {
     "FATAL": logging.FATAL,
 }
 
+
 TASK_META_USE_DB = getattr(settings, "CELERY_TASK_META_USE_DB",
                             DEFAULT_TASK_META_USE_DB)
 LOG_FORMAT = getattr(settings, "CELERYD_DAEMON_LOG_FORMAT",

@@ -1,7 +1,5 @@
 from django.conf import settings
 
-__all__ = ["autodiscover", "find_related_module"]
-
 
 def autodiscover():
     """Include tasks for all applications in settings.INSTALLED_APPS."""

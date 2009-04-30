@@ -1,8 +1,6 @@
 from UserList import UserList
 from celery.task import mark_as_done
 
-__all__ = ["ProcessQueue"]
-
 
 class ProcessQueue(UserList):
     """Queue of running child processes, which starts waiting for the
