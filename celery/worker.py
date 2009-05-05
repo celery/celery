@@ -31,6 +31,7 @@ class TaskDaemon(object):
     concurrency = DAEMON_CONCURRENCY
     logfile = DAEMON_LOG_FILE
     queue_wakeup_after = QUEUE_WAKEUP_AFTER
+    empty_msg_emit_every = EMPTY_MSG_EMIT_EVERY
     
     def __init__(self, concurrency=None, logfile=None, loglevel=None,
             queue_wakeup_after=None):
@@ -91,10 +92,12 @@ class TaskDaemon(object):
                 # probably because it got an exception.
                 continue
             except EmptyQueue:
-                if not last_empty_emit or \
-                        time.time() > last_empty_emit + EMPTY_MSG_EMIT_EVERY:
-                    self.logger.info("Waiting for queue.")
-                    last_empty_emit = time.time()
+                emit_every = self.empty_msg_emit_every
+                if emit_every:
+                    if not last_empty_emit or \
+                            time.time() > last_empty_emit + emit_every:
+                        self.logger.info("Waiting for queue.")
+                        last_empty_emit = time.time()
                 time.sleep(self.queue_wakeup_after)
                 continue
             except UnknownTask, e:
