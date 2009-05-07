@@ -254,16 +254,6 @@ class PeriodicTask(Task):
         super(PeriodicTask, self).__init__()
 
 
-class TestTask(Task):
-    """A simple test task that just logs something."""
-    name = "celery.test_task"
-
-    def run(self, some_arg, **kwargs):
-        logger = self.get_logger(**kwargs)
-        logger.info("TestTask got some_arg=%s" % some_arg)
-tasks.register(TestTask)
-
-
 class DeleteExpiredTaskMetaTask(PeriodicTask):
     """A periodic task that deletes expired task metadata every day.
    

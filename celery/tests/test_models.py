@@ -26,6 +26,7 @@ class TestModels(unittest.TestCase):
         m1 = self.createTaskMeta()
         m2 = self.createTaskMeta()
         m3 = self.createTaskMeta()
+        self.assertTrue(unicode(m1).startswith("<Task:"))
         self.assertTrue(m1.task_id)
         self.assertTrue(isinstance(m1.date_done, datetime))
 
@@ -52,11 +53,14 @@ class TestModels(unittest.TestCase):
     def test_periodic_taskmeta(self):
         tasks.register(TestPeriodicTask)
         p = self.createPeriodicTaskMeta(TestPeriodicTask.name)
+        # check that repr works.
+        self.assertTrue(unicode(p).startswith("<PeriodicTask:"))
         self.assertFalse(p in PeriodicTaskMeta.objects.get_waiting_tasks())
         # Have to avoid save() because it applies the auto_now=True.
         PeriodicTaskMeta.objects.filter(name=p.name).update(
                 last_run_at=datetime.now() - TestPeriodicTask.run_every)
         self.assertTrue(p in PeriodicTaskMeta.objects.get_waiting_tasks())
         self.assertTrue(isinstance(p.task, TestPeriodicTask))
-        
+
+        p.delay()
 

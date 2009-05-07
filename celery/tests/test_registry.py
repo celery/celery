@@ -74,3 +74,7 @@ class TestTaskRegistry(unittest.TestCase):
         self.assertFalse(TestPeriodicTask.name in r)
         r.unregister(FUNC_TASK_NAME)
         self.assertFalse(FUNC_TASK_NAME in r)
+
+        self.assertTrue(func_task())
+        self.assertTrue(TestTask().run())
+        self.assertTrue(TestPeriodicTask().run())

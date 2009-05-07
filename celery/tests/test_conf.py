@@ -2,6 +2,7 @@ import unittest
 from celery import conf
 from django.conf import settings
 
+
 SETTING_VARS = (
     ("CELERY_AMQP_CONSUMER_QUEUE", "AMQP_CONSUMER_QUEUE",
         "DEFAULT_AMQP_CONSUMER_QUEUE"),

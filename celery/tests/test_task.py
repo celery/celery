@@ -9,12 +9,6 @@ from celery.log import setup_logger
 from celery import messaging
 
 
-def get_string_io_logger():
-    sio = StringIO()
-    logger = setup_logger(loglevel=logging.INFO, logfile=sio)
-    return logger, sio
-
-
 # Task run functions can't be closures/lambdas, as they're pickled.
 def return_True(self, **kwargs):
     return True
@@ -83,6 +77,7 @@ class TestCeleryTasks(unittest.TestCase):
         registry.tasks.register(T1)
         t1 = T1()
         consumer = t1.get_consumer()
+        self.assertRaises(NotImplementedError, consumer.receive, "foo", "foo")
         consumer.discard_all()
         self.assertTrue(consumer.fetch() is None)
 
