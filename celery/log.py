@@ -28,6 +28,9 @@ def setup_logger(loglevel=DAEMON_LOG_LEVEL, logfile=None, format=LOG_FORMAT,
 
 
 def emergency_error(logfile, message):
+    """Emergency error logging, for when there's no standard file
+    descriptors open because the process has been daemonized or for
+    some other reason."""
     logfh_needs_to_close = False
     if hasattr(logfile, "write"):
         logfh = logfile
