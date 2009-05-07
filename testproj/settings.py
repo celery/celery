@@ -93,6 +93,7 @@ TEMPLATE_DIRS = (
     # Don't forget to use absolute paths, not relative paths.
 )
 
+
 INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -100,3 +101,10 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'celery'
 )
+
+try:
+    import test_extensions
+except ImportError:
+    pass
+else:
+    INSTALLED_APPS += ("test_extensions", )
