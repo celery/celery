@@ -80,8 +80,8 @@ class Task(object):
     All subclasses of ``Task`` has to define the ``name`` attribute, which is
     the name of the task that can be passed to ``celery.task.delay_task``,
     it also has to define the ``run`` method, which is the actual method the
-    ``celery`` daemon executes. This method does not support positional
-    arguments, only keyword arguments.
+    ``celery`` daemon executes.
+    
 
     Examples
     --------

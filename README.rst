@@ -59,8 +59,6 @@ Defining tasks
     ...     logger.info("Did something: %s" % some_arg)
     >>> task.register(do_something, "do_something") 
 
-*Note* Task functions only supports keyword arguments.
-
 Tell the celery daemon to run a task
 -------------------------------------
 
