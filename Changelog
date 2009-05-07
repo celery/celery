@@ -1,6 +1,12 @@
 ==============
 Change history
 ==============
+0.1.8 :date:`2009-05-07 12:27 P.M CET` :author:askh@opera.com
+
+	* Better test coverage
+	* More documentation
+	* celeryd doesn't emit "Queue is empty" message if
+	  :setting:`CELERYD_EMPTY_MSG_EMIT_EVERY` is 0.
 
 0.1.7 :date:`2009-04-30 1:50 P.M CET` :author:askh@opera.com
 
