@@ -14,21 +14,27 @@ class TaskPublisher(Publisher):
     exchange = conf.AMQP_EXCHANGE
     routing_key = conf.AMQP_ROUTING_KEY
 
-    def delay_task(self, task_name, **task_kwargs):
-        return self._delay_task(task_name=task_name, extra_data=task_kwargs)
+    def delay_task(self, task_name, *task_args, **task_kwargs):
+        return self._delay_task(task_name=task_name, args=task_args,
+                                kwargs=task_kwargs)
 
-    def delay_task_in_set(self, task_name, taskset_id, task_kwargs):
+    def delay_task_in_set(self, task_name, taskset_id, task_args,
+            task_kwargs):
         return self._delay_task(task_name=task_name, part_of_set=taskset_id,
-                                extra_data=task_kwargs)
+                                args=task_args, kwargs=task_kwargs)
 
-    def _delay_task(self, task_name, part_of_set=None, extra_data=None):
-        extra_data = extra_data or {}
+    def _delay_task(self, task_name, part_of_set=None, args=None, kwargs=None):
+        args = args or []
+        kwargs = kwargs or {}
         task_id = str(uuid.uuid4())
-        message_data = dict(extra_data)
-        message_data["celeryTASK"] = task_name
-        message_data["celeryID"] = task_id
+        message_data = {
+            "id": task_id,
+            "task": task_name,
+            "args": args,
+            "kwargs": kwargs,
+        }
         if part_of_set:
-            message_data["celeryTASKSET"] = part_of_set
+            message_data["taskset"] = part_of_set
         self.send(message_data)
         return task_id
 

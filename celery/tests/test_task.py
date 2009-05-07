@@ -41,10 +41,11 @@ class TestCeleryTasks(unittest.TestCase):
             **kwargs):
         next_task = consumer.fetch()
         task_data = consumer.decoder(next_task.body)
-        self.assertEquals(task_data["celeryID"], task_id)
-        self.assertEquals(task_data["celeryTASK"], task_name)
+        self.assertEquals(task_data["id"], task_id)
+        self.assertEquals(task_data["task"], task_name)
+        task_kwargs = task_data.get("kwargs", {})
         for arg_name, arg_value in kwargs.items():
-            self.assertEquals(task_data.get(arg_name), arg_value)
+            self.assertEquals(task_kwargs.get(arg_name), arg_value)
 
     def test_raising_task(self):
         rtask = self.createTaskCls("RaisingTask", "c.unittest.t.rtask")
@@ -136,8 +137,9 @@ class TestTaskSet(unittest.TestCase):
         consumer = IncrementCounterTask().get_consumer()
         for subtask_id in subtask_ids:
             m = consumer.decoder(consumer.fetch().body)
-            self.assertEquals(m.get("celeryTASKSET"), taskset_id)
-            self.assertEquals(m.get("celeryTASK"), IncrementCounterTask.name)
-            self.assertEquals(m.get("celeryID"), subtask_id)
-            IncrementCounterTask().run(increment_by=m.get("increment_by"))
+            self.assertEquals(m.get("taskset"), taskset_id)
+            self.assertEquals(m.get("task"), IncrementCounterTask.name)
+            self.assertEquals(m.get("id"), subtask_id)
+            IncrementCounterTask().run(
+                    increment_by=m.get("kwargs", {}).get("increment_by"))
         self.assertEquals(IncrementCounterTask.count, sum(xrange(1, 10)))

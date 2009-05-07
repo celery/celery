@@ -10,7 +10,7 @@ import uuid
 import traceback
 
 
-def delay_task(task_name, **kwargs):
+def delay_task(task_name, *args, **kwargs):
     """Delay a task for execution by the ``celery`` daemon.
 
     Examples
@@ -23,7 +23,7 @@ def delay_task(task_name, **kwargs):
                 "Task with name %s not registered in the task registry." % (
                     task_name))
     publisher = TaskPublisher(connection=DjangoAMQPConnection)
-    task_id = publisher.delay_task(task_name, **kwargs)
+    task_id = publisher.delay_task(task_name, *args, **kwargs)
     publisher.close()
     return task_id
 
@@ -116,11 +116,11 @@ class Task(object):
         if not self.name:
             raise NotImplementedError("Tasks must define a name attribute.")
 
-    def __call__(self, **kwargs):
+    def __call__(self, *args, **kwargs):
         """The ``__call__`` is called when you do ``Task().run()`` and calls
         the ``run`` method. It also catches any exceptions and logs them."""
         try:
-            retval = self.run(**kwargs)
+            retval = self.run(*args, **kwargs)
         except Exception, e:
             logger = self.get_logger(**kwargs)
             logger.critical("Task got exception %s: %s\n%s" % (
@@ -129,7 +129,7 @@ class Task(object):
         else:
             return retval
 
-    def run(self, **kwargs):
+    def run(self, *args, **kwargs):
         """The actual task. All subclasses of :class:`Task` must define
         the run method, if not a ``NotImplementedError`` exception is raised.
         """
@@ -148,9 +148,9 @@ class Task(object):
         return TaskConsumer(connection=DjangoAMQPConnection)
 
     @classmethod
-    def delay(cls, **kwargs):
+    def delay(cls, *args, **kwargs):
         """Delay this task for execution by the ``celery`` daemon(s)."""
-        return delay_task(cls.name, **kwargs)
+        return delay_task(cls.name, *args, **kwargs)
 
 
 class TaskSet(object):
@@ -209,6 +209,7 @@ class TaskSet(object):
         for arg in self.arguments:
             subtask_id = publisher.delay_task_in_set(task_name=self.task_name,
                                                      taskset_id=taskset_id,
+                                                     task_args=[],
                                                      task_kwargs=arg)
             subtask_ids.append(subtask_id) 
         publisher.close()

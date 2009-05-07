@@ -22,6 +22,42 @@ class UnknownTask(Exception):
     ignored."""
 
 
+class TaskWrapper(object):
+    def __init__(self, task_name, task_id, task_func, args, kwargs):
+        self.task_name = task_name
+        self.task_id = task_id
+        self.task_func = task_func
+        self.args = args
+        self.kwargs = kwargs
+
+    @classmethod
+    def from_message(cls, message):
+        message_data = simplejson.loads(message.body)
+        task_name = message_data.pop("task")
+        task_id = message_data.pop("id")
+        args = message_data.pop("args")
+        kwargs = message_data.pop("kwargs")
+        if task_name not in tasks:
+            message.reject()
+            raise UnknownTask(task_name)
+        task_func = tasks[task_name]
+        return cls(task_name, task_id, task_func, args, kwargs)
+
+    def extend_kwargs_with_logging(self, loglevel, logfile):
+        task_func_kwargs = {"logfile": logfile,
+                            "loglevel": loglevel}
+        task_func_kwargs.update(self.kwargs)
+        return task_func_kwargs
+
+    def execute(self, loglevel, logfile):
+        task_func_kwargs = self.extend_kwargs_with_logging(logfile, loglevel)
+        return self.task_func(*self.args, **task_func_kwargs)
+
+    def execute_using_pool(self, pool, loglevel, logfile):
+        task_func_kwargs = self.extend_kwargs_with_logging(logfile, loglevel)
+        return pool.apply_async(self.task_func, self.args, task_func_kwargs)
+
+
 class TaskDaemon(object):
     """Executes tasks waiting in the task queue.
 
@@ -43,42 +79,44 @@ class TaskDaemon(object):
         self.logger = setup_logger(loglevel, logfile)
         self.pool = multiprocessing.Pool(self.concurrency)
         self.task_consumer = TaskConsumer(connection=DjangoAMQPConnection)
-        self.task_registry = tasks
 
     def fetch_next_task(self):
         message = self.task_consumer.fetch()
         if message is None: # No messages waiting.
             raise EmptyQueue()
 
-        message_data = simplejson.loads(message.body)
-        task_name = message_data.pop("celeryTASK")
-        task_id = message_data.pop("celeryID")
+        task = TaskWrapper.from_message(message)
         self.logger.info("Got task from broker: %s[%s]" % (
-                            task_name, task_id))
-        if task_name not in self.task_registry:
-            message.reject()
-            raise UnknownTask(task_name)
+                            task.task_name, task.task_id))
 
-        task_func = self.task_registry[task_name]
-        task_func_params = {"logfile": self.logfile,
-                            "loglevel": self.loglevel}
-        task_func_params.update(message_data)
+        return task
+
+    def execute_next_task(self):
+        task = self.fetch_next_task()
 
         try:
-            result = self.pool.apply_async(task_func, [], task_func_params)
+            result = task.execute_using_pool(self.pool, self.loglevel,
+                                             self.logfile)
         except Exception, error:
             self.logger.critical("Worker got exception %s: %s\n%s" % (
                 error.__class__, error, traceback.format_exc()))
             return 
 
         message.ack()
-        return result, task_name, task_id
+        return result, task.task_name, task.task_id
 
     def run_periodic_tasks(self):
-        for task in PeriodicTaskMeta.objects.get_waiting_tasks():
-            task.delay()
+        """Schedule all waiting periodic tasks for execution.
+       
+        Returns list of :class:`celery.models.PeriodicTaskMeta` objects.
+        """
+        waiting_tasks = PeriodicTaskMeta.objects.get_waiting_tasks()
+        [waiting_task.delay()
+                for waiting_task in waiting_tasks]
+        return waiting_tasks
 
     def run(self):
+        """Run the worker server."""
         results = ProcessQueue(self.concurrency, logger=self.logger,
                 done_msg="Task %(name)s[%(id)s] processed: %(return_value)s")
         last_empty_emit = None
