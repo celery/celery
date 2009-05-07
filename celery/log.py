@@ -1,5 +1,6 @@
 import multiprocessing
 import os
+import sys
 import time
 import logging
 from celery.conf import LOG_FORMAT, DAEMON_LOG_LEVEL
@@ -32,6 +33,8 @@ def emergency_error(logfile, message):
     descriptors open because the process has been daemonized or for
     some other reason."""
     logfh_needs_to_close = False
+    if not logfile:
+        logfile = sys.stderr
     if hasattr(logfile, "write"):
         logfh = logfile
     else:
