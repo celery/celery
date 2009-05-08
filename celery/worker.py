@@ -89,10 +89,10 @@ class TaskDaemon(object):
         self.logger.info("Got task from broker: %s[%s]" % (
                             task.task_name, task.task_id))
 
-        return task
+        return task, message
 
     def execute_next_task(self):
-        task = self.fetch_next_task()
+        task, message = self.fetch_next_task()
 
         try:
             result = task.execute_using_pool(self.pool, self.loglevel,
@@ -124,9 +124,9 @@ class TaskDaemon(object):
         while True:
             self.run_periodic_tasks()
             try:
-                result, task_name, task_id = self.fetch_next_task()
+                result, task_name, task_id = self.execute_next_task()
             except ValueError:
-                # fetch_next_task didn't return a r/name/id tuple,
+                # execute_next_task didn't return a r/name/id tuple,
                 # probably because it got an exception.
                 continue
             except EmptyQueue:
