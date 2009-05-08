@@ -61,7 +61,7 @@ setup(
     install_requires=[
         'django-unittest-depth',
         'simplejson',
-        'carrot',
+        'carrot>=0.3.8',
         'django',
     ],
     cmdclass = {"test": RunTests},

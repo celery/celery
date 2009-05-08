@@ -78,7 +78,7 @@ class TaskDaemon(object):
                                     self.queue_wakeup_after
         self.logger = setup_logger(loglevel, logfile)
         self.pool = multiprocessing.Pool(self.concurrency)
-        self.task_consumer = TaskConsumer(connection=DjangoAMQPConnection)
+        self.task_consumer = TaskConsumer(connection=DjangoAMQPConnection())
 
     def fetch_next_task(self):
         message = self.task_consumer.fetch()

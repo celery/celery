@@ -22,7 +22,7 @@ def delay_task(task_name, *args, **kwargs):
         raise tasks.NotRegistered(
                 "Task with name %s not registered in the task registry." % (
                     task_name))
-    publisher = TaskPublisher(connection=DjangoAMQPConnection)
+    publisher = TaskPublisher(connection=DjangoAMQPConnection())
     task_id = publisher.delay_task(task_name, *args, **kwargs)
     publisher.close()
     return task_id
@@ -37,7 +37,7 @@ def discard_all():
     Returns the number of tasks discarded.
 
     """
-    consumer = TaskConsumer(connection=DjangoAMQPConnection)
+    consumer = TaskConsumer(connection=DjangoAMQPConnection())
     discarded_count = consumer.discard_all()
     consumer.close()
     return discarded_count
@@ -141,11 +141,11 @@ class Task(object):
 
     def get_publisher(self):
         """Get a celery task message publisher."""
-        return TaskPublisher(connection=DjangoAMQPConnection)
+        return TaskPublisher(connection=DjangoAMQPConnection())
 
     def get_consumer(self):
         """Get a celery task message consumer."""
-        return TaskConsumer(connection=DjangoAMQPConnection)
+        return TaskConsumer(connection=DjangoAMQPConnection())
 
     @classmethod
     def delay(cls, *args, **kwargs):
@@ -204,7 +204,7 @@ class TaskSet(object):
             True
         """
         taskset_id = str(uuid.uuid4())
-        publisher = TaskPublisher(connection=DjangoAMQPConnection)
+        publisher = TaskPublisher(connection=DjangoAMQPConnection())
         subtask_ids = []
         for arg in self.arguments:
             subtask_id = publisher.delay_task_in_set(task_name=self.task_name,
