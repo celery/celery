@@ -50,11 +50,11 @@ class TaskWrapper(object):
         return task_func_kwargs
 
     def execute(self, loglevel, logfile):
-        task_func_kwargs = self.extend_kwargs_with_logging(logfile, loglevel)
+        task_func_kwargs = self.extend_kwargs_with_logging(loglevel, logfile)
         return self.task_func(*self.args, **task_func_kwargs)
 
     def execute_using_pool(self, pool, loglevel, logfile):
-        task_func_kwargs = self.extend_kwargs_with_logging(logfile, loglevel)
+        task_func_kwargs = self.extend_kwargs_with_logging(loglevel, logfile)
         return pool.apply_async(self.task_func, self.args, task_func_kwargs)
 
 
