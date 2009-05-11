@@ -33,10 +33,10 @@ class TaskWrapper(object):
     @classmethod
     def from_message(cls, message):
         message_data = simplejson.loads(message.body)
-        task_name = message_data.pop("task")
-        task_id = message_data.pop("id")
-        args = message_data.pop("args")
-        kwargs = message_data.pop("kwargs")
+        task_name = message_data["task"]
+        task_id = message_data["id"]
+        args = message_data["args"]
+        kwargs = message_data["kwargs"]
         if task_name not in tasks:
             message.reject()
             raise UnknownTask(task_name)
