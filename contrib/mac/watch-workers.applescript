@@ -1,4 +1,4 @@
-set workers to {"h8", "h9", "h10"}
+set workers to {"h8.opera.com", "h9.opera.com", "h10.opera.com"}
 tell application "iTerm"
     activate
     set myterm to (make new terminal)
