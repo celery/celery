@@ -2,9 +2,13 @@
 Change history
 ==============
 
-0.1.9 :date:`TBA` :author:askh@opera.com
+0.1.10 :date:`2009-05-11 12:46 P.M CET` :author:askh@opera.com
 
 	* Tasks now supports both positional arguments and keyword arguments.
+
+	* Requires carrot 0.3.8.
+
+	* The daemon now tries to reconnect if the connection is lost.
 
 0.1.8 :date:`2009-05-07 12:27 P.M CET` :author:askh@opera.com
 
