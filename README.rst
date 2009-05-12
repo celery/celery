@@ -4,7 +4,7 @@ celery - Distributed Task Queue for Django.
 
 :Authors:
     Ask Solem (askh@opera.com)
-:Version: 0.1.10
+:Version: 0.1.11
 
 Introduction
 ------------
