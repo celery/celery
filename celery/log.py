@@ -15,8 +15,8 @@ def setup_logger(loglevel=DAEMON_LOG_LEVEL, logfile=None, format=LOG_FORMAT,
     """
     logger = multiprocessing.get_logger()
     for handler in logger.handlers:
-        if hasattr(handler, "stream"):
-            handler.stream.close()
+        if hasattr(handler, "close"):
+            handler.close()
     logger.handlers = []
     if logfile:
         if hasattr(logfile, "write"):
