@@ -98,6 +98,8 @@ class TaskDaemon(object):
         self.reset_connection()
 
     def reset_connection(self):
+        if hasattr(self, "task_consumer"):
+            self.task_consumer.close()
         self.task_consumer = TaskConsumer(connection=DjangoAMQPConnection())
 
     def connection_diagnostics(self):
