@@ -6,8 +6,13 @@ from celery.messaging import TaskPublisher, TaskConsumer
 from celery.models import TaskMeta
 from django.core.cache import cache
 from datetime import timedelta
+from celery.models import RetryTask
 import uuid
 import traceback
+
+
+class RetryTask(Exception):
+    """The task has failed and is to be appended to the retry queue."""
 
 
 def delay_task(task_name, *args, **kwargs):
@@ -111,6 +116,10 @@ class Task(object):
     """
     name = None
     type = "regular"
+    max_retries = 0 # unlimited
+    retry_interval = timedelta(seconds=2)
+
+    RetryTask = RetryTask
 
     def __init__(self):
         if not self.name:
@@ -121,10 +130,13 @@ class Task(object):
         the ``run`` method. It also catches any exceptions and logs them."""
         try:
             retval = self.run(*args, **kwargs)
+        except RetryTask, e:
+            self.retry(kwargs["task_id"], args, kwargs)
         except Exception, e:
             logger = self.get_logger(**kwargs)
             logger.critical("Task got exception %s: %s\n%s" % (
                                 e.__class__, e, traceback.format_exc()))
+            self.handle_exception(e, args, kwargs)
             return
         else:
             return retval
@@ -146,6 +158,15 @@ class Task(object):
     def get_consumer(self):
         """Get a celery task message consumer."""
         return TaskConsumer(connection=DjangoAMQPConnection())
+
+    def requeue(self, task_id, args, kwargs):
+        self.get_publisher().requeue_task(self.name, task_id, args, kwargs)
+
+    def retry(self, task_id, args, kwargs):
+        RetryTask.objects.add(self.name, task_id, args, kwargs)
+
+    def handle_exception(self, exception, retry_args, retry_kwargs):
+        pass
 
     @classmethod
     def delay(cls, *args, **kwargs):

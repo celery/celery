@@ -39,3 +39,22 @@ class PeriodicTaskManager(models.Manager):
             if datetime.now() > run_at:
                 waiting.append(task_meta)
         return waiting
+
+class RetryQueueManager(models.Manager):
+
+    def add(self, task_name, task_id, args, kwargs):
+        new_item, c = self.get_or_create(task_id=task_id, defaults={
+                                            "task_name": task_name})
+        new_item.stack = {"args": args, "kwargs": kwargs}
+        new_item.save()
+        return new_item
+
+    def get_waiting_tasks(self):
+        waiting_tasks = self.all().order_by('-last_retry', 'retry_count')
+        to_retry = []
+        for waiting_task in waiting_tasks:
+            task = tasks[waiting_task.task_name]
+            retry_at = waiting_task.last_retry_at + task.retry_interval
+            if datetime.now() > retry_at:
+                to_retry.append(waiting_task)
+        return to_retry

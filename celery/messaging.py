@@ -18,15 +18,23 @@ class TaskPublisher(Publisher):
         return self._delay_task(task_name=task_name, args=task_args,
                                 kwargs=task_kwargs)
 
+
     def delay_task_in_set(self, task_name, taskset_id, task_args,
             task_kwargs):
         return self._delay_task(task_name=task_name, part_of_set=taskset_id,
                                 args=task_args, kwargs=task_kwargs)
+    
+    def requeue_task(self, task_name, task_id, task_args, task_kwargs,
+            part_of_set=None):
+        return self._delay_task(task_name=task_name, part_of_set=part_of_set,
+                                task_id=task_id, args=task_args,
+                                kwargs=task_kwargs)
 
-    def _delay_task(self, task_name, part_of_set=None, args=None, kwargs=None):
+    def _delay_task(self, task_name, task_id=None, part_of_set=None,
+            args=None, kwargs=None):
         args = args or []
         kwargs = kwargs or {}
-        task_id = str(uuid.uuid4())
+        task_id = task_id or str(uuid.uuid4())
         message_data = {
             "id": task_id,
             "task": task_name,
