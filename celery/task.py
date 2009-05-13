@@ -11,10 +11,6 @@ import uuid
 import traceback
 
 
-class RetryTask(Exception):
-    """The task has failed and is to be appended to the retry queue."""
-
-
 def delay_task(task_name, *args, **kwargs):
     """Delay a task for execution by the ``celery`` daemon.
 
@@ -118,8 +114,7 @@ class Task(object):
     type = "regular"
     max_retries = 0 # unlimited
     retry_interval = timedelta(seconds=2)
-
-    RetryTask = RetryTask
+    auto_retry = False
 
     def __init__(self):
         if not self.name:
@@ -130,13 +125,13 @@ class Task(object):
         the ``run`` method. It also catches any exceptions and logs them."""
         try:
             retval = self.run(*args, **kwargs)
-        except RetryTask, e:
-            self.retry(kwargs["task_id"], args, kwargs)
         except Exception, e:
             logger = self.get_logger(**kwargs)
             logger.critical("Task got exception %s: %s\n%s" % (
                                 e.__class__, e, traceback.format_exc()))
             self.handle_exception(e, args, kwargs)
+            if self.auto_retry:
+                self.retry(kwargs["task_id"], args, kwargs)
             return
         else:
             return retval
