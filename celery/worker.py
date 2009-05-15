@@ -5,7 +5,7 @@ from celery.conf import QUEUE_WAKEUP_AFTER, EMPTY_MSG_EMIT_EVERY
 from celery.log import setup_logger
 from celery.registry import tasks
 from celery.process import ProcessQueue
-from celery.models import RetryTask, PeriodicTaskMeta
+from celery.models import PeriodicTaskMeta
 import multiprocessing
 import simplejson
 import traceback
@@ -145,10 +145,7 @@ class TaskDaemon(object):
 
     def schedule_retry_tasks(self):
         """Reschedule all requeued tasks waiting for retry."""
-        retry_tasks = RetryTask.objects.get_waiting_tasks()
-        [retry_task.retry()
-                for retry_task in retry_tasks]
-        return retry_tasks
+        pass
 
     def run(self):
         """The worker server's main loop."""
