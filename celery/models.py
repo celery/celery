@@ -60,7 +60,7 @@ class TaskMeta(models.Model):
         verbose_name_plural = _(u"task meta")
 
     def __unicode__(self):
-        return u"<Task: %s done:%s>" % (self.task_id, self.is_done)
+        return u"<Task: %s done:%s>" % (self.task_id, self.status)
 
 
 class PeriodicTaskMeta(models.Model):
