@@ -6,7 +6,7 @@ from celery.messaging import TaskPublisher, TaskConsumer
 from celery.models import TaskMeta
 from django.core.cache import cache
 from datetime import timedelta
-from celery.models import RetryTask
+from celery.backends import Job, default_backend
 import uuid
 import traceback
 
@@ -26,7 +26,7 @@ def delay_task(task_name, *args, **kwargs):
     publisher = TaskPublisher(connection=DjangoAMQPConnection())
     task_id = publisher.delay_task(task_name, *args, **kwargs)
     publisher.close()
-    return task_id
+    return Job(task_id)
 
 
 def discard_all():
@@ -44,35 +44,14 @@ def discard_all():
     return discarded_count
 
 
-def gen_task_done_cache_key(task_id):
-    """Generate a cache key for marking a task as done."""
-    return "celery-task-done-marker-%s" % task_id
-
-
 def mark_as_done(task_id, result):
-    """Mark task as done (executed).
-
-    if ``settings.TASK_META_USE_DB`` is ``True``, this will
-    use the :class:`celery.models.TaskMeta` model, if not memcached
-    is used.
-
-    """
-    if result is None:
-        result = True
-    if TASK_META_USE_DB:
-        TaskMeta.objects.mark_as_done(task_id)
-    else:
-        cache_key = gen_task_done_cache_key(task_id)
-        cache.set(cache_key, result)
+    """Mark task as done (executed)."""
+    return default_backend.mark_as_done(task_id, result)
 
 
 def is_done(task_id):
     """Returns ``True`` if task with ``task_id`` has been executed."""
-    if TASK_META_USE_DB:
-        return TaskMeta.objects.is_done(task_id)
-    else:
-        cache_key = gen_task_done_cache_key(task_id)
-        return bool(cache.get(cache_key))
+    return default_backend.is_done(task_id)
 
 
 class Task(object):
@@ -158,7 +137,7 @@ class Task(object):
         self.get_publisher().requeue_task(self.name, task_id, args, kwargs)
 
     def retry(self, task_id, args, kwargs):
-        RetryTask.objects.add(self.name, task_id, args, kwargs)
+        retry_queue.put(self.name, task_id, args, kwargs)
 
     def handle_exception(self, exception, retry_args, retry_kwargs):
         pass
@@ -282,6 +261,5 @@ class DeleteExpiredTaskMetaTask(PeriodicTask):
     def run(self, **kwargs):
         logger = self.get_logger(**kwargs)
         logger.info("Deleting expired task meta objects...")
-        TaskMeta.objects.delete_expired()
-if TASK_META_USE_DB:
-    tasks.register(DeleteExpiredTaskMetaTask)
+        default_backend.cleanup()
+tasks.register(DeleteExpiredTaskMetaTask)
