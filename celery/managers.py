@@ -19,12 +19,12 @@ class TaskManager(models.Manager):
     def delete_expired(self):
         self.get_all_expired().delete()
 
-    def mark_as_done(self, task_id, result):
+    def store_result(self, task_id, result, status):
         task, created = self.get_or_create(task_id=task_id, defaults={
-                                            "status": "DONE",
+                                            "status": status,
                                             "result": result})
         if not created:
-            task.status = "DONE"
+            task.status = status
             task.result = result
             task.save()
 

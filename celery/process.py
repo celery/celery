@@ -1,5 +1,4 @@
 from UserList import UserList
-from celery.task import mark_as_done
 
 
 class ProcessQueue(UserList):
@@ -23,5 +22,4 @@ class ProcessQueue(UserList):
                         "name": task_name,
                         "id": task_id,
                         "return_value": ret_value})
-                    mark_as_done(task_id, ret_value)
             self.data = []

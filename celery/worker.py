@@ -6,6 +6,7 @@ from celery.log import setup_logger
 from celery.registry import tasks
 from celery.process import ProcessQueue
 from celery.models import PeriodicTaskMeta
+from celery.task import mark_as_done, mark_as_failure
 import multiprocessing
 import simplejson
 import traceback
@@ -20,6 +21,18 @@ class EmptyQueue(Exception):
 class UnknownTask(Exception):
     """Got an unknown task in the queue. The message is requeued and
     ignored."""
+
+
+def jail(task_id, callable_, args, kwargs):
+    try:
+        result = callable_(*args, **kwargs)
+        mark_as_done(task_id, result)
+        print("SUCCESS: %s" % result)
+        return result
+    except Exception, exc:
+        mark_as_failure(task_id, exc)
+        print("FAILURE: %s\n%s" % (exc, traceback.format_exc()))
+        return exc
 
 
 class TaskWrapper(object):
@@ -53,11 +66,13 @@ class TaskWrapper(object):
 
     def execute(self, loglevel, logfile):
         task_func_kwargs = self.extend_kwargs_with_logging(loglevel, logfile)
-        return self.task_func(*self.args, **task_func_kwargs)
+        return jail(self.task_id, [
+                        self.task_func, self.args, task_func_kwargs])
 
     def execute_using_pool(self, pool, loglevel, logfile):
         task_func_kwargs = self.extend_kwargs_with_logging(loglevel, logfile)
-        return pool.apply_async(self.task_func, self.args, task_func_kwargs)
+        return pool.apply_async(jail, [self.task_id, self.task_func,
+                                       self.args, task_func_kwargs])
 
 
 class EventTimer(object):

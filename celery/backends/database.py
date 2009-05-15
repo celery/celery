@@ -8,10 +8,10 @@ class Backend(BaseBackend):
         super(Backend, self).__init__(*args, **kwargs)
         self._cache = {}
    
-    def mark_as_done(self, task_id, result):
+    def store_result(self, task_id, result, status):
         """Mark task as done (executed)."""
         result = self.prepare_result(result)
-        return TaskMeta.objects.mark_as_done(task_id, result)
+        return TaskMeta.objects.store_result(task_id, result, status)
 
     def is_done(self, task_id):
         """Returns ``True`` if task with ``task_id`` has been executed."""

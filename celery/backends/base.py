@@ -12,9 +12,18 @@ class BaseBackend(object):
     def __init__(self):
         pass
 
-    def mark_as_done(self, task_id, result):
+    def store_result(self, task_id, result, status):
         raise NotImplementedError(
-                "Backends must implement the mark_as_done method")
+                "Backends must implement the store_result method")
+
+    def mark_as_done(self, task_id, result):
+        return self.store_result(task_id, result, status="DONE")
+    
+    def mark_as_failure(self, task_id, exc):
+        return self.store_result(task_id, exc, status="FAILURE")
+
+    def mark_as_retry(self, task_id, exc):
+        return self.store_result(task_id, exc, status="RETRY")
 
     def get_status(self, task_id):
         raise NotImplementedError(

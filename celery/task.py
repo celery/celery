@@ -8,6 +8,7 @@ from django.core.cache import cache
 from datetime import timedelta
 from celery.backends import default_backend
 import uuid
+import pickle
 import traceback
 
 
@@ -85,6 +86,11 @@ def mark_as_done(task_id, result):
     return default_backend.mark_as_done(task_id, result)
 
 
+def mark_as_failure(task_id, exc):
+    """Mark task as done (executed)."""
+    return default_backend.mark_as_failure(task_id, exc)
+
+
 def is_done(task_id):
     """Returns ``True`` if task with ``task_id`` has been executed."""
     return default_backend.is_done(task_id)
@@ -138,18 +144,7 @@ class Task(object):
     def __call__(self, *args, **kwargs):
         """The ``__call__`` is called when you do ``Task().run()`` and calls
         the ``run`` method. It also catches any exceptions and logs them."""
-        try:
-            retval = self.run(*args, **kwargs)
-        except Exception, e:
-            logger = self.get_logger(**kwargs)
-            logger.critical("Task got exception %s: %s\n%s" % (
-                                e.__class__, e, traceback.format_exc()))
-            self.handle_exception(e, args, kwargs)
-            if self.auto_retry:
-                self.retry(kwargs["task_id"], args, kwargs)
-            return
-        else:
-            return retval
+        return self.run(*args, **kwargs)
 
     def run(self, *args, **kwargs):
         """The actual task. All subclasses of :class:`Task` must define
@@ -174,9 +169,6 @@ class Task(object):
 
     def retry(self, task_id, args, kwargs):
         retry_queue.put(self.name, task_id, args, kwargs)
-
-    def handle_exception(self, exception, retry_args, retry_kwargs):
-        pass
 
     @classmethod
     def delay(cls, *args, **kwargs):
@@ -299,3 +291,22 @@ class DeleteExpiredTaskMetaTask(PeriodicTask):
         logger.info("Deleting expired task meta objects...")
         default_backend.cleanup()
 tasks.register(DeleteExpiredTaskMetaTask)
+
+class ExecuteRemoteTask(Task):
+    name = "celery.execute_remote"
+
+    def run(self, ser_callable, fargs, fkwargs, **kwargs):
+        callable_ = pickle.loads(ser_callable)
+        return callable_(*fargs, **fkwargs)
+tasks.register(ExecuteRemoteTask)
+
+
+def execute_remote(func, *args, **kwargs):
+    return ExecuteRemoteTask.delay(pickle.dumps(func), args, kwargs)
+
+class SumTask(Task):
+    name = "celery.sum_task"
+
+    def run(self, *numbers, **kwargs):
+        return sum(numbers)
+tasks.register(SumTask)

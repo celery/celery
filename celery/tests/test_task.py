@@ -47,15 +47,6 @@ class TestCeleryTasks(unittest.TestCase):
         for arg_name, arg_value in kwargs.items():
             self.assertEquals(task_kwargs.get(arg_name), arg_value)
 
-    def test_raising_task(self):
-        rtask = self.createTaskCls("RaisingTask", "c.unittest.t.rtask")
-        rtask.run = raise_exception
-        sio = StringIO()
-
-        taskinstance = rtask()
-        taskinstance(loglevel=logging.INFO, logfile=sio)
-        self.assertTrue(sio.getvalue().find("Task got exception") != -1)
-       
     def test_incomplete_task_cls(self):
         class IncompleteTask(task.Task):
             name = "c.unittest.t.itask"

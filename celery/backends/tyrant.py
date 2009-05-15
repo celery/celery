@@ -36,10 +36,10 @@ class Backend(BaseBackend):
     def _cache_key(self, task_id):
         return "celery-task-meta-%s" % task_id
 
-    def mark_as_done(self, task_id, result):
-        """Mark task as done (executed)."""
+    def store_result(self, task_id, result, status):
+        """Store task result and status."""
         result = self.prepare_result(result)
-        meta = {"status": "DONE", "result": pickle.dumps(result)}
+        meta = {"status": status, "result": pickle.dumps(result)}
         get_server()[self._cache_key(task_id)] = serialize(meta)
 
     def get_status(self, task_id):

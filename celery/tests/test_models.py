@@ -33,8 +33,8 @@ class TestModels(unittest.TestCase):
         self.assertEquals(TaskMeta.objects.get_task(m1.task_id).task_id,
                 m1.task_id)
         self.assertFalse(TaskMeta.objects.is_done(m1.task_id))
-        TaskMeta.objects.mark_as_done(m1.task_id, True)
-        TaskMeta.objects.mark_as_done(m2.task_id, True)
+        TaskMeta.objects.store_result(m1.task_id, True, status="DONE")
+        TaskMeta.objects.store_result(m2.task_id, True, status="DONE")
         self.assertTrue(TaskMeta.objects.is_done(m1.task_id))
         self.assertTrue(TaskMeta.objects.is_done(m2.task_id))
 
