@@ -6,9 +6,45 @@ from celery.messaging import TaskPublisher, TaskConsumer
 from celery.models import TaskMeta
 from django.core.cache import cache
 from datetime import timedelta
-from celery.backends import Job, default_backend
+from celery.backends import default_backend
 import uuid
 import traceback
+
+
+class BasePendingResult(object):
+    """Base class for pending result, takes ``backend`` argument."""
+    def __init__(self, task_id, backend):
+        self.task_id = task_id
+        self.backend = backend
+
+    def __str__(self):
+        return self.task_id
+
+    def __repr__(self):
+        return "<Job: %s>" % self.task_id
+
+    def is_done(self):
+        return self.backend.is_done(self.task_id)
+
+    def wait_for(self):
+        return self.backend.wait_for(self.task_id)
+
+    @property
+    def result(self):
+        if self.status == "DONE":
+            return self.backend.get_result(self.task_id)
+        return None
+
+    @property
+    def status(self):
+        return self.backend.get_status(self.task_id)
+
+
+class PendingResult(BasePendingResult):
+    """Pending task result using the default backend.""" 
+
+    def __init__(self, task_id):
+        super(PendingResult, self).__init__(task_id, backend=default_backend)
 
 
 def delay_task(task_name, *args, **kwargs):
