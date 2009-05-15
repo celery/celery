@@ -14,9 +14,5 @@ def get_backend_cls(backend):
     return getattr(backend_module, 'Backend')
 
 get_default_backend_cls = partial(get_backend_cls, CELERY_BACKEND)
-
-
 DefaultBackend = get_default_backend_cls()
-
-
 default_backend = DefaultBackend()

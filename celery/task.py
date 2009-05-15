@@ -62,7 +62,7 @@ def delay_task(task_name, *args, **kwargs):
     publisher = TaskPublisher(connection=DjangoAMQPConnection())
     task_id = publisher.delay_task(task_name, *args, **kwargs)
     publisher.close()
-    return Job(task_id)
+    return PendingResult(task_id)
 
 
 def discard_all():
