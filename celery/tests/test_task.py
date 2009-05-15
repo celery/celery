@@ -37,11 +37,11 @@ class TestCeleryTasks(unittest.TestCase):
         cls.run = return_True
         return cls
 
-    def assertNextTaskDataEquals(self, consumer, task_id, task_name,
+    def assertNextTaskDataEquals(self, consumer, presult, task_name,
             **kwargs):
         next_task = consumer.fetch()
         task_data = consumer.decoder(next_task.body)
-        self.assertEquals(task_data["id"], task_id)
+        self.assertEquals(task_data["id"], presult.task_id)
         self.assertEquals(task_data["task"], task_name)
         task_kwargs = task_data.get("kwargs", {})
         for arg_name, arg_value in kwargs.items():
@@ -83,12 +83,12 @@ class TestCeleryTasks(unittest.TestCase):
         self.assertTrue(consumer.fetch() is None)
 
         # Without arguments.
-        tid = t1.delay()
-        self.assertNextTaskDataEquals(consumer, tid, t1.name)
+        presult = t1.delay()
+        self.assertNextTaskDataEquals(consumer, presult, t1.name)
 
         # With arguments.
-        tid2 = task.delay_task(t1.name, name="George Constanza")
-        self.assertNextTaskDataEquals(consumer, tid2, t1.name,
+        presult2 = task.delay_task(t1.name, name="George Constanza")
+        self.assertNextTaskDataEquals(consumer, presult2, t1.name,
                 name="George Constanza")
 
         self.assertRaises(registry.tasks.NotRegistered, task.delay_task,
@@ -100,19 +100,15 @@ class TestCeleryTasks(unittest.TestCase):
         self.assertEquals(task.discard_all(), 1)
         self.assertTrue(consumer.fetch() is None)
 
-        self.assertFalse(task.is_done(tid))
-        task.mark_as_done(tid, result=None)
-        self.assertTrue(task.is_done(tid))
+        self.assertFalse(task.is_done(presult.task_id))
+        self.assertFalse(presult.is_done())
+        task.mark_as_done(presult.task_id, result=None)
+        self.assertTrue(task.is_done(presult.task_id))
+        self.assertTrue(presult.is_done())
 
 
         publisher = t1.get_publisher()
         self.assertTrue(isinstance(publisher, messaging.TaskPublisher))
-
-    def test_taskmeta_cache(self):
-        # TODO Needs to test task meta without TASK_META_USE_DB.
-        tid = str(uuid.uuid4())
-        ckey = task.gen_task_done_cache_key(tid)
-        self.assertTrue(ckey.rfind(tid) != -1)
 
 
 class TestTaskSet(unittest.TestCase):
