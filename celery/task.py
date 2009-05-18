@@ -431,10 +431,3 @@ tasks.register(ExecuteRemoteTask)
 
 def execute_remote(func, *args, **kwargs):
     return ExecuteRemoteTask.delay(pickle.dumps(func), args, kwargs)
-
-class SumTask(Task):
-    name = "celery.sum_task"
-
-    def run(self, *numbers, **kwargs):
-        return sum(numbers)
-tasks.register(SumTask)
