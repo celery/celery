@@ -1,14 +1,8 @@
-import time
-
-
-class TimeOutError(Exception):
-    """The operation has timed out."""
+from celery.timer import TimeoutTimer
 
 
 class BaseBackend(object):
 
-    TimeOutError = TimeOutError
-    
     def __init__(self):
         pass
 
@@ -45,13 +39,11 @@ class BaseBackend(object):
         pass
 
     def wait_for(self, task_id, timeout=None):
-        time_start = time.time()
+        timeout_timer = TimeoutTimer(timeout)
         while True:
             status = self.get_status(task_id)
             if status == "DONE":
                 return self.get_result(task_id)
             elif status == "FAILURE":
                 raise self.get_result(task_id)
-            if timeout and time.time() > time_start + timeout:
-                raise self.TimeOutError(
-                        "Timed out while waiting for task %s" % (task_id))
+            timeout_timer.tick()
