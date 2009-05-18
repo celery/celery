@@ -406,19 +406,6 @@ class PeriodicTask(Task):
         super(PeriodicTask, self).__init__()
 
 
-class DeleteExpiredTaskMetaTask(PeriodicTask):
-    """A periodic task that deletes expired task metadata every day.
-   
-    It's only registered if ``settings.CELERY_TASK_META_USE_DB`` is set.
-    """
-    name = "celery.delete_expired_task_meta"
-    run_every = timedelta(days=1)
-
-    def run(self, **kwargs):
-        logger = self.get_logger(**kwargs)
-        logger.info("Deleting expired task meta objects...")
-        default_backend.cleanup()
-tasks.register(DeleteExpiredTaskMetaTask)
 
 class ExecuteRemoteTask(Task):
     name = "celery.execute_remote"
@@ -431,3 +418,17 @@ tasks.register(ExecuteRemoteTask)
 
 def execute_remote(func, *args, **kwargs):
     return ExecuteRemoteTask.delay(pickle.dumps(func), args, kwargs)
+
+class DeleteExpiredTaskMetaTask(PeriodicTask):
+    """A periodic task that deletes expired task metadata every day.
+
+    This runs the current backend's cleanup() method.
+    """
+    name = "celery.delete_expired_task_meta"
+    run_every = timedelta(days=1)
+
+    def run(self, **kwargs):
+        logger = self.get_logger(**kwargs)
+        logger.info("Deleting expired task meta objects...")
+        default_backend.cleanup()
+tasks.register(DeleteExpiredTaskMetaTask)
