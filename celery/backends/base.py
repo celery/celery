@@ -50,6 +50,8 @@ class BaseBackend(object):
             status = self.get_status(task_id)
             if status == "DONE":
                 return self.get_result(task_id)
+            elif status == "FAILURE":
+                raise self.get_result(task_id)
             if timeout and time.time() > time_start + timeout:
                 raise self.TimeOutError(
                         "Timed out while waiting for task %s" % (task_id))
