@@ -392,6 +392,7 @@ def dmap_async(func, args, timeout=None):
     """
     return TaskSet.map_async(func, args, timeout=timeout)
 
+
 class PeriodicTask(Task):
     """A periodic task is a task that behaves like a cron job.
 
