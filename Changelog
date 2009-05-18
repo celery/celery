@@ -2,7 +2,46 @@
 Change history
 ==============
 
-0.1.11 :date:`2009-05-12 14:08 P.M CET` :author:askh@opera.com
+0.1.12 :date:`2009-05-18 04:38 P.M CET` :author:askh@opera.com
+
+    * delay_task() etc. now returns :class:`celery.task.AsyncResult` object,
+    which lets you check the result and any failure that might have happened.
+    It kind of works like the ``multiprocessing.AsyncResult`` class returned
+    by ``multiprocessing.Pool.map_async``.
+
+    * Added dmap() and dmap_async(). This works like the
+    * ``multiprocessing.Pool`` versions except they are tasks distributed
+    to the celery server. Example:
+
+        >>> from celery.task import dmap
+        >>> import operator
+        >>> dmap(operator.add, [[2, 2], [4, 4], [8, 8]])
+        >>> [4, 8, 16]
+        
+        >>> from celery.task import dmap_async
+        >>> import operator
+        >>> result = dmap_async(operator.add, [[2, 2], [4, 4], [8, 8]])
+        >>> result.ready()
+        False
+        >>> time.sleep(1)
+        >>> result.ready()
+        True
+        >>> result.result
+        [4, 8, 16]
+
+    * Refactored the task metadata cache and database backends, and added
+    a new backend for Tokyo Tyrant. You can set the backend in your django
+    settings file. e.g
+
+        CELERY_BACKEND = "database"; # Uses the database
+
+        CELERY_BACKEND = "cache"; # Uses the django cache framework
+
+        CELERY_BACKEND = "tyrant"; # Uses Tokyo Tyrant
+        TT_HOST = "localhost"; # Hostname for the Tokyo Tyrant server.
+        TT_PORT = 6657; # Port of the Tokyo Tyrant server.
+
+0.1.11 :date:`2009-05-12 02:08 P.M CET` :author:askh@opera.com
 
 	* The logging system was leaking file descriptors, resulting in servers
 	stopping with the EMFILES (too many open files) error. (fixed)
