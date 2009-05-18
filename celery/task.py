@@ -26,10 +26,10 @@ class BaseAsyncResult(object):
         return self.backend.is_done(self.task_id)
 
     def get(self):
-        """Alias to ``wait_for``."""
-        return self.wait_for()
+        """Alias to ``wait``."""
+        return self.wait()
 
-    def wait_for(self, timeout=None):
+    def wait(self, timeout=None):
         """Return the result when it arrives.
         
         If timeout is not ``None`` and the result does not arrive within
