@@ -4,7 +4,7 @@ from celery.conf import DAEMON_CONCURRENCY, DAEMON_LOG_FILE
 from celery.conf import QUEUE_WAKEUP_AFTER, EMPTY_MSG_EMIT_EVERY
 from celery.log import setup_logger
 from celery.registry import tasks
-from celery.process import ProcessQueue
+from celery.datastructures import TaskProcessQueue
 from celery.models import PeriodicTaskMeta
 from celery.task import mark_as_done, mark_as_failure
 import multiprocessing
@@ -164,7 +164,7 @@ class TaskDaemon(object):
 
     def run(self):
         """The worker server's main loop."""
-        results = ProcessQueue(self.concurrency, logger=self.logger,
+        results = TaskProcessQueue(self.concurrency, logger=self.logger,
                 done_msg="Task %(name)s[%(id)s] processed: %(return_value)s")
         log_wait = lambda: self.logger.info("Waiting for queue...")
         ev_msg_waiting = EventTimer(log_wait, self.empty_msg_emit_every)
