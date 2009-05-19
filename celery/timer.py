@@ -1,3 +1,4 @@
+"""celery.timer"""
 import time
 
 
@@ -14,6 +15,12 @@ class EventTimer(object):
         self.last_triggered = None
 
     def tick(self):
+        """Run a event timer clock tick.
+       
+        When the interval has run, the event will be triggered.
+        If interval is not set, the event will never be triggered.
+
+        """
         if not self.interval: # never trigger if no interval.
             return
         if not self.last_triggered or \
@@ -30,8 +37,14 @@ class TimeoutTimer(object):
         self.time_start = time.time()
 
     def tick(self):
+        """Run a timeout timer clock tick.
+
+        When ``timeout`` seconds has passed, it will raise a
+        :class:`TimeoutTimer` exception.
+        If ``timeout`` is not set, it will never time out.
+
+        """
         if not self.timeout:
             return
         if time.time() > self.time_start + self.timeout:
             raise TimeoutError("The operation timed out.")
-

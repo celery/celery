@@ -1,3 +1,4 @@
+"""celery.platform"""
 import os
 import sys
 import errno
@@ -20,18 +21,27 @@ if (hasattr(os, "devnull")):
 else:
    REDIRECT_TO = "/dev/null"
 
-class PIDFile(object):
 
+class PIDFile(object):
+    """Manages a pid file."""
     def __init__(self, pidfile):
         self.pidfile = pidfile
 
     def get_pid(self):
+        """Get the process id stored in the pidfile."""
         pidfile_fh = file(self.pidfile, "r")
         pid = int(pidfile_fh.read().strip())
         pidfile_fh.close()
         return pid
 
     def check(self):
+        """Check the status of the pidfile.
+        
+        If the pidfile exists, and the process is not running, it will
+        remove the stale pidfile and continue as normal. If the process
+        *is* running, it will exit the program with an error message.
+
+        """
         if os.path.exists(self.pidfile) and os.path.isfile(self.pidfile):
             pid = self.get_pid()
             try:
@@ -44,9 +54,16 @@ class PIDFile(object):
                 raise SystemExit("celeryd is already running.")
 
     def remove(self):
+        """Remove the pidfile."""
         os.unlink(self.pidfile)
 
     def write(self, pid=None):
+        """Write a pidfile.
+        
+        If ``pid`` is not specified the pid of the current process
+        will be used.
+        
+        """
         if not pid:
             pid = os.getpid()
         pidfile_fh = file(self.pidfile, "w")
@@ -55,6 +72,7 @@ class PIDFile(object):
 
 
 def remove_pidfile(pidfile):
+    """Remove the pidfile."""
     os.unlink(pidfile)
 
 

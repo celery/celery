@@ -1,8 +1,9 @@
+"""celery.discovery"""
 from django.conf import settings
 
 
 def autodiscover():
-    """Include tasks for all applications in settings.INSTALLED_APPS."""
+    """Include tasks for all applications in :setting:`INSTALLED_APPS`."""
     return filter(None, [find_related_module(app, "tasks")
                             for app in settings.INSTALLED_APPS])
 

@@ -1,3 +1,4 @@
+"""celery.worker"""
 from carrot.connection import DjangoAMQPConnection
 from celery.messaging import TaskConsumer
 from celery.conf import DAEMON_CONCURRENCY, DAEMON_LOG_FILE
@@ -25,18 +26,19 @@ class UnknownTask(Exception):
 
 
 def jail(task_id, callable_, args, kwargs):
+    """Wraps the task in a jail which saves the status and result
+    of the task execution to the task meta backend."""
     try:
         result = callable_(*args, **kwargs)
         mark_as_done(task_id, result)
-        print("SUCCESS: %s" % result)
         return result
     except Exception, exc:
         mark_as_failure(task_id, exc)
-        print("FAILURE: %s\n%s" % (exc, traceback.format_exc()))
         return exc
 
 
 class TaskWrapper(object):
+    """Class defining a task to be run."""
     def __init__(self, task_name, task_id, task_func, args, kwargs):
         self.task_name = task_name
         self.task_id = task_id
@@ -46,6 +48,8 @@ class TaskWrapper(object):
 
     @classmethod
     def from_message(cls, message):
+        """Create a TaskWrapper from a message returned by
+        :class:`celery.messaging.TaskConsumer`."""
         message_data = simplejson.loads(message.body)
         task_name = message_data["task"]
         task_id = message_data["id"]
@@ -58,6 +62,11 @@ class TaskWrapper(object):
         return cls(task_name, task_id, task_func, args, kwargs)
 
     def extend_kwargs_with_logging(self, loglevel, logfile):
+        """Extend the tasks keyword arguments with standard task arguments.
+
+        These are ``logfile``, ``loglevel``, ``task_id`` and ``task_name``.
+
+        """
         task_func_kwargs = {"logfile": logfile,
                             "loglevel": loglevel,
                             "task_id": self.task_id,
@@ -66,16 +75,17 @@ class TaskWrapper(object):
         return task_func_kwargs
 
     def execute(self, loglevel, logfile):
+        """Execute the task in a ``jail()`` and store its result and status
+        in the task meta backend."""
         task_func_kwargs = self.extend_kwargs_with_logging(loglevel, logfile)
         return jail(self.task_id, [
                         self.task_func, self.args, task_func_kwargs])
 
     def execute_using_pool(self, pool, loglevel, logfile):
+        """Like ``execute``, but using the ``multiprocessing`` pool."""
         task_func_kwargs = self.extend_kwargs_with_logging(loglevel, logfile)
         return pool.apply_async(jail, [self.task_id, self.task_func,
                                        self.args, task_func_kwargs])
-
-
 
 
 class TaskDaemon(object):

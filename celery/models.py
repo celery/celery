@@ -1,3 +1,4 @@
+"""celery.models"""
 from django.db import models
 from celery.registry import tasks
 from celery.managers import TaskManager, PeriodicTaskManager
@@ -45,6 +46,7 @@ TASK_STATUSES = (TASK_STATUS_PENDING, TASK_STATUS_RETRY,
                  TASK_STATUS_FAILURE, TASK_STATUS_DONE)
 TASK_STATUSES_CHOICES = zip(TASK_STATUSES, TASK_STATUSES)
                 
+
 class TaskMeta(models.Model):
     task_id = models.CharField(_(u"task id"), max_length=255, unique=True)
     status = models.CharField(_(u"task status"), max_length=50,
@@ -79,7 +81,7 @@ class PeriodicTaskMeta(models.Model):
         return u"<PeriodicTask: %s [last-run:%s, total-run:%d]>" % (
                 self.name, self.last_run_at, self.total_run_count)
 
-    def delay(self, **kwargs):
+    def delay(self, *args, **kwargs):
         self.task.delay()
         self.total_run_count = self.total_run_count + 1
         self.save()

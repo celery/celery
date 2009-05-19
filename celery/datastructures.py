@@ -1,3 +1,4 @@
+"""celery.datastructures"""
 from UserList import UserList
 
 

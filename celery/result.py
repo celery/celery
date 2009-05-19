@@ -1,3 +1,4 @@
+"""celery.result"""
 from celery.backends import default_backend
 
 
