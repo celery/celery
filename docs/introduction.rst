@@ -22,7 +22,6 @@ downloading data like syndication feeds or web scraping. Use-cases are
 plentiful. Implementing these features asynchronously using ``celery`` is
 easy and fun, and the performance improvements can make it more than
 worthwhile.
-, 
 
 Features
 --------
@@ -163,7 +162,6 @@ A good place to add this command could be in your ``urls.py``,
 
     from celery.task import tasks
     tasks.autodiscover()
-
 
 
 Then you can add new tasks in your applications ``tasks.py`` module,
