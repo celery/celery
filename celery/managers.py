@@ -1,25 +1,31 @@
+"""celery.managers"""
 from django.db import models
 from celery.registry import tasks
 from datetime import datetime, timedelta
 
 
 class TaskManager(models.Manager):
+    """Manager for ``Task`` models."""
     
     def get_task(self, task_id):
+        """Get task meta for task by ``task_id``."""
         task, created = self.get_or_create(task_id=task_id)
         return task
 
     def is_done(self, task_id):
+        """Returns ``True`` if the task was executed successfully."""
         return self.get_task(task_id).status == "DONE"
 
     def get_all_expired(self):
-        return self.filter(date_done__lt=datetime.now() - timedelta(days=5),
-                           status="DONE")
+        """Get all expired task results."""
+        return self.filter(date_done__lt=datetime.now() - timedelta(days=5))
 
     def delete_expired(self):
+        """Delete all expired task results."""
         self.get_all_expired().delete()
 
     def store_result(self, task_id, result, status):
+        """Store the result and status of a task."""
         task, created = self.get_or_create(task_id=task_id, defaults={
                                             "status": status,
                                             "result": result})
@@ -30,8 +36,10 @@ class TaskManager(models.Manager):
 
 
 class PeriodicTaskManager(models.Manager):
+    """Manager for ``PeriodicTask`` models."""
 
     def get_waiting_tasks(self):
+        """Get all waiting periodic tasks."""
         periodic_tasks = tasks.get_all_periodic()
         waiting = []
         for task_name, task in periodic_tasks.items():
@@ -41,6 +49,7 @@ class PeriodicTaskManager(models.Manager):
             if datetime.now() > run_at:
                 waiting.append(task_meta)
         return waiting
+
 
 class RetryQueueManager(models.Manager):
 
