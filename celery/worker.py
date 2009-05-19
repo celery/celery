@@ -210,7 +210,7 @@ class TaskDaemon(object):
     def fetch_next_task(self):
         """Fetch the next task from the AMQP broker.
        
-        Raises :class`EmptyQueue` exception if there is no messages
+        Raises :class:`EmptyQueue` exception if there is no messages
         waiting on the queue.
 
         :rtype: :class:`TaskWrapper` instance.
