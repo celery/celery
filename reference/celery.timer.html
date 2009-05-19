@@ -56,6 +56,21 @@
 <em class="property">
 class </em><tt class="descclassname">celery.timer.</tt><tt class="descname">EventTimer</tt><big>(</big><em>event</em>, <em>interval=None</em><big>)</big><a class="headerlink" href="#celery.timer.EventTimer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Do something at an interval.</p>
+<dl class="attribute">
+<dt id="celery.timer.EventTimer.interval">
+<tt class="descname">interval</tt><a class="headerlink" href="#celery.timer.EventTimer.interval" title="Permalink to this definition">¶</a></dt>
+<dd>How often we call the event (in seconds).</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.timer.EventTimer.event">
+<tt class="descname">event</tt><a class="headerlink" href="#celery.timer.EventTimer.event" title="Permalink to this definition">¶</a></dt>
+<dd>The event callable to run every <tt class="docutils literal"><span class="pre">interval</span></tt> seconds.</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.timer.EventTimer.last_triggered">
+<tt class="descname">last_triggered</tt><a class="headerlink" href="#celery.timer.EventTimer.last_triggered" title="Permalink to this definition">¶</a></dt>
+<dd>The last time, in unix timestamp format, the event was executed.</dd></dl>
+
 <dl class="method">
 <dt id="celery.timer.EventTimer.tick">
 <tt class="descname">tick</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.timer.EventTimer.tick" title="Permalink to this definition">¶</a></dt>
@@ -76,7 +91,18 @@ exception </em><tt class="descclassname">celery.timer.</tt><tt class="descname">
 <dt id="celery.timer.TimeoutTimer">
 <em class="property">
 class </em><tt class="descclassname">celery.timer.</tt><tt class="descname">TimeoutTimer</tt><big>(</big><em>timeout</em><big>)</big><a class="headerlink" href="#celery.timer.TimeoutTimer" title="Permalink to this definition">¶</a></dt>
-<dd><p>A timer that raises <tt class="docutils literal"><span class="pre">TimeoutError</span></tt> when the time has run out.</p>
+<dd><p>A timer that raises <a title="celery.timer.TimeoutError" class="reference internal" href="#celery.timer.TimeoutError"><tt class="xref docutils literal"><span class="pre">TimeoutError</span></tt></a> exception when the
+time has run out.</p>
+<dl class="attribute">
+<dt id="celery.timer.TimeoutTimer.timeout">
+<tt class="descname">timeout</tt><a class="headerlink" href="#celery.timer.TimeoutTimer.timeout" title="Permalink to this definition">¶</a></dt>
+<dd>The timeout in seconds.</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.timer.TimeoutTimer.time_start">
+<tt class="descname">time_start</tt><a class="headerlink" href="#celery.timer.TimeoutTimer.time_start" title="Permalink to this definition">¶</a></dt>
+<dd>The time when the timeout timer instance was constructed.</dd></dl>
+
 <dl class="method">
 <dt id="celery.timer.TimeoutTimer.tick">
 <tt class="descname">tick</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.timer.TimeoutTimer.tick" title="Permalink to this definition">¶</a></dt>

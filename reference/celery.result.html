@@ -91,14 +91,32 @@ class </em><tt class="descclassname">celery.result.</tt><tt class="descname">Bas
 <dl class="method">
 <dt id="celery.result.BaseAsyncResult.is_done">
 <tt class="descname">is_done</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult.is_done" title="Permalink to this definition">¶</a></dt>
-<dd>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task executed successfully.</dd></dl>
+<dd><p>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task executed successfully.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.result.BaseAsyncResult.ready">
 <tt class="descname">ready</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult.ready" title="Permalink to this definition">¶</a></dt>
-<dd>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task executed successfully, or raised
+<dd><p>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task executed successfully, or raised
 an exception. If the task is still pending, or is waiting for retry
-then <tt class="xref docutils literal"><span class="pre">False</span></tt> is returned.</dd></dl>
+then <tt class="xref docutils literal"><span class="pre">False</span></tt> is returned.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 <dl class="attribute">
 <dt id="celery.result.BaseAsyncResult.result">
