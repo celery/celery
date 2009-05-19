@@ -2,6 +2,11 @@
 Change history
 ==============
 
+0.1.15 [2009-05-20 04:13 P.M CET] askh@opera.com
+------------------------------------------------
+
+	* The celery daemon was leaking AMQP connections, this should be fixed, if you have any problems with too many files open (like ``emfile`` errors in ``rabbit.log``, please contact us!
+
 0.1.14 [2009-05-19 01:08 P.M CET] askh@opera.com
 ------------------------------------------------
 

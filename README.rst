@@ -4,13 +4,17 @@ celery - Distributed Task Queue for Django.
 
 :Authors:
     Ask Solem (askh@opera.com)
-:Version: 0.1.14
+:Version: 0.1.15
 
 Introduction
 ------------
 
 ``celery`` is a distributed task queue framework for Django.
 More information will follow.
+
+Be sure to also consult the `API Reference Documentation`_
+
+.. _`API Reference Docmentation`: http://ask.github.com/celery/
 
 Installation
 =============
