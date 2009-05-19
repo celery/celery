@@ -2,16 +2,33 @@
 Change history
 ==============
 
-0.1.12 :date:`2009-05-18 04:38 P.M CET` :author:askh@opera.com
+0.1.13 [2009-05-19 12:36 P.M CET] askh@opera.com
+------------------------------------------------
 
-    * delay_task() etc. now returns :class:`celery.task.AsyncResult` object,
-    which lets you check the result and any failure that might have happened.
-    It kind of works like the ``multiprocessing.AsyncResult`` class returned
-    by ``multiprocessing.Pool.map_async``.
+	* Forgot to add ``yadayada`` to install requirements.
 
-    * Added dmap() and dmap_async(). This works like the
-    * ``multiprocessing.Pool`` versions except they are tasks distributed
-    to the celery server. Example:
+	* Now deletes all expired task results, not just those marked as done.
+
+	* Able to load the Tokyo Tyrant backend class without django
+	  configuration, can specify tyrant settings directly in the class
+	  constructor.
+
+	* Improved API documentation
+
+	* Now using the Sphinx documentation system, you can build
+	  the html documentation by doing ::
+
+		$ cd docs
+		$ make html
+	
+	and the result will be in ``docs/.build/html``.
+
+0.1.12 [2009-05-18 04:38 P.M CET] askh@opera.com
+------------------------------------------------
+
+    * delay_task() etc. now returns ``celery.task.AsyncResult`` object, which lets you check the result and any failure that might have happened.  It kind of works like the ``multiprocessing.AsyncResult`` class returned by ``multiprocessing.Pool.map_async``.
+
+    * Added dmap() and dmap_async(). This works like the * ``multiprocessing.Pool`` versions except they are tasks distributed to the celery server. Example:
 
         >>> from celery.task import dmap
         >>> import operator
@@ -29,9 +46,7 @@ Change history
         >>> result.result
         [4, 8, 16]
 
-    * Refactored the task metadata cache and database backends, and added
-    a new backend for Tokyo Tyrant. You can set the backend in your django
-    settings file. e.g
+    * Refactored the task metadata cache and database backends, and added a new backend for Tokyo Tyrant. You can set the backend in your django settings file. e.g
 
         CELERY_BACKEND = "database"; # Uses the database
 
@@ -41,12 +56,13 @@ Change history
         TT_HOST = "localhost"; # Hostname for the Tokyo Tyrant server.
         TT_PORT = 6657; # Port of the Tokyo Tyrant server.
 
-0.1.11 :date:`2009-05-12 02:08 P.M CET` :author:askh@opera.com
+0.1.11 [2009-05-12 02:08 P.M CET] askh@opera.com
+-------------------------------------------------
 
-	* The logging system was leaking file descriptors, resulting in servers
-	stopping with the EMFILES (too many open files) error. (fixed)
+	* The logging system was leaking file descriptors, resulting in servers stopping with the EMFILES (too many open files) error. (fixed)
 
-0.1.10 :date:`2009-05-11 12:46 P.M CET` :author:askh@opera.com
+0.1.10 [2009-05-11 12:46 P.M CET] askh@opera.com
+-------------------------------------------------
 
 	* Tasks now supports both positional arguments and keyword arguments.
 
@@ -54,47 +70,38 @@ Change history
 
 	* The daemon now tries to reconnect if the connection is lost.
 
-0.1.8 :date:`2009-05-07 12:27 P.M CET` :author:askh@opera.com
+0.1.8 [2009-05-07 12:27 P.M CET] askh@opera.com
+------------------------------------------------
 
 	* Better test coverage
 	* More documentation
-	* celeryd doesn't emit "Queue is empty" message if
-	  :setting:`CELERYD_EMPTY_MSG_EMIT_EVERY` is 0.
+	* celeryd doesn't emit ``Queue is empty`` message if ``settings.CELERYD_EMPTY_MSG_EMIT_EVERY`` is 0.
 
-0.1.7 :date:`2009-04-30 1:50 P.M CET` :author:askh@opera.com
+0.1.7 [2009-04-30 1:50 P.M CET] askh@opera.com
+-----------------------------------------------
 
 	* Added some unittests
 
-	* Can now use the database for task metadata (like if the task
-	has been executed or not). Set :setting:`CELERY_TASK_META`
+	* Can now use the database for task metadata (like if the task has been executed or not). Set ``settings.CELERY_TASK_META``
 
-	* Can now run ``python setup.py test`` to run the unittests from within
-	the ``testproj`` project.
+	* Can now run ``python setup.py test`` to run the unittests from within the ``testproj`` project.
 
-	* Can set the AMQP exchange/routing key/queue using
-	:setting:`CELERY_AMQP_EXCHANGE`, :setting:`CELERY_AMQP_ROUTING_KEY`,
-	and :setting:`CELERY_AMQP_CONSUMER_QUEUE`.
+	* Can set the AMQP exchange/routing key/queue using ``settings.CELERY_AMQP_EXCHANGE``, ``settings.CELERY_AMQP_ROUTING_KEY``, and ``settings.CELERY_AMQP_CONSUMER_QUEUE``.
 
-0.1.6 :date:`2009-04-28 2:13 P.M CET` :author:askh@opera.com
+0.1.6 [2009-04-28 2:13 P.M CET] askh@opera.com
+-----------------------------------------------
 
-	* Introducing ``TaskSet``. A set of subtasks is executed and you can find
-	out how many, or if all them, are done (excellent for progress bars and
-	such)
+	* Introducing ``TaskSet``. A set of subtasks is executed and you can find out how many, or if all them, are done (excellent for progress bars and such)
 
-	* Now catches all exceptions when running ``Task.__call__``, so the daemon
-	doesn't die. This does't happen for pure functions yet, only
-	:class:`Task` classes.
+	* Now catches all exceptions when running ``Task.__call__``, so the daemon doesn't die. This does't happen for pure functions yet, only ``Task`` classes.
 
 	* ``autodiscover()`` now works with zipped eggs.
 
-	* celeryd: Now adds curernt working directory to ``sys.path`` for
-	convenience.
+	* celeryd: Now adds curernt working directory to ``sys.path`` for convenience.
 
-	* The ``run_every`` attribute of :class:`PeriodicTask` classes can now
-	  be a :class:`datetime.timedelta()` object.
+	* The ``run_every`` attribute of ``PeriodicTask`` classes can now be a ``datetime.timedelta()`` object.
 
-	* celeryd: You can now set the ``DJANGO_PROJECT_DIR`` variable for
-	``celeryd`` and it will add that to ``sys.path`` for easy launching.
+	* celeryd: You can now set the ``DJANGO_PROJECT_DIR`` variable for ``celeryd`` and it will add that to ``sys.path`` for easy launching.
 
 	* Can now check if a task has been executed or not via HTTP.
 
@@ -110,14 +117,13 @@ Change history
 
 		>>> {"task": {"id": $task_id, "executed": true}}
 
-	* ``delay_task`` now returns string id, not :class:`uuid.UUID` instance.
+	* ``delay_task`` now returns string id, not ``uuid.UUID`` instance.
 
 	* Now has ``PeriodicTasks``, to have ``cron`` like functionality.
 
-	* Project changed name from ``crunchy`` to ``celery``. The details of
-	the name change request is in ``docs/name_change_request.txt``.
+	* Project changed name from ``crunchy`` to ``celery``. The details of the name change request is in ``docs/name_change_request.txt``.
 
-0.1.0 :date:`2009-04-24 11:28 A.M CET` :author:askh@opera.com
---------------------------------------------------------------
+0.1.0 [2009-04-24 11:28 A.M CET] askh@opera.com
+------------------------------------------------
 
 	* Initial release
