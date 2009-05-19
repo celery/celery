@@ -82,11 +82,13 @@
 <table width="100%" class="indextable"><tr><td width="33%" valign="top">
 <dl>
 
+<dt><a href="reference/celery.datastructures.html#celery.datastructures.TaskProcessQueue.add">add() (celery.datastructures.TaskProcessQueue method)</a></dt>
 <dt><a href="reference/celery.registry.html#celery.registry.AlreadyRegistered">AlreadyRegistered</a></dt>
 <dt><a href="reference/celery.conf.html#celery.conf.AMQP_CONSUMER_QUEUE">AMQP_CONSUMER_QUEUE (in module celery.conf)</a></dt>
 <dt><a href="reference/celery.conf.html#celery.conf.AMQP_EXCHANGE">AMQP_EXCHANGE (in module celery.conf)</a></dt>
 <dt><a href="reference/celery.conf.html#celery.conf.AMQP_ROUTING_KEY">AMQP_ROUTING_KEY (in module celery.conf)</a></dt>
-<dt><a href="reference/celery.task.html#celery.task.AsynchronousMapTask">AsynchronousMapTask (class in celery.task)</a></dt></dl></td><td width="33%" valign="top"><dl>
+<dt><a href="reference/celery.task.html#celery.task.TaskSet.arguments">arguments (celery.task.TaskSet attribute)</a></dt></dl></td><td width="33%" valign="top"><dl>
+<dt><a href="reference/celery.task.html#celery.task.AsynchronousMapTask">AsynchronousMapTask (class in celery.task)</a></dt>
 <dt><a href="reference/celery.result.html#celery.result.AsyncResult">AsyncResult (class in celery.result)</a></dt>
 <dt><a href="reference/celery.registry.html#celery.registry.TaskRegistry.autodiscover">autodiscover() (celery.registry.TaskRegistry method)</a></dt>
   <dd><dl>
@@ -161,22 +163,22 @@
 <dt><a href="reference/celery.conf.html#celery.conf.DAEMON_PID_FILE">DAEMON_PID_FILE (in module celery.conf)</a></dt>
 <dt><a href="reference/celery.platform.html#celery.platform.daemonize">daemonize() (in module celery.platform)</a></dt>
 <dt><a href="reference/celery.models.html#TaskMeta.date_done">date_done (TaskMeta attribute)</a></dt>
-<dt><a href="reference/celery.backends.html#celery.backends.default_backend">default_backend (in module celery.backends)</a></dt>
 <dt><a href="reference/celery.backends.html#celery.backends.DefaultBackend">DefaultBackend (class in celery.backends)</a></dt>
 <dt><a href="reference/celery.task.html#celery.task.Task.delay">delay() (celery.task.Task class method)</a></dt>
   <dd><dl>
     <dt><a href="reference/celery.models.html#PeriodicTaskMeta.delay">(PeriodicTaskMeta method)</a></dt>
-  </dl></dd></dl></td><td width="33%" valign="top"><dl>
+  </dl></dd>
 <dt><a href="reference/celery.messaging.html#celery.messaging.TaskPublisher.delay_task">delay_task() (celery.messaging.TaskPublisher method)</a></dt>
   <dd><dl>
     <dt><a href="reference/celery.task.html#celery.task.delay_task">(in module celery.task)</a></dt>
-  </dl></dd>
+  </dl></dd></dl></td><td width="33%" valign="top"><dl>
 <dt><a href="reference/celery.messaging.html#celery.messaging.TaskPublisher.delay_task_in_set">delay_task_in_set() (celery.messaging.TaskPublisher method)</a></dt>
 <dt><a href="reference/celery.managers.html#celery.managers.TaskManager.delete_expired">delete_expired() (celery.managers.TaskManager method)</a></dt>
 <dt><a href="reference/celery.task.html#celery.task.DeleteExpiredTaskMetaTask">DeleteExpiredTaskMetaTask (class in celery.task)</a></dt>
 <dt><a href="reference/celery.task.html#celery.task.discard_all">discard_all() (in module celery.task)</a></dt>
 <dt><a href="reference/celery.task.html#celery.task.dmap">dmap() (in module celery.task)</a></dt>
 <dt><a href="reference/celery.task.html#celery.task.dmap_async">dmap_async() (in module celery.task)</a></dt>
+<dt><a href="reference/celery.datastructures.html#celery.datastructures.TaskProcessQueue.done_msg">done_msg (celery.datastructures.TaskProcessQueue attribute)</a></dt>
 </dl></td></tr></table>
 
 <h2 id="E">E</h2>
@@ -220,7 +222,7 @@
 <dt><a href="reference/celery.registry.html#celery.registry.TaskRegistry.get_all_regular">get_all_regular() (celery.registry.TaskRegistry method)</a></dt>
 <dt><a href="reference/celery.backends.html#celery.backends.get_backend_cls">get_backend_cls() (in module celery.backends)</a></dt>
 <dt><a href="reference/celery.task.html#celery.task.Task.get_consumer">get_consumer() (celery.task.Task method)</a></dt>
-<dt><a href="reference/celery.backends.html#celery.backends.get_default_backend_cls">get_default_backend_cls() (in module celery.backends)</a></dt>
+<dt><a href="reference/celery.backends.html#celery.backends.get_default_backend_cls">get_default_backend_cls (in module celery.backends)</a></dt>
 <dt><a href="reference/celery.task.html#celery.task.Task.get_logger">get_logger() (celery.task.Task method)</a></dt>
 <dt><a href="reference/celery.platform.html#celery.platform.PIDFile.get_pid">get_pid() (celery.platform.PIDFile method)</a></dt>
 <dt><a href="reference/celery.task.html#celery.task.Task.get_publisher">get_publisher() (celery.task.Task method)</a></dt>
@@ -275,10 +277,14 @@
 
 <dt><a href="reference/celery.models.html#PeriodicTaskMeta.last_run_at">last_run_at (PeriodicTaskMeta attribute)</a></dt>
 <dt><a href="reference/celery.timer.html#celery.timer.EventTimer.last_triggered">last_triggered (celery.timer.EventTimer attribute)</a></dt>
+<dt><a href="reference/celery.datastructures.html#celery.datastructures.TaskProcessQueue.limit">limit (celery.datastructures.TaskProcessQueue attribute)</a></dt>
 <dt><a href="reference/celery.conf.html#celery.conf.LOG_FORMAT">LOG_FORMAT (in module celery.conf)</a></dt>
 <dt><a href="reference/celery.conf.html#celery.conf.LOG_LEVELS">LOG_LEVELS (in module celery.conf)</a></dt></dl></td><td width="33%" valign="top"><dl>
 <dt><a href="reference/celery.worker.html#celery.worker.TaskDaemon.logfile">logfile (celery.worker.TaskDaemon attribute)</a></dt>
-<dt><a href="reference/celery.worker.html#celery.worker.TaskDaemon.logger">logger (celery.worker.TaskDaemon attribute)</a></dt>
+<dt><a href="reference/celery.datastructures.html#celery.datastructures.TaskProcessQueue.logger">logger (celery.datastructures.TaskProcessQueue attribute)</a></dt>
+  <dd><dl>
+    <dt><a href="reference/celery.worker.html#celery.worker.TaskDaemon.logger">(celery.worker.TaskDaemon attribute)</a></dt>
+  </dl></dd>
 <dt><a href="reference/celery.worker.html#celery.worker.TaskDaemon.loglevel">loglevel (celery.worker.TaskDaemon attribute)</a></dt>
 </dl></td></tr></table>
 
@@ -303,7 +309,10 @@
 <table width="100%" class="indextable"><tr><td width="33%" valign="top">
 <dl>
 
-<dt><a href="reference/celery.models.html#PeriodicTaskMeta.name">name (PeriodicTaskMeta attribute)</a></dt>
+<dt><a href="reference/celery.task.html#celery.task.Task.name">name (celery.task.Task attribute)</a></dt>
+  <dd><dl>
+    <dt><a href="reference/celery.models.html#PeriodicTaskMeta.name">(PeriodicTaskMeta attribute)</a></dt>
+  </dl></dd>
 <dt><a href="reference/celery.messaging.html#celery.messaging.NoProcessConsumer">NoProcessConsumer (class in celery.messaging)</a></dt></dl></td><td width="33%" valign="top"><dl>
 <dt><a href="reference/celery.registry.html#celery.registry.NotRegistered">NotRegistered</a></dt>
 </dl></td></tr></table>
@@ -353,6 +362,7 @@
     <dt><a href="reference/celery.task.html#celery.task.TaskSet.run">(celery.task.TaskSet method)</a></dt>
     <dt><a href="reference/celery.worker.html#celery.worker.TaskDaemon.run">(celery.worker.TaskDaemon method)</a></dt>
   </dl></dd>
+<dt><a href="reference/celery.task.html#celery.task.PeriodicTask.run_every">run_every (celery.task.PeriodicTask attribute)</a></dt>
 <dt><a href="reference/celery.worker.html#celery.worker.TaskDaemon.run_periodic_tasks">run_periodic_tasks() (celery.worker.TaskDaemon method)</a></dt>
 </dl></td></tr></table>
 
@@ -388,6 +398,7 @@
     <dt><a href="reference/celery.models.html#TaskMeta.task_id">(TaskMeta attribute)</a></dt>
     <dt><a href="reference/celery.result.html#celery.result.BaseAsyncResult.task_id">(celery.result.BaseAsyncResult attribute)</a></dt>
   </dl></dd>
+<dt><a href="reference/celery.task.html#celery.task.TaskSet.task_name">task_name (celery.task.TaskSet attribute)</a></dt>
 <dt><a href="reference/celery.models.html#TASK_STATUS_DONE">TASK_STATUS_DONE (built-in variable)</a></dt>
 <dt><a href="reference/celery.models.html#TASK_STATUS_FAILURE">TASK_STATUS_FAILURE (built-in variable)</a></dt>
 <dt><a href="reference/celery.models.html#TASK_STATUS_PENDING">TASK_STATUS_PENDING (built-in variable)</a></dt>
@@ -403,7 +414,6 @@
 <dt><a href="reference/celery.registry.html#celery.registry.TaskRegistry">TaskRegistry (class in celery.registry)</a></dt>
 <dt><a href="reference/celery.registry.html#celery.registry.TaskRegistry.AlreadyRegistered">TaskRegistry.AlreadyRegistered</a></dt>
 <dt><a href="reference/celery.registry.html#celery.registry.TaskRegistry.NotRegistered">TaskRegistry.NotRegistered</a></dt>
-<dt><a href="reference/celery.registry.html#celery.registry.tasks">tasks (in module celery.registry)</a></dt>
 <dt><a href="reference/celery.task.html#celery.task.TaskSet">TaskSet (class in celery.task)</a></dt>
 <dt><a href="reference/celery.worker.html#celery.worker.TaskWrapper">TaskWrapper (class in celery.worker)</a></dt>
 <dt><a href="reference/celery.timer.html#celery.timer.EventTimer.tick">tick() (celery.timer.EventTimer method)</a></dt>
@@ -414,7 +424,9 @@
 <dt><a href="reference/celery.timer.html#celery.timer.TimeoutTimer.timeout">timeout (celery.timer.TimeoutTimer attribute)</a></dt>
 <dt><a href="reference/celery.timer.html#celery.timer.TimeoutError">TimeoutError</a></dt>
 <dt><a href="reference/celery.timer.html#celery.timer.TimeoutTimer">TimeoutTimer (class in celery.timer)</a></dt>
+<dt><a href="reference/celery.task.html#celery.task.TaskSet.total">total (celery.task.TaskSet attribute)</a></dt>
 <dt><a href="reference/celery.models.html#PeriodicTaskMeta.total_run_count">total_run_count (PeriodicTaskMeta attribute)</a></dt>
+<dt><a href="reference/celery.task.html#celery.task.Task.type">type (celery.task.Task attribute)</a></dt>
 <dt><a href="reference/celery.backends.tyrant.html#celery.backends.tyrant.Backend.tyrant_host">tyrant_host (celery.backends.tyrant.Backend attribute)</a></dt>
 <dt><a href="reference/celery.backends.tyrant.html#celery.backends.tyrant.Backend.tyrant_port">tyrant_port (celery.backends.tyrant.Backend attribute)</a></dt>
 </dl></td></tr></table>

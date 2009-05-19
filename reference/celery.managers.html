@@ -55,11 +55,20 @@
 <dt id="celery.managers.PeriodicTaskManager">
 <em class="property">
 class </em><tt class="descclassname">celery.managers.</tt><tt class="descname">PeriodicTaskManager</tt><a class="headerlink" href="#celery.managers.PeriodicTaskManager" title="Permalink to this definition">¶</a></dt>
-<dd><p>Manager for <tt class="docutils literal"><span class="pre">PeriodicTask</span></tt> models.</p>
+<dd><p>Manager for <tt class="xref docutils literal"><span class="pre">celery.models.PeriodicTask</span></tt> models.</p>
 <dl class="method">
 <dt id="celery.managers.PeriodicTaskManager.get_waiting_tasks">
 <tt class="descname">get_waiting_tasks</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.managers.PeriodicTaskManager.get_waiting_tasks" title="Permalink to this definition">¶</a></dt>
-<dd>Get all waiting periodic tasks.</dd></dl>
+<dd><p>Get all waiting periodic tasks.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body">list of <tt class="xref docutils literal"><span class="pre">celery.models.PeriodicTaskMeta</span></tt> objects.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 </dd></dl>
 
@@ -67,7 +76,7 @@ class </em><tt class="descclassname">celery.managers.</tt><tt class="descname">P
 <dt id="celery.managers.TaskManager">
 <em class="property">
 class </em><tt class="descclassname">celery.managers.</tt><tt class="descname">TaskManager</tt><a class="headerlink" href="#celery.managers.TaskManager" title="Permalink to this definition">¶</a></dt>
-<dd><p>Manager for <tt class="docutils literal"><span class="pre">Task</span></tt> models.</p>
+<dd><p>Manager for <tt class="xref docutils literal"><span class="pre">celery.models.Task</span></tt> models.</p>
 <dl class="method">
 <dt id="celery.managers.TaskManager.delete_expired">
 <tt class="descname">delete_expired</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.managers.TaskManager.delete_expired" title="Permalink to this definition">¶</a></dt>
@@ -91,7 +100,24 @@ class </em><tt class="descclassname">celery.managers.</tt><tt class="descname">T
 <dl class="method">
 <dt id="celery.managers.TaskManager.store_result">
 <tt class="descname">store_result</tt><big>(</big><em>task_id</em>, <em>result</em>, <em>status</em><big>)</big><a class="headerlink" href="#celery.managers.TaskManager.store_result" title="Permalink to this definition">¶</a></dt>
-<dd>Store the result and status of a task.</dd></dl>
+<dd><p>Store the result and status of a task.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><em>task_id</em> &#8211; task id</li>
+<li><em>result</em> &#8211; The return value of the task, or an exception 
+instance raised by the task.</li>
+<li><em>status</em> &#8211; Task status. See
+<tt class="xref docutils literal"><span class="pre">celery.result.AsyncResult.get_status()</span></tt> for a list of
+possible status values.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 </dd></dl>
 

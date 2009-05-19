@@ -107,10 +107,10 @@ class </em><tt class="descclassname">celery.backends.base.</tt><tt class="descna
 <tt class="descname">wait_for</tt><big>(</big><em>task_id</em>, <em>timeout=None</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.wait_for" title="Permalink to this definition">¶</a></dt>
 <dd><p>Wait for task and return its result.</p>
 <p>If the task raises an exception, this exception
-will be re-raised by <tt class="docutils literal"><span class="pre">wait_for</span></tt>.</p>
-<p>If <tt class="docutils literal"><span class="pre">timeout</span></tt> is not <tt class="xref docutils literal"><span class="pre">None</span></tt>, this raises
-<tt class="docutils literal"><span class="pre">celery.timer.TimeoutError</span></tt> if the operation takes longer than
-<tt class="docutils literal"><span class="pre">timeout</span></tt> seconds.</p>
+will be re-raised by <a title="celery.backends.base.BaseBackend.wait_for" class="reference internal" href="#celery.backends.base.BaseBackend.wait_for"><tt class="xref docutils literal"><span class="pre">wait_for()</span></tt></a>.</p>
+<p>If <tt class="docutils literal"><span class="pre">timeout</span></tt> is not <tt class="xref docutils literal"><span class="pre">None</span></tt>, this raises the
+<a title="celery.timer.TimeoutError" class="reference external" href="celery.timer.html#celery.timer.TimeoutError"><tt class="xref docutils literal"><span class="pre">celery.timer.TimeoutError</span></tt></a> exception if the operation takes
+longer than <tt class="docutils literal"><span class="pre">timeout</span></tt> seconds.</p>
 </dd></dl>
 
 </dd></dl>

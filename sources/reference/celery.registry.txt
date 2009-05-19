@@ -6,6 +6,3 @@ Task Registry - celery.registry
 
 .. automodule:: celery.registry
     :members:
-
-.. data:: tasks
-    The global task registry.

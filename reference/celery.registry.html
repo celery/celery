@@ -50,7 +50,6 @@
             
   <div class="section" id="module-celery.registry">
 <h1>Task Registry - celery.registry<a class="headerlink" href="#module-celery.registry" title="Permalink to this headline">¶</a></h1>
-<p>celery.registry</p>
 <dl class="exception">
 <dt id="celery.registry.AlreadyRegistered">
 <em class="property">
@@ -83,7 +82,7 @@ exception </em><tt class="descclassname">TaskRegistry.</tt><tt class="descname">
 <dl class="method">
 <dt id="celery.registry.TaskRegistry.autodiscover">
 <tt class="descclassname">TaskRegistry.</tt><tt class="descname">autodiscover</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.registry.TaskRegistry.autodiscover" title="Permalink to this definition">¶</a></dt>
-<dd>Autodiscover tasks using <tt class="docutils literal"><span class="pre">celery.discovery.autodiscover</span></tt>.</dd></dl>
+<dd>Autodiscovers tasks using <a title="celery.discovery.autodiscover" class="reference external" href="celery.discovery.html#celery.discovery.autodiscover"><tt class="xref docutils literal"><span class="pre">celery.discovery.autodiscover()</span></tt></a>.</dd></dl>
 
 <dl class="method">
 <dt id="celery.registry.TaskRegistry.filter_types">
@@ -116,23 +115,37 @@ exception </em><tt class="descclassname">TaskRegistry.</tt><tt class="descname">
 <dd><p>Register a task in the task registry.</p>
 <p>Task can either be a regular function, or a class inheriting
 from <a title="celery.task.Task" class="reference external" href="celery.task.html#celery.task.Task"><tt class="xref docutils literal"><span class="pre">celery.task.Task</span></tt></a>.</p>
-<p>If the task is a regular function, the <tt class="docutils literal"><span class="pre">task_name</span></tt> argument is
-required.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>task_name</em> &#8211; Required if the task is a regular function.</td>
+</tr>
+<tr class="field"><th class="field-name" colspan="2">Raises <a title="celery.registry.AlreadyRegistered" class="reference internal" href="#celery.registry.AlreadyRegistered">AlreadyRegistered</a>:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body">if the task is already registered.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="celery.registry.TaskRegistry.unregister">
 <tt class="descclassname">TaskRegistry.</tt><tt class="descname">unregister</tt><big>(</big><em>task_name</em><big>)</big><a class="headerlink" href="#celery.registry.TaskRegistry.unregister" title="Permalink to this definition">¶</a></dt>
-<dd>Unregister task by name.</dd></dl>
-
+<dd><p>Unregister task by name.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>task_name</em> &#8211; name of the task to unregister.</td>
+</tr>
+<tr class="field"><th class="field-name" colspan="2">Raises <a title="celery.registry.NotRegistered" class="reference internal" href="#celery.registry.NotRegistered">NotRegistered</a>:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body">if the task has not been registered.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
-<dl class="data">
-<dt id="celery.registry.tasks">
-<tt class="descclassname">celery.registry.</tt><tt class="descname">tasks</tt><a class="headerlink" href="#celery.registry.tasks" title="Permalink to this definition">¶</a></dt>
-<dt>
-<tt class="descname">The global task registry.</tt></dt>
-<dd></dd></dl>
+</dd></dl>
 
 </div>
 

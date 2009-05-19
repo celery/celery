@@ -50,12 +50,22 @@
             
   <div class="section" id="module-celery.datastructures">
 <h1>Datastructures - celery.datastructures<a class="headerlink" href="#module-celery.datastructures" title="Permalink to this headline">¶</a></h1>
-<p>celery.datastructures</p>
+<p>Custom Datastructures</p>
 <dl class="class">
 <dt id="celery.datastructures.PositionQueue">
 <em class="property">
 class </em><tt class="descclassname">celery.datastructures.</tt><tt class="descname">PositionQueue</tt><big>(</big><em>length</em><big>)</big><a class="headerlink" href="#celery.datastructures.PositionQueue" title="Permalink to this definition">¶</a></dt>
-<dd><p>A positional queue with filled/unfilled slots.</p>
+<dd><p>A positional queue of a specific length, with slots that are either
+filled or unfilled. When all of the positions are filled, the queue
+is considered <a title="celery.datastructures.PositionQueue.full" class="reference internal" href="#celery.datastructures.PositionQueue.full"><tt class="xref docutils literal"><span class="pre">full()</span></tt></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>length</em> &#8211; The number of items required for the queue to be filled.</td>
+</tr>
+</tbody>
+</table>
 <dl class="class">
 <dt id="celery.datastructures.PositionQueue.UnfilledPosition">
 <em class="property">
@@ -70,7 +80,7 @@ class </em><tt class="descname">UnfilledPosition</tt><big>(</big><em>position</e
 <dl class="method">
 <dt id="celery.datastructures.PositionQueue.full">
 <tt class="descclassname">PositionQueue.</tt><tt class="descname">full</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.datastructures.PositionQueue.full" title="Permalink to this definition">¶</a></dt>
-<dd>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if all the positions has been filled.</dd></dl>
+<dd>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if all of the slots has been filled.</dd></dl>
 
 </dd></dl>
 
@@ -78,8 +88,62 @@ class </em><tt class="descname">UnfilledPosition</tt><big>(</big><em>position</e
 <dt id="celery.datastructures.TaskProcessQueue">
 <em class="property">
 class </em><tt class="descclassname">celery.datastructures.</tt><tt class="descname">TaskProcessQueue</tt><big>(</big><em>limit</em>, <em>logger=None</em>, <em>done_msg=None</em><big>)</big><a class="headerlink" href="#celery.datastructures.TaskProcessQueue" title="Permalink to this definition">¶</a></dt>
-<dd>Queue of running child processes, which starts waiting for the
-processes to finish when the queue limit is reached.</dd></dl>
+<dd><p>Queue of running child processes, which starts waiting for the
+processes to finish when the queue limit is reached.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><em>limit</em> &#8211; see <a title="celery.datastructures.TaskProcessQueue.limit" class="reference internal" href="#celery.datastructures.TaskProcessQueue.limit"><tt class="xref docutils literal"><span class="pre">limit</span></tt></a> attribute.</li>
+<li><em>logger</em> &#8211; see <a title="celery.datastructures.TaskProcessQueue.logger" class="reference internal" href="#celery.datastructures.TaskProcessQueue.logger"><tt class="xref docutils literal"><span class="pre">logger</span></tt></a> attribute.</li>
+<li><em>done_msg</em> &#8211; see <a title="celery.datastructures.TaskProcessQueue.done_msg" class="reference internal" href="#celery.datastructures.TaskProcessQueue.done_msg"><tt class="xref docutils literal"><span class="pre">done_msg</span></tt></a> attribute.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="celery.datastructures.TaskProcessQueue.limit">
+<tt class="descname">limit</tt><a class="headerlink" href="#celery.datastructures.TaskProcessQueue.limit" title="Permalink to this definition">¶</a></dt>
+<dd>The number of processes that can run simultaneously until
+we start collecting results.</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.datastructures.TaskProcessQueue.logger">
+<tt class="descname">logger</tt><a class="headerlink" href="#celery.datastructures.TaskProcessQueue.logger" title="Permalink to this definition">¶</a></dt>
+<dd>The logger used to print the <a title="celery.datastructures.TaskProcessQueue.done_msg" class="reference internal" href="#celery.datastructures.TaskProcessQueue.done_msg"><tt class="xref docutils literal"><span class="pre">done_msg</span></tt></a>.</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.datastructures.TaskProcessQueue.done_msg">
+<tt class="descname">done_msg</tt><a class="headerlink" href="#celery.datastructures.TaskProcessQueue.done_msg" title="Permalink to this definition">¶</a></dt>
+<dd>Message logged when a tasks result has been collected.
+The message is logged with loglevel <tt class="xref docutils literal"><span class="pre">logging.INFO</span></tt>.</dd></dl>
+
+<dl class="method">
+<dt id="celery.datastructures.TaskProcessQueue.add">
+<tt class="descname">add</tt><big>(</big><em>result</em>, <em>task_name</em>, <em>task_id</em><big>)</big><a class="headerlink" href="#celery.datastructures.TaskProcessQueue.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a process to the queue.</p>
+<p>If the queue is full, it will start to collect return values from
+the tasks executed. When all return values has been collected,
+it deletes the current queue and is ready to accept new processes.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><em>result</em> &#8211; A <tt class="xref docutils literal"><span class="pre">multiprocessing.AsyncResult</span></tt> instance, as
+returned by <tt class="xref docutils literal"><span class="pre">multiprocessing.Pool.apply_async()</span></tt>.</li>
+<li><em>task_name</em> &#8211; Name of the task executed.</li>
+<li><em>task_id</em> &#8211; Id of the task executed.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
 
 </div>
 

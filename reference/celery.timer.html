@@ -50,7 +50,7 @@
             
   <div class="section" id="module-celery.timer">
 <h1>Timers - celery.timer<a class="headerlink" href="#module-celery.timer" title="Permalink to this headline">¶</a></h1>
-<p>celery.timer</p>
+<p>Managing time and events</p>
 <dl class="class">
 <dt id="celery.timer.EventTimer">
 <em class="property">
@@ -107,9 +107,16 @@ time has run out.</p>
 <dt id="celery.timer.TimeoutTimer.tick">
 <tt class="descname">tick</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.timer.TimeoutTimer.tick" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run a timeout timer clock tick.</p>
-<p>When <tt class="docutils literal"><span class="pre">timeout</span></tt> seconds has passed, it will raise a
-<a title="celery.timer.TimeoutTimer" class="reference internal" href="#celery.timer.TimeoutTimer"><tt class="xref docutils literal"><span class="pre">TimeoutTimer</span></tt></a> exception.
-If <tt class="docutils literal"><span class="pre">timeout</span></tt> is not set, it will never time out.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name" colspan="2">Raises <a title="celery.timer.TimeoutError" class="reference internal" href="#celery.timer.TimeoutError">TimeoutError</a>:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body">when <a title="celery.timer.TimeoutTimer.timeout" class="reference internal" href="#celery.timer.TimeoutTimer.timeout"><tt class="xref docutils literal"><span class="pre">timeout</span></tt></a> seconds has passed.
+If <a title="celery.timer.TimeoutTimer.timeout" class="reference internal" href="#celery.timer.TimeoutTimer.timeout"><tt class="xref docutils literal"><span class="pre">timeout</span></tt></a> is not set, it will never time out.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>

@@ -50,7 +50,7 @@
             
   <div class="section" id="module-celery.result">
 <h1>Task Result - celery.result<a class="headerlink" href="#module-celery.result" title="Permalink to this headline">¶</a></h1>
-<p>celery.result</p>
+<p>Asynchronous result types.</p>
 <dl class="class">
 <dt id="celery.result.AsyncResult">
 <em class="property">
@@ -64,7 +64,7 @@ class </em><tt class="descclassname">celery.result.</tt><tt class="descname">Asy
 <dl class="attribute">
 <dt id="celery.result.AsyncResult.backend">
 <tt class="descname">backend</tt><a class="headerlink" href="#celery.result.AsyncResult.backend" title="Permalink to this definition">¶</a></dt>
-<dd>Instance of <tt class="docutils literal"><span class="pre">celery.backends.DefaultBackend</span></tt>.</dd></dl>
+<dd>Instance of <a title="celery.backends.DefaultBackend" class="reference external" href="celery.backends.html#celery.backends.DefaultBackend"><tt class="xref docutils literal"><span class="pre">celery.backends.DefaultBackend</span></tt></a>.</dd></dl>
 
 </dd></dl>
 
@@ -86,7 +86,7 @@ class </em><tt class="descclassname">celery.result.</tt><tt class="descname">Bas
 <dl class="method">
 <dt id="celery.result.BaseAsyncResult.get">
 <tt class="descname">get</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult.get" title="Permalink to this definition">¶</a></dt>
-<dd>Alias to <tt class="docutils literal"><span class="pre">wait</span></tt>.</dd></dl>
+<dd>Alias to <a title="celery.result.BaseAsyncResult.wait" class="reference internal" href="#celery.result.BaseAsyncResult.wait"><tt class="xref docutils literal"><span class="pre">wait()</span></tt></a>.</dd></dl>
 
 <dl class="method">
 <dt id="celery.result.BaseAsyncResult.is_done">
@@ -121,26 +121,59 @@ then <tt class="xref docutils literal"><span class="pre">False</span></tt> is re
 <dl class="attribute">
 <dt id="celery.result.BaseAsyncResult.result">
 <tt class="descname">result</tt><a class="headerlink" href="#celery.result.BaseAsyncResult.result" title="Permalink to this definition">¶</a></dt>
-<dd>The tasks resulting value.</dd></dl>
+<dd><p>When the task is executed, this contains the return value.</p>
+<p>If the task resulted in failure, this will be the exception instance
+raised.</p>
+</dd></dl>
 
 <dl class="attribute">
 <dt id="celery.result.BaseAsyncResult.status">
 <tt class="descname">status</tt><a class="headerlink" href="#celery.result.BaseAsyncResult.status" title="Permalink to this definition">¶</a></dt>
-<dd>The current status of the task.</dd></dl>
+<dd><p>The current status of the task.</p>
+<p>Can be one of the following:</p>
+<blockquote>
+<p><em>PENDING</em></p>
+<blockquote>
+The task is waiting for execution.</blockquote>
+<p><em>RETRY</em></p>
+<blockquote>
+The task is to be retried, possibly because of failure.</blockquote>
+<p><em>FAILURE</em></p>
+<blockquote>
+The task raised an exception, or has been retried more times
+than its limit. The <a title="celery.result.BaseAsyncResult.result" class="reference internal" href="#celery.result.BaseAsyncResult.result"><tt class="xref docutils literal"><span class="pre">result</span></tt></a> attribute contains the
+exception raised.</blockquote>
+<p><em>DONE</em></p>
+<blockquote>
+The task executed successfully. The <a title="celery.result.BaseAsyncResult.result" class="reference internal" href="#celery.result.BaseAsyncResult.result"><tt class="xref docutils literal"><span class="pre">result</span></tt></a> attribute
+contains the resulting value.</blockquote>
+</blockquote>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.result.BaseAsyncResult.successful">
 <tt class="descname">successful</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult.successful" title="Permalink to this definition">¶</a></dt>
-<dd>Alias to <tt class="docutils literal"><span class="pre">is_done</span></tt>.</dd></dl>
+<dd>Alias to <a title="celery.result.BaseAsyncResult.is_done" class="reference internal" href="#celery.result.BaseAsyncResult.is_done"><tt class="xref docutils literal"><span class="pre">is_done()</span></tt></a>.</dd></dl>
 
 <dl class="method">
 <dt id="celery.result.BaseAsyncResult.wait">
 <tt class="descname">wait</tt><big>(</big><em>timeout=None</em><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult.wait" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the result when it arrives.</p>
-<p>If timeout is not <tt class="xref docutils literal"><span class="pre">None</span></tt> and the result does not arrive within
-<tt class="docutils literal"><span class="pre">timeout</span></tt> seconds then <tt class="docutils literal"><span class="pre">celery.backends.base.TimeoutError</span></tt> is
-raised. If the remote call raised an exception then that exception
-will be reraised by get().</p>
+<dd><p>Wait for task, and return the result when it arrives.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>timeout</em> &#8211; How long to wait in seconds, before the
+operation times out.</td>
+</tr>
+<tr class="field"><th class="field-name" colspan="2">Raises <a title="celery.timer.TimeoutError" class="reference external" href="celery.timer.html#celery.timer.TimeoutError">celery.timer.TimeoutError</a>:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body">if <tt class="docutils literal"><span class="pre">timeout</span></tt> is not <tt class="xref docutils literal"><span class="pre">None</span></tt> and
+the result does not arrive within <tt class="docutils literal"><span class="pre">timeout</span></tt> seconds.</td>
+</tr>
+</tbody>
+</table>
+<p>If the remote call raised an exception then that
+exception will be re-raised.</p>
 </dd></dl>
 
 </dd></dl>
