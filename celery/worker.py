@@ -7,6 +7,7 @@ from celery.registry import tasks
 from celery.datastructures import TaskProcessQueue
 from celery.models import PeriodicTaskMeta
 from celery.task import mark_as_done, mark_as_failure
+from celery.timer import EventTimer
 import multiprocessing
 import simplejson
 import traceback
@@ -75,21 +76,6 @@ class TaskWrapper(object):
                                        self.args, task_func_kwargs])
 
 
-class EventTimer(object):
-    """Do something at an interval."""
-
-    def __init__(self, event, interval=None):
-        self.event = event
-        self.interval = interval
-        self.last_triggered = None
-
-    def tick(self):
-        if not self.interval: # never trigger if no interval.
-            return
-        if not self.last_triggered or \
-                time.time() > self.last_triggered + self.interval:
-            self.event()
-            self.last_triggered = time.time()
 
 
 class TaskDaemon(object):

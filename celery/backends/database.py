@@ -1,8 +1,10 @@
+"""celery.backends.database"""
 from celery.models import TaskMeta
 from celery.backends.base import BaseBackend
 
 
 class Backend(BaseBackend):
+    """The database backends. Using Django models to store task metadata."""
 
     def __init__(self, *args, **kwargs):
         super(Backend, self).__init__(*args, **kwargs)
@@ -34,4 +36,5 @@ class Backend(BaseBackend):
         return meta
 
     def cleanup(self):
+        """Delete expired metadata."""
         TaskMeta.objects.delete_expired()

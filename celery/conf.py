@@ -1,3 +1,4 @@
+"""celery.conf"""
 from django.conf import settings
 import logging
 
@@ -9,10 +10,6 @@ DEFAULT_AMQP_ROUTING_KEY = "celery"
 
 # The default AMQP consumer queue.
 DEFAULT_AMQP_CONSUMER_QUEUE = "celery"
-
-# If True, task meta information (like is_done) is saved to the database
-# instead of using the Django cache framework.
-DEFAULT_TASK_META_USE_DB = False
 
 # The number of processes to work simultaneously at processing the queue.
 DEFAULT_DAEMON_CONCURRENCY = 10
@@ -48,8 +45,6 @@ LOG_LEVELS = {
 }
 
 
-TASK_META_USE_DB = getattr(settings, "CELERY_TASK_META_USE_DB",
-                            DEFAULT_TASK_META_USE_DB)
 LOG_FORMAT = getattr(settings, "CELERYD_DAEMON_LOG_FORMAT",
                             DEFAULT_LOG_FMT)
 DAEMON_LOG_FILE = getattr(settings, "CELERYD_LOG_FILE",

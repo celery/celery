@@ -14,7 +14,7 @@ class PositionQueue(UserList):
         self.length = length
         self.data = map(self.UnfilledPosition, xrange(length))
 
-    def is_full(self):
+    def full(self):
         """Returns ``True`` if all the positions has been filled."""
         return len(self) >= self.length
 

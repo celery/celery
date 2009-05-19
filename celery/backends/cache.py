@@ -1,3 +1,4 @@
+"""celery.backends.cache"""
 from django.core.cache import cache
 from celery.backends.base import BaseBackend
 try:
@@ -7,7 +8,7 @@ except ImportError:
 
 
 class Backend(BaseBackend):
-
+    """Backend using the Django cache framework to store task metadata."""
     def __init__(self, *args, **kwargs):
         super(Backend, self).__init__(*args, **kwargs)
         self._cache = {}
@@ -22,12 +23,15 @@ class Backend(BaseBackend):
         cache.set(self._cache_key(task_id), meta)
 
     def get_status(self, task_id):
+        """Get the status of a task."""
         return self._get_task_meta_for(self, task_id)["status"]
 
     def get_result(self, task_id):
+        """Get the result of a task."""
         return self._get_task_meta_for(self, task_id)["result"]
 
     def is_done(self, task_id):
+        """Returns ``True`` if the task has been executed successfully."""
         return self.get_status(task_id) == "DONE"
 
     def _get_task_meta_for(self, task_id):

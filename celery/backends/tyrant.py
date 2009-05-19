@@ -1,3 +1,4 @@
+"""celery.backends.tyrant"""
 from django.core.exceptions import ImproperlyConfigured
 
 try:
@@ -43,12 +44,15 @@ class Backend(BaseBackend):
         get_server()[self._cache_key(task_id)] = serialize(meta)
 
     def get_status(self, task_id):
+        """Get the status for a task."""
         return self._get_task_meta_for(self, task_id)["status"]
 
     def get_result(self, task_id):
+        """Get the result of a task."""
         return self._get_task_meta_for(self, task_id)["result"]
 
     def is_done(self, task_id):
+        """Returns ``True`` if the task executed successfully."""
         return self.get_status(task_id) == "DONE"
 
     def _get_task_meta_for(self, task_id):

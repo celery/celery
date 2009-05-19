@@ -1,6 +1,5 @@
 from carrot.connection import DjangoAMQPConnection
 from celery.log import setup_logger
-from celery.conf import TASK_META_USE_DB
 from celery.registry import tasks
 from celery.messaging import TaskPublisher, TaskConsumer
 from celery.models import TaskMeta
@@ -17,8 +16,6 @@ import pickle
 def delay_task(task_name, *args, **kwargs):
     """Delay a task for execution by the ``celery`` daemon.
 
-    Examples
-    --------
         >>> delay_task("update_record", name="George Constanza", age=32)
 
     """
@@ -70,10 +67,6 @@ class Task(object):
     it also has to define the ``run`` method, which is the actual method the
     ``celery`` daemon executes.
     
-
-    Examples
-    --------
-
     This is a simple task just logging a message,
 
         >>> from celery.task import tasks, Task
@@ -151,9 +144,6 @@ class TaskSet(object):
     """A task containing several subtasks, making it possible
     to track how many, or when all of the tasks are completed.
     
-    Example Usage
-    --------------
-
         >>> from djangofeeds.tasks import RefreshFeedTask
         >>> taskset = TaskSet(RefreshFeedTask, args=[
         ...                 {"feed_url": "http://cnn.com/rss"},
@@ -184,8 +174,6 @@ class TaskSet(object):
 
         Returns a tuple with the taskset id, and a list of subtask id's.
 
-        Examples
-        --------
             >>> ts = RefreshFeeds([
             ...         ["http://foo.com/rss", {}],
             ...         ["http://bar.com/rss", {}],
@@ -213,54 +201,82 @@ class TaskSet(object):
         return taskset_id, subtask_ids
 
     def iterate(self):
+        """Iterate over the results returned after calling ``run()``.
+        
+        If any of the tasks raises an exception, the exception will
+        be reraised by ``iterate``.
+        """
         taskset_id, subtask_ids = self.run()
         results = dict([(task_id, AsyncResult(task_id))
                             for task_id in subtask_ids])
         while results:
-            for pending_result in results:
+            for task_id, pending_result in results.items():
                 if pending_result.status == "DONE":
+                    del(results[task_id])
                     yield pending_result.result
                 elif pending_result.status == "FAILURE":
                     raise pending_result.result
 
     def join(self, timeout=None):
-        timeout_timer = TimeOutTimer(timeout)
+        """Gather the results for all of the tasks in the taskset,
+        and return a list with them ordered by the order of which they
+        were called.
+
+        If any of the tasks raises an exception, the exception
+        will be reraised by ``join``.
+
+        If ``timeout`` is not ``None`` and the operation takes
+        longer than ``timeout`` seconds, it will raise
+        the :class:`celery.timer.TimeoutError` exception.
+
+        """
+        timeout_timer = TimeOutTimer(timeout) # Timeout timer starts here.
         taskset_id, subtask_ids = self.run()
         pending_results = map(AsyncResult, subtask_ids)
         results = PositionQueue(length=len(subtask_ids))
 
         while True:
-            for i, pending_result in enumerate(pending_results):
+            for position, pending_result in enumerate(pending_results):
                 if pending_result.status == "DONE":
-                    results[i] = pending_result.result
+                    results[position] = pending_result.result
                 elif pending_result.status == "FAILURE":
                     raise pending_result.result
-            if results.is_full():
+            if results.full():
+                # Make list copy, so the returned type is not a position
+                # queue.
                 return list(results)
+
+            # This raises TimeoutError when timed out.
             timeout_timer.tick()
 
     @classmethod
     def remote_execute(cls, func, args):
+        """Apply ``args`` to function by distributing the args to the
+        celery server(s)."""
         pickled = pickle.dumps(func)
         arguments = [[[pickled, arg, {}], {}] for arg in args]
         return cls(ExecuteRemoteTask, arguments)
 
     @classmethod
     def map(cls, func, args, timeout=None):
+        """Distribute processing of the arguments and collect the results."""
         remote_task = cls.remote_execute(func, args)
         return remote_task.join(timeout=timeout)
 
     @classmethod
     def map_async(cls, func, args, timeout=None):
+        """Distribute processing of the arguments and collect the results
+        asynchronously.
+        
+        Returns :class:`celery.result.AsyncResult` instance.
+        
+        """
         serfunc = pickle.dumps(func)
         return AsynchronousMapTask.delay(serfunc, args, timeout=timeout)
 
 
 def dmap(func, args, timeout=None):
     """Distribute processing of the arguments and collect the results.
-
-    Example
-    --------
 
         >>> from celery.task import map
         >>> import operator
@@ -272,6 +288,7 @@ def dmap(func, args, timeout=None):
 
 
 class AsynchronousMapTask(Task):
+    """Task used internally by ``dmap_async``."""
     name = "celery.map_async"
 
     def run(self, serfunc, args, **kwargs):
@@ -282,10 +299,9 @@ tasks.register(AsynchronousMapTask)
 
 def dmap_async(func, args, timeout=None):
     """Distribute processing of the arguments and collect the results
-    asynchronously. Returns a :class:`AsyncResult` object.
-
-    Example
-    --------
+    asynchronously.
+    
+    Returns a :class:`celery.result.AsyncResult` object.
 
         >>> from celery.task import dmap_async
         >>> import operator
@@ -309,9 +325,6 @@ class PeriodicTask(Task):
     specifying the time in seconds.
 
     You have to register the periodic task in the task registry.
-
-    Examples
-    --------
 
         >>> from celery.task import tasks, PeriodicTask
         >>> from datetime import timedelta
@@ -340,17 +353,30 @@ class PeriodicTask(Task):
         super(PeriodicTask, self).__init__()
 
 
-
 class ExecuteRemoteTask(Task):
+    """Execute arbitrary function/object.
+
+    The object must be pickleable, so you can't use lambdas or functions
+    defined in the REPL.
+    
+    """
     name = "celery.execute_remote"
 
     def run(self, ser_callable, fargs, fkwargs, **kwargs):
+        """Execute the pickled ``ser_callable``, with ``fargs`` as positional
+        arguments and ``fkwargs`` as keyword arguments."""
         callable_ = pickle.loads(ser_callable)
         return callable_(*fargs, **fkwargs)
 tasks.register(ExecuteRemoteTask)
 
 
 def execute_remote(func, *args, **kwargs):
+    """Execute arbitrary function/object remotely.
+
+    The object must be picklable, so you can't use lambdas or functions
+    defined in the REPL (the objects must have an associated module).
+    
+    """
     return ExecuteRemoteTask.delay(pickle.dumps(func), args, kwargs)
 
 
