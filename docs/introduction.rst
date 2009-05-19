@@ -17,11 +17,11 @@ worker servers, running concurrently using multiprocessing.
 It is designed to solve certain problems related to running websites
 demanding high-availability and performance.
 
-It is perfect for filling caches and posting updates to twitter
-asynchronously, or for mass downloading of data like syndication
-feeds or web scraping. Use-cases are plentiful, and while implementing
-these features asynchronously is a demanding task, it is a lot easier using
-``celery``, and the performance improvements can make it more than worthwhile.
+It is perfect for filling caches, posting updates to twitter, mass
+downloading data like syndication feeds or web scraping. Use-cases are
+plentiful. Implementing these features asynchronously using ``celery`` is
+easy and fun, and the performance improvements can make it more than
+worthwhile.
 , 
 
 Features
@@ -30,18 +30,19 @@ Features
     * Uses AMQP messaging (RabbitMQ, ZeroMQ) to route tasks to the
       worker servers.
 
-    * Tasks can be routed to as many worker servers as you want.
-      They will be picked up from the messaging server.
+    * You can run as many worker servers as you want, and still
+      be *guaranteed that the task is only executed once.*
 
-    * Tasks are executed concurrently using the Python 2.6
+    * Tasks are executed *concurrently* using the Python 2.6
       ``multiprocessing`` module (also available as a backport
       to older python versions)
 
-    * Supports periodic tasks, which makes it a replacement for cronjobs.
+    * Supports *periodic tasks*, which makes it a (better) replacement
+      for cronjobs.
 
-    * When the task has been executed, the return value is stored using either
+    * When a task has been executed, the return value is stored using either
       a MySQL/Oracle/PostgreSQL/SQLite database, memcached,
-      or Tokyo Tyrant.
+      or Tokyo Tyrant backend.
 
     * If the task raises an exception, the exception instance is stored,
       instead of the return value.
@@ -49,17 +50,17 @@ Features
     * All tasks has a Universaly Unique Identifier (UUID), which is the
       task id, used for querying task status and return values.
 
-    * Supports tasksets, which is a task consisting of several subtasks.
-      You can find out if all, or how many of the subtasks have been executed,
-      excellent for progress bar like functionality.
+    * Supports *tasksets*, which is a task consisting of several subtasks.
+      You can find out how many, or if all of the subtasks has been executed.
+      Excellent for progress-bar like functionality.
 
     * Has a ``map`` like function that uses tasks, called ``dmap``.
 
-    * However, you rarely want to wait for these results in a web-environment,
-      you'd rather want to use Ajax to poll the task status, which is
+    * However, you rarely want to wait for these results in a web-environment.
+      You'd rather want to use Ajax to poll the task status, which is
       available from a URL like ``celery/<task_id>/status/``. This view
       returns a JSON-serialized data structure containing the task status,
-      return value if completed, or exception on failure.
+      and the return value if completed, or exception on failure.
       
 API Reference Documentation
 ---------------------------
@@ -98,8 +99,8 @@ and you need to have the amqp server setup in your settings file, as described
 in the `carrot distribution README`_.
 
 *Note* If you're running ``SQLite`` as the database backend, ``celeryd`` will
-only be able to process one message at a time, this because ``SQLite`` doesn't
-allow concurrent writes.
+only be able to process one message at a time, this is because ``SQLite``
+doesn't allow concurrent writes.
 
 .. _`RabbitMQ`: http://www.rabbitmq.com
 .. _`carrot distribution README`: http://pypi.python.org/pypi/carrot/0.3.3
@@ -130,7 +131,7 @@ Execute a task, and get its return value.
     >>> result = delay_task("do_something", some_arg="foo bar baz")
     >>> result.ready()
     False
-    >>> result.wait()   # Waits until the task is done.
+    >>> result.get()   # Waits until the task is done.
     42
     >>> result.status()
     'DONE'
