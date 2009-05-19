@@ -9,7 +9,9 @@ Contents:
 
 .. toctree::
     :maxdepth: 2
-   
+
+    introduction 
+
     reference/celery.task
     reference/celery.result
     reference/celery.registry
@@ -29,7 +31,6 @@ Contents:
     reference/celery.platform
     reference/celery.timer
     reference/celery.bin.celeryd
-
 
 Indices and tables
 ==================
