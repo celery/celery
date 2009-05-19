@@ -10,9 +10,61 @@ Introduction
 ------------
 
 ``celery`` is a distributed task queue framework for Django.
-More information will follow.
 
-Be sure to also consult the `API Reference Documentation`_
+It is used for executing tasks *asynchronously*, routed to one or more
+worker servers, running concurrently using multiprocessing.
+
+It is designed to solve certain problems related to running websites
+demanding high-availability and performance.
+
+It is perfect for filling caches and posting updates to twitter
+asynchronously, or for mass downloading of data like syndication
+feeds or web scraping. Use-cases are plentiful, and while implementing
+these features asynchronously is a demanding task, it is a lot easier using
+``celery``, and the performance improvements can make it more than worthwhile.
+, 
+
+Features
+--------
+
+    * Uses AMQP messaging (RabbitMQ, ZeroMQ) to route tasks to the
+      worker servers.
+
+    * Tasks can be routed to as many worker servers as you want.
+      They will be picked up from the messaging server.
+
+    * Tasks are executed concurrently using the Python 2.6
+      ``multiprocessing`` module (also available as a backport
+      to older python versions)
+
+    * Supports periodic tasks, which makes it a replacement for cronjobs.
+
+    * When the task has been executed, the return value is stored using either
+      a MySQL/Oracle/PostgreSQL/SQLite database, memcached,
+      or Tokyo Tyrant.
+
+    * If the task raises an exception, the exception instance is stored,
+      instead of the return value.
+
+    * All tasks has a Universaly Unique Identifier (UUID), which is the
+      task id, used for querying task status and return values.
+
+    * Supports tasksets, which is a task consisting of several subtasks.
+      You can find out if all, or how many of the subtasks have been executed,
+      excellent for progress bar like functionality.
+
+    * Has a ``map`` like function that uses tasks, called ``dmap``.
+
+    * However, you rarely want to wait for these results in a web-environment,
+      you'd rather want to use Ajax to poll the task status, which is
+      available from a URL like ``celery/<task_id>/status/``. This view
+      returns a JSON-serialized data structure containing the task status,
+      return value if completed, or exception on failure.
+      
+API Reference Documentation
+---------------------------
+
+The `API Reference Documentation`_ is hosted at Github.
 
 .. _`API Reference Docmentation`: http://ask.github.com/celery/
 
@@ -61,6 +113,7 @@ Defining tasks
     >>> def do_something(some_arg, **kwargs):
     ...     logger = setup_logger(**kwargs)
     ...     logger.info("Did something: %s" % some_arg)
+    ...     return 42
     >>> task.register(do_something, "do_something") 
 
 Tell the celery daemon to run a task
@@ -69,6 +122,21 @@ Tell the celery daemon to run a task
     >>> from celery.task import delay_task
     >>> delay_task("do_something", some_arg="foo bar baz")
 
+
+Execute a task, and get its return value.
+-----------------------------------------
+
+    >>> from celery.task import delay_task
+    >>> result = delay_task("do_something", some_arg="foo bar baz")
+    >>> result.ready()
+    False
+    >>> result.wait()   # Waits until the task is done.
+    42
+    >>> result.status()
+    'DONE'
+
+If the task raises an exception, the tasks status will be ``FAILURE``, and
+``result.result`` will contain the exception instance raised.
 
 Running the celery daemon
 --------------------------
@@ -80,8 +148,6 @@ Running the celery daemon
     [....]
     [2009-04-23 17:44:05,115: INFO/Process-1] Did something: foo bar baz
     [2009-04-23 17:44:05,118: INFO/MainProcess] Waiting for queue.
-
-
 
 
 Autodiscovery of tasks
