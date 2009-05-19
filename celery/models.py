@@ -1,4 +1,3 @@
-"""celery.models"""
 from django.db import models
 from celery.registry import tasks
 from celery.managers import TaskManager, PeriodicTaskManager

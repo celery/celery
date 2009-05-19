@@ -1,4 +1,3 @@
-"""celery.registry"""
 from celery import discovery
 from UserDict import UserDict
 
@@ -21,7 +20,7 @@ class TaskRegistry(UserDict):
         self.data = {}
 
     def autodiscover(self):
-        """Autodiscover tasks using ``celery.discovery.autodiscover``."""
+        """Autodiscovers tasks using :func:`celery.discovery.autodiscover`."""
         discovery.autodiscover()
 
     def register(self, task, task_name=None):
@@ -30,8 +29,9 @@ class TaskRegistry(UserDict):
         Task can either be a regular function, or a class inheriting
         from :class:`celery.task.Task`.
 
-        If the task is a regular function, the ``task_name`` argument is
-        required.
+        :keyword task_name: Required if the task is a regular function.
+
+        :raises AlreadyRegistered: if the task is already registered.
         
         """
         is_class = False
@@ -49,7 +49,13 @@ class TaskRegistry(UserDict):
             self.data[task_name] = task
 
     def unregister(self, task_name):
-        """Unregister task by name."""
+        """Unregister task by name.
+       
+        :param task_name: name of the task to unregister.
+
+        :raises NotRegistered: if the task has not been registered.
+
+        """
         if hasattr(task_name, "run"):
             task_name = task_name.name
         if task_name not in self.data:
@@ -79,5 +85,10 @@ class TaskRegistry(UserDict):
         """Get task by name."""
         return self.data[task_name]
 
-"""This is the global task registry."""
+"""
+.. data:: tasks
+
+    The global task registry.
+
+"""
 tasks = TaskRegistry()

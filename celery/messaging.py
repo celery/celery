@@ -1,4 +1,8 @@
-"""celery.messaging"""
+"""
+
+Sending and Receiving Messages
+
+"""
 from carrot.messaging import Publisher, Consumer
 from celery import conf
 import uuid
@@ -6,11 +10,11 @@ import uuid
 
 class NoProcessConsumer(Consumer):
     """A consumer that raises an error if used with wait callbacks (i.e.
-    it doesn't support ``carrot.messaging.Consumer.wait``)."""
+    it doesn't support :meth:`carrot.messaging.Consumer.wait``)."""
     
     def receive(self, message_data, message):
         raise NotImplementedError(
-                "Don't use process_next() or wait() with the TaskConsumer!")
+                "This consumer doesn't support process_next() or wait()")
 
 
 class TaskPublisher(Publisher):

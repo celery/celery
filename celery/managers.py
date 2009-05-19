@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 
 
 class TaskManager(models.Manager):
-    """Manager for ``Task`` models."""
+    """Manager for :class:`celery.models.Task` models."""
     
     def get_task(self, task_id):
         """Get task meta for task by ``task_id``."""
@@ -36,7 +36,7 @@ class TaskManager(models.Manager):
 
 
 class PeriodicTaskManager(models.Manager):
-    """Manager for ``PeriodicTask`` models."""
+    """Manager for :class:`celery.models.PeriodicTask` models."""
 
     def get_waiting_tasks(self):
         """Get all waiting periodic tasks."""

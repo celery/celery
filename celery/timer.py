@@ -1,4 +1,8 @@
-"""celery.timer"""
+"""
+
+Managing time and events
+
+"""
 import time
 
 
@@ -44,7 +48,7 @@ class EventTimer(object):
 
 
 class TimeoutTimer(object):
-    """A timer that raises :class:`TimeoutError` exception when the
+    """A timer that raises :exc:`TimeoutError` exception when the
     time has run out.
    
     .. attribute:: timeout
@@ -64,9 +68,8 @@ class TimeoutTimer(object):
     def tick(self):
         """Run a timeout timer clock tick.
 
-        When ``timeout`` seconds has passed, it will raise a
-        :class:`TimeoutTimer` exception.
-        If ``timeout`` is not set, it will never time out.
+        :raises TimeoutError: when :attr:`timeout` seconds has passed.
+            If :attr:`timeout` is not set, it will never time out.
 
         """
         if not self.timeout:

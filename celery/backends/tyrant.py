@@ -33,6 +33,12 @@ class Backend(BaseBackend):
     tyrant_port = None
 
     def __init__(self, tyrant_host=None, tyrant_port=None):
+        """Initialize Tokyo Tyrant backend instance.
+
+        Raises :class:`django.core.exceptions.ImproperlyConfigured` if
+        :setting:`TT_HOST` or :setting:`TT_PORT` is not set.
+
+        """
         self.tyrant_host = kwargs.get("tyrant_host", 
                             getattr(settings, "TT_HOST", self.tyrant_host))
         self.tyrant_port = kwargs.get("tyrant_port",

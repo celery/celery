@@ -51,11 +51,11 @@ class BaseBackend(object):
         """Wait for task and return its result.
 
         If the task raises an exception, this exception
-        will be re-raised by ``wait_for``.
+        will be re-raised by :func:`wait_for`.
 
-        If ``timeout`` is not ``None``, this raises
-        ``celery.timer.TimeoutError`` if the operation takes longer than
-        ``timeout`` seconds.
+        If ``timeout`` is not ``None``, this raises the
+        :class:`celery.timer.TimeoutError` exception if the operation takes
+        longer than ``timeout`` seconds.
 
         """
         timeout_timer = TimeoutTimer(timeout)

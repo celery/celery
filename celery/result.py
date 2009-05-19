@@ -1,4 +1,8 @@
-"""celery.result"""
+"""
+
+Asynchronous result types.
+
+"""
 from celery.backends import default_backend
 
 
@@ -16,6 +20,13 @@ class BaseAsyncResult(object):
     """
 
     def __init__(self, task_id, backend):
+        """Create a result instance.
+
+        :param task_id: id of the task this is a result for.
+
+        :param backend: task result backend used.
+
+        """
         self.task_id = task_id
         self.backend = backend
 
@@ -28,16 +39,22 @@ class BaseAsyncResult(object):
         return self.backend.is_done(self.task_id)
 
     def get(self):
-        """Alias to ``wait``."""
+        """Alias to :func:`wait`."""
         return self.wait()
 
     def wait(self, timeout=None):
-        """Return the result when it arrives.
+        """Wait for task, and return the result when it arrives.
+       
+        :keyword timeout: How long to wait in seconds, before the
+            operation times out.
         
-        If timeout is not ``None`` and the result does not arrive within
-        ``timeout`` seconds then ``celery.backends.base.TimeoutError`` is
-        raised. If the remote call raised an exception then that exception
-        will be reraised by get()."""
+        :raises celery.timer.TimeoutError: if ``timeout`` is not ``None`` and
+            the result does not arrive within ``timeout`` seconds.
+        
+        If the remote call raised an exception then that
+        exception will be re-raised.
+        
+        """
         return self.backend.wait_for(self.task_id, timeout=timeout)
 
     def ready(self):
@@ -52,11 +69,11 @@ class BaseAsyncResult(object):
         return status != "PENDING" or status != "RETRY"
 
     def successful(self):
-        """Alias to ``is_done``."""
+        """Alias to :func:`is_done`."""
         return self.is_done()
 
     def __str__(self):
-        """str(self) -> self.task_id"""
+        """``str(self)`` -> ``self.task_id``"""
         return self.task_id
 
     def __repr__(self):
@@ -64,14 +81,41 @@ class BaseAsyncResult(object):
 
     @property
     def result(self):
-        """The tasks resulting value."""
+        """When the task is executed, this contains the return value.
+       
+        If the task resulted in failure, this will be the exception instance
+        raised.
+        """
         if self.status == "DONE" or self.status == "FAILURE":
             return self.backend.get_result(self.task_id)
         return None
 
     @property
     def status(self):
-        """The current status of the task."""
+        """The current status of the task.
+       
+        Can be one of the following:
+
+            *PENDING*
+
+                The task is waiting for execution.
+
+            *RETRY*
+
+                The task is to be retried, possibly because of failure.
+
+            *FAILURE*
+
+                The task raised an exception, or has been retried more times
+                than its limit. The :attr:`result` attribute contains the
+                exception raised.
+
+            *DONE*
+
+                The task executed successfully. The :attr:`result` attribute
+                contains the resulting value.
+
+        """
         return self.backend.get_status(self.task_id)
 
 
@@ -84,7 +128,7 @@ class AsyncResult(BaseAsyncResult):
 
     .. attribute:: backend
     
-        Instance of ``celery.backends.DefaultBackend``.
+        Instance of :class:`celery.backends.DefaultBackend`.
 
     """
     def __init__(self, task_id):
