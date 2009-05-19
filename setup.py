@@ -59,7 +59,7 @@ setup(
     url=celery.__homepage__,
     platforms=["any"],
     packages=find_packages(exclude=['ez_setup']),
-    scripts=["celery/bin/celeryd"],
+    scripts=["bin/celeryd"],
     zip_safe=False,
     install_requires=[
         'django-unittest-depth',
