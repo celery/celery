@@ -27,7 +27,7 @@ class PositionQueue(UserList):
     def filled(self):
         """Returns the filled slots as a list."""
         return filter(lambda v: not isinstance(v, self.UnfilledPosition),
-                      self)
+                      self.data)
 
         
 class TaskProcessQueue(UserList):
