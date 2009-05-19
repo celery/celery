@@ -1,0 +1,196 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Task Registry - celery.registry &mdash; Celery v0.1.12 documentation</title>
+    <link rel="stylesheet" href="../static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1.12',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v0.1.12 documentation" href="../index.html" />
+    <link rel="next" title="Task Discovery - celery.discovery" href="celery.discovery.html" />
+    <link rel="prev" title="Task Result - celery.result" href="celery.result.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="celery.discovery.html" title="Task Discovery - celery.discovery"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.result.html" title="Task Result - celery.result"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Celery v0.1.12 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-celery.registry">
+<h1>Task Registry - celery.registry<a class="headerlink" href="#module-celery.registry" title="Permalink to this headline">¶</a></h1>
+<p>celery.registry</p>
+<dl class="exception">
+<dt id="celery.registry.AlreadyRegistered">
+<em class="property">
+exception </em><tt class="descclassname">celery.registry.</tt><tt class="descname">AlreadyRegistered</tt><a class="headerlink" href="#celery.registry.AlreadyRegistered" title="Permalink to this definition">¶</a></dt>
+<dd>The task is already registered.</dd></dl>
+
+<dl class="exception">
+<dt id="celery.registry.NotRegistered">
+<em class="property">
+exception </em><tt class="descclassname">celery.registry.</tt><tt class="descname">NotRegistered</tt><a class="headerlink" href="#celery.registry.NotRegistered" title="Permalink to this definition">¶</a></dt>
+<dd>The task is not registered.</dd></dl>
+
+<dl class="class">
+<dt id="celery.registry.TaskRegistry">
+<em class="property">
+class </em><tt class="descclassname">celery.registry.</tt><tt class="descname">TaskRegistry</tt><a class="headerlink" href="#celery.registry.TaskRegistry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Site registry for tasks.</p>
+<dl class="exception">
+<dt id="celery.registry.TaskRegistry.AlreadyRegistered">
+<em class="property">
+exception </em><tt class="descname">AlreadyRegistered</tt><a class="headerlink" href="#celery.registry.TaskRegistry.AlreadyRegistered" title="Permalink to this definition">¶</a></dt>
+<dd>The task is already registered.</dd></dl>
+
+<dl class="exception">
+<dt id="celery.registry.TaskRegistry.NotRegistered">
+<em class="property">
+exception </em><tt class="descclassname">TaskRegistry.</tt><tt class="descname">NotRegistered</tt><a class="headerlink" href="#celery.registry.TaskRegistry.NotRegistered" title="Permalink to this definition">¶</a></dt>
+<dd>The task is not registered.</dd></dl>
+
+<dl class="method">
+<dt id="celery.registry.TaskRegistry.autodiscover">
+<tt class="descclassname">TaskRegistry.</tt><tt class="descname">autodiscover</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.registry.TaskRegistry.autodiscover" title="Permalink to this definition">¶</a></dt>
+<dd>Autodiscover tasks using <tt class="docutils literal"><span class="pre">celery.discovery.autodiscover</span></tt>.</dd></dl>
+
+<dl class="method">
+<dt id="celery.registry.TaskRegistry.filter_types">
+<tt class="descclassname">TaskRegistry.</tt><tt class="descname">filter_types</tt><big>(</big><em>type</em><big>)</big><a class="headerlink" href="#celery.registry.TaskRegistry.filter_types" title="Permalink to this definition">¶</a></dt>
+<dd>Return all tasks of a specific type.</dd></dl>
+
+<dl class="method">
+<dt id="celery.registry.TaskRegistry.get_all">
+<tt class="descclassname">TaskRegistry.</tt><tt class="descname">get_all</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.registry.TaskRegistry.get_all" title="Permalink to this definition">¶</a></dt>
+<dd>Get all task types.</dd></dl>
+
+<dl class="method">
+<dt id="celery.registry.TaskRegistry.get_all_periodic">
+<tt class="descclassname">TaskRegistry.</tt><tt class="descname">get_all_periodic</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.registry.TaskRegistry.get_all_periodic" title="Permalink to this definition">¶</a></dt>
+<dd>Get all periodic task types.</dd></dl>
+
+<dl class="method">
+<dt id="celery.registry.TaskRegistry.get_all_regular">
+<tt class="descclassname">TaskRegistry.</tt><tt class="descname">get_all_regular</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.registry.TaskRegistry.get_all_regular" title="Permalink to this definition">¶</a></dt>
+<dd>Get all regular task types.</dd></dl>
+
+<dl class="method">
+<dt id="celery.registry.TaskRegistry.get_task">
+<tt class="descclassname">TaskRegistry.</tt><tt class="descname">get_task</tt><big>(</big><em>task_name</em><big>)</big><a class="headerlink" href="#celery.registry.TaskRegistry.get_task" title="Permalink to this definition">¶</a></dt>
+<dd>Get task by name.</dd></dl>
+
+<dl class="method">
+<dt id="celery.registry.TaskRegistry.register">
+<tt class="descclassname">TaskRegistry.</tt><tt class="descname">register</tt><big>(</big><em>task</em>, <em>task_name=None</em><big>)</big><a class="headerlink" href="#celery.registry.TaskRegistry.register" title="Permalink to this definition">¶</a></dt>
+<dd><p>Register a task in the task registry.</p>
+<p>Task can either be a regular function, or a class inheriting
+from <a title="celery.task.Task" class="reference external" href="celery.task.html#celery.task.Task"><tt class="xref docutils literal"><span class="pre">celery.task.Task</span></tt></a>.</p>
+<p>If the task is a regular function, the <tt class="docutils literal"><span class="pre">task_name</span></tt> argument is
+required.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.registry.TaskRegistry.unregister">
+<tt class="descclassname">TaskRegistry.</tt><tt class="descname">unregister</tt><big>(</big><em>task_name</em><big>)</big><a class="headerlink" href="#celery.registry.TaskRegistry.unregister" title="Permalink to this definition">¶</a></dt>
+<dd>Unregister task by name.</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt id="celery.registry.tasks">
+<tt class="descclassname">celery.registry.</tt><tt class="descname">tasks</tt><a class="headerlink" href="#celery.registry.tasks" title="Permalink to this definition">¶</a></dt>
+<dt>
+<tt class="descname">The global task registry.</tt></dt>
+<dd></dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="celery.result.html"
+                                  title="previous chapter">Task Result - celery.result</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="celery.discovery.html"
+                                  title="next chapter">Task Discovery - celery.discovery</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../sources/reference/celery.registry.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.discovery.html" title="Task Discovery - celery.discovery"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.result.html" title="Task Result - celery.result"
+             >previous</a> |</li>
+        <li><a href="../index.html">Celery v0.1.12 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.1.
+    </div>
+  </body>
+</html>

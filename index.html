@@ -1,80 +1,140 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-<head>
-	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-
-	<title>ask/celery @ GitHub</title>
-	
-	<style type="text/css">
-		body {
-  		margin-top: 1.0em;
-  		background-color: #bdaa63;
-		  font-family: "helvetica"; 
-  		color: #000000;
-    }
-    #container {
-      margin: 0 auto;
-      width: 700px;
-    }
-		h1 { font-size: 3.8em; color: #42559c; margin-bottom: 3px; }
-		h1 .small { font-size: 0.4em; }
-		h1 a { text-decoration: none }
-		h2 { font-size: 1.5em; color: #42559c; }
-    h3 { text-align: center; color: #42559c; }
-    a { color: #42559c; }
-    .description { font-size: 1.2em; margin-bottom: 30px; margin-top: 30px; font-style: italic;}
-    .download { float: right; }
-		pre { background: #000; color: #fff; padding: 15px;}
-    hr { border: 0; width: 80%; border-bottom: 1px solid #aaa}
-    .footer { text-align:center; padding-top:30px; font-style: italic; }
-	</style>
-	
-</head>
-
-<body>
-  <a href="http://github.com/ask/celery"><img style="position: absolute; top: 0; right: 0; border: 0;" src="http://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub" /></a>
-  
-  <div id="container">
-
-    <div class="download">
-      <a href="http://github.com/ask/celery/zipball/master">
-        <img border="0" width="90" src="http://github.com/images/modules/download/zip.png"></a>
-      <a href="http://github.com/ask/celery/tarball/master">
-        <img border="0" width="90" src="http://github.com/images/modules/download/tar.png"></a>
-    </div>
-      
-    <h1><a href="http://github.com/ask/celery">celery</a> 
-      <span class="small">by <a href="http://github.com/ask">ask</a></span></h1>
-
-    <div class="description">
-      Distributed Task Queue for Django
-    </div>
-
-    <h2>Authors</h2>
-<p>Ask Solem (askh@opera.com)<br/><br/>      </p>
-<h2>Contact</h2>
-<p>Ask Solem Hoel (ask@0x61736b.net)<br/>      </p>
-
-
-    <h2>Download</h2>
-    <p>
-      You can download this project in either
-      <a href="http://github.com/ask/celery/zipball/master">zip</a> or
-      <a href="http://github.com/ask/celery/tarball/master">tar</a> formats.
-    </p>
-    <p>You can also clone the project with <a href="http://git-scm.com">Git</a>
-      by running:
-      <pre>$ git clone git://github.com/ask/celery</pre>
-    </p>
-      
-    <div class="footer">
-      get the source code on GitHub : <a href="http://github.com/ask/celery">ask/celery</a>
-    </div>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-  </div>
+    <title>Welcome to Celery’s documentation! &mdash; Celery v0.1.12 documentation</title>
+    <link rel="stylesheet" href="static/default.css" type="text/css" />
+    <link rel="stylesheet" href="static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1.12',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="static/jquery.js"></script>
+    <script type="text/javascript" src="static/doctools.js"></script>
+    <link rel="top" title="Celery v0.1.12 documentation" href="" />
+    <link rel="next" title="Tasks - celery.task" href="reference/celery.task.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="reference/celery.task.html" title="Tasks - celery.task"
+             accesskey="N">next</a> |</li>
+        <li><a href="">Celery v0.1.12 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
 
-  
-</body>
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="welcome-to-celery-s-documentation">
+<h1>Welcome to Celery&#8217;s documentation!<a class="headerlink" href="#welcome-to-celery-s-documentation" title="Permalink to this headline">¶</a></h1>
+<p>Contents:</p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="reference/celery.task.html">Tasks - celery.task</a></li>
+<li class="toctree-l1"><a class="reference external" href="reference/celery.result.html">Task Result - celery.result</a></li>
+<li class="toctree-l1"><a class="reference external" href="reference/celery.registry.html">Task Registry - celery.registry</a></li>
+<li class="toctree-l1"><a class="reference external" href="reference/celery.discovery.html">Task Discovery - celery.discovery</a></li>
+<li class="toctree-l1"><a class="reference external" href="reference/celery.worker.html">Multiprocessing Worker - celery.worker</a></li>
+<li class="toctree-l1"><a class="reference external" href="reference/celery.backends.html">Backends - celery.backends</a></li>
+<li class="toctree-l1"><a class="reference external" href="reference/celery.backends.base.html">Backend: Base - celery.backends.base</a></li>
+<li class="toctree-l1"><a class="reference external" href="reference/celery.backends.database.html">Backend: Database - celery.backends.database</a></li>
+<li class="toctree-l1"><a class="reference external" href="reference/celery.backends.cache.html">Backend: Cache - celery.backends.cache</a></li>
+<li class="toctree-l1"><a class="reference external" href="reference/celery.backends.tyrant.html">Backend: Tokyo Tyrant - celery.backends.tyrant</a></li>
+<li class="toctree-l1"><a class="reference external" href="reference/celery.conf.html">Configuration - celery.conf</a></li>
+<li class="toctree-l1"><a class="reference external" href="reference/celery.datastructures.html">Datastructures - celery.datastructures</a></li>
+<li class="toctree-l1"><a class="reference external" href="reference/celery.log.html">Logging - celery.log</a></li>
+<li class="toctree-l1"><a class="reference external" href="reference/celery.managers.html">Django Model Managers - celery.managers</a></li>
+<li class="toctree-l1"><a class="reference external" href="reference/celery.models.html">Django Models - celery.models</a></li>
+<li class="toctree-l1"><a class="reference external" href="reference/celery.messaging.html">Messaging - celery.messaging</a></li>
+<li class="toctree-l1"><a class="reference external" href="reference/celery.platform.html">Platform Specific - celery.platform</a></li>
+<li class="toctree-l1"><a class="reference external" href="reference/celery.timer.html">Timers - celery.timer</a></li>
+<li class="toctree-l1"><a class="reference external" href="reference/celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
+</ul>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference external" href="genindex.html"><em>Index</em></a></li>
+<li><a class="reference external" href="modindex.html"><em>Module Index</em></a></li>
+<li><a class="reference external" href="search.html"><em>Search Page</em></a></li>
+</ul>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="">Welcome to Celery&#8217;s documentation!</a><ul>
+</ul>
+</li>
+<li><a class="reference external" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+
+            <h4>Next topic</h4>
+            <p class="topless"><a href="reference/celery.task.html"
+                                  title="next chapter">Tasks - celery.task</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="sources/index.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="reference/celery.task.html" title="Tasks - celery.task"
+             >next</a> |</li>
+        <li><a href="">Celery v0.1.12 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.1.
+    </div>
+  </body>
 </html>

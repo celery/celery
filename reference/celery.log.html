@@ -1,0 +1,128 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Logging - celery.log &mdash; Celery v0.1.12 documentation</title>
+    <link rel="stylesheet" href="../static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1.12',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v0.1.12 documentation" href="../index.html" />
+    <link rel="next" title="Django Model Managers - celery.managers" href="celery.managers.html" />
+    <link rel="prev" title="Datastructures - celery.datastructures" href="celery.datastructures.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="celery.managers.html" title="Django Model Managers - celery.managers"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.datastructures.html" title="Datastructures - celery.datastructures"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Celery v0.1.12 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-celery.log">
+<h1>Logging - celery.log<a class="headerlink" href="#module-celery.log" title="Permalink to this headline">¶</a></h1>
+<p>celery.log</p>
+<dl class="function">
+<dt id="celery.log.emergency_error">
+<tt class="descclassname">celery.log.</tt><tt class="descname">emergency_error</tt><big>(</big><em>logfile</em>, <em>message</em><big>)</big><a class="headerlink" href="#celery.log.emergency_error" title="Permalink to this definition">¶</a></dt>
+<dd>Emergency error logging, for when there&#8217;s no standard file
+descriptors open because the process has been daemonized or for
+some other reason.</dd></dl>
+
+<dl class="function">
+<dt id="celery.log.setup_logger">
+<tt class="descclassname">celery.log.</tt><tt class="descname">setup_logger</tt><big>(</big><em>loglevel=20</em>, <em>logfile=None</em>, <em>format='</em><span class="optional">[</span>, <em>%(asctime)s: %(levelname)s/%(processName)s</em><span class="optional">]</span>, <em>%(message)s'</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.log.setup_logger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setup the <tt class="docutils literal"><span class="pre">multiprocessing</span></tt> logger. If <tt class="docutils literal"><span class="pre">logfile</span></tt> is not specified,
+<tt class="docutils literal"><span class="pre">stderr</span></tt> is used.</p>
+<p>Returns logger object.</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="celery.datastructures.html"
+                                  title="previous chapter">Datastructures - celery.datastructures</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="celery.managers.html"
+                                  title="next chapter">Django Model Managers - celery.managers</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../sources/reference/celery.log.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.managers.html" title="Django Model Managers - celery.managers"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.datastructures.html" title="Datastructures - celery.datastructures"
+             >previous</a> |</li>
+        <li><a href="../index.html">Celery v0.1.12 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.1.
+    </div>
+  </body>
+</html>

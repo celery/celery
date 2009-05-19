@@ -1,0 +1,157 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Django Model Managers - celery.managers &mdash; Celery v0.1.12 documentation</title>
+    <link rel="stylesheet" href="../static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1.12',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v0.1.12 documentation" href="../index.html" />
+    <link rel="next" title="Django Models - celery.models" href="celery.models.html" />
+    <link rel="prev" title="Logging - celery.log" href="celery.log.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="celery.models.html" title="Django Models - celery.models"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.log.html" title="Logging - celery.log"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Celery v0.1.12 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-celery.managers">
+<h1>Django Model Managers - celery.managers<a class="headerlink" href="#module-celery.managers" title="Permalink to this headline">¶</a></h1>
+<p>celery.managers</p>
+<dl class="class">
+<dt id="celery.managers.PeriodicTaskManager">
+<em class="property">
+class </em><tt class="descclassname">celery.managers.</tt><tt class="descname">PeriodicTaskManager</tt><a class="headerlink" href="#celery.managers.PeriodicTaskManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Manager for <tt class="docutils literal"><span class="pre">PeriodicTask</span></tt> models.</p>
+<dl class="method">
+<dt id="celery.managers.PeriodicTaskManager.get_waiting_tasks">
+<tt class="descname">get_waiting_tasks</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.managers.PeriodicTaskManager.get_waiting_tasks" title="Permalink to this definition">¶</a></dt>
+<dd>Get all waiting periodic tasks.</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.managers.TaskManager">
+<em class="property">
+class </em><tt class="descclassname">celery.managers.</tt><tt class="descname">TaskManager</tt><a class="headerlink" href="#celery.managers.TaskManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Manager for <tt class="docutils literal"><span class="pre">Task</span></tt> models.</p>
+<dl class="method">
+<dt id="celery.managers.TaskManager.delete_expired">
+<tt class="descname">delete_expired</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.managers.TaskManager.delete_expired" title="Permalink to this definition">¶</a></dt>
+<dd>Delete all expired task results.</dd></dl>
+
+<dl class="method">
+<dt id="celery.managers.TaskManager.get_all_expired">
+<tt class="descname">get_all_expired</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.managers.TaskManager.get_all_expired" title="Permalink to this definition">¶</a></dt>
+<dd>Get all expired task results.</dd></dl>
+
+<dl class="method">
+<dt id="celery.managers.TaskManager.get_task">
+<tt class="descname">get_task</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.managers.TaskManager.get_task" title="Permalink to this definition">¶</a></dt>
+<dd>Get task meta for task by <tt class="docutils literal"><span class="pre">task_id</span></tt>.</dd></dl>
+
+<dl class="method">
+<dt id="celery.managers.TaskManager.is_done">
+<tt class="descname">is_done</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.managers.TaskManager.is_done" title="Permalink to this definition">¶</a></dt>
+<dd>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task was executed successfully.</dd></dl>
+
+<dl class="method">
+<dt id="celery.managers.TaskManager.store_result">
+<tt class="descname">store_result</tt><big>(</big><em>task_id</em>, <em>result</em>, <em>status</em><big>)</big><a class="headerlink" href="#celery.managers.TaskManager.store_result" title="Permalink to this definition">¶</a></dt>
+<dd>Store the result and status of a task.</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="celery.log.html"
+                                  title="previous chapter">Logging - celery.log</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="celery.models.html"
+                                  title="next chapter">Django Models - celery.models</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../sources/reference/celery.managers.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.models.html" title="Django Models - celery.models"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.log.html" title="Logging - celery.log"
+             >previous</a> |</li>
+        <li><a href="../index.html">Celery v0.1.12 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.1.
+    </div>
+  </body>
+</html>

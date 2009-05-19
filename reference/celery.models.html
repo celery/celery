@@ -1,0 +1,242 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Django Models - celery.models &mdash; Celery v0.1.12 documentation</title>
+    <link rel="stylesheet" href="../static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1.12',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v0.1.12 documentation" href="../index.html" />
+    <link rel="next" title="Messaging - celery.messaging" href="celery.messaging.html" />
+    <link rel="prev" title="Django Model Managers - celery.managers" href="celery.managers.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="celery.messaging.html" title="Messaging - celery.messaging"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.managers.html" title="Django Model Managers - celery.managers"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Celery v0.1.12 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="django-models-celery-models">
+<h1>Django Models - celery.models<a class="headerlink" href="#django-models-celery-models" title="Permalink to this headline">¶</a></h1>
+<dl class="data">
+<dt id="TASK_STATUS_PENDING">
+<tt class="descname">TASK_STATUS_PENDING</tt><a class="headerlink" href="#TASK_STATUS_PENDING" title="Permalink to this definition">¶</a></dt>
+<dt>
+<tt class="descname">The string status of a pending task.</tt></dt>
+<dd></dd></dl>
+
+<dl class="data">
+<dt id="TASK_STATUS_RETRY">
+<tt class="descname">TASK_STATUS_RETRY</tt><a class="headerlink" href="#TASK_STATUS_RETRY" title="Permalink to this definition">¶</a></dt>
+<dt>
+<tt class="descname">The string status of a task which is to be retried.</tt></dt>
+<dd></dd></dl>
+
+<dl class="data">
+<dt id="TASK_STATUS_FAILURE">
+<tt class="descname">TASK_STATUS_FAILURE</tt><a class="headerlink" href="#TASK_STATUS_FAILURE" title="Permalink to this definition">¶</a></dt>
+<dt>
+<tt class="descname">The string status of a failed task.</tt></dt>
+<dd></dd></dl>
+
+<dl class="data">
+<dt id="TASK_STATUS_DONE">
+<tt class="descname">TASK_STATUS_DONE</tt><a class="headerlink" href="#TASK_STATUS_DONE" title="Permalink to this definition">¶</a></dt>
+<dt>
+<tt class="descname">The string status of a task that was successfully executed.</tt></dt>
+<dd></dd></dl>
+
+<dl class="data">
+<dt id="TASK_STATUSES">
+<tt class="descname">TASK_STATUSES</tt><a class="headerlink" href="#TASK_STATUSES" title="Permalink to this definition">¶</a></dt>
+<dt>
+<tt class="descname">List of possible task statuses.</tt></dt>
+<dd></dd></dl>
+
+<dl class="data">
+<dt id="TASK_STATUSES_CHOICES">
+<tt class="descname">TASK_STATUSES_CHOICES</tt><a class="headerlink" href="#TASK_STATUSES_CHOICES" title="Permalink to this definition">¶</a></dt>
+<dt>
+<tt class="descname">Django choice tuple of possible task statuses, for usage in model/form</tt></dt>
+<dt>
+<tt class="descname">fields ``choices`` argument.</tt></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="TaskMeta">
+<em class="property">
+class </em><tt class="descname">TaskMeta</tt><a class="headerlink" href="#TaskMeta" title="Permalink to this definition">¶</a></dt>
+<dt>
+<tt class="descname">Model for storing the result and status of a task.</tt></dt>
+<dd><p><em>Note</em> Only used if you&#8217;re running the <tt class="docutils literal"><span class="pre">database</span></tt> backend.</p>
+<dl class="attribute">
+<dt id="TaskMeta.task_id">
+<tt class="descname">task_id</tt><a class="headerlink" href="#TaskMeta.task_id" title="Permalink to this definition">¶</a></dt>
+<dt>
+<tt class="descname">The unique task id.</tt></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TaskMeta.status">
+<tt class="descname">status</tt><a class="headerlink" href="#TaskMeta.status" title="Permalink to this definition">¶</a></dt>
+<dt>
+<tt class="descname">The current status for this task.</tt></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TaskMeta.result">
+<tt class="descname">result</tt><a class="headerlink" href="#TaskMeta.result" title="Permalink to this definition">¶</a></dt>
+<dt>
+<tt class="descname">The result after successful/failed execution. If the task failed,</tt></dt>
+<dt>
+<tt class="descname">this contains the execption it raised.</tt></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TaskMeta.date_done">
+<tt class="descname">date_done</tt><a class="headerlink" href="#TaskMeta.date_done" title="Permalink to this definition">¶</a></dt>
+<dt>
+<tt class="descname">The date this task changed status.</tt></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="PeriodicTaskMeta">
+<em class="property">
+class </em><tt class="descname">PeriodicTaskMeta</tt><a class="headerlink" href="#PeriodicTaskMeta" title="Permalink to this definition">¶</a></dt>
+<dt>
+<tt class="descname">Metadata model for periodic tasks.</tt></dt>
+<dd><dl class="attribute">
+<dt id="PeriodicTaskMeta.name">
+<tt class="descname">name</tt><a class="headerlink" href="#PeriodicTaskMeta.name" title="Permalink to this definition">¶</a></dt>
+<dt>
+<tt class="descname">The name of this task, as registered in the task registry.</tt></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="PeriodicTaskMeta.last_run_at">
+<tt class="descname">last_run_at</tt><a class="headerlink" href="#PeriodicTaskMeta.last_run_at" title="Permalink to this definition">¶</a></dt>
+<dt>
+<tt class="descname">The date this periodic task was last run. Used to find out</tt></dt>
+<dt>
+<tt class="descname">when it should be run next.</tt></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="PeriodicTaskMeta.total_run_count">
+<tt class="descname">total_run_count</tt><a class="headerlink" href="#PeriodicTaskMeta.total_run_count" title="Permalink to this definition">¶</a></dt>
+<dt>
+<tt class="descname">The number of times this periodic task has been run.</tt></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="PeriodicTaskMeta.task">
+<tt class="descname">task</tt><a class="headerlink" href="#PeriodicTaskMeta.task" title="Permalink to this definition">¶</a></dt>
+<dt>
+<tt class="descname">The class/function for this task.</tt></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PeriodicTaskMeta.delay">
+<tt class="descname">delay</tt><big>(</big><big>)</big><a class="headerlink" href="#PeriodicTaskMeta.delay" title="Permalink to this definition">¶</a></dt>
+<dt>
+<tt class="descname">Delay the execution of a periodic task, and increment its total</tt></dt>
+<dt>
+<tt class="descname">run count.</tt></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="celery.managers.html"
+                                  title="previous chapter">Django Model Managers - celery.managers</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="celery.messaging.html"
+                                  title="next chapter">Messaging - celery.messaging</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../sources/reference/celery.models.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.messaging.html" title="Messaging - celery.messaging"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.managers.html" title="Django Model Managers - celery.managers"
+             >previous</a> |</li>
+        <li><a href="../index.html">Celery v0.1.12 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.1.
+    </div>
+  </body>
+</html>

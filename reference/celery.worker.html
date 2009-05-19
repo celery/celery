@@ -1,0 +1,189 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Multiprocessing Worker - celery.worker &mdash; Celery v0.1.12 documentation</title>
+    <link rel="stylesheet" href="../static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1.12',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v0.1.12 documentation" href="../index.html" />
+    <link rel="next" title="Backends - celery.backends" href="celery.backends.html" />
+    <link rel="prev" title="Task Discovery - celery.discovery" href="celery.discovery.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="celery.backends.html" title="Backends - celery.backends"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.discovery.html" title="Task Discovery - celery.discovery"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Celery v0.1.12 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-celery.worker">
+<h1>Multiprocessing Worker - celery.worker<a class="headerlink" href="#module-celery.worker" title="Permalink to this headline">¶</a></h1>
+<p>celery.worker</p>
+<dl class="exception">
+<dt id="celery.worker.EmptyQueue">
+<em class="property">
+exception </em><tt class="descclassname">celery.worker.</tt><tt class="descname">EmptyQueue</tt><a class="headerlink" href="#celery.worker.EmptyQueue" title="Permalink to this definition">¶</a></dt>
+<dd>The message queue is currently empty.</dd></dl>
+
+<dl class="class">
+<dt id="celery.worker.TaskDaemon">
+<em class="property">
+class </em><tt class="descclassname">celery.worker.</tt><tt class="descname">TaskDaemon</tt><big>(</big><em>concurrency=None</em>, <em>logfile=None</em>, <em>loglevel=None</em>, <em>queue_wakeup_after=None</em><big>)</big><a class="headerlink" href="#celery.worker.TaskDaemon" title="Permalink to this definition">¶</a></dt>
+<dd><p>Executes tasks waiting in the task queue.</p>
+<p><tt class="docutils literal"><span class="pre">concurrency</span></tt> is the number of simultaneous processes.</p>
+<dl class="method">
+<dt id="celery.worker.TaskDaemon.run">
+<tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.TaskDaemon.run" title="Permalink to this definition">¶</a></dt>
+<dd>The worker server&#8217;s main loop.</dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.TaskDaemon.run_periodic_tasks">
+<tt class="descname">run_periodic_tasks</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.TaskDaemon.run_periodic_tasks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Schedule all waiting periodic tasks for execution.</p>
+<p>Returns list of <tt class="xref docutils literal"><span class="pre">celery.models.PeriodicTaskMeta</span></tt> objects.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.TaskDaemon.schedule_retry_tasks">
+<tt class="descname">schedule_retry_tasks</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.TaskDaemon.schedule_retry_tasks" title="Permalink to this definition">¶</a></dt>
+<dd>Reschedule all requeued tasks waiting for retry.</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.worker.TaskWrapper">
+<em class="property">
+class </em><tt class="descclassname">celery.worker.</tt><tt class="descname">TaskWrapper</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>task_func</em>, <em>args</em>, <em>kwargs</em><big>)</big><a class="headerlink" href="#celery.worker.TaskWrapper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class defining a task to be run.</p>
+<dl class="method">
+<dt id="celery.worker.TaskWrapper.execute">
+<tt class="descname">execute</tt><big>(</big><em>loglevel</em>, <em>logfile</em><big>)</big><a class="headerlink" href="#celery.worker.TaskWrapper.execute" title="Permalink to this definition">¶</a></dt>
+<dd>Execute the task in a <tt class="docutils literal"><span class="pre">jail()</span></tt> and store its result and status
+in the task meta backend.</dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.TaskWrapper.execute_using_pool">
+<tt class="descname">execute_using_pool</tt><big>(</big><em>pool</em>, <em>loglevel</em>, <em>logfile</em><big>)</big><a class="headerlink" href="#celery.worker.TaskWrapper.execute_using_pool" title="Permalink to this definition">¶</a></dt>
+<dd>Like <tt class="docutils literal"><span class="pre">execute</span></tt>, but using the <tt class="docutils literal"><span class="pre">multiprocessing</span></tt> pool.</dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.TaskWrapper.extend_kwargs_with_logging">
+<tt class="descname">extend_kwargs_with_logging</tt><big>(</big><em>loglevel</em>, <em>logfile</em><big>)</big><a class="headerlink" href="#celery.worker.TaskWrapper.extend_kwargs_with_logging" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extend the tasks keyword arguments with standard task arguments.</p>
+<p>These are <tt class="docutils literal"><span class="pre">logfile</span></tt>, <tt class="docutils literal"><span class="pre">loglevel</span></tt>, <tt class="docutils literal"><span class="pre">task_id</span></tt> and <tt class="docutils literal"><span class="pre">task_name</span></tt>.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="celery.worker.TaskWrapper.from_message">
+<em class="property">
+classmethod </em><tt class="descname">from_message</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#celery.worker.TaskWrapper.from_message" title="Permalink to this definition">¶</a></dt>
+<dd>Create a TaskWrapper from a message returned by
+<a title="celery.messaging.TaskConsumer" class="reference external" href="celery.messaging.html#celery.messaging.TaskConsumer"><tt class="xref docutils literal"><span class="pre">celery.messaging.TaskConsumer</span></tt></a>.</dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="celery.worker.UnknownTask">
+<em class="property">
+exception </em><tt class="descclassname">celery.worker.</tt><tt class="descname">UnknownTask</tt><a class="headerlink" href="#celery.worker.UnknownTask" title="Permalink to this definition">¶</a></dt>
+<dd>Got an unknown task in the queue. The message is requeued and
+ignored.</dd></dl>
+
+<dl class="function">
+<dt id="celery.worker.jail">
+<tt class="descclassname">celery.worker.</tt><tt class="descname">jail</tt><big>(</big><em>task_id</em>, <em>callable_</em>, <em>args</em>, <em>kwargs</em><big>)</big><a class="headerlink" href="#celery.worker.jail" title="Permalink to this definition">¶</a></dt>
+<dd>Wraps the task in a jail which saves the status and result
+of the task execution to the task meta backend.</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="celery.discovery.html"
+                                  title="previous chapter">Task Discovery - celery.discovery</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="celery.backends.html"
+                                  title="next chapter">Backends - celery.backends</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../sources/reference/celery.worker.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.backends.html" title="Backends - celery.backends"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.discovery.html" title="Task Discovery - celery.discovery"
+             >previous</a> |</li>
+        <li><a href="../index.html">Celery v0.1.12 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.1.
+    </div>
+  </body>
+</html>

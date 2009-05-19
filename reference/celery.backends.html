@@ -1,0 +1,138 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Backends - celery.backends &mdash; Celery v0.1.12 documentation</title>
+    <link rel="stylesheet" href="../static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1.12',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v0.1.12 documentation" href="../index.html" />
+    <link rel="next" title="Backend: Base - celery.backends.base" href="celery.backends.base.html" />
+    <link rel="prev" title="Multiprocessing Worker - celery.worker" href="celery.worker.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="celery.backends.base.html" title="Backend: Base - celery.backends.base"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.worker.html" title="Multiprocessing Worker - celery.worker"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Celery v0.1.12 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-celery.backends">
+<h1>Backends - celery.backends<a class="headerlink" href="#module-celery.backends" title="Permalink to this headline">¶</a></h1>
+<p>celery.backends</p>
+<dl class="function">
+<dt id="celery.backends.get_backend_cls">
+<tt class="descclassname">celery.backends.</tt><tt class="descname">get_backend_cls</tt><big>(</big><em>backend</em><big>)</big><a class="headerlink" href="#celery.backends.get_backend_cls" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get backend class by name.</p>
+<p>If the name does not include <tt class="docutils literal"><span class="pre">.</span></tt> (is not fully qualified),
+<tt class="docutils literal"><span class="pre">celery.backends.</span></tt> will be prepended to the name. e.g.
+<tt class="docutils literal"><span class="pre">database</span></tt> becomes <tt class="docutils literal"><span class="pre">celery.backends.database</span></tt>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.backends.get_default_backend_cls">
+<tt class="descclassname">celery.backends.</tt><tt class="descname">get_default_backend_cls</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.backends.get_default_backend_cls" title="Permalink to this definition">¶</a></dt>
+<dd>Get the backend class specified in <tt class="docutils literal"><span class="pre">settings.CELERY_BACKEND</span></tt>.</dd></dl>
+
+<dl class="class">
+<dt id="celery.backends.DefaultBackend">
+<em class="property">
+class </em><tt class="descclassname">celery.backends.</tt><tt class="descname">DefaultBackend</tt><a class="headerlink" href="#celery.backends.DefaultBackend" title="Permalink to this definition">¶</a></dt>
+<dd>The backend class specified in <tt class="docutils literal"><span class="pre">settings.CELERY_BACKEND</span></tt>.</dd></dl>
+
+<dl class="data">
+<dt id="celery.backends.default_backend">
+<tt class="descclassname">celery.backends.</tt><tt class="descname">default_backend</tt><a class="headerlink" href="#celery.backends.default_backend" title="Permalink to this definition">¶</a></dt>
+<dd>An instance of <a title="celery.backends.DefaultBackend" class="reference internal" href="#celery.backends.DefaultBackend"><tt class="xref docutils literal"><span class="pre">DefaultBackend</span></tt></a>.</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="celery.worker.html"
+                                  title="previous chapter">Multiprocessing Worker - celery.worker</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="celery.backends.base.html"
+                                  title="next chapter">Backend: Base - celery.backends.base</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../sources/reference/celery.backends.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.backends.base.html" title="Backend: Base - celery.backends.base"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.worker.html" title="Multiprocessing Worker - celery.worker"
+             >previous</a> |</li>
+        <li><a href="../index.html">Celery v0.1.12 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.1.
+    </div>
+  </body>
+</html>

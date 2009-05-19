@@ -1,0 +1,168 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Task Result - celery.result &mdash; Celery v0.1.12 documentation</title>
+    <link rel="stylesheet" href="../static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1.12',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v0.1.12 documentation" href="../index.html" />
+    <link rel="next" title="Task Registry - celery.registry" href="celery.registry.html" />
+    <link rel="prev" title="Tasks - celery.task" href="celery.task.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="celery.registry.html" title="Task Registry - celery.registry"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.task.html" title="Tasks - celery.task"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Celery v0.1.12 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-celery.result">
+<h1>Task Result - celery.result<a class="headerlink" href="#module-celery.result" title="Permalink to this headline">¶</a></h1>
+<p>celery.result</p>
+<dl class="class">
+<dt id="celery.result.AsyncResult">
+<em class="property">
+class </em><tt class="descclassname">celery.result.</tt><tt class="descname">AsyncResult</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.result.AsyncResult" title="Permalink to this definition">¶</a></dt>
+<dd>Pending task result using the default backend.</dd></dl>
+
+<dl class="class">
+<dt id="celery.result.BaseAsyncResult">
+<em class="property">
+class </em><tt class="descclassname">celery.result.</tt><tt class="descname">BaseAsyncResult</tt><big>(</big><em>task_id</em>, <em>backend</em><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class for pending result, takes <tt class="docutils literal"><span class="pre">backend</span></tt> argument.</p>
+<dl class="method">
+<dt id="celery.result.BaseAsyncResult.get">
+<tt class="descname">get</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult.get" title="Permalink to this definition">¶</a></dt>
+<dd>Alias to <tt class="docutils literal"><span class="pre">wait</span></tt>.</dd></dl>
+
+<dl class="method">
+<dt id="celery.result.BaseAsyncResult.is_done">
+<tt class="descname">is_done</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult.is_done" title="Permalink to this definition">¶</a></dt>
+<dd>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task executed successfully.</dd></dl>
+
+<dl class="method">
+<dt id="celery.result.BaseAsyncResult.ready">
+<tt class="descname">ready</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult.ready" title="Permalink to this definition">¶</a></dt>
+<dd>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task executed successfully, or raised
+an exception. If the task is still pending, or is waiting for retry
+then <tt class="xref docutils literal"><span class="pre">False</span></tt> is returned.</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.result.BaseAsyncResult.result">
+<tt class="descname">result</tt><a class="headerlink" href="#celery.result.BaseAsyncResult.result" title="Permalink to this definition">¶</a></dt>
+<dd>The tasks resulting value.</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.result.BaseAsyncResult.status">
+<tt class="descname">status</tt><a class="headerlink" href="#celery.result.BaseAsyncResult.status" title="Permalink to this definition">¶</a></dt>
+<dd>The current status of the task.</dd></dl>
+
+<dl class="method">
+<dt id="celery.result.BaseAsyncResult.successful">
+<tt class="descname">successful</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult.successful" title="Permalink to this definition">¶</a></dt>
+<dd>Alias to <tt class="docutils literal"><span class="pre">is_done</span></tt>.</dd></dl>
+
+<dl class="method">
+<dt id="celery.result.BaseAsyncResult.wait">
+<tt class="descname">wait</tt><big>(</big><em>timeout=None</em><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult.wait" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the result when it arrives.</p>
+<p>If timeout is not <tt class="xref docutils literal"><span class="pre">None</span></tt> and the result does not arrive within
+<tt class="docutils literal"><span class="pre">timeout</span></tt> seconds then <tt class="docutils literal"><span class="pre">celery.backends.base.TimeoutError</span></tt> is
+raised. If the remote call raised an exception then that exception
+will be reraised by get().</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="celery.task.html"
+                                  title="previous chapter">Tasks - celery.task</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="celery.registry.html"
+                                  title="next chapter">Task Registry - celery.registry</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../sources/reference/celery.result.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.registry.html" title="Task Registry - celery.registry"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.task.html" title="Tasks - celery.task"
+             >previous</a> |</li>
+        <li><a href="../index.html">Celery v0.1.12 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.1.
+    </div>
+  </body>
+</html>

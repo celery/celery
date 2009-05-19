@@ -1,0 +1,386 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Tasks - celery.task &mdash; Celery v0.1.12 documentation</title>
+    <link rel="stylesheet" href="../static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1.12',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v0.1.12 documentation" href="../index.html" />
+    <link rel="next" title="Task Result - celery.result" href="celery.result.html" />
+    <link rel="prev" title="Welcome to Celery’s documentation!" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="celery.result.html" title="Task Result - celery.result"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../index.html" title="Welcome to Celery’s documentation!"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Celery v0.1.12 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-celery.task">
+<h1>Tasks - celery.task<a class="headerlink" href="#module-celery.task" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="celery.task.AsynchronousMapTask">
+<em class="property">
+class </em><tt class="descclassname">celery.task.</tt><tt class="descname">AsynchronousMapTask</tt><a class="headerlink" href="#celery.task.AsynchronousMapTask" title="Permalink to this definition">¶</a></dt>
+<dd>Task used internally by <tt class="docutils literal"><span class="pre">dmap_async</span></tt>.</dd></dl>
+
+<dl class="class">
+<dt id="celery.task.DeleteExpiredTaskMetaTask">
+<em class="property">
+class </em><tt class="descclassname">celery.task.</tt><tt class="descname">DeleteExpiredTaskMetaTask</tt><a class="headerlink" href="#celery.task.DeleteExpiredTaskMetaTask" title="Permalink to this definition">¶</a></dt>
+<dd><p>A periodic task that deletes expired task metadata every day.</p>
+<p>This runs the current backend&#8217;s cleanup() method.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.task.ExecuteRemoteTask">
+<em class="property">
+class </em><tt class="descclassname">celery.task.</tt><tt class="descname">ExecuteRemoteTask</tt><a class="headerlink" href="#celery.task.ExecuteRemoteTask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute arbitrary function/object.</p>
+<p>The object must be pickleable, so you can&#8217;t use lambdas or functions
+defined in the REPL.</p>
+<dl class="method">
+<dt id="celery.task.ExecuteRemoteTask.run">
+<tt class="descname">run</tt><big>(</big><em>ser_callable</em>, <em>fargs</em>, <em>fkwargs</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.ExecuteRemoteTask.run" title="Permalink to this definition">¶</a></dt>
+<dd>Execute the pickled <tt class="docutils literal"><span class="pre">ser_callable</span></tt>, with <tt class="docutils literal"><span class="pre">fargs</span></tt> as positional
+arguments and <tt class="docutils literal"><span class="pre">fkwargs</span></tt> as keyword arguments.</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.task.PeriodicTask">
+<em class="property">
+class </em><tt class="descclassname">celery.task.</tt><tt class="descname">PeriodicTask</tt><a class="headerlink" href="#celery.task.PeriodicTask" title="Permalink to this definition">¶</a></dt>
+<dd><p>A periodic task is a task that behaves like a cron job.</p>
+<p>The <tt class="docutils literal"><span class="pre">run_every</span></tt> attribute defines how often the task is run (its
+interval), it can be either a <tt class="docutils literal"><span class="pre">datetime.timedelta</span></tt> object or a integer
+specifying the time in seconds.</p>
+<p>You have to register the periodic task in the task registry.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">tasks</span><span class="p">,</span> <span class="n">PeriodicTask</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">timedelta</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">MyPeriodicTask</span><span class="p">(</span><span class="n">PeriodicTask</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">name</span> <span class="o">=</span> <span class="s">&quot;my_periodic_task&quot;</span>
+<span class="gp">... </span>    <span class="n">run_every</span> <span class="o">=</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="mf">30</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<span class="gp">... </span>        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Running MyPeriodicTask&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tasks</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">MyPeriodicTask</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.task.Task">
+<em class="property">
+class </em><tt class="descclassname">celery.task.</tt><tt class="descname">Task</tt><a class="headerlink" href="#celery.task.Task" title="Permalink to this definition">¶</a></dt>
+<dd><p>A task that can be delayed for execution by the <tt class="docutils literal"><span class="pre">celery</span></tt> daemon.</p>
+<p>All subclasses of <tt class="docutils literal"><span class="pre">Task</span></tt> has to define the <tt class="docutils literal"><span class="pre">name</span></tt> attribute, which is
+the name of the task that can be passed to <tt class="docutils literal"><span class="pre">celery.task.delay_task</span></tt>,
+it also has to define the <tt class="docutils literal"><span class="pre">run</span></tt> method, which is the actual method the
+<tt class="docutils literal"><span class="pre">celery</span></tt> daemon executes.</p>
+<p>This is a simple task just logging a message,</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">tasks</span><span class="p">,</span> <span class="n">Task</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">MyTask</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">name</span> <span class="o">=</span> <span class="s">&quot;mytask&quot;</span>
+<span class="gp">...</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">some_arg</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<span class="gp">... </span>        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Running MyTask with arg some_arg=</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+<span class="gp">... </span>                    <span class="n">some_arg</span><span class="p">))</span>
+<span class="gp">... </span>        <span class="k">return</span> <span class="mf">42</span>
+<span class="gp">... </span><span class="n">tasks</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">MyTask</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You can delay the task using the classmethod <tt class="docutils literal"><span class="pre">delay</span></tt>...</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">MyTask</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">some_arg</span><span class="o">=</span><span class="s">&quot;foo&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">status</span> <span class="c"># after some time</span>
+<span class="go">&#39;DONE&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">result</span>
+<span class="go">42</span>
+</pre></div>
+</div>
+<p>...or using the <tt class="docutils literal"><span class="pre">celery.task.delay_task</span></tt> function, by passing the
+name of the task.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">delay_task</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">delay_task</span><span class="p">(</span><span class="n">MyTask</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">some_arg</span><span class="o">=</span><span class="s">&quot;foo&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="classmethod">
+<dt id="celery.task.Task.delay">
+<em class="property">
+classmethod </em><tt class="descname">delay</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.Task.delay" title="Permalink to this definition">¶</a></dt>
+<dd>Delay this task for execution by the <tt class="docutils literal"><span class="pre">celery</span></tt> daemon(s).</dd></dl>
+
+<dl class="method">
+<dt id="celery.task.Task.get_consumer">
+<tt class="descname">get_consumer</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.Task.get_consumer" title="Permalink to this definition">¶</a></dt>
+<dd>Get a celery task message consumer.</dd></dl>
+
+<dl class="method">
+<dt id="celery.task.Task.get_logger">
+<tt class="descname">get_logger</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.Task.get_logger" title="Permalink to this definition">¶</a></dt>
+<dd>Get a process-aware logger object.</dd></dl>
+
+<dl class="method">
+<dt id="celery.task.Task.get_publisher">
+<tt class="descname">get_publisher</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.Task.get_publisher" title="Permalink to this definition">¶</a></dt>
+<dd>Get a celery task message publisher.</dd></dl>
+
+<dl class="method">
+<dt id="celery.task.Task.run">
+<tt class="descname">run</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.Task.run" title="Permalink to this definition">¶</a></dt>
+<dd>The actual task. All subclasses of <a title="celery.task.Task" class="reference internal" href="#celery.task.Task"><tt class="xref docutils literal"><span class="pre">Task</span></tt></a> must define
+the run method, if not a <tt class="docutils literal"><span class="pre">NotImplementedError</span></tt> exception is raised.</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.task.TaskSet">
+<em class="property">
+class </em><tt class="descclassname">celery.task.</tt><tt class="descname">TaskSet</tt><big>(</big><em>task</em>, <em>args</em><big>)</big><a class="headerlink" href="#celery.task.TaskSet" title="Permalink to this definition">¶</a></dt>
+<dd><p>A task containing several subtasks, making it possible
+to track how many, or when all of the tasks are completed.</p>
+<blockquote>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">djangofeeds.tasks</span> <span class="kn">import</span> <span class="n">RefreshFeedTask</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">taskset</span> <span class="o">=</span> <span class="n">TaskSet</span><span class="p">(</span><span class="n">RefreshFeedTask</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">[</span>
+<span class="gp">... </span>                <span class="p">{</span><span class="s">&quot;feed_url&quot;</span><span class="p">:</span> <span class="s">&quot;http://cnn.com/rss&quot;</span><span class="p">},</span>
+<span class="gp">... </span>                <span class="p">{</span><span class="s">&quot;feed_url&quot;</span><span class="p">:</span> <span class="s">&quot;http://bbc.com/rss&quot;</span><span class="p">},</span>
+<span class="gp">... </span>                <span class="p">{</span><span class="s">&quot;feed_url&quot;</span><span class="p">:</span> <span class="s">&quot;http://xkcd.com/rss&quot;</span><span class="p">}])</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">taskset_id</span><span class="p">,</span> <span class="n">subtask_ids</span> <span class="o">=</span> <span class="n">taskset</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+</blockquote>
+<dl class="method">
+<dt id="celery.task.TaskSet.iterate">
+<tt class="descname">iterate</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.TaskSet.iterate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterate over the results returned after calling <tt class="docutils literal"><span class="pre">run()</span></tt>.</p>
+<p>If any of the tasks raises an exception, the exception will
+be reraised by <tt class="docutils literal"><span class="pre">iterate</span></tt>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.task.TaskSet.join">
+<tt class="descname">join</tt><big>(</big><em>timeout=None</em><big>)</big><a class="headerlink" href="#celery.task.TaskSet.join" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gather the results for all of the tasks in the taskset,
+and return a list with them ordered by the order of which they
+were called.</p>
+<p>If any of the tasks raises an exception, the exception
+will be reraised by <tt class="docutils literal"><span class="pre">join</span></tt>.</p>
+<p>If <tt class="docutils literal"><span class="pre">timeout</span></tt> is not <tt class="xref docutils literal"><span class="pre">None</span></tt> and the operation takes
+longer than <tt class="docutils literal"><span class="pre">timeout</span></tt> seconds, it will raise
+the <a title="celery.timer.TimeoutError" class="reference external" href="celery.timer.html#celery.timer.TimeoutError"><tt class="xref docutils literal"><span class="pre">celery.timer.TimeoutError</span></tt></a> exception.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="celery.task.TaskSet.map">
+<em class="property">
+classmethod </em><tt class="descname">map</tt><big>(</big><em>func</em>, <em>args</em>, <em>timeout=None</em><big>)</big><a class="headerlink" href="#celery.task.TaskSet.map" title="Permalink to this definition">¶</a></dt>
+<dd>Distribute processing of the arguments and collect the results.</dd></dl>
+
+<dl class="classmethod">
+<dt id="celery.task.TaskSet.map_async">
+<em class="property">
+classmethod </em><tt class="descname">map_async</tt><big>(</big><em>func</em>, <em>args</em>, <em>timeout=None</em><big>)</big><a class="headerlink" href="#celery.task.TaskSet.map_async" title="Permalink to this definition">¶</a></dt>
+<dd><p>Distribute processing of the arguments and collect the results
+asynchronously.</p>
+<p>Returns <a title="celery.result.AsyncResult" class="reference external" href="celery.result.html#celery.result.AsyncResult"><tt class="xref docutils literal"><span class="pre">celery.result.AsyncResult</span></tt></a> instance.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="celery.task.TaskSet.remote_execute">
+<em class="property">
+classmethod </em><tt class="descname">remote_execute</tt><big>(</big><em>func</em>, <em>args</em><big>)</big><a class="headerlink" href="#celery.task.TaskSet.remote_execute" title="Permalink to this definition">¶</a></dt>
+<dd>Apply <tt class="docutils literal"><span class="pre">args</span></tt> to function by distributing the args to the
+celery server(s).</dd></dl>
+
+<dl class="method">
+<dt id="celery.task.TaskSet.run">
+<tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.TaskSet.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run all tasks in the taskset.</p>
+<p>Returns a tuple with the taskset id, and a list of subtask id&#8217;s.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">ts</span> <span class="o">=</span> <span class="n">RefreshFeeds</span><span class="p">([</span>
+<span class="gp">... </span>        <span class="p">[</span><span class="s">&quot;http://foo.com/rss&quot;</span><span class="p">,</span> <span class="p">{}],</span>
+<span class="gp">... </span>        <span class="p">[</span><span class="s">&quot;http://bar.com/rss&quot;</span><span class="p">,</span> <span class="p">{}],</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">taskset_id</span><span class="p">,</span> <span class="n">subtask_ids</span> <span class="o">=</span> <span class="n">ts</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">taskset_id</span>
+<span class="go">&quot;d2c9b261-8eff-4bfb-8459-1e1b72063514&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">subtask_ids</span>
+<span class="go">[&quot;b4996460-d959-49c8-aeb9-39c530dcde25&quot;,</span>
+<span class="go">&quot;598d2d18-ab86-45ca-8b4f-0779f5d6a3cb&quot;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">10</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">is_done</span><span class="p">(</span><span class="n">taskset_id</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.task.delay_task">
+<tt class="descclassname">celery.task.</tt><tt class="descname">delay_task</tt><big>(</big><em>task_name</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.delay_task" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delay a task for execution by the <tt class="docutils literal"><span class="pre">celery</span></tt> daemon.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">delay_task</span><span class="p">(</span><span class="s">&quot;update_record&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;George Constanza&quot;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="mf">32</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.task.discard_all">
+<tt class="descclassname">celery.task.</tt><tt class="descname">discard_all</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.discard_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Discard all waiting tasks.</p>
+<p>This will ignore all tasks waiting for execution, and they will
+be deleted from the messaging server.</p>
+<p>Returns the number of tasks discarded.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.task.dmap">
+<tt class="descclassname">celery.task.</tt><tt class="descname">dmap</tt><big>(</big><em>func</em>, <em>args</em>, <em>timeout=None</em><big>)</big><a class="headerlink" href="#celery.task.dmap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Distribute processing of the arguments and collect the results.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="nb">map</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">operator</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dmap</span><span class="p">(</span><span class="n">operator</span><span class="o">.</span><span class="n">add</span><span class="p">,</span> <span class="p">[[</span><span class="mf">2</span><span class="p">,</span> <span class="mf">2</span><span class="p">],</span> <span class="p">[</span><span class="mf">4</span><span class="p">,</span> <span class="mf">4</span><span class="p">],</span> <span class="p">[</span><span class="mf">8</span><span class="p">,</span> <span class="mf">8</span><span class="p">]])</span>
+<span class="go">[4, 8, 16]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.task.dmap_async">
+<tt class="descclassname">celery.task.</tt><tt class="descname">dmap_async</tt><big>(</big><em>func</em>, <em>args</em>, <em>timeout=None</em><big>)</big><a class="headerlink" href="#celery.task.dmap_async" title="Permalink to this definition">¶</a></dt>
+<dd><p>Distribute processing of the arguments and collect the results
+asynchronously.</p>
+<p>Returns a <a title="celery.result.AsyncResult" class="reference external" href="celery.result.html#celery.result.AsyncResult"><tt class="xref docutils literal"><span class="pre">celery.result.AsyncResult</span></tt></a> object.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">dmap_async</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">operator</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">presult</span> <span class="o">=</span> <span class="n">dmap_async</span><span class="p">(</span><span class="n">operator</span><span class="o">.</span><span class="n">add</span><span class="p">,</span> <span class="p">[[</span><span class="mf">2</span><span class="p">,</span> <span class="mf">2</span><span class="p">],</span> <span class="p">[</span><span class="mf">4</span><span class="p">,</span> <span class="mf">4</span><span class="p">],</span> <span class="p">[</span><span class="mf">8</span><span class="p">,</span> <span class="mf">8</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">presult</span>
+<span class="go">&lt;AsyncResult: 373550e8-b9a0-4666-bc61-ace01fa4f91d&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">presult</span><span class="o">.</span><span class="n">status</span>
+<span class="go">&#39;DONE&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">presult</span><span class="o">.</span><span class="n">result</span>
+<span class="go">[4, 8, 16]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.task.execute_remote">
+<tt class="descclassname">celery.task.</tt><tt class="descname">execute_remote</tt><big>(</big><em>func</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.execute_remote" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute arbitrary function/object remotely.</p>
+<p>The object must be picklable, so you can&#8217;t use lambdas or functions
+defined in the REPL (the objects must have an associated module).</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.task.is_done">
+<tt class="descclassname">celery.task.</tt><tt class="descname">is_done</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.task.is_done" title="Permalink to this definition">¶</a></dt>
+<dd>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if task with <tt class="docutils literal"><span class="pre">task_id</span></tt> has been executed.</dd></dl>
+
+<dl class="function">
+<dt id="celery.task.mark_as_done">
+<tt class="descclassname">celery.task.</tt><tt class="descname">mark_as_done</tt><big>(</big><em>task_id</em>, <em>result</em><big>)</big><a class="headerlink" href="#celery.task.mark_as_done" title="Permalink to this definition">¶</a></dt>
+<dd>Mark task as done (executed).</dd></dl>
+
+<dl class="function">
+<dt id="celery.task.mark_as_failure">
+<tt class="descclassname">celery.task.</tt><tt class="descname">mark_as_failure</tt><big>(</big><em>task_id</em>, <em>exc</em><big>)</big><a class="headerlink" href="#celery.task.mark_as_failure" title="Permalink to this definition">¶</a></dt>
+<dd>Mark task as done (executed).</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="../index.html"
+                                  title="previous chapter">Welcome to Celery&#8217;s documentation!</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="celery.result.html"
+                                  title="next chapter">Task Result - celery.result</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../sources/reference/celery.task.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.result.html" title="Task Result - celery.result"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../index.html" title="Welcome to Celery’s documentation!"
+             >previous</a> |</li>
+        <li><a href="../index.html">Celery v0.1.12 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.1.
+    </div>
+  </body>
+</html>
