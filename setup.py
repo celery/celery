@@ -61,6 +61,7 @@ setup(
     install_requires=[
         'django-unittest-depth',
         'simplejson',
+        'yadayada',
         'carrot>=0.3.8',
         'django',
     ],
