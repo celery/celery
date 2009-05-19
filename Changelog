@@ -2,6 +2,12 @@
 Change history
 ==============
 
+0.1.14 [2009-05-19 01:08 P.M CET] askh@opera.com
+------------------------------------------------
+
+	* Fixed a syntax error in the ``TaskSet`` class.
+	(No such variable ``TimeOutError``).
+
 0.1.13 [2009-05-19 12:36 P.M CET] askh@opera.com
 ------------------------------------------------
 
