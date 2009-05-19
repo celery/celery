@@ -7,7 +7,21 @@ class TimeoutError(Exception):
 
 
 class EventTimer(object):
-    """Do something at an interval."""
+    """Do something at an interval.
+
+    .. attribute:: interval
+    
+        How often we call the event (in seconds).
+  
+    .. attribute:: event
+
+        The event callable to run every ``interval`` seconds.
+
+    .. attribute:: last_triggered
+
+        The last time, in unix timestamp format, the event was executed.
+    
+    """
 
     def __init__(self, event, interval=None):
         self.event = event
@@ -30,7 +44,18 @@ class EventTimer(object):
 
 
 class TimeoutTimer(object):
-    """A timer that raises ``TimeoutError`` when the time has run out."""
+    """A timer that raises :class:`TimeoutError` exception when the
+    time has run out.
+   
+    .. attribute:: timeout
+
+        The timeout in seconds.
+
+    .. attribute:: time_start
+
+        The time when the timeout timer instance was constructed.
+    
+    """
 
     def __init__(self, timeout):
         self.timeout = timeout

@@ -16,7 +16,16 @@ import pickle
 def delay_task(task_name, *args, **kwargs):
     """Delay a task for execution by the ``celery`` daemon.
 
-        >>> delay_task("update_record", name="George Constanza", age=32)
+        >>> r = delay_task("update_record", name="George Constanza", age=32)
+        >>> r.ready()
+        True
+        >>> r.result
+        "Record was updated"
+
+    Raises :class:`celery.registry.NotRegistered` exception if no such task 
+    has been registered in the task registry.
+
+    :rtype: :class:`celery.result.AsyncResult`. 
 
     """
     if task_name not in tasks:
@@ -38,6 +47,8 @@ def discard_all():
 
     Returns the number of tasks discarded.
 
+    :rtype: int
+
     """
     amqp_connection = DjangoAMQPConnection()
     consumer = TaskConsumer(connection=amqp_connection)
@@ -57,7 +68,11 @@ def mark_as_failure(task_id, exc):
 
 
 def is_done(task_id):
-    """Returns ``True`` if task with ``task_id`` has been executed."""
+    """Returns ``True`` if task with ``task_id`` has been executed.
+   
+    :rtype: bool
+
+    """
     return default_backend.is_done(task_id)
 
 
@@ -140,7 +155,11 @@ class Task(object):
 
     @classmethod
     def delay(cls, *args, **kwargs):
-        """Delay this task for execution by the ``celery`` daemon(s)."""
+        """Delay this task for execution by the ``celery`` daemon(s).
+        
+        :rtype: :class:`celery.result.AsyncResult`
+
+        """
         return delay_task(cls.name, *args, **kwargs)
 
 
@@ -380,6 +399,8 @@ def execute_remote(func, *args, **kwargs):
 
     The object must be picklable, so you can't use lambdas or functions
     defined in the REPL (the objects must have an associated module).
+
+    :rtype: :class:`celery.result.AsyncResult`
     
     """
     return ExecuteRemoteTask.delay(pickle.dumps(func), args, kwargs)

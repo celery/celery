@@ -20,7 +20,11 @@ class BaseAsyncResult(object):
         self.backend = backend
 
     def is_done(self):
-        """Returns ``True`` if the task executed successfully."""
+        """Returns ``True`` if the task executed successfully.
+        
+        :rtype: bool
+        
+        """
         return self.backend.is_done(self.task_id)
 
     def get(self):
@@ -39,7 +43,11 @@ class BaseAsyncResult(object):
     def ready(self):
         """Returns ``True`` if the task executed successfully, or raised
         an exception. If the task is still pending, or is waiting for retry
-        then ``False`` is returned."""
+        then ``False`` is returned.
+        
+        :rtype: bool 
+
+        """
         status = self.backend.get_status(self.task_id)
         return status != "PENDING" or status != "RETRY"
 
