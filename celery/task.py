@@ -230,7 +230,7 @@ class TaskSet(object):
         the :class:`celery.timer.TimeoutError` exception.
 
         """
-        timeout_timer = TimeOutTimer(timeout) # Timeout timer starts here.
+        timeout_timer = TimeoutTimer(timeout) # Timeout timer starts here.
         taskset_id, subtask_ids = self.run()
         pending_results = map(AsyncResult, subtask_ids)
         results = PositionQueue(length=len(subtask_ids))
