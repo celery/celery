@@ -55,13 +55,34 @@
 <dt id="celery.result.AsyncResult">
 <em class="property">
 class </em><tt class="descclassname">celery.result.</tt><tt class="descname">AsyncResult</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.result.AsyncResult" title="Permalink to this definition">¶</a></dt>
-<dd>Pending task result using the default backend.</dd></dl>
+<dd><p>Pending task result using the default backend.</p>
+<dl class="attribute">
+<dt id="celery.result.AsyncResult.task_id">
+<tt class="descname">task_id</tt><a class="headerlink" href="#celery.result.AsyncResult.task_id" title="Permalink to this definition">¶</a></dt>
+<dd>The unique identifier for this task.</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.result.AsyncResult.backend">
+<tt class="descname">backend</tt><a class="headerlink" href="#celery.result.AsyncResult.backend" title="Permalink to this definition">¶</a></dt>
+<dd>Instance of <tt class="docutils literal"><span class="pre">celery.backends.DefaultBackend</span></tt>.</dd></dl>
+
+</dd></dl>
 
 <dl class="class">
 <dt id="celery.result.BaseAsyncResult">
 <em class="property">
 class </em><tt class="descclassname">celery.result.</tt><tt class="descname">BaseAsyncResult</tt><big>(</big><em>task_id</em>, <em>backend</em><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult" title="Permalink to this definition">¶</a></dt>
 <dd><p>Base class for pending result, takes <tt class="docutils literal"><span class="pre">backend</span></tt> argument.</p>
+<dl class="attribute">
+<dt id="celery.result.BaseAsyncResult.task_id">
+<tt class="descname">task_id</tt><a class="headerlink" href="#celery.result.BaseAsyncResult.task_id" title="Permalink to this definition">¶</a></dt>
+<dd>The unique identifier for this task.</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.result.BaseAsyncResult.backend">
+<tt class="descname">backend</tt><a class="headerlink" href="#celery.result.BaseAsyncResult.backend" title="Permalink to this definition">¶</a></dt>
+<dd>The task result backend used.</dd></dl>
+
 <dl class="method">
 <dt id="celery.result.BaseAsyncResult.get">
 <tt class="descname">get</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult.get" title="Permalink to this definition">¶</a></dt>
