@@ -18,11 +18,21 @@ except ImportError:
     
 
 class Backend(BaseBackend):
-    """Tokyo Cabinet based task backend store."""
+    """Tokyo Cabinet based task backend store.
+
+    .. attribute:: tyrant_host
+
+        The hostname to the Tokyo Tyrant server.
+
+    .. attribute:: tyrant_port
+
+        The port to the Tokyo Tyrant server.
+
+    """
     tyrant_host = None
     tyrant_port = None
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, tyrant_host=None, tyrant_port=None):
         self.tyrant_host = kwargs.get("tyrant_host", 
                             getattr(settings, "TT_HOST", self.tyrant_host))
         self.tyrant_port = kwargs.get("tyrant_port",
@@ -35,6 +45,8 @@ class Backend(BaseBackend):
         self._cache = {}
     
     def get_server(self):
+        """Get :class:`pytyrant.PyTyrant`` instance with the current
+        server configuration."""
         return pytyrant.PyTyrant.open(self.tyrant_host, self.tyrant_port)
 
     def _cache_key(self, task_id):
