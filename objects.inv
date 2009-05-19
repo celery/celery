@@ -34,7 +34,6 @@ celery.result.BaseAsyncResult.backend attribute reference/celery.result.html
 celery.worker.TaskWrapper class reference/celery.worker.html
 celery.datastructures.PositionQueue.full method reference/celery.datastructures.html
 celery.discovery.find_related_module function reference/celery.discovery.html
-celery.backends.tyrant.TT_PORT data reference/celery.backends.tyrant.html
 celery.result.BaseAsyncResult.ready method reference/celery.result.html
 celery.worker.EmptyQueue exception reference/celery.worker.html
 celery.worker.TaskDaemon.fetch_next_task method reference/celery.worker.html
@@ -75,7 +74,6 @@ celery.worker.TaskWrapper.extend_kwargs_with_logging method reference/celery.wor
 PeriodicTaskMeta.last_run_at attribute reference/celery.models.html
 celery.task.Task.get_publisher method reference/celery.task.html
 celery.worker.TaskDaemon.run method reference/celery.worker.html
-celery.backends.tyrant.TT_HOST data reference/celery.backends.tyrant.html
 celery.backends.base.BaseBackend.cleanup method reference/celery.backends.base.html
 celery.task.discard_all function reference/celery.task.html
 celery.backends.database.Backend.get_status method reference/celery.backends.database.html
