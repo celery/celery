@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Configuration - celery.conf &mdash; Celery v0.1.14 documentation</title>
+    <title>Configuration - celery.conf &mdash; Celery v0.1.15 documentation</title>
     <link rel="stylesheet" href="../static/default.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.1.14',
+        VERSION:     '0.1.15',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,7 +19,7 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.1.14 documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.1.15 documentation" href="../index.html" />
     <link rel="next" title="Datastructures - celery.datastructures" href="celery.datastructures.html" />
     <link rel="prev" title="Backend: Tokyo Tyrant - celery.backends.tyrant" href="celery.backends.tyrant.html" /> 
   </head>
@@ -39,7 +39,7 @@
         <li class="right" >
           <a href="celery.backends.tyrant.html" title="Backend: Tokyo Tyrant - celery.backends.tyrant"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v0.1.14 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">Celery v0.1.15 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -54,91 +54,63 @@
 <dl class="data">
 <dt id="celery.conf.AMQP_EXCHANGE">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_EXCHANGE</tt><a class="headerlink" href="#celery.conf.AMQP_EXCHANGE" title="Permalink to this definition">¶</a></dt>
-<dt>
-<tt class="descname">The AMQP exchange.</tt></dt>
-<dd></dd></dl>
+<dd>The AMQP exchange.</dd></dl>
 
 <dl class="data">
 <dt id="celery.conf.AMQP_ROUTING_KEY">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_ROUTING_KEY</tt><a class="headerlink" href="#celery.conf.AMQP_ROUTING_KEY" title="Permalink to this definition">¶</a></dt>
-<dt>
-<tt class="descname">The AMQP routing key.</tt></dt>
-<dd></dd></dl>
+<dd>The AMQP routing key.</dd></dl>
 
 <dl class="data">
 <dt id="celery.conf.AMQP_CONSUMER_QUEUE">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONSUMER_QUEUE</tt><a class="headerlink" href="#celery.conf.AMQP_CONSUMER_QUEUE" title="Permalink to this definition">¶</a></dt>
-<dt>
-<tt class="descname">The name of the AMQP queue.</tt></dt>
-<dd></dd></dl>
+<dd>The name of the AMQP queue.</dd></dl>
 
 <dl class="data">
 <dt id="celery.conf.DAEMON_CONCURRENCY">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">DAEMON_CONCURRENCY</tt><a class="headerlink" href="#celery.conf.DAEMON_CONCURRENCY" title="Permalink to this definition">¶</a></dt>
-<dt>
-<tt class="descname">The number of worker processes, that should work simultaenously.</tt></dt>
-<dd></dd></dl>
+<dd>The number of worker processes, that should work simultaenously.</dd></dl>
 
 <dl class="data">
 <dt id="celery.conf.DAEMON_PID_FILE">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">DAEMON_PID_FILE</tt><a class="headerlink" href="#celery.conf.DAEMON_PID_FILE" title="Permalink to this definition">¶</a></dt>
-<dt>
-<tt class="descname">Full path to the daemon pid file.</tt></dt>
-<dd></dd></dl>
+<dd>Full path to the daemon pid file.</dd></dl>
 
 <dl class="data">
 <dt id="celery.conf.EMPTY_MSG_EMIT_EVERY">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">EMPTY_MSG_EMIT_EVERY</tt><a class="headerlink" href="#celery.conf.EMPTY_MSG_EMIT_EVERY" title="Permalink to this definition">¶</a></dt>
-<dt>
-<tt class="descname">How often the celery daemon should write a log message saying there are no</tt></dt>
-<dt>
-<tt class="descname">messages in the queue. If this is ``None`` or ``0``, it will never print</tt></dt>
-<dt>
-<tt class="descname">this message.</tt></dt>
-<dd></dd></dl>
+<dd>How often the celery daemon should write a log message saying there are no
+messages in the queue. If this is <tt class="xref docutils literal"><span class="pre">None</span></tt> or <tt class="docutils literal"><span class="pre">0</span></tt>, it will never print
+this message.</dd></dl>
 
 <dl class="data">
 <dt id="celery.conf.QUEUE_WAKEUP_AFTER">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">QUEUE_WAKEUP_AFTER</tt><a class="headerlink" href="#celery.conf.QUEUE_WAKEUP_AFTER" title="Permalink to this definition">¶</a></dt>
-<dt>
-<tt class="descname">The time (in seconds) the celery daemon should sleep when there are no messages</tt></dt>
-<dt>
-<tt class="descname">left on the queue. After the time is slept, the worker wakes up and</tt></dt>
-<dt>
-<tt class="descname">checks the queue again.</tt></dt>
-<dd></dd></dl>
+<dd>The time (in seconds) the celery daemon should sleep when there are no messages
+left on the queue. After the time is slept, the worker wakes up and
+checks the queue again.</dd></dl>
 
 <dl class="data">
 <dt id="celery.conf.DAEMON_LOG_LEVEL">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">DAEMON_LOG_LEVEL</tt><a class="headerlink" href="#celery.conf.DAEMON_LOG_LEVEL" title="Permalink to this definition">¶</a></dt>
-<dt>
-<tt class="descname">Celery daemon log level, could be any of ``DEBUG``, ``INFO``, ``WARNING``,</tt></dt>
-<dt>
-<tt class="descname">``ERROR``, ``CRITICAL``, or ``FATAL``.</tt></dt>
-<dd></dd></dl>
+<dd>Celery daemon log level, could be any of <tt class="docutils literal"><span class="pre">DEBUG</span></tt>, <tt class="docutils literal"><span class="pre">INFO</span></tt>, <tt class="docutils literal"><span class="pre">WARNING</span></tt>,
+<tt class="docutils literal"><span class="pre">ERROR</span></tt>, <tt class="docutils literal"><span class="pre">CRITICAL</span></tt>, or <tt class="docutils literal"><span class="pre">FATAL</span></tt>.</dd></dl>
 
 <dl class="data">
 <dt id="celery.conf.DAEMON_LOG_FILE">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">DAEMON_LOG_FILE</tt><a class="headerlink" href="#celery.conf.DAEMON_LOG_FILE" title="Permalink to this definition">¶</a></dt>
-<dt>
-<tt class="descname">The path to the deamon log file (if not set, ``stderr`` is used).</tt></dt>
-<dd></dd></dl>
+<dd>The path to the deamon log file (if not set, <tt class="docutils literal"><span class="pre">stderr</span></tt> is used).</dd></dl>
 
 <dl class="data">
 <dt id="celery.conf.LOG_FORMAT">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">LOG_FORMAT</tt><a class="headerlink" href="#celery.conf.LOG_FORMAT" title="Permalink to this definition">¶</a></dt>
-<dt>
-<tt class="descname">The format to use for log messages.</tt></dt>
-<dt>
-<tt class="descname">Default is ``[%(asctime)s: %(levelname)s/%(processName)s] %(message)s``</tt></dt>
-<dd></dd></dl>
+<dd>The format to use for log messages.
+Default is <tt class="docutils literal"><span class="pre">[%(asctime)s:</span> <span class="pre">%(levelname)s/%(processName)s]</span> <span class="pre">%(message)s</span></tt></dd></dl>
 
 <dl class="data">
 <dt id="celery.conf.LOG_LEVELS">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">LOG_LEVELS</tt><a class="headerlink" href="#celery.conf.LOG_LEVELS" title="Permalink to this definition">¶</a></dt>
-<dt>
-<tt class="descname">Mapping of log level names to ``logging`` module constants.</tt></dt>
-<dd></dd></dl>
+<dd>Mapping of log level names to <tt class="docutils literal"><span class="pre">logging</span></tt> module constants.</dd></dl>
 
 </div>
 
@@ -191,7 +163,7 @@
         <li class="right" >
           <a href="celery.backends.tyrant.html" title="Backend: Tokyo Tyrant - celery.backends.tyrant"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v0.1.14 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">Celery v0.1.15 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

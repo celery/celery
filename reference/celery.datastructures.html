@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Datastructures - celery.datastructures &mdash; Celery v0.1.14 documentation</title>
+    <title>Datastructures - celery.datastructures &mdash; Celery v0.1.15 documentation</title>
     <link rel="stylesheet" href="../static/default.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.1.14',
+        VERSION:     '0.1.15',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,7 +19,7 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.1.14 documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.1.15 documentation" href="../index.html" />
     <link rel="next" title="Logging - celery.log" href="celery.log.html" />
     <link rel="prev" title="Configuration - celery.conf" href="celery.conf.html" /> 
   </head>
@@ -39,7 +39,7 @@
         <li class="right" >
           <a href="celery.conf.html" title="Configuration - celery.conf"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v0.1.14 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">Celery v0.1.15 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -48,8 +48,39 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="datastructures-celery-datastructures">
-<h1>Datastructures - celery.datastructures<a class="headerlink" href="#datastructures-celery-datastructures" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="module-celery.datastructures">
+<h1>Datastructures - celery.datastructures<a class="headerlink" href="#module-celery.datastructures" title="Permalink to this headline">¶</a></h1>
+<p>celery.datastructures</p>
+<dl class="class">
+<dt id="celery.datastructures.PositionQueue">
+<em class="property">
+class </em><tt class="descclassname">celery.datastructures.</tt><tt class="descname">PositionQueue</tt><big>(</big><em>length</em><big>)</big><a class="headerlink" href="#celery.datastructures.PositionQueue" title="Permalink to this definition">¶</a></dt>
+<dd><p>A positional queue with filled/unfilled slots.</p>
+<dl class="class">
+<dt id="celery.datastructures.PositionQueue.UnfilledPosition">
+<em class="property">
+class </em><tt class="descname">UnfilledPosition</tt><big>(</big><em>position</em><big>)</big><a class="headerlink" href="#celery.datastructures.PositionQueue.UnfilledPosition" title="Permalink to this definition">¶</a></dt>
+<dd>Describes an unfilled slot.</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.datastructures.PositionQueue.filled">
+<tt class="descclassname">PositionQueue.</tt><tt class="descname">filled</tt><a class="headerlink" href="#celery.datastructures.PositionQueue.filled" title="Permalink to this definition">¶</a></dt>
+<dd>Returns the filled slots as a list.</dd></dl>
+
+<dl class="method">
+<dt id="celery.datastructures.PositionQueue.full">
+<tt class="descclassname">PositionQueue.</tt><tt class="descname">full</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.datastructures.PositionQueue.full" title="Permalink to this definition">¶</a></dt>
+<dd>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if all the positions has been filled.</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.datastructures.TaskProcessQueue">
+<em class="property">
+class </em><tt class="descclassname">celery.datastructures.</tt><tt class="descname">TaskProcessQueue</tt><big>(</big><em>limit</em>, <em>logger=None</em>, <em>done_msg=None</em><big>)</big><a class="headerlink" href="#celery.datastructures.TaskProcessQueue" title="Permalink to this definition">¶</a></dt>
+<dd>Queue of running child processes, which starts waiting for the
+processes to finish when the queue limit is reached.</dd></dl>
+
 </div>
 
 
@@ -101,7 +132,7 @@
         <li class="right" >
           <a href="celery.conf.html" title="Configuration - celery.conf"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v0.1.14 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">Celery v0.1.15 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
