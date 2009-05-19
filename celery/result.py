@@ -3,7 +3,17 @@ from celery.backends import default_backend
 
 
 class BaseAsyncResult(object):
-    """Base class for pending result, takes ``backend`` argument."""
+    """Base class for pending result, takes ``backend`` argument.
+    
+    .. attribute:: task_id
+
+        The unique identifier for this task.
+
+    .. attribute:: backend
+       
+        The task result backend used.
+    
+    """
 
     def __init__(self, task_id, backend):
         self.task_id = task_id
@@ -58,7 +68,16 @@ class BaseAsyncResult(object):
 
 
 class AsyncResult(BaseAsyncResult):
-    """Pending task result using the default backend.""" 
+    """Pending task result using the default backend.
 
+    .. attribute:: task_id
+    
+        The unique identifier for this task.
+
+    .. attribute:: backend
+    
+        Instance of ``celery.backends.DefaultBackend``.
+
+    """
     def __init__(self, task_id):
         super(AsyncResult, self).__init__(task_id, backend=default_backend)
