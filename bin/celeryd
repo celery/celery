@@ -1,0 +1,11 @@
+#!/usr/bin/env python
+from celery.bin.celeryd import main, parse_options
+
+if __name__ == "__main__":
+    options = parse_options(sys.argv[1:])
+    main(concurrency=options.concurrency,
+         daemon=options.daemon,
+         logfile=options.logfile,
+         loglevel=options.loglevel,
+         pidfile=options.pidfile,
+         queue_wakeup_after=options.queue_wakeup_after)
