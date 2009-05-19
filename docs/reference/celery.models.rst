@@ -72,6 +72,5 @@ Django Models - celery.models
         The class/function for this task.
 
     .. method:: delay()
-        
         Delay the execution of a periodic task, and increment its total
         run count.

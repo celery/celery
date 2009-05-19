@@ -18,6 +18,7 @@ class TaskManager(models.Manager):
 
     def get_all_expired(self):
         """Get all expired task results."""
+        # TODO Make the timedelta configurable
         return self.filter(date_done__lt=datetime.now() - timedelta(days=5))
 
     def delete_expired(self):
@@ -25,7 +26,18 @@ class TaskManager(models.Manager):
         self.get_all_expired().delete()
 
     def store_result(self, task_id, result, status):
-        """Store the result and status of a task."""
+        """Store the result and status of a task.
+
+        :param task_id: task id
+
+        :param result: The return value of the task, or an exception 
+            instance raised by the task.
+       
+        :param status: Task status. See
+            :meth:`celery.result.AsyncResult.get_status` for a list of
+            possible status values.
+
+        """
         task, created = self.get_or_create(task_id=task_id, defaults={
                                             "status": status,
                                             "result": result})
@@ -39,7 +51,10 @@ class PeriodicTaskManager(models.Manager):
     """Manager for :class:`celery.models.PeriodicTask` models."""
 
     def get_waiting_tasks(self):
-        """Get all waiting periodic tasks."""
+        """Get all waiting periodic tasks.
+        
+        :returns: list of :class:`celery.models.PeriodicTaskMeta` objects. 
+        """
         periodic_tasks = tasks.get_all_periodic()
         waiting = []
         for task_name, task in periodic_tasks.items():
