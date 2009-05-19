@@ -5,9 +5,6 @@ from celery.timer import TimeoutTimer
 class BaseBackend(object):
     """The base backend class. All backends should inherit from this."""
 
-    def __init__(self):
-        pass
-
     def store_result(self, task_id, result, status):
         """Store the result and status of a task."""
         raise NotImplementedError(
