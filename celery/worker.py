@@ -141,6 +141,7 @@ class TaskDaemon(object):
         The :class:`logging.Logger` instance used for logging.
 
     .. attribute:: pool
+        
         The :class:`multiprocessing.Pool` instance used.
 
     .. attribute:: task_consumer
