@@ -106,15 +106,15 @@ class TestTaskSet(unittest.TestCase):
 
     def test_counter_taskset(self):
         ts = task.TaskSet(IncrementCounterTask, [
-            {},
-            {"increment_by": 2},
-            {"increment_by": 3},
-            {"increment_by": 4},
-            {"increment_by": 5},
-            {"increment_by": 6},
-            {"increment_by": 7},
-            {"increment_by": 8},
-            {"increment_by": 9},
+            [[], {}],
+            [[], {"increment_by": 2}],
+            [[], {"increment_by": 3}],
+            [[], {"increment_by": 4}],
+            [[], {"increment_by": 5}],
+            [[], {"increment_by": 6}],
+            [[], {"increment_by": 7}],
+            [[], {"increment_by": 8}],
+            [[], {"increment_by": 9}],
         ])
         self.assertEquals(ts.task_name, IncrementCounterTask.name)
         self.assertEquals(ts.total, 9)
