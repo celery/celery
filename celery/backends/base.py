@@ -9,21 +9,32 @@ import sys
 
 def find_nearest_pickleable_exception(exc):
     """With an exception instance, iterate over its super classes (by mro)
-    and find the first super exception that is pickleable.
+    and find the first super exception that is pickleable. It does
+    not go below :exc:`Exception` (i.e. it skips :exc:`Exception`,
+    :class:`BaseExecption` and :class:`object`). If that happens
+    you should use :exc:`UnpickleableException` instead.
   
     :param exc: An exception instance.
+
+    :returns: the nearest exception if it's not :exc:`Exception` or below,
+        if it is it returns ``None``.
+
     :rtype: :exc:`Exception`
 
     """
     for supercls in exc.__class__.mro():
+        if supercls is Exception:
+            # only BaseException and object, from here on down,
+            # we don't care about these.
+            return None
         try:
-            superexc = supercls(exc.args)
+            superexc = supercls(*exc.args)
             pickle.dumps(superexc)
         except:
             pass
         else:
             return superexc
-    return exc
+    return None
 
 
 class UnpickleableExceptionWrapper(Exception):
@@ -33,7 +44,7 @@ class UnpickleableExceptionWrapper(Exception):
 
     :param exc_cls_name: see :attr:`exc_cls_name`.
     
-    :param exc_args: The arguments for the original exception.
+    :param exc_args: see :attr:`exc_args`
 
     .. attribute:: exc_module
 
@@ -42,6 +53,10 @@ class UnpickleableExceptionWrapper(Exception):
     .. attribute:: exc_cls_name
 
         The name of the original exception class.
+
+    .. attribute:: exc_args
+
+        The arguments for the original exception.
 
     Example
 
@@ -57,12 +72,15 @@ class UnpickleableExceptionWrapper(Exception):
 
     def __init__(self, exc_module, exc_cls_name, exc_args):
         self.exc_module = exc_module
-        self.exc_cls = exc_cls_name
+        self.exc_cls_name = exc_cls_name
+        self.exc_args = exc_args
         super(Exception, self).__init__(exc_module, exc_cls_name, exc_args)
 
 
 class BaseBackend(object):
     """The base backend class. All backends should inherit from this."""
+
+    UnpickleableExecptionWrapper = UnpickleableExceptionWrapper
 
     def store_result(self, task_id, result, status):
         """Store the result and status of a task."""
@@ -77,8 +95,16 @@ class BaseBackend(object):
         """Mark task as executed with failure. Stores the execption."""
         return self.store_result(task_id, exc, status="FAILURE")
 
+    def create_exception_cls(self, name, module, parent=None):
+        if not parent:
+            parent = Exception
+        return type(name, (parent, ), {"__module__": module})
+
     def prepare_exception(self, exc):
-        exc = find_nearest_pickleable_exception(exc)
+        nearest = find_nearest_pickleable_exception(exc)
+        if nearest:
+            return nearest
+
         try:
             pickle.dumps(exc)
         except pickle.PickleError:
@@ -89,6 +115,13 @@ class BaseBackend(object):
             return excwrapper
         else:
             return exc
+    
+    def exception_to_python(self, exc):
+        if isinstance(exc, UnpickleableExceptionWrapper):
+            exc_cls = self.create_exception_cls(exc.exc_cls_name,
+                                                exc.exc_module)
+            return exc_cls(*exc.exc_args)
+        return exc
 
     def mark_as_retry(self, task_id, exc):
         """Mark task for retry."""

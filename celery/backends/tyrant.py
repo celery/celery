@@ -72,7 +72,11 @@ class Backend(BaseBackend):
 
     def get_result(self, task_id):
         """Get the result of a task."""
-        return self._get_task_meta_for(self, task_id)["result"]
+        meta = self._get_task_meta_for(self, task_id)
+        if meta["status"] == "FAILURE":
+            return self.exception_to_python(meta["result"])
+        else:
+            return meta["result"]
 
     def is_done(self, task_id):
         """Returns ``True`` if the task executed successfully."""
