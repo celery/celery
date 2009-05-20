@@ -2,7 +2,13 @@
 Change history
 ==============
 
-0.2.0-pre1 [2009-05-20 04:13 P.M CET] askh@opera.com
+0.2.0-pre2 [2009-05-20 01:56 P.M CET] askh@opera.com
+----------------------------------------------------
+
+	* Now handles unpickleable exceptions (like the dynimically generated
+	  subclasses of ``django.core.exception.MultipleObjectsReturned``).
+
+0.2.0-pre1 [2009-05-20 12:33 P.M CET] askh@opera.com
 ----------------------------------------------------
 
 	* It's getting quite stable, with a lot of new features, so bump
@@ -12,7 +18,7 @@ Change history
 	  been removed. Use ``celery.backends.default_backend.mark_as_read()``, 
 	  and ``celery.backends.default_backend.mark_as_failure()`` instead.
 
-0.1.15 [2009-05-20 04:13 P.M CET] askh@opera.com
+0.1.15 [2009-05-19 04:13 P.M CET] askh@opera.com
 ------------------------------------------------
 
 	* The celery daemon was leaking AMQP connections, this should be fixed,
