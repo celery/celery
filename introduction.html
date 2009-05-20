@@ -1,0 +1,311 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>celery - Distributed Task Queue for Django. &mdash; Celery v0.1.15 documentation</title>
+    <link rel="stylesheet" href="static/default.css" type="text/css" />
+    <link rel="stylesheet" href="static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1.15',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="static/jquery.js"></script>
+    <script type="text/javascript" src="static/doctools.js"></script>
+    <link rel="top" title="Celery v0.1.15 documentation" href="index.html" />
+    <link rel="next" title="Tasks - celery.task" href="reference/celery.task.html" />
+    <link rel="prev" title="Welcome to Celery’s documentation!" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="reference/celery.task.html" title="Tasks - celery.task"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to Celery’s documentation!"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Celery v0.1.15 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="celery-distributed-task-queue-for-django">
+<h1>celery - Distributed Task Queue for Django.<a class="headerlink" href="#celery-distributed-task-queue-for-django" title="Permalink to this headline">¶</a></h1>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Authors:</th><td class="field-body">Ask Solem (<a class="reference external" href="mailto:askh&#37;&#52;&#48;opera&#46;com">askh<span>&#64;</span>opera<span>&#46;</span>com</a>)</td>
+</tr>
+<tr class="field"><th class="field-name">Version:</th><td class="field-body">0.1.15</td>
+</tr>
+</tbody>
+</table>
+<div class="section" id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p><tt class="docutils literal"><span class="pre">celery</span></tt> is a distributed task queue framework for Django.</p>
+<p>It is used for executing tasks <em>asynchronously</em>, routed to one or more
+worker servers, running concurrently using multiprocessing.</p>
+<p>It is designed to solve certain problems related to running websites
+demanding high-availability and performance.</p>
+<p>It is perfect for filling caches, posting updates to twitter, mass
+downloading data like syndication feeds or web scraping. Use-cases are
+plentiful. Implementing these features asynchronously using <tt class="docutils literal"><span class="pre">celery</span></tt> is
+easy and fun, and the performance improvements can make it more than
+worthwhile.</p>
+</div>
+<div class="section" id="features">
+<h2>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Uses AMQP messaging (RabbitMQ, ZeroMQ) to route tasks to the
+worker servers.</li>
+<li>You can run as many worker servers as you want, and still
+be <em>guaranteed that the task is only executed once.</em></li>
+<li>Tasks are executed <em>concurrently</em> using the Python 2.6
+<tt class="docutils literal"><span class="pre">multiprocessing</span></tt> module (also available as a backport
+to older python versions)</li>
+<li>Supports <em>periodic tasks</em>, which makes it a (better) replacement
+for cronjobs.</li>
+<li>When a task has been executed, the return value is stored using either
+a MySQL/Oracle/PostgreSQL/SQLite database, memcached,
+or Tokyo Tyrant backend.</li>
+<li>If the task raises an exception, the exception instance is stored,
+instead of the return value.</li>
+<li>All tasks has a Universaly Unique Identifier (UUID), which is the
+task id, used for querying task status and return values.</li>
+<li>Supports <em>tasksets</em>, which is a task consisting of several subtasks.
+You can find out how many, or if all of the subtasks has been executed.
+Excellent for progress-bar like functionality.</li>
+<li>Has a <tt class="docutils literal"><span class="pre">map</span></tt> like function that uses tasks, called <tt class="docutils literal"><span class="pre">dmap</span></tt>.</li>
+<li>However, you rarely want to wait for these results in a web-environment.
+You&#8217;d rather want to use Ajax to poll the task status, which is
+available from a URL like <tt class="docutils literal"><span class="pre">celery/&lt;task_id&gt;/status/</span></tt>. This view
+returns a JSON-serialized data structure containing the task status,
+and the return value if completed, or exception on failure.</li>
+</ul>
+</div>
+<div class="section" id="api-reference-documentation">
+<h2>API Reference Documentation<a class="headerlink" href="#api-reference-documentation" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference internal" href="#api-reference-documentation">API Reference Documentation</a> is hosted at Github.</p>
+<div class="section" id="installation">
+<h3>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h3>
+<p>You can install <tt class="docutils literal"><span class="pre">celery</span></tt> either via the Python Package Index (PyPI)
+or from source.</p>
+<p>To install using <tt class="docutils literal"><span class="pre">pip</span></tt>,:</p>
+<div class="highlight-python"><pre>$ pip install celery</pre>
+</div>
+<p>To install using <tt class="docutils literal"><span class="pre">easy_install</span></tt>,:</p>
+<div class="highlight-python"><pre>$ easy_install celery</pre>
+</div>
+<p>If you have downloaded a source tarball you can install it
+by doing the following,:</p>
+<div class="highlight-python"><pre>$ python setup.py build
+# python setup.py install # as root</pre>
+</div>
+</div>
+<div class="section" id="usage">
+<h3>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h3>
+<p>Have to write a cool tutorial, but here is some simple usage info.</p>
+<p><em>Note</em> You need to have a AMQP message broker running, like <a class="reference external" href="http://www.rabbitmq.com">RabbitMQ</a>,
+and you need to have the amqp server setup in your settings file, as described
+in the <a class="reference external" href="http://pypi.python.org/pypi/carrot/0.3.3">carrot distribution README</a>.</p>
+<p><em>Note</em> If you&#8217;re running <tt class="docutils literal"><span class="pre">SQLite</span></tt> as the database backend, <tt class="docutils literal"><span class="pre">celeryd</span></tt> will
+only be able to process one message at a time, this is because <tt class="docutils literal"><span class="pre">SQLite</span></tt>
+doesn&#8217;t allow concurrent writes.</p>
+</div>
+</div>
+<div class="section" id="defining-tasks">
+<h2>Defining tasks<a class="headerlink" href="#defining-tasks" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">tasks</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.log</span> <span class="kn">import</span> <span class="n">setup_logger</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">do_something</span><span class="p">(</span><span class="n">some_arg</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">logger</span> <span class="o">=</span> <span class="n">setup_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Did something: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">some_arg</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="mf">42</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">task</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">do_something</span><span class="p">,</span> <span class="s">&quot;do_something&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="tell-the-celery-daemon-to-run-a-task">
+<h2>Tell the celery daemon to run a task<a class="headerlink" href="#tell-the-celery-daemon-to-run-a-task" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">delay_task</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">delay_task</span><span class="p">(</span><span class="s">&quot;do_something&quot;</span><span class="p">,</span> <span class="n">some_arg</span><span class="o">=</span><span class="s">&quot;foo bar baz&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="execute-a-task-and-get-its-return-value">
+<h2>Execute a task, and get its return value.<a class="headerlink" href="#execute-a-task-and-get-its-return-value" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">delay_task</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">delay_task</span><span class="p">(</span><span class="s">&quot;do_something&quot;</span><span class="p">,</span> <span class="n">some_arg</span><span class="o">=</span><span class="s">&quot;foo bar baz&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">ready</span><span class="p">()</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>   <span class="c"># Waits until the task is done.</span>
+<span class="go">42</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">status</span><span class="p">()</span>
+<span class="go">&#39;DONE&#39;</span>
+</pre></div>
+</div>
+<p>If the task raises an exception, the tasks status will be <tt class="docutils literal"><span class="pre">FAILURE</span></tt>, and
+<tt class="docutils literal"><span class="pre">result.result</span></tt> will contain the exception instance raised.</p>
+</div>
+<div class="section" id="running-the-celery-daemon">
+<h2>Running the celery daemon<a class="headerlink" href="#running-the-celery-daemon" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><pre>$ cd mydjangoproject
+$ env DJANGO_SETTINGS_MODULE=settings celeryd
+[....]
+[2009-04-23 17:44:05,115: INFO/Process-1] Did something: foo bar baz
+[2009-04-23 17:44:05,118: INFO/MainProcess] Waiting for queue.</pre>
+</div>
+</div>
+<div class="section" id="autodiscovery-of-tasks">
+<h2>Autodiscovery of tasks<a class="headerlink" href="#autodiscovery-of-tasks" title="Permalink to this headline">¶</a></h2>
+<p><tt class="docutils literal"><span class="pre">celery</span></tt> has an autodiscovery feature like the Django Admin, that
+automatically loads any <tt class="docutils literal"><span class="pre">tasks.py</span></tt> module in the applications listed
+in <tt class="docutils literal"><span class="pre">settings.INSTALLED_APPS</span></tt>.</p>
+<p>A good place to add this command could be in your <tt class="docutils literal"><span class="pre">urls.py</span></tt>,</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">tasks</span>
+<span class="n">tasks</span><span class="o">.</span><span class="n">autodiscover</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Then you can add new tasks in your applications <tt class="docutils literal"><span class="pre">tasks.py</span></tt> module,</p>
+<div class="highlight-python"><pre>from celery.task import tasks
+from celery.log import setup_logger
+from clickcounter.models import ClickCount
+
+def increment_click(for_url, **kwargs):
+    logger = setup_logger(**kwargs)
+    clicks_for_url, cr = ClickCount.objects.get_or_create(url=for_url)
+    clicks_for_url.clicks = clicks_for_url.clicks + 1
+    clicks_for_url.save()
+    logger.info("Incremented click count for %s (not at %d)" % (
+                    for_url, clicks_for_url.clicks)
+tasks.register(increment_click, "increment_click")</pre>
+</div>
+</div>
+<div class="section" id="periodic-tasks">
+<h2>Periodic Tasks<a class="headerlink" href="#periodic-tasks" title="Permalink to this headline">¶</a></h2>
+<p>Periodic tasks are tasks that are run every <tt class="docutils literal"><span class="pre">n</span></tt> seconds. They don&#8217;t
+support extra arguments. Here&#8217;s an example of a periodic task:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">tasks</span><span class="p">,</span> <span class="n">PeriodicTask</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">timedelta</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">MyPeriodicTask</span><span class="p">(</span><span class="n">PeriodicTask</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">name</span> <span class="o">=</span> <span class="s">&quot;foo.my-periodic-task&quot;</span>
+<span class="gp">... </span>    <span class="n">run_every</span> <span class="o">=</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="mf">30</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<span class="gp">... </span>        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Running periodic task!&quot;</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tasks</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">MyPeriodicTask</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>For periodic tasks to work you need to add <tt class="docutils literal"><span class="pre">celery</span></tt> to <tt class="docutils literal"><span class="pre">INSTALLED_APPS</span></tt>,
+and issue a <tt class="docutils literal"><span class="pre">syncdb</span></tt>.</p>
+<div class="section" id="license">
+<h3>License<a class="headerlink" href="#license" title="Permalink to this headline">¶</a></h3>
+<p>This software is licensed under the <tt class="docutils literal"><span class="pre">New</span> <span class="pre">BSD</span> <span class="pre">License</span></tt>. See the <tt class="docutils literal"><span class="pre">LICENSE</span></tt>
+file in the top distribution directory for the full license text.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="">celery - Distributed Task Queue for Django.</a><ul>
+<li><a class="reference external" href="#introduction">Introduction</a></li>
+<li><a class="reference external" href="#features">Features</a></li>
+<li><a class="reference external" href="#api-reference-documentation">API Reference Documentation</a><ul>
+<li><a class="reference external" href="#installation">Installation</a></li>
+<li><a class="reference external" href="#usage">Usage</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#defining-tasks">Defining tasks</a></li>
+<li><a class="reference external" href="#tell-the-celery-daemon-to-run-a-task">Tell the celery daemon to run a task</a></li>
+<li><a class="reference external" href="#execute-a-task-and-get-its-return-value">Execute a task, and get its return value.</a></li>
+<li><a class="reference external" href="#running-the-celery-daemon">Running the celery daemon</a></li>
+<li><a class="reference external" href="#autodiscovery-of-tasks">Autodiscovery of tasks</a></li>
+<li><a class="reference external" href="#periodic-tasks">Periodic Tasks</a><ul>
+<li><a class="reference external" href="#license">License</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="index.html"
+                                  title="previous chapter">Welcome to Celery&#8217;s documentation!</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="reference/celery.task.html"
+                                  title="next chapter">Tasks - celery.task</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="sources/introduction.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="reference/celery.task.html" title="Tasks - celery.task"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to Celery’s documentation!"
+             >previous</a> |</li>
+        <li><a href="index.html">Celery v0.1.15 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.1.
+    </div>
+  </body>
+</html>
