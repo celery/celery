@@ -2,6 +2,13 @@
 Change history
 ==============
 
+0.2.0-pre3 [2009-05-20 05:14 P.M CET] askh@opera.com
+----------------------------------------------------
+
+	 * *Internal release*. Improved handling of unpickled exceptions,
+	 	get_result() now tries to recreate something looking like the
+	 	original exception.
+
 0.2.0-pre2 [2009-05-20 01:56 P.M CET] askh@opera.com
 ----------------------------------------------------
 
