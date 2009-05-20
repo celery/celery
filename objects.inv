@@ -1,6 +1,6 @@
 # Sphinx inventory version 1
 # Project: Celery
-# Version: 0.1
+# Version: 0.2
 celery.backends mod reference/celery.backends.html
 celery.task mod reference/celery.task.html
 celery.worker mod reference/celery.worker.html
@@ -24,7 +24,6 @@ celery.log.emergency_error function reference/celery.log.html
 celery.backends.base.BaseBackend.get_result method reference/celery.backends.base.html
 celery.task.dmap function reference/celery.task.html
 celery.messaging.NoProcessConsumer class reference/celery.messaging.html
-celery.task.mark_as_done function reference/celery.task.html
 celery.result.BaseAsyncResult.is_done method reference/celery.result.html
 celery.worker.TaskWrapper.execute method reference/celery.worker.html
 celery.backends.tyrant.Backend.tyrant_port attribute reference/celery.backends.tyrant.html
@@ -134,7 +133,6 @@ TaskMeta.date_done attribute reference/celery.models.html
 celery.worker.TaskDaemon.execute_next_task method reference/celery.worker.html
 celery.result.AsyncResult class reference/celery.result.html
 PeriodicTaskMeta.name attribute reference/celery.models.html
-celery.task.mark_as_failure function reference/celery.task.html
 celery.worker.TaskWrapper.execute_using_pool method reference/celery.worker.html
 celery.backends.base.BaseBackend.is_done method reference/celery.backends.base.html
 celery.worker.TaskDaemon.pool attribute reference/celery.worker.html
