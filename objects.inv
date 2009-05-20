@@ -43,6 +43,7 @@ celery.registry.TaskRegistry.AlreadyRegistered exception reference/celery.regist
 celery.managers.TaskManager.delete_expired method reference/celery.managers.html
 celery.registry.TaskRegistry.filter_types method reference/celery.registry.html
 celery.worker.jail function reference/celery.worker.html
+celery.backends.base.UnpickleableExceptionWrapper.exc_args attribute reference/celery.backends.base.html
 celery.worker.TaskDaemon.receive_message method reference/celery.worker.html
 celery.conf.AMQP_CONSUMER_QUEUE data reference/celery.conf.html
 celery.task.DeleteExpiredTaskMetaTask class reference/celery.task.html
@@ -132,6 +133,7 @@ celery.task.PeriodicTask class reference/celery.task.html
 celery.registry.TaskRegistry.unregister method reference/celery.registry.html
 celery.task.TaskSet.remote_execute classmethod reference/celery.task.html
 TaskMeta.date_done attribute reference/celery.models.html
+celery.backends.base.BaseBackend.UnpickleableExecptionWrapper attribute reference/celery.backends.base.html
 celery.worker.TaskDaemon.execute_next_task method reference/celery.worker.html
 celery.result.AsyncResult class reference/celery.result.html
 PeriodicTaskMeta.name attribute reference/celery.models.html
