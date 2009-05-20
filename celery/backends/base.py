@@ -11,7 +11,7 @@ def find_nearest_pickleable_exception(exc):
     """With an exception instance, iterate over its super classes (by mro)
     and find the first super exception that is pickleable. It does
     not go below :exc:`Exception` (i.e. it skips :exc:`Exception`,
-    :class:`BaseExecption` and :class:`object`). If that happens
+    :class:`BaseException` and :class:`object`). If that happens
     you should use :exc:`UnpickleableException` instead.
   
     :param exc: An exception instance.
