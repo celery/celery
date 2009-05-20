@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Backend: Base - celery.backends.base &mdash; Celery v0.2.0-pre1 documentation</title>
+    <title>Backend: Base - celery.backends.base &mdash; Celery v0.2.0-pre2 documentation</title>
     <link rel="stylesheet" href="../static/default.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.2.0-pre1',
+        VERSION:     '0.2.0-pre2',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,7 +19,7 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.2.0-pre1 documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.2.0-pre2 documentation" href="../index.html" />
     <link rel="next" title="Backend: Database - celery.backends.database" href="celery.backends.database.html" />
     <link rel="prev" title="Backends - celery.backends" href="celery.backends.html" /> 
   </head>
@@ -39,7 +39,7 @@
         <li class="right" >
           <a href="celery.backends.html" title="Backends - celery.backends"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v0.2.0-pre1 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">Celery v0.2.0-pre2 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -115,6 +115,63 @@ longer than <tt class="docutils literal"><span class="pre">timeout</span></tt> s
 
 </dd></dl>
 
+<dl class="exception">
+<dt id="celery.backends.base.UnpickleableExceptionWrapper">
+<em class="property">
+exception </em><tt class="descclassname">celery.backends.base.</tt><tt class="descname">UnpickleableExceptionWrapper</tt><big>(</big><em>exc_module</em>, <em>exc_cls_name</em>, <em>exc_args</em><big>)</big><a class="headerlink" href="#celery.backends.base.UnpickleableExceptionWrapper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wraps unpickleable exceptions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><em>exc_module</em> &#8211; see <a title="celery.backends.base.UnpickleableExceptionWrapper.exc_module" class="reference internal" href="#celery.backends.base.UnpickleableExceptionWrapper.exc_module"><tt class="xref docutils literal"><span class="pre">exc_module</span></tt></a>.</li>
+<li><em>exc_cls_name</em> &#8211; see <a title="celery.backends.base.UnpickleableExceptionWrapper.exc_cls_name" class="reference internal" href="#celery.backends.base.UnpickleableExceptionWrapper.exc_cls_name"><tt class="xref docutils literal"><span class="pre">exc_cls_name</span></tt></a>.</li>
+<li><em>exc_args</em> &#8211; The arguments for the original exception.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="celery.backends.base.UnpickleableExceptionWrapper.exc_module">
+<tt class="descname">exc_module</tt><a class="headerlink" href="#celery.backends.base.UnpickleableExceptionWrapper.exc_module" title="Permalink to this definition">¶</a></dt>
+<dd>The module of the original exception.</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.backends.base.UnpickleableExceptionWrapper.exc_cls_name">
+<tt class="descname">exc_cls_name</tt><a class="headerlink" href="#celery.backends.base.UnpickleableExceptionWrapper.exc_cls_name" title="Permalink to this definition">¶</a></dt>
+<dd>The name of the original exception class.</dd></dl>
+
+<p>Example</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">try</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">something_raising_unpickleable_exc</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">exc</span> <span class="o">=</span> <span class="n">UnpickleableException</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__module__</span><span class="p">,</span>
+<span class="gp">... </span>                                <span class="n">e</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+<span class="gp">... </span>                                <span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span> <span class="c"># Works fine.</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.backends.base.find_nearest_pickleable_exception">
+<tt class="descclassname">celery.backends.base.</tt><tt class="descname">find_nearest_pickleable_exception</tt><big>(</big><em>exc</em><big>)</big><a class="headerlink" href="#celery.backends.base.find_nearest_pickleable_exception" title="Permalink to this definition">¶</a></dt>
+<dd><p>With an exception instance, iterate over its super classes (by mro)
+and find the first super exception that is pickleable.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>exc</em> &#8211; An exception instance.</td>
+</tr>
+<tr class="field"><th class="field-name">Return type:</th><td class="field-body"><tt class="xref docutils literal"><span class="pre">Exception</span></tt></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </div>
 
 
@@ -166,7 +223,7 @@ longer than <tt class="docutils literal"><span class="pre">timeout</span></tt> s
         <li class="right" >
           <a href="celery.backends.html" title="Backends - celery.backends"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v0.2.0-pre1 documentation</a> &raquo;</li> 
+        <li><a href="../index.html">Celery v0.2.0-pre2 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
