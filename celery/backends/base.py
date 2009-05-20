@@ -80,7 +80,7 @@ class UnpickleableExceptionWrapper(Exception):
 class BaseBackend(object):
     """The base backend class. All backends should inherit from this."""
 
-    UnpickleableExecptionWrapper = UnpickleableExceptionWrapper
+    UnpickleableExceptionWrapper = UnpickleableExceptionWrapper
 
     def store_result(self, task_id, result, status):
         """Store the result and status of a task."""
