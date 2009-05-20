@@ -7,7 +7,7 @@ from celery.log import setup_logger
 from celery.registry import tasks
 from celery.datastructures import TaskProcessQueue
 from celery.models import PeriodicTaskMeta
-from celery.task import mark_as_done, mark_as_failure
+from celery.backends import default_backend
 from celery.timer import EventTimer
 import multiprocessing
 import simplejson
@@ -38,10 +38,10 @@ def jail(task_id, callable_, args, kwargs):
     """
     try:
         result = callable_(*args, **kwargs)
-        mark_as_done(task_id, result)
+        default_backend.mark_as_done(task_id, result)
         return result
     except Exception, exc:
-        mark_as_failure(task_id, exc)
+        default_backend.mark_as_failure(task_id, exc)
         return exc
 
 

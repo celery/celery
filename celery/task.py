@@ -70,26 +70,6 @@ def discard_all():
     return discarded_count
 
 
-def mark_as_done(task_id, result):
-    """Mark task as done (executed successfully).
-   
-    :param task_id: id of the task.
-    
-    :param result: the return value of the task.
-
-    """
-    default_backend.mark_as_done(task_id, result)
-
-
-def mark_as_failure(task_id, exc):
-    """Mark task as done (executed).
-    
-    :param task_id: id of the task.
-
-    :param exc: the exception instance raised by the task.
-
-    """
-    default_backend.mark_as_failure(task_id, exc)
 
 
 def is_done(task_id):
