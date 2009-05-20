@@ -12,7 +12,10 @@ class Backend(BaseBackend):
 
     def store_result(self, task_id, result, status):
         """Mark task as done (executed)."""
-        result = self.prepare_result(result)
+        if status == "DONE":
+            result = self.prepare_result(result)
+        elif status == "FAILURE":
+            result = self.prepare_exception(result)
         return TaskMeta.objects.store_result(task_id, result, status)
 
     def is_done(self, task_id):

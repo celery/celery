@@ -59,7 +59,10 @@ class Backend(BaseBackend):
 
     def store_result(self, task_id, result, status):
         """Store task result and status."""
-        result = self.prepare_result(result)
+        if status == "DONE":
+            result = self.prepare_result(result)
+        elif status == "FAILURE":
+            result = self.prepare_exception(result)
         meta = {"status": status, "result": pickle.dumps(result)}
         self.get_server()[self._cache_key(task_id)] = serialize(meta)
 

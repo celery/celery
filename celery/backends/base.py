@@ -1,5 +1,64 @@
 """celery.backends.base"""
 from celery.timer import TimeoutTimer
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+import sys
+
+
+def find_nearest_pickleable_exception(exc):
+    """With an exception instance, iterate over its super classes (by mro)
+    and find the first super exception that is pickleable.
+  
+    :param exc: An exception instance.
+    :rtype: :exc:`Exception`
+
+    """
+    for supercls in exc.__class__.mro():
+        try:
+            superexc = supercls(exc.args)
+            pickle.dumps(superexc)
+        except:
+            pass
+        else:
+            return superexc
+    return exc
+
+
+class UnpickleableExceptionWrapper(Exception):
+    """Wraps unpickleable exceptions.
+   
+    :param exc_module: see :attr:`exc_module`.
+
+    :param exc_cls_name: see :attr:`exc_cls_name`.
+    
+    :param exc_args: The arguments for the original exception.
+
+    .. attribute:: exc_module
+
+        The module of the original exception.
+
+    .. attribute:: exc_cls_name
+
+        The name of the original exception class.
+
+    Example
+
+        >>> try:
+        ...     something_raising_unpickleable_exc()
+        >>> except Exception, e:
+        ...     exc = UnpickleableException(e.__class__.__module__,
+        ...                                 e.__class__.__name__,
+        ...                                 e.args)
+        ...     pickle.dumps(exc) # Works fine.
+
+    """
+
+    def __init__(self, exc_module, exc_cls_name, exc_args):
+        self.exc_module = exc_module
+        self.exc_cls = exc_cls_name
+        super(Exception, self).__init__(exc_module, exc_cls_name, exc_args)
 
 
 class BaseBackend(object):
@@ -17,6 +76,19 @@ class BaseBackend(object):
     def mark_as_failure(self, task_id, exc):
         """Mark task as executed with failure. Stores the execption."""
         return self.store_result(task_id, exc, status="FAILURE")
+
+    def prepare_exception(self, exc):
+        exc = find_nearest_pickleable_exception(exc)
+        try:
+            pickle.dumps(exc)
+        except pickle.PickleError:
+            excwrapper = UnpickleableExceptionWrapper(
+                            exc.__class__.__module__,
+                            exc.__class__.__name__,
+                            exc.args)
+            return excwrapper
+        else:
+            return exc
 
     def mark_as_retry(self, task_id, exc):
         """Mark task for retry."""
