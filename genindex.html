@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Index &mdash; Celery v0.2.0-pre2 documentation</title>
+    <title>Index &mdash; Celery v0.2.0-pre3 documentation</title>
     <link rel="stylesheet" href="static/default.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.2.0-pre2',
+        VERSION:     '0.2.0-pre3',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,7 +19,7 @@
     </script>
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v0.2.0-pre2 documentation" href="index.html" /> 
+    <link rel="top" title="Celery v0.2.0-pre3 documentation" href="index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -31,7 +31,7 @@
         <li class="right" >
           <a href="modindex.html" title="Global Module Index"
              accesskey="M">modules</a> |</li>
-        <li><a href="index.html">Celery v0.2.0-pre2 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v0.2.0-pre3 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -111,6 +111,7 @@
   </dl></dd></dl></td><td width="33%" valign="top"><dl>
 <dt><a href="reference/celery.result.html#celery.result.BaseAsyncResult">BaseAsyncResult (class in celery.result)</a></dt>
 <dt><a href="reference/celery.backends.base.html#celery.backends.base.BaseBackend">BaseBackend (class in celery.backends.base)</a></dt>
+<dt><a href="reference/celery.backends.base.html#celery.backends.base.BaseBackend.UnpickleableExceptionWrapper">BaseBackend.UnpickleableExceptionWrapper</a></dt>
 </dl></td></tr></table>
 
 <h2 id="C">C</h2>
@@ -191,9 +192,18 @@
 <dt><a href="reference/celery.worker.html#celery.worker.EmptyQueue">EmptyQueue</a></dt>
 <dt><a href="reference/celery.timer.html#celery.timer.EventTimer.event">event (celery.timer.EventTimer attribute)</a></dt>
 <dt><a href="reference/celery.timer.html#celery.timer.EventTimer">EventTimer (class in celery.timer)</a></dt>
-<dt><a href="reference/celery.backends.base.html#celery.backends.base.UnpickleableExceptionWrapper.exc_args">exc_args (celery.backends.base.UnpickleableExceptionWrapper attribute)</a></dt>
-<dt><a href="reference/celery.backends.base.html#celery.backends.base.UnpickleableExceptionWrapper.exc_cls_name">exc_cls_name (celery.backends.base.UnpickleableExceptionWrapper attribute)</a></dt></dl></td><td width="33%" valign="top"><dl>
-<dt><a href="reference/celery.backends.base.html#celery.backends.base.UnpickleableExceptionWrapper.exc_module">exc_module (celery.backends.base.UnpickleableExceptionWrapper attribute)</a></dt>
+<dt><a href="reference/celery.backends.base.html#celery.backends.base.BaseBackend.UnpickleableExceptionWrapper.exc_args">exc_args (celery.backends.base.BaseBackend.UnpickleableExceptionWrapper attribute)</a></dt>
+  <dd><dl>
+    <dt><a href="reference/celery.backends.base.html#celery.backends.base.UnpickleableExceptionWrapper.exc_args">(celery.backends.base.UnpickleableExceptionWrapper attribute)</a></dt>
+  </dl></dd>
+<dt><a href="reference/celery.backends.base.html#celery.backends.base.BaseBackend.UnpickleableExceptionWrapper.exc_cls_name">exc_cls_name (celery.backends.base.BaseBackend.UnpickleableExceptionWrapper attribute)</a></dt>
+  <dd><dl>
+    <dt><a href="reference/celery.backends.base.html#celery.backends.base.UnpickleableExceptionWrapper.exc_cls_name">(celery.backends.base.UnpickleableExceptionWrapper attribute)</a></dt>
+  </dl></dd></dl></td><td width="33%" valign="top"><dl>
+<dt><a href="reference/celery.backends.base.html#celery.backends.base.BaseBackend.UnpickleableExceptionWrapper.exc_module">exc_module (celery.backends.base.BaseBackend.UnpickleableExceptionWrapper attribute)</a></dt>
+  <dd><dl>
+    <dt><a href="reference/celery.backends.base.html#celery.backends.base.UnpickleableExceptionWrapper.exc_module">(celery.backends.base.UnpickleableExceptionWrapper attribute)</a></dt>
+  </dl></dd>
 <dt><a href="reference/celery.worker.html#celery.worker.TaskWrapper.execute">execute() (celery.worker.TaskWrapper method)</a></dt>
 <dt><a href="reference/celery.worker.html#celery.worker.TaskDaemon.execute_next_task">execute_next_task() (celery.worker.TaskDaemon method)</a></dt>
 <dt><a href="reference/celery.task.html#celery.task.execute_remote">execute_remote() (in module celery.task)</a></dt>
@@ -434,8 +444,7 @@
 <dl>
 
 <dt><a href="reference/celery.worker.html#celery.worker.UnknownTask">UnknownTask</a></dt>
-<dt><a href="reference/celery.backends.base.html#celery.backends.base.UnpickleableExceptionWrapper">UnpickleableExceptionWrapper</a></dt>
-<dt><a href="reference/celery.backends.base.html#celery.backends.base.BaseBackend.UnpickleableExecptionWrapper">UnpickleableExecptionWrapper (celery.backends.base.BaseBackend attribute)</a></dt></dl></td><td width="33%" valign="top"><dl>
+<dt><a href="reference/celery.backends.base.html#celery.backends.base.UnpickleableExceptionWrapper">UnpickleableExceptionWrapper</a></dt></dl></td><td width="33%" valign="top"><dl>
 <dt><a href="reference/celery.registry.html#celery.registry.TaskRegistry.unregister">unregister() (celery.registry.TaskRegistry method)</a></dt>
 </dl></td></tr></table>
 
@@ -484,7 +493,7 @@
         <li class="right" >
           <a href="modindex.html" title="Global Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">Celery v0.2.0-pre2 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v0.2.0-pre3 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
