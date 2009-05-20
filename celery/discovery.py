@@ -22,5 +22,5 @@ def find_related_module(app, related_name):
         related_module = getattr(module, related_name)
     except AttributeError:
         return None
-   
+
     return related_module

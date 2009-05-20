@@ -41,7 +41,7 @@ class TestModels(unittest.TestCase):
         # Have to avoid save() because it applies the auto_now=True.
         TaskMeta.objects.filter(task_id=m1.task_id).update(
                 date_done=datetime.now() - timedelta(days=10))
-        
+
         expired = TaskMeta.objects.get_all_expired()
         self.assertTrue(m1 in expired)
         self.assertFalse(m2 in expired)
@@ -49,7 +49,7 @@ class TestModels(unittest.TestCase):
 
         TaskMeta.objects.delete_expired()
         self.assertFalse(m1 in TaskMeta.objects.all())
-       
+
     def test_periodic_taskmeta(self):
         tasks.register(TestPeriodicTask)
         p = self.createPeriodicTaskMeta(TestPeriodicTask.name)
@@ -63,4 +63,3 @@ class TestModels(unittest.TestCase):
         self.assertTrue(isinstance(p.task, TestPeriodicTask))
 
         p.delay()
-

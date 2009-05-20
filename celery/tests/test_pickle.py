@@ -1,11 +1,13 @@
 import unittest
 import pickle
 
+
 class RegularException(Exception):
     pass
 
 
 class ArgOverrideException(Exception):
+
     def __init__(self, message, status_code=10):
         self.status_code = status_code
         super(ArgOverrideException, self).__init__(message, status_code)
@@ -29,7 +31,6 @@ class TestPickle(unittest.TestCase):
         self.assertTrue(exception)
         self.assertTrue(isinstance(exception, RegularException))
         self.assertEquals(exception.args, ("RegularException raised", ))
-
 
     def test_pickle_arg_override_exception(self):
 

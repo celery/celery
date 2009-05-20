@@ -13,7 +13,7 @@ class BaseBackend(object):
     def mark_as_done(self, task_id, result):
         """Mark task as successfully executed."""
         return self.store_result(task_id, result, status="DONE")
-    
+
     def mark_as_failure(self, task_id, exc):
         """Mark task as executed with failure. Stores the execption."""
         return self.store_result(task_id, exc, status="FAILURE")
@@ -32,7 +32,7 @@ class BaseBackend(object):
         if result is None:
             return True
         return result
-        
+
     def get_result(self, task_id):
         """Get the result of a task."""
         raise NotImplementedError(

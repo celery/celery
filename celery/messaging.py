@@ -11,7 +11,7 @@ import uuid
 class NoProcessConsumer(Consumer):
     """A consumer that raises an error if used with wait callbacks (i.e.
     it doesn't support :meth:`carrot.messaging.Consumer.wait``)."""
-    
+
     def receive(self, message_data, message):
         raise NotImplementedError(
                 "This consumer doesn't support process_next() or wait()")
@@ -27,13 +27,12 @@ class TaskPublisher(Publisher):
         return self._delay_task(task_name=task_name, args=task_args,
                                 kwargs=task_kwargs)
 
-
     def delay_task_in_set(self, task_name, taskset_id, task_args,
             task_kwargs):
         """Delay a task which part of a task set."""
         return self._delay_task(task_name=task_name, part_of_set=taskset_id,
                                 args=task_args, kwargs=task_kwargs)
-    
+
     def requeue_task(self, task_name, task_id, task_args, task_kwargs,
             part_of_set=None):
         """Requeue a failed task."""

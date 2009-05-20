@@ -28,7 +28,7 @@ class UnknownTask(Exception):
 def jail(task_id, callable_, args, kwargs):
     """Wraps the task in a jail which saves the status and result
     of the task execution to the task meta backend.
-   
+
     If the call results in an exception, it saves the exception as the task
     result, and sets the task status to ``FAILURE``.
 
@@ -62,9 +62,9 @@ class TaskWrapper(object):
 
         If the message is not a proper task it raises
         :class:`UnknownTask` exception.
-        
+
         :rtype: :class:`TaskWrapper` instance.
-        
+
         """
         message_data = simplejson.loads(message.body)
         task_name = message_data["task"]
@@ -99,7 +99,7 @@ class TaskWrapper(object):
 
     def execute_using_pool(self, pool, loglevel, logfile):
         """Like ``execute``, but using the ``multiprocessing`` pool.
-       
+
         :rtype: :class:`multiprocessing.AsyncResult` instance.
         """
         task_func_kwargs = self.extend_kwargs_with_logging(loglevel, logfile)
@@ -141,7 +141,7 @@ class TaskDaemon(object):
         The :class:`logging.Logger` instance used for logging.
 
     .. attribute:: pool
-        
+
         The :class:`multiprocessing.Pool` instance used.
 
     .. attribute:: task_consumer
@@ -154,7 +154,7 @@ class TaskDaemon(object):
     logfile = DAEMON_LOG_FILE
     queue_wakeup_after = QUEUE_WAKEUP_AFTER
     empty_msg_emit_every = EMPTY_MSG_EMIT_EVERY
-    
+
     def __init__(self, concurrency=None, logfile=None, loglevel=None,
             queue_wakeup_after=None):
         self.loglevel = loglevel or self.loglevel
@@ -184,12 +184,12 @@ class TaskDaemon(object):
 
     def receive_message(self):
         """Receive the next message from the Task consumer queue.
-       
+
         Tries to reset the AMQP connection if not available.
         Returns ``None`` if no message is waiting on the queue.
 
         :rtype: :class:`carrot.messaging.Message` instance.
-        
+
         """
         self.connection_diagnostics()
         message = self.task_consumer.fetch()
@@ -209,7 +209,7 @@ class TaskDaemon(object):
 
     def fetch_next_task(self):
         """Fetch the next task from the AMQP broker.
-       
+
         Raises :class:`EmptyQueue` exception if there is no messages
         waiting on the queue.
 
@@ -228,8 +228,8 @@ class TaskDaemon(object):
     def execute_next_task(self):
         """Execute the next task on the queue using the multiprocessing
         pool.
-        
-        Catches all exceptions and logs them with level ``logging.CRITICAL``. 
+
+        Catches all exceptions and logs them with level ``logging.CRITICAL``.
 
         """
         task, message = self.fetch_next_task()
@@ -240,13 +240,13 @@ class TaskDaemon(object):
         except Exception, error:
             self.logger.critical("Worker got exception %s: %s\n%s" % (
                 error.__class__, error, traceback.format_exc()))
-            return 
+            return
 
         return result, task.task_name, task.task_id
 
     def run_periodic_tasks(self):
         """Schedule all waiting periodic tasks for execution.
-       
+
         :rtype: list of :class:`celery.models.PeriodicTaskMeta` objects.
         """
         waiting_tasks = PeriodicTaskMeta.objects.get_waiting_tasks()
@@ -288,5 +288,5 @@ class TaskDaemon(object):
                 self.logger.critical("Message queue raised %s: %s\n%s" % (
                              e.__class__, e, traceback.format_exc()))
                 continue
-           
+
             results.add(result, task_name, task_id)

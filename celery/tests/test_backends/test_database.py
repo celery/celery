@@ -18,7 +18,7 @@ class TestDatabaseBackend(unittest.TestCase):
         self.assertFalse(b.is_done(tid))
         self.assertEquals(b.get_status(tid), "PENDING")
         self.assertEquals(b.get_result(tid), '')
-        
+
         b.mark_as_done(tid, 42)
         self.assertTrue(b.is_done(tid))
         self.assertEquals(b.get_status(tid), "DONE")
@@ -43,4 +43,3 @@ class TestDatabaseBackend(unittest.TestCase):
         self.assertFalse(b.is_done(tid3))
         self.assertEquals(b.get_status(tid3), "FAILURE")
         self.assertTrue(isinstance(b.get_result(tid3), KeyError))
-        

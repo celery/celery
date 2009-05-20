@@ -17,13 +17,14 @@ DAEMON_MAXFD = 1024
 
 # The standard I/O file descriptors are redirected to /dev/null by default.
 if (hasattr(os, "devnull")):
-   REDIRECT_TO = os.devnull
+    REDIRECT_TO = os.devnull
 else:
-   REDIRECT_TO = "/dev/null"
+    REDIRECT_TO = "/dev/null"
 
 
 class PIDFile(object):
     """Manages a pid file."""
+
     def __init__(self, pidfile):
         self.pidfile = pidfile
 
@@ -36,7 +37,7 @@ class PIDFile(object):
 
     def check(self):
         """Check the status of the pidfile.
-        
+
         If the pidfile exists, and the process is not running, it will
         remove the stale pidfile and continue as normal. If the process
         *is* running, it will exit the program with an error message.
@@ -48,8 +49,8 @@ class PIDFile(object):
                 os.kill(pid, 0)
             except os.error, e:
                 if e.errno == errno.ESRCH:
-                   sys.stderr.write("Stale pidfile exists. removing it.\n")
-                   self.remove()
+                    sys.stderr.write("Stale pidfile exists. removing it.\n")
+                    self.remove()
             else:
                 raise SystemExit("celeryd is already running.")
 
@@ -59,10 +60,10 @@ class PIDFile(object):
 
     def write(self, pid=None):
         """Write a pidfile.
-        
+
         If ``pid`` is not specified the pid of the current process
         will be used.
-        
+
         """
         if not pid:
             pid = os.getpid()
@@ -83,7 +84,7 @@ def daemonize(pidfile):
     try:
         pid = os.fork()
     except OSError, e:
-        raise Exception, "%s [%d]" % (e.strerror, e.errno)
+        raise Exception("%s [%d]" % (e.strerror, e.errno))
 
     if pid == 0: # child
         os.setsid()
@@ -91,7 +92,7 @@ def daemonize(pidfile):
         try:
             pid = os.fork() # second child
         except OSError, e:
-            raise Exception, "%s [%d]" % (e.strerror, e.errno)
+            raise Exception("%s [%d]" % (e.strerror, e.errno))
 
         if pid == 0: # second child
             #os.chdir(DAEMON_WORKDIR)
@@ -105,7 +106,7 @@ def daemonize(pidfile):
     maxfd = resource.getrlimit(resource.RLIMIT_NOFILE)[1]
     if (maxfd == resource.RLIM_INFINITY):
         maxfd = DAEMON_MAXFD
-  
+
     # Iterate through and close all file descriptors.
     for fd in range(0, maxfd):
         try:
@@ -115,7 +116,7 @@ def daemonize(pidfile):
 
     os.open(REDIRECT_TO, os.O_RDWR)
     # Duplicate standard input to standard output and standard error.
-    os.dup2(0, 1) 
+    os.dup2(0, 1)
     os.dup2(0, 2)
 
     return 0

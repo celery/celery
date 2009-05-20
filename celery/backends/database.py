@@ -9,7 +9,7 @@ class Backend(BaseBackend):
     def __init__(self, *args, **kwargs):
         super(Backend, self).__init__(*args, **kwargs)
         self._cache = {}
-   
+
     def store_result(self, task_id, result, status):
         """Mark task as done (executed)."""
         result = self.prepare_result(result)

@@ -10,8 +10,8 @@ from celery import messaging
 from celery.backends import default_backend
 
 
-# Task run functions can't be closures/lambdas, as they're pickled.
 def return_True(self, **kwargs):
+    # Task run functions can't be closures/lambdas, as they're pickled.
     return True
 
 
@@ -49,6 +49,7 @@ class TestCeleryTasks(unittest.TestCase):
             self.assertEquals(task_kwargs.get(arg_name), arg_value)
 
     def test_incomplete_task_cls(self):
+
         class IncompleteTask(task.Task):
             name = "c.unittest.t.itask"
 
@@ -62,7 +63,7 @@ class TestCeleryTasks(unittest.TestCase):
                 "Task class is callable()")
         self.assertTrue(T1()(),
                 "Task class runs run() when called")
-        
+
         # task without name raises NotImplementedError
         T2 = self.createTaskCls("T2")
         self.assertRaises(NotImplementedError, T2)

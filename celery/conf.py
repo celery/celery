@@ -16,11 +16,11 @@ DEFAULT_DAEMON_CONCURRENCY = 10
 
 # If the queue is empty, this is the time *in seconds* the daemon sleeps
 # until it wakes up to check if there's any new messages on the queue.
-DEFAULT_QUEUE_WAKEUP_AFTER = 0.3 
+DEFAULT_QUEUE_WAKEUP_AFTER = 0.3
 
 # As long as the queue is empty, the daemon logs a "Queue is empty" message
 # every ``EMPTY_MSG_EMIT_EVERY`` *seconds*.
-DEFAULT_EMPTY_MSG_EMIT_EVERY = 5 
+DEFAULT_EMPTY_MSG_EMIT_EVERY = 5
 
 DEFAULT_DAEMON_PID_FILE = "celeryd.pid"
 

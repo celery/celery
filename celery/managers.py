@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 class TaskManager(models.Manager):
     """Manager for :class:`celery.models.Task` models."""
-    
+
     def get_task(self, task_id):
         """Get task meta for task by ``task_id``."""
         task, created = self.get_or_create(task_id=task_id)
@@ -30,9 +30,9 @@ class TaskManager(models.Manager):
 
         :param task_id: task id
 
-        :param result: The return value of the task, or an exception 
+        :param result: The return value of the task, or an exception
             instance raised by the task.
-       
+
         :param status: Task status. See
             :meth:`celery.result.AsyncResult.get_status` for a list of
             possible status values.
@@ -52,8 +52,8 @@ class PeriodicTaskManager(models.Manager):
 
     def get_waiting_tasks(self):
         """Get all waiting periodic tasks.
-        
-        :returns: list of :class:`celery.models.PeriodicTaskMeta` objects. 
+
+        :returns: list of :class:`celery.models.PeriodicTaskMeta` objects.
         """
         periodic_tasks = tasks.get_all_periodic()
         waiting = []

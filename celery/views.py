@@ -20,5 +20,3 @@ def task_status(request, task_id):
                         "result": async_result.get_result(),
     }}
     return HttpResponse(simplejson.dumps(response_data))
-
-

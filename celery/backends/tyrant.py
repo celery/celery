@@ -15,7 +15,6 @@ try:
 except ImportError:
     import pickle
 
-    
 
 class Backend(BaseBackend):
     """Tokyo Cabinet based task backend store.
@@ -39,7 +38,7 @@ class Backend(BaseBackend):
         :setting:`TT_HOST` or :setting:`TT_PORT` is not set.
 
         """
-        self.tyrant_host = kwargs.get("tyrant_host", 
+        self.tyrant_host = kwargs.get("tyrant_host",
                             getattr(settings, "TT_HOST", self.tyrant_host))
         self.tyrant_port = kwargs.get("tyrant_port",
                             getattr(settings, "TT_PORT", self.tyrant_port))
@@ -49,7 +48,7 @@ class Backend(BaseBackend):
                 "set the TT_HOST and TT_PORT settings in your settings.py")
         super(Backend, self).__init__(*args, **kwargs)
         self._cache = {}
-    
+
     def get_server(self):
         """Get :class:`pytyrant.PyTyrant`` instance with the current
         server configuration."""

@@ -48,9 +48,3 @@ class TestLog(unittest.TestCase):
         emergency_error(sio, "Testing emergency error facility")
         self.assertEquals(sio.getvalue().rpartition(":")[2].strip(),
                              "Testing emergency error facility")
-
-
-
-
-
-

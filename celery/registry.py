@@ -25,14 +25,14 @@ class TaskRegistry(UserDict):
 
     def register(self, task, task_name=None):
         """Register a task in the task registry.
-        
+
         Task can either be a regular function, or a class inheriting
         from :class:`celery.task.Task`.
 
         :keyword task_name: Required if the task is a regular function.
 
         :raises AlreadyRegistered: if the task is already registered.
-        
+
         """
         is_class = False
         if hasattr(task, "run"):
@@ -41,7 +41,7 @@ class TaskRegistry(UserDict):
         if task_name in self.data:
             raise self.AlreadyRegistered(
                     "Task with name %s is already registered." % task_name)
-       
+
         if is_class:
             self.data[task_name] = task() # instantiate Task class
         else:
@@ -50,7 +50,7 @@ class TaskRegistry(UserDict):
 
     def unregister(self, task_name):
         """Unregister task by name.
-       
+
         :param task_name: name of the task to unregister.
 
         :raises NotRegistered: if the task has not been registered.

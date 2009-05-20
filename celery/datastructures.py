@@ -11,13 +11,14 @@ class PositionQueue(UserList):
     """A positional queue of a specific length, with slots that are either
     filled or unfilled. When all of the positions are filled, the queue
     is considered :meth:`full`.
-   
+
     :param length: The number of items required for the queue to be filled.
 
     """
 
     class UnfilledPosition(object):
         """Describes an unfilled slot."""
+
         def __init__(self, position):
             self.position = position
 
@@ -39,7 +40,7 @@ class PositionQueue(UserList):
         return filter(lambda v: not isinstance(v, self.UnfilledPosition),
                       self.data)
 
-        
+
 class TaskProcessQueue(UserList):
     """Queue of running child processes, which starts waiting for the
     processes to finish when the queue limit is reached.
@@ -72,10 +73,10 @@ class TaskProcessQueue(UserList):
         self.logger = logger
         self.done_msg = done_msg
         self.data = []
-        
+
     def add(self, result, task_name, task_id):
         """Add a process to the queue.
-        
+
         If the queue is full, it will start to collect return values from
         the tasks executed. When all return values has been collected,
         it deletes the current queue and is ready to accept new processes.
@@ -86,7 +87,7 @@ class TaskProcessQueue(UserList):
         :param task_name: Name of the task executed.
 
         :param task_id: Id of the task executed.
-        
+
         """
         self.data.append([result, task_name, task_id])
 

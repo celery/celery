@@ -16,4 +16,3 @@ class TestDiscovery(unittest.TestCase):
     def test_discovery(self):
         if "someapp" in settings.INSTALLED_APPS:
             self.assertDiscovery()
-

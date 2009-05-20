@@ -4,7 +4,7 @@
 .. program:: celeryd
 
 .. cmdoption:: -c, --concurrency
-            
+
     Number of child processes processing the queue.
 
 .. cmdoption:: -f, --logfile

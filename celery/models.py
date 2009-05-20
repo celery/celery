@@ -10,6 +10,7 @@ class RetryQueue(object):
     queue = Queue()
 
     class Item(object):
+
         def __init__(self, task_name, task_id, args, kwargs):
             self.task_name = task_name
             self.task_id = task_id
@@ -44,7 +45,7 @@ TASK_STATUS_DONE = "DONE"
 TASK_STATUSES = (TASK_STATUS_PENDING, TASK_STATUS_RETRY,
                  TASK_STATUS_FAILURE, TASK_STATUS_DONE)
 TASK_STATUSES_CHOICES = zip(TASK_STATUSES, TASK_STATUSES)
-                
+
 
 class TaskMeta(models.Model):
     task_id = models.CharField(_(u"task id"), max_length=255, unique=True)

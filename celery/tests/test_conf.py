@@ -38,7 +38,7 @@ class TestConf(unittest.TestCase):
                              getattr(conf, result_var),
                              "Default setting %s is written to %s" % (
                                  default_var, result_var))
-            
+
     def test_configuration_cls(self):
         for setting_name, result_var, default_var in SETTING_VARS:
             self.assertDefaultSetting(setting_name, result_var, default_var)

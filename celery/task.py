@@ -24,13 +24,13 @@ def delay_task(task_name, *args, **kwargs):
     :param task_name: the name of a task registered in the task registry.
 
     :param \*args: positional arguments to pass on to the task.
-    
+
     :param \*\*kwargs: keyword arguments to pass on to the task.
-    
-    :raises celery.registry.NotRegistered: exception if no such task 
+
+    :raises celery.registry.NotRegistered: exception if no such task
         has been registered in the task registry.
 
-    :rtype: :class:`celery.result.AsyncResult`. 
+    :rtype: :class:`celery.result.AsyncResult`.
 
     Example
 
@@ -70,11 +70,9 @@ def discard_all():
     return discarded_count
 
 
-
-
 def is_done(task_id):
     """Returns ``True`` if task with ``task_id`` has been executed.
-   
+
     :rtype: bool
 
     """
@@ -88,26 +86,26 @@ class Task(object):
     which is the actual method the ``celery`` daemon executes.
 
     The :meth:`run` method supports both positional, and keyword arguments.
-    
+
     .. attribute:: name
 
         *REQUIRED* All subclasses of :class:`Task` has to define the
         :attr:`name` attribute. This is the name of the task, registered
         in the task registry, and passed to :func:`delay_task`.
-        
+
     .. attribute:: type
 
         The type of task, currently this can be ``regular``, or ``periodic``,
         however if you want a periodic task, you should subclass
         :class:`PeriodicTask` instead.
-        
+
     :raises NotImplementedError: if the :attr:`name` attribute is not set.
 
     The resulting class is callable, which if called will apply the
     :meth:`run` method.
 
     Examples
-    
+
     This is a simple task just logging a message,
 
         >>> from celery.task import tasks, Task
@@ -152,9 +150,9 @@ class Task(object):
 
     def run(self, *args, **kwargs):
         """*REQUIRED* The actual task.
-        
+
         All subclasses of :class:`Task` must define the run method.
-        
+
         :raises NotImplementedError: by default, so you have to override
             this method in your subclass.
 
@@ -165,13 +163,13 @@ class Task(object):
         """Get process-aware logger object.
 
         See :func:`celery.log.setup_logger`.
-        
+
         """
         return setup_logger(**kwargs)
 
     def get_publisher(self):
         """Get a celery task message publisher.
-        
+
         :rtype: :class:`celery.messaging.TaskPublisher`.
 
         Please be sure to close the AMQP connection when you're done
@@ -186,7 +184,7 @@ class Task(object):
 
     def get_consumer(self):
         """Get a celery task message consumer.
-       
+
         :rtype: :class:`celery.messaging.TaskConsumer`.
 
         Please be sure to close the AMQP connection when you're done
@@ -214,7 +212,7 @@ class Task(object):
         :param \*args: positional arguments passed on to the task.
 
         :param \*\*kwargs: keyword arguments passed on to the task.
-        
+
         :rtype: :class:`celery.result.AsyncResult`
 
         See :func:`delay_task`.
@@ -245,7 +243,7 @@ class TaskSet(object):
     .. attribute:: total
 
         Total number of tasks in this task set.
-   
+
     Example
 
         >>> from djangofeeds.tasks import RefreshFeedTask
@@ -256,7 +254,7 @@ class TaskSet(object):
 
         >>> taskset_id, subtask_ids = taskset.run()
         >>> list_of_return_values = taskset.join()
-        
+
 
     """
 
@@ -303,13 +301,13 @@ class TaskSet(object):
                                                      taskset_id=taskset_id,
                                                      task_args=arg,
                                                      task_kwargs=kwarg)
-            subtask_ids.append(subtask_id) 
+            subtask_ids.append(subtask_id)
         amqp_connection.close()
         return taskset_id, subtask_ids
 
     def iterate(self):
         """Iterate over the results returned after calling :meth:`run`.
-        
+
         If any of the tasks raises an exception, the exception will
         be re-raised.
 
@@ -379,9 +377,9 @@ class TaskSet(object):
     def map_async(cls, func, args, timeout=None):
         """Distribute processing of the arguments and collect the results
         asynchronously.
-        
+
         :returns: :class:`celery.result.AsyncResult` instance.
-        
+
         """
         serfunc = pickle.dumps(func)
         return AsynchronousMapTask.delay(serfunc, args, timeout=timeout)
@@ -415,7 +413,7 @@ tasks.register(AsynchronousMapTask)
 def dmap_async(func, args, timeout=None):
     """Distribute processing of the arguments and collect the results
     asynchronously.
-    
+
     :returns: :class:`celery.result.AsyncResult` object.
 
     Example
@@ -438,7 +436,7 @@ class PeriodicTask(Task):
     """A periodic task is a task that behaves like a :manpage:`cron` job.
 
     .. attribute:: run_every
-    
+
         *REQUIRED* Defines how often the task is run (its interval),
         it can be either a :class:`datetime.timedelta` object or an
         integer specifying the time in seconds.
@@ -485,13 +483,13 @@ class ExecuteRemoteTask(Task):
 
     The object must be pickleable, so you can't use lambdas or functions
     defined in the REPL (that is the python shell, or ``ipython``).
-    
+
     """
     name = "celery.execute_remote"
 
     def run(self, ser_callable, fargs, fkwargs, **kwargs):
         """
-        :param ser_callable: A pickled function or callable object. 
+        :param ser_callable: A pickled function or callable object.
 
         :param fargs: Positional arguments to apply to the function.
 
@@ -505,7 +503,7 @@ tasks.register(ExecuteRemoteTask)
 
 def execute_remote(func, *args, **kwargs):
     """Execute arbitrary function/object remotely.
-        
+
     :param func: A callable function or object.
 
     :param \*args: Positional arguments to apply to the function.
@@ -516,7 +514,7 @@ def execute_remote(func, *args, **kwargs):
     defined in the REPL (the objects must have an associated module).
 
     :returns: class:`celery.result.AsyncResult`.
-    
+
     """
     return ExecuteRemoteTask.delay(pickle.dumps(func), args, kwargs)
 
