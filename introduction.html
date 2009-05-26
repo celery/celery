@@ -105,9 +105,11 @@ and the return value if completed, or exception on failure.</li>
 </div>
 <div class="section" id="api-reference-documentation">
 <h2>API Reference Documentation<a class="headerlink" href="#api-reference-documentation" title="Permalink to this headline">¶</a></h2>
-<p>The <a class="reference internal" href="#api-reference-documentation">API Reference Documentation</a> is hosted at Github.</p>
+<p>The <a class="reference internal" href="#api-reference-documentation">API Reference Documentation</a> is hosted at Github
+(<a class="reference external" href="http://ask.github.com/celery">http://ask.github.com/celery</a>)</p>
+</div>
 <div class="section" id="installation">
-<h3>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h3>
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
 <p>You can install <tt class="docutils literal"><span class="pre">celery</span></tt> either via the Python Package Index (PyPI)
 or from source.</p>
 <p>To install using <tt class="docutils literal"><span class="pre">pip</span></tt>,:</p>
@@ -123,7 +125,7 @@ by doing the following,:</p>
 </div>
 </div>
 <div class="section" id="usage">
-<h3>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h3>
+<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
 <p>Have to write a cool tutorial, but here is some simple usage info.</p>
 <p><em>Note</em> You need to have a AMQP message broker running, like <a class="reference external" href="http://www.rabbitmq.com">RabbitMQ</a>,
 and you need to have the amqp server setup in your settings file, as described
@@ -131,10 +133,8 @@ in the <a class="reference external" href="http://pypi.python.org/pypi/carrot/0.
 <p><em>Note</em> If you&#8217;re running <tt class="docutils literal"><span class="pre">SQLite</span></tt> as the database backend, <tt class="docutils literal"><span class="pre">celeryd</span></tt> will
 only be able to process one message at a time, this is because <tt class="docutils literal"><span class="pre">SQLite</span></tt>
 doesn&#8217;t allow concurrent writes.</p>
-</div>
-</div>
 <div class="section" id="defining-tasks">
-<h2>Defining tasks<a class="headerlink" href="#defining-tasks" title="Permalink to this headline">¶</a></h2>
+<h3>Defining tasks<a class="headerlink" href="#defining-tasks" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">tasks</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.log</span> <span class="kn">import</span> <span class="n">setup_logger</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">do_something</span><span class="p">(</span><span class="n">some_arg</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -146,14 +146,14 @@ doesn&#8217;t allow concurrent writes.</p>
 </div>
 </div>
 <div class="section" id="tell-the-celery-daemon-to-run-a-task">
-<h2>Tell the celery daemon to run a task<a class="headerlink" href="#tell-the-celery-daemon-to-run-a-task" title="Permalink to this headline">¶</a></h2>
+<h3>Tell the celery daemon to run a task<a class="headerlink" href="#tell-the-celery-daemon-to-run-a-task" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">delay_task</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">delay_task</span><span class="p">(</span><span class="s">&quot;do_something&quot;</span><span class="p">,</span> <span class="n">some_arg</span><span class="o">=</span><span class="s">&quot;foo bar baz&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="execute-a-task-and-get-its-return-value">
-<h2>Execute a task, and get its return value.<a class="headerlink" href="#execute-a-task-and-get-its-return-value" title="Permalink to this headline">¶</a></h2>
+<h3>Execute a task, and get its return value.<a class="headerlink" href="#execute-a-task-and-get-its-return-value" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">delay_task</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">delay_task</span><span class="p">(</span><span class="s">&quot;do_something&quot;</span><span class="p">,</span> <span class="n">some_arg</span><span class="o">=</span><span class="s">&quot;foo bar baz&quot;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">ready</span><span class="p">()</span>
@@ -168,7 +168,7 @@ doesn&#8217;t allow concurrent writes.</p>
 <tt class="docutils literal"><span class="pre">result.result</span></tt> will contain the exception instance raised.</p>
 </div>
 <div class="section" id="running-the-celery-daemon">
-<h2>Running the celery daemon<a class="headerlink" href="#running-the-celery-daemon" title="Permalink to this headline">¶</a></h2>
+<h3>Running the celery daemon<a class="headerlink" href="#running-the-celery-daemon" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-python"><pre>$ cd mydjangoproject
 $ env DJANGO_SETTINGS_MODULE=settings celeryd
 [....]
@@ -177,7 +177,7 @@ $ env DJANGO_SETTINGS_MODULE=settings celeryd
 </div>
 </div>
 <div class="section" id="autodiscovery-of-tasks">
-<h2>Autodiscovery of tasks<a class="headerlink" href="#autodiscovery-of-tasks" title="Permalink to this headline">¶</a></h2>
+<h3>Autodiscovery of tasks<a class="headerlink" href="#autodiscovery-of-tasks" title="Permalink to this headline">¶</a></h3>
 <p><tt class="docutils literal"><span class="pre">celery</span></tt> has an autodiscovery feature like the Django Admin, that
 automatically loads any <tt class="docutils literal"><span class="pre">tasks.py</span></tt> module in the applications listed
 in <tt class="docutils literal"><span class="pre">settings.INSTALLED_APPS</span></tt>.</p>
@@ -202,7 +202,7 @@ tasks.register(increment_click, "increment_click")</pre>
 </div>
 </div>
 <div class="section" id="periodic-tasks">
-<h2>Periodic Tasks<a class="headerlink" href="#periodic-tasks" title="Permalink to this headline">¶</a></h2>
+<h3>Periodic Tasks<a class="headerlink" href="#periodic-tasks" title="Permalink to this headline">¶</a></h3>
 <p>Periodic tasks are tasks that are run every <tt class="docutils literal"><span class="pre">n</span></tt> seconds. They don&#8217;t
 support extra arguments. Here&#8217;s an example of a periodic task:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">tasks</span><span class="p">,</span> <span class="n">PeriodicTask</span>
@@ -220,11 +220,12 @@ support extra arguments. Here&#8217;s an example of a periodic task:</p>
 </div>
 <p>For periodic tasks to work you need to add <tt class="docutils literal"><span class="pre">celery</span></tt> to <tt class="docutils literal"><span class="pre">INSTALLED_APPS</span></tt>,
 and issue a <tt class="docutils literal"><span class="pre">syncdb</span></tt>.</p>
+</div>
+</div>
 <div class="section" id="license">
-<h3>License<a class="headerlink" href="#license" title="Permalink to this headline">¶</a></h3>
+<h2>License<a class="headerlink" href="#license" title="Permalink to this headline">¶</a></h2>
 <p>This software is licensed under the <tt class="docutils literal"><span class="pre">New</span> <span class="pre">BSD</span> <span class="pre">License</span></tt>. See the <tt class="docutils literal"><span class="pre">LICENSE</span></tt>
 file in the top distribution directory for the full license text.</p>
-</div>
 </div>
 </div>
 
@@ -240,12 +241,9 @@ file in the top distribution directory for the full license text.</p>
 <li class="toctree-l2"><a class="reference external" href="#introduction">Introduction</a></li>
 <li class="toctree-l2"><a class="reference external" href="#features">Features</a></li>
 <li class="toctree-l2"><a class="reference external" href="#api-reference-documentation">API Reference Documentation</a></li>
-<li class="toctree-l2"><a class="reference external" href="#defining-tasks">Defining tasks</a></li>
-<li class="toctree-l2"><a class="reference external" href="#tell-the-celery-daemon-to-run-a-task">Tell the celery daemon to run a task</a></li>
-<li class="toctree-l2"><a class="reference external" href="#execute-a-task-and-get-its-return-value">Execute a task, and get its return value.</a></li>
-<li class="toctree-l2"><a class="reference external" href="#running-the-celery-daemon">Running the celery daemon</a></li>
-<li class="toctree-l2"><a class="reference external" href="#autodiscovery-of-tasks">Autodiscovery of tasks</a></li>
-<li class="toctree-l2"><a class="reference external" href="#periodic-tasks">Periodic Tasks</a></li>
+<li class="toctree-l2"><a class="reference external" href="#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference external" href="#usage">Usage</a></li>
+<li class="toctree-l2"><a class="reference external" href="#license">License</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference external" href="reference/celery.task.html">Tasks - celery.task</a></li>
