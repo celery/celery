@@ -5,6 +5,8 @@ git checkout master
     rm -rf .build;
     make html;
     (cd .build/html;
+        find . -type f -name "*.html" | \
+            xargs perl -pi -e's/default\.css/agogo\.css/g';
         sphinx-to-github;))
 git checkout gh-pages
 cp -r docs/.build/html/* .

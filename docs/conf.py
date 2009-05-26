@@ -194,3 +194,6 @@ latex_documents = [
 
 # If false, no module index is generated.
 #latex_use_modindex = True
+
+html_theme = "agogo"
+html_theme_path = ["_theme"]
