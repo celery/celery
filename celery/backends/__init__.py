@@ -11,8 +11,8 @@ def get_backend_cls(backend):
     """Get backend class by name.
 
     If the name does not include "``.``" (is not fully qualified),
-    ``celery.backends.`` will be prepended to the name. e.g.
-    ``database`` becomes ``celery.backends.database``.
+    ``"celery.backends."`` will be prepended to the name. e.g.
+    ``"database"`` becomes ``"celery.backends.database"``.
 
     """
     if backend.find(".") == -1:
