@@ -152,7 +152,7 @@ class TaskWrapper(object):
     def execute_using_pool(self, pool, loglevel=None, logfile=None):
         """Like :meth:`execute`, but using the :mod:`multiprocessing` pool.
 
-        :param pool: A :cls:`multiprocessing.Pool` instance.
+        :param pool: A :class:`multiprocessing.Pool` instance.
 
         :keyword loglevel: The loglevel used by the task.
 
