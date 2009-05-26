@@ -1,0 +1,31 @@
+.. reference-index::
+
+===========================
+ Module API Reference
+===========================
+
+:Release: |version|
+:Date: |today|
+
+.. toctree::
+    :maxdepth: 2
+    
+    celery.task
+    celery.result
+    celery.registry
+    celery.discovery
+    celery.worker
+    celery.backends
+    celery.backends.base
+    celery.backends.database
+    celery.backends.cache
+    celery.backends.tyrant
+    celery.conf
+    celery.datastructures
+    celery.log
+    celery.managers
+    celery.models
+    celery.messaging
+    celery.platform
+    celery.timer
+    celery.bin.celeryd
