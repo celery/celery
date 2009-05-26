@@ -7,7 +7,13 @@ from celery.backends import default_backend
 
 
 class BaseAsyncResult(object):
-    """Base class for pending result, takes ``backend`` argument.
+    """Base class for pending result, supports custom
+    task meta :attr:`backend`
+
+    :param task_id: see :attr:`task_id`.
+
+    :param backend: see :attr:`backend`.
+
 
     .. attribute:: task_id
 
@@ -20,13 +26,6 @@ class BaseAsyncResult(object):
     """
 
     def __init__(self, task_id, backend):
-        """Create a result instance.
-
-        :param task_id: id of the task this is a result for.
-
-        :param backend: task result backend used.
-
-        """
         self.task_id = task_id
         self.backend = backend
 
@@ -39,7 +38,7 @@ class BaseAsyncResult(object):
         return self.backend.is_done(self.task_id)
 
     def get(self):
-        """Alias to :func:`wait`."""
+        """Alias to :meth:`wait`."""
         return self.wait()
 
     def wait(self, timeout=None):
@@ -69,7 +68,7 @@ class BaseAsyncResult(object):
         return status != "PENDING" or status != "RETRY"
 
     def successful(self):
-        """Alias to :func:`is_done`."""
+        """Alias to :meth:`is_done`."""
         return self.is_done()
 
     def __str__(self):
@@ -81,10 +80,10 @@ class BaseAsyncResult(object):
 
     @property
     def result(self):
-        """When the task is executed, this contains the return value.
+        """When the task has been executed, this contains the return value.
 
-        If the task resulted in failure, this will be the exception instance
-        raised.
+        If the task raised an exception, this will be the exception instance.
+
         """
         if self.status == "DONE" or self.status == "FAILURE":
             return self.backend.get_result(self.task_id)
@@ -122,6 +121,9 @@ class BaseAsyncResult(object):
 class AsyncResult(BaseAsyncResult):
     """Pending task result using the default backend.
 
+    :param task_id: see :attr:`task_id`.
+
+    
     .. attribute:: task_id
 
         The unique identifier for this task.
