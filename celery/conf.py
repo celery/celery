@@ -2,38 +2,23 @@
 from django.conf import settings
 import logging
 
-# The default AMQP exchange key.
 DEFAULT_AMQP_EXCHANGE = "celery"
-
-# The default AMQP routing key
 DEFAULT_AMQP_ROUTING_KEY = "celery"
-
-# The default AMQP consumer queue.
 DEFAULT_AMQP_CONSUMER_QUEUE = "celery"
-
-# The number of processes to work simultaneously at processing the queue.
 DEFAULT_DAEMON_CONCURRENCY = 10
-
-# If the queue is empty, this is the time *in seconds* the daemon sleeps
-# until it wakes up to check if there's any new messages on the queue.
 DEFAULT_QUEUE_WAKEUP_AFTER = 0.3
-
-# As long as the queue is empty, the daemon logs a "Queue is empty" message
-# every ``EMPTY_MSG_EMIT_EVERY`` *seconds*.
 DEFAULT_EMPTY_MSG_EMIT_EVERY = 5
-
 DEFAULT_DAEMON_PID_FILE = "celeryd.pid"
-
-# The format we log messages in.
 DEFAULT_LOG_FMT = '[%(asctime)s: %(levelname)s/%(processName)s] %(message)s'
-
-# Default log level [DEBUG|INFO|WARNING|ERROR|CRITICAL|FATAL]
 DEFAULT_DAEMON_LOG_LEVEL = "INFO"
-
-# Default log file
 DEFAULT_DAEMON_LOG_FILE = "celeryd.log"
 
-# Table of loglevels to constants for use in settings.py.
+"""
+.. data:: LOG_LEVELS
+   
+    Mapping of log level names to :mod:`logging` module constants.
+
+"""
 LOG_LEVELS = {
     "DEBUG": logging.DEBUG,
     "INFO": logging.INFO,
@@ -44,26 +29,99 @@ LOG_LEVELS = {
     "FATAL": logging.FATAL,
 }
 
+"""
+.. data:: LOG_FORMAT
+   
+    The format to use for log messages.
+    Default is ``[%(asctime)s: %(levelname)s/%(processName)s] %(message)s``
 
+"""
 LOG_FORMAT = getattr(settings, "CELERYD_DAEMON_LOG_FORMAT",
-                            DEFAULT_LOG_FMT)
+                     DEFAULT_LOG_FMT)
+
+"""
+.. data:: DAEMON_LOG_FILE
+   
+    The path to the deamon log file (if not set, ``stderr`` is used).
+
+"""
 DAEMON_LOG_FILE = getattr(settings, "CELERYD_LOG_FILE",
-                            DEFAULT_DAEMON_LOG_FILE)
+                          DEFAULT_DAEMON_LOG_FILE)
+
+"""
+.. data:: DAEMON_LOG_LEVEL
+   
+    Celery daemon log level, can be any of ``DEBUG``, ``INFO``, ``WARNING``,
+    ``ERROR``, ``CRITICAL``, or ``FATAL``. See the :mod:`logging` module
+    for more information.
+
+"""
 DAEMON_LOG_LEVEL = LOG_LEVELS[getattr(settings, "CELERYD_DAEMON_LOG_LEVEL",
-                               DEFAULT_DAEMON_LOG_LEVEL).upper()]
+                                      DEFAULT_DAEMON_LOG_LEVEL).upper()]
 
+"""
+.. data:: QUEUE_WAKEUP_AFTER
+   
+    The time (in seconds) the celery worker should sleep when there's
+    no messages left on the queue. After the time is slept, the worker
+    wakes up and checks the queue again.
+
+"""
 QUEUE_WAKEUP_AFTER = getattr(settings, "CELERYD_QUEUE_WAKEUP_AFTER",
-                                DEFAULT_QUEUE_WAKEUP_AFTER)
-EMPTY_MSG_EMIT_EVERY = getattr(settings, "CELERYD_EMPTY_MSG_EMIT_EVERY",
-                                DEFAULT_EMPTY_MSG_EMIT_EVERY)
-DAEMON_PID_FILE = getattr(settings, "CELERYD_PID_FILE",
-                            DEFAULT_DAEMON_PID_FILE)
-DAEMON_CONCURRENCY = getattr(settings, "CELERYD_CONCURRENCY",
-                                DEFAULT_DAEMON_CONCURRENCY)
+                             DEFAULT_QUEUE_WAKEUP_AFTER)
 
+"""
+.. data:: EMPTY_MSG_EMIT_EVERY
+   
+    How often the celery daemon should write a log message saying there are no
+    messages in the queue. If this is ``None`` or ``0``, it will never print
+    this message.
+
+"""
+EMPTY_MSG_EMIT_EVERY = getattr(settings, "CELERYD_EMPTY_MSG_EMIT_EVERY",
+                               DEFAULT_EMPTY_MSG_EMIT_EVERY)
+
+"""
+.. data:: DAEMON_PID_FILE
+   
+    Full path to the daemon pidfile.
+
+"""
+DAEMON_PID_FILE = getattr(settings, "CELERYD_PID_FILE",
+                          DEFAULT_DAEMON_PID_FILE)
+
+"""
+.. data:: DAEMON_CONCURRENCY
+   
+    The number of concurrent worker processes, executing tasks simultaneously.
+
+"""
+DAEMON_CONCURRENCY = getattr(settings, "CELERYD_CONCURRENCY",
+                             DEFAULT_DAEMON_CONCURRENCY)
+
+"""
+.. data:: AMQP_EXCHANGE
+
+    Name of the AMQP exchange.
+
+"""
 AMQP_EXCHANGE = getattr(settings, "CELERY_AMQP_EXCHANGE",
-                            DEFAULT_AMQP_EXCHANGE)
+                        DEFAULT_AMQP_EXCHANGE)
+
+"""
+.. data:: AMQP_ROUTING_KEY
+   
+    The AMQP routing key.
+
+"""
 AMQP_ROUTING_KEY = getattr(settings, "CELERY_AMQP_ROUTING_KEY",
-                            DEFAULT_AMQP_ROUTING_KEY)
+                           DEFAULT_AMQP_ROUTING_KEY)
+
+"""
+.. data:: AMQP_CONSUMER_QUEUE
+   
+    The name of the AMQP queue.
+
+"""
 AMQP_CONSUMER_QUEUE = getattr(settings, "CELERY_AMQP_CONSUMER_QUEUE",
-                            DEFAULT_AMQP_CONSUMER_QUEUE)
+                              DEFAULT_AMQP_CONSUMER_QUEUE)
