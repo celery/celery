@@ -7,7 +7,7 @@ celery - Distributed Task Queue for Django.
 :Version: 0.2.0-pre3
 
 Introduction
-------------
+============
 
 ``celery`` is a distributed task queue framework for Django.
 
@@ -24,7 +24,7 @@ easy and fun, and the performance improvements can make it more than
 worthwhile.
 
 Features
---------
+========
 
     * Uses AMQP messaging (RabbitMQ, ZeroMQ) to route tasks to the
       worker servers.
@@ -62,9 +62,10 @@ Features
       and the return value if completed, or exception on failure.
       
 API Reference Documentation
----------------------------
+===========================
 
-The `API Reference Documentation`_ is hosted at Github.
+The `API Reference Documentation`_ is hosted at Github
+(http://ask.github.com/celery)
 
 .. _`API Reference Docmentation`: http://ask.github.com/celery/
 
