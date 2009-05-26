@@ -12,7 +12,12 @@ class PositionQueue(UserList):
     filled or unfilled. When all of the positions are filled, the queue
     is considered :meth:`full`.
 
-    :param length: The number of items required for the queue to be filled.
+    :param length: see :attr:`length`.
+
+
+    .. attribute:: length
+
+        The number of items required for the queue to be considered full.
 
     """
 
@@ -43,7 +48,7 @@ class PositionQueue(UserList):
 
 class TaskProcessQueue(UserList):
     """Queue of running child processes, which starts waiting for the
-    processes to finish when the queue limit is reached.
+    processes to finish when the queue limit has been reached.
 
     :param limit: see :attr:`limit` attribute.
 
