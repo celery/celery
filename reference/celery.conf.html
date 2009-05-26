@@ -54,63 +54,119 @@
 <dl class="data">
 <dt id="celery.conf.AMQP_EXCHANGE">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_EXCHANGE</tt><a class="headerlink" href="#celery.conf.AMQP_EXCHANGE" title="Permalink to this definition">¶</a></dt>
-<dd>The AMQP exchange.</dd></dl>
-
-<dl class="data">
+<dd><dl class="data">
 <dt id="celery.conf.AMQP_ROUTING_KEY">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_ROUTING_KEY</tt><a class="headerlink" href="#celery.conf.AMQP_ROUTING_KEY" title="Permalink to this definition">¶</a></dt>
 <dd>The AMQP routing key.</dd></dl>
 
+</dd></dl>
+
 <dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_ROUTING_KEY</tt></dt>
+<dd><dl class="data">
 <dt id="celery.conf.AMQP_CONSUMER_QUEUE">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONSUMER_QUEUE</tt><a class="headerlink" href="#celery.conf.AMQP_CONSUMER_QUEUE" title="Permalink to this definition">¶</a></dt>
 <dd>The name of the AMQP queue.</dd></dl>
 
+</dd></dl>
+
 <dl class="data">
 <dt id="celery.conf.DAEMON_CONCURRENCY">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">DAEMON_CONCURRENCY</tt><a class="headerlink" href="#celery.conf.DAEMON_CONCURRENCY" title="Permalink to this definition">¶</a></dt>
-<dd>The number of worker processes, that should work simultaenously.</dd></dl>
+<dd><dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_EXCHANGE</tt></dt>
+<dd>Name of the AMQP exchange.</dd></dl>
 
-<dl class="data">
-<dt id="celery.conf.DAEMON_PID_FILE">
-<tt class="descclassname">celery.conf.</tt><tt class="descname">DAEMON_PID_FILE</tt><a class="headerlink" href="#celery.conf.DAEMON_PID_FILE" title="Permalink to this definition">¶</a></dt>
-<dd>Full path to the daemon pid file.</dd></dl>
-
-<dl class="data">
-<dt id="celery.conf.EMPTY_MSG_EMIT_EVERY">
-<tt class="descclassname">celery.conf.</tt><tt class="descname">EMPTY_MSG_EMIT_EVERY</tt><a class="headerlink" href="#celery.conf.EMPTY_MSG_EMIT_EVERY" title="Permalink to this definition">¶</a></dt>
-<dd>How often the celery daemon should write a log message saying there are no
-messages in the queue. If this is <tt class="xref docutils literal"><span class="pre">None</span></tt> or <tt class="docutils literal"><span class="pre">0</span></tt>, it will never print
-this message.</dd></dl>
-
-<dl class="data">
-<dt id="celery.conf.QUEUE_WAKEUP_AFTER">
-<tt class="descclassname">celery.conf.</tt><tt class="descname">QUEUE_WAKEUP_AFTER</tt><a class="headerlink" href="#celery.conf.QUEUE_WAKEUP_AFTER" title="Permalink to this definition">¶</a></dt>
-<dd>The time (in seconds) the celery daemon should sleep when there are no messages
-left on the queue. After the time is slept, the worker wakes up and
-checks the queue again.</dd></dl>
-
-<dl class="data">
-<dt id="celery.conf.DAEMON_LOG_LEVEL">
-<tt class="descclassname">celery.conf.</tt><tt class="descname">DAEMON_LOG_LEVEL</tt><a class="headerlink" href="#celery.conf.DAEMON_LOG_LEVEL" title="Permalink to this definition">¶</a></dt>
-<dd>Celery daemon log level, could be any of <tt class="docutils literal"><span class="pre">DEBUG</span></tt>, <tt class="docutils literal"><span class="pre">INFO</span></tt>, <tt class="docutils literal"><span class="pre">WARNING</span></tt>,
-<tt class="docutils literal"><span class="pre">ERROR</span></tt>, <tt class="docutils literal"><span class="pre">CRITICAL</span></tt>, or <tt class="docutils literal"><span class="pre">FATAL</span></tt>.</dd></dl>
+</dd></dl>
 
 <dl class="data">
 <dt id="celery.conf.DAEMON_LOG_FILE">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">DAEMON_LOG_FILE</tt><a class="headerlink" href="#celery.conf.DAEMON_LOG_FILE" title="Permalink to this definition">¶</a></dt>
-<dd>The path to the deamon log file (if not set, <tt class="docutils literal"><span class="pre">stderr</span></tt> is used).</dd></dl>
+<dd><dl class="data">
+<dt id="celery.conf.DAEMON_LOG_LEVEL">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">DAEMON_LOG_LEVEL</tt><a class="headerlink" href="#celery.conf.DAEMON_LOG_LEVEL" title="Permalink to this definition">¶</a></dt>
+<dd>Celery daemon log level, can be any of <tt class="docutils literal"><span class="pre">DEBUG</span></tt>, <tt class="docutils literal"><span class="pre">INFO</span></tt>, <tt class="docutils literal"><span class="pre">WARNING</span></tt>,
+<tt class="docutils literal"><span class="pre">ERROR</span></tt>, <tt class="docutils literal"><span class="pre">CRITICAL</span></tt>, or <tt class="docutils literal"><span class="pre">FATAL</span></tt>. See the <tt class="xref docutils literal"><span class="pre">logging</span></tt> module
+for more information.</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">DAEMON_LOG_LEVEL</tt></dt>
+<dd><dl class="data">
+<dt id="celery.conf.QUEUE_WAKEUP_AFTER">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">QUEUE_WAKEUP_AFTER</tt><a class="headerlink" href="#celery.conf.QUEUE_WAKEUP_AFTER" title="Permalink to this definition">¶</a></dt>
+<dd>The time (in seconds) the celery worker should sleep when there&#8217;s
+no messages left on the queue. After the time is slept, the worker
+wakes up and checks the queue again.</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt id="celery.conf.DAEMON_PID_FILE">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">DAEMON_PID_FILE</tt><a class="headerlink" href="#celery.conf.DAEMON_PID_FILE" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">DAEMON_CONCURRENCY</tt></dt>
+<dd>The number of concurrent worker processes, executing tasks simultaneously.</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt id="celery.conf.DEFAULT_DAEMON_LOG_FILE">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">DEFAULT_DAEMON_LOG_FILE</tt><a class="headerlink" href="#celery.conf.DEFAULT_DAEMON_LOG_FILE" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="data">
+<dt id="celery.conf.LOG_LEVELS">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">LOG_LEVELS</tt><a class="headerlink" href="#celery.conf.LOG_LEVELS" title="Permalink to this definition">¶</a></dt>
+<dd>Mapping of log level names to <tt class="xref docutils literal"><span class="pre">logging</span></tt> module constants.</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt id="celery.conf.EMPTY_MSG_EMIT_EVERY">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">EMPTY_MSG_EMIT_EVERY</tt><a class="headerlink" href="#celery.conf.EMPTY_MSG_EMIT_EVERY" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">DAEMON_PID_FILE</tt></dt>
+<dd>Full path to the daemon pidfile.</dd></dl>
+
+</dd></dl>
 
 <dl class="data">
 <dt id="celery.conf.LOG_FORMAT">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">LOG_FORMAT</tt><a class="headerlink" href="#celery.conf.LOG_FORMAT" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">DAEMON_LOG_FILE</tt></dt>
+<dd>The path to the deamon log file (if not set, <tt class="docutils literal"><span class="pre">stderr</span></tt> is used).</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">LOG_LEVELS</tt></dt>
+<dd><dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">LOG_FORMAT</tt></dt>
 <dd>The format to use for log messages.
 Default is <tt class="docutils literal"><span class="pre">[%(asctime)s:</span> <span class="pre">%(levelname)s/%(processName)s]</span> <span class="pre">%(message)s</span></tt></dd></dl>
 
+</dd></dl>
+
 <dl class="data">
-<dt id="celery.conf.LOG_LEVELS">
-<tt class="descclassname">celery.conf.</tt><tt class="descname">LOG_LEVELS</tt><a class="headerlink" href="#celery.conf.LOG_LEVELS" title="Permalink to this definition">¶</a></dt>
-<dd>Mapping of log level names to <tt class="docutils literal"><span class="pre">logging</span></tt> module constants.</dd></dl>
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">QUEUE_WAKEUP_AFTER</tt></dt>
+<dd><dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">EMPTY_MSG_EMIT_EVERY</tt></dt>
+<dd>How often the celery daemon should write a log message saying there are no
+messages in the queue. If this is <tt class="xref docutils literal"><span class="pre">None</span></tt> or <tt class="docutils literal"><span class="pre">0</span></tt>, it will never print
+this message.</dd></dl>
+
+</dd></dl>
 
 </div>
 

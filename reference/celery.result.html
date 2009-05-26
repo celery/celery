@@ -56,6 +56,14 @@
 <em class="property">
 class </em><tt class="descclassname">celery.result.</tt><tt class="descname">AsyncResult</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.result.AsyncResult" title="Permalink to this definition">¶</a></dt>
 <dd><p>Pending task result using the default backend.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>task_id</em> &#8211; see <a title="celery.result.AsyncResult.task_id" class="reference internal" href="#celery.result.AsyncResult.task_id"><tt class="xref docutils literal"><span class="pre">task_id</span></tt></a>.</td>
+</tr>
+</tbody>
+</table>
 <dl class="attribute">
 <dt id="celery.result.AsyncResult.task_id">
 <tt class="descname">task_id</tt><a class="headerlink" href="#celery.result.AsyncResult.task_id" title="Permalink to this definition">¶</a></dt>
@@ -72,7 +80,20 @@ class </em><tt class="descclassname">celery.result.</tt><tt class="descname">Asy
 <dt id="celery.result.BaseAsyncResult">
 <em class="property">
 class </em><tt class="descclassname">celery.result.</tt><tt class="descname">BaseAsyncResult</tt><big>(</big><em>task_id</em>, <em>backend</em><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult" title="Permalink to this definition">¶</a></dt>
-<dd><p>Base class for pending result, takes <tt class="docutils literal"><span class="pre">backend</span></tt> argument.</p>
+<dd><p>Base class for pending result, supports custom
+task meta <a title="celery.result.BaseAsyncResult.backend" class="reference internal" href="#celery.result.BaseAsyncResult.backend"><tt class="xref docutils literal"><span class="pre">backend</span></tt></a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><em>task_id</em> &#8211; see <a title="celery.result.BaseAsyncResult.task_id" class="reference internal" href="#celery.result.BaseAsyncResult.task_id"><tt class="xref docutils literal"><span class="pre">task_id</span></tt></a>.</li>
+<li><em>backend</em> &#8211; see <a title="celery.result.BaseAsyncResult.backend" class="reference internal" href="#celery.result.BaseAsyncResult.backend"><tt class="xref docutils literal"><span class="pre">backend</span></tt></a>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 <dl class="attribute">
 <dt id="celery.result.BaseAsyncResult.task_id">
 <tt class="descname">task_id</tt><a class="headerlink" href="#celery.result.BaseAsyncResult.task_id" title="Permalink to this definition">¶</a></dt>
@@ -121,9 +142,8 @@ then <tt class="xref docutils literal"><span class="pre">False</span></tt> is re
 <dl class="attribute">
 <dt id="celery.result.BaseAsyncResult.result">
 <tt class="descname">result</tt><a class="headerlink" href="#celery.result.BaseAsyncResult.result" title="Permalink to this definition">¶</a></dt>
-<dd><p>When the task is executed, this contains the return value.</p>
-<p>If the task resulted in failure, this will be the exception instance
-raised.</p>
+<dd><p>When the task has been executed, this contains the return value.</p>
+<p>If the task raised an exception, this will be the exception instance.</p>
 </dd></dl>
 
 <dl class="attribute">

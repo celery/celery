@@ -62,10 +62,15 @@ is considered <a title="celery.datastructures.PositionQueue.full" class="referen
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>length</em> &#8211; The number of items required for the queue to be filled.</td>
+<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>length</em> &#8211; see <a title="celery.datastructures.PositionQueue.length" class="reference internal" href="#celery.datastructures.PositionQueue.length"><tt class="xref docutils literal"><span class="pre">length</span></tt></a>.</td>
 </tr>
 </tbody>
 </table>
+<dl class="attribute">
+<dt id="celery.datastructures.PositionQueue.length">
+<tt class="descname">length</tt><a class="headerlink" href="#celery.datastructures.PositionQueue.length" title="Permalink to this definition">¶</a></dt>
+<dd>The number of items required for the queue to be considered full.</dd></dl>
+
 <dl class="class">
 <dt id="celery.datastructures.PositionQueue.UnfilledPosition">
 <em class="property">
@@ -89,7 +94,7 @@ class </em><tt class="descname">UnfilledPosition</tt><big>(</big><em>position</e
 <em class="property">
 class </em><tt class="descclassname">celery.datastructures.</tt><tt class="descname">TaskProcessQueue</tt><big>(</big><em>limit</em>, <em>logger=None</em>, <em>done_msg=None</em><big>)</big><a class="headerlink" href="#celery.datastructures.TaskProcessQueue" title="Permalink to this definition">¶</a></dt>
 <dd><p>Queue of running child processes, which starts waiting for the
-processes to finish when the queue limit is reached.</p>
+processes to finish when the queue limit has been reached.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
