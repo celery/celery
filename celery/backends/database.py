@@ -32,7 +32,7 @@ class Backend(BaseBackend):
         if meta.status == "FAILURE":
             return self.exception_to_python(meta.result)
         else:
-            return result
+            return meta.result
 
     def _get_task_meta_for(self, task_id):
         if task_id in self._cache:
