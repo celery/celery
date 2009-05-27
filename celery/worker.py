@@ -250,7 +250,12 @@ class TaskDaemon(object):
     def connection_diagnostics(self):
         """Diagnose the AMQP connection, and reset connection if
         necessary."""
-        if not self.task_consumer.channel.connection:
+        if hasattr(self.task_consumer.backend):
+            connection = self.task_consumer.backend.channel.connection
+        else:
+            connection = self.task_consumer.channel.connection
+
+        if not connection:
             self.logger.info(
                     "AMQP Connection has died, restoring connection.")
             self.reset_connection()
