@@ -161,7 +161,7 @@ class TaskWrapper(object):
         :returns :class:`multiprocessing.AsyncResult` instance.
 
         """
-        task_func_kwargs = self.extend_kwargs_with_logging(loglevel, logfile)
+        task_func_kwargs = self.extend_with_default_kwargs(loglevel, logfile)
         return pool.apply_async(jail, [self.task_id, self.task_func,
                                        self.args, task_func_kwargs])
 
