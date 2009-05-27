@@ -2,6 +2,16 @@
 Change history
 ==============
 
+0.2.0 [2009-05-20 05:14 P.M CET] askh@opera.com
+------------------------------------------------
+
+	* Final release of 0.2.0
+
+	* Compatible with carrot version 0.4.0.
+
+	* Fixes some syntax errors related to fetching results
+	  from the database backend.
+
 0.2.0-pre3 [2009-05-20 05:14 P.M CET] askh@opera.com
 ----------------------------------------------------
 
