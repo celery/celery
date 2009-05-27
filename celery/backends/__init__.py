@@ -19,7 +19,7 @@ def get_backend_cls(backend):
         backend = "celery.backends.%s" % backend
     __import__(backend)
     backend_module = sys.modules[backend]
-    return getattr(backend_module, 'Backend')
+    return getattr(backend_module, "Backend")
 
 """
 .. function:: get_default_backend_cls()
