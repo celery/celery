@@ -70,7 +70,7 @@ setup(
     ],
     cmdclass = {"test": RunTests},
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         "Framework :: Django",
         "Operating System :: OS Independent",
         "Programming Language :: Python",
