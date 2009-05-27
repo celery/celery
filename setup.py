@@ -47,8 +47,8 @@ py_minor_version = py_version_info[1]
 if (py_major_version == 2 and py_minor_version <=5) or py_major_version < 2:
     install_requires.append("multiprocessing")    
 
-long_description = codecs.open("README.rst", "r", "utf-8").read() + "\n" + \
-                   codecs.open("Changelog", "r", "utf-8").read()
+long_description = codecs.open("README.rst", "r", "utf-8").read()
+                   
 
 setup(
     name='celery',
