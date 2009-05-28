@@ -162,8 +162,10 @@ class TaskWrapper(object):
 
         """
         task_func_kwargs = self.extend_with_default_kwargs(loglevel, logfile)
-        return pool.apply_async(jail, [self.task_id, self.task_func,
-                                       self.args, task_func_kwargs])
+        jail_args = [self.task_id, self.task_func,
+                     self.args, task_func_kwargs]
+        return pool.apply_async(jail, jail_args, {},
+                                self.task_name, self.task_id)
 
 
 class TaskDaemon(object):
@@ -231,7 +233,8 @@ class TaskDaemon(object):
         self.queue_wakeup_after = queue_wakeup_after or \
                                     self.queue_wakeup_after
         self.logger = setup_logger(loglevel, logfile)
-        self.pool = multiprocessing.Pool(self.concurrency)
+        self.pool = TaskProcessQueue(self.concurrency, logger=self.logger,
+                done_msg="Task %(name)s[%(id)s] processed: %(return_value)s")
         self.task_consumer = None
         self.reset_connection()
 
@@ -329,8 +332,6 @@ class TaskDaemon(object):
 
     def run(self):
         """Starts the workers main loop."""
-        results = TaskProcessQueue(self.concurrency, logger=self.logger,
-                done_msg="Task %(name)s[%(id)s] processed: %(return_value)s")
         log_wait = lambda: self.logger.info("Waiting for queue...")
         ev_msg_waiting = EventTimer(log_wait, self.empty_msg_emit_every)
         events = [
@@ -357,5 +358,3 @@ class TaskDaemon(object):
                 self.logger.critical("Message queue raised %s: %s\n%s" % (
                              e.__class__, e, traceback.format_exc()))
                 continue
-
-            results.add(result, task_name, task_id)

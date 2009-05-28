@@ -5,6 +5,7 @@ Custom Datastructures
 """
 import multiprocessing
 import itertools
+import threading
 import time
 from UserList import UserList
 
@@ -108,7 +109,7 @@ class TaskWorkerPool(object):
                 "return_value": ret_value})
 
 
-class TaskProcessQueue(UserList):
+class TaskProcessQueue(object):
     """Queue of running child processes, which starts waiting for the
     processes to finish when the queue limit has been reached.
 
@@ -135,15 +136,47 @@ class TaskProcessQueue(UserList):
 
     """
 
-    def __init__(self, limit, process_timeout=None, logger=None,
-            done_msg=None):
+    def __init__(self, limit, process_timeout=None,
+            logger=None, done_msg=None):
         self.limit = limit
         self.logger = logger
         self.done_msg = done_msg
         self.process_timeout = process_timeout
-        self.data = []
+        self._processes = {}
+        self._process_counter = itertools.count(1)
+        self._data_lock = threading.Condition(threading.Lock())
+        self.pool = multiprocessing.Pool(limit)
 
-    def add(self, result, task_name, task_id):
+    def apply_async(self, target, args, kwargs, task_name, task_id):
+        #self._data_lock.acquire()
+        try:
+            _pid = self._process_counter.next()
+
+            on_return = lambda ret_val: self.on_return(_pid, ret_val,
+                                                       task_name, task_id)
+
+            result = self.pool.apply_async(target, args, kwargs,
+                                           callback=on_return)
+            self.add(_pid, result, task_name, task_id)
+        finally:
+            pass
+            #self._data_lock.release()
+
+        return result
+
+    def on_return(self, _pid, ret_val, task_name, task_id):
+        #self._data_lock.acquire()
+        try:
+            del(self._processes[_pid])
+        except KeyError:
+            pass
+        else:
+            self.on_ready(ret_val, task_name, task_id)
+        finally:
+            pass
+            #self._data_lock.acquire()
+
+    def add(self, _pid, result, task_name, task_id):
         """Add a process to the queue.
 
         If the queue is full, it will wait for the first task to finish,
@@ -158,32 +191,34 @@ class TaskProcessQueue(UserList):
         :param task_id: Id of the task executed.
 
         """
+      
+        self._processes[_pid] = [result, task_name, task_id]
 
-        self.data.append([result, task_name, task_id])
-
-        if self.data and len(self.data) >= self.limit:
+        if self.full():
             self.wait_for_result()
-        else:
-            self.reap()
+
+    def full(self):
+        return len(self._processes.values()) >= self.limit
 
 
     def wait_for_result(self):
         """Collect results from processes that are ready."""
+        assert self.full()
         while True:
             if self.reap():
                 break
 
     def reap(self):
         processes_reaped = 0
-        for process_no, process_info in enumerate(self.data):
+        for process_no, entry in enumerate(self._processes.items()):
+            _pid, process_info = entry
             result, task_name, task_id = process_info
             try:
                 ret_value = result.get(timeout=0.1)
             except multiprocessing.TimeoutError:
                 continue
             else:
-                del(self[process_no])
-                self.on_ready(ret_value, task_name, task_id)
+                self.on_return(_pid, ret_value, task_name, task_id)
                 processes_reaped += 1
         return processes_reaped
 
