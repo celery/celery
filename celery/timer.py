@@ -61,8 +61,9 @@ class TimeoutTimer(object):
 
     """
 
-    def __init__(self, timeout):
+    def __init__(self, timeout, timeout_msg="The operation timed out"):
         self.timeout = timeout
+        self.timeout_msg = timeout_msg
         self.time_start = time.time()
 
     def tick(self):
@@ -75,4 +76,4 @@ class TimeoutTimer(object):
         if not self.timeout:
             return
         if time.time() > self.time_start + self.timeout:
-            raise TimeoutError("The operation timed out.")
+            raise TimeoutError(self.timeout_msg)

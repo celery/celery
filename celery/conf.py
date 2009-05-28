@@ -12,6 +12,7 @@ DEFAULT_DAEMON_PID_FILE = "celeryd.pid"
 DEFAULT_LOG_FMT = '[%(asctime)s: %(levelname)s/%(processName)s] %(message)s'
 DEFAULT_DAEMON_LOG_LEVEL = "INFO"
 DEFAULT_DAEMON_LOG_FILE = "celeryd.log"
+DEFAULT_REAP_TIMEOUT = 30
 
 """
 .. data:: LOG_LEVELS
@@ -125,3 +126,5 @@ AMQP_ROUTING_KEY = getattr(settings, "CELERY_AMQP_ROUTING_KEY",
 """
 AMQP_CONSUMER_QUEUE = getattr(settings, "CELERY_AMQP_CONSUMER_QUEUE",
                               DEFAULT_AMQP_CONSUMER_QUEUE)
+
+REAP_TIMEOUT = DEFAULT_REAP_TIMEOUT
