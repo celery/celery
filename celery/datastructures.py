@@ -4,6 +4,8 @@ Custom Datastructures
 
 """
 import multiprocessing
+import itertools
+import time
 from UserList import UserList
 
 
@@ -44,6 +46,66 @@ class PositionQueue(UserList):
         """Returns the filled slots as a list."""
         return filter(lambda v: not isinstance(v, self.UnfilledPosition),
                       self.data)
+
+
+class TaskWorkerPool(object):
+
+    Process = multiprocessing.Process
+
+    class TaskWorker(object):
+        def __init__(self, process, task_name, task_id):
+            self.process = process
+            self.task_name = task_name
+            self.task_id = task_id
+
+    def __init__(self, limit, logger=None, done_msg=None):
+        self.limit = limit
+        self.logger = logger
+        self.done_msg = done_msg
+        self._pool = []
+        self.task_counter = itertools.count(1)
+        self.total_tasks_run = 0
+
+    def add(self, target, args, kwargs=None, task_name=None, task_id=None):
+        self.total_tasks_run = self.task_counter.next()
+        if self._pool and len(self._pool) >= self.limit:
+            self.wait_for_result()
+        else:
+            self.reap()
+
+        current_worker_no = len(self._pool) + 1
+        process_name = "TaskWorker-%d" % current_worker_no
+        process = self.Process(target=target, args=args, kwargs=kwargs,
+                               name=process_name)
+        process.start()
+        task = self.TaskWorker(process, task_name, task_id)
+        self._pool.append(task)
+
+    def wait_for_result(self):
+        """Collect results from processes that are ready."""
+        while True:
+            if self.reap():
+                break
+            time.sleep(0.1)
+            
+    def reap(self):
+        processed_reaped = 0
+        for worker_no, worker in enumerate(self._pool):
+            process = worker.process
+            if not process.is_alive():
+                ret_value = process.join()
+                self.on_finished(ret_value, worker.task_name,
+                        worker.task_id)
+                del(self._pool[worker_no])
+                processed_reaped += 1
+        return processed_reaped
+
+    def on_finished(self, ret_value, task_name, task_id):
+        if self.done_msg and self.logger:
+            self.logger.info(self.done_msg % {
+                "name": task_name,
+                "id": task_id,
+                "return_value": ret_value})
 
 
 class TaskProcessQueue(UserList):
