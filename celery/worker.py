@@ -269,7 +269,7 @@ class TaskDaemon(object):
         :rtype: :class:`carrot.messaging.Message` instance.
 
         """
-        self.connection_diagnostics()
+        #self.connection_diagnostics()
         message = self.task_consumer.fetch()
         if message is not None:
             message.ack()
