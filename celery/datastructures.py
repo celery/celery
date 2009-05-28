@@ -162,27 +162,35 @@ class TaskProcessQueue(UserList):
         self.data.append([result, task_name, task_id])
 
         if self.data and len(self.data) >= self.limit:
-            self.collect()
+            self.wait_for_result()
+        else:
+            self.reap()
 
-    def collect(self):
+
+    def wait_for_result(self):
         """Collect results from processes that are ready."""
-        processes_joined = 0
-        while not processes_joined:
-            for process_no, process_info in enumerate(self.data):
-                result, task_name, task_id = process_info
-                if result.ready():
-                    try:
-                        self.on_ready(result, task_name, task_id)
-                    except multiprocessing.TimeoutError:
-                        pass
-                    else:
-                        del(self[i])
-                        processed_join += 1
+        while True:
+            if self.reap():
+                break
 
-    def on_ready(self, result, task_name, task_id):
-        ret_value = result.get(timeout=self.process_timeout)
+    def reap(self):
+        processes_reaped = 0
+        for process_no, process_info in enumerate(self.data):
+            result, task_name, task_id = process_info
+            try:
+                ret_value = result.get(timeout=0.1)
+            except multiprocessing.TimeoutError:
+                continue
+            else:
+                del(self[process_no])
+                self.on_ready(ret_value, task_name, task_id)
+                processes_reaped += 1
+        return processes_reaped
+
+
+    def on_ready(self, ret_value, task_name, task_id):
         if self.done_msg and self.logger:
-            self.logger_info(self.done_msg % {
+            self.logger.info(self.done_msg % {
                 "name": task_name,
                 "id": task_id,
                 "return_value": ret_value})

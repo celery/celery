@@ -5,7 +5,7 @@ from celery.conf import DAEMON_CONCURRENCY, DAEMON_LOG_FILE
 from celery.conf import QUEUE_WAKEUP_AFTER, EMPTY_MSG_EMIT_EVERY
 from celery.log import setup_logger
 from celery.registry import tasks
-from celery.datastructures import TaskWorkerPool
+from celery.datastructures import TaskProcessQueue
 from celery.models import PeriodicTaskMeta
 from celery.backends import default_backend
 from celery.timer import EventTimer
@@ -162,9 +162,8 @@ class TaskWrapper(object):
 
         """
         task_func_kwargs = self.extend_with_default_kwargs(loglevel, logfile)
-        jail_args = [self.task_id, self.task_func, self.args,
-                     task_func_kwargs]
-        return pool.add(jail, jail_args, self.task_name, self.task_id)
+        return pool.apply_async(jail, [self.task_id, self.task_func,
+                                       self.args, task_func_kwargs])
 
 
 class TaskDaemon(object):
@@ -232,8 +231,7 @@ class TaskDaemon(object):
         self.queue_wakeup_after = queue_wakeup_after or \
                                     self.queue_wakeup_after
         self.logger = setup_logger(loglevel, logfile)
-        self.pool = TaskWorkerPool(self.concurrency, logger=self.logger,
-                done_msg="Task %(name)s[%(id)s] processed: %(return_value)s")
+        self.pool = multiprocessing.Pool(self.concurrency)
         self.task_consumer = None
         self.reset_connection()
 
@@ -331,12 +329,13 @@ class TaskDaemon(object):
 
     def run(self):
         """Starts the workers main loop."""
+        results = TaskProcessQueue(self.concurrency, logger=self.logger,
+                done_msg="Task %(name)s[%(id)s] processed: %(return_value)s")
         log_wait = lambda: self.logger.info("Waiting for queue...")
         ev_msg_waiting = EventTimer(log_wait, self.empty_msg_emit_every)
         events = [
-            EventTimer(self.run_periodic_tasks, 2),
-            EventTimer(self.schedule_retry_tasks, 4),
-            EventTimer(self.pool.reap, 2),
+            EventTimer(self.run_periodic_tasks, 1),
+            EventTimer(self.schedule_retry_tasks, 2),
         ]
 
         while True:
@@ -358,3 +357,5 @@ class TaskDaemon(object):
                 self.logger.critical("Message queue raised %s: %s\n%s" % (
                              e.__class__, e, traceback.format_exc()))
                 continue
+
+            results.add(result, task_name, task_id)

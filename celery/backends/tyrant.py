@@ -38,15 +38,15 @@ class Backend(BaseBackend):
         :setting:`TT_HOST` or :setting:`TT_PORT` is not set.
 
         """
-        self.tyrant_host = kwargs.get("tyrant_host",
-                            getattr(settings, "TT_HOST", self.tyrant_host))
-        self.tyrant_port = kwargs.get("tyrant_port",
-                            getattr(settings, "TT_PORT", self.tyrant_port))
+        self.tyrant_host = tyrant_host or \
+                            getattr(settings, "TT_HOST", self.tyrant_host)
+        self.tyrant_port = tyrant_port or \
+                            getattr(settings, "TT_PORT", self.tyrant_port)
         if not self.tyrant_host or not self.tyrant_port:
             raise ImproperlyConfigured(
                 "To use the Tokyo Tyrant backend, you have to "
                 "set the TT_HOST and TT_PORT settings in your settings.py")
-        super(Backend, self).__init__(*args, **kwargs)
+        super(Backend, self).__init__()
         self._cache = {}
 
     def get_server(self):
