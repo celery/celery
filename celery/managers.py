@@ -46,6 +46,9 @@ class TaskManager(models.Manager):
             task.result = result
             task.save()
 
+# server_drift can be negative, but timedelta supports addition on
+#negative seconds.
+server_drift = timedelta(seconds=random.vonmisesvariate(1, 10))
 
 class PeriodicTaskManager(models.Manager):
     """Manager for :class:`celery.models.PeriodicTask` models."""
@@ -60,6 +63,7 @@ class PeriodicTaskManager(models.Manager):
         for task_name, task in periodic_tasks.items():
             task_meta, created = self.get_or_create(name=task_name)
             # task_run.every must be a timedelta object.
+            run_every_drifted = task.run_every + server_drift
             run_at = task_meta.last_run_at + task.run_every
             if datetime.now() > run_at:
                 waiting.append(task_meta)
