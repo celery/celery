@@ -2,6 +2,7 @@
 from django.db import models
 from celery.registry import tasks
 from datetime import datetime, timedelta
+import random
 
 
 class TaskManager(models.Manager):
