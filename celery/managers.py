@@ -48,7 +48,7 @@ class TaskManager(models.Manager):
 
 # server_drift can be negative, but timedelta supports addition on
 #negative seconds.
-server_drift = timedelta(seconds=random.vonmisesvariate(1, 10))
+server_drift = timedelta(seconds=random.vonmisesvariate(1, 4))
 
 class PeriodicTaskManager(models.Manager):
     """Manager for :class:`celery.models.PeriodicTask` models."""
