@@ -53,9 +53,9 @@ def apply_async(task, args, kwargs, routing_key=None, immediate=None,
         message_opts[option_name] = getattr(task, option_name, option_value)
 
     amqp_connection = DjangoAMQPConnection(connect_timeout=connect_timeout)
-    publisher = TaskPublsher(connection=amqp_connection)
+    publisher = TaskPublisher(connection=amqp_connection)
     task_id = publisher.delay_task(task.name, args, kwargs, **message_opts)
-    amqp_conection.close()
+    amqp_connection.close()
     return AsyncResult(task_id)
 
 

@@ -1,9 +1,12 @@
 """celery.views"""
 from django.http import Http404, HttpResponse
-from celery.task import is_done
+from celery.task import is_done, delay_task
 from celery.result import AsyncResult
 import simplejson
 
+
+def apply_async(request, task_name, *args, **kwargs):
+    res = delay_task(task_name, args, kwargs)
 
 def is_task_done(request, task_id):
     """Returns task execute status in JSON format."""
