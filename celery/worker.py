@@ -26,7 +26,7 @@ class UnknownTask(Exception):
 
 
 def jail(task_id, func, args, kwargs):
-    """Wraps the task in a jail, which catches all exceptions, and 
+    """Wraps the task in a jail, which catches all exceptions, and
     saves the status and result of the task execution to the task
     meta backend.
 
@@ -57,7 +57,7 @@ def jail(task_id, func, args, kwargs):
 
 class TaskWrapper(object):
     """Class wrapping a task to be run.
-    
+
     :param task_name: see :attr:`task_name`.
 
     :param task_id: see :attr:`task_id`.
@@ -71,7 +71,7 @@ class TaskWrapper(object):
     .. attribute:: task_name
 
         Kind of task. Must be a name registered in the task registry.
-    
+
     .. attribute:: task_id
 
         UUID of the task.
@@ -87,7 +87,7 @@ class TaskWrapper(object):
     .. attribute:: kwargs
 
         Mapping of keyword arguments to apply to the task.
-    
+
     """
 
     def __init__(self, task_name, task_id, task_func, args, kwargs):
@@ -141,7 +141,7 @@ class TaskWrapper(object):
     def execute(self, loglevel=None, logfile=None):
         """Execute the task in a :func:`jail` and store return value
         and status in the task meta backend.
-       
+
         :keyword loglevel: The loglevel used by the task.
 
         :keyword logfile: The logfile used by the task.
@@ -172,9 +172,9 @@ class TaskWrapper(object):
 
 class WorkController(object):
     """Executes tasks waiting in the task queue.
-    
+
     :param concurrency: see :attr:`concurrency`.
-    
+
     :param logfile: see :attr:`logfile`.
 
     :param loglevel: see :attr:`loglevel`.
@@ -244,7 +244,7 @@ class WorkController(object):
     def reset_connection(self):
         """Reset the AMQP connection, and reinitialize the
         :class:`celery.messaging.TaskConsumer` instance.
-       
+
         Resets the task consumer in :attr:`task_consumer`.
 
         """
@@ -313,7 +313,7 @@ class WorkController(object):
         self.logger.debug("Trying to fetch a task.")
         task, message = self.fetch_next_task()
         self.logger.debug("Got a task: %s. Trying to execute it..." % task)
-        
+
         result = task.execute_using_pool(self.pool, self.loglevel,
                                          self.logfile)
 

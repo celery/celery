@@ -8,6 +8,7 @@ import simplejson
 def apply_async(request, task_name, *args, **kwargs):
     res = delay_task(task_name, args, kwargs)
 
+
 def is_task_done(request, task_id):
     """Returns task execute status in JSON format."""
     response_data = {"task": {"id": task_id, "executed": is_done(task_id)}}

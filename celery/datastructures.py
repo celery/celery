@@ -120,7 +120,7 @@ class TaskProcessQueue(object):
             self._start()
 
         self._processed_total = self._process_counter.next()
-        
+
         on_return = lambda r: self.on_return(r, task_name, task_id)
 
         result = self._pool.apply_async(target, args, kwargs,
@@ -152,7 +152,7 @@ class TaskProcessQueue(object):
         :param task_id: Id of the task executed.
 
         """
-      
+
         self._processes[task_id] = [result, task_name]
 
         if self.full():
