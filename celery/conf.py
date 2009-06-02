@@ -3,7 +3,8 @@ from django.conf import settings
 import logging
 
 DEFAULT_AMQP_EXCHANGE = "celery"
-DEFAULT_AMQP_ROUTING_KEY = "celery"
+DEFAULT_AMQP_PUBLISHER_ROUTING_KEY = "celery"
+DEFAULT_AMQP_CONSUMER_ROUTING_KEY = "celery"
 DEFAULT_AMQP_CONSUMER_QUEUE = "celery"
 DEFAULT_AMQP_EXCHANGE_TYPE = "direct"
 DEFAULT_DAEMON_CONCURRENCY = 10
@@ -126,13 +127,24 @@ AMQP_EXCHANGE_TYPE = getattr(settings, "CELERY_AMQP_EXCHANGE_TYPE",
                         DEFAULT_AMQP_EXCHANGE_TYPE)
 
 """
-.. data:: AMQP_ROUTING_KEY
+.. data:: AMQP_PUBLISHER_ROUTING_KEY
    
-    The AMQP routing key.
+    The default AMQP routing key used when publishing tasks.
 
 """
-AMQP_ROUTING_KEY = getattr(settings, "CELERY_AMQP_ROUTING_KEY",
-                           DEFAULT_AMQP_ROUTING_KEY)
+AMQP_PUBLISHER_ROUTING_KEY = getattr(settings,
+                                "CELERY_AMQP_PUBLISHER_ROUTING_KEY",
+                                DEFAULT_AMQP_PUBLISHER_ROUTING_KEY)
+
+"""
+.. data:: AMQP_CONSUMER_ROUTING_KEY
+   
+    The AMQP routing key used when consuming tasks.
+
+"""
+AMQP_CONSUMER_ROUTING_KEY = getattr(settings,
+                                "CELERY_AMQP_CONSUMER_ROUTING_KEY",
+                                DEFAULT_AMQP_CONSUMER_ROUTING_KEY)
 
 """
 .. data:: AMQP_CONSUMER_QUEUE

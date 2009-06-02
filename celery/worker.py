@@ -350,10 +350,8 @@ class WorkController(object):
                 time.sleep(1)
 
         while True:
-            print("!!!!! Running tick...")
             [event.tick() for event in events]
             try:
-                print("Trying to execute task.")
                 result, task_name, task_id = self.execute_next_task()
             except ValueError:
                 # execute_next_task didn't return a r/name/id tuple,

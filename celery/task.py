@@ -18,8 +18,8 @@ import uuid
 import pickle
 
 
-def apply_async(task, args, kwargs, routing_key=None, immediate=None,
-        mandatory=None, connect_timeout=None, priority=None):
+def apply_async(task, args=None, kwargs=None, routing_key=None,
+        immediate=None, mandatory=None, connect_timeout=None, priority=None):
     """Run a task asynchronously by the celery daemon(s).
 
     :param task: The task to run (a callable object, or a :class:`Task`
@@ -45,6 +45,10 @@ def apply_async(task, args, kwargs, routing_key=None, immediate=None,
     :keyword priority: The task priority, a number between ``0`` and ``9``.
 
     """
+    if not args:
+        args = []
+    if not kwargs:
+        kwargs = []
     message_opts = {"routing_key": routing_key,
                     "immediate": immediate,
                     "mandatory": mandatory,
@@ -262,7 +266,7 @@ class Task(object):
         return apply_async(cls, args, kwargs)
 
     @classmethod
-    def apply_async(cls, args, kwargs, **options):
+    def apply_async(cls, args=None, kwargs=None, **options):
         """Delay this task for execution by the ``celery`` daemon(s).
 
         :param args: positional arguments passed on to the task.
