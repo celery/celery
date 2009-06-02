@@ -1,14 +1,21 @@
 """celery.backends.database"""
-from celery.models import TaskMeta
+from celery.models import TaskMeta, PeriodicTaskMeta
 from celery.backends.base import BaseBackend
 
 
 class Backend(BaseBackend):
     """The database backends. Using Django models to store task metadata."""
 
+    capabilities = ["ResultStore", "PeriodicStatus"]
+
     def __init__(self, *args, **kwargs):
         super(Backend, self).__init__(*args, **kwargs)
         self._cache = {}
+
+    def run_periodic_tasks(self):
+        waiting_tasks = PeriodicTaskMeta.objects.get_waiting_tasks()
+        for waiting_task in waiting_tasks:
+            waiting_task.delay()
 
     def store_result(self, task_id, result, status):
         """Mark task as done (executed)."""

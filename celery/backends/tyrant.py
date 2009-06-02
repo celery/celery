@@ -31,6 +31,8 @@ class Backend(BaseBackend):
     tyrant_host = None
     tyrant_port = None
 
+    capabilities = ["ResultStore"]
+
     def __init__(self, tyrant_host=None, tyrant_port=None):
         """Initialize Tokyo Tyrant backend instance.
 

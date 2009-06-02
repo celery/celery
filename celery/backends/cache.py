@@ -10,6 +10,8 @@ except ImportError:
 class Backend(BaseBackend):
     """Backend using the Django cache framework to store task metadata."""
 
+    capabilities = ["ResultStore"]
+
     def __init__(self, *args, **kwargs):
         super(Backend, self).__init__(*args, **kwargs)
         self._cache = {}

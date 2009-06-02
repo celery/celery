@@ -80,12 +80,13 @@ class UnpickleableExceptionWrapper(Exception):
 class BaseBackend(object):
     """The base backend class. All backends should inherit from this."""
 
+    capabilities = []
     UnpickleableExceptionWrapper = UnpickleableExceptionWrapper
 
     def store_result(self, task_id, result, status):
         """Store the result and status of a task."""
         raise NotImplementedError(
-                "Backends must implement the store_result method")
+                "store_result is not supported by this backend.")
 
     def mark_as_done(self, task_id, result):
         """Mark task as successfully executed."""
@@ -130,7 +131,7 @@ class BaseBackend(object):
     def get_status(self, task_id):
         """Get the status of a task."""
         raise NotImplementedError(
-                "Backends must implement the get_status method")
+                "get_status is not supported by this backend.")
 
     def prepare_result(self, result):
         """Prepare result for storage."""
@@ -141,7 +142,7 @@ class BaseBackend(object):
     def get_result(self, task_id):
         """Get the result of a task."""
         raise NotImplementedError(
-                "Backends must implement the get_result method")
+                "get_result is not supported by this backend.")
 
     def is_done(self, task_id):
         """Returns ``True`` if the task was successfully executed."""
