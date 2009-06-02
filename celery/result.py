@@ -123,7 +123,7 @@ class AsyncResult(BaseAsyncResult):
 
     :param task_id: see :attr:`task_id`.
 
-    
+
     .. attribute:: task_id
 
         The unique identifier for this task.

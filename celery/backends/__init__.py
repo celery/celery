@@ -47,7 +47,7 @@ get_default_periodicstatus_backend_cls = partial(get_backend_cls,
 
 """
 .. class:: DefaultBackend
-    
+
     The default backend class used for storing task results and status,
     specified in :setting:`CELERY_BACKEND`.
 

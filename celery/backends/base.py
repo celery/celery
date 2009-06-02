@@ -13,7 +13,7 @@ def find_nearest_pickleable_exception(exc):
     not go below :exc:`Exception` (i.e. it skips :exc:`Exception`,
     :class:`BaseException` and :class:`object`). If that happens
     you should use :exc:`UnpickleableException` instead.
-  
+
     :param exc: An exception instance.
 
     :returns: the nearest exception if it's not :exc:`Exception` or below,
@@ -39,11 +39,11 @@ def find_nearest_pickleable_exception(exc):
 
 class UnpickleableExceptionWrapper(Exception):
     """Wraps unpickleable exceptions.
-   
+
     :param exc_module: see :attr:`exc_module`.
 
     :param exc_cls_name: see :attr:`exc_cls_name`.
-    
+
     :param exc_args: see :attr:`exc_args`
 
     .. attribute:: exc_module
@@ -116,7 +116,7 @@ class BaseBackend(object):
             return excwrapper
         else:
             return exc
-    
+
     def exception_to_python(self, exc):
         if isinstance(exc, UnpickleableExceptionWrapper):
             exc_cls = self.create_exception_cls(exc.exc_cls_name,
