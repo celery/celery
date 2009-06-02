@@ -4,6 +4,7 @@ Custom Datastructures
 
 """
 import multiprocessing
+from multiprocessing.pool import RUN as POOL_STATE_RUN
 import itertools
 import threading
 import time
@@ -85,42 +86,58 @@ class TaskProcessQueue(object):
         self.logger = logger or multiprocessing.get_logger()
         self.done_msg = done_msg
         self.reap_timeout = reap_timeout
-        self._processes = {}
         self._process_counter = itertools.count(1)
+        self._processed_total = 0
         self._data_lock = threading.Condition(threading.Lock())
         self._start()
 
     def _start(self):
-        assert int(self.limit)
+        self._processes = {}
         self._pool = multiprocessing.Pool(processes=self.limit)
+
+    def _terminate_and_restart(self):
+        try:
+            self._pool.terminate()
+        except OSError:
+            pass
+        self._start()
 
     def _restart(self):
         self.logger.info("Closing and restarting the pool...")
         self._pool.close()
+        timeout_thread = threading.Timer(30.0, self._terminate_and_restart)
+        timeout_thread.start()
         self._pool.join()
+        timeout_thread.cancel()
         self._start()
 
-    def apply_async(self, target, args, kwargs, task_name, task_id):
-        _pid = self._process_counter.next()
+    def _pool_is_running(self):
+        return self._pool._state == POOL_STATE_RUN
 
-        on_return = lambda ret_val: self.on_return(_pid, ret_val,
-                                                   task_name, task_id)
+    def apply_async(self, target, args, kwargs, task_name, task_id):
+
+        if not self._pool_is_running():
+            self._start()
+
+        self._processed_total = self._process_counter.next()
+        
+        on_return = lambda r: self.on_return(r, task_name, task_id)
 
         result = self._pool.apply_async(target, args, kwargs,
                                            callback=on_return)
-        self.add(_pid, result, task_name, task_id)
+        self.add(result, task_name, task_id)
 
         return result
 
-    def on_return(self, _pid, ret_val, task_name, task_id):
+    def on_return(self, ret_val, task_name, task_id):
         try:
-            del(self._processes[_pid])
+            del(self._processes[task_id])
         except KeyError:
             pass
         else:
             self.on_ready(ret_val, task_name, task_id)
 
-    def add(self, _pid, result, task_name, task_id):
+    def add(self, result, task_name, task_id):
         """Add a process to the queue.
 
         If the queue is full, it will wait for the first task to finish,
@@ -136,12 +153,22 @@ class TaskProcessQueue(object):
 
         """
       
-        self._processes[_pid] = [result, task_name, task_id]
+        self._processes[task_id] = [result, task_name]
 
         if self.full():
             self.wait_for_result()
 
     def _is_alive(self, pid):
+        """Uses non-blocking ``waitpid`` to see if a process is still alive.
+
+        :param pid: The process id of the process.
+
+        :returns: ``True`` if the process is still running, ``False``
+            otherwise.
+
+        :rtype: bool
+
+        """
         try:
             is_alive = os.waitpid(pid, os.WNOHANG) == (0, 0)
         except OSError, e:
@@ -149,7 +176,7 @@ class TaskProcessQueue(object):
                 raise
         return is_alive
 
-    def reap_zombies(self):
+    def _reap_zombies(self):
         assert hasattr(self._pool, "_pool")
         self.logger.debug("Trying to find zombies...")
         for process in self._pool._pool:
@@ -163,28 +190,59 @@ class TaskProcessQueue(object):
         return len(self._processes.values()) >= self.limit
 
     def wait_for_result(self):
-        """Collect results from processes that are ready."""
+        """Waits for the first process in the pool to finish.
+
+        This operation is blocking.
+
+        """
         while True:
             if self.reap():
                 break
-            self.reap_zombies()
+            #self._reap_zombies()
 
     def reap(self):
+        self.logger.debug("Reaping processes...")
         processes_reaped = 0
         for process_no, entry in enumerate(self._processes.items()):
-            _pid, process_info = entry
-            result, task_name, task_id = process_info
+            task_id, process_info = entry
+            result, task_name = process_info
             try:
-                ret_value = result.get(timeout=0.1)
+                ret_value = result.get(timeout=0.3)
             except multiprocessing.TimeoutError:
                 continue
             else:
-                self.on_return(_pid, ret_value, task_name, task_id)
+                self.on_return(ret_value, task_name, task_id)
                 processes_reaped += 1
         return processes_reaped
 
+    def get_worker_pids(self):
+        """Returns the process id's of all the pool workers.
+
+        :rtype: list
+
+        """
+        return [process.pid for process in self._pool._pool]
 
     def on_ready(self, ret_value, task_name, task_id):
+        """What to do when a worker returns with a result.
+
+        If :attr:`done_msg` is defined, it will log this
+        format string, with level ``logging.INFO``,
+        using these format variables:
+
+            * %(name)
+
+                The name of the task completed
+
+            * %(id)
+
+                The UUID of the task completed.
+
+            * %(return_value)
+
+                Return value of the task function.
+
+        """
         if self.done_msg:
             self.logger.info(self.done_msg % {
                 "name": task_name,

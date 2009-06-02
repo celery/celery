@@ -45,7 +45,7 @@ from celery.conf import LOG_LEVELS, DAEMON_LOG_FILE, DAEMON_LOG_LEVEL
 from celery.conf import DAEMON_CONCURRENCY, DAEMON_PID_FILE
 from celery.conf import QUEUE_WAKEUP_AFTER
 from celery import discovery
-from celery.worker import TaskDaemon
+from celery.worker import WorkController
 import traceback
 import optparse
 import atexit
@@ -70,10 +70,11 @@ def main(concurrency=DAEMON_CONCURRENCY, daemon=False,
         logfile = None # log to stderr when not running as daemon.
 
     discovery.autodiscover()
-    celeryd = TaskDaemon(concurrency=concurrency,
+    celeryd = WorkController(concurrency=concurrency,
                                loglevel=loglevel,
                                logfile=logfile,
-                               queue_wakeup_after=queue_wakeup_after)
+                               queue_wakeup_after=queue_wakeup_after,
+                               is_detached=daemon)
     try:
         celeryd.run()
     except Exception, e:

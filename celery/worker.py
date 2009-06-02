@@ -7,7 +7,7 @@ from celery.log import setup_logger
 from celery.registry import tasks
 from celery.datastructures import TaskProcessQueue
 from celery.models import PeriodicTaskMeta
-from celery.backends import default_backend
+from celery.backends import default_backend, default_periodic_status_backend
 from celery.timer import EventTimer
 import multiprocessing
 import simplejson
@@ -37,16 +37,12 @@ def jail(task_id, func, args, kwargs):
     result, and sets the task status to ``"FAILURE"``.
 
     :param task_id: The id of the task.
-
     :param func: Callable object to execute.
-
     :param args: List of positional args to pass on to the function.
-
     :param kwargs: Keyword arguments mapping to pass on to the function.
 
-    :returns: the function return value on success.
-
-    :returns: the exception instance on failure.
+    :returns: the function return value on success, or
+        the exception instance on failure.
 
     """
     try:
@@ -100,6 +96,12 @@ class TaskWrapper(object):
         self.task_func = task_func
         self.args = args
         self.kwargs = kwargs
+
+    def __repr__(self):
+        return '<%s: {name:"%s", id:"%s", args:"%s", kwargs:"%s"}>' % (
+                self.__class__.__name__,
+                self.task_name, self.task_id,
+                self.args, self.kwargs)
 
     @classmethod
     def from_message(cls, message):
@@ -168,7 +170,7 @@ class TaskWrapper(object):
                                 self.task_name, self.task_id)
 
 
-class TaskDaemon(object):
+class WorkController(object):
     """Executes tasks waiting in the task queue.
     
     :param concurrency: see :attr:`concurrency`.
@@ -226,7 +228,7 @@ class TaskDaemon(object):
     empty_msg_emit_every = EMPTY_MSG_EMIT_EVERY
 
     def __init__(self, concurrency=None, logfile=None, loglevel=None,
-            queue_wakeup_after=None):
+            queue_wakeup_after=None, is_detached=False):
         self.loglevel = loglevel or self.loglevel
         self.concurrency = concurrency or self.concurrency
         self.logfile = logfile or self.logfile
@@ -236,6 +238,7 @@ class TaskDaemon(object):
         self.pool = TaskProcessQueue(self.concurrency, logger=self.logger,
                 done_msg="Task %(name)s[%(id)s] processed: %(return_value)s")
         self.task_consumer = None
+        self.is_detached = is_detached
         self.reset_connection()
 
     def reset_connection(self):
@@ -273,8 +276,11 @@ class TaskDaemon(object):
 
         """
         #self.connection_diagnostics()
+        self.logger.debug("Trying to fetch message from broker...")
         message = self.task_consumer.fetch()
         if message is not None:
+            self.logger.debug("Acknowledging message with delivery tag %s" % (
+                message.delivery_tag))
             message.ack()
         return message
 
@@ -304,27 +310,23 @@ class TaskDaemon(object):
         :const:`logging.CRITICAL`.
 
         """
+        self.logger.debug("Trying to fetch a task.")
         task, message = self.fetch_next_task()
+        self.logger.debug("Got a task: %s. Trying to execute it..." % task)
+        
+        result = task.execute_using_pool(self.pool, self.loglevel,
+                                         self.logfile)
 
-        try:
-            result = task.execute_using_pool(self.pool, self.loglevel,
-                                             self.logfile)
-        except Exception, error:
-            self.logger.critical("Worker got exception %s: %s\n%s" % (
-                error.__class__, error, traceback.format_exc()))
-            return
+        self.logger.debug("Task %s has been executed asynchronously." % task)
 
         return result, task.task_name, task.task_id
 
     def run_periodic_tasks(self):
         """Schedule all waiting periodic tasks for execution.
 
-        :rtype: list of :class:`celery.models.PeriodicTaskMeta` objects.
         """
-        waiting_tasks = PeriodicTaskMeta.objects.get_waiting_tasks()
-        [waiting_task.delay()
-                for waiting_task in waiting_tasks]
-        return waiting_tasks
+        self.logger.debug("Looking for periodic tasks ready for execution...")
+        default_periodic_status_backend.run_periodic_tasks()
 
     def schedule_retry_tasks(self):
         """Reschedule all requeued tasks waiting for retry."""
@@ -339,9 +341,19 @@ class TaskDaemon(object):
             EventTimer(self.schedule_retry_tasks, 2),
         ]
 
+        # If not running as daemon, and DEBUG logging level is enabled,
+        # print pool PIDs and sleep for a second before we start.
+        if self.logger.isEnabledFor(logging.DEBUG):
+            self.logger.debug("Pool child processes: [%s]" % (
+                "|".join(map(str, self.pool.get_worker_pids()))))
+            if not self.is_detached:
+                time.sleep(1)
+
         while True:
+            print("!!!!! Running tick...")
             [event.tick() for event in events]
             try:
+                print("Trying to execute task.")
                 result, task_name, task_id = self.execute_next_task()
             except ValueError:
                 # execute_next_task didn't return a r/name/id tuple,
