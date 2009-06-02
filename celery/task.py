@@ -276,7 +276,7 @@ class Task(object):
         :rtype: :class:`celery.result.AsyncResult`
 
         See :func:`apply_async`.
-
+        
         """
         return apply_async(cls, args, kwargs, **options)
 

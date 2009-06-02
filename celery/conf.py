@@ -18,7 +18,7 @@ DEFAULT_REAP_TIMEOUT = 30
 
 """
 .. data:: LOG_LEVELS
-
+   
     Mapping of log level names to :mod:`logging` module constants.
 
 """
@@ -34,7 +34,7 @@ LOG_LEVELS = {
 
 """
 .. data:: LOG_FORMAT
-
+   
     The format to use for log messages.
     Default is ``[%(asctime)s: %(levelname)s/%(processName)s] %(message)s``
 
@@ -44,7 +44,7 @@ LOG_FORMAT = getattr(settings, "CELERYD_DAEMON_LOG_FORMAT",
 
 """
 .. data:: DAEMON_LOG_FILE
-
+   
     The path to the deamon log file (if not set, ``stderr`` is used).
 
 """
@@ -53,7 +53,7 @@ DAEMON_LOG_FILE = getattr(settings, "CELERYD_LOG_FILE",
 
 """
 .. data:: DAEMON_LOG_LEVEL
-
+   
     Celery daemon log level, can be any of ``DEBUG``, ``INFO``, ``WARNING``,
     ``ERROR``, ``CRITICAL``, or ``FATAL``. See the :mod:`logging` module
     for more information.
@@ -64,7 +64,7 @@ DAEMON_LOG_LEVEL = LOG_LEVELS[getattr(settings, "CELERYD_DAEMON_LOG_LEVEL",
 
 """
 .. data:: QUEUE_WAKEUP_AFTER
-
+   
     The time (in seconds) the celery worker should sleep when there's
     no messages left on the queue. After the time is slept, the worker
     wakes up and checks the queue again.
@@ -75,7 +75,7 @@ QUEUE_WAKEUP_AFTER = getattr(settings, "CELERYD_QUEUE_WAKEUP_AFTER",
 
 """
 .. data:: EMPTY_MSG_EMIT_EVERY
-
+   
     How often the celery daemon should write a log message saying there are no
     messages in the queue. If this is ``None`` or ``0``, it will never print
     this message.
@@ -86,7 +86,7 @@ EMPTY_MSG_EMIT_EVERY = getattr(settings, "CELERYD_EMPTY_MSG_EMIT_EVERY",
 
 """
 .. data:: DAEMON_PID_FILE
-
+   
     Full path to the daemon pidfile.
 
 """
@@ -95,7 +95,7 @@ DAEMON_PID_FILE = getattr(settings, "CELERYD_PID_FILE",
 
 """
 .. data:: DAEMON_CONCURRENCY
-
+   
     The number of concurrent worker processes, executing tasks simultaneously.
 
 """
@@ -116,7 +116,7 @@ AMQP_EXCHANGE = getattr(settings, "CELERY_AMQP_EXCHANGE",
 .. data:: AMQP_EXCHANGE_TYPE
 
 The type of exchange. If the exchange type is ``direct``, all messages
-receives all tasks. However, if the exchange type is ``topic``, you can
+receives all tasks. However, if the exchange type is ``topic``, you can 
 route e.g some tasks to one server, and others to the rest.
 See `Exchange types and the effect of bindings`_.
 
@@ -128,7 +128,7 @@ AMQP_EXCHANGE_TYPE = getattr(settings, "CELERY_AMQP_EXCHANGE_TYPE",
 
 """
 .. data:: AMQP_PUBLISHER_ROUTING_KEY
-
+   
     The default AMQP routing key used when publishing tasks.
 
 """
@@ -138,7 +138,7 @@ AMQP_PUBLISHER_ROUTING_KEY = getattr(settings,
 
 """
 .. data:: AMQP_CONSUMER_ROUTING_KEY
-
+   
     The AMQP routing key used when consuming tasks.
 
 """
@@ -148,7 +148,7 @@ AMQP_CONSUMER_ROUTING_KEY = getattr(settings,
 
 """
 .. data:: AMQP_CONSUMER_QUEUE
-
+   
     The name of the AMQP queue.
 
 """
