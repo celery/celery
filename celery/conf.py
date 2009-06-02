@@ -5,6 +5,7 @@ import logging
 DEFAULT_AMQP_EXCHANGE = "celery"
 DEFAULT_AMQP_ROUTING_KEY = "celery"
 DEFAULT_AMQP_CONSUMER_QUEUE = "celery"
+DEFAULT_AMQP_EXCHANGE_TYPE = "direct"
 DEFAULT_DAEMON_CONCURRENCY = 10
 DEFAULT_QUEUE_WAKEUP_AFTER = 0.3
 DEFAULT_EMPTY_MSG_EMIT_EVERY = 5
@@ -108,6 +109,21 @@ DAEMON_CONCURRENCY = getattr(settings, "CELERYD_CONCURRENCY",
 """
 AMQP_EXCHANGE = getattr(settings, "CELERY_AMQP_EXCHANGE",
                         DEFAULT_AMQP_EXCHANGE)
+
+
+"""
+.. data:: AMQP_EXCHANGE_TYPE
+
+The type of exchange. If the exchange type is ``direct``, all messages
+receives all tasks. However, if the exchange type is ``topic``, you can 
+route e.g some tasks to one server, and others to the rest.
+See `Exchange types and the effect of bindings`_.
+
+.. _`Exchange types and the effect of bindings: http://en.wikipedia.org/wiki/Advanced_Message_Queuing_Protocol#Exchange_types_and_the_effect_of_bindings
+
+"""
+AMQP_EXCHANGE_TYPE = getattr(settings, "CELERY_AMQP_EXCHANGE_TYPE",
+                        DEFAULT_AMQP_EXCHANGE_TYPE)
 
 """
 .. data:: AMQP_ROUTING_KEY

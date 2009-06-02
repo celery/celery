@@ -22,34 +22,39 @@ class TaskPublisher(Publisher):
     exchange = conf.AMQP_EXCHANGE
     routing_key = conf.AMQP_ROUTING_KEY
 
-    def delay_task(self, task_name, *task_args, **task_kwargs):
+    def delay_task(self, task_name, task_args, task_kwargs, **kwargs):
         """Delay task for execution by the celery nodes."""
         return self._delay_task(task_name=task_name, args=task_args,
-                                kwargs=task_kwargs)
+                                kwargs=task_kwargs, **kwargs)
 
     def delay_task_in_set(self, task_name, taskset_id, task_args,
-            task_kwargs):
+            task_kwargs, **kwargs):
         """Delay a task which part of a task set."""
         return self._delay_task(task_name=task_name, part_of_set=taskset_id,
-                                args=task_args, kwargs=task_kwargs)
+                                args=task_args, kwargs=task_kwargs, **kwargs)
 
     def requeue_task(self, task_name, task_id, task_args, task_kwargs,
-            part_of_set=None):
+            part_of_set=None, **kwargs):
         """Requeue a failed task."""
         return self._delay_task(task_name=task_name, part_of_set=part_of_set,
                                 task_id=task_id, args=task_args,
-                                kwargs=task_kwargs)
+                                kwargs=task_kwargs, **kwargs)
 
     def _delay_task(self, task_name, task_id=None, part_of_set=None,
-            args=None, kwargs=None):
-        args = args or []
-        kwargs = kwargs or {}
+            task_args=None, task_kwargs=None, **kwargs):
+        priority = kwargs.get("priority")
+        immediate = kwargs.get("immediate")
+        mandatory = kwargs.get("mandatory")
+        routing_key = kwargs.get("routing_key")
+
+        task_args = task_args or []
+        task_kwargs = task_kwargs or {}
         task_id = task_id or str(uuid.uuid4())
         message_data = {
             "id": task_id,
             "task": task_name,
-            "args": args,
-            "kwargs": kwargs,
+            "args": task_args,
+            "kwargs": task_kwargs,
         }
         if part_of_set:
             message_data["taskset"] = part_of_set
@@ -62,3 +67,4 @@ class TaskConsumer(NoProcessConsumer):
     queue = conf.AMQP_CONSUMER_QUEUE
     exchange = conf.AMQP_EXCHANGE
     routing_key = conf.AMQP_ROUTING_KEY
+    exchange_type = conf.AMQP_EXCHANGE_TYPE

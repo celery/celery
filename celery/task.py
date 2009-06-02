@@ -18,6 +18,47 @@ import uuid
 import pickle
 
 
+def apply_async(task, args, kwargs, routing_key=None, immediate=None,
+        mandatory=None, connect_timeout=None, priority=None):
+    """Run a task asynchronously by the celery daemon(s).
+
+    :param task: The task to run (a callable object, or a :class:`Task`
+        instance
+
+    :param args: The positional arguments to pass on to the task (a ``list``).
+
+    :param kwargs: The keyword arguments to pass on to the task (a ``dict``)
+
+
+    :keyword routing_key: The routing key used to route the task to a worker
+        server.
+
+    :keyword immediate: Request immediate delivery. Will raise an exception
+        if the task cannot be routed to a worker immediately.
+
+    :keyword mandatory: Mandatory routing. Raises an exception if there's
+        no running workers able to take on this task.
+
+    :keyword connect_timeout: The timeout in seconds, before we give up
+        on establishing a connection to the AMQP server.
+
+    :keyword priority: The task priority, a number between ``0`` and ``9``.
+
+    """
+    message_opts = {"routing_key": routing_key,
+                    "immediate": immediate,
+                    "mandatory": mandatory,
+                    "priority": priority}
+    for option_name, option_value in message_opts.items():
+        message_opts[option_name] = getattr(task, option_name, option_value)
+
+    amqp_connection = DjangoAMQPConnection(connect_timeout=connect_timeout)
+    publisher = TaskPublsher(connection=amqp_connection)
+    task_id = publisher.delay_task(task.name, args, kwargs, **message_opts)
+    amqp_conection.close()
+    return AsyncResult(task_id)
+
+
 def delay_task(task_name, *args, **kwargs):
     """Delay a task for execution by the ``celery`` daemon.
 
@@ -45,11 +86,8 @@ def delay_task(task_name, *args, **kwargs):
         raise tasks.NotRegistered(
                 "Task with name %s not registered in the task registry." % (
                     task_name))
-    amqp_connection = DjangoAMQPConnection()
-    publisher = TaskPublisher(connection=amqp_connection)
-    task_id = publisher.delay_task(task_name, *args, **kwargs)
-    amqp_connection.close()
-    return AsyncResult(task_id)
+    task = tasks[task_name]
+    return apply_async(task, args, kwargs)
 
 
 def discard_all():
@@ -140,6 +178,9 @@ class Task(object):
     max_retries = 0 # unlimited
     retry_interval = timedelta(seconds=2)
     auto_retry = False
+    routing_key = None
+    immediate = False
+    mandatory = False
 
     def __init__(self):
         if not self.name:
@@ -218,7 +259,22 @@ class Task(object):
         See :func:`delay_task`.
 
         """
-        return delay_task(cls.name, *args, **kwargs)
+        return apply_async(cls, args, kwargs)
+
+    @classmethod
+    def apply_async(cls, args, kwargs, **options):
+        """Delay this task for execution by the ``celery`` daemon(s).
+
+        :param args: positional arguments passed on to the task.
+
+        :param kwargs: keyword arguments passed on to the task.
+
+        :rtype: :class:`celery.result.AsyncResult`
+
+        See :func:`apply_async`.
+        
+        """
+        return apply_async(cls, args, kwargs, **options)
 
 
 class TaskSet(object):
