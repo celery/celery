@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Multiprocessing Worker - celery.worker &mdash; Celery v0.2.0 documentation</title>
+    <title>Multiprocessing Worker - celery.worker &mdash; Celery v0.2.14 documentation</title>
     <link rel="stylesheet" href="../static/agogo.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
       URL_ROOT:    '../',
-      VERSION:     '0.2.0',
+      VERSION:     '0.2.14',
       COLLAPSE_MODINDEX: false,
       FILE_SUFFIX: '.html',
       HAS_SOURCE:  true
@@ -19,7 +19,7 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.2.0 documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.2.14 documentation" href="../index.html" />
     <link rel="up" title="Module API Reference" href="index.html" />
     <link rel="next" title="Backends - celery.backends" href="celery.backends.html" />
     <link rel="prev" title="Task Discovery - celery.discovery" href="celery.discovery.html" /> 
@@ -28,7 +28,7 @@
 
     <div class="header-wrapper">
       <div class="header">
-	<h1><a href="../index.html">Celery v0.2.0 documentation</a></h1>
+	<h1><a href="../index.html">Celery v0.2.14 documentation</a></h1>
 	<div class="rel">
           <a href="../genindex.html" title="General Index"
              accesskey="I">index</a> |
@@ -57,151 +57,6 @@
 <em class="property">
 exception </em><tt class="descclassname">celery.worker.</tt><tt class="descname">EmptyQueue</tt><a class="headerlink" href="#celery.worker.EmptyQueue" title="Permalink to this definition">¶</a></dt>
 <dd>The message queue is currently empty.</dd></dl>
-
-<dl class="class">
-<dt id="celery.worker.TaskDaemon">
-<em class="property">
-class </em><tt class="descclassname">celery.worker.</tt><tt class="descname">TaskDaemon</tt><big>(</big><em>concurrency=None</em>, <em>logfile=None</em>, <em>loglevel=None</em>, <em>queue_wakeup_after=None</em><big>)</big><a class="headerlink" href="#celery.worker.TaskDaemon" title="Permalink to this definition">¶</a></dt>
-<dd><p>Executes tasks waiting in the task queue.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><em>concurrency</em> &#8211; see <a title="celery.worker.TaskDaemon.concurrency" class="reference internal" href="#celery.worker.TaskDaemon.concurrency"><tt class="xref docutils literal"><span class="pre">concurrency</span></tt></a>.</li>
-<li><em>logfile</em> &#8211; see <a title="celery.worker.TaskDaemon.logfile" class="reference internal" href="#celery.worker.TaskDaemon.logfile"><tt class="xref docutils literal"><span class="pre">logfile</span></tt></a>.</li>
-<li><em>loglevel</em> &#8211; see <a title="celery.worker.TaskDaemon.loglevel" class="reference internal" href="#celery.worker.TaskDaemon.loglevel"><tt class="xref docutils literal"><span class="pre">loglevel</span></tt></a>.</li>
-<li><em>queue_wakeup_after</em> &#8211; see <a title="celery.worker.TaskDaemon.queue_wakeup_after" class="reference internal" href="#celery.worker.TaskDaemon.queue_wakeup_after"><tt class="xref docutils literal"><span class="pre">queue_wakeup_after</span></tt></a>.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-<dl class="attribute">
-<dt id="celery.worker.TaskDaemon.concurrency">
-<tt class="descname">concurrency</tt><a class="headerlink" href="#celery.worker.TaskDaemon.concurrency" title="Permalink to this definition">¶</a></dt>
-<dd>The number of simultaneous processes doing work (default:
-<a title="celery.conf.DAEMON_CONCURRENCY" class="reference external" href="celery.conf.html#celery.conf.DAEMON_CONCURRENCY"><tt class="xref docutils literal"><span class="pre">celery.conf.DAEMON_CONCURRENCY</span></tt></a>)</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.worker.TaskDaemon.loglevel">
-<tt class="descname">loglevel</tt><a class="headerlink" href="#celery.worker.TaskDaemon.loglevel" title="Permalink to this definition">¶</a></dt>
-<dd>The loglevel used (default: <tt class="xref docutils literal"><span class="pre">logging.INFO</span></tt>)</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.worker.TaskDaemon.logfile">
-<tt class="descname">logfile</tt><a class="headerlink" href="#celery.worker.TaskDaemon.logfile" title="Permalink to this definition">¶</a></dt>
-<dd>The logfile used, if no logfile is specified it uses <tt class="docutils literal"><span class="pre">stderr</span></tt>
-(default: <a title="celery.conf.DAEMON_LOG_FILE" class="reference external" href="celery.conf.html#celery.conf.DAEMON_LOG_FILE"><tt class="xref docutils literal"><span class="pre">celery.conf.DAEMON_LOG_FILE</span></tt></a>).</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.worker.TaskDaemon.queue_wakeup_after">
-<tt class="descname">queue_wakeup_after</tt><a class="headerlink" href="#celery.worker.TaskDaemon.queue_wakeup_after" title="Permalink to this definition">¶</a></dt>
-<dd>The time it takes for the daemon to wake up after the queue is empty,
-so it can check for more work
-(default: <a title="celery.conf.QUEUE_WAKEUP_AFTER" class="reference external" href="celery.conf.html#celery.conf.QUEUE_WAKEUP_AFTER"><tt class="xref docutils literal"><span class="pre">celery.conf.QUEUE_WAKEUP_AFTER</span></tt></a>).</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.worker.TaskDaemon.empty_msg_emit_every">
-<tt class="descname">empty_msg_emit_every</tt><a class="headerlink" href="#celery.worker.TaskDaemon.empty_msg_emit_every" title="Permalink to this definition">¶</a></dt>
-<dd>How often the daemon emits the <tt class="docutils literal"><span class="pre">&quot;Waiting</span> <span class="pre">for</span> <span class="pre">queue...&quot;</span></tt> message.
-If this is <tt class="xref docutils literal"><span class="pre">None</span></tt>, the message will never be logged.
-(default: <a title="celery.conf.EMPTY_MSG_EMIT_EVERY" class="reference external" href="celery.conf.html#celery.conf.EMPTY_MSG_EMIT_EVERY"><tt class="xref docutils literal"><span class="pre">celery.conf.EMPTY_MSG_EMIT_EVERY</span></tt></a>)</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.worker.TaskDaemon.logger">
-<tt class="descname">logger</tt><a class="headerlink" href="#celery.worker.TaskDaemon.logger" title="Permalink to this definition">¶</a></dt>
-<dd>The <tt class="xref docutils literal"><span class="pre">logging.Logger</span></tt> instance used for logging.</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.worker.TaskDaemon.pool">
-<tt class="descname">pool</tt><a class="headerlink" href="#celery.worker.TaskDaemon.pool" title="Permalink to this definition">¶</a></dt>
-<dd>The <tt class="xref docutils literal"><span class="pre">multiprocessing.Pool</span></tt> instance used.</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.worker.TaskDaemon.task_consumer">
-<tt class="descname">task_consumer</tt><a class="headerlink" href="#celery.worker.TaskDaemon.task_consumer" title="Permalink to this definition">¶</a></dt>
-<dd>The <a title="celery.messaging.TaskConsumer" class="reference external" href="celery.messaging.html#celery.messaging.TaskConsumer"><tt class="xref docutils literal"><span class="pre">celery.messaging.TaskConsumer</span></tt></a> instance used.</dd></dl>
-
-<dl class="method">
-<dt id="celery.worker.TaskDaemon.connection_diagnostics">
-<tt class="descname">connection_diagnostics</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.TaskDaemon.connection_diagnostics" title="Permalink to this definition">¶</a></dt>
-<dd>Diagnose the AMQP connection, and reset connection if
-necessary.</dd></dl>
-
-<dl class="method">
-<dt id="celery.worker.TaskDaemon.execute_next_task">
-<tt class="descname">execute_next_task</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.TaskDaemon.execute_next_task" title="Permalink to this definition">¶</a></dt>
-<dd><p>Execute the next task on the queue using the multiprocessing pool.</p>
-<p>Catches all exceptions and logs them with level
-<tt class="xref docutils literal"><span class="pre">logging.CRITICAL</span></tt>.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.worker.TaskDaemon.fetch_next_task">
-<tt class="descname">fetch_next_task</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.TaskDaemon.fetch_next_task" title="Permalink to this definition">¶</a></dt>
-<dd><p>Fetch the next task from the AMQP broker.</p>
-<p>Raises <a title="celery.worker.EmptyQueue" class="reference internal" href="#celery.worker.EmptyQueue"><tt class="xref docutils literal"><span class="pre">EmptyQueue</span></tt></a> exception if there is no message
-waiting on the queue.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><a title="celery.worker.TaskWrapper" class="reference internal" href="#celery.worker.TaskWrapper"><tt class="xref docutils literal"><span class="pre">TaskWrapper</span></tt></a> instance.</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.worker.TaskDaemon.receive_message">
-<tt class="descname">receive_message</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.TaskDaemon.receive_message" title="Permalink to this definition">¶</a></dt>
-<dd><p>Receive the next message from the message broker.</p>
-<p>Tries to reset the AMQP connection if not available.
-Returns <tt class="xref docutils literal"><span class="pre">None</span></tt> if no message is waiting on the queue.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Return type:</th><td class="field-body"><tt class="xref docutils literal"><span class="pre">carrot.messaging.Message</span></tt> instance.</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.worker.TaskDaemon.reset_connection">
-<tt class="descname">reset_connection</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.TaskDaemon.reset_connection" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reset the AMQP connection, and reinitialize the
-<a title="celery.messaging.TaskConsumer" class="reference external" href="celery.messaging.html#celery.messaging.TaskConsumer"><tt class="xref docutils literal"><span class="pre">celery.messaging.TaskConsumer</span></tt></a> instance.</p>
-<p>Resets the task consumer in <a title="celery.worker.TaskDaemon.task_consumer" class="reference internal" href="#celery.worker.TaskDaemon.task_consumer"><tt class="xref docutils literal"><span class="pre">task_consumer</span></tt></a>.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.worker.TaskDaemon.run">
-<tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.TaskDaemon.run" title="Permalink to this definition">¶</a></dt>
-<dd>Starts the workers main loop.</dd></dl>
-
-<dl class="method">
-<dt id="celery.worker.TaskDaemon.run_periodic_tasks">
-<tt class="descname">run_periodic_tasks</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.TaskDaemon.run_periodic_tasks" title="Permalink to this definition">¶</a></dt>
-<dd><p>Schedule all waiting periodic tasks for execution.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Return type:</th><td class="field-body">list of <tt class="xref docutils literal"><span class="pre">celery.models.PeriodicTaskMeta</span></tt> objects.</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.worker.TaskDaemon.schedule_retry_tasks">
-<tt class="descname">schedule_retry_tasks</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.TaskDaemon.schedule_retry_tasks" title="Permalink to this definition">¶</a></dt>
-<dd>Reschedule all requeued tasks waiting for retry.</dd></dl>
-
-</dd></dl>
 
 <dl class="class">
 <dt id="celery.worker.TaskWrapper">
@@ -323,10 +178,146 @@ exception </em><tt class="descclassname">celery.worker.</tt><tt class="descname"
 <dd>Got an unknown task in the queue. The message is requeued and
 ignored.</dd></dl>
 
+<dl class="class">
+<dt id="celery.worker.WorkController">
+<em class="property">
+class </em><tt class="descclassname">celery.worker.</tt><tt class="descname">WorkController</tt><big>(</big><em>concurrency=None</em>, <em>logfile=None</em>, <em>loglevel=None</em>, <em>queue_wakeup_after=None</em>, <em>is_detached=False</em><big>)</big><a class="headerlink" href="#celery.worker.WorkController" title="Permalink to this definition">¶</a></dt>
+<dd><p>Executes tasks waiting in the task queue.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><em>concurrency</em> &#8211; see <a title="celery.worker.WorkController.concurrency" class="reference internal" href="#celery.worker.WorkController.concurrency"><tt class="xref docutils literal"><span class="pre">concurrency</span></tt></a>.</li>
+<li><em>logfile</em> &#8211; see <a title="celery.worker.WorkController.logfile" class="reference internal" href="#celery.worker.WorkController.logfile"><tt class="xref docutils literal"><span class="pre">logfile</span></tt></a>.</li>
+<li><em>loglevel</em> &#8211; see <a title="celery.worker.WorkController.loglevel" class="reference internal" href="#celery.worker.WorkController.loglevel"><tt class="xref docutils literal"><span class="pre">loglevel</span></tt></a>.</li>
+<li><em>queue_wakeup_after</em> &#8211; see <a title="celery.worker.WorkController.queue_wakeup_after" class="reference internal" href="#celery.worker.WorkController.queue_wakeup_after"><tt class="xref docutils literal"><span class="pre">queue_wakeup_after</span></tt></a>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="celery.worker.WorkController.concurrency">
+<tt class="descname">concurrency</tt><a class="headerlink" href="#celery.worker.WorkController.concurrency" title="Permalink to this definition">¶</a></dt>
+<dd>The number of simultaneous processes doing work (default:
+<a title="celery.conf.DAEMON_CONCURRENCY" class="reference external" href="celery.conf.html#celery.conf.DAEMON_CONCURRENCY"><tt class="xref docutils literal"><span class="pre">celery.conf.DAEMON_CONCURRENCY</span></tt></a>)</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.worker.WorkController.loglevel">
+<tt class="descname">loglevel</tt><a class="headerlink" href="#celery.worker.WorkController.loglevel" title="Permalink to this definition">¶</a></dt>
+<dd>The loglevel used (default: <tt class="xref docutils literal"><span class="pre">logging.INFO</span></tt>)</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.worker.WorkController.logfile">
+<tt class="descname">logfile</tt><a class="headerlink" href="#celery.worker.WorkController.logfile" title="Permalink to this definition">¶</a></dt>
+<dd>The logfile used, if no logfile is specified it uses <tt class="docutils literal"><span class="pre">stderr</span></tt>
+(default: <a title="celery.conf.DAEMON_LOG_FILE" class="reference external" href="celery.conf.html#celery.conf.DAEMON_LOG_FILE"><tt class="xref docutils literal"><span class="pre">celery.conf.DAEMON_LOG_FILE</span></tt></a>).</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.worker.WorkController.queue_wakeup_after">
+<tt class="descname">queue_wakeup_after</tt><a class="headerlink" href="#celery.worker.WorkController.queue_wakeup_after" title="Permalink to this definition">¶</a></dt>
+<dd>The time it takes for the daemon to wake up after the queue is empty,
+so it can check for more work
+(default: <a title="celery.conf.QUEUE_WAKEUP_AFTER" class="reference external" href="celery.conf.html#celery.conf.QUEUE_WAKEUP_AFTER"><tt class="xref docutils literal"><span class="pre">celery.conf.QUEUE_WAKEUP_AFTER</span></tt></a>).</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.worker.WorkController.empty_msg_emit_every">
+<tt class="descname">empty_msg_emit_every</tt><a class="headerlink" href="#celery.worker.WorkController.empty_msg_emit_every" title="Permalink to this definition">¶</a></dt>
+<dd>How often the daemon emits the <tt class="docutils literal"><span class="pre">&quot;Waiting</span> <span class="pre">for</span> <span class="pre">queue...&quot;</span></tt> message.
+If this is <tt class="xref docutils literal"><span class="pre">None</span></tt>, the message will never be logged.
+(default: <a title="celery.conf.EMPTY_MSG_EMIT_EVERY" class="reference external" href="celery.conf.html#celery.conf.EMPTY_MSG_EMIT_EVERY"><tt class="xref docutils literal"><span class="pre">celery.conf.EMPTY_MSG_EMIT_EVERY</span></tt></a>)</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.worker.WorkController.logger">
+<tt class="descname">logger</tt><a class="headerlink" href="#celery.worker.WorkController.logger" title="Permalink to this definition">¶</a></dt>
+<dd>The <tt class="xref docutils literal"><span class="pre">logging.Logger</span></tt> instance used for logging.</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.worker.WorkController.pool">
+<tt class="descname">pool</tt><a class="headerlink" href="#celery.worker.WorkController.pool" title="Permalink to this definition">¶</a></dt>
+<dd>The <tt class="xref docutils literal"><span class="pre">multiprocessing.Pool</span></tt> instance used.</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.worker.WorkController.task_consumer">
+<tt class="descname">task_consumer</tt><a class="headerlink" href="#celery.worker.WorkController.task_consumer" title="Permalink to this definition">¶</a></dt>
+<dd>The <a title="celery.messaging.TaskConsumer" class="reference external" href="celery.messaging.html#celery.messaging.TaskConsumer"><tt class="xref docutils literal"><span class="pre">celery.messaging.TaskConsumer</span></tt></a> instance used.</dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.WorkController.connection_diagnostics">
+<tt class="descname">connection_diagnostics</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.WorkController.connection_diagnostics" title="Permalink to this definition">¶</a></dt>
+<dd>Diagnose the AMQP connection, and reset connection if
+necessary.</dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.WorkController.execute_next_task">
+<tt class="descname">execute_next_task</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.WorkController.execute_next_task" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute the next task on the queue using the multiprocessing pool.</p>
+<p>Catches all exceptions and logs them with level
+<tt class="xref docutils literal"><span class="pre">logging.CRITICAL</span></tt>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.WorkController.fetch_next_task">
+<tt class="descname">fetch_next_task</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.WorkController.fetch_next_task" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fetch the next task from the AMQP broker.</p>
+<p>Raises <a title="celery.worker.EmptyQueue" class="reference internal" href="#celery.worker.EmptyQueue"><tt class="xref docutils literal"><span class="pre">EmptyQueue</span></tt></a> exception if there is no message
+waiting on the queue.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><a title="celery.worker.TaskWrapper" class="reference internal" href="#celery.worker.TaskWrapper"><tt class="xref docutils literal"><span class="pre">TaskWrapper</span></tt></a> instance.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.WorkController.receive_message">
+<tt class="descname">receive_message</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.WorkController.receive_message" title="Permalink to this definition">¶</a></dt>
+<dd><p>Receive the next message from the message broker.</p>
+<p>Tries to reset the AMQP connection if not available.
+Returns <tt class="xref docutils literal"><span class="pre">None</span></tt> if no message is waiting on the queue.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Return type:</th><td class="field-body"><tt class="xref docutils literal"><span class="pre">carrot.messaging.Message</span></tt> instance.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.WorkController.reset_connection">
+<tt class="descname">reset_connection</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.WorkController.reset_connection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset the AMQP connection, and reinitialize the
+<a title="celery.messaging.TaskConsumer" class="reference external" href="celery.messaging.html#celery.messaging.TaskConsumer"><tt class="xref docutils literal"><span class="pre">celery.messaging.TaskConsumer</span></tt></a> instance.</p>
+<p>Resets the task consumer in <a title="celery.worker.WorkController.task_consumer" class="reference internal" href="#celery.worker.WorkController.task_consumer"><tt class="xref docutils literal"><span class="pre">task_consumer</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.WorkController.run">
+<tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.WorkController.run" title="Permalink to this definition">¶</a></dt>
+<dd>Starts the workers main loop.</dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.WorkController.run_periodic_tasks">
+<tt class="descname">run_periodic_tasks</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.WorkController.run_periodic_tasks" title="Permalink to this definition">¶</a></dt>
+<dd>Schedule all waiting periodic tasks for execution.</dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.WorkController.schedule_retry_tasks">
+<tt class="descname">schedule_retry_tasks</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.WorkController.schedule_retry_tasks" title="Permalink to this definition">¶</a></dt>
+<dd>Reschedule all requeued tasks waiting for retry.</dd></dl>
+
+</dd></dl>
+
 <dl class="function">
 <dt id="celery.worker.jail">
 <tt class="descclassname">celery.worker.</tt><tt class="descname">jail</tt><big>(</big><em>task_id</em>, <em>func</em>, <em>args</em>, <em>kwargs</em><big>)</big><a class="headerlink" href="#celery.worker.jail" title="Permalink to this definition">¶</a></dt>
-<dd><p>Wraps the task in a jail, which catches all exceptions, and 
+<dd><p>Wraps the task in a jail, which catches all exceptions, and
 saves the status and result of the task execution to the task
 meta backend.</p>
 <p>If the call was successful, it saves the result to the task result
@@ -345,10 +336,8 @@ result, and sets the task status to <tt class="docutils literal"><span class="pr
 </ul>
 </td>
 </tr>
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">the function return value on success.</p>
-</td>
-</tr>
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">the exception instance on failure.</p>
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">the function return value on success, or
+the exception instance on failure.</p>
 </td>
 </tr>
 </tbody>
@@ -366,6 +355,7 @@ result, and sets the task status to <tt class="docutils literal"><span class="pr
 	  <h3>Contents</h3>
 	  <ul class="current">
 <li class="toctree-l1"><a class="reference external" href="../introduction.html">celery - Distributed Task Queue for Django.</a></li>
+<li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
 <li class="toctree-l1 current"><a class="reference external" href="index.html">Module API Reference</a><ul class="current">
 <li class="toctree-l2"><a class="reference external" href="celery.task.html">Tasks - celery.task</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.result.html">Task Result - celery.result</a></li>

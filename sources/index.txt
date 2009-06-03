@@ -11,6 +11,7 @@ Contents:
     :maxdepth: 3
 
     introduction
+    faq
     reference/index
 
 

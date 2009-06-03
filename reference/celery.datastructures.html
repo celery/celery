@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Datastructures - celery.datastructures &mdash; Celery v0.2.0 documentation</title>
+    <title>Datastructures - celery.datastructures &mdash; Celery v0.2.14 documentation</title>
     <link rel="stylesheet" href="../static/agogo.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
       URL_ROOT:    '../',
-      VERSION:     '0.2.0',
+      VERSION:     '0.2.14',
       COLLAPSE_MODINDEX: false,
       FILE_SUFFIX: '.html',
       HAS_SOURCE:  true
@@ -19,7 +19,7 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.2.0 documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.2.14 documentation" href="../index.html" />
     <link rel="up" title="Module API Reference" href="index.html" />
     <link rel="next" title="Logging - celery.log" href="celery.log.html" />
     <link rel="prev" title="Configuration - celery.conf" href="celery.conf.html" /> 
@@ -28,7 +28,7 @@
 
     <div class="header-wrapper">
       <div class="header">
-	<h1><a href="../index.html">Celery v0.2.0 documentation</a></h1>
+	<h1><a href="../index.html">Celery v0.2.14 documentation</a></h1>
 	<div class="rel">
           <a href="../genindex.html" title="General Index"
              accesskey="I">index</a> |
@@ -93,7 +93,7 @@ class </em><tt class="descname">UnfilledPosition</tt><big>(</big><em>position</e
 <dl class="class">
 <dt id="celery.datastructures.TaskProcessQueue">
 <em class="property">
-class </em><tt class="descclassname">celery.datastructures.</tt><tt class="descname">TaskProcessQueue</tt><big>(</big><em>limit</em>, <em>logger=None</em>, <em>done_msg=None</em><big>)</big><a class="headerlink" href="#celery.datastructures.TaskProcessQueue" title="Permalink to this definition">¶</a></dt>
+class </em><tt class="descclassname">celery.datastructures.</tt><tt class="descname">TaskProcessQueue</tt><big>(</big><em>limit</em>, <em>reap_timeout=None</em>, <em>logger=None</em>, <em>done_msg=None</em><big>)</big><a class="headerlink" href="#celery.datastructures.TaskProcessQueue" title="Permalink to this definition">¶</a></dt>
 <dd><p>Queue of running child processes, which starts waiting for the
 processes to finish when the queue limit has been reached.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -130,9 +130,9 @@ The message is logged with loglevel <tt class="xref docutils literal"><span clas
 <dt id="celery.datastructures.TaskProcessQueue.add">
 <tt class="descname">add</tt><big>(</big><em>result</em>, <em>task_name</em>, <em>task_id</em><big>)</big><a class="headerlink" href="#celery.datastructures.TaskProcessQueue.add" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a process to the queue.</p>
-<p>If the queue is full, it will start to collect return values from
-the tasks executed. When all return values has been collected,
-it deletes the current queue and is ready to accept new processes.</p>
+<p>If the queue is full, it will wait for the first task to finish,
+collects its result and remove it from the queue, so it&#8217;s ready
+to accept new processes.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -149,6 +149,53 @@ returned by <tt class="xref docutils literal"><span class="pre">multiprocessing.
 </table>
 </dd></dl>
 
+<dl class="method">
+<dt id="celery.datastructures.TaskProcessQueue.get_worker_pids">
+<tt class="descname">get_worker_pids</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.datastructures.TaskProcessQueue.get_worker_pids" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the process id&#8217;s of all the pool workers.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.datastructures.TaskProcessQueue.on_ready">
+<tt class="descname">on_ready</tt><big>(</big><em>ret_value</em>, <em>task_name</em>, <em>task_id</em><big>)</big><a class="headerlink" href="#celery.datastructures.TaskProcessQueue.on_ready" title="Permalink to this definition">¶</a></dt>
+<dd><p>What to do when a worker returns with a result.</p>
+<p>If <a title="celery.datastructures.TaskProcessQueue.done_msg" class="reference internal" href="#celery.datastructures.TaskProcessQueue.done_msg"><tt class="xref docutils literal"><span class="pre">done_msg</span></tt></a> is defined, it will log this
+format string, with level <tt class="docutils literal"><span class="pre">logging.INFO</span></tt>,
+using these format variables:</p>
+<ul>
+<li><p class="first">%(name)</p>
+<blockquote>
+<p>The name of the task completed</p>
+</blockquote>
+</li>
+<li><p class="first">%(id)</p>
+<blockquote>
+<p>The UUID of the task completed.</p>
+</blockquote>
+</li>
+<li><p class="first">%(return_value)</p>
+<blockquote>
+<p>Return value of the task function.</p>
+</blockquote>
+</li>
+</ul>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.datastructures.TaskProcessQueue.wait_for_result">
+<tt class="descname">wait_for_result</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.datastructures.TaskProcessQueue.wait_for_result" title="Permalink to this definition">¶</a></dt>
+<dd><p>Waits for the first process in the pool to finish.</p>
+<p>This operation is blocking.</p>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -162,6 +209,7 @@ returned by <tt class="xref docutils literal"><span class="pre">multiprocessing.
 	  <h3>Contents</h3>
 	  <ul class="current">
 <li class="toctree-l1"><a class="reference external" href="../introduction.html">celery - Distributed Task Queue for Django.</a></li>
+<li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
 <li class="toctree-l1 current"><a class="reference external" href="index.html">Module API Reference</a><ul class="current">
 <li class="toctree-l2"><a class="reference external" href="celery.task.html">Tasks - celery.task</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.result.html">Task Result - celery.result</a></li>

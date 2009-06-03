@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Messaging - celery.messaging &mdash; Celery v0.2.0 documentation</title>
+    <title>Messaging - celery.messaging &mdash; Celery v0.2.14 documentation</title>
     <link rel="stylesheet" href="../static/agogo.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
       URL_ROOT:    '../',
-      VERSION:     '0.2.0',
+      VERSION:     '0.2.14',
       COLLAPSE_MODINDEX: false,
       FILE_SUFFIX: '.html',
       HAS_SOURCE:  true
@@ -19,7 +19,7 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.2.0 documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.2.14 documentation" href="../index.html" />
     <link rel="up" title="Module API Reference" href="index.html" />
     <link rel="next" title="Platform Specific - celery.platform" href="celery.platform.html" />
     <link rel="prev" title="Django Models - celery.models" href="celery.models.html" /> 
@@ -28,7 +28,7 @@
 
     <div class="header-wrapper">
       <div class="header">
-	<h1><a href="../index.html">Celery v0.2.0 documentation</a></h1>
+	<h1><a href="../index.html">Celery v0.2.14 documentation</a></h1>
 	<div class="rel">
           <a href="../genindex.html" title="General Index"
              accesskey="I">index</a> |
@@ -72,17 +72,17 @@ class </em><tt class="descclassname">celery.messaging.</tt><tt class="descname">
 <dd><p>The AMQP Task Publisher class.</p>
 <dl class="method">
 <dt id="celery.messaging.TaskPublisher.delay_task">
-<tt class="descname">delay_task</tt><big>(</big><em>task_name</em>, <em>*task_args</em>, <em>**task_kwargs</em><big>)</big><a class="headerlink" href="#celery.messaging.TaskPublisher.delay_task" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">delay_task</tt><big>(</big><em>task_name</em>, <em>task_args</em>, <em>task_kwargs</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.messaging.TaskPublisher.delay_task" title="Permalink to this definition">¶</a></dt>
 <dd>Delay task for execution by the celery nodes.</dd></dl>
 
 <dl class="method">
 <dt id="celery.messaging.TaskPublisher.delay_task_in_set">
-<tt class="descname">delay_task_in_set</tt><big>(</big><em>task_name</em>, <em>taskset_id</em>, <em>task_args</em>, <em>task_kwargs</em><big>)</big><a class="headerlink" href="#celery.messaging.TaskPublisher.delay_task_in_set" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">delay_task_in_set</tt><big>(</big><em>task_name</em>, <em>taskset_id</em>, <em>task_args</em>, <em>task_kwargs</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.messaging.TaskPublisher.delay_task_in_set" title="Permalink to this definition">¶</a></dt>
 <dd>Delay a task which part of a task set.</dd></dl>
 
 <dl class="method">
 <dt id="celery.messaging.TaskPublisher.requeue_task">
-<tt class="descname">requeue_task</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>task_args</em>, <em>task_kwargs</em>, <em>part_of_set=None</em><big>)</big><a class="headerlink" href="#celery.messaging.TaskPublisher.requeue_task" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">requeue_task</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>task_args</em>, <em>task_kwargs</em>, <em>part_of_set=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.messaging.TaskPublisher.requeue_task" title="Permalink to this definition">¶</a></dt>
 <dd>Requeue a failed task.</dd></dl>
 
 </dd></dl>
@@ -98,6 +98,7 @@ class </em><tt class="descclassname">celery.messaging.</tt><tt class="descname">
 	  <h3>Contents</h3>
 	  <ul class="current">
 <li class="toctree-l1"><a class="reference external" href="../introduction.html">celery - Distributed Task Queue for Django.</a></li>
+<li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
 <li class="toctree-l1 current"><a class="reference external" href="index.html">Module API Reference</a><ul class="current">
 <li class="toctree-l2"><a class="reference external" href="celery.task.html">Tasks - celery.task</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.result.html">Task Result - celery.result</a></li>

@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery - Distributed Task Queue for Django. &mdash; Celery v0.2.0 documentation</title>
+    <title>celery - Distributed Task Queue for Django. &mdash; Celery v0.2.14 documentation</title>
     <link rel="stylesheet" href="static/agogo.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
       URL_ROOT:    '',
-      VERSION:     '0.2.0',
+      VERSION:     '0.2.14',
       COLLAPSE_MODINDEX: false,
       FILE_SUFFIX: '.html',
       HAS_SOURCE:  true
@@ -19,21 +19,21 @@
     </script>
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v0.2.0 documentation" href="index.html" />
-    <link rel="next" title="Module API Reference" href="reference/index.html" />
+    <link rel="top" title="Celery v0.2.14 documentation" href="index.html" />
+    <link rel="next" title="Frequently Asked Questions" href="faq.html" />
     <link rel="prev" title="Welcome to Celery’s documentation!" href="index.html" /> 
   </head>
   <body>
 
     <div class="header-wrapper">
       <div class="header">
-	<h1><a href="index.html">Celery v0.2.0 documentation</a></h1>
+	<h1><a href="index.html">Celery v0.2.14 documentation</a></h1>
 	<div class="rel">
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a> |
           <a href="modindex.html" title="Global Module Index"
              accesskey="M">modules</a> |
-          <a href="reference/index.html" title="Module API Reference"
+          <a href="faq.html" title="Frequently Asked Questions"
              accesskey="N">next</a> |
           <a href="index.html" title="Welcome to Celery’s documentation!"
              accesskey="P">previous</a>
@@ -54,9 +54,7 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Authors:</th><td class="field-body">Ask Solem (<a class="reference external" href="mailto:askh&#37;&#52;&#48;opera&#46;com">askh<span>&#64;</span>opera<span>&#46;</span>com</a>)</td>
-</tr>
-<tr class="field"><th class="field-name">Version:</th><td class="field-body">0.2.0</td>
+<tr class="field"><th class="field-name">Version:</th><td class="field-body">0.2.10</td>
 </tr>
 </tbody>
 </table>
@@ -81,19 +79,19 @@ worker servers.</li>
 <li>You can run as many worker servers as you want, and still
 be <em>guaranteed that the task is only executed once.</em></li>
 <li>Tasks are executed <em>concurrently</em> using the Python 2.6
-<tt class="docutils literal"><span class="pre">multiprocessing</span></tt> module (also available as a backport
+<tt class="docutils literal"><span class="pre">multiprocessing</span></tt> module (also available as a back-port
 to older python versions)</li>
 <li>Supports <em>periodic tasks</em>, which makes it a (better) replacement
 for cronjobs.</li>
 <li>When a task has been executed, the return value is stored using either
 a MySQL/Oracle/PostgreSQL/SQLite database, memcached,
-or Tokyo Tyrant backend.</li>
+or Tokyo Tyrant back-end.</li>
 <li>If the task raises an exception, the exception instance is stored,
 instead of the return value.</li>
-<li>All tasks has a Universaly Unique Identifier (UUID), which is the
+<li>All tasks has a Universally Unique Identifier (UUID), which is the
 task id, used for querying task status and return values.</li>
-<li>Supports <em>tasksets</em>, which is a task consisting of several subtasks.
-You can find out how many, or if all of the subtasks has been executed.
+<li>Supports <em>task-sets</em>, which is a task consisting of several sub-tasks.
+You can find out how many, or if all of the sub-tasks has been executed.
 Excellent for progress-bar like functionality.</li>
 <li>Has a <tt class="docutils literal"><span class="pre">map</span></tt> like function that uses tasks, called <tt class="docutils literal"><span class="pre">dmap</span></tt>.</li>
 <li>However, you rarely want to wait for these results in a web-environment.
@@ -130,7 +128,7 @@ by doing the following,:</p>
 <p><em>Note</em> You need to have a AMQP message broker running, like <a class="reference external" href="http://www.rabbitmq.com">RabbitMQ</a>,
 and you need to have the amqp server setup in your settings file, as described
 in the <a class="reference external" href="http://pypi.python.org/pypi/carrot/0.3.3">carrot distribution README</a>.</p>
-<p><em>Note</em> If you&#8217;re running <tt class="docutils literal"><span class="pre">SQLite</span></tt> as the database backend, <tt class="docutils literal"><span class="pre">celeryd</span></tt> will
+<p><em>Note</em> If you&#8217;re running <tt class="docutils literal"><span class="pre">SQLite</span></tt> as the database back-end, <tt class="docutils literal"><span class="pre">celeryd</span></tt> will
 only be able to process one message at a time, this is because <tt class="docutils literal"><span class="pre">SQLite</span></tt>
 doesn&#8217;t allow concurrent writes.</p>
 <div class="section" id="defining-tasks">
@@ -176,9 +174,9 @@ $ env DJANGO_SETTINGS_MODULE=settings celeryd
 [2009-04-23 17:44:05,118: INFO/MainProcess] Waiting for queue.</pre>
 </div>
 </div>
-<div class="section" id="autodiscovery-of-tasks">
-<h3>Autodiscovery of tasks<a class="headerlink" href="#autodiscovery-of-tasks" title="Permalink to this headline">¶</a></h3>
-<p><tt class="docutils literal"><span class="pre">celery</span></tt> has an autodiscovery feature like the Django Admin, that
+<div class="section" id="auto-discovery-of-tasks">
+<h3>Auto-discovery of tasks<a class="headerlink" href="#auto-discovery-of-tasks" title="Permalink to this headline">¶</a></h3>
+<p><tt class="docutils literal"><span class="pre">celery</span></tt> has an auto-discovery feature like the Django Admin, that
 automatically loads any <tt class="docutils literal"><span class="pre">tasks.py</span></tt> module in the applications listed
 in <tt class="docutils literal"><span class="pre">settings.INSTALLED_APPS</span></tt>.</p>
 <p>A good place to add this command could be in your <tt class="docutils literal"><span class="pre">urls.py</span></tt>,</p>
@@ -246,6 +244,7 @@ file in the top distribution directory for the full license text.</p>
 <li class="toctree-l2"><a class="reference external" href="#license">License</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference external" href="faq.html">Frequently Asked Questions</a></li>
 <li class="toctree-l1"><a class="reference external" href="reference/index.html">Module API Reference</a></li>
 </ul>
 
@@ -271,7 +270,7 @@ file in the top distribution directory for the full license text.</p>
              >index</a> |
           <a href="modindex.html" title="Global Module Index"
              >modules</a> |
-          <a href="reference/index.html" title="Module API Reference"
+          <a href="faq.html" title="Frequently Asked Questions"
              >next</a> |
           <a href="index.html" title="Welcome to Celery’s documentation!"
              >previous</a>

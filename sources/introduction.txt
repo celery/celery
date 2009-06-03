@@ -2,9 +2,7 @@
 celery - Distributed Task Queue for Django.
 ============================================
 
-:Authors:
-    Ask Solem (askh@opera.com)
-:Version: 0.2.0
+:Version: 0.2.10
 
 Introduction
 ============
@@ -33,7 +31,7 @@ Features
       be *guaranteed that the task is only executed once.*
 
     * Tasks are executed *concurrently* using the Python 2.6
-      ``multiprocessing`` module (also available as a backport
+      ``multiprocessing`` module (also available as a back-port
       to older python versions)
 
     * Supports *periodic tasks*, which makes it a (better) replacement
@@ -41,16 +39,16 @@ Features
 
     * When a task has been executed, the return value is stored using either
       a MySQL/Oracle/PostgreSQL/SQLite database, memcached,
-      or Tokyo Tyrant backend.
+      or Tokyo Tyrant back-end.
 
     * If the task raises an exception, the exception instance is stored,
       instead of the return value.
 
-    * All tasks has a Universaly Unique Identifier (UUID), which is the
+    * All tasks has a Universally Unique Identifier (UUID), which is the
       task id, used for querying task status and return values.
 
-    * Supports *tasksets*, which is a task consisting of several subtasks.
-      You can find out how many, or if all of the subtasks has been executed.
+    * Supports *task-sets*, which is a task consisting of several sub-tasks.
+      You can find out how many, or if all of the sub-tasks has been executed.
       Excellent for progress-bar like functionality.
 
     * Has a ``map`` like function that uses tasks, called ``dmap``.
@@ -98,7 +96,7 @@ Have to write a cool tutorial, but here is some simple usage info.
 and you need to have the amqp server setup in your settings file, as described
 in the `carrot distribution README`_.
 
-*Note* If you're running ``SQLite`` as the database backend, ``celeryd`` will
+*Note* If you're running ``SQLite`` as the database back-end, ``celeryd`` will
 only be able to process one message at a time, this is because ``SQLite``
 doesn't allow concurrent writes.
 
@@ -151,10 +149,10 @@ Running the celery daemon
     [2009-04-23 17:44:05,118: INFO/MainProcess] Waiting for queue.
 
 
-Autodiscovery of tasks
+Auto-discovery of tasks
 -----------------------
 
-``celery`` has an autodiscovery feature like the Django Admin, that
+``celery`` has an auto-discovery feature like the Django Admin, that
 automatically loads any ``tasks.py`` module in the applications listed
 in ``settings.INSTALLED_APPS``.
 
