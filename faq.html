@@ -1,0 +1,197 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Frequently Asked Questions &mdash; Celery v0.2.14 documentation</title>
+    <link rel="stylesheet" href="static/agogo.css" type="text/css" />
+    <link rel="stylesheet" href="static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+      URL_ROOT:    '',
+      VERSION:     '0.2.14',
+      COLLAPSE_MODINDEX: false,
+      FILE_SUFFIX: '.html',
+      HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="static/jquery.js"></script>
+    <script type="text/javascript" src="static/doctools.js"></script>
+    <link rel="top" title="Celery v0.2.14 documentation" href="index.html" />
+    <link rel="next" title="Module API Reference" href="reference/index.html" />
+    <link rel="prev" title="celery - Distributed Task Queue for Django." href="introduction.html" /> 
+  </head>
+  <body>
+
+    <div class="header-wrapper">
+      <div class="header">
+	<h1><a href="index.html">Celery v0.2.14 documentation</a></h1>
+	<div class="rel">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a> |
+          <a href="modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |
+          <a href="reference/index.html" title="Module API Reference"
+             accesskey="N">next</a> |
+          <a href="introduction.html" title="celery - Distributed Task Queue for Django."
+             accesskey="P">previous</a>
+	</div>
+      </div>
+    </div>
+
+    <div class="content-wrapper">
+      <div class="content">
+	<div class="document">
+	  <div class="documentwrapper">
+	    <div class="bodywrapper">
+	      <div class="body">
+		
+  <div class="section" id="frequently-asked-questions">
+<h1>Frequently Asked Questions<a class="headerlink" href="#frequently-asked-questions" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="questions">
+<h2>Questions<a class="headerlink" href="#questions" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="mysql-is-throwing-deadlock-errors-what-can-i-do">
+<h3>MySQL is throwing deadlock errors, what can I do?<a class="headerlink" href="#mysql-is-throwing-deadlock-errors-what-can-i-do" title="Permalink to this headline">¶</a></h3>
+<p><strong>Answer:</strong> MySQL has default isolation level set to <tt class="docutils literal"><span class="pre">REPEATABLE-READ</span></tt>,
+if you don&#8217;t really need that, set it to <tt class="docutils literal"><span class="pre">READ-COMMITTED</span></tt>.
+You can do that by adding the following to your <tt class="docutils literal"><span class="pre">my.cnf</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">[</span><span class="n">mysqld</span><span class="p">]</span>
+<span class="n">transaction</span><span class="o">-</span><span class="n">isolation</span> <span class="o">=</span> <span class="n">READ</span><span class="o">-</span><span class="n">COMMITTED</span>
+</pre></div>
+</div>
+<p>For more information about InnoDBs transaction model see <a class="reference external" href="http://dev.mysql.com/doc/refman/5.1/en/innodb-transaction-model.html">MySQL - The InnoDB
+Transaction Model and Locking</a> in the MySQL user manual.</p>
+<p>(Thanks to Honza Kral and Anton Tsigularov for this solution)</p>
+</div>
+<div class="section" id="celeryd-is-not-doing-anything-just-hanging">
+<h3>celeryd is not doing anything, just hanging<a class="headerlink" href="#celeryd-is-not-doing-anything-just-hanging" title="Permalink to this headline">¶</a></h3>
+<p><strong>Answer:</strong> See <a class="reference internal" href="#mysql-is-throwing-deadlock-errors-what-can-i-do">MySQL is throwing deadlock errors, what can I do?</a>.</p>
+</div>
+<div class="section" id="can-i-send-some-tasks-to-only-some-servers">
+<h3>Can I send some tasks to only some servers?<a class="headerlink" href="#can-i-send-some-tasks-to-only-some-servers" title="Permalink to this headline">¶</a></h3>
+<p>As of now there is only one use-case that works like this, and that is
+tasks of type <tt class="docutils literal"><span class="pre">A</span></tt> can be sent to servers <tt class="docutils literal"><span class="pre">x</span></tt> and <tt class="docutils literal"><span class="pre">y</span></tt>, while tasks
+of type <tt class="docutils literal"><span class="pre">B</span></tt> can be sent to server <tt class="docutils literal"><span class="pre">z</span></tt>. One server can&#8217;t handle more than
+one routing_key, but this is coming in a later release.</p>
+<p>Say you have two servers, <tt class="docutils literal"><span class="pre">x</span></tt>, and <tt class="docutils literal"><span class="pre">y</span></tt> that handles regular tasks,
+and one server <tt class="docutils literal"><span class="pre">z</span></tt>, that only handles feed related tasks, you can use this
+configuration:</p>
+<blockquote>
+<ul class="simple">
+<li>Servers <tt class="docutils literal"><span class="pre">x</span></tt> and <tt class="docutils literal"><span class="pre">y</span></tt>: settings.py:</li>
+</ul>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">AMQP_SERVER</span> <span class="o">=</span> <span class="s">&quot;rabbit&quot;</span>
+<span class="n">AMQP_PORT</span> <span class="o">=</span> <span class="mf">5678</span>
+<span class="n">AMQP_USER</span> <span class="o">=</span> <span class="s">&quot;myapp&quot;</span>
+<span class="n">AMQP_PASSWORD</span> <span class="o">=</span> <span class="s">&quot;secret&quot;</span>
+<span class="n">AMQP_VHOST</span> <span class="o">=</span> <span class="s">&quot;myapp&quot;</span>
+
+<span class="n">CELERY_AMQP_CONSUMER_QUEUE</span> <span class="o">=</span> <span class="s">&quot;regular_tasks&quot;</span>
+<span class="n">CELERY_AMQP_EXCHANGE</span> <span class="o">=</span> <span class="s">&quot;tasks&quot;</span>
+<span class="n">CELERY_AMQP_PUBLISHER_ROUTING_KEY</span> <span class="o">=</span> <span class="s">&quot;task.regular&quot;</span>
+<span class="n">CELERY_AMQP_CONSUMER_ROUTING_KEY</span> <span class="o">=</span> <span class="s">&quot;task.#&quot;</span>
+<span class="n">CELERY_AMQP_EXCHANGE_TYPE</span> <span class="o">=</span> <span class="s">&quot;topic&quot;</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>Server <tt class="docutils literal"><span class="pre">z</span></tt>: settings.py:</li>
+</ul>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">AMQP_SERVER</span> <span class="o">=</span> <span class="s">&quot;rabbit&quot;</span>
+<span class="n">AMQP_PORT</span> <span class="o">=</span> <span class="mf">5678</span>
+<span class="n">AMQP_USER</span> <span class="o">=</span> <span class="s">&quot;myapp&quot;</span>
+<span class="n">AMQP_PASSWORD</span> <span class="o">=</span> <span class="s">&quot;secret&quot;</span>
+<span class="n">AMQP_VHOST</span> <span class="o">=</span> <span class="s">&quot;myapp&quot;</span>
+
+<span class="n">CELERY_AMQP_CONSUMER_QUEUE</span> <span class="o">=</span> <span class="s">&quot;feed_tasks&quot;</span>
+<span class="n">CELERY_AMQP_EXCHANGE</span> <span class="o">=</span> <span class="s">&quot;tasks&quot;</span>
+<span class="n">CELERY_AMQP_PUBLISHER_ROUTING_KEY</span> <span class="o">=</span> <span class="s">&quot;task.regular&quot;</span>
+<span class="n">CELERY_AMQP_CONSUMER_ROUTING_KEY</span> <span class="o">=</span> <span class="s">&quot;task.feed.#&quot;</span>
+<span class="n">CELERY_AMQP_EXCHANGE_TYPE</span> <span class="o">=</span> <span class="s">&quot;topic&quot;</span>
+</pre></div>
+</div>
+</blockquote>
+<p>Now to make a Task run on the <tt class="docutils literal"><span class="pre">z</span></tt> server you need to set its
+<tt class="docutils literal"><span class="pre">routing_key</span></tt> attribute so it starts with the words <tt class="docutils literal"><span class="pre">&quot;task.feed.&quot;</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">feedaggregator.models</span> <span class="kn">import</span> <span class="n">Feed</span>
+<span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">Task</span>
+
+<span class="k">class</span> <span class="nc">FeedImportTask</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s">&quot;import_feed&quot;</span>
+    <span class="n">routing_key</span> <span class="o">=</span> <span class="s">&quot;task.feed.importer&quot;</span>
+
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feed_url</span><span class="p">):</span>
+        <span class="c"># something importing the feed</span>
+        <span class="n">Feed</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">import_feed</span><span class="p">(</span><span class="n">feed_url</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You can also override this using the <tt class="docutils literal"><span class="pre">routing_key</span></tt> argument to
+<a title="celery.task.apply_async" class="reference external" href="reference/celery.task.html#celery.task.apply_async"><tt class="xref docutils literal"><span class="pre">celery.task.apply_async()</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">apply_async</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">myapp.tasks</span> <span class="kn">import</span> <span class="n">RefreshFeedTask</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">apply_async</span><span class="p">(</span><span class="n">RefreshFeedTask</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="s">&quot;http://cnn.com/rss&quot;</span><span class="p">],</span>
+<span class="gp">... </span>            <span class="n">routing_key</span><span class="o">=</span><span class="s">&quot;task.feed.importer&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+	      </div>
+	    </div>
+	  </div>
+	</div>
+	<div class="sidebar">
+	  <h3>Contents</h3>
+	  <ul class="current">
+<li class="toctree-l1"><a class="reference external" href="introduction.html">celery - Distributed Task Queue for Django.</a></li>
+<li class="toctree-l1 current"><a class="current reference external" href="">Frequently Asked Questions</a><ul>
+<li class="toctree-l2"><a class="reference external" href="#questions">Questions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="reference/index.html">Module API Reference</a></li>
+</ul>
+
+	  <h3 style="margin-top: 1.5em;">Search</h3>
+	  <form class="search" action="search.html" method="get">
+            <input type="text" name="q" size="18" />
+            <input type="submit" value="Go" />
+            <input type="hidden" name="check_keywords" value="yes" />
+            <input type="hidden" name="area" value="default" />
+          </form>
+          <p class="searchtip" style="font-size: 90%">
+            Enter search terms or a module, class or function name.
+          </p>
+	</div>
+	<div class="clearer"></div>
+      </div>
+    </div>
+
+    <div class="footer-wrapper">
+      <div class="footer">
+	<div class="left">
+          <a href="genindex.html" title="General Index"
+             >index</a> |
+          <a href="modindex.html" title="Global Module Index"
+             >modules</a> |
+          <a href="reference/index.html" title="Module API Reference"
+             >next</a> |
+          <a href="introduction.html" title="celery - Distributed Task Queue for Django."
+             >previous</a>
+            <br/>
+            <a href="sources/faq.txt"
+               rel="nofollow">Show Source</a>
+	</div>
+
+	<div class="right">
+	  &copy; Copyright 2009, Ask Solem.<br/>
+	  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.1.
+	</div>
+	<div class="clearer"></div>
+      </div>
+    </div>
+
+  </body>
+</html>
