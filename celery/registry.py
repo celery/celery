@@ -29,15 +29,18 @@ class TaskRegistry(UserDict):
         Task can either be a regular function, or a class inheriting
         from :class:`celery.task.Task`.
 
-        :keyword task_name: Required if the task is a regular function.
+        :keyword task_name: By default the :attr:`Task.name` attribute on the
+            task is used as the name of the task, but you can override it
+            using this option.
 
         :raises AlreadyRegistered: if the task is already registered.
 
         """
-        is_class = False
-        if hasattr(task, "run"):
-            is_class = True
-            task_name = task.name
+        is_class = hasattr(task, "run")
+
+        if not task_name:
+            task_name = getattr(task, "name")
+
         if task_name in self.data:
             raise self.AlreadyRegistered(
                     "Task with name %s is already registered." % task_name)
@@ -45,6 +48,7 @@ class TaskRegistry(UserDict):
         if is_class:
             self.data[task_name] = task() # instantiate Task class
         else:
+            task.name = task_name
             task.type = "regular"
             self.data[task_name] = task
 
