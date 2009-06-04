@@ -218,7 +218,7 @@ class Task(object):
         :rtype: :class:`celery.messaging.TaskPublisher`.
 
         Please be sure to close the AMQP connection when you're done
-        with this object, i.e:
+        with this object, i.e.:
 
             >>> publisher = self.get_publisher()
             >>> # do something with publisher
@@ -233,7 +233,7 @@ class Task(object):
         :rtype: :class:`celery.messaging.TaskConsumer`.
 
         Please be sure to close the AMQP connection when you're done
-        with this object. i.e:
+        with this object. i.e.:
 
             >>> consumer = self.get_consumer()
             >>> # do something with consumer

@@ -117,7 +117,7 @@ AMQP_EXCHANGE = getattr(settings, "CELERY_AMQP_EXCHANGE",
 
 The type of exchange. If the exchange type is ``direct``, all messages
 receives all tasks. However, if the exchange type is ``topic``, you can
-route e.g some tasks to one server, and others to the rest.
+route e.g. some tasks to one server, and others to the rest.
 See `Exchange types and the effect of bindings`_.
 
 .. _`Exchange types and the effect of bindings:
