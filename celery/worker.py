@@ -114,7 +114,7 @@ class TaskWrapper(object):
         :returns: :class:`TaskWrapper` instance.
 
         """
-        message_data = simplejson.loads(message.body)
+        message_data = message.decode()
         task_name = message_data["task"]
         task_id = message_data["id"]
         args = message_data["args"]
