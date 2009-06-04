@@ -45,6 +45,9 @@ def jail(task_id, func, args, kwargs):
         the exception instance on failure.
 
     """
+    # Convert any unicode keys in the keyword arguments to ascii.
+    kwargs = dict([(k.encode("utf-8"), v)
+                        for k, v in kwargs.items()])
     try:
         result = func(*args, **kwargs)
     except Exception, exc:
