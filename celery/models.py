@@ -1,7 +1,7 @@
 from django.db import models
 from celery.registry import tasks
 from celery.managers import TaskManager, PeriodicTaskManager
-from yadayada.models import PickledObjectField
+from celery.fields import PickledObjectField
 from django.utils.translation import ugettext_lazy as _
 from Queue import Queue
 

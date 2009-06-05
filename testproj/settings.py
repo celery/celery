@@ -19,9 +19,9 @@ TEST_APPS = (
 
 AMQP_SERVER = "localhost"
 AMQP_PORT = 5672
-AMQP_VHOST = "celery"
-AMQP_USER = "celery"
-AMQP_PASSWORD = "celery"
+AMQP_VHOST = "/"
+AMQP_USER = "guest"
+AMQP_PASSWORD = "guest"
 
 CELERY_AMQP_EXCHANGE = "testcelery"
 CELERY_AMQP_ROUTING_KEY = "testcelery"

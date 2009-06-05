@@ -62,10 +62,8 @@ setup(
     scripts=["bin/celeryd"],
     zip_safe=False,
     install_requires=[
-        'django-unittest-depth',
         'simplejson',
-        'yadayada',
-        'carrot>=0.3.8',
+        'carrot>=0.3.9',
         'django',
     ],
     cmdclass = {"test": RunTests},
