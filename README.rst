@@ -113,7 +113,7 @@ Defining tasks
     ...     logger = setup_logger(**kwargs)
     ...     logger.info("Did something: %s" % some_arg)
     ...     return 42
-    >>> task.register(do_something, "do_something") 
+    >>> tasks.register(do_something, "do_something") 
 
 Tell the celery daemon to run a task
 -------------------------------------
