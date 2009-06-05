@@ -63,7 +63,7 @@ setup(
     zip_safe=False,
     install_requires=[
         'simplejson',
-        'carrot>=0.3.9',
+        'carrot>=0.4.0',
         'django',
     ],
     cmdclass = {"test": RunTests},

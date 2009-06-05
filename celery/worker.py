@@ -123,7 +123,6 @@ class TaskWrapper(object):
         args = message_data["args"]
         kwargs = message_data["kwargs"]
         if task_name not in tasks:
-            message.reject()
             raise UnknownTask(task_name)
         task_func = tasks[task_name]
         return cls(task_name, task_id, task_func, args, kwargs)
@@ -284,7 +283,6 @@ class WorkController(object):
         if message is not None:
             self.logger.debug("Acknowledging message with delivery tag %s" % (
                 message.delivery_tag))
-            message.ack()
         return message
 
     def fetch_next_task(self):

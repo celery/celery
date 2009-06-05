@@ -71,3 +71,4 @@ class TaskConsumer(NoProcessConsumer):
     exchange = conf.AMQP_EXCHANGE
     routing_key = conf.AMQP_CONSUMER_ROUTING_KEY
     exchange_type = conf.AMQP_EXCHANGE_TYPE
+    auto_ack = True
