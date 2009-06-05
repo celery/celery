@@ -27,6 +27,11 @@ celeryd is not doing anything, just hanging
 
 **Answer:** See `MySQL is throwing deadlock errors, what can I do?`_.
 
+I'm having ``IntegrityError: Duplicate Key`` errors. Why?
+----------------------------------------------------------
+
+**Answer:** See `MySQL is throwing deadlock errors, what can I do?`_.
+Thanks to howsthedotcom.
 
 Can I send some tasks to only some servers?
 --------------------------------------------
