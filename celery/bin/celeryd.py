@@ -82,28 +82,31 @@ def main(concurrency=DAEMON_CONCURRENCY, daemon=False,
                             e.__class__, e, traceback.format_exc()))
 
 
-def parse_options(arguments):
-    parser = optparse.OptionParser()
-    parser.add_option('-c', '--concurrency', default=DAEMON_CONCURRENCY,
+option_list = (
+    optparse.make_option('-c', '--concurrency', default=DAEMON_CONCURRENCY,
             action="store", dest="concurrency", type="int",
-            help="Number of child processes processing the queue.")
-    parser.add_option('-f', '--logfile', default=DAEMON_LOG_FILE,
+            help="Number of child processes processing the queue."),
+    optparse.make_option('-f', '--logfile', default=DAEMON_LOG_FILE,
             action="store", dest="logfile",
-            help="Path to log file.")
-    parser.add_option('-l', '--loglevel', default=DAEMON_LOG_LEVEL,
+            help="Path to log file."),
+    optparse.make_option('-l', '--loglevel', default=DAEMON_LOG_LEVEL,
             action="store", dest="loglevel",
-            help="Choose between DEBUG/INFO/WARNING/ERROR/CRITICAL/FATAL.")
-    parser.add_option('-p', '--pidfile', default=DAEMON_PID_FILE,
+            help="Choose between DEBUG/INFO/WARNING/ERROR/CRITICAL/FATAL."),
+    optparse.make_option('-p', '--pidfile', default=DAEMON_PID_FILE,
             action="store", dest="pidfile",
-            help="Path to pidfile.")
-    parser.add_option('-w', '--wakeup-after', default=QUEUE_WAKEUP_AFTER,
+            help="Path to pidfile."),
+    optparse.make_option('-w', '--wakeup-after', default=QUEUE_WAKEUP_AFTER,
             action="store", dest="queue_wakeup_after",
             help="If the queue is empty, this is the time *in seconds* the "
                  "daemon sleeps until it wakes up to check if there's any "
-                 "new messages on the queue.")
-    parser.add_option('-d', '--daemon', default=False,
+                 "new messages on the queue."),
+    optparse.make_option('-d', '--daemon', default=False,
             action="store_true", dest="daemon",
-            help="Run in the background as a daemon.")
+            help="Run in the background as a daemon."),
+)
+
+def parse_options(arguments):
+    parser = optparse.OptionParser(option_list=option_list)
     options, values = parser.parse_args(arguments)
     if not isinstance(options.loglevel, int):
         options.loglevel = LOG_LEVELS[options.loglevel.upper()]
