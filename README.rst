@@ -143,10 +143,27 @@ Running the celery daemon
 ::
 
     $ cd mydjangoproject
-    $ env DJANGO_SETTINGS_MODULE=settings celeryd
+    $ python manage.py celeryd
     [....]
     [2009-04-23 17:44:05,115: INFO/Process-1] Did something: foo bar baz
     [2009-04-23 17:44:05,118: INFO/MainProcess] Waiting for queue.
+
+Launching celeryd in the background as a daemon
+------------------------------------------------
+
+::
+
+    $ cd mydjangoproject
+    $ python manage.py celeryd --daemon
+
+Getting help for the available options to celeryd
+-------------------------------------------------
+
+::
+    
+    $ cd mydjangoproject
+    $ python manage.py help celeryd
+
 
 
 Auto-discovery of tasks
