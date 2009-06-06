@@ -18,7 +18,6 @@ import traceback
 import logging
 import time
 import sys
-import traceback
 
 
 class EmptyQueue(Exception):
