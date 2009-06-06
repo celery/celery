@@ -8,10 +8,11 @@ import os
 from multiprocessing.pool import RUN as POOL_STATE_RUN
 from celery.timer import TimeoutTimer, TimeoutError
 from celery.conf import REAP_TIMEOUT
+from celery.datastructures import ExceptionInfo
 
 
 class TaskPool(object):
-    """Queue of running child processes, which starts waiting for the
+    """Pool of running child processes, which starts waiting for the
     processes to finish when the queue limit has been reached.
 
     :param limit: see :attr:`limit` attribute.
@@ -167,7 +168,7 @@ st
         """What to do when a worker task is ready and its return value has
         been collected."""
 
-        if isinstance(ret_value, Exception):
+        if isinstance(ret_value, ExceptionInfo):
             for errback in errbacks:
                 errback(ret_value, meta)
         else:
