@@ -14,6 +14,8 @@ import simplejson
 import traceback
 import logging
 import time
+import sys
+import traceback
 
 
 class EmptyQueue(Exception):
@@ -24,6 +26,15 @@ class UnknownTask(Exception):
     """Got an unknown task in the queue. The message is requeued and
     ignored."""
 
+class ExcInfo(object):
+    
+    def __init__(self, exc_info):
+        type_, exception, tb = exc_info
+        self.exception = exception
+        self.traceback = '\n'.join(traceback.format_exception(*exc_info))
+        
+    def __str__(self):
+        return str(self.exception)
 
 def jail(task_id, func, args, kwargs):
     """Wraps the task in a jail, which catches all exceptions, and
@@ -52,7 +63,7 @@ def jail(task_id, func, args, kwargs):
         result = func(*args, **kwargs)
     except Exception, exc:
         default_backend.mark_as_failure(task_id, exc)
-        return exc
+        return ExcInfo(sys.exc_info())
     else:
         default_backend.mark_as_done(task_id, result)
         return result
