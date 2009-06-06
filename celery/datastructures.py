@@ -244,7 +244,11 @@ class TaskProcessQueue(object):
 
         """
         if self.done_msg:
-            self.logger.info(self.done_msg % {
-                "name": task_name,
-                "id": task_id,
-                "return_value": ret_value})
+            msg = self.done_msg % {
+                    "name": task_name,
+                    "id": task_id,
+                    "return_value": ret_value}
+            if isinstance(ret_value, Exception):
+                self.logger.error(msg)
+            else:
+                self.logger.info(msg)
