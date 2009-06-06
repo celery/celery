@@ -5,7 +5,7 @@ from celery.conf import DAEMON_CONCURRENCY, DAEMON_LOG_FILE
 from celery.conf import QUEUE_WAKEUP_AFTER, EMPTY_MSG_EMIT_EVERY
 from celery.log import setup_logger
 from celery.registry import tasks
-from celery.datastructures import TaskProcessQueue
+from celery.pool import TaskPool
 from celery.models import PeriodicTaskMeta
 from celery.backends import default_backend, default_periodic_status_backend
 from celery.timer import EventTimer
@@ -103,13 +103,16 @@ class TaskWrapper(object):
         Mapping of keyword arguments to apply to the task.
 
     """
+    done_msg = "Task %(name)s[%(id)s] processed: %(return_value)s"
 
-    def __init__(self, task_name, task_id, task_func, args, kwargs):
+    def __init__(self, task_name, task_id, task_func, args, kwargs, **opts):
         self.task_name = task_name
         self.task_id = task_id
         self.task_func = task_func
         self.args = args
         self.kwargs = kwargs
+        self.done_msg = opts.get("done_msg", self.done_msg)
+        self.logger = opts.get("logger", multiprocessing.get_logger())
 
     def __repr__(self):
         return '<%s: {name:"%s", id:"%s", args:"%s", kwargs:"%s"}>' % (
@@ -118,7 +121,7 @@ class TaskWrapper(object):
                 self.args, self.kwargs)
 
     @classmethod
-    def from_message(cls, message):
+    def from_message(cls, message, logger):
         """Create a :class:`TaskWrapper` from a task message sent by
         :class:`celery.messaging.TaskPublisher`.
 
@@ -136,7 +139,7 @@ class TaskWrapper(object):
         if task_name not in tasks:
             raise UnknownTask(task_name)
         task_func = tasks[task_name]
-        return cls(task_name, task_id, task_func, args, kwargs)
+        return cls(task_name, task_id, task_func, args, kwargs, logger=logger)
 
     def extend_with_default_kwargs(self, loglevel, logfile):
         """Extend the tasks keyword arguments with standard task arguments.
@@ -164,6 +167,24 @@ class TaskWrapper(object):
         return jail(self.task_id, [
                         self.task_func, self.args, task_func_kwargs])
 
+    def on_success(self, ret_value, meta):
+        task_id = meta.get("task_id")
+        task_name = meta.get("task_name")
+        msg = self.done_msg % {
+                "id": task_id,
+                "name": task_name,
+                "return_value": ret_value}
+        self.logger.info(msg)
+
+    def on_failure(self, ret_value, meta):
+        task_id = meta.get("task_id")
+        task_name = meta.get("task_name")
+        msg = self.done_msg % {
+                "id": task_id,
+                "name": task_name,
+                "return_value": ret_value}
+        self.logger.error(msg)
+
     def execute_using_pool(self, pool, loglevel=None, logfile=None):
         """Like :meth:`execute`, but using the :mod:`multiprocessing` pool.
 
@@ -179,8 +200,9 @@ class TaskWrapper(object):
         task_func_kwargs = self.extend_with_default_kwargs(loglevel, logfile)
         jail_args = [self.task_id, self.task_func,
                      self.args, task_func_kwargs]
-        return pool.apply_async(jail, jail_args, {},
-                                self.task_name, self.task_id)
+        return pool.apply_async(jail, args=jail_args,
+                callbacks=[self.on_success], errbacks=[self.on_failure],
+                meta={"task_id": self.task_id, "task_name": self.task_name})
 
 
 class WorkController(object):
@@ -248,8 +270,7 @@ class WorkController(object):
         self.queue_wakeup_after = queue_wakeup_after or \
                                     self.queue_wakeup_after
         self.logger = setup_logger(loglevel, logfile)
-        self.pool = TaskProcessQueue(self.concurrency, logger=self.logger,
-                done_msg="Task %(name)s[%(id)s] processed: %(return_value)s")
+        self.pool = TaskPool(self.concurrency)
         self.task_consumer = None
         self.is_detached = is_detached
         self.reset_connection()
@@ -309,7 +330,7 @@ class WorkController(object):
         if message is None: # No messages waiting.
             raise EmptyQueue()
 
-        task = TaskWrapper.from_message(message)
+        task = TaskWrapper.from_message(message, logger=self.logger)
         self.logger.info("Got task from broker: %s[%s]" % (
                             task.task_name, task.task_id))
 
@@ -352,6 +373,8 @@ class WorkController(object):
             EventTimer(self.run_periodic_tasks, 1),
             EventTimer(self.schedule_retry_tasks, 2),
         ]
+
+        self.pool.run()
 
         # If not running as daemon, and DEBUG logging level is enabled,
         # print pool PIDs and sleep for a second before we start.
