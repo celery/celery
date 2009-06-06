@@ -3,12 +3,15 @@ from carrot.connection import DjangoAMQPConnection
 from celery.messaging import TaskConsumer
 from celery.conf import DAEMON_CONCURRENCY, DAEMON_LOG_FILE
 from celery.conf import QUEUE_WAKEUP_AFTER, EMPTY_MSG_EMIT_EVERY
+from celery.conf import SEND_CELERY_TASK_ERROR_EMAILS
 from celery.log import setup_logger
 from celery.registry import tasks
 from celery.pool import TaskPool
+from celery.datastructures import ExceptionInfo
 from celery.models import PeriodicTaskMeta
 from celery.backends import default_backend, default_periodic_status_backend
 from celery.timer import EventTimer
+from django.core.mail import mail_admins
 import multiprocessing
 import simplejson
 import traceback
@@ -26,15 +29,8 @@ class UnknownTask(Exception):
     """Got an unknown task in the queue. The message is requeued and
     ignored."""
 
-class ExcInfo(object):
-    
-    def __init__(self, exc_info):
-        type_, exception, tb = exc_info
-        self.exception = exception
-        self.traceback = '\n'.join(traceback.format_exception(*exc_info))
-        
-    def __str__(self):
-        return str(self.exception)
+
+
 
 def jail(task_id, func, args, kwargs):
     """Wraps the task in a jail, which catches all exceptions, and
@@ -63,7 +59,7 @@ def jail(task_id, func, args, kwargs):
         result = func(*args, **kwargs)
     except Exception, exc:
         default_backend.mark_as_failure(task_id, exc)
-        return ExcInfo(sys.exc_info())
+        return ExceptionInfo(sys.exc_info())
     else:
         default_backend.mark_as_done(task_id, result)
         return result
@@ -184,6 +180,8 @@ class TaskWrapper(object):
                 "name": task_name,
                 "return_value": ret_value}
         self.logger.error(msg)
+        if SEND_CELERY_TASK_ERROR_EMAILS:
+            mail_admins(msg, ret_value.traceback, fail_silently=True)
 
     def execute_using_pool(self, pool, loglevel=None, logfile=None):
         """Like :meth:`execute`, but using the :mod:`multiprocessing` pool.
