@@ -158,3 +158,13 @@ AMQP_CONSUMER_QUEUE = getattr(settings, "CELERY_AMQP_CONSUMER_QUEUE",
                               DEFAULT_AMQP_CONSUMER_QUEUE)
 
 REAP_TIMEOUT = DEFAULT_REAP_TIMEOUT
+
+"""
+.. data:: SEND_CELERY_TASK_ERROR_EMAILS
+
+    If set to True, errors in tasks will be sent to admins by e-mail.
+    If unset, it will send the emails if DEBUG is False.
+
+"""
+SEND_CELERY_TASK_ERROR_EMAILS = getattr(settings, "SEND_CELERY_TASK_ERROR_EMAILS",
+                                        settings.DEBUG is False)

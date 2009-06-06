@@ -11,7 +11,9 @@ import time
 import os
 from UserList import UserList
 from celery.timer import TimeoutTimer, TimeoutError
-from celery.conf import REAP_TIMEOUT
+from celery.conf import REAP_TIMEOUT, SEND_CELERY_TASK_ERROR_EMAILS
+
+from django.core.mail import mail_admins
 
 
 class PositionQueue(UserList):
@@ -244,11 +246,14 @@ class TaskProcessQueue(object):
 
         """
         if self.done_msg:
+            from celery.worker import ExcInfo
             msg = self.done_msg % {
                     "name": task_name,
                     "id": task_id,
                     "return_value": ret_value}
-            if isinstance(ret_value, Exception):
+            if isinstance(ret_value, ExcInfo):
                 self.logger.error(msg)
+                if SEND_CELERY_TASK_ERROR_EMAILS is True:
+                    mail_admins(msg, ret_value.traceback, fail_silently=True)
             else:
                 self.logger.info(msg)
