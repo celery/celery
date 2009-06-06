@@ -267,7 +267,7 @@ class WorkController(object):
         self.queue_wakeup_after = queue_wakeup_after or \
                                     self.queue_wakeup_after
         self.logger = setup_logger(loglevel, logfile)
-        self.pool = TaskPool(self.concurrency)
+        self.pool = TaskPool(self.concurrency, logger=self.logger)
         self.task_consumer = None
         self.is_detached = is_detached
         self.reset_connection()

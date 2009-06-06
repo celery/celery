@@ -38,8 +38,9 @@ class TaskPool(object):
 
     """
 
-    def __init__(self, limit, reap_timeout=None):
+    def __init__(self, limit, reap_timeout=None, logger=None):
         self.limit = limit
+        self.logger = logger or multiprocessing.get_logger()
         self.reap_timeout = reap_timeout
         self._process_counter = itertools.count(1)
         self._processed_total = 0
