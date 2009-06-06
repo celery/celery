@@ -3,18 +3,8 @@
 Custom Datastructures
 
 """
-import multiprocessing
-from multiprocessing.pool import RUN as POOL_STATE_RUN
-import itertools
-import threading
-import time
-import os
-import traceback
 from UserList import UserList
-from celery.timer import TimeoutTimer, TimeoutError
-from celery.conf import REAP_TIMEOUT, SEND_CELERY_TASK_ERROR_EMAILS
-
-from django.core.mail import mail_admins
+import traceback
 
 
 class PositionQueue(UserList):
