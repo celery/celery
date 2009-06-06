@@ -19,8 +19,6 @@ class TaskPool(object):
 
     :param logger: see :attr:`logger` attribute.
 
-    :param done_msg: see :attr:`done_msg` attribute.
-
 
     .. attribute:: limit
 
@@ -29,12 +27,7 @@ class TaskPool(object):
 
     .. attribute:: logger
 
-        The logger used to print the :attr:`done_msg`.
-
-    .. attribute:: done_msg
-
-        Message logged when a tasks result has been collected.
-        The message is logged with loglevel :const:`logging.INFO`.
+        The logger used for debugging.
 
     """
 
