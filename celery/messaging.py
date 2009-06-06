@@ -7,6 +7,11 @@ from carrot.messaging import Publisher, Consumer
 from celery import conf
 import uuid
 
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+
 
 class NoProcessConsumer(Consumer):
     """A consumer that raises an error if used with wait callbacks (i.e.
@@ -21,6 +26,7 @@ class TaskPublisher(Publisher):
     """The AMQP Task Publisher class."""
     exchange = conf.AMQP_EXCHANGE
     routing_key = conf.AMQP_PUBLISHER_ROUTING_KEY
+    encoder = pickle.dumps
 
     def delay_task(self, task_name, task_args, task_kwargs, **kwargs):
         """Delay task for execution by the celery nodes."""
@@ -72,3 +78,4 @@ class TaskConsumer(NoProcessConsumer):
     routing_key = conf.AMQP_CONSUMER_ROUTING_KEY
     exchange_type = conf.AMQP_EXCHANGE_TYPE
     auto_ack = True
+    decoder = pickle.loads
