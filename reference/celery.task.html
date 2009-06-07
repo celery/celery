@@ -255,7 +255,7 @@ classmethod </em><tt class="descname">delay</tt><big>(</big><em>*args</em>, <em>
 </tbody>
 </table>
 <p>Please be sure to close the AMQP connection when you&#8217;re done
-with this object. i.e:</p>
+with this object. i.e.:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">consumer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumer</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c"># do something with consumer</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">consumer</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
@@ -283,7 +283,7 @@ with this object. i.e:</p>
 </tbody>
 </table>
 <p>Please be sure to close the AMQP connection when you&#8217;re done
-with this object, i.e:</p>
+with this object, i.e.:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">publisher</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_publisher</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c"># do something with publisher</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">publisher</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>

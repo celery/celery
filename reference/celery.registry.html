@@ -120,7 +120,9 @@ from <a title="celery.task.Task" class="reference external" href="celery.task.ht
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>task_name</em> &#8211; Required if the task is a regular function.</td>
+<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>task_name</em> &#8211; By default the <tt class="xref docutils literal"><span class="pre">Task.name</span></tt> attribute on the
+task is used as the name of the task, but you can override it
+using this option.</td>
 </tr>
 <tr class="field"><th class="field-name" colspan="2">Raises <a title="celery.registry.AlreadyRegistered" class="reference internal" href="#celery.registry.AlreadyRegistered">AlreadyRegistered</a>:</th></tr>
 <tr><td>&nbsp;</td><td class="field-body">if the task is already registered.</td>

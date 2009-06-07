@@ -61,7 +61,7 @@ exception </em><tt class="descclassname">celery.worker.</tt><tt class="descname"
 <dl class="class">
 <dt id="celery.worker.TaskWrapper">
 <em class="property">
-class </em><tt class="descclassname">celery.worker.</tt><tt class="descname">TaskWrapper</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>task_func</em>, <em>args</em>, <em>kwargs</em><big>)</big><a class="headerlink" href="#celery.worker.TaskWrapper" title="Permalink to this definition">¶</a></dt>
+class </em><tt class="descclassname">celery.worker.</tt><tt class="descname">TaskWrapper</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>task_func</em>, <em>args</em>, <em>kwargs</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.worker.TaskWrapper" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class wrapping a task to be run.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -152,7 +152,7 @@ and status in the task meta backend.</p>
 <dl class="classmethod">
 <dt id="celery.worker.TaskWrapper.from_message">
 <em class="property">
-classmethod </em><tt class="descname">from_message</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#celery.worker.TaskWrapper.from_message" title="Permalink to this definition">¶</a></dt>
+classmethod </em><tt class="descname">from_message</tt><big>(</big><em>message</em>, <em>logger</em><big>)</big><a class="headerlink" href="#celery.worker.TaskWrapper.from_message" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a <a title="celery.worker.TaskWrapper" class="reference internal" href="#celery.worker.TaskWrapper"><tt class="xref docutils literal"><span class="pre">TaskWrapper</span></tt></a> from a task message sent by
 <a title="celery.messaging.TaskPublisher" class="reference external" href="celery.messaging.html#celery.messaging.TaskPublisher"><tt class="xref docutils literal"><span class="pre">celery.messaging.TaskPublisher</span></tt></a>.</p>
 <table class="docutils field-list" frame="void" rules="none">

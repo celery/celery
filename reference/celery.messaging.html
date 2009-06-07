@@ -63,7 +63,13 @@ it doesn&#8217;t support <tt class="xref docutils literal"><span class="pre">car
 <dt id="celery.messaging.TaskConsumer">
 <em class="property">
 class </em><tt class="descclassname">celery.messaging.</tt><tt class="descname">TaskConsumer</tt><big>(</big><em>connection</em>, <em>queue=None</em>, <em>exchange=None</em>, <em>routing_key=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.messaging.TaskConsumer" title="Permalink to this definition">¶</a></dt>
-<dd>The AMQP Task Consumer class.</dd></dl>
+<dd><p>The AMQP Task Consumer class.</p>
+<dl class="method">
+<dt id="celery.messaging.TaskConsumer.decoder">
+<tt class="descname">decoder</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.messaging.TaskConsumer.decoder" title="Permalink to this definition">¶</a></dt>
+<dd>loads(string) &#8211; Load a pickle from the given string</dd></dl>
+
+</dd></dl>
 
 <dl class="class">
 <dt id="celery.messaging.TaskPublisher">
@@ -79,6 +85,13 @@ class </em><tt class="descclassname">celery.messaging.</tt><tt class="descname">
 <dt id="celery.messaging.TaskPublisher.delay_task_in_set">
 <tt class="descname">delay_task_in_set</tt><big>(</big><em>task_name</em>, <em>taskset_id</em>, <em>task_args</em>, <em>task_kwargs</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.messaging.TaskPublisher.delay_task_in_set" title="Permalink to this definition">¶</a></dt>
 <dd>Delay a task which part of a task set.</dd></dl>
+
+<dl class="method">
+<dt id="celery.messaging.TaskPublisher.encoder">
+<tt class="descname">encoder</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.messaging.TaskPublisher.encoder" title="Permalink to this definition">¶</a></dt>
+<dd><p>dumps(obj, protocol=0) &#8211; Return a string containing an object in pickle format.</p>
+<p>See the Pickler docstring for the meaning of optional argument proto.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.messaging.TaskPublisher.requeue_task">

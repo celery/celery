@@ -124,85 +124,102 @@ by doing the following,:</p>
 </div>
 <div class="section" id="usage">
 <h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
-<p>Have to write a cool tutorial, but here is some simple usage info.</p>
-<p><em>Note</em> You need to have a AMQP message broker running, like <a class="reference external" href="http://www.rabbitmq.com">RabbitMQ</a>,
-and you need to have the amqp server setup in your settings file, as described
-in the <a class="reference external" href="http://pypi.python.org/pypi/carrot/0.3.3">carrot distribution README</a>.</p>
-<p><em>Note</em> If you&#8217;re running <tt class="docutils literal"><span class="pre">SQLite</span></tt> as the database back-end, <tt class="docutils literal"><span class="pre">celeryd</span></tt> will
-only be able to process one message at a time, this is because <tt class="docutils literal"><span class="pre">SQLite</span></tt>
-doesn&#8217;t allow concurrent writes.</p>
-<div class="section" id="defining-tasks">
-<h3>Defining tasks<a class="headerlink" href="#defining-tasks" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">tasks</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.log</span> <span class="kn">import</span> <span class="n">setup_logger</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">do_something</span><span class="p">(</span><span class="n">some_arg</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="gp">... </span>    <span class="n">logger</span> <span class="o">=</span> <span class="n">setup_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-<span class="gp">... </span>    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Did something: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">some_arg</span><span class="p">)</span>
-<span class="gp">... </span>    <span class="k">return</span> <span class="mf">42</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">task</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">do_something</span><span class="p">,</span> <span class="s">&quot;do_something&quot;</span><span class="p">)</span>
+<div class="section" id="installing-rabbitmq">
+<h3>Installing RabbitMQ<a class="headerlink" href="#installing-rabbitmq" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="configuring-your-django-project">
+<h3>Configuring your Django project<a class="headerlink" href="#configuring-your-django-project" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="running-the-celery-worker-daemon">
+<h3>Running the celery worker daemon<a class="headerlink" href="#running-the-celery-worker-daemon" title="Permalink to this headline">¶</a></h3>
+<p>To test this we&#8217;ll be running the worker daemon in the foreground, so we can
+see what&#8217;s going on without consulting the logfile:</p>
+<div class="highlight-python"><pre>::</pre>
+</div>
+<blockquote>
+$ python manage.py celeryd</blockquote>
+<p>However, in production you&#8217;ll probably want to run the worker in the
+background as daemon instead:</p>
+<div class="highlight-python"><pre>$ python manage.py celeryd --daemon</pre>
+</div>
+<p>For help on command line arguments to the worker daemon, you can execute the
+help command:</p>
+<div class="highlight-python"><pre>$ python manage.py help celeryd</pre>
+</div>
+<p><strong>Note</strong>: If you&#8217;re using <tt class="docutils literal"><span class="pre">SQLite</span></tt> as the Django database back-end,
+<tt class="docutils literal"><span class="pre">celeryd</span></tt> will only be able to process one task at a time, this is
+because <tt class="docutils literal"><span class="pre">SQLite</span></tt> doesn&#8217;t allow concurrent writes.</p>
+</div>
+<div class="section" id="defining-and-executing-tasks">
+<h3>Defining and executing tasks<a class="headerlink" href="#defining-and-executing-tasks" title="Permalink to this headline">¶</a></h3>
+<p><strong>Please note</strong> All of these tasks has to be stored in a real module, they can&#8217;t
+be defined in the python shell or ipython/bpython. This is because the celery
+worker server needs access to the task function to be able to run it.
+So while it looks like we use the python shell to define the tasks in these
+examples, you can&#8217;t do it this way. Put them in your Django applications
+<tt class="docutils literal"><span class="pre">tasks</span></tt> module (the worker daemon will automatically load any <tt class="docutils literal"><span class="pre">tasks.py</span></tt>
+file for all of the applications listed in <tt class="docutils literal"><span class="pre">settings.INSTALLED_APPS</span></tt>.
+Execution tasks using <tt class="docutils literal"><span class="pre">delay</span></tt> and <tt class="docutils literal"><span class="pre">apply_async</span></tt> can be done from the
+python shell, but keep in mind that since arguments are pickled, you can&#8217;t
+use custom classes defined in the shell session.</p>
+<p>While you can use regular functions, the recommended way is creating
+a task class, this way you can cleanly upgrade the task to use the more
+advanced features of celery later.</p>
+<p>This is a task that basically does nothing but take some arguments,
+and return value:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">MyTask</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">name</span> <span class="o">=</span> <span class="s">&quot;myapp.mytask&quot;</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">some_arg</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<span class="gp">... </span>        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Did something: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">some_arg</span><span class="p">)</span>
+<span class="gp">... </span>        <span class="k">return</span> <span class="mf">42</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tasks</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">MyTask</span><span class="p">)</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="tell-the-celery-daemon-to-run-a-task">
-<h3>Tell the celery daemon to run a task<a class="headerlink" href="#tell-the-celery-daemon-to-run-a-task" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">delay_task</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">delay_task</span><span class="p">(</span><span class="s">&quot;do_something&quot;</span><span class="p">,</span> <span class="n">some_arg</span><span class="o">=</span><span class="s">&quot;foo bar baz&quot;</span><span class="p">)</span>
+<p>Now if we want to execute this task, we can use the <tt class="docutils literal"><span class="pre">delay</span></tt> method of the
+task class (this is a handy shortcut to the <tt class="docutils literal"><span class="pre">apply_async</span></tt> method which gives
+you greater control of the task execution).</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">myapp.tasks</span> <span class="kn">import</span> <span class="n">MyTask</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">MyTask</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">some_arg</span><span class="o">=</span><span class="s">&quot;foo&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="execute-a-task-and-get-its-return-value">
-<h3>Execute a task, and get its return value.<a class="headerlink" href="#execute-a-task-and-get-its-return-value" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">delay_task</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">delay_task</span><span class="p">(</span><span class="s">&quot;do_something&quot;</span><span class="p">,</span> <span class="n">some_arg</span><span class="o">=</span><span class="s">&quot;foo bar baz&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">ready</span><span class="p">()</span>
+<p>At this point, the task has been sent to the message broker. The message
+broker will hold on to the task until a celery worker server has successfully
+picked it up.</p>
+<p>Now the task has been executed, but to know what happened with the task we
+have to check the celery logfile to see its return value and output.
+This is because we didn&#8217;t keep the <tt class="docutils literal"><span class="pre">AsyncResult</span></tt> object returned by
+<tt class="docutils literal"><span class="pre">delay</span></tt>.</p>
+<p>The <tt class="docutils literal"><span class="pre">AsyncResult</span></tt> lets us find out the state of the task, wait for the task to
+finish and get its return value (or exception if the task failed).</p>
+<p>So, let&#8217;s execute the task again, but this time we&#8217;ll keep track of the task:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">MyTask</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="s">&quot;do_something&quot;</span><span class="p">,</span> <span class="n">some_arg</span><span class="o">=</span><span class="s">&quot;foo bar baz&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">ready</span><span class="p">()</span> <span class="c"># returns True if the task has finished processing.</span>
 <span class="go">False</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>   <span class="c"># Waits until the task is done.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">result</span> <span class="c"># task is not ready, so no return value yet.</span>
+<span class="go">None</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>   <span class="c"># Waits until the task is done and return the retval.</span>
 <span class="go">42</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">status</span><span class="p">()</span>
-<span class="go">&#39;DONE&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">result</span>
+<span class="go">42</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">success</span><span class="p">()</span> <span class="c"># returns True if the task didn&#39;t end in failure.</span>
+<span class="go">True</span>
 </pre></div>
 </div>
-<p>If the task raises an exception, the tasks status will be <tt class="docutils literal"><span class="pre">FAILURE</span></tt>, and
-<tt class="docutils literal"><span class="pre">result.result</span></tt> will contain the exception instance raised.</p>
-</div>
-<div class="section" id="running-the-celery-daemon">
-<h3>Running the celery daemon<a class="headerlink" href="#running-the-celery-daemon" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-python"><pre>$ cd mydjangoproject
-$ env DJANGO_SETTINGS_MODULE=settings celeryd
-[....]
-[2009-04-23 17:44:05,115: INFO/Process-1] Did something: foo bar baz
-[2009-04-23 17:44:05,118: INFO/MainProcess] Waiting for queue.</pre>
-</div>
+<p>If the task raises an exception, the <tt class="docutils literal"><span class="pre">result.success()</span></tt> will be <tt class="xref docutils literal"><span class="pre">False</span></tt>,
+and <tt class="docutils literal"><span class="pre">result.result</span></tt> will contain the exception instance raised.</p>
 </div>
 <div class="section" id="auto-discovery-of-tasks">
 <h3>Auto-discovery of tasks<a class="headerlink" href="#auto-discovery-of-tasks" title="Permalink to this headline">¶</a></h3>
 <p><tt class="docutils literal"><span class="pre">celery</span></tt> has an auto-discovery feature like the Django Admin, that
 automatically loads any <tt class="docutils literal"><span class="pre">tasks.py</span></tt> module in the applications listed
-in <tt class="docutils literal"><span class="pre">settings.INSTALLED_APPS</span></tt>.</p>
-<p>A good place to add this command could be in your <tt class="docutils literal"><span class="pre">urls.py</span></tt>,</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">tasks</span>
-<span class="n">tasks</span><span class="o">.</span><span class="n">autodiscover</span><span class="p">()</span>
-</pre></div>
-</div>
-<p>Then you can add new tasks in your applications <tt class="docutils literal"><span class="pre">tasks.py</span></tt> module,</p>
-<div class="highlight-python"><pre>from celery.task import tasks
-from celery.log import setup_logger
-from clickcounter.models import ClickCount
-
-def increment_click(for_url, **kwargs):
-    logger = setup_logger(**kwargs)
-    clicks_for_url, cr = ClickCount.objects.get_or_create(url=for_url)
-    clicks_for_url.clicks = clicks_for_url.clicks + 1
-    clicks_for_url.save()
-    logger.info("Incremented click count for %s (not at %d)" % (
-                    for_url, clicks_for_url.clicks)
-tasks.register(increment_click, "increment_click")</pre>
-</div>
+in <tt class="docutils literal"><span class="pre">settings.INSTALLED_APPS</span></tt>. This autodiscovery is used by the celery
+worker to find registered tasks for your Django project.</p>
 </div>
 <div class="section" id="periodic-tasks">
 <h3>Periodic Tasks<a class="headerlink" href="#periodic-tasks" title="Permalink to this headline">¶</a></h3>
-<p>Periodic tasks are tasks that are run every <tt class="docutils literal"><span class="pre">n</span></tt> seconds. They don&#8217;t
-support extra arguments. Here&#8217;s an example of a periodic task:</p>
+<p>Periodic tasks are tasks that are run every <tt class="docutils literal"><span class="pre">n</span></tt> seconds.
+Here&#8217;s an example of a periodic task:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">tasks</span><span class="p">,</span> <span class="n">PeriodicTask</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">timedelta</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">MyPeriodicTask</span><span class="p">(</span><span class="n">PeriodicTask</span><span class="p">):</span>
@@ -216,6 +233,8 @@ support extra arguments. Here&#8217;s an example of a periodic task:</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">tasks</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">MyPeriodicTask</span><span class="p">)</span>
 </pre></div>
 </div>
+<p><strong>Note:</strong> Periodic tasks does not support arguments, as this doesn&#8217;t
+really make sense.</p>
 <p>For periodic tasks to work you need to add <tt class="docutils literal"><span class="pre">celery</span></tt> to <tt class="docutils literal"><span class="pre">INSTALLED_APPS</span></tt>,
 and issue a <tt class="docutils literal"><span class="pre">syncdb</span></tt>.</p>
 </div>

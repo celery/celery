@@ -53,11 +53,22 @@
 <h1>Configuration - celery.conf<a class="headerlink" href="#module-celery.conf" title="Permalink to this headline">¶</a></h1>
 <p>celery.conf</p>
 <dl class="data">
+<dt id="celery.conf.AMQP_CONSUMER_QUEUE">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONSUMER_QUEUE</tt><a class="headerlink" href="#celery.conf.AMQP_CONSUMER_QUEUE" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="data">
+<dt id="celery.conf.SEND_CELERY_TASK_ERROR_EMAILS">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">SEND_CELERY_TASK_ERROR_EMAILS</tt><a class="headerlink" href="#celery.conf.SEND_CELERY_TASK_ERROR_EMAILS" title="Permalink to this definition">¶</a></dt>
+<dd>If set to <tt class="xref docutils literal"><span class="pre">True</span></tt>, errors in tasks will be sent to admins by e-mail.
+If unset, it will send the e-mails if DEBUG is False.</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
 <dt id="celery.conf.AMQP_CONSUMER_ROUTING_KEY">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONSUMER_ROUTING_KEY</tt><a class="headerlink" href="#celery.conf.AMQP_CONSUMER_ROUTING_KEY" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="data">
-<dt id="celery.conf.AMQP_CONSUMER_QUEUE">
-<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONSUMER_QUEUE</tt><a class="headerlink" href="#celery.conf.AMQP_CONSUMER_QUEUE" title="Permalink to this definition">¶</a></dt>
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONSUMER_QUEUE</tt></dt>
 <dd>The name of the AMQP queue.</dd></dl>
 
 </dd></dl>
@@ -72,7 +83,7 @@
 
 <p>The type of exchange. If the exchange type is <tt class="docutils literal"><span class="pre">direct</span></tt>, all messages
 receives all tasks. However, if the exchange type is <tt class="docutils literal"><span class="pre">topic</span></tt>, you can
-route e.g some tasks to one server, and others to the rest.
+route e.g. some tasks to one server, and others to the rest.
 See <a href="#id1"><span class="problematic" id="id2">`Exchange types and the effect of bindings`_</span></a>.</p>
 </dd></dl>
 
@@ -141,8 +152,8 @@ wakes up and checks the queue again.</dd></dl>
 </dd></dl>
 
 <dl class="data">
-<dt id="celery.conf.DEFAULT_REAP_TIMEOUT">
-<tt class="descclassname">celery.conf.</tt><tt class="descname">DEFAULT_REAP_TIMEOUT</tt><a class="headerlink" href="#celery.conf.DEFAULT_REAP_TIMEOUT" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.conf.DEFAULT_DAEMON_LOG_FILE">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">DEFAULT_DAEMON_LOG_FILE</tt><a class="headerlink" href="#celery.conf.DEFAULT_DAEMON_LOG_FILE" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="data">
 <dt id="celery.conf.LOG_LEVELS">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">LOG_LEVELS</tt><a class="headerlink" href="#celery.conf.LOG_LEVELS" title="Permalink to this definition">¶</a></dt>
