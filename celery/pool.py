@@ -7,7 +7,6 @@ import os
 
 from multiprocessing.pool import RUN as POOL_STATE_RUN
 from celery.timer import TimeoutTimer, TimeoutError
-from celery.conf import REAP_TIMEOUT
 from celery.datastructures import ExceptionInfo
 
 

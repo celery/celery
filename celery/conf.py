@@ -14,7 +14,6 @@ DEFAULT_DAEMON_PID_FILE = "celeryd.pid"
 DEFAULT_LOG_FMT = '[%(asctime)s: %(levelname)s/%(processName)s] %(message)s'
 DEFAULT_DAEMON_LOG_LEVEL = "INFO"
 DEFAULT_DAEMON_LOG_FILE = "celeryd.log"
-DEFAULT_REAP_TIMEOUT = 30
 
 """
 .. data:: LOG_LEVELS
@@ -157,14 +156,13 @@ AMQP_CONSUMER_ROUTING_KEY = getattr(settings,
 AMQP_CONSUMER_QUEUE = getattr(settings, "CELERY_AMQP_CONSUMER_QUEUE",
                               DEFAULT_AMQP_CONSUMER_QUEUE)
 
-REAP_TIMEOUT = DEFAULT_REAP_TIMEOUT
-
 """
 .. data:: SEND_CELERY_TASK_ERROR_EMAILS
 
-    If set to True, errors in tasks will be sent to admins by e-mail.
-    If unset, it will send the emails if DEBUG is False.
+    If set to ``True``, errors in tasks will be sent to admins by e-mail.
+    If unset, it will send the e-mails if DEBUG is False.
 
 """
-SEND_CELERY_TASK_ERROR_EMAILS = getattr(settings, "SEND_CELERY_TASK_ERROR_EMAILS",
-                                        settings.DEBUG is False)
+SEND_CELERY_TASK_ERROR_EMAILS = getattr(settings,
+                                        "SEND_CELERY_TASK_ERROR_EMAILS",
+                                        not settings.DEBUG)
