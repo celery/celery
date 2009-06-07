@@ -103,10 +103,7 @@ Running the celery worker daemon
 To test this we'll be running the worker daemon in the foreground, so we can
 see what's going on without consulting the logfile::
 
-::
-    
     $ python manage.py celeryd
-
 
 However, in production you'll probably want to run the worker in the
 background as daemon instead::
