@@ -79,7 +79,7 @@ Thanks to howsthedotcom.</p>
 <p><strong>Answer:</strong> Did you register the task in the applications <tt class="docutils literal"><span class="pre">tasks.py</span></tt> module?
 (or in some other module Django loads by default, like <tt class="docutils literal"><span class="pre">models.py</span></tt>?).</p>
 <p>You can find out if the celery daemon is able to run the task by executing the
-periodic task manually, by doing the following:</p>
+periodic task manually:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">myapp.tasks</span> <span class="kn">import</span> <span class="n">MyPeriodicTask</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">MyPeriodicTask</span><span class="o">.</span><span class="n">delay</span><span class="p">()</span>
 </pre></div>

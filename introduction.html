@@ -134,10 +134,8 @@ by doing the following,:</p>
 <h3>Running the celery worker daemon<a class="headerlink" href="#running-the-celery-worker-daemon" title="Permalink to this headline">¶</a></h3>
 <p>To test this we&#8217;ll be running the worker daemon in the foreground, so we can
 see what&#8217;s going on without consulting the logfile:</p>
-<div class="highlight-python"><pre>::</pre>
+<div class="highlight-python"><pre>$ python manage.py celeryd</pre>
 </div>
-<blockquote>
-$ python manage.py celeryd</blockquote>
 <p>However, in production you&#8217;ll probably want to run the worker in the
 background as daemon instead:</p>
 <div class="highlight-python"><pre>$ python manage.py celeryd --daemon</pre>
