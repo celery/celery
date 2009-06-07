@@ -7,8 +7,6 @@ from carrot.connection import DjangoAMQPConnection
 from celery.log import setup_logger
 from celery.registry import tasks
 from celery.messaging import TaskPublisher, TaskConsumer
-from celery.models import TaskMeta
-from django.core.cache import cache
 from datetime import timedelta
 from celery.backends import default_backend
 from celery.datastructures import PositionQueue
