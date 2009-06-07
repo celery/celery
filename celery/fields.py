@@ -18,8 +18,8 @@ class PickledObjectField(models.Field):
 
     def to_python(self, value):
         if isinstance(value, PickledObject):
-            # If the value is a definite pickle; and an error is raised in de-pickling
-            # it should be allowed to propogate.
+            # If the value is a definite pickle; and an error is
+            # raised in de-pickling it should be allowed to propogate.
             return pickle.loads(str(value))
         else:
             try:
@@ -39,9 +39,11 @@ class PickledObjectField(models.Field):
     def get_db_prep_lookup(self, lookup_type, value):
         if lookup_type == 'exact':
             value = self.get_db_prep_save(value)
-            return super(PickledObjectField, self).get_db_prep_lookup(lookup_type, value)
+            return super(PickledObjectField, self).get_db_prep_lookup(
+                    lookup_type, value)
         elif lookup_type == 'in':
             value = [self.get_db_prep_save(v) for v in value]
-            return super(PickledObjectField, self).get_db_prep_lookup(lookup_type, value)
+            return super(PickledObjectField, self).get_db_prep_lookup(
+                    lookup_type, value)
         else:
             raise TypeError('Lookup type %s is not supported.' % lookup_type)
