@@ -90,7 +90,18 @@ by doing the following,::
 Usage
 =====
 
-Have to write a cool tutorial, but here is some simple usage info.
+Installing RabbitMQ
+-------------------
+
+
+Configuring your Django project
+-------------------------------
+
+Running the celery worker daemon
+--------------------------------
+
+Defining and executing tasks
+----------------------------
 
 *Note* You need to have a AMQP message broker running, like `RabbitMQ`_,
 and you need to have the amqp server setup in your settings file, as described
