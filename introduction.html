@@ -127,8 +127,8 @@ by doing the following,:</p>
 <div class="section" id="installing-rabbitmq">
 <h3>Installing RabbitMQ<a class="headerlink" href="#installing-rabbitmq" title="Permalink to this headline">¶</a></h3>
 </div>
-<div class="section" id="configuring-your-django-project">
-<h3>Configuring your Django project<a class="headerlink" href="#configuring-your-django-project" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="configuring-your-django-project-to-use-celery">
+<h3>Configuring your Django project to use Celery<a class="headerlink" href="#configuring-your-django-project-to-use-celery" title="Permalink to this headline">¶</a></h3>
 </div>
 <div class="section" id="running-the-celery-worker-daemon">
 <h3>Running the celery worker daemon<a class="headerlink" href="#running-the-celery-worker-daemon" title="Permalink to this headline">¶</a></h3>
@@ -137,7 +137,7 @@ see what&#8217;s going on without consulting the logfile:</p>
 <div class="highlight-python"><pre>$ python manage.py celeryd</pre>
 </div>
 <p>However, in production you&#8217;ll probably want to run the worker in the
-background as daemon instead:</p>
+background as a daemon instead:</p>
 <div class="highlight-python"><pre>$ python manage.py celeryd --daemon</pre>
 </div>
 <p>For help on command line arguments to the worker daemon, you can execute the

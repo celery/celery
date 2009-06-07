@@ -94,8 +94,8 @@ Installing RabbitMQ
 -------------------
 
 
-Configuring your Django project
--------------------------------
+Configuring your Django project to use Celery
+---------------------------------------------
 
 Running the celery worker daemon
 --------------------------------
@@ -106,7 +106,7 @@ see what's going on without consulting the logfile::
     $ python manage.py celeryd
 
 However, in production you'll probably want to run the worker in the
-background as daemon instead::
+background as a daemon instead::
 
     $ python manage.py celeryd --daemon
 
