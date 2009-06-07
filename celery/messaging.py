@@ -13,15 +13,6 @@ except ImportError:
     import pickle
 
 
-class NoProcessConsumer(Consumer):
-    """A consumer that raises an error if used with wait callbacks (i.e.
-    it doesn't support :meth:`carrot.messaging.Consumer.wait``)."""
-
-    def receive(self, message_data, message):
-        raise NotImplementedError(
-                "This consumer doesn't support process_next() or wait()")
-
-
 class TaskPublisher(Publisher):
     """The AMQP Task Publisher class."""
     exchange = conf.AMQP_EXCHANGE
@@ -71,7 +62,7 @@ class TaskPublisher(Publisher):
         return task_id
 
 
-class TaskConsumer(NoProcessConsumer):
+class TaskConsumer(Consumer):
     """The AMQP Task Consumer class."""
     queue = conf.AMQP_CONSUMER_QUEUE
     exchange = conf.AMQP_EXCHANGE
