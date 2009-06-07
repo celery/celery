@@ -40,7 +40,7 @@ My Periodic Tasks won't run
 (or in some other module Django loads by default, like ``models.py``?).
 
 You can find out if the celery daemon is able to run the task by executing the
-periodic task manually, by doing the following:
+periodic task manually:
 
     >>> from myapp.tasks import MyPeriodicTask
     >>> MyPeriodicTask.delay()
