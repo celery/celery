@@ -40,7 +40,7 @@ if django_project_dir:
 
 from django.conf import settings
 from celery.platform import PIDFile, daemonize, remove_pidfile
-from celery.log import setup_logger, emergency_error
+from celery.log import emergency_error
 from celery.conf import LOG_LEVELS, DAEMON_LOG_FILE, DAEMON_LOG_LEVEL
 from celery.conf import DAEMON_CONCURRENCY, DAEMON_PID_FILE
 from celery.conf import QUEUE_WAKEUP_AFTER
@@ -54,6 +54,7 @@ import atexit
 def main(concurrency=DAEMON_CONCURRENCY, daemon=False,
         loglevel=DAEMON_LOG_LEVEL, logfile=DAEMON_LOG_FILE,
         pidfile=DAEMON_PID_FILE, queue_wakeup_after=QUEUE_WAKEUP_AFTER):
+    """Run the celery daemon."""
     if settings.DATABASE_ENGINE == "sqlite3" and concurrency > 1:
         import warnings
         warnings.warn("The sqlite3 database engine doesn't support "
@@ -82,7 +83,7 @@ def main(concurrency=DAEMON_CONCURRENCY, daemon=False,
                             e.__class__, e, traceback.format_exc()))
 
 
-option_list = (
+OPTION_LIST = (
     optparse.make_option('-c', '--concurrency', default=DAEMON_CONCURRENCY,
             action="store", dest="concurrency", type="int",
             help="Number of child processes processing the queue."),
@@ -107,7 +108,8 @@ option_list = (
 
 
 def parse_options(arguments):
-    parser = optparse.OptionParser(option_list=option_list)
+    """Option parsers for the available options to ``celeryd``."""
+    parser = optparse.OptionParser(option_list=OPTION_LIST)
     options, values = parser.parse_args(arguments)
     if not isinstance(options.loglevel, int):
         options.loglevel = LOG_LEVELS[options.loglevel.upper()]

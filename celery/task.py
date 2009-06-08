@@ -239,14 +239,6 @@ class Task(object):
         """
         return TaskConsumer(connection=DjangoAMQPConnection())
 
-    def requeue(self, task_id, args, kwargs):
-        publisher = self.get_publisher()
-        publisher.requeue_task(self.name, task_id, args, kwargs)
-        publisher.connection.close()
-
-    def retry(self, task_id, args, kwargs):
-        retry_queue.put(self.name, task_id, args, kwargs)
-
     @classmethod
     def delay(cls, *args, **kwargs):
         """Delay this task for execution by the ``celery`` daemon(s).
@@ -441,6 +433,7 @@ class AsynchronousMapTask(Task):
     name = "celery.map_async"
 
     def run(self, serfunc, args, **kwargs):
+        """The method run by ``celeryd``."""
         timeout = kwargs.get("timeout")
         return TaskSet.map(pickle.loads(serfunc), args, timeout=timeout)
 tasks.register(AsynchronousMapTask)
@@ -566,6 +559,7 @@ class DeleteExpiredTaskMetaTask(PeriodicTask):
     run_every = timedelta(days=1)
 
     def run(self, **kwargs):
+        """The method run by ``celeryd``."""
         logger = self.get_logger(**kwargs)
         logger.info("Deleting expired task meta objects...")
         default_backend.cleanup()

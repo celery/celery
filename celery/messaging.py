@@ -40,6 +40,7 @@ class TaskPublisher(Publisher):
 
     def _delay_task(self, task_name, task_id=None, part_of_set=None,
             task_args=None, task_kwargs=None, **kwargs):
+        """INTERNAL"""
         priority = kwargs.get("priority")
         immediate = kwargs.get("immediate")
         mandatory = kwargs.get("mandatory")

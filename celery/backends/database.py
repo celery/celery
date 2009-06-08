@@ -13,6 +13,7 @@ class Backend(BaseBackend):
         self._cache = {}
 
     def run_periodic_tasks(self):
+        """Run all waiting periodic tasks."""
         waiting_tasks = PeriodicTaskMeta.objects.get_waiting_tasks()
         for waiting_task in waiting_tasks:
             waiting_task.delay()
@@ -42,6 +43,7 @@ class Backend(BaseBackend):
             return meta.result
 
     def _get_task_meta_for(self, task_id):
+        """Get task metadata for a task by id."""
         if task_id in self._cache:
             return self._cache[task_id]
         meta = TaskMeta.objects.get_task(task_id)

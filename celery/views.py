@@ -1,12 +1,8 @@
 """celery.views"""
-from django.http import Http404, HttpResponse
+from django.http import HttpResponse
 from celery.task import is_done, delay_task
 from celery.result import AsyncResult
 import simplejson
-
-
-def apply_async(request, task_name, *args, **kwargs):
-    res = delay_task(task_name, args, kwargs)
 
 
 def is_task_done(request, task_id):
@@ -20,7 +16,7 @@ def task_status(request, task_id):
     async_result = AsyncResult(task_id)
     response_data = {"task": {
                         "id": task_id,
-                        "status": async_result.get_status(),
-                        "result": async_result.get_result(),
+                        "status": async_result.status,
+                        "result": async_result.result,
     }}
     return HttpResponse(simplejson.dumps(response_data))

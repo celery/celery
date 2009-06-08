@@ -133,8 +133,9 @@ class TaskWrapper(object):
         self.task_func = task_func
         self.args = args
         self.kwargs = kwargs
+        self.logger = kwargs.get("logger")
         for opt in ("success_msg", "fail_msg", "fail_email_subject",
-                "fail_email_body", "logger"):
+                "fail_email_body"):
             setattr(self, opt, opts.get(opt, getattr(self, opt, None)))
         if not self.logger:
             self.logger = multiprocessing.get_logger()
@@ -308,6 +309,7 @@ class WorkController(object):
         self.logger = setup_logger(loglevel, logfile)
         self.pool = TaskPool(self.concurrency, logger=self.logger)
         self.task_consumer = None
+        self.task_consumer_it = None
         self.is_detached = is_detached
         self.reset_connection()
 
@@ -349,6 +351,7 @@ class WorkController(object):
         return message
 
     def process_task(self, message):
+        """Process task message by passing it to the pool of workers."""
         task = TaskWrapper.from_message(message, logger=self.logger)
         self.logger.info("Got task from broker: %s[%s]" % (
             task.task_name, task.task_id))

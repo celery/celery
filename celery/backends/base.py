@@ -4,7 +4,6 @@ try:
     import cPickle as pickle
 except ImportError:
     import pickle
-import sys
 
 
 def find_nearest_pickleable_exception(exc):
@@ -97,11 +96,13 @@ class BaseBackend(object):
         return self.store_result(task_id, exc, status="FAILURE")
 
     def create_exception_cls(self, name, module, parent=None):
+        """Dynamically create an exception class."""
         if not parent:
             parent = Exception
         return type(name, (parent, ), {"__module__": module})
 
     def prepare_exception(self, exc):
+        """Prepare exception for serialization."""
         nearest = find_nearest_pickleable_exception(exc)
         if nearest:
             return nearest
@@ -118,6 +119,7 @@ class BaseBackend(object):
             return exc
 
     def exception_to_python(self, exc):
+        """Convert serialized exception to Python exception."""
         if isinstance(exc, UnpickleableExceptionWrapper):
             exc_cls = self.create_exception_cls(exc.exc_cls_name,
                                                 exc.exc_module)

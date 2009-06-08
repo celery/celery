@@ -57,6 +57,7 @@ class Backend(BaseBackend):
         return pytyrant.PyTyrant.open(self.tyrant_host, self.tyrant_port)
 
     def _cache_key(self, task_id):
+        """Get the cache key for a task by id."""
         return "celery-task-meta-%s" % task_id
 
     def store_result(self, task_id, result, status):
@@ -85,6 +86,7 @@ class Backend(BaseBackend):
         return self.get_status(task_id) == "DONE"
 
     def _get_task_meta_for(self, task_id):
+        """Get task metadata for a task by id."""
         if task_id in self._cache:
             return self._cache[task_id]
         meta = self.get_server().get(self._cache_key(task_id))

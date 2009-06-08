@@ -1,3 +1,8 @@
+"""
+
+Custom Django Model Fields.
+
+"""
 from django.db import models
 
 try:
@@ -14,9 +19,11 @@ class PickledObject(str):
 
 
 class PickledObjectField(models.Field):
+    """A field that automatically pickles/unpickles its value."""
     __metaclass__ = models.SubfieldBase
 
     def to_python(self, value):
+        """Convert the database value to a python value."""
         if isinstance(value, PickledObject):
             # If the value is a definite pickle; and an error is
             # raised in de-pickling it should be allowed to propogate.
@@ -24,19 +31,22 @@ class PickledObjectField(models.Field):
         else:
             try:
                 return pickle.loads(str(value))
-            except:
+            except pickle.PickleError:
                 # If an error was raised, just return the plain value
                 return value
 
     def get_db_prep_save(self, value):
+        """get_db_prep_save"""
         if value is not None and not isinstance(value, PickledObject):
             value = PickledObject(pickle.dumps(value))
         return value
 
     def get_internal_type(self):
+        """The database field type used by this field."""
         return 'TextField'
 
     def get_db_prep_lookup(self, lookup_type, value):
+        """get_db_prep_lookup"""
         if lookup_type == 'exact':
             value = self.get_db_prep_save(value)
             return super(PickledObjectField, self).get_db_prep_lookup(

@@ -1,3 +1,4 @@
+"""celery.registry"""
 from celery import discovery
 from UserDict import UserDict
 

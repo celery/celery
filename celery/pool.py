@@ -1,3 +1,8 @@
+"""
+
+Process Pools.
+
+"""
 import multiprocessing
 import itertools
 import threading
@@ -33,15 +38,25 @@ class TaskPool(object):
         self.reap_timeout = reap_timeout
         self._process_counter = itertools.count(1)
         self._processed_total = 0
+        self._pool = None
+        self._processes = None
 
     def run(self):
+        """Run the task pool.
+        
+        Will launch all worker processes so they are ready
+        for processing tasks.
+
+        """
         self._start()
 
     def _start(self):
+        """INTERNAL: Starts the pool. Used by :meth:`run`."""
         self._processes = {}
         self._pool = multiprocessing.Pool(processes=self.limit)
 
     def _terminate_and_restart(self):
+        """INTERNAL: Terminate and restart the pool."""
         try:
             self._pool.terminate()
         except OSError:
@@ -49,6 +64,7 @@ class TaskPool(object):
         self._start()
 
     def _restart(self):
+        """INTERNAL: Close and restart the pool."""
         self.logger.info("Closing and restarting the pool...")
         self._pool.close()
         timeout_thread = threading.Timer(30.0, self._terminate_and_restart)
@@ -58,10 +74,21 @@ class TaskPool(object):
         self._start()
 
     def _pool_is_running(self):
+        """Check if the pool is in the run state.
+
+        :returns: ``True`` if the pool is running.
+
+        """
         return self._pool._state == POOL_STATE_RUN
 
     def apply_async(self, target, args=None, kwargs=None, callbacks=None,
             errbacks=None, meta=None):
+        """Equivalent of the :func:``apply`` built-in function.
+
+        All ``callbacks`` and ``errbacks`` should complete immediately since
+        otherwise the thread which handles the result will get blocked.
+
+        """
         args = args or []
         kwargs = kwargs or {}
         callbacks = callbacks or []
@@ -84,6 +111,7 @@ class TaskPool(object):
         return result
 
     def on_return(self, ret_val, tid, callbacks, errbacks, meta):
+        """What to do when the process returns."""
         try:
             del(self._processes[tid])
         except KeyError:
@@ -119,6 +147,12 @@ class TaskPool(object):
             self.wait_for_result()
 
     def full(self):
+        """Is the pool full?
+
+        :returns: ``True`` if the maximum number of concurrent processes
+            has been reached.
+            
+        """
         return len(self._processes.values()) >= self.limit
 
     def wait_for_result(self):
@@ -132,6 +166,7 @@ class TaskPool(object):
                 break
 
     def reap(self):
+        """Reap finished tasks."""
         self.logger.debug("Reaping processes...")
         processes_reaped = 0
         for process_no, entry in enumerate(self._processes.items()):
