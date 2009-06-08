@@ -119,9 +119,7 @@ receives all tasks. However, if the exchange type is ``topic``, you can
 route e.g. some tasks to one server, and others to the rest.
 See `Exchange types and the effect of bindings`_.
 
-.. _`Exchange types and the effect of bindings:
-    http://en.wikipedia.org/wiki/Advanced_Message_Queuing_Protocol
-    #Exchange_types_and_the_effect_of_bindings
+.. _`Exchange types and the effect of bindings`: http://bit.ly/wpamqpexchanges
 
 """
 AMQP_EXCHANGE_TYPE = getattr(settings, "CELERY_AMQP_EXCHANGE_TYPE",

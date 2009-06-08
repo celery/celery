@@ -28,7 +28,7 @@ def get_backend_cls(backend):
 """
 .. function:: get_default_backend_cls()
 
-    Get the backend class specified in :settings:`CELERY_BACKEND`.
+    Get the backend class specified in :setting:`CELERY_BACKEND`.
 
 """
 get_default_backend_cls = partial(get_backend_cls, CELERY_BACKEND)
@@ -38,7 +38,7 @@ get_default_backend_cls = partial(get_backend_cls, CELERY_BACKEND)
 .. function:: get_default_periodicstatus_backend_cls()
 
     Get the backend class specified in
-    :settings:`CELERY_PERIODIC_STATUS_BACKEND`.
+    :setting:`CELERY_PERIODIC_STATUS_BACKEND`.
 
 """
 get_default_periodicstatus_backend_cls = partial(get_backend_cls,

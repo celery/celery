@@ -144,7 +144,7 @@ class AsyncResult(BaseAsyncResult):
 class TaskSetResult(object):
     """Working with :class:`celery.task.TaskSet` results.
 
-    An instance of this class is returned by :meth:`celery.task.TaskSet.run().
+    An instance of this class is returned by :meth:`celery.task.TaskSet.run()`.
     It lets you inspect the status and return values of a taskset as a
     single entity.
 
@@ -170,36 +170,60 @@ class TaskSetResult(object):
         self.subtasks = map(AsyncResult, self.subtask_ids)
 
     def itersubtasks(self):
-        """:returns: an iterator for iterating over the tasksets
-        :class:`AsyncResult` objects."""
+        """Taskset subtask iterator.
+        
+        :returns: an iterator for iterating over the tasksets
+            :class:`AsyncResult` objects.
+        
+        """
         return (subtask for subtask in self.subtasks)
 
     def successful(self):
-        """:returns: ``True`` if all of the tasks in the taskset finished
-        successfully (i.e. did not raise an exception)."""
+        """Was the taskset successful?
+        
+        :returns: ``True`` if all of the tasks in the taskset finished
+            successfully (i.e. did not raise an exception).
+        
+        """
         return all((subtask.successful()
                         for subtask in self.itersubtasks()))
 
     def failed(self):
-        """:returns: ``True`` if any of the tasks in the taskset failed.
-        (i.e., raised an exception)"""
+        """Did the taskset fail?
+        
+        :returns: ``True`` if any of the tasks in the taskset failed.
+            (i.e., raised an exception)
+            
+        """
         return any((not subtask.successful()
                         for subtask in self.itersubtasks()))
 
     def waiting(self):
-        """:returns: ``True`` if any of the tasks in the taskset is still
-        waiting for execution."""
+        """Is the taskset waiting?
+        
+        :returns: ``True`` if any of the tasks in the taskset is still
+            waiting for execution.
+            
+        """
         return any((not subtask.ready()
                         for subtask in self.itersubtasks()))
 
     def ready(self):
-        """:returns: ``True`` if all of the tasks in the taskset has been
-        executed."""
+        """Is the task readyu?
+        
+        :returns: ``True`` if all of the tasks in the taskset has been
+            executed.
+
+        """
         return all((subtask.ready()
                         for subtask in self.itersubtasks()))
 
     def completed_count(self):
-        """:returns: the number of tasks completed."""
+        """Task completion count.
+        
+        :returns: the number of tasks completed.
+        
+        """
         return sum(imap(int, (subtask.successful()
                                 for subtask in self.itersubtasks())))
 
