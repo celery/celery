@@ -13,6 +13,7 @@ Contents:
     introduction
     faq
     reference/index
+    changelog
 
 
 Indices and tables
