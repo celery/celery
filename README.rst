@@ -177,7 +177,7 @@ So while it looks like we use the python shell to define the tasks in these
 examples, you can't do it this way. Put them in the ``tasks`` module of your
 Django application. The worker daemon will automatically load any ``tasks.py``
 file for all of the applications listed in ``settings.INSTALLED_APPS``.
-Execution tasks using ``delay`` and ``apply_async`` can be done from the
+Executing tasks using ``delay`` and ``apply_async`` can be done from the
 python shell, but keep in mind that since arguments are pickled, you can't
 use custom classes defined in the shell session.
 
@@ -186,7 +186,7 @@ a task class. With this way you can cleanly upgrade the task to use the more
 advanced features of celery later.
 
 This is a task that basically does nothing but take some arguments,
-and return value:
+and return a value:
 
     >>> class MyTask(Task):
     ...     name = "myapp.mytask"
@@ -260,9 +260,6 @@ Here's an example of a periodic task:
 
 **Note:** Periodic tasks does not support arguments, as this doesn't
 really make sense.
-
-For periodic tasks to work you need to add ``celery`` to ``INSTALLED_APPS``,
-and issue a ``syncdb``.
 
 License
 =======
