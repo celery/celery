@@ -14,7 +14,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 		instance, which lets you inspect the status and return values of a
 		taskset as it was a single entity.
 
-	* **IMPORTANT** Celery now depends on carrot >= 0.4.0.
+	* **IMPORTANT** Celery now depends on carrot >= 0.4.1.
 
 	* The celery daemon now sends task errors to the registered admin e-mails.
 		To turn off this feature, set ``SEND_CELERY_TASK_ERROR_EMAILS`` to
@@ -52,6 +52,10 @@ arguments, so be sure to flush your task queue before you upgrade.
 
 	* Task errors are now logged using loglevel ``ERROR`` instead of ``INFO``,
 		and backtraces are dumped. Thanks to Grégoire Cachet.
+
+	* Make every new worker process re-establish it's Django DB connection,
+		this solving the "MySQL connection died?" exceptions.
+		Thanks to Vitaly Babiy and Jirka Vejrazka.
 
 	* **IMOPORTANT** Now using pickle to encode task arguments. This means you
 		now can pass complex python objects to tasks as arguments.

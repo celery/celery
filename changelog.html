@@ -61,7 +61,7 @@ taskset as it was a single entity.</p>
 </dd>
 </dl>
 </li>
-<li><p class="first"><strong>IMPORTANT</strong> Celery now depends on carrot &gt;= 0.4.0.</p>
+<li><p class="first"><strong>IMPORTANT</strong> Celery now depends on carrot &gt;= 0.4.1.</p>
 </li>
 <li><dl class="first docutils">
 <dt>The celery daemon now sends task errors to the registered admin e-mails.</dt>
@@ -102,6 +102,13 @@ been renamed, while others are new:</p>
 <li><dl class="first docutils">
 <dt>Task errors are now logged using loglevel <tt class="docutils literal"><span class="pre">ERROR</span></tt> instead of <tt class="docutils literal"><span class="pre">INFO</span></tt>,</dt>
 <dd><p class="first last">and backtraces are dumped. Thanks to Grégoire Cachet.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Make every new worker process re-establish it&#8217;s Django DB connection,</dt>
+<dd><p class="first last">this solving the &#8220;MySQL connection died?&#8221; exceptions.
+Thanks to Vitaly Babiy and Jirka Vejrazka.</p>
 </dd>
 </dl>
 </li>

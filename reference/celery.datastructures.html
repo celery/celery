@@ -53,6 +53,32 @@
 <h1>Datastructures - celery.datastructures<a class="headerlink" href="#module-celery.datastructures" title="Permalink to this headline">¶</a></h1>
 <p>Custom Datastructures</p>
 <dl class="class">
+<dt id="celery.datastructures.ExceptionInfo">
+<em class="property">
+class </em><tt class="descclassname">celery.datastructures.</tt><tt class="descname">ExceptionInfo</tt><big>(</big><em>exc_info</em><big>)</big><a class="headerlink" href="#celery.datastructures.ExceptionInfo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Exception wrapping an exception and its traceback.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>exc_info</em> &#8211; The exception tuple info as returned by
+<tt class="xref docutils literal"><span class="pre">traceback.format_exception()</span></tt>.</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="celery.datastructures.ExceptionInfo.exception">
+<tt class="descname">exception</tt><a class="headerlink" href="#celery.datastructures.ExceptionInfo.exception" title="Permalink to this definition">¶</a></dt>
+<dd>The original exception.</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.datastructures.ExceptionInfo.traceback">
+<tt class="descname">traceback</tt><a class="headerlink" href="#celery.datastructures.ExceptionInfo.traceback" title="Permalink to this definition">¶</a></dt>
+<dd>A traceback from the point when <a title="celery.datastructures.ExceptionInfo.exception" class="reference internal" href="#celery.datastructures.ExceptionInfo.exception"><tt class="xref docutils literal"><span class="pre">exception</span></tt></a> was raised.</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
 <dt id="celery.datastructures.PositionQueue">
 <em class="property">
 class </em><tt class="descclassname">celery.datastructures.</tt><tt class="descname">PositionQueue</tt><big>(</big><em>length</em><big>)</big><a class="headerlink" href="#celery.datastructures.PositionQueue" title="Permalink to this definition">¶</a></dt>

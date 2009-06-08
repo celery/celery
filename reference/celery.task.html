@@ -56,8 +56,14 @@
 <dt id="celery.task.AsynchronousMapTask">
 <em class="property">
 class </em><tt class="descclassname">celery.task.</tt><tt class="descname">AsynchronousMapTask</tt><a class="headerlink" href="#celery.task.AsynchronousMapTask" title="Permalink to this definition">¶</a></dt>
-<dd>Task used internally by <a title="celery.task.dmap_async" class="reference internal" href="#celery.task.dmap_async"><tt class="xref docutils literal"><span class="pre">dmap_async()</span></tt></a> and
-<a title="celery.task.TaskSet.map_async" class="reference internal" href="#celery.task.TaskSet.map_async"><tt class="xref docutils literal"><span class="pre">TaskSet.map_async()</span></tt></a>.</dd></dl>
+<dd><p>Task used internally by <a title="celery.task.dmap_async" class="reference internal" href="#celery.task.dmap_async"><tt class="xref docutils literal"><span class="pre">dmap_async()</span></tt></a> and
+<a title="celery.task.TaskSet.map_async" class="reference internal" href="#celery.task.TaskSet.map_async"><tt class="xref docutils literal"><span class="pre">TaskSet.map_async()</span></tt></a>.</p>
+<dl class="method">
+<dt id="celery.task.AsynchronousMapTask.run">
+<tt class="descname">run</tt><big>(</big><em>serfunc</em>, <em>args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.AsynchronousMapTask.run" title="Permalink to this definition">¶</a></dt>
+<dd>The method run by <tt class="docutils literal"><span class="pre">celeryd</span></tt>.</dd></dl>
+
+</dd></dl>
 
 <dl class="class">
 <dt id="celery.task.DeleteExpiredTaskMetaTask">
@@ -66,6 +72,11 @@ class </em><tt class="descclassname">celery.task.</tt><tt class="descname">Delet
 <dd><p>A periodic task that deletes expired task metadata every day.</p>
 <p>This runs the current backend&#8217;s
 <a title="celery.backends.base.BaseBackend.cleanup" class="reference external" href="celery.backends.base.html#celery.backends.base.BaseBackend.cleanup"><tt class="xref docutils literal"><span class="pre">celery.backends.base.BaseBackend.cleanup()</span></tt></a> method.</p>
+<dl class="method">
+<dt id="celery.task.DeleteExpiredTaskMetaTask.run">
+<tt class="descname">run</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.DeleteExpiredTaskMetaTask.run" title="Permalink to this definition">¶</a></dt>
+<dd>The method run by <tt class="docutils literal"><span class="pre">celeryd</span></tt>.</dd></dl>
+
 </dd></dl>
 
 <dl class="class">

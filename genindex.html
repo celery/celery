@@ -141,8 +141,8 @@
 <dt><a href="reference/celery.platform.html#module-celery.platform">celery.platform (module)</a></dt>
 <dt><a href="reference/celery.registry.html#module-celery.registry">celery.registry (module)</a></dt>
 <dt><a href="reference/celery.result.html#module-celery.result">celery.result (module)</a></dt>
-<dt><a href="reference/celery.task.html#module-celery.task">celery.task (module)</a></dt></dl></td><td width="33%" valign="top"><dl>
-<dt><a href="reference/celery.timer.html#module-celery.timer">celery.timer (module)</a></dt>
+<dt><a href="reference/celery.task.html#module-celery.task">celery.task (module)</a></dt>
+<dt><a href="reference/celery.timer.html#module-celery.timer">celery.timer (module)</a></dt></dl></td><td width="33%" valign="top"><dl>
 <dt><a href="reference/celery.worker.html#module-celery.worker">celery.worker (module)</a></dt>
 <dt>celeryd command line option</dt>
   <dd><dl>
@@ -161,6 +161,7 @@
 <dt><a href="reference/celery.result.html#celery.result.TaskSetResult.completed_count">completed_count() (celery.result.TaskSetResult method)</a></dt>
 <dt><a href="reference/celery.worker.html#celery.worker.WorkController.concurrency">concurrency (celery.worker.WorkController attribute)</a></dt>
 <dt><a href="reference/celery.worker.html#celery.worker.WorkController.connection_diagnostics">connection_diagnostics() (celery.worker.WorkController method)</a></dt>
+<dt><a href="reference/celery.backends.base.html#celery.backends.base.BaseBackend.create_exception_cls">create_exception_cls() (celery.backends.base.BaseBackend method)</a></dt>
 </dl></td></tr></table>
 
 <h2 id="D">D</h2>
@@ -210,11 +211,14 @@
 <dt><a href="reference/celery.backends.base.html#celery.backends.base.BaseBackend.UnpickleableExceptionWrapper.exc_cls_name">exc_cls_name (celery.backends.base.BaseBackend.UnpickleableExceptionWrapper attribute)</a></dt>
   <dd><dl>
     <dt><a href="reference/celery.backends.base.html#celery.backends.base.UnpickleableExceptionWrapper.exc_cls_name">(celery.backends.base.UnpickleableExceptionWrapper attribute)</a></dt>
-  </dl></dd></dl></td><td width="33%" valign="top"><dl>
+  </dl></dd>
 <dt><a href="reference/celery.backends.base.html#celery.backends.base.BaseBackend.UnpickleableExceptionWrapper.exc_module">exc_module (celery.backends.base.BaseBackend.UnpickleableExceptionWrapper attribute)</a></dt>
   <dd><dl>
     <dt><a href="reference/celery.backends.base.html#celery.backends.base.UnpickleableExceptionWrapper.exc_module">(celery.backends.base.UnpickleableExceptionWrapper attribute)</a></dt>
-  </dl></dd>
+  </dl></dd></dl></td><td width="33%" valign="top"><dl>
+<dt><a href="reference/celery.datastructures.html#celery.datastructures.ExceptionInfo.exception">exception (celery.datastructures.ExceptionInfo attribute)</a></dt>
+<dt><a href="reference/celery.backends.base.html#celery.backends.base.BaseBackend.exception_to_python">exception_to_python() (celery.backends.base.BaseBackend method)</a></dt>
+<dt><a href="reference/celery.datastructures.html#celery.datastructures.ExceptionInfo">ExceptionInfo (class in celery.datastructures)</a></dt>
 <dt><a href="reference/celery.worker.html#celery.worker.TaskWrapper.execute">execute() (celery.worker.TaskWrapper method)</a></dt>
 <dt><a href="reference/celery.worker.html#celery.worker.WorkController.execute_next_task">execute_next_task() (celery.worker.WorkController method)</a></dt>
 <dt><a href="reference/celery.task.html#celery.task.execute_remote">execute_remote() (in module celery.task)</a></dt>
@@ -330,6 +334,7 @@
 <table width="100%" class="indextable"><tr><td width="33%" valign="top">
 <dl>
 
+<dt><a href="reference/celery.bin.celeryd.html#celery.bin.celeryd.main">main() (in module celery.bin.celeryd)</a></dt>
 <dt><a href="reference/celery.task.html#celery.task.TaskSet.map">map() (celery.task.TaskSet class method)</a></dt>
 <dt><a href="reference/celery.task.html#celery.task.TaskSet.map_async">map_async() (celery.task.TaskSet class method)</a></dt>
 <dt><a href="reference/celery.backends.base.html#celery.backends.base.BaseBackend.mark_as_done">mark_as_done() (celery.backends.base.BaseBackend method)</a></dt></dl></td><td width="33%" valign="top"><dl>
@@ -360,6 +365,7 @@
 <table width="100%" class="indextable"><tr><td width="33%" valign="top">
 <dl>
 
+<dt><a href="reference/celery.bin.celeryd.html#celery.bin.celeryd.parse_options">parse_options() (in module celery.bin.celeryd)</a></dt>
 <dt><a href="reference/celery.task.html#celery.task.PeriodicTask">PeriodicTask (class in celery.task)</a></dt>
 <dt><a href="reference/celery.managers.html#celery.managers.PeriodicTaskManager">PeriodicTaskManager (class in celery.managers)</a></dt>
 <dt><a href="reference/celery.models.html#PeriodicTaskMeta">PeriodicTaskMeta (built-in class)</a></dt>
@@ -367,7 +373,9 @@
 <dt><a href="reference/celery.worker.html#celery.worker.WorkController.pool">pool (celery.worker.WorkController attribute)</a></dt></dl></td><td width="33%" valign="top"><dl>
 <dt><a href="reference/celery.datastructures.html#celery.datastructures.PositionQueue">PositionQueue (class in celery.datastructures)</a></dt>
 <dt><a href="reference/celery.datastructures.html#celery.datastructures.PositionQueue.UnfilledPosition">PositionQueue.UnfilledPosition (class in celery.datastructures)</a></dt>
+<dt><a href="reference/celery.backends.base.html#celery.backends.base.BaseBackend.prepare_exception">prepare_exception() (celery.backends.base.BaseBackend method)</a></dt>
 <dt><a href="reference/celery.backends.base.html#celery.backends.base.BaseBackend.prepare_result">prepare_result() (celery.backends.base.BaseBackend method)</a></dt>
+<dt><a href="reference/celery.worker.html#celery.worker.WorkController.process_task">process_task() (celery.worker.WorkController method)</a></dt>
 </dl></td></tr></table>
 
 <h2 id="Q">Q</h2>
@@ -392,19 +400,24 @@
 <dt><a href="reference/celery.platform.html#celery.platform.PIDFile.remove">remove() (celery.platform.PIDFile method)</a></dt>
 <dt><a href="reference/celery.platform.html#celery.platform.remove_pidfile">remove_pidfile() (in module celery.platform)</a></dt>
 <dt><a href="reference/celery.messaging.html#celery.messaging.TaskPublisher.requeue_task">requeue_task() (celery.messaging.TaskPublisher method)</a></dt>
-<dt><a href="reference/celery.worker.html#celery.worker.WorkController.reset_connection">reset_connection() (celery.worker.WorkController method)</a></dt></dl></td><td width="33%" valign="top"><dl>
+<dt><a href="reference/celery.worker.html#celery.worker.WorkController.reset_connection">reset_connection() (celery.worker.WorkController method)</a></dt>
 <dt><a href="reference/celery.result.html#celery.result.BaseAsyncResult.result">result (celery.result.BaseAsyncResult attribute)</a></dt>
   <dd><dl>
     <dt><a href="reference/celery.models.html#TaskMeta.result">(TaskMeta attribute)</a></dt>
-  </dl></dd>
-<dt><a href="reference/celery.task.html#celery.task.ExecuteRemoteTask.run">run() (celery.task.ExecuteRemoteTask method)</a></dt>
+  </dl></dd></dl></td><td width="33%" valign="top"><dl>
+<dt><a href="reference/celery.task.html#celery.task.AsynchronousMapTask.run">run() (celery.task.AsynchronousMapTask method)</a></dt>
   <dd><dl>
+    <dt><a href="reference/celery.task.html#celery.task.DeleteExpiredTaskMetaTask.run">(celery.task.DeleteExpiredTaskMetaTask method)</a></dt>
+    <dt><a href="reference/celery.task.html#celery.task.ExecuteRemoteTask.run">(celery.task.ExecuteRemoteTask method)</a></dt>
     <dt><a href="reference/celery.task.html#celery.task.Task.run">(celery.task.Task method)</a></dt>
     <dt><a href="reference/celery.task.html#celery.task.TaskSet.run">(celery.task.TaskSet method)</a></dt>
     <dt><a href="reference/celery.worker.html#celery.worker.WorkController.run">(celery.worker.WorkController method)</a></dt>
   </dl></dd>
 <dt><a href="reference/celery.task.html#celery.task.PeriodicTask.run_every">run_every (celery.task.PeriodicTask attribute)</a></dt>
-<dt><a href="reference/celery.worker.html#celery.worker.WorkController.run_periodic_tasks">run_periodic_tasks() (celery.worker.WorkController method)</a></dt>
+<dt><a href="reference/celery.backends.database.html#celery.backends.database.Backend.run_periodic_tasks">run_periodic_tasks() (celery.backends.database.Backend method)</a></dt>
+  <dd><dl>
+    <dt><a href="reference/celery.worker.html#celery.worker.WorkController.run_periodic_tasks">(celery.worker.WorkController method)</a></dt>
+  </dl></dd>
 </dl></td></tr></table>
 
 <h2 id="S">S</h2>
@@ -460,8 +473,8 @@
 <dt><a href="reference/celery.messaging.html#celery.messaging.TaskConsumer">TaskConsumer (class in celery.messaging)</a></dt>
 <dt><a href="reference/celery.managers.html#celery.managers.TaskManager">TaskManager (class in celery.managers)</a></dt>
 <dt><a href="reference/celery.models.html#TaskMeta">TaskMeta (built-in class)</a></dt>
-<dt><a href="reference/celery.messaging.html#celery.messaging.TaskPublisher">TaskPublisher (class in celery.messaging)</a></dt></dl></td><td width="33%" valign="top"><dl>
-<dt><a href="reference/celery.registry.html#celery.registry.TaskRegistry">TaskRegistry (class in celery.registry)</a></dt>
+<dt><a href="reference/celery.messaging.html#celery.messaging.TaskPublisher">TaskPublisher (class in celery.messaging)</a></dt>
+<dt><a href="reference/celery.registry.html#celery.registry.TaskRegistry">TaskRegistry (class in celery.registry)</a></dt></dl></td><td width="33%" valign="top"><dl>
 <dt><a href="reference/celery.registry.html#celery.registry.TaskRegistry.AlreadyRegistered">TaskRegistry.AlreadyRegistered</a></dt>
 <dt><a href="reference/celery.registry.html#celery.registry.TaskRegistry.NotRegistered">TaskRegistry.NotRegistered</a></dt>
 <dt><a href="reference/celery.task.html#celery.task.TaskSet">TaskSet (class in celery.task)</a></dt>
@@ -481,6 +494,7 @@
     <dt><a href="reference/celery.task.html#celery.task.TaskSet.total">(celery.task.TaskSet attribute)</a></dt>
   </dl></dd>
 <dt><a href="reference/celery.models.html#PeriodicTaskMeta.total_run_count">total_run_count (PeriodicTaskMeta attribute)</a></dt>
+<dt><a href="reference/celery.datastructures.html#celery.datastructures.ExceptionInfo.traceback">traceback (celery.datastructures.ExceptionInfo attribute)</a></dt>
 <dt><a href="reference/celery.task.html#celery.task.Task.type">type (celery.task.Task attribute)</a></dt>
 <dt><a href="reference/celery.backends.tyrant.html#celery.backends.tyrant.Backend.tyrant_host">tyrant_host (celery.backends.tyrant.Backend attribute)</a></dt>
 <dt><a href="reference/celery.backends.tyrant.html#celery.backends.tyrant.Backend.tyrant_port">tyrant_port (celery.backends.tyrant.Backend attribute)</a></dt>

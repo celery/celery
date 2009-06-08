@@ -109,6 +109,16 @@ exception </em><tt class="descname">UnpickleableExceptionWrapper</tt><big>(</big
 <a title="celery.task.DeleteExpiredTaskMetaTask" class="reference external" href="celery.task.html#celery.task.DeleteExpiredTaskMetaTask"><tt class="xref docutils literal"><span class="pre">celery.task.DeleteExpiredTaskMetaTask</span></tt></a>.</dd></dl>
 
 <dl class="method">
+<dt id="celery.backends.base.BaseBackend.create_exception_cls">
+<tt class="descclassname">BaseBackend.</tt><tt class="descname">create_exception_cls</tt><big>(</big><em>name</em>, <em>module</em>, <em>parent=None</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.create_exception_cls" title="Permalink to this definition">¶</a></dt>
+<dd>Dynamically create an exception class.</dd></dl>
+
+<dl class="method">
+<dt id="celery.backends.base.BaseBackend.exception_to_python">
+<tt class="descclassname">BaseBackend.</tt><tt class="descname">exception_to_python</tt><big>(</big><em>exc</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.exception_to_python" title="Permalink to this definition">¶</a></dt>
+<dd>Convert serialized exception to Python exception.</dd></dl>
+
+<dl class="method">
 <dt id="celery.backends.base.BaseBackend.get_result">
 <tt class="descclassname">BaseBackend.</tt><tt class="descname">get_result</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.get_result" title="Permalink to this definition">¶</a></dt>
 <dd>Get the result of a task.</dd></dl>
@@ -137,6 +147,11 @@ exception </em><tt class="descname">UnpickleableExceptionWrapper</tt><big>(</big
 <dt id="celery.backends.base.BaseBackend.mark_as_retry">
 <tt class="descclassname">BaseBackend.</tt><tt class="descname">mark_as_retry</tt><big>(</big><em>task_id</em>, <em>exc</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.mark_as_retry" title="Permalink to this definition">¶</a></dt>
 <dd>Mark task for retry.</dd></dl>
+
+<dl class="method">
+<dt id="celery.backends.base.BaseBackend.prepare_exception">
+<tt class="descclassname">BaseBackend.</tt><tt class="descname">prepare_exception</tt><big>(</big><em>exc</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.prepare_exception" title="Permalink to this definition">¶</a></dt>
+<dd>Prepare exception for serialization.</dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.base.BaseBackend.prepare_result">
