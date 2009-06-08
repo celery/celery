@@ -4,6 +4,9 @@ Asynchronous result types.
 
 """
 from celery.backends import default_backend
+from celery.datastructures import PositionQueue
+from celery.timer import TimeoutTimer
+from itertools import imap
 
 
 class BaseAsyncResult(object):
@@ -136,3 +139,126 @@ class AsyncResult(BaseAsyncResult):
 
     def __init__(self, task_id):
         super(AsyncResult, self).__init__(task_id, backend=default_backend)
+
+
+class TaskSetResult(object):
+    """Working with :class:`celery.task.TaskSet` results.
+
+    An instance of this class is returned by :meth:`celery.task.TaskSet.run().
+    It lets you inspect the status and return values of a taskset as a
+    single entity.
+
+    :option taskset_id: see :attr:`taskset_id`.
+    :option subtask_ids: see :attr:`subtask_ids`.
+
+    .. attribute:: taskset_id
+
+        The UUID of the taskset itself.
+
+    .. attribute:: subtask_ids
+
+        The list of task UUID's for all of the subtasks.
+
+    .. attribute:: subtasks
+
+        A list of :class:`AsyncResult`` instances for all of the subtasks.
+
+    """
+    def __init__(self, taskset_id, subtask_ids):
+        self.taskset_id = taskset_id
+        self.subtask_ids = subtask_ids
+        self.subtasks = map(AsyncResult, self.subtask_ids)
+
+    def itersubtasks(self):
+        """:returns: an iterator for iterating over the tasksets
+        :class:`AsyncResult` objects."""
+        return (subtask for subtask in self.subtasks)
+
+    def successful(self):
+        """:returns: ``True`` if all of the tasks in the taskset finished
+        successfully (i.e. did not raise an exception)."""
+        return all((subtask.successful()
+                        for subtask in self.itersubtasks()))
+
+    def failed(self):
+        """:returns: ``True`` if any of the tasks in the taskset failed.
+        (i.e., raised an exception)"""
+        return any((not subtask.successful()
+                        for subtask in self.itersubtasks()))
+
+    def waiting(self):
+        """:returns: ``True`` if any of the tasks in the taskset is still
+        waiting for execution."""
+        return any((not subtask.ready()
+                        for subtask in self.itersubtasks()))
+
+    def ready(self):
+        """:returns: ``True`` if all of the tasks in the taskset has been
+        executed."""
+        return all((subtask.ready()
+                        for subtask in self.itersubtasks()))
+
+    def completed_count(self):
+        """:returns: the number of tasks completed."""
+        return sum(imap(int, (subtask.successful()
+                                for subtask in self.itersubtasks())))
+
+    def __iter__(self):
+        """``iter(res)`` -> ``res.iterate()``."""
+        return self.iterate()
+
+    def iterate(self):
+        """Iterate over the return values of the tasks as they finish
+        one by one.
+        
+        :raises: The exception if any of the tasks raised an exception.
+
+        """
+        results = dict([(task_id, AsyncResult(task_id))
+                            for task_id in self.subtask_ids])
+        while results:
+            for task_id, pending_result in results.items():
+                if pending_result.status == "DONE":
+                    del(results[task_id])
+                    yield pending_result.result
+                elif pending_result.status == "FAILURE":
+                    raise pending_result.result
+
+    def join(self, timeout=None):
+        """Gather the results for all of the tasks in the taskset,
+        and return a list with them ordered by the order of which they
+        were called.
+
+        :keyword timeout: The time in seconds, how long
+            it will wait for results, before the operation times out.
+
+        :raises celery.timer.TimeoutError: if ``timeout`` is not ``None``
+            and the operation takes longer than ``timeout`` seconds.
+
+        If any of the tasks raises an exception, the exception
+        will be reraised by :meth:`join`.
+
+        :returns: list of return values for all tasks in the taskset.
+
+        """
+        timeout_timer = TimeoutTimer(timeout) # Timeout timer starts here.
+        results = PositionQueue(length=self.total)
+
+        while True:
+            for position, pending_result in enumerate(self.subtasks):
+                if pending_result.status == "DONE":
+                    results[position] = pending_result.result
+                elif pending_result.status == "FAILURE":
+                    raise pending_result.result
+            if results.full():
+                # Make list copy, so the returned type is not a position
+                # queue.
+                return list(results)
+
+            # This raises TimeoutError when timed out.
+            timeout_timer.tick()
+
+    @property
+    def total(self):
+        """The total number of tasks in the :class:`celery.task.TaskSet`."""
+        return len(self.subtasks)
