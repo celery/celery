@@ -52,10 +52,11 @@ def apply_async(task, args=None, kwargs=None, routing_key=None,
     for option_name, option_value in message_opts.items():
         message_opts[option_name] = getattr(task, option_name, option_value)
 
-    with DjangoAMQPConnection(connect_timeout=connect_timeout) as conn:
-        with TaskPublisher(connection=conn) as publisher:
-            task_id = publisher.delay_task(task.name, args, kwargs,
-                                           **message_opts)
+    conn = DjangoAMQPConnection(connect_timeout=connect_timeout)
+    publisher = TaskPublisher(connection=conn)
+    task_id = publisher.delay_task(task.name, args, kwargs, **message_opts)
+    publisher.close()
+    conn.close()
     return AsyncResult(task_id)
 
 
@@ -355,14 +356,15 @@ class TaskSet(object):
 
         """
         taskset_id = str(uuid.uuid4())
-        with DjangoAMQPConnection() as amqp_connection:
-            with TaskPublisher(connection=amqp_connection) as publisher:
-                subtask_ids = [publisher.delay_task_in_set(
-                                                    task_name=self.task_name,
-                                                    taskset_id=taskset_id,
-                                                    task_args=arg,
-                                                    task_kwargs=kwarg)
-                                for arg, kwarg in self.arguments]
+        conn = DjangoAMQPConnection()
+        publisher = TaskPublisher(connection=conn)
+        subtask_ids = [publisher.delay_task_in_set(task_name=self.task_name,
+                                                   taskset_id=taskset_id,
+                                                   task_args=arg,
+                                                   task_kwargs=kwarg)
+                        for arg, kwarg in self.arguments]
+        publisher.close()
+        conn.close()
         return TaskSetResult(taskset_id, subtask_ids)
 
     def iterate(self):
