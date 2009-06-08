@@ -11,43 +11,46 @@ import sphinx.environment
 import sphinx.roles
 from docutils import nodes
 
+
 def setup(app):
     app.add_crossref_type(
         directivename = "setting",
-        rolename      = "setting",
+        rolename = "setting",
         indextemplate = "pair: %s; setting",
     )
     app.add_crossref_type(
         directivename = "templatetag",
-        rolename      = "ttag",
-        indextemplate = "pair: %s; template tag"
+        rolename = "ttag",
+        indextemplate = "pair: %s; template tag",
     )
     app.add_crossref_type(
         directivename = "templatefilter",
-        rolename      = "tfilter",
-        indextemplate = "pair: %s; template filter"
+        rolename = "tfilter",
+        indextemplate = "pair: %s; template filter",
     )
     app.add_crossref_type(
         directivename = "fieldlookup",
-        rolename      = "lookup",
+        rolename = "lookup",
         indextemplate = "pair: %s, field lookup type",
     )
     app.add_description_unit(
         directivename = "django-admin",
-        rolename      = "djadmin",
+        rolename = "djadmin",
         indextemplate = "pair: %s; django-admin command",
-        parse_node    = parse_django_admin_node,
+        parse_node = parse_django_admin_node,
     )
     app.add_description_unit(
         directivename = "django-admin-option",
-        rolename      = "djadminopt",
+        rolename = "djadminopt",
         indextemplate = "pair: %s; django-admin command-line option",
-        parse_node    = lambda env, sig, signode: sphinx.directives.parse_option_desc(signode, sig),
+        parse_node = lambda env, sig, signode: \
+                sphinx.directives.parse_option_desc(signode, sig),
     )
     app.add_config_value('django_next_version', '0.0', True)
     app.add_directive('versionadded', parse_version_directive, 1, (1, 1, 1))
     app.add_directive('versionchanged', parse_version_directive, 1, (1, 1, 1))
     app.add_transform(SuppressBlockquotes)
+
 
 def parse_version_directive(name, arguments, options, content, lineno,
                       content_offset, block_text, state, state_machine):
@@ -58,8 +61,10 @@ def parse_version_directive(name, arguments, options, content, lineno,
     ret.append(node)
     if not is_nextversion:
         if len(arguments) == 1:
-            linktext = 'Please, see the release notes <releases-%s>' % (arguments[0])
-            xrefs = sphinx.roles.xfileref_role('ref', linktext, linktext, lineno, state)
+            linktext = 'Please, see the release notes <releases-%s>' % (
+                    arguments[0])
+            xrefs = sphinx.roles.xfileref_role('ref', linktext, linktext,
+                                               lineno, state)
             node.extend(xrefs[0])
         node['version'] = arguments[0]
     else:
@@ -74,26 +79,28 @@ def parse_version_directive(name, arguments, options, content, lineno,
     env.note_versionchange(node['type'], node['version'], node, lineno)
     return ret
 
-                
+
 class SuppressBlockquotes(docutils.transforms.Transform):
     """
     Remove the default blockquotes that encase indented list, tables, etc.
     """
     default_priority = 300
-    
+
     suppress_blockquote_child_nodes = (
-        docutils.nodes.bullet_list, 
-        docutils.nodes.enumerated_list, 
+        docutils.nodes.bullet_list,
+        docutils.nodes.enumerated_list,
         docutils.nodes.definition_list,
-        docutils.nodes.literal_block, 
-        docutils.nodes.doctest_block, 
-        docutils.nodes.line_block, 
-        docutils.nodes.table
+        docutils.nodes.literal_block,
+        docutils.nodes.doctest_block,
+        docutils.nodes.line_block,
+        docutils.nodes.table,
     )
-    
+
     def apply(self):
         for node in self.document.traverse(docutils.nodes.block_quote):
-            if len(node.children) == 1 and isinstance(node.children[0], self.suppress_blockquote_child_nodes):
+            if len(node.children) == 1 and \
+                    isinstance(node.children[0],
+                               self.suppress_blockquote_child_nodes):
                 node.replace_self(node.children[0])
 
 

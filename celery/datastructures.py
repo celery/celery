@@ -48,9 +48,9 @@ class PositionQueue(UserList):
 
 class ExceptionInfo(object):
     """Exception wrapping an exception and its traceback.
-    
+
     :param exc_info: The exception tuple info as returned by
-        :func:`traceback.format_exception`. 
+        :func:`traceback.format_exception`.
 
 
     .. attribute:: exception
@@ -62,11 +62,11 @@ class ExceptionInfo(object):
         A traceback from the point when :attr:`exception` was raised.
 
     """
-    
+
     def __init__(self, exc_info):
         type_, exception, tb = exc_info
         self.exception = exception
         self.traceback = '\n'.join(traceback.format_exception(*exc_info))
-        
+
     def __str__(self):
         return str(self.exception)

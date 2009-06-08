@@ -105,6 +105,7 @@ option_list = (
             help="Run in the background as a daemon."),
 )
 
+
 def parse_options(arguments):
     parser = optparse.OptionParser(option_list=option_list)
     options, values = parser.parse_args(arguments)

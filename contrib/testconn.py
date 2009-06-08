@@ -11,6 +11,7 @@ import time
 import multiprocessing
 import logging
 
+
 def get_logger():
     logger = multiprocessing.get_logger()
     logger.setLevel(logging.INFO)
@@ -23,6 +24,7 @@ class MyMessager(Messaging):
     exchange = "conntest"
     routing_key = "conntest"
 
+
 def _create_conn():
     from django.conf import settings
     conn = amqp.Connection(host=settings.AMQP_SERVER,
@@ -32,6 +34,7 @@ def _create_conn():
                            insist=False)
     return conn
 
+
 def _send2(msg):
     conn = _create_conn()
     channel = conn.channel()
@@ -39,6 +42,7 @@ def _send2(msg):
     msg.properties["delivery_mode"] = 2
     channel.basic_publish(msg, exchange="conntest", routing_key="conntest")
     conn.close()
+
 
 def _recv2():
     conn = _create_conn()
@@ -55,15 +59,18 @@ def _recv2():
         print("RECEIVED MSG: %s" % m.body)
     conn.close()
 
+
 def send_a_message(msg):
     conn = DjangoAMQPConnection()
     MyMessager(connection=conn).send({"message": msg})
     conn.close()
 
+
 def discard_all():
     conn = DjangoAMQPConnection()
     MyMessager(connection=conn).consumer.discard_all()
     conn.close()
+
 
 def receive_a_message():
     logger = get_logger()
@@ -75,6 +82,7 @@ def receive_a_message():
         m.ack()
     conn.close()
 
+
 def connection_stress_test():
     message_count = 0
     discard_all()
@@ -85,7 +93,7 @@ def connection_stress_test():
         message_count += 1
         print("Sent %d message(s)" % message_count)
 
-import multiprocessing
+
 def connection_stress_test_mp():
     message_count = 0
     pool = multiprocessing.Pool(10)
@@ -94,9 +102,10 @@ def connection_stress_test_mp():
         pool.apply(send_a_message, ["FOOBARBAZ!!!"])
         time.sleep(0.1)
         r = pool.apply(receive_a_message)
-        
+
         message_count += 1
         print("Sent %d message(s)" % message_count)
+
 
 def connection_stress_test2():
     message_count = 0
@@ -106,6 +115,7 @@ def connection_stress_test2():
         _recv2()
         message_count += 1
         print("Sent %d message(s)" % message_count)
+
 
 def task_stress_test():
     task_count = 0

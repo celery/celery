@@ -18,17 +18,21 @@ import socket
 import time
 import sys
 
+
+# pep8.py borks on a inline signature separator and
+# says "trailing whitespace" ;)
+EMAIL_SIGNATURE_SEP = "-- "
 TASK_FAIL_EMAIL_BODY = """
-Task %(name)s with id %(id)s raised exception: %(exc)s
+Task %%(name)s with id %%(id)s raised exception: %%(exc)s
 
 The contents of the full traceback was:
 
-%(traceback)s
+%%(traceback)s
 
--- 
+%%(EMAIL_SIGNATURE_SEP)s
 Just thought I'd let you know!
-celeryd at %(hostname)s.
-"""
+celeryd at %%(hostname)s.
+""" % {"EMAIL_SIGNATURE_SEP": EMAIL_SIGNATURE_SEP}
 
 
 class EmptyQueue(Exception):
@@ -38,8 +42,6 @@ class EmptyQueue(Exception):
 class UnknownTask(Exception):
     """Got an unknown task in the queue. The message is requeued and
     ignored."""
-
-
 
 
 def jail(task_id, func, args, kwargs):
@@ -124,7 +126,6 @@ class TaskWrapper(object):
         [celery@%(hostname)s] Error: Task %(name)s (%(id)s): %(exc)s
     """
     fail_email_body = TASK_FAIL_EMAIL_BODY
-
 
     def __init__(self, task_name, task_id, task_func, args, kwargs, **opts):
         self.task_name = task_name
@@ -211,7 +212,7 @@ class TaskWrapper(object):
             "id": task_id,
             "name": task_name,
             "exc": exc_info.exception,
-            "traceback": exc_info.traceback
+            "traceback": exc_info.traceback,
         }
         self.logger.error(self.fail_msg.strip() % context)
 

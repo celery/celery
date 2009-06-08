@@ -3,6 +3,7 @@ from django.core.management.base import BaseCommand
 from celery.bin.celeryd import main, option_list
 from celery.conf import LOG_LEVELS
 
+
 class Command(BaseCommand):
     option_list = BaseCommand.option_list + option_list
     help = 'Run the celery daemon'

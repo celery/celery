@@ -52,7 +52,6 @@ class TaskManager(models.Manager):
             task.save()
 
 
-
 class PeriodicTaskManager(models.Manager):
     """Manager for :class:`celery.models.PeriodicTask` models."""
 

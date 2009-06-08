@@ -164,6 +164,7 @@ class TaskSetResult(object):
         A list of :class:`AsyncResult`` instances for all of the subtasks.
 
     """
+
     def __init__(self, taskset_id, subtask_ids):
         self.taskset_id = taskset_id
         self.subtask_ids = subtask_ids
@@ -171,46 +172,46 @@ class TaskSetResult(object):
 
     def itersubtasks(self):
         """Taskset subtask iterator.
-        
+
         :returns: an iterator for iterating over the tasksets
             :class:`AsyncResult` objects.
-        
+
         """
         return (subtask for subtask in self.subtasks)
 
     def successful(self):
         """Was the taskset successful?
-        
+
         :returns: ``True`` if all of the tasks in the taskset finished
             successfully (i.e. did not raise an exception).
-        
+
         """
         return all((subtask.successful()
                         for subtask in self.itersubtasks()))
 
     def failed(self):
         """Did the taskset fail?
-        
+
         :returns: ``True`` if any of the tasks in the taskset failed.
             (i.e., raised an exception)
-            
+
         """
         return any((not subtask.successful()
                         for subtask in self.itersubtasks()))
 
     def waiting(self):
         """Is the taskset waiting?
-        
+
         :returns: ``True`` if any of the tasks in the taskset is still
             waiting for execution.
-            
+
         """
         return any((not subtask.ready()
                         for subtask in self.itersubtasks()))
 
     def ready(self):
-        """Is the task readyu?
-        
+        """Is the task ready?
+
         :returns: ``True`` if all of the tasks in the taskset has been
             executed.
 
@@ -220,9 +221,9 @@ class TaskSetResult(object):
 
     def completed_count(self):
         """Task completion count.
-        
+
         :returns: the number of tasks completed.
-        
+
         """
         return sum(imap(int, (subtask.successful()
                                 for subtask in self.itersubtasks())))
@@ -234,7 +235,7 @@ class TaskSetResult(object):
     def iterate(self):
         """Iterate over the return values of the tasks as they finish
         one by one.
-        
+
         :raises: The exception if any of the tasks raised an exception.
 
         """
