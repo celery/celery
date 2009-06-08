@@ -43,7 +43,7 @@ class TaskPool(object):
 
     def run(self):
         """Run the task pool.
-        
+
         Will launch all worker processes so they are ready
         for processing tasks.
 
@@ -151,7 +151,7 @@ class TaskPool(object):
 
         :returns: ``True`` if the maximum number of concurrent processes
             has been reached.
-            
+
         """
         return len(self._processes.values()) >= self.limit
 
