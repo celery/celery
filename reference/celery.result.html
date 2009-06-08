@@ -204,7 +204,7 @@ exception will be re-raised.</p>
 <em class="property">
 class </em><tt class="descclassname">celery.result.</tt><tt class="descname">TaskSetResult</tt><big>(</big><em>taskset_id</em>, <em>subtask_ids</em><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult" title="Permalink to this definition">¶</a></dt>
 <dd><p>Working with <a title="celery.task.TaskSet" class="reference external" href="celery.task.html#celery.task.TaskSet"><tt class="xref docutils literal"><span class="pre">celery.task.TaskSet</span></tt></a> results.</p>
-<p>An instance of this class is returned by :meth:<a href="#id1"><span class="problematic" id="id2">`</span></a>celery.task.TaskSet.run().
+<p>An instance of this class is returned by <a title="celery.task.TaskSet.run" class="reference external" href="celery.task.html#celery.task.TaskSet.run"><tt class="xref docutils literal"><span class="pre">celery.task.TaskSet.run()</span></tt></a>.
 It lets you inspect the status and return values of a taskset as a
 single entity.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -237,7 +237,8 @@ single entity.</p>
 <dl class="method">
 <dt id="celery.result.TaskSetResult.completed_count">
 <tt class="descname">completed_count</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult.completed_count" title="Permalink to this definition">¶</a></dt>
-<dd><table class="docutils field-list" frame="void" rules="none">
+<dd><p>Task completion count.</p>
+<table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
@@ -250,15 +251,16 @@ single entity.</p>
 <dl class="method">
 <dt id="celery.result.TaskSetResult.failed">
 <tt class="descname">failed</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult.failed" title="Permalink to this definition">¶</a></dt>
-<dd><table class="docutils field-list" frame="void" rules="none">
+<dd><p>Did the taskset fail?</p>
+<table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><tt class="xref docutils literal"><span class="pre">True</span></tt> if any of the tasks in the taskset failed.</td>
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><tt class="xref docutils literal"><span class="pre">True</span></tt> if any of the tasks in the taskset failed.
+(i.e., raised an exception)</td>
 </tr>
 </tbody>
 </table>
-<p>(i.e., raised an exception)</p>
 </dd></dl>
 
 <dl class="method">
@@ -279,15 +281,16 @@ one by one.</p>
 <dl class="method">
 <dt id="celery.result.TaskSetResult.itersubtasks">
 <tt class="descname">itersubtasks</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult.itersubtasks" title="Permalink to this definition">¶</a></dt>
-<dd><table class="docutils field-list" frame="void" rules="none">
+<dd><p>Taskset subtask iterator.</p>
+<table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body">an iterator for iterating over the tasksets</td>
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body">an iterator for iterating over the tasksets
+<a title="celery.result.AsyncResult" class="reference internal" href="#celery.result.AsyncResult"><tt class="xref docutils literal"><span class="pre">AsyncResult</span></tt></a> objects.</td>
 </tr>
 </tbody>
 </table>
-<p><a title="celery.result.AsyncResult" class="reference internal" href="#celery.result.AsyncResult"><tt class="xref docutils literal"><span class="pre">AsyncResult</span></tt></a> objects.</p>
 </dd></dl>
 
 <dl class="method">
@@ -324,29 +327,31 @@ will be reraised by <a title="celery.result.TaskSetResult.join" class="reference
 <dl class="method">
 <dt id="celery.result.TaskSetResult.ready">
 <tt class="descname">ready</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult.ready" title="Permalink to this definition">¶</a></dt>
-<dd><table class="docutils field-list" frame="void" rules="none">
+<dd><p>Is the task readyu?</p>
+<table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><tt class="xref docutils literal"><span class="pre">True</span></tt> if all of the tasks in the taskset has been</td>
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><tt class="xref docutils literal"><span class="pre">True</span></tt> if all of the tasks in the taskset has been
+executed.</td>
 </tr>
 </tbody>
 </table>
-<p>executed.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="celery.result.TaskSetResult.successful">
 <tt class="descname">successful</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult.successful" title="Permalink to this definition">¶</a></dt>
-<dd><table class="docutils field-list" frame="void" rules="none">
+<dd><p>Was the taskset successful?</p>
+<table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><tt class="xref docutils literal"><span class="pre">True</span></tt> if all of the tasks in the taskset finished</td>
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><tt class="xref docutils literal"><span class="pre">True</span></tt> if all of the tasks in the taskset finished
+successfully (i.e. did not raise an exception).</td>
 </tr>
 </tbody>
 </table>
-<p>successfully (i.e. did not raise an exception).</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -357,15 +362,16 @@ will be reraised by <a title="celery.result.TaskSetResult.join" class="reference
 <dl class="method">
 <dt id="celery.result.TaskSetResult.waiting">
 <tt class="descname">waiting</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult.waiting" title="Permalink to this definition">¶</a></dt>
-<dd><table class="docutils field-list" frame="void" rules="none">
+<dd><p>Is the taskset waiting?</p>
+<table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><tt class="xref docutils literal"><span class="pre">True</span></tt> if any of the tasks in the taskset is still</td>
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><tt class="xref docutils literal"><span class="pre">True</span></tt> if any of the tasks in the taskset is still
+waiting for execution.</td>
 </tr>
 </tbody>
 </table>
-<p>waiting for execution.</p>
 </dd></dl>
 
 </dd></dl>
