@@ -33,20 +33,26 @@ I'm having ``IntegrityError: Duplicate Key`` errors. Why?
 **Answer:** See `MySQL is throwing deadlock errors, what can I do?`_.
 Thanks to howsthedotcom.
 
-My Periodic Tasks won't run
-----------------------------
+Why won't my Task run?
+----------------------
 
 **Answer:** Did you register the task in the applications ``tasks.py`` module?
 (or in some other module Django loads by default, like ``models.py``?).
+Also there might be syntax errors preventing the tasks module being imported.
 
 You can find out if the celery daemon is able to run the task by executing the
-periodic task manually:
+task manually:
 
     >>> from myapp.tasks import MyPeriodicTask
     >>> MyPeriodicTask.delay()
 
 Watch celery daemons logfile (or output if not running as a daemon), to see
 if it's able to find the task, or if some other error is happening.
+
+Why won't my Periodic Task run?
+-------------------------------
+
+See `Why won't my Task run?`_.
 
 Can I send some tasks to only some servers?
 --------------------------------------------

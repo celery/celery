@@ -74,18 +74,23 @@ Transaction Model and Locking</a> in the MySQL user manual.</p>
 <p><strong>Answer:</strong> See <a class="reference internal" href="#mysql-is-throwing-deadlock-errors-what-can-i-do">MySQL is throwing deadlock errors, what can I do?</a>.
 Thanks to howsthedotcom.</p>
 </div>
-<div class="section" id="my-periodic-tasks-won-t-run">
-<h3>My Periodic Tasks won&#8217;t run<a class="headerlink" href="#my-periodic-tasks-won-t-run" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="why-won-t-my-task-run">
+<h3>Why won&#8217;t my Task run?<a class="headerlink" href="#why-won-t-my-task-run" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> Did you register the task in the applications <tt class="docutils literal"><span class="pre">tasks.py</span></tt> module?
-(or in some other module Django loads by default, like <tt class="docutils literal"><span class="pre">models.py</span></tt>?).</p>
+(or in some other module Django loads by default, like <tt class="docutils literal"><span class="pre">models.py</span></tt>?).
+Also there might be syntax errors preventing the tasks module being imported.</p>
 <p>You can find out if the celery daemon is able to run the task by executing the
-periodic task manually:</p>
+task manually:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">myapp.tasks</span> <span class="kn">import</span> <span class="n">MyPeriodicTask</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">MyPeriodicTask</span><span class="o">.</span><span class="n">delay</span><span class="p">()</span>
 </pre></div>
 </div>
 <p>Watch celery daemons logfile (or output if not running as a daemon), to see
 if it&#8217;s able to find the task, or if some other error is happening.</p>
+</div>
+<div class="section" id="why-won-t-my-periodic-task-run">
+<h3>Why won&#8217;t my Periodic Task run?<a class="headerlink" href="#why-won-t-my-periodic-task-run" title="Permalink to this headline">¶</a></h3>
+<p>See <a class="reference internal" href="#why-won-t-my-task-run">Why won&#8217;t my Task run?</a>.</p>
 </div>
 <div class="section" id="can-i-send-some-tasks-to-only-some-servers">
 <h3>Can I send some tasks to only some servers?<a class="headerlink" href="#can-i-send-some-tasks-to-only-some-servers" title="Permalink to this headline">¶</a></h3>
