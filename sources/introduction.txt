@@ -2,7 +2,7 @@
 celery - Distributed Task Queue for Django.
 ============================================
 
-:Version: 0.2.10
+:Version: 0.3.0
 
 Introduction
 ============
@@ -62,10 +62,10 @@ Features
 API Reference Documentation
 ===========================
 
-The `API Reference Documentation`_ is hosted at Github
+The `API Reference`_ is hosted at Github
 (http://ask.github.com/celery)
 
-.. _`API Reference Docmentation`: http://ask.github.com/celery/
+.. _`API Reference`: http://ask.github.com/celery/
 
 Installation
 =============
@@ -93,9 +93,58 @@ Usage
 Installing RabbitMQ
 -------------------
 
+See `Installing RabbitMQ`_ over at RabbitMQ's website. For Mac OS X
+see `Installing RabbitMQ on OS X`_.
+
+.. _`Installing RabbitMQ`: http://www.rabbitmq.com/install.html
+.. _`Installing RabbitMQ on OS X`:
+    http://playtype.net/past/2008/10/9/installing_rabbitmq_on_osx/
+
+
+Setting up RabbitMQ
+-------------------
+
+To use celery we need to create a RabbitMQ user, a virtual host and
+allow that user access to that virtual host::
+
+    $ rabbitmqctl add_user myuser mypassword
+
+    $ rabbitmqctl add_vhost myvhost
+
+    $ rabbitmqctl map_user_vhost myuser myvhost
+
 
 Configuring your Django project to use Celery
 ---------------------------------------------
+
+You only need three simple steps to use celery with your Django project.
+
+    1. Add ``celery`` to ``INSTALLED_APPS``.
+
+    2. Create the celery database tables::
+
+            $ python manage.py syncdb
+
+    3. Configure celery to use the AMQP user and virtual host we created
+        before, by adding the following to your ``settings.py``::
+
+            AMQP_HOST = "localhost"
+            AMQP_PORT = 5672
+            AMQP_USER = "myuser"
+            AMQP_PASSWORD = "mypassword"
+            AMQP_VHOST = "myvhost"
+
+
+That's it.
+
+There are more options available, like how many processes you want to process
+work in parallel (the ``CELERY_CONCURRENCY`` setting), and the backend used
+for storing task statuses. But for now, this should do. For all of the options
+available, please consult the `API Reference`_
+
+**Note**: If you're using SQLite as the Django database back-end,
+``celeryd`` will only be able to process one task at a time, this is
+because SQLite doesn't allow concurrent writes.
 
 Running the celery worker daemon
 --------------------------------
@@ -105,19 +154,18 @@ see what's going on without consulting the logfile::
 
     $ python manage.py celeryd
 
+
 However, in production you'll probably want to run the worker in the
 background as a daemon instead::
 
     $ python manage.py celeryd --daemon
+
 
 For help on command line arguments to the worker daemon, you can execute the
 help command::
 
     $ python manage.py help celeryd
 
-**Note**: If you're using ``SQLite`` as the Django database back-end,
-``celeryd`` will only be able to process one task at a time, this is
-because ``SQLite`` doesn't allow concurrent writes.
 
 Defining and executing tasks
 ----------------------------
@@ -126,19 +174,19 @@ Defining and executing tasks
 be defined in the python shell or ipython/bpython. This is because the celery
 worker server needs access to the task function to be able to run it.
 So while it looks like we use the python shell to define the tasks in these
-examples, you can't do it this way. Put them in your Django applications
-``tasks`` module (the worker daemon will automatically load any ``tasks.py``
+examples, you can't do it this way. Put them in the ``tasks`` module of your
+Django application. The worker daemon will automatically load any ``tasks.py``
 file for all of the applications listed in ``settings.INSTALLED_APPS``.
-Execution tasks using ``delay`` and ``apply_async`` can be done from the
+Executing tasks using ``delay`` and ``apply_async`` can be done from the
 python shell, but keep in mind that since arguments are pickled, you can't
 use custom classes defined in the shell session.
 
-While you can use regular functions, the recommended way is creating
-a task class, this way you can cleanly upgrade the task to use the more
+While you can use regular functions, the recommended way is to define
+a task class. With this way you can cleanly upgrade the task to use the more
 advanced features of celery later.
 
 This is a task that basically does nothing but take some arguments,
-and return value:
+and return a value:
 
     >>> class MyTask(Task):
     ...     name = "myapp.mytask"
@@ -159,12 +207,11 @@ At this point, the task has been sent to the message broker. The message
 broker will hold on to the task until a celery worker server has successfully
 picked it up.
 
-Now the task has been executed, but to know what happened with the task we
-have to check the celery logfile to see its return value and output.
-This is because we didn't keep the ``AsyncResult`` object returned by
-``delay``.
+Right now we have to check the celery worker logfiles to know what happened with
+the task. This is because we didn't keep the ``AsyncResult`` object returned
+by ``delay``.
 
-The ``AsyncResult`` lets us find out the state of the task, wait for the task to
+The ``AsyncResult`` lets us find the state of the task, wait for the task to
 finish and get its return value (or exception if the task failed).
 
 So, let's execute the task again, but this time we'll keep track of the task:
@@ -193,7 +240,6 @@ automatically loads any ``tasks.py`` module in the applications listed
 in ``settings.INSTALLED_APPS``. This autodiscovery is used by the celery
 worker to find registered tasks for your Django project.
 
-
 Periodic Tasks
 ---------------
 
@@ -214,9 +260,6 @@ Here's an example of a periodic task:
 
 **Note:** Periodic tasks does not support arguments, as this doesn't
 really make sense.
-
-For periodic tasks to work you need to add ``celery`` to ``INSTALLED_APPS``,
-and issue a ``syncdb``.
 
 License
 =======

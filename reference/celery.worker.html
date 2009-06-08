@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Multiprocessing Worker - celery.worker &mdash; Celery v0.2.14 documentation</title>
+    <title>Multiprocessing Worker - celery.worker &mdash; Celery v0.3.0 (unstable) documentation</title>
     <link rel="stylesheet" href="../static/agogo.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
       URL_ROOT:    '../',
-      VERSION:     '0.2.14',
+      VERSION:     '0.3.0 (unstable)',
       COLLAPSE_MODINDEX: false,
       FILE_SUFFIX: '.html',
       HAS_SOURCE:  true
@@ -19,7 +19,7 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.2.14 documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.3.0 (unstable) documentation" href="../index.html" />
     <link rel="up" title="Module API Reference" href="index.html" />
     <link rel="next" title="Backends - celery.backends" href="celery.backends.html" />
     <link rel="prev" title="Task Discovery - celery.discovery" href="celery.discovery.html" /> 
@@ -28,7 +28,7 @@
 
     <div class="header-wrapper">
       <div class="header">
-	<h1><a href="../index.html">Celery v0.2.14 documentation</a></h1>
+	<h1><a href="../index.html">Celery v0.3.0 (unstable) documentation</a></h1>
 	<div class="rel">
           <a href="../genindex.html" title="General Index"
              accesskey="I">index</a> |
@@ -169,6 +169,17 @@ the message is also rejected.</td>
 </table>
 </dd></dl>
 
+<dl class="method">
+<dt id="celery.worker.TaskWrapper.on_failure">
+<tt class="descname">on_failure</tt><big>(</big><em>exc_info</em>, <em>meta</em><big>)</big><a class="headerlink" href="#celery.worker.TaskWrapper.on_failure" title="Permalink to this definition">¶</a></dt>
+<dd>The handler used if the task raised an exception.</dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.TaskWrapper.on_success">
+<tt class="descname">on_success</tt><big>(</big><em>ret_value</em>, <em>meta</em><big>)</big><a class="headerlink" href="#celery.worker.TaskWrapper.on_success" title="Permalink to this definition">¶</a></dt>
+<dd>The handler used if the task was successfully processed (
+without raising an exception).</dd></dl>
+
 </dd></dl>
 
 <dl class="exception">
@@ -255,22 +266,8 @@ necessary.</dd></dl>
 <dd><p>Execute the next task on the queue using the multiprocessing pool.</p>
 <p>Catches all exceptions and logs them with level
 <tt class="xref docutils literal"><span class="pre">logging.CRITICAL</span></tt>.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.worker.WorkController.fetch_next_task">
-<tt class="descname">fetch_next_task</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.WorkController.fetch_next_task" title="Permalink to this definition">¶</a></dt>
-<dd><p>Fetch the next task from the AMQP broker.</p>
 <p>Raises <a title="celery.worker.EmptyQueue" class="reference internal" href="#celery.worker.EmptyQueue"><tt class="xref docutils literal"><span class="pre">EmptyQueue</span></tt></a> exception if there is no message
 waiting on the queue.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><a title="celery.worker.TaskWrapper" class="reference internal" href="#celery.worker.TaskWrapper"><tt class="xref docutils literal"><span class="pre">TaskWrapper</span></tt></a> instance.</td>
-</tr>
-</tbody>
-</table>
 </dd></dl>
 
 <dl class="method">
@@ -378,6 +375,7 @@ the exception instance on failure.</p>
 <li class="toctree-l2"><a class="reference external" href="celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference external" href="../changelog.html">Change history</a></li>
 </ul>
 
 	  <h3 style="margin-top: 1.5em;">Search</h3>

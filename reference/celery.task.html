@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Tasks - celery.task &mdash; Celery v0.2.14 documentation</title>
+    <title>Tasks - celery.task &mdash; Celery v0.3.0 (unstable) documentation</title>
     <link rel="stylesheet" href="../static/agogo.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
       URL_ROOT:    '../',
-      VERSION:     '0.2.14',
+      VERSION:     '0.3.0 (unstable)',
       COLLAPSE_MODINDEX: false,
       FILE_SUFFIX: '.html',
       HAS_SOURCE:  true
@@ -19,7 +19,7 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.2.14 documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.3.0 (unstable) documentation" href="../index.html" />
     <link rel="up" title="Module API Reference" href="index.html" />
     <link rel="next" title="Task Result - celery.result" href="celery.result.html" />
     <link rel="prev" title="Module API Reference" href="index.html" /> 
@@ -28,7 +28,7 @@
 
     <div class="header-wrapper">
       <div class="header">
-	<h1><a href="../index.html">Celery v0.2.14 documentation</a></h1>
+	<h1><a href="../index.html">Celery v0.3.0 (unstable) documentation</a></h1>
 	<div class="rel">
           <a href="../genindex.html" title="General Index"
              accesskey="I">index</a> |
@@ -354,7 +354,7 @@ e.g. <tt class="docutils literal"><span class="pre">[[args1,</span> <span class=
 <span class="gp">... </span>                <span class="p">[],</span> <span class="p">{</span><span class="s">&quot;feed_url&quot;</span><span class="p">:</span> <span class="s">&quot;http://xkcd.com/rss&quot;</span><span class="p">}])</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">taskset_id</span><span class="p">,</span> <span class="n">subtask_ids</span> <span class="o">=</span> <span class="n">taskset</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">taskset_result</span> <span class="o">=</span> <span class="n">taskset</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">list_of_return_values</span> <span class="o">=</span> <span class="n">taskset</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -435,27 +435,32 @@ celery server(s).</dd></dl>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body">A tuple containing the taskset id, and a list
-of subtask ids.</td>
-</tr>
-<tr class="field"><th class="field-name">Return type:</th><td class="field-body">tuple</td>
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body">A <a title="celery.result.TaskSetResult" class="reference external" href="celery.result.html#celery.result.TaskSetResult"><tt class="xref docutils literal"><span class="pre">celery.result.TaskSetResult</span></tt></a> instance.</td>
 </tr>
 </tbody>
 </table>
 <p>Example</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">ts</span> <span class="o">=</span> <span class="n">RefreshFeeds</span><span class="p">([</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">ts</span> <span class="o">=</span> <span class="n">TaskSet</span><span class="p">(</span><span class="n">RefreshFeedTask</span><span class="p">,</span> <span class="p">[</span>
 <span class="gp">... </span>        <span class="p">[</span><span class="s">&quot;http://foo.com/rss&quot;</span><span class="p">,</span> <span class="p">{}],</span>
 <span class="gp">... </span>        <span class="p">[</span><span class="s">&quot;http://bar.com/rss&quot;</span><span class="p">,</span> <span class="p">{}],</span>
 <span class="gp">... </span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">taskset_id</span><span class="p">,</span> <span class="n">subtask_ids</span> <span class="o">=</span> <span class="n">ts</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">taskset_id</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">ts</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">taskset_id</span>
 <span class="go">&quot;d2c9b261-8eff-4bfb-8459-1e1b72063514&quot;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">subtask_ids</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">subtask_ids</span>
 <span class="go">[&quot;b4996460-d959-49c8-aeb9-39c530dcde25&quot;,</span>
 <span class="go">&quot;598d2d18-ab86-45ca-8b4f-0779f5d6a3cb&quot;]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">10</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">is_done</span><span class="p">(</span><span class="n">taskset_id</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">waiting</span><span class="p">()</span>
 <span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">10</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">ready</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">successful</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">failed</span><span class="p">()</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+<span class="go">[True, True]</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -661,6 +666,7 @@ defined in the REPL (the objects must have an associated module).</p>
 <li class="toctree-l2"><a class="reference external" href="celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference external" href="../changelog.html">Change history</a></li>
 </ul>
 
 	  <h3 style="margin-top: 1.5em;">Search</h3>
