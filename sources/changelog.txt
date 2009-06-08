@@ -1,0 +1,262 @@
+==============
+Change history
+==============
+
+0.3.0 [2009-06-08 12:41 P.M CET] askh@opera.com
+-----------------------------------------------
+**NOTE** This is a development version, for the stable release, please
+see versions 0.2.x.
+
+**VERY IMPORTANT:** Pickle is now the encoder used for serializing task
+arguments, so be sure to flush your task queue before you upgrade.
+
+	* **IMPORTANT** TaskSet.run() now returns a celery.result.TaskSetResult
+		instance, which lets you inspect the status and return values of a
+		taskset as it was a single entity.
+
+	* **IMPORTANT** Celery now depends on carrot >= 0.4.0.
+
+	* The celery daemon now sends task errors to the registered admin e-mails.
+		To turn off this feature, set ``SEND_CELERY_TASK_ERROR_EMAILS`` to
+		``False`` in your ``settings.py``. Thanks to Grégoire Cachet.
+
+	* You can now run the celery daemon by using ``manage.py``::
+		
+			$ python manage.py celeryd
+
+		Thanks to Grégoire Cachet.
+
+	* Added support for message priorities, topic exchanges, custom routing
+		keys for tasks. This means we have introduced
+		``celery.task.apply_async``, a new way of executing tasks.
+
+		You can use ``celery.task.delay`` and ``celery.Task.delay`` like usual, but
+		if you want greater control over the message sent, you want
+		``celery.task.apply_async`` and ``celery.Task.apply_async``.
+
+		This also means the AMQP configuration has changed. Some settings has
+		been renamed, while others are new::
+
+			CELERY_AMQP_EXCHANGE
+			CELERY_AMQP_PUBLISHER_ROUTING_KEY
+			CELERY_AMQP_CONSUMER_ROUTING_KEY
+			CELERY_AMQP_CONSUMER_QUEUE
+			CELERY_AMQP_EXCHANGE_TYPE
+
+		See the entry `Can I send some tasks to only some servers?`_ in the
+		`FAQ`_ for more information.
+
+.. _`Can I send some tasks to only some servers?`:
+		http://bit.ly/celery_AMQP_routing
+.. _`FAQ`: http://ask.github.com/celery/faq.html
+
+	* Task errors are now logged using loglevel ``ERROR`` instead of ``INFO``,
+		and backtraces are dumped. Thanks to Grégoire Cachet.
+
+	* **IMOPORTANT** Now using pickle to encode task arguments. This means you
+		now can pass complex python objects to tasks as arguments.
+
+	* Removed dependency on ``yadayada``.
+
+	* Added a FAQ, see ``docs/faq.rst``.
+
+	* Now converts any unicode keys in task ``kwargs`` to regular strings.
+		Thanks Vitaly Babiy.
+
+	* Renamed the ``TaskDaemon`` to ``WorkController``.
+
+	* ``celery.datastructures.TaskProcessQueue`` is now renamed to
+		``celery.pool.TaskPool``.
+
+	* The pool algorithm has been refactored for greater performance and
+		stability.
+
+0.2.0 [2009-05-20 05:14 P.M CET] askh@opera.com
+------------------------------------------------
+
+	* Final release of 0.2.0
+
+	* Compatible with carrot version 0.4.0.
+
+	* Fixes some syntax errors related to fetching results
+	  from the database backend.
+
+0.2.0-pre3 [2009-05-20 05:14 P.M CET] askh@opera.com
+----------------------------------------------------
+
+	 * *Internal release*. Improved handling of unpickled exceptions,
+	 	get_result() now tries to recreate something looking like the
+	 	original exception.
+
+0.2.0-pre2 [2009-05-20 01:56 P.M CET] askh@opera.com
+----------------------------------------------------
+
+	* Now handles unpickleable exceptions (like the dynimically generated
+	  subclasses of ``django.core.exception.MultipleObjectsReturned``).
+
+0.2.0-pre1 [2009-05-20 12:33 P.M CET] askh@opera.com
+----------------------------------------------------
+
+	* It's getting quite stable, with a lot of new features, so bump
+	  version to 0.2. This is a pre-release.
+
+	* ``celery.task.mark_as_read()`` and ``celery.task.mark_as_failure()`` has
+	  been removed. Use ``celery.backends.default_backend.mark_as_read()``, 
+	  and ``celery.backends.default_backend.mark_as_failure()`` instead.
+
+0.1.15 [2009-05-19 04:13 P.M CET] askh@opera.com
+------------------------------------------------
+
+	* The celery daemon was leaking AMQP connections, this should be fixed,
+	  if you have any problems with too many files open (like ``emfile``
+	  errors in ``rabbit.log``, please contact us!
+
+0.1.14 [2009-05-19 01:08 P.M CET] askh@opera.com
+------------------------------------------------
+
+	* Fixed a syntax error in the ``TaskSet`` class.  (No such variable
+	  ``TimeOutError``).
+
+0.1.13 [2009-05-19 12:36 P.M CET] askh@opera.com
+------------------------------------------------
+
+	* Forgot to add ``yadayada`` to install requirements.
+
+	* Now deletes all expired task results, not just those marked as done.
+
+	* Able to load the Tokyo Tyrant backend class without django
+	  configuration, can specify tyrant settings directly in the class
+	  constructor.
+
+	* Improved API documentation
+
+	* Now using the Sphinx documentation system, you can build
+	  the html documentation by doing ::
+
+			$ cd docs
+			$ make html
+	
+	  and the result will be in ``docs/.build/html``.
+
+0.1.12 [2009-05-18 04:38 P.M CET] askh@opera.com
+------------------------------------------------
+
+    * ``delay_task()`` etc. now returns ``celery.task.AsyncResult`` object,
+      which lets you check the result and any failure that might have
+      happened.  It kind of works like the ``multiprocessing.AsyncResult``
+      class returned by ``multiprocessing.Pool.map_async``.
+
+    * Added dmap() and dmap_async(). This works like the 
+      ``multiprocessing.Pool`` versions except they are tasks
+      distributed to the celery server. Example:
+
+        >>> from celery.task import dmap
+        >>> import operator
+        >>> dmap(operator.add, [[2, 2], [4, 4], [8, 8]])
+        >>> [4, 8, 16]
+        
+        >>> from celery.task import dmap_async
+        >>> import operator
+        >>> result = dmap_async(operator.add, [[2, 2], [4, 4], [8, 8]])
+        >>> result.ready()
+        False
+        >>> time.sleep(1)
+        >>> result.ready()
+        True
+        >>> result.result
+        [4, 8, 16]
+
+    * Refactored the task metadata cache and database backends, and added a new backend for Tokyo Tyrant. You can set the backend in your django settings file. e.g
+
+        CELERY_BACKEND = "database"; # Uses the database
+
+        CELERY_BACKEND = "cache"; # Uses the django cache framework
+
+        CELERY_BACKEND = "tyrant"; # Uses Tokyo Tyrant
+        TT_HOST = "localhost"; # Hostname for the Tokyo Tyrant server.
+        TT_PORT = 6657; # Port of the Tokyo Tyrant server.
+
+0.1.11 [2009-05-12 02:08 P.M CET] askh@opera.com
+-------------------------------------------------
+
+	* The logging system was leaking file descriptors, resulting in
+	  servers stopping with the EMFILES (too many open files) error. (fixed)
+
+0.1.10 [2009-05-11 12:46 P.M CET] askh@opera.com
+-------------------------------------------------
+
+	* Tasks now supports both positional arguments and keyword arguments.
+
+	* Requires carrot 0.3.8.
+
+	* The daemon now tries to reconnect if the connection is lost.
+
+0.1.8 [2009-05-07 12:27 P.M CET] askh@opera.com
+------------------------------------------------
+
+	* Better test coverage
+	* More documentation
+	* celeryd doesn't emit ``Queue is empty`` message if
+	  ``settings.CELERYD_EMPTY_MSG_EMIT_EVERY`` is 0.
+
+0.1.7 [2009-04-30 1:50 P.M CET] askh@opera.com
+-----------------------------------------------
+
+	* Added some unittests
+
+	* Can now use the database for task metadata (like if the task has
+	  been executed or not). Set ``settings.CELERY_TASK_META``
+
+	* Can now run ``python setup.py test`` to run the unittests from
+	  within the ``testproj`` project.
+
+	* Can set the AMQP exchange/routing key/queue using
+	  ``settings.CELERY_AMQP_EXCHANGE``, ``settings.CELERY_AMQP_ROUTING_KEY``,
+	  and ``settings.CELERY_AMQP_CONSUMER_QUEUE``.
+
+0.1.6 [2009-04-28 2:13 P.M CET] askh@opera.com
+-----------------------------------------------
+
+	* Introducing ``TaskSet``. A set of subtasks is executed and you can
+	  find out how many, or if all them, are done (excellent for progress bars and such)
+
+	* Now catches all exceptions when running ``Task.__call__``, so the
+	  daemon doesn't die. This does't happen for pure functions yet, only
+	  ``Task`` classes.
+
+	* ``autodiscover()`` now works with zipped eggs.
+
+	* celeryd: Now adds curernt working directory to ``sys.path`` for
+	  convenience.
+
+	* The ``run_every`` attribute of ``PeriodicTask`` classes can now be a
+	  ``datetime.timedelta()`` object.
+
+	* celeryd: You can now set the ``DJANGO_PROJECT_DIR`` variable
+	  for ``celeryd`` and it will add that to ``sys.path`` for easy launching.
+
+	* Can now check if a task has been executed or not via HTTP.
+
+	You can do this by including the celery ``urls.py`` into your project,
+
+		>>> url(r'^celery/$', include("celery.urls"))
+
+	then visiting the following url,::
+
+		http://mysite/celery/$task_id/done/
+
+	this will return a JSON dictionary like e.g:
+
+		>>> {"task": {"id": $task_id, "executed": true}}
+
+	* ``delay_task`` now returns string id, not ``uuid.UUID`` instance.
+
+	* Now has ``PeriodicTasks``, to have ``cron`` like functionality.
+
+	* Project changed name from ``crunchy`` to ``celery``. The details of
+	  the name change request is in ``docs/name_change_request.txt``.
+
+0.1.0 [2009-04-24 11:28 A.M CET] askh@opera.com
+------------------------------------------------
+
+	* Initial release

@@ -1,0 +1,408 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Change history &mdash; Celery v0.3.0 (unstable) documentation</title>
+    <link rel="stylesheet" href="static/agogo.css" type="text/css" />
+    <link rel="stylesheet" href="static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+      URL_ROOT:    '',
+      VERSION:     '0.3.0 (unstable)',
+      COLLAPSE_MODINDEX: false,
+      FILE_SUFFIX: '.html',
+      HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="static/jquery.js"></script>
+    <script type="text/javascript" src="static/doctools.js"></script>
+    <link rel="top" title="Celery v0.3.0 (unstable) documentation" href="index.html" />
+    <link rel="prev" title="Celery Worker Daemon - celery.bin.celeryd" href="reference/celery.bin.celeryd.html" /> 
+  </head>
+  <body>
+
+    <div class="header-wrapper">
+      <div class="header">
+	<h1><a href="index.html">Celery v0.3.0 (unstable) documentation</a></h1>
+	<div class="rel">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a> |
+          <a href="modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |
+          <a href="reference/celery.bin.celeryd.html" title="Celery Worker Daemon - celery.bin.celeryd"
+             accesskey="P">previous</a>
+	</div>
+      </div>
+    </div>
+
+    <div class="content-wrapper">
+      <div class="content">
+	<div class="document">
+	  <div class="documentwrapper">
+	    <div class="bodywrapper">
+	      <div class="body">
+		
+  <div class="section" id="change-history">
+<h1>Change history<a class="headerlink" href="#change-history" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="p-m-cet-askh-opera-com">
+<h2>0.3.0 [2009-06-08 12:41 P.M CET] <a class="reference external" href="mailto:askh&#37;&#52;&#48;opera&#46;com">askh<span>&#64;</span>opera<span>&#46;</span>com</a><a class="headerlink" href="#p-m-cet-askh-opera-com" title="Permalink to this headline">¶</a></h2>
+<p><strong>NOTE</strong> This is a development version, for the stable release, please
+see versions 0.2.x.</p>
+<p><strong>VERY IMPORTANT:</strong> Pickle is now the encoder used for serializing task
+arguments, so be sure to flush your task queue before you upgrade.</p>
+<ul>
+<li><dl class="first docutils">
+<dt><strong>IMPORTANT</strong> TaskSet.run() now returns a celery.result.TaskSetResult</dt>
+<dd><p class="first last">instance, which lets you inspect the status and return values of a
+taskset as it was a single entity.</p>
+</dd>
+</dl>
+</li>
+<li><p class="first"><strong>IMPORTANT</strong> Celery now depends on carrot &gt;= 0.4.0.</p>
+</li>
+<li><dl class="first docutils">
+<dt>The celery daemon now sends task errors to the registered admin e-mails.</dt>
+<dd><p class="first last">To turn off this feature, set <tt class="docutils literal"><span class="pre">SEND_CELERY_TASK_ERROR_EMAILS</span></tt> to
+<tt class="xref docutils literal"><span class="pre">False</span></tt> in your <tt class="docutils literal"><span class="pre">settings.py</span></tt>. Thanks to Grégoire Cachet.</p>
+</dd>
+</dl>
+</li>
+<li><p class="first">You can now run the celery daemon by using <tt class="docutils literal"><span class="pre">manage.py</span></tt>:</p>
+<div class="highlight-python"><pre>        $ python manage.py celeryd
+
+Thanks to Grégoire Cachet.</pre>
+</div>
+</li>
+<li><dl class="first docutils">
+<dt>Added support for message priorities, topic exchanges, custom routing</dt>
+<dd><p class="first">keys for tasks. This means we have introduced
+<tt class="docutils literal"><span class="pre">celery.task.apply_async</span></tt>, a new way of executing tasks.</p>
+<p>You can use <tt class="docutils literal"><span class="pre">celery.task.delay</span></tt> and <tt class="docutils literal"><span class="pre">celery.Task.delay</span></tt> like usual, but
+if you want greater control over the message sent, you want
+<tt class="docutils literal"><span class="pre">celery.task.apply_async</span></tt> and <tt class="docutils literal"><span class="pre">celery.Task.apply_async</span></tt>.</p>
+<p>This also means the AMQP configuration has changed. Some settings has
+been renamed, while others are new:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_AMQP_EXCHANGE</span>
+<span class="n">CELERY_AMQP_PUBLISHER_ROUTING_KEY</span>
+<span class="n">CELERY_AMQP_CONSUMER_ROUTING_KEY</span>
+<span class="n">CELERY_AMQP_CONSUMER_QUEUE</span>
+<span class="n">CELERY_AMQP_EXCHANGE_TYPE</span>
+</pre></div>
+</div>
+<p class="last">See the entry <a class="reference external" href="http://bit.ly/celery_AMQP_routing">Can I send some tasks to only some servers?</a> in the
+<a class="reference external" href="http://ask.github.com/celery/faq.html">FAQ</a> for more information.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<ul>
+<li><dl class="first docutils">
+<dt>Task errors are now logged using loglevel <tt class="docutils literal"><span class="pre">ERROR</span></tt> instead of <tt class="docutils literal"><span class="pre">INFO</span></tt>,</dt>
+<dd><p class="first last">and backtraces are dumped. Thanks to Grégoire Cachet.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><strong>IMOPORTANT</strong> Now using pickle to encode task arguments. This means you</dt>
+<dd><p class="first last">now can pass complex python objects to tasks as arguments.</p>
+</dd>
+</dl>
+</li>
+<li><p class="first">Removed dependency on <tt class="docutils literal"><span class="pre">yadayada</span></tt>.</p>
+</li>
+<li><p class="first">Added a FAQ, see <tt class="docutils literal"><span class="pre">docs/faq.rst</span></tt>.</p>
+</li>
+<li><dl class="first docutils">
+<dt>Now converts any unicode keys in task <tt class="docutils literal"><span class="pre">kwargs</span></tt> to regular strings.</dt>
+<dd><p class="first last">Thanks Vitaly Babiy.</p>
+</dd>
+</dl>
+</li>
+<li><p class="first">Renamed the <tt class="docutils literal"><span class="pre">TaskDaemon</span></tt> to <tt class="docutils literal"><span class="pre">WorkController</span></tt>.</p>
+</li>
+<li><dl class="first docutils">
+<dt><tt class="docutils literal"><span class="pre">celery.datastructures.TaskProcessQueue</span></tt> is now renamed to</dt>
+<dd><p class="first last"><tt class="docutils literal"><span class="pre">celery.pool.TaskPool</span></tt>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>The pool algorithm has been refactored for greater performance and</dt>
+<dd><p class="first last">stability.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div>
+<div class="section" id="id1">
+<h2>0.2.0 [2009-05-20 05:14 P.M CET] <a class="reference external" href="mailto:askh&#37;&#52;&#48;opera&#46;com">askh<span>&#64;</span>opera<span>&#46;</span>com</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Final release of 0.2.0</li>
+<li>Compatible with carrot version 0.4.0.</li>
+<li>Fixes some syntax errors related to fetching results
+from the database backend.</li>
+</ul>
+</div>
+<div class="section" id="pre3-2009-05-20-05-14-p-m-cet-askh-opera-com">
+<h2>0.2.0-pre3 [2009-05-20 05:14 P.M CET] <a class="reference external" href="mailto:askh&#37;&#52;&#48;opera&#46;com">askh<span>&#64;</span>opera<span>&#46;</span>com</a><a class="headerlink" href="#pre3-2009-05-20-05-14-p-m-cet-askh-opera-com" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><dl class="first docutils">
+<dt><em>Internal release</em>. Improved handling of unpickled exceptions,</dt>
+<dd><p class="first last">get_result() now tries to recreate something looking like the
+original exception.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div>
+<div class="section" id="pre2-2009-05-20-01-56-p-m-cet-askh-opera-com">
+<h2>0.2.0-pre2 [2009-05-20 01:56 P.M CET] <a class="reference external" href="mailto:askh&#37;&#52;&#48;opera&#46;com">askh<span>&#64;</span>opera<span>&#46;</span>com</a><a class="headerlink" href="#pre2-2009-05-20-01-56-p-m-cet-askh-opera-com" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Now handles unpickleable exceptions (like the dynimically generated
+subclasses of <tt class="docutils literal"><span class="pre">django.core.exception.MultipleObjectsReturned</span></tt>).</li>
+</ul>
+</div>
+<div class="section" id="pre1-2009-05-20-12-33-p-m-cet-askh-opera-com">
+<h2>0.2.0-pre1 [2009-05-20 12:33 P.M CET] <a class="reference external" href="mailto:askh&#37;&#52;&#48;opera&#46;com">askh<span>&#64;</span>opera<span>&#46;</span>com</a><a class="headerlink" href="#pre1-2009-05-20-12-33-p-m-cet-askh-opera-com" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>It&#8217;s getting quite stable, with a lot of new features, so bump
+version to 0.2. This is a pre-release.</li>
+<li><tt class="docutils literal"><span class="pre">celery.task.mark_as_read()</span></tt> and <tt class="docutils literal"><span class="pre">celery.task.mark_as_failure()</span></tt> has
+been removed. Use <tt class="docutils literal"><span class="pre">celery.backends.default_backend.mark_as_read()</span></tt>,
+and <tt class="docutils literal"><span class="pre">celery.backends.default_backend.mark_as_failure()</span></tt> instead.</li>
+</ul>
+</div>
+<div class="section" id="id2">
+<h2>0.1.15 [2009-05-19 04:13 P.M CET] <a class="reference external" href="mailto:askh&#37;&#52;&#48;opera&#46;com">askh<span>&#64;</span>opera<span>&#46;</span>com</a><a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>The celery daemon was leaking AMQP connections, this should be fixed,
+if you have any problems with too many files open (like <tt class="docutils literal"><span class="pre">emfile</span></tt>
+errors in <tt class="docutils literal"><span class="pre">rabbit.log</span></tt>, please contact us!</li>
+</ul>
+</div>
+<div class="section" id="id3">
+<h2>0.1.14 [2009-05-19 01:08 P.M CET] <a class="reference external" href="mailto:askh&#37;&#52;&#48;opera&#46;com">askh<span>&#64;</span>opera<span>&#46;</span>com</a><a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Fixed a syntax error in the <tt class="docutils literal"><span class="pre">TaskSet</span></tt> class.  (No such variable
+<tt class="docutils literal"><span class="pre">TimeOutError</span></tt>).</li>
+</ul>
+</div>
+<div class="section" id="id4">
+<h2>0.1.13 [2009-05-19 12:36 P.M CET] <a class="reference external" href="mailto:askh&#37;&#52;&#48;opera&#46;com">askh<span>&#64;</span>opera<span>&#46;</span>com</a><a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><p class="first">Forgot to add <tt class="docutils literal"><span class="pre">yadayada</span></tt> to install requirements.</p>
+</li>
+<li><p class="first">Now deletes all expired task results, not just those marked as done.</p>
+</li>
+<li><p class="first">Able to load the Tokyo Tyrant backend class without django
+configuration, can specify tyrant settings directly in the class
+constructor.</p>
+</li>
+<li><p class="first">Improved API documentation</p>
+</li>
+<li><p class="first">Now using the Sphinx documentation system, you can build
+the html documentation by doing</p>
+<div class="highlight-python"><pre>$ cd docs
+$ make html</pre>
+</div>
+<p>and the result will be in <tt class="docutils literal"><span class="pre">docs/.build/html</span></tt>.</p>
+</li>
+</ul>
+</div>
+<div class="section" id="id5">
+<h2>0.1.12 [2009-05-18 04:38 P.M CET] <a class="reference external" href="mailto:askh&#37;&#52;&#48;opera&#46;com">askh<span>&#64;</span>opera<span>&#46;</span>com</a><a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><p class="first"><tt class="docutils literal"><span class="pre">delay_task()</span></tt> etc. now returns <tt class="docutils literal"><span class="pre">celery.task.AsyncResult</span></tt> object,
+which lets you check the result and any failure that might have
+happened.  It kind of works like the <tt class="docutils literal"><span class="pre">multiprocessing.AsyncResult</span></tt>
+class returned by <tt class="docutils literal"><span class="pre">multiprocessing.Pool.map_async</span></tt>.</p>
+</li>
+<li><p class="first">Added dmap() and dmap_async(). This works like the
+<tt class="docutils literal"><span class="pre">multiprocessing.Pool</span></tt> versions except they are tasks
+distributed to the celery server. Example:</p>
+<blockquote>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">dmap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">operator</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dmap</span><span class="p">(</span><span class="n">operator</span><span class="o">.</span><span class="n">add</span><span class="p">,</span> <span class="p">[[</span><span class="mf">2</span><span class="p">,</span> <span class="mf">2</span><span class="p">],</span> <span class="p">[</span><span class="mf">4</span><span class="p">,</span> <span class="mf">4</span><span class="p">],</span> <span class="p">[</span><span class="mf">8</span><span class="p">,</span> <span class="mf">8</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="mf">4</span><span class="p">,</span> <span class="mf">8</span><span class="p">,</span> <span class="mf">16</span><span class="p">]</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">dmap_async</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">operator</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">dmap_async</span><span class="p">(</span><span class="n">operator</span><span class="o">.</span><span class="n">add</span><span class="p">,</span> <span class="p">[[</span><span class="mf">2</span><span class="p">,</span> <span class="mf">2</span><span class="p">],</span> <span class="p">[</span><span class="mf">4</span><span class="p">,</span> <span class="mf">4</span><span class="p">],</span> <span class="p">[</span><span class="mf">8</span><span class="p">,</span> <span class="mf">8</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">ready</span><span class="p">()</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">ready</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">result</span>
+<span class="go">[4, 8, 16]</span>
+</pre></div>
+</div>
+</blockquote>
+</li>
+<li><p class="first">Refactored the task metadata cache and database backends, and added a new backend for Tokyo Tyrant. You can set the backend in your django settings file. e.g</p>
+<blockquote>
+<p>CELERY_BACKEND = &#8220;database&#8221;; # Uses the database</p>
+<p>CELERY_BACKEND = &#8220;cache&#8221;; # Uses the django cache framework</p>
+<p>CELERY_BACKEND = &#8220;tyrant&#8221;; # Uses Tokyo Tyrant
+TT_HOST = &#8220;localhost&#8221;; # Hostname for the Tokyo Tyrant server.
+TT_PORT = 6657; # Port of the Tokyo Tyrant server.</p>
+</blockquote>
+</li>
+</ul>
+</div>
+<div class="section" id="id6">
+<h2>0.1.11 [2009-05-12 02:08 P.M CET] <a class="reference external" href="mailto:askh&#37;&#52;&#48;opera&#46;com">askh<span>&#64;</span>opera<span>&#46;</span>com</a><a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>The logging system was leaking file descriptors, resulting in
+servers stopping with the EMFILES (too many open files) error. (fixed)</li>
+</ul>
+</div>
+<div class="section" id="id7">
+<h2>0.1.10 [2009-05-11 12:46 P.M CET] <a class="reference external" href="mailto:askh&#37;&#52;&#48;opera&#46;com">askh<span>&#64;</span>opera<span>&#46;</span>com</a><a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Tasks now supports both positional arguments and keyword arguments.</li>
+<li>Requires carrot 0.3.8.</li>
+<li>The daemon now tries to reconnect if the connection is lost.</li>
+</ul>
+</div>
+<div class="section" id="id8">
+<h2>0.1.8 [2009-05-07 12:27 P.M CET] <a class="reference external" href="mailto:askh&#37;&#52;&#48;opera&#46;com">askh<span>&#64;</span>opera<span>&#46;</span>com</a><a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Better test coverage</li>
+<li>More documentation</li>
+<li>celeryd doesn&#8217;t emit <tt class="docutils literal"><span class="pre">Queue</span> <span class="pre">is</span> <span class="pre">empty</span></tt> message if
+<tt class="docutils literal"><span class="pre">settings.CELERYD_EMPTY_MSG_EMIT_EVERY</span></tt> is 0.</li>
+</ul>
+</div>
+<div class="section" id="id9">
+<h2>0.1.7 [2009-04-30 1:50 P.M CET] <a class="reference external" href="mailto:askh&#37;&#52;&#48;opera&#46;com">askh<span>&#64;</span>opera<span>&#46;</span>com</a><a class="headerlink" href="#id9" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Added some unittests</li>
+<li>Can now use the database for task metadata (like if the task has
+been executed or not). Set <tt class="docutils literal"><span class="pre">settings.CELERY_TASK_META</span></tt></li>
+<li>Can now run <tt class="docutils literal"><span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">test</span></tt> to run the unittests from
+within the <tt class="docutils literal"><span class="pre">testproj</span></tt> project.</li>
+<li>Can set the AMQP exchange/routing key/queue using
+<tt class="docutils literal"><span class="pre">settings.CELERY_AMQP_EXCHANGE</span></tt>, <tt class="docutils literal"><span class="pre">settings.CELERY_AMQP_ROUTING_KEY</span></tt>,
+and <tt class="docutils literal"><span class="pre">settings.CELERY_AMQP_CONSUMER_QUEUE</span></tt>.</li>
+</ul>
+</div>
+<div class="section" id="id10">
+<h2>0.1.6 [2009-04-28 2:13 P.M CET] <a class="reference external" href="mailto:askh&#37;&#52;&#48;opera&#46;com">askh<span>&#64;</span>opera<span>&#46;</span>com</a><a class="headerlink" href="#id10" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<ul class="simple">
+<li>Introducing <tt class="docutils literal"><span class="pre">TaskSet</span></tt>. A set of subtasks is executed and you can
+find out how many, or if all them, are done (excellent for progress bars and such)</li>
+<li>Now catches all exceptions when running <tt class="docutils literal"><span class="pre">Task.__call__</span></tt>, so the
+daemon doesn&#8217;t die. This does&#8217;t happen for pure functions yet, only
+<tt class="docutils literal"><span class="pre">Task</span></tt> classes.</li>
+<li><tt class="docutils literal"><span class="pre">autodiscover()</span></tt> now works with zipped eggs.</li>
+<li>celeryd: Now adds curernt working directory to <tt class="docutils literal"><span class="pre">sys.path</span></tt> for
+convenience.</li>
+<li>The <tt class="docutils literal"><span class="pre">run_every</span></tt> attribute of <tt class="docutils literal"><span class="pre">PeriodicTask</span></tt> classes can now be a
+<tt class="docutils literal"><span class="pre">datetime.timedelta()</span></tt> object.</li>
+<li>celeryd: You can now set the <tt class="docutils literal"><span class="pre">DJANGO_PROJECT_DIR</span></tt> variable
+for <tt class="docutils literal"><span class="pre">celeryd</span></tt> and it will add that to <tt class="docutils literal"><span class="pre">sys.path</span></tt> for easy launching.</li>
+<li>Can now check if a task has been executed or not via HTTP.</li>
+</ul>
+<p>You can do this by including the celery <tt class="docutils literal"><span class="pre">urls.py</span></tt> into your project,</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">url</span><span class="p">(</span><span class="s">r&#39;^celery/$&#39;</span><span class="p">,</span> <span class="n">include</span><span class="p">(</span><span class="s">&quot;celery.urls&quot;</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>then visiting the following url,:</p>
+<div class="highlight-python"><pre>http://mysite/celery/$task_id/done/</pre>
+</div>
+<p>this will return a JSON dictionary like e.g:</p>
+<div class="highlight-python"><pre>&gt;&gt;&gt; {"task": {"id": $task_id, "executed": true}}</pre>
+</div>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">delay_task</span></tt> now returns string id, not <tt class="docutils literal"><span class="pre">uuid.UUID</span></tt> instance.</li>
+<li>Now has <tt class="docutils literal"><span class="pre">PeriodicTasks</span></tt>, to have <tt class="docutils literal"><span class="pre">cron</span></tt> like functionality.</li>
+<li>Project changed name from <tt class="docutils literal"><span class="pre">crunchy</span></tt> to <tt class="docutils literal"><span class="pre">celery</span></tt>. The details of
+the name change request is in <tt class="docutils literal"><span class="pre">docs/name_change_request.txt</span></tt>.</li>
+</ul>
+</blockquote>
+</div>
+<div class="section" id="a-m-cet-askh-opera-com">
+<h2>0.1.0 [2009-04-24 11:28 A.M CET] <a class="reference external" href="mailto:askh&#37;&#52;&#48;opera&#46;com">askh<span>&#64;</span>opera<span>&#46;</span>com</a><a class="headerlink" href="#a-m-cet-askh-opera-com" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Initial release</li>
+</ul>
+</div>
+</div>
+
+
+	      </div>
+	    </div>
+	  </div>
+	</div>
+	<div class="sidebar">
+	  <h3>Contents</h3>
+	  <ul class="current">
+<li class="toctree-l1"><a class="reference external" href="introduction.html">celery - Distributed Task Queue for Django.</a></li>
+<li class="toctree-l1"><a class="reference external" href="faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference external" href="reference/index.html">Module API Reference</a></li>
+<li class="toctree-l1 current"><a class="current reference external" href="">Change history</a><ul>
+<li class="toctree-l2"><a class="reference external" href="#p-m-cet-askh-opera-com">0.3.0 [2009-06-08 12:41 P.M CET] askh&#64;opera.com</a></li>
+<li class="toctree-l2"><a class="reference external" href="#id1">0.2.0 [2009-05-20 05:14 P.M CET] askh&#64;opera.com</a></li>
+<li class="toctree-l2"><a class="reference external" href="#pre3-2009-05-20-05-14-p-m-cet-askh-opera-com">0.2.0-pre3 [2009-05-20 05:14 P.M CET] askh&#64;opera.com</a></li>
+<li class="toctree-l2"><a class="reference external" href="#pre2-2009-05-20-01-56-p-m-cet-askh-opera-com">0.2.0-pre2 [2009-05-20 01:56 P.M CET] askh&#64;opera.com</a></li>
+<li class="toctree-l2"><a class="reference external" href="#pre1-2009-05-20-12-33-p-m-cet-askh-opera-com">0.2.0-pre1 [2009-05-20 12:33 P.M CET] askh&#64;opera.com</a></li>
+<li class="toctree-l2"><a class="reference external" href="#id2">0.1.15 [2009-05-19 04:13 P.M CET] askh&#64;opera.com</a></li>
+<li class="toctree-l2"><a class="reference external" href="#id3">0.1.14 [2009-05-19 01:08 P.M CET] askh&#64;opera.com</a></li>
+<li class="toctree-l2"><a class="reference external" href="#id4">0.1.13 [2009-05-19 12:36 P.M CET] askh&#64;opera.com</a></li>
+<li class="toctree-l2"><a class="reference external" href="#id5">0.1.12 [2009-05-18 04:38 P.M CET] askh&#64;opera.com</a></li>
+<li class="toctree-l2"><a class="reference external" href="#id6">0.1.11 [2009-05-12 02:08 P.M CET] askh&#64;opera.com</a></li>
+<li class="toctree-l2"><a class="reference external" href="#id7">0.1.10 [2009-05-11 12:46 P.M CET] askh&#64;opera.com</a></li>
+<li class="toctree-l2"><a class="reference external" href="#id8">0.1.8 [2009-05-07 12:27 P.M CET] askh&#64;opera.com</a></li>
+<li class="toctree-l2"><a class="reference external" href="#id9">0.1.7 [2009-04-30 1:50 P.M CET] askh&#64;opera.com</a></li>
+<li class="toctree-l2"><a class="reference external" href="#id10">0.1.6 [2009-04-28 2:13 P.M CET] askh&#64;opera.com</a></li>
+<li class="toctree-l2"><a class="reference external" href="#a-m-cet-askh-opera-com">0.1.0 [2009-04-24 11:28 A.M CET] askh&#64;opera.com</a></li>
+</ul>
+</li>
+</ul>
+
+	  <h3 style="margin-top: 1.5em;">Search</h3>
+	  <form class="search" action="search.html" method="get">
+            <input type="text" name="q" size="18" />
+            <input type="submit" value="Go" />
+            <input type="hidden" name="check_keywords" value="yes" />
+            <input type="hidden" name="area" value="default" />
+          </form>
+          <p class="searchtip" style="font-size: 90%">
+            Enter search terms or a module, class or function name.
+          </p>
+	</div>
+	<div class="clearer"></div>
+      </div>
+    </div>
+
+    <div class="footer-wrapper">
+      <div class="footer">
+	<div class="left">
+          <a href="genindex.html" title="General Index"
+             >index</a> |
+          <a href="modindex.html" title="Global Module Index"
+             >modules</a> |
+          <a href="reference/celery.bin.celeryd.html" title="Celery Worker Daemon - celery.bin.celeryd"
+             >previous</a>
+            <br/>
+            <a href="sources/changelog.txt"
+               rel="nofollow">Show Source</a>
+	</div>
+
+	<div class="right">
+	  &copy; Copyright 2009, Ask Solem.<br/>
+	  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.1.
+	</div>
+	<div class="clearer"></div>
+      </div>
+    </div>
+
+  </body>
+</html>
