@@ -31,7 +31,7 @@ class PickledObjectField(models.Field):
         else:
             try:
                 return pickle.loads(str(value))
-            except pickle.PickleError:
+            except Exception:
                 # If an error was raised, just return the plain value
                 return value
 
