@@ -1,5 +1,4 @@
 """celery.worker"""
-from __future__ import with_statement
 from carrot.connection import DjangoAMQPConnection
 from celery.messaging import TaskConsumer
 from celery.conf import DAEMON_CONCURRENCY, DAEMON_LOG_FILE
@@ -63,6 +62,13 @@ def jail(task_id, func, args, kwargs):
         the exception instance on failure.
 
     """
+
+    # See: http://groups.google.com/group/django-users/browse_thread/
+    #       thread/78200863d0c07c6d/38402e76cf3233e8?hl=en&lnk=gst&
+    #       q=multiprocessing#38402e76cf3233e8
+    from django.db import connection
+    connection.close()
+
     # Convert any unicode keys in the keyword arguments to ascii.
     kwargs = dict([(k.encode("utf-8"), v)
                         for k, v in kwargs.items()])
