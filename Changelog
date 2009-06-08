@@ -2,6 +2,75 @@
 Change history
 ==============
 
+0.3.0 [2009-06-08 12:41 P.M CET] askh@opera.com
+-----------------------------------------------
+**NOTE** This is a development version, for the stable release, please
+see versions 0.2.x.
+
+**VERY IMPORTANT:** Pickle is now the encoder used for serializing task
+arguments, so be sure to flush your task queue before you upgrade.
+
+	* **IMPORTANT** TaskSet.run() now returns a celery.result.TaskSetResult
+		instance, which lets you inspect the status and return values of a
+		taskset as it was a single entity.
+
+	* **IMPORTANT** Celery now depends on carrot >= 0.4.0.
+
+	* The celery daemon now sends task errors to the registered admin e-mails.
+		To turn off this feature, set ``SEND_CELERY_TASK_ERROR_EMAILS`` to
+		``False`` in your ``settings.py``. Thanks to Grégoire Cachet.
+
+	* You can now run the celery daemon by using ``manage.py``::
+		
+			$ python manage.py celeryd
+
+		Thanks to Grégoire Cachet.
+
+	* Added support for message priorities, topic exchanges, custom routing
+		keys for tasks. This means we have introduced
+		``celery.task.apply_async``, a new way of executing tasks.
+
+		You can use ``celery.task.delay`` and ``celery.Task.delay`` like usual, but
+		if you want greater control over the message sent, you want
+		``celery.task.apply_async`` and ``celery.Task.apply_async``.
+
+		This also means the AMQP configuration has changed. Some settings has
+		been renamed, while others are new::
+
+			CELERY_AMQP_EXCHANGE
+			CELERY_AMQP_PUBLISHER_ROUTING_KEY
+			CELERY_AMQP_CONSUMER_ROUTING_KEY
+			CELERY_AMQP_CONSUMER_QUEUE
+			CELERY_AMQP_EXCHANGE_TYPE
+
+		See the entry `Can I send some tasks to only some servers?`_ in the
+		`FAQ`_ for more information.
+
+.. _`Can I send some tasks to only some servers?`:
+		http://bit.ly/celery_AMQP_routing
+.. _`FAQ`: http://ask.github.com/celery/faq.html
+
+	* Task errors are now logged using loglevel ``ERROR`` instead of ``INFO``,
+		and backtraces are dumped. Thanks to Grégoire Cachet.
+
+	* **IMOPORTANT** Now using pickle to encode task arguments. This means you
+		now can pass complex python objects to tasks as arguments.
+
+	* Removed dependency on ``yadayada``.
+
+	* Added a FAQ, see ``docs/faq.rst``.
+
+	* Now converts any unicode keys in task ``kwargs`` to regular strings.
+		Thanks Vitaly Babiy.
+
+	* Renamed the ``TaskDaemon`` to ``WorkController``.
+
+	* ``celery.datastructures.TaskProcessQueue`` is now renamed to
+	``celery.pool.TaskPool``.
+
+	* The pool algorithm has been refactored for greater performance and
+		stability.
+
 0.2.0 [2009-05-20 05:14 P.M CET] askh@opera.com
 ------------------------------------------------
 
