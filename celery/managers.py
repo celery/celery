@@ -66,7 +66,8 @@ class PeriodicTaskManager(models.Manager):
         for task_name, task in periodic_tasks.items():
             task_meta, created = self.get_or_create(name=task_name)
             # task_run.every must be a timedelta object.
-            run_every_drifted = task.run_every + SERVER_DRIFT
+            run_every_drifted = task.run_every + \
+                                    timedelta(seconds=SERVER_DRIFT)
             run_at = task_meta.last_run_at + task.run_every
             if datetime.now() > run_at:
                 waiting.append(task_meta)

@@ -1,7 +1,2 @@
-* Store result/errors in the TaskMeta store.
-* Catch exceptions from pure function tasks.
-* Need a tutorial
-* Need more documentation
-* Need a way to run without a AMQP server (see the ``backends`` branch of
-  carrot, it should make it able to run just using the python ``Queue``
-  module.)
+Please see our Issue Tracker at GitHub:
+    http://github.com/ask/celery/issues

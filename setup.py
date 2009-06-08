@@ -13,6 +13,7 @@ except ImportError:
 
 import celery
 
+
 class RunTests(Command):
     description = "Run the django test suite from the testproj dir."
 
@@ -45,10 +46,10 @@ py_major_version = py_version_info[0]
 py_minor_version = py_version_info[1]
 
 if (py_major_version == 2 and py_minor_version <=5) or py_major_version < 2:
-    install_requires.append("multiprocessing")    
+    install_requires.append("multiprocessing")
 
-long_description = codecs.open("README.rst", "r", "utf-8").read()
-                   
+long_description = codecs.open("README", "r", "utf-8").read()
+
 
 setup(
     name='celery',
