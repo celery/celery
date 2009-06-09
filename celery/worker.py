@@ -13,6 +13,7 @@ from celery.timer import EventTimer
 from django.core.mail import mail_admins
 import multiprocessing
 import traceback
+import threading
 import logging
 import socket
 import time
@@ -242,6 +243,13 @@ class TaskWrapper(object):
                 meta={"task_id": self.task_id, "task_name": self.task_name})
 
 
+class PeriodicWorkController(threading.Thread):
+
+    def run(self):
+        while True:
+            default_periodic_status_backend.run_periodic_tasks()
+
+
 class WorkController(object):
     """Executes tasks waiting in the task queue.
 
@@ -376,27 +384,18 @@ class WorkController(object):
         """
         self.process_task(self.receive_message())
 
-    def run_periodic_tasks(self):
-        """Schedule all waiting periodic tasks for execution.
-
-        """
-        self.logger.debug("Looking for periodic tasks ready for execution...")
-        default_periodic_status_backend.run_periodic_tasks()
-
     def schedule_retry_tasks(self):
         """Reschedule all requeued tasks waiting for retry."""
         pass
+
 
     def run(self):
         """Starts the workers main loop."""
         log_wait = lambda: self.logger.info("Waiting for queue...")
         ev_msg_waiting = EventTimer(log_wait, self.empty_msg_emit_every)
-        events = [
-            EventTimer(self.run_periodic_tasks, 1),
-            EventTimer(self.schedule_retry_tasks, 2),
-        ]
 
         self.pool.run()
+        PeriodicWorkController().start()
 
         # If not running as daemon, and DEBUG logging level is enabled,
         # print pool PIDs and sleep for a second before we start.
@@ -407,7 +406,6 @@ class WorkController(object):
                 time.sleep(1)
 
         while True:
-            [event.tick() for event in events]
             try:
                 self.execute_next_task()
             except ValueError:
