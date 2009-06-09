@@ -175,7 +175,7 @@ class BaseBackend(object):
                 raise self.get_result(task_id)
             timeout_timer.tick()
 
-    def cleanup_process(self):
+    def process_cleanup(self):
         """Cleanup actions to do at the end of a task worker process.
 
         See :func:`celery.worker.jail`.
