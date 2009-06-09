@@ -73,11 +73,12 @@ def jail(task_id, func, args, kwargs):
     connection.close()
 
     # Reset cache connection
-    from django.core.cache import cache
-    cache.close()
+    from django.core.cache import cache, backends
+    if not isinstance(cache,backends.locmem.CacheClass):
+        cache.close()
 
     # Backend process cleanup
-    default_backend.process_cleanup()
+    default_backend.cleanup_process()
 
     # Convert any unicode keys in the keyword arguments to ascii.
     kwargs = dict([(k.encode("utf-8"), v)
