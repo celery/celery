@@ -72,10 +72,10 @@ def jail(task_id, func, args, kwargs):
     from django.db import connection
     connection.close()
 
-    # Reset cache connection
-    from django.core.cache import cache, backends
-    if not isinstance(cache,backends.locmem.CacheClass):
-        cache.close()
+    # Reset cache connection only if using memcached
+    from django.core import cache
+    if cache.parse_backend_uri(cache.settings.CACHE_BACKEND)[0] == 'memcached':
+        cache.cache.close()
 
     # Backend process cleanup
     default_backend.cleanup_process()
