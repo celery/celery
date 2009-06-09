@@ -71,3 +71,21 @@ class TaskConsumer(Consumer):
     exchange_type = conf.AMQP_EXCHANGE_TYPE
     auto_ack = True
     decoder = pickle.loads
+
+
+class StatsPublisher(Publisher):
+    exchange = "celerygraph"
+    routing_key = "stats"
+    encoder = pickle.dumps
+
+
+class StatsConsumer(Consumer):
+    queue = "celerygraph"
+    exchange = "celerygraph"
+    routing_key = "stats"
+    exchange_type = "direct"
+    auto_ack = True
+    decoder = pickle.loads
+
+    def receive(self, message_data, message):
+        pass

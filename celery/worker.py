@@ -11,6 +11,7 @@ from celery.datastructures import ExceptionInfo
 from celery.backends import default_backend, default_periodic_status_backend
 from celery.timer import EventTimer
 from django.core.mail import mail_admins
+from celery.monitoring import Statistics
 import multiprocessing
 import traceback
 import threading
@@ -45,7 +46,7 @@ class UnknownTask(Exception):
     ignored."""
 
 
-def jail(task_id, func, args, kwargs):
+def jail(task_id, task_name, func, args, kwargs):
     """Wraps the task in a jail, which catches all exceptions, and
     saves the status and result of the task execution to the task
     meta backend.
@@ -65,6 +66,7 @@ def jail(task_id, func, args, kwargs):
         the exception instance on failure.
 
     """
+    time_start = time.time()
 
     # See: http://groups.google.com/group/django-users/browse_thread/
     #       thread/78200863d0c07c6d/38402e76cf3233e8?hl=en&lnk=gst&
@@ -86,10 +88,16 @@ def jail(task_id, func, args, kwargs):
         result = func(*args, **kwargs)
     except Exception, exc:
         default_backend.mark_as_failure(task_id, exc)
-        return ExceptionInfo(sys.exc_info())
+        retval = ExceptionInfo(sys.exc_info())
     else:
         default_backend.mark_as_done(task_id, result)
-        return result
+        retval = result
+
+    time_finished = time.time() - time_start
+    Statistics().task_time_running(task_id, task_name, args, kwargs,
+                                   time_finished)
+    
+    return retval
 
     
 
@@ -199,7 +207,7 @@ class TaskWrapper(object):
 
         """
         task_func_kwargs = self.extend_with_default_kwargs(loglevel, logfile)
-        return jail(self.task_id, [
+        return jail(self.task_id, self.task_name, [
                         self.task_func, self.args, task_func_kwargs])
 
     def on_success(self, ret_value, meta):
@@ -244,7 +252,7 @@ class TaskWrapper(object):
 
         """
         task_func_kwargs = self.extend_with_default_kwargs(loglevel, logfile)
-        jail_args = [self.task_id, self.task_func,
+        jail_args = [self.task_id, self.task_name, self.task_func,
                      self.args, task_func_kwargs]
         return pool.apply_async(jail, args=jail_args,
                 callbacks=[self.on_success], errbacks=[self.on_failure],
