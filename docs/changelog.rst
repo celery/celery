@@ -1,1 +1,1 @@
-../CHANGELOG
+../Changelog
