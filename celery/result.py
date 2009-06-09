@@ -266,7 +266,7 @@ class TaskSetResult(object):
         :returns: list of return values for all tasks in the taskset.
 
         """
-        timeout_timer = TimeoutTimer(timeout) # Timeout timer starts here.
+        timeout_timer = TimeoutTimer(timeout)
         results = PositionQueue(length=self.total)
 
         while True:
