@@ -78,7 +78,7 @@ def jail(task_id, func, args, kwargs):
         cache.cache.close()
 
     # Backend process cleanup
-    default_backend.cleanup_process()
+    default_backend.process_cleanup()
 
     # Convert any unicode keys in the keyword arguments to ascii.
     kwargs = dict([(k.encode("utf-8"), v)
