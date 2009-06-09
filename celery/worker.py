@@ -11,7 +11,7 @@ from celery.datastructures import ExceptionInfo
 from celery.backends import default_backend, default_periodic_status_backend
 from celery.timer import EventTimer
 from django.core.mail import mail_admins
-from celery.monitoring import Statistics
+from celery.monitoring import TaskTimerStats
 import multiprocessing
 import traceback
 import threading
@@ -58,6 +58,7 @@ def jail(task_id, task_name, func, args, kwargs):
     result, and sets the task status to ``"FAILURE"``.
 
     :param task_id: The id of the task.
+    :param task_name: The name of the task.
     :param func: Callable object to execute.
     :param args: List of positional args to pass on to the function.
     :param kwargs: Keyword arguments mapping to pass on to the function.
@@ -66,7 +67,7 @@ def jail(task_id, task_name, func, args, kwargs):
         the exception instance on failure.
 
     """
-    time_start = time.time()
+    timer_stat = TaskTimerStats.start(task_id, task_name, args, kwargs)
 
     # See: http://groups.google.com/group/django-users/browse_thread/
     #       thread/78200863d0c07c6d/38402e76cf3233e8?hl=en&lnk=gst&
@@ -93,10 +94,7 @@ def jail(task_id, task_name, func, args, kwargs):
         default_backend.mark_as_done(task_id, result)
         retval = result
 
-    time_finished = time.time() - time_start
-    Statistics().task_time_running(task_id, task_name, args, kwargs,
-                                   time_finished)
-    
+    timer_stat.stop()
     return retval
 
     
