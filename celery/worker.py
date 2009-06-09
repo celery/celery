@@ -244,8 +244,18 @@ class TaskWrapper(object):
 
 
 class PeriodicWorkController(threading.Thread):
+    """A thread that continuously checks if there are
+    :class:`celery.task.PeriodicTask`s waiting for execution, and executes
+    them.
+
+    Example
+
+        >>> PeriodicWorkController().start()
+    
+    """
 
     def run(self):
+        """Don't use :meth:`run`. use :meth:`start`."""
         while True:
             default_periodic_status_backend.run_periodic_tasks()
 
