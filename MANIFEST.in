@@ -2,7 +2,7 @@ include AUTHORS
 include CHANGELOG
 include README
 include MANIFEST.in
-include LICENCE
+include LICENSE
 include TODO
 include THANKS
 recursive-include celery *
