@@ -258,6 +258,7 @@ class PeriodicWorkController(threading.Thread):
         """Don't use :meth:`run`. use :meth:`start`."""
         while True:
             default_periodic_status_backend.run_periodic_tasks()
+            time.sleep(1)
 
 
 class WorkController(object):
