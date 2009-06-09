@@ -72,6 +72,13 @@ def jail(task_id, func, args, kwargs):
     from django.db import connection
     connection.close()
 
+    # Reset cache connection
+    from django.core.cache import cache
+    cache.close()
+
+    # Backend process cleanup
+    default_backend.process_cleanup()
+
     # Convert any unicode keys in the keyword arguments to ascii.
     kwargs = dict([(k.encode("utf-8"), v)
                         for k, v in kwargs.items()])
@@ -84,6 +91,7 @@ def jail(task_id, func, args, kwargs):
         default_backend.mark_as_done(task_id, result)
         return result
 
+    
 
 class TaskWrapper(object):
     """Class wrapping a task to be run.

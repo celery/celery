@@ -50,11 +50,22 @@ class Backend(BaseBackend):
                 "set the TT_HOST and TT_PORT settings in your settings.py")
         super(Backend, self).__init__()
         self._cache = {}
+        self._connection = None
 
-    def get_server(self):
+    def open(self):
         """Get :class:`pytyrant.PyTyrant`` instance with the current
         server configuration."""
-        return pytyrant.PyTyrant.open(self.tyrant_host, self.tyrant_port)
+        if not self._connection:
+            self._connection = pytyrant.PyTyrant.open(self.tyrant_host,
+                                                      self.tyrant_port)
+        return self._connection
+
+    def close(self):
+        if self._connection:
+            self._connection.close()
+
+    def process_cleanup(self):
+        self.close()
 
     def _cache_key(self, task_id):
         """Get the cache key for a task by id."""
@@ -67,7 +78,7 @@ class Backend(BaseBackend):
         elif status == "FAILURE":
             result = self.prepare_exception(result)
         meta = {"status": status, "result": pickle.dumps(result)}
-        self.get_server()[self._cache_key(task_id)] = serialize(meta)
+        self.open()[self._cache_key(task_id)] = serialize(meta)
 
     def get_status(self, task_id):
         """Get the status for a task."""
@@ -89,7 +100,7 @@ class Backend(BaseBackend):
         """Get task metadata for a task by id."""
         if task_id in self._cache:
             return self._cache[task_id]
-        meta = self.get_server().get(self._cache_key(task_id))
+        meta = self.open().get(self._cache_key(task_id))
         if not meta:
             return {"status": "PENDING", "result": None}
         meta = deserialize(meta)
