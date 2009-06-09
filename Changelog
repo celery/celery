@@ -2,6 +2,14 @@
 Change history
 ==============
 
+0.3.2 [2009-06-08 01:07 P.M CET] askh@opera.com
+-----------------------------------------------
+
+	* celeryd: Added option ``--discard``: Discard (delete!) all waiting
+		messages in the queue.
+
+	* celeryd: The ``--wakeup-after`` option was not handled as a float.
+
 0.3.1 [2009-06-08 01:07 P.M CET] askh@opera.com
 -----------------------------------------------
 
