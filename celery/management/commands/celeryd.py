@@ -20,6 +20,7 @@ class Command(BaseCommand):
         main(concurrency=options.get('concurrency'),
              daemon=options.get('daemon'),
              logfile=options.get('logfile'),
+             discard=options.get('discard'),
              loglevel=options.get('loglevel'),
              pidfile=options.get('pidfile'),
              queue_wakeup_after=options.get('queue_wakeup_after'))
