@@ -63,6 +63,7 @@ class Backend(BaseBackend):
     def close(self):
         if self._connection:
             self._connection.close()
+            self._connection = None
 
     def process_cleanup(self):
         self.close()
