@@ -1,5 +1,3 @@
-.. reference-index::
-
 ===========================
  Module API Reference
 ===========================

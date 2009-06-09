@@ -153,7 +153,6 @@ celery.task.PeriodicTask class reference/celery.task.html
 celery.registry.TaskRegistry.unregister method reference/celery.registry.html
 celery.backends.base.BaseBackend.UnpickleableExceptionWrapper.exc_args attribute reference/celery.backends.base.html
 TaskMeta.date_done attribute reference/celery.models.html
-celery.worker.WorkController.run_periodic_tasks method reference/celery.worker.html
 celery.result.AsyncResult class reference/celery.result.html
 PeriodicTaskMeta.name attribute reference/celery.models.html
 celery.worker.TaskWrapper.execute_using_pool method reference/celery.worker.html
@@ -167,6 +166,7 @@ celery.task.Task.get_consumer method reference/celery.task.html
 celery.messaging.TaskPublisher.delay_task_in_set method reference/celery.messaging.html
 celery.backends.base.BaseBackend.UnpickleableExceptionWrapper exception reference/celery.backends.base.html
 celery.task.AsynchronousMapTask.run method reference/celery.task.html
+celery.worker.PeriodicWorkController.run method reference/celery.worker.html
 celery.platform.PIDFile.write method reference/celery.platform.html
 celery.platform.remove_pidfile function reference/celery.platform.html
 celery.platform.PIDFile class reference/celery.platform.html
@@ -186,6 +186,7 @@ celery.timer.TimeoutTimer class reference/celery.timer.html
 celery.backends.get_default_periodicstatus_backend_cls function reference/celery.backends.html
 celery.result.BaseAsyncResult.wait method reference/celery.result.html
 celery.result.TaskSetResult.join method reference/celery.result.html
+celery.worker.PeriodicWorkController class reference/celery.worker.html
 celery.worker.WorkController.reset_connection method reference/celery.worker.html
 celery.task.TaskSet.run method reference/celery.task.html
 celery.task.ExecuteRemoteTask.run method reference/celery.task.html

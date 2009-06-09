@@ -2,8 +2,25 @@
 Change history
 ==============
 
+0.3.2 [2009-06-08 01:07 P.M CET] askh@opera.com
+-----------------------------------------------
+
+	* celeryd: Added option ``--discard``: Discard (delete!) all waiting
+		messages in the queue.
+
+	* celeryd: The ``--wakeup-after`` option was not handled as a float.
+
+0.3.1 [2009-06-08 01:07 P.M CET] askh@opera.com
+-----------------------------------------------
+
+	* The `PeriodicTask`` worker is now running in its own thread instead
+		of blocking the ``TaskController`` loop.
+
+	* Default ``QUEUE_WAKEUP_AFTER`` has been lowered to ``0.1`` (was ``0.3``)
+
 0.3.0 [2009-06-08 12:41 P.M CET] askh@opera.com
 -----------------------------------------------
+
 **NOTE** This is a development version, for the stable release, please
 see versions 0.2.x.
 

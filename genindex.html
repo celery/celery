@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Index &mdash; Celery v0.3.0 (unstable) documentation</title>
+    <title>Index &mdash; Celery v0.3.2 (unstable) documentation</title>
     <link rel="stylesheet" href="static/agogo.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
       URL_ROOT:    '',
-      VERSION:     '0.3.0 (unstable)',
+      VERSION:     '0.3.2 (unstable)',
       COLLAPSE_MODINDEX: false,
       FILE_SUFFIX: '.html',
       HAS_SOURCE:  true
@@ -19,13 +19,13 @@
     </script>
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v0.3.0 (unstable) documentation" href="index.html" /> 
+    <link rel="top" title="Celery v0.3.2 (unstable) documentation" href="index.html" /> 
   </head>
   <body>
 
     <div class="header-wrapper">
       <div class="header">
-	<h1><a href="index.html">Celery v0.3.0 (unstable) documentation</a></h1>
+	<h1><a href="index.html">Celery v0.3.2 (unstable) documentation</a></h1>
 	<div class="rel">
           <a href="" title="General Index"
              accesskey="I">index</a> |
@@ -54,6 +54,10 @@
 <table width="100%" class="indextable"><tr><td width="33%" valign="top">
 <dl>
 
+<dt>--discard</dt>
+  <dd><dl>
+    <dt><a href="reference/celery.bin.celeryd.html#cmdoption-celeryd--discard">celeryd command line option</a></dt>
+  </dl></dd>
 <dt>-c, --concurrency</dt>
   <dd><dl>
     <dt><a href="reference/celery.bin.celeryd.html#cmdoption-celeryd-c">celeryd command line option</a></dt>
@@ -65,11 +69,11 @@
 <dt>-f, --logfile</dt>
   <dd><dl>
     <dt><a href="reference/celery.bin.celeryd.html#cmdoption-celeryd-f">celeryd command line option</a></dt>
-  </dl></dd>
+  </dl></dd></dl></td><td width="33%" valign="top"><dl>
 <dt>-l, --loglevel</dt>
   <dd><dl>
     <dt><a href="reference/celery.bin.celeryd.html#cmdoption-celeryd-l">celeryd command line option</a></dt>
-  </dl></dd></dl></td><td width="33%" valign="top"><dl>
+  </dl></dd>
 <dt>-p, --pidfile</dt>
   <dd><dl>
     <dt><a href="reference/celery.bin.celeryd.html#cmdoption-celeryd-p">celeryd command line option</a></dt>
@@ -146,6 +150,7 @@
 <dt><a href="reference/celery.worker.html#module-celery.worker">celery.worker (module)</a></dt>
 <dt>celeryd command line option</dt>
   <dd><dl>
+    <dt><a href="reference/celery.bin.celeryd.html#cmdoption-celeryd--discard">--discard</a></dt>
     <dt><a href="reference/celery.bin.celeryd.html#cmdoption-celeryd-c">-c, --concurrency</a></dt>
     <dt><a href="reference/celery.bin.celeryd.html#cmdoption-celeryd-d">-d, --daemon</a></dt>
     <dt><a href="reference/celery.bin.celeryd.html#cmdoption-celeryd-f">-f, --logfile</a></dt>
@@ -369,6 +374,7 @@
 <dt><a href="reference/celery.task.html#celery.task.PeriodicTask">PeriodicTask (class in celery.task)</a></dt>
 <dt><a href="reference/celery.managers.html#celery.managers.PeriodicTaskManager">PeriodicTaskManager (class in celery.managers)</a></dt>
 <dt><a href="reference/celery.models.html#PeriodicTaskMeta">PeriodicTaskMeta (built-in class)</a></dt>
+<dt><a href="reference/celery.worker.html#celery.worker.PeriodicWorkController">PeriodicWorkController (class in celery.worker)</a></dt>
 <dt><a href="reference/celery.platform.html#celery.platform.PIDFile">PIDFile (class in celery.platform)</a></dt>
 <dt><a href="reference/celery.worker.html#celery.worker.WorkController.pool">pool (celery.worker.WorkController attribute)</a></dt></dl></td><td width="33%" valign="top"><dl>
 <dt><a href="reference/celery.datastructures.html#celery.datastructures.PositionQueue">PositionQueue (class in celery.datastructures)</a></dt>
@@ -411,13 +417,11 @@
     <dt><a href="reference/celery.task.html#celery.task.ExecuteRemoteTask.run">(celery.task.ExecuteRemoteTask method)</a></dt>
     <dt><a href="reference/celery.task.html#celery.task.Task.run">(celery.task.Task method)</a></dt>
     <dt><a href="reference/celery.task.html#celery.task.TaskSet.run">(celery.task.TaskSet method)</a></dt>
+    <dt><a href="reference/celery.worker.html#celery.worker.PeriodicWorkController.run">(celery.worker.PeriodicWorkController method)</a></dt>
     <dt><a href="reference/celery.worker.html#celery.worker.WorkController.run">(celery.worker.WorkController method)</a></dt>
   </dl></dd>
 <dt><a href="reference/celery.task.html#celery.task.PeriodicTask.run_every">run_every (celery.task.PeriodicTask attribute)</a></dt>
 <dt><a href="reference/celery.backends.database.html#celery.backends.database.Backend.run_periodic_tasks">run_periodic_tasks() (celery.backends.database.Backend method)</a></dt>
-  <dd><dl>
-    <dt><a href="reference/celery.worker.html#celery.worker.WorkController.run_periodic_tasks">(celery.worker.WorkController method)</a></dt>
-  </dl></dd>
 </dl></td></tr></table>
 
 <h2 id="S">S</h2>
