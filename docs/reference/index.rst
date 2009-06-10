@@ -13,6 +13,7 @@
     celery.registry
     celery.discovery
     celery.worker
+    celery.pool
     celery.backends
     celery.backends.base
     celery.backends.database
