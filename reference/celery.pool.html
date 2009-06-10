@@ -1,0 +1,269 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Task Pool - celery.pool &mdash; Celery v0.3.5 (unstable) documentation</title>
+    <link rel="stylesheet" href="../static/agogo.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+      URL_ROOT:    '../',
+      VERSION:     '0.3.5 (unstable)',
+      COLLAPSE_MODINDEX: false,
+      FILE_SUFFIX: '.html',
+      HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v0.3.5 (unstable) documentation" href="../index.html" />
+    <link rel="up" title="Module API Reference" href="index.html" />
+    <link rel="next" title="Backends - celery.backends" href="celery.backends.html" />
+    <link rel="prev" title="Multiprocessing Worker - celery.worker" href="celery.worker.html" /> 
+  </head>
+  <body>
+
+    <div class="header-wrapper">
+      <div class="header">
+	<h1><a href="../index.html">Celery v0.3.5 (unstable) documentation</a></h1>
+	<div class="rel">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a> |
+          <a href="../modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |
+          <a href="celery.backends.html" title="Backends - celery.backends"
+             accesskey="N">next</a> |
+          <a href="celery.worker.html" title="Multiprocessing Worker - celery.worker"
+             accesskey="P">previous</a>
+	</div>
+      </div>
+    </div>
+
+    <div class="content-wrapper">
+      <div class="content">
+	<div class="document">
+	  <div class="documentwrapper">
+	    <div class="bodywrapper">
+	      <div class="body">
+		
+  <div class="section" id="module-celery.pool">
+<h1>Task Pool - celery.pool<a class="headerlink" href="#module-celery.pool" title="Permalink to this headline">¶</a></h1>
+<p>Process Pools.</p>
+<dl class="class">
+<dt id="celery.pool.TaskPool">
+<em class="property">
+class </em><tt class="descclassname">celery.pool.</tt><tt class="descname">TaskPool</tt><big>(</big><em>limit</em>, <em>reap_timeout=None</em>, <em>logger=None</em><big>)</big><a class="headerlink" href="#celery.pool.TaskPool" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pool of running child processes, which starts waiting for the
+processes to finish when the queue limit has been reached.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><em>limit</em> &#8211; see <a title="celery.pool.TaskPool.limit" class="reference internal" href="#celery.pool.TaskPool.limit"><tt class="xref docutils literal"><span class="pre">limit</span></tt></a> attribute.</li>
+<li><em>logger</em> &#8211; see <a title="celery.pool.TaskPool.logger" class="reference internal" href="#celery.pool.TaskPool.logger"><tt class="xref docutils literal"><span class="pre">logger</span></tt></a> attribute.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="celery.pool.TaskPool.limit">
+<tt class="descname">limit</tt><a class="headerlink" href="#celery.pool.TaskPool.limit" title="Permalink to this definition">¶</a></dt>
+<dd>The number of processes that can run simultaneously until
+we start collecting results.</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.pool.TaskPool.logger">
+<tt class="descname">logger</tt><a class="headerlink" href="#celery.pool.TaskPool.logger" title="Permalink to this definition">¶</a></dt>
+<dd>The logger used for debugging.</dd></dl>
+
+<dl class="method">
+<dt id="celery.pool.TaskPool.add">
+<tt class="descname">add</tt><big>(</big><em>result</em>, <em>callbacks</em>, <em>errbacks</em>, <em>tid</em>, <em>meta</em><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a process to the queue.</p>
+<p>If the queue is full, it will wait for the first task to finish,
+collects its result and remove it from the queue, so it&#8217;s ready
+to accept new processes.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><p class="first"><em>result</em> &#8211; A <tt class="xref docutils literal"><span class="pre">multiprocessing.AsyncResult</span></tt> instance, as
+returned by <tt class="xref docutils literal"><span class="pre">multiprocessing.Pool.apply_async()</span></tt>.</p>
+</td>
+</tr>
+<tr class="field"><th class="field-name" colspan="2">Option callbacks:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first">List of callbacks to execute if the task was
+successful. Must have the function signature:</p>
+<blockquote>
+<p><tt class="docutils literal"><span class="pre">mycallback(result,</span> <span class="pre">meta)</span></tt></p>
+</blockquote>
+</td>
+</tr>
+<tr class="field"><th class="field-name" colspan="2">Option errbacks:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first">List of errbacks to execute if the task raised
+and exception. Must have the function signature:</p>
+<blockquote>
+<p><tt class="docutils literal"><span class="pre">myerrback(exc,</span> <span class="pre">meta)</span></tt>.</p>
+</blockquote>
+</td>
+</tr>
+<tr class="field"><th class="field-name">Option tid:</th><td class="field-body"><p class="first last">The tid for this task (unqiue pool id).</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.pool.TaskPool.apply_async">
+<tt class="descname">apply_async</tt><big>(</big><em>target</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>callbacks=None</em>, <em>errbacks=None</em>, <em>meta=None</em><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.apply_async" title="Permalink to this definition">¶</a></dt>
+<dd><p>Equivalent of the :func:<tt class="docutils literal"><span class="pre">apply</span></tt> built-in function.</p>
+<p>All <tt class="docutils literal"><span class="pre">callbacks</span></tt> and <tt class="docutils literal"><span class="pre">errbacks</span></tt> should complete immediately since
+otherwise the thread which handles the result will get blocked.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.pool.TaskPool.full">
+<tt class="descname">full</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.full" title="Permalink to this definition">¶</a></dt>
+<dd><p>Is the pool full?</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><tt class="xref docutils literal"><span class="pre">True</span></tt> if the maximum number of concurrent processes
+has been reached.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.pool.TaskPool.get_worker_pids">
+<tt class="descname">get_worker_pids</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.get_worker_pids" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the process id&#8217;s of all the pool workers.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.pool.TaskPool.on_ready">
+<tt class="descname">on_ready</tt><big>(</big><em>ret_value</em>, <em>callbacks</em>, <em>errbacks</em>, <em>meta</em><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.on_ready" title="Permalink to this definition">¶</a></dt>
+<dd>What to do when a worker task is ready and its return value has
+been collected.</dd></dl>
+
+<dl class="method">
+<dt id="celery.pool.TaskPool.on_return">
+<tt class="descname">on_return</tt><big>(</big><em>ret_val</em>, <em>tid</em>, <em>callbacks</em>, <em>errbacks</em>, <em>meta</em><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.on_return" title="Permalink to this definition">¶</a></dt>
+<dd>What to do when the process returns.</dd></dl>
+
+<dl class="method">
+<dt id="celery.pool.TaskPool.reap">
+<tt class="descname">reap</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.reap" title="Permalink to this definition">¶</a></dt>
+<dd>Reap finished tasks.</dd></dl>
+
+<dl class="method">
+<dt id="celery.pool.TaskPool.run">
+<tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run the task pool.</p>
+<p>Will launch all worker processes so they are ready
+for processing tasks.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.pool.TaskPool.wait_for_result">
+<tt class="descname">wait_for_result</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.wait_for_result" title="Permalink to this definition">¶</a></dt>
+<dd><p>Waits for the first process in the pool to finish.</p>
+<p>This operation is blocking.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+	      </div>
+	    </div>
+	  </div>
+	</div>
+	<div class="sidebar">
+	  <h3>Contents</h3>
+	  <ul class="current">
+<li class="toctree-l1"><a class="reference external" href="../introduction.html">celery - Distributed Task Queue for Django.</a></li>
+<li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1 current"><a class="reference external" href="index.html">Module API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference external" href="celery.task.html">Tasks - celery.task</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.result.html">Task Result - celery.result</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.registry.html">Task Registry - celery.registry</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.discovery.html">Task Discovery - celery.discovery</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.worker.html">Multiprocessing Worker - celery.worker</a></li>
+<li class="toctree-l2 current"><a class="current reference external" href="">Task Pool - celery.pool</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.backends.html">Backends - celery.backends</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.backends.base.html">Backend: Base - celery.backends.base</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.backends.database.html">Backend: Database - celery.backends.database</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.backends.cache.html">Backend: Cache - celery.backends.cache</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.backends.tyrant.html">Backend: Tokyo Tyrant - celery.backends.tyrant</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.conf.html">Configuration - celery.conf</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.datastructures.html">Datastructures - celery.datastructures</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.log.html">Logging - celery.log</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.managers.html">Django Model Managers - celery.managers</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.models.html">Django Models - celery.models</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.messaging.html">Messaging - celery.messaging</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.timer.html">Timers - celery.timer</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="../changelog.html">Change history</a></li>
+</ul>
+
+	  <h3 style="margin-top: 1.5em;">Search</h3>
+	  <form class="search" action="../search.html" method="get">
+            <input type="text" name="q" size="18" />
+            <input type="submit" value="Go" />
+            <input type="hidden" name="check_keywords" value="yes" />
+            <input type="hidden" name="area" value="default" />
+          </form>
+          <p class="searchtip" style="font-size: 90%">
+            Enter search terms or a module, class or function name.
+          </p>
+	</div>
+	<div class="clearer"></div>
+      </div>
+    </div>
+
+    <div class="footer-wrapper">
+      <div class="footer">
+	<div class="left">
+          <a href="../genindex.html" title="General Index"
+             >index</a> |
+          <a href="../modindex.html" title="Global Module Index"
+             >modules</a> |
+          <a href="celery.backends.html" title="Backends - celery.backends"
+             >next</a> |
+          <a href="celery.worker.html" title="Multiprocessing Worker - celery.worker"
+             >previous</a>
+            <br/>
+            <a href="../sources/reference/celery.pool.txt"
+               rel="nofollow">Show Source</a>
+	</div>
+
+	<div class="right">
+	  &copy; Copyright 2009, Ask Solem.<br/>
+	  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.1.
+	</div>
+	<div class="clearer"></div>
+      </div>
+    </div>
+
+  </body>
+</html>
