@@ -181,6 +181,9 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, daemon=False,
     except Exception, e:
         emergency_error(logfile, "celeryd raised exception %s: %s\n%s" % (
                             e.__class__, e, traceback.format_exc()))
+    except:
+        context.close()
+        raise
 
 
 OPTION_LIST = (

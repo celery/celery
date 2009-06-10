@@ -1,5 +1,5 @@
 include AUTHORS
-include CHANGELOG
+include Changelog
 include README
 include MANIFEST.in
 include LICENSE
