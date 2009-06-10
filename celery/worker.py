@@ -95,6 +95,8 @@ def jail(task_id, func, args, kwargs):
                         for k, v in kwargs.items()])
     try:
         result = func(*args, **kwargs)
+    except (SystemExit, KeyboardInterrupt):
+        raise
     except Exception, exc:
         default_backend.mark_as_failure(task_id, exc)
         return ExceptionInfo(sys.exc_info())
@@ -453,3 +455,7 @@ class WorkController(object):
                 self.logger.critical("Message queue raised %s: %s\n%s" % (
                              exc.__class__, exc, traceback.format_exc()))
                 continue
+            except:
+                self.pool.terminate()
+                raise
+

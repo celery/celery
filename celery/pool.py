@@ -55,10 +55,14 @@ class TaskPool(object):
         self._processes = {}
         self._pool = multiprocessing.Pool(processes=self.limit)
 
+    def terminate(self):
+        """Terminate the pool."""
+        self._pool.terminate()
+
     def _terminate_and_restart(self):
         """INTERNAL: Terminate and restart the pool."""
         try:
-            self._pool.terminate()
+            self.terminate()
         except OSError:
             pass
         self._start()
@@ -194,6 +198,10 @@ class TaskPool(object):
         been collected."""
 
         if isinstance(ret_value, ExceptionInfo):
+            if isinstance(ret_value.exception, KeyboardInterrupt) or \
+                    isinstance(ret_value.exception, SystemExit):
+                self.terminate()
+                raise ret_value.exception
             for errback in errbacks:
                 errback(ret_value, meta)
         else:
