@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Welcome to Celery’s documentation! &mdash; Celery v0.3.2 (unstable) documentation</title>
+    <title>Welcome to Celery’s documentation! &mdash; Celery v0.3.5 (unstable) documentation</title>
     <link rel="stylesheet" href="static/agogo.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
       URL_ROOT:    '',
-      VERSION:     '0.3.2 (unstable)',
+      VERSION:     '0.3.5 (unstable)',
       COLLAPSE_MODINDEX: false,
       FILE_SUFFIX: '.html',
       HAS_SOURCE:  true
@@ -19,14 +19,14 @@
     </script>
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v0.3.2 (unstable) documentation" href="" />
+    <link rel="top" title="Celery v0.3.5 (unstable) documentation" href="" />
     <link rel="next" title="celery - Distributed Task Queue for Django." href="introduction.html" /> 
   </head>
   <body>
 
     <div class="header-wrapper">
       <div class="header">
-	<h1><a href="">Celery v0.3.2 (unstable) documentation</a></h1>
+	<h1><a href="">Celery v0.3.5 (unstable) documentation</a></h1>
 	<div class="rel">
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a> |
@@ -85,6 +85,7 @@
 <li class="toctree-l2"><a class="reference external" href="reference/celery.registry.html">Task Registry - celery.registry</a></li>
 <li class="toctree-l2"><a class="reference external" href="reference/celery.discovery.html">Task Discovery - celery.discovery</a></li>
 <li class="toctree-l2"><a class="reference external" href="reference/celery.worker.html">Multiprocessing Worker - celery.worker</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.pool.html">Task Pool - celery.pool</a></li>
 <li class="toctree-l2"><a class="reference external" href="reference/celery.backends.html">Backends - celery.backends</a></li>
 <li class="toctree-l2"><a class="reference external" href="reference/celery.backends.base.html">Backend: Base - celery.backends.base</a></li>
 <li class="toctree-l2"><a class="reference external" href="reference/celery.backends.database.html">Backend: Database - celery.backends.database</a></li>
@@ -96,28 +97,28 @@
 <li class="toctree-l2"><a class="reference external" href="reference/celery.managers.html">Django Model Managers - celery.managers</a></li>
 <li class="toctree-l2"><a class="reference external" href="reference/celery.models.html">Django Models - celery.models</a></li>
 <li class="toctree-l2"><a class="reference external" href="reference/celery.messaging.html">Messaging - celery.messaging</a></li>
-<li class="toctree-l2"><a class="reference external" href="reference/celery.platform.html">Platform Specific - celery.platform</a></li>
 <li class="toctree-l2"><a class="reference external" href="reference/celery.timer.html">Timers - celery.timer</a></li>
 <li class="toctree-l2"><a class="reference external" href="reference/celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference external" href="changelog.html">Change history</a><ul>
-<li class="toctree-l2"><a class="reference external" href="changelog.html#p-m-cet-askh-opera-com">0.3.2 [2009-06-08 01:07 P.M CET] askh&#64;opera.com</a></li>
-<li class="toctree-l2"><a class="reference external" href="changelog.html#id1">0.3.1 [2009-06-08 01:07 P.M CET] askh&#64;opera.com</a></li>
-<li class="toctree-l2"><a class="reference external" href="changelog.html#id2">0.3.0 [2009-06-08 12:41 P.M CET] askh&#64;opera.com</a></li>
-<li class="toctree-l2"><a class="reference external" href="changelog.html#id3">0.2.0 [2009-05-20 05:14 P.M CET] askh&#64;opera.com</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#p-m-cet-askh-opera-com">0.3.3 [2009-06-08 01:07 P.M CET] askh&#64;opera.com</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#id1">0.3.2 [2009-06-08 01:07 P.M CET] askh&#64;opera.com</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#id2">0.3.1 [2009-06-08 01:07 P.M CET] askh&#64;opera.com</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#id3">0.3.0 [2009-06-08 12:41 P.M CET] askh&#64;opera.com</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#id4">0.2.0 [2009-05-20 05:14 P.M CET] askh&#64;opera.com</a></li>
 <li class="toctree-l2"><a class="reference external" href="changelog.html#pre3-2009-05-20-05-14-p-m-cet-askh-opera-com">0.2.0-pre3 [2009-05-20 05:14 P.M CET] askh&#64;opera.com</a></li>
 <li class="toctree-l2"><a class="reference external" href="changelog.html#pre2-2009-05-20-01-56-p-m-cet-askh-opera-com">0.2.0-pre2 [2009-05-20 01:56 P.M CET] askh&#64;opera.com</a></li>
 <li class="toctree-l2"><a class="reference external" href="changelog.html#pre1-2009-05-20-12-33-p-m-cet-askh-opera-com">0.2.0-pre1 [2009-05-20 12:33 P.M CET] askh&#64;opera.com</a></li>
-<li class="toctree-l2"><a class="reference external" href="changelog.html#id4">0.1.15 [2009-05-19 04:13 P.M CET] askh&#64;opera.com</a></li>
-<li class="toctree-l2"><a class="reference external" href="changelog.html#id5">0.1.14 [2009-05-19 01:08 P.M CET] askh&#64;opera.com</a></li>
-<li class="toctree-l2"><a class="reference external" href="changelog.html#id6">0.1.13 [2009-05-19 12:36 P.M CET] askh&#64;opera.com</a></li>
-<li class="toctree-l2"><a class="reference external" href="changelog.html#id7">0.1.12 [2009-05-18 04:38 P.M CET] askh&#64;opera.com</a></li>
-<li class="toctree-l2"><a class="reference external" href="changelog.html#id8">0.1.11 [2009-05-12 02:08 P.M CET] askh&#64;opera.com</a></li>
-<li class="toctree-l2"><a class="reference external" href="changelog.html#id9">0.1.10 [2009-05-11 12:46 P.M CET] askh&#64;opera.com</a></li>
-<li class="toctree-l2"><a class="reference external" href="changelog.html#id10">0.1.8 [2009-05-07 12:27 P.M CET] askh&#64;opera.com</a></li>
-<li class="toctree-l2"><a class="reference external" href="changelog.html#id11">0.1.7 [2009-04-30 1:50 P.M CET] askh&#64;opera.com</a></li>
-<li class="toctree-l2"><a class="reference external" href="changelog.html#id12">0.1.6 [2009-04-28 2:13 P.M CET] askh&#64;opera.com</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#id5">0.1.15 [2009-05-19 04:13 P.M CET] askh&#64;opera.com</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#id6">0.1.14 [2009-05-19 01:08 P.M CET] askh&#64;opera.com</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#id7">0.1.13 [2009-05-19 12:36 P.M CET] askh&#64;opera.com</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#id8">0.1.12 [2009-05-18 04:38 P.M CET] askh&#64;opera.com</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#id9">0.1.11 [2009-05-12 02:08 P.M CET] askh&#64;opera.com</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#id10">0.1.10 [2009-05-11 12:46 P.M CET] askh&#64;opera.com</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#id11">0.1.8 [2009-05-07 12:27 P.M CET] askh&#64;opera.com</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#id12">0.1.7 [2009-04-30 1:50 P.M CET] askh&#64;opera.com</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#id13">0.1.6 [2009-04-28 2:13 P.M CET] askh&#64;opera.com</a></li>
 <li class="toctree-l2"><a class="reference external" href="changelog.html#a-m-cet-askh-opera-com">0.1.0 [2009-04-24 11:28 A.M CET] askh&#64;opera.com</a></li>
 </ul>
 </li>

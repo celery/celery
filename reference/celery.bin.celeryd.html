@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Celery Worker Daemon - celery.bin.celeryd &mdash; Celery v0.3.2 (unstable) documentation</title>
+    <title>Celery Worker Daemon - celery.bin.celeryd &mdash; Celery v0.3.5 (unstable) documentation</title>
     <link rel="stylesheet" href="../static/agogo.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
       URL_ROOT:    '../',
-      VERSION:     '0.3.2 (unstable)',
+      VERSION:     '0.3.5 (unstable)',
       COLLAPSE_MODINDEX: false,
       FILE_SUFFIX: '.html',
       HAS_SOURCE:  true
@@ -19,7 +19,7 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.3.2 (unstable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.3.5 (unstable) documentation" href="../index.html" />
     <link rel="up" title="Module API Reference" href="index.html" />
     <link rel="next" title="Change history" href="../changelog.html" />
     <link rel="prev" title="Timers - celery.timer" href="celery.timer.html" /> 
@@ -28,7 +28,7 @@
 
     <div class="header-wrapper">
       <div class="header">
-	<h1><a href="../index.html">Celery v0.3.2 (unstable) documentation</a></h1>
+	<h1><a href="../index.html">Celery v0.3.5 (unstable) documentation</a></h1>
 	<div class="rel">
           <a href="../genindex.html" title="General Index"
              accesskey="I">index</a> |
@@ -82,7 +82,7 @@ new messages on the queue.</dd></dl>
 
 <dl class="cmdoption">
 <dt id="cmdoption-celeryd-d">
-<tt class="descname">-d</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">--daemon</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd-d" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">-d</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">--detach</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">--daemon</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd-d" title="Permalink to this definition">¶</a></dt>
 <dd>Run in the background as a daemon.</dd></dl>
 
 <dl class="cmdoption">
@@ -92,15 +92,52 @@ new messages on the queue.</dd></dl>
 <strong>WARNING</strong>: This is unrecoverable, and the tasks will be
 deleted from the messaging server.</dd></dl>
 
+<dl class="cmdoption">
+<dt id="cmdoption-celeryd-u">
+<tt class="descname">-u</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">--uid</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd-u" title="Permalink to this definition">¶</a></dt>
+<dd>User-id to run <tt class="docutils literal"><span class="pre">celeryd</span></tt> as when in daemon mode.</dd></dl>
+
+<dl class="cmdoption">
+<dt id="cmdoption-celeryd-g">
+<tt class="descname">-g</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">--gid</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd-g" title="Permalink to this definition">¶</a></dt>
+<dd>Group-id to run <tt class="docutils literal"><span class="pre">celeryd</span></tt> as when in daemon mode.</dd></dl>
+
+<dl class="cmdoption">
+<dt id="cmdoption-celeryd--umask">
+<tt class="descname">--umask</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd--umask" title="Permalink to this definition">¶</a></dt>
+<dd>umask of the process when in daemon mode.</dd></dl>
+
+<dl class="cmdoption">
+<dt id="cmdoption-celeryd--workdir">
+<tt class="descname">--workdir</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd--workdir" title="Permalink to this definition">¶</a></dt>
+<dd>Directory to change to when in daemon mode.</dd></dl>
+
+<dl class="cmdoption">
+<dt id="cmdoption-celeryd--chroot">
+<tt class="descname">--chroot</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd--chroot" title="Permalink to this definition">¶</a></dt>
+<dd>Change root directory to this path when in daemon mode.</dd></dl>
+
 <dl class="function">
-<dt id="celery.bin.celeryd.main">
-<tt class="descclassname">celery.bin.celeryd.</tt><tt class="descname">main</tt><big>(</big><em>concurrency=10</em>, <em>daemon=False</em>, <em>loglevel=20</em>, <em>logfile='celeryd.log'</em>, <em>discard=False</em>, <em>pidfile='celeryd.pid'</em>, <em>queue_wakeup_after=0.10000000000000001</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.main" title="Permalink to this definition">¶</a></dt>
-<dd>Run the celery daemon.</dd></dl>
+<dt id="celery.bin.celeryd.acquire_pidlock">
+<tt class="descclassname">celery.bin.celeryd.</tt><tt class="descname">acquire_pidlock</tt><big>(</big><em>pidfile</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.acquire_pidlock" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the <tt class="xref docutils literal"><span class="pre">daemon.pidlockfile.PIDLockFile</span></tt> handler for
+<tt class="docutils literal"><span class="pre">pidfile</span></tt>.</p>
+<p>If the <tt class="docutils literal"><span class="pre">pidfile</span></tt> already exists, but the process is not running the
+<tt class="docutils literal"><span class="pre">pidfile</span></tt> will be removed, a <tt class="docutils literal"><span class="pre">&quot;stale</span> <span class="pre">pidfile&quot;</span></tt> message is emitted
+and execution continues as normally. However, if the process is still
+running the program will exit complaning that the program is already
+running in the background somewhere.</p>
+</dd></dl>
 
 <dl class="function">
 <dt id="celery.bin.celeryd.parse_options">
 <tt class="descclassname">celery.bin.celeryd.</tt><tt class="descname">parse_options</tt><big>(</big><em>arguments</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.parse_options" title="Permalink to this definition">¶</a></dt>
-<dd>Option parsers for the available options to <tt class="docutils literal"><span class="pre">celeryd</span></tt>.</dd></dl>
+<dd>Parse the available options to <tt class="docutils literal"><span class="pre">celeryd</span></tt>.</dd></dl>
+
+<dl class="function">
+<dt id="celery.bin.celeryd.run_worker">
+<tt class="descclassname">celery.bin.celeryd.</tt><tt class="descname">run_worker</tt><big>(</big><em>concurrency=10</em>, <em>daemon=False</em>, <em>loglevel=20</em>, <em>logfile='celeryd.log'</em>, <em>discard=False</em>, <em>pidfile='celeryd.pid'</em>, <em>queue_wakeup_after=0.10000000000000001</em>, <em>umask=0</em>, <em>uid=None</em>, <em>gid=None</em>, <em>working_directory=None</em>, <em>chroot=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.run_worker" title="Permalink to this definition">¶</a></dt>
+<dd>Run the celery daemon.</dd></dl>
 
 </div>
 
@@ -120,6 +157,7 @@ deleted from the messaging server.</dd></dl>
 <li class="toctree-l2"><a class="reference external" href="celery.registry.html">Task Registry - celery.registry</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.discovery.html">Task Discovery - celery.discovery</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.worker.html">Multiprocessing Worker - celery.worker</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.pool.html">Task Pool - celery.pool</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.backends.html">Backends - celery.backends</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.backends.base.html">Backend: Base - celery.backends.base</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.backends.database.html">Backend: Database - celery.backends.database</a></li>
@@ -131,7 +169,6 @@ deleted from the messaging server.</dd></dl>
 <li class="toctree-l2"><a class="reference external" href="celery.managers.html">Django Model Managers - celery.managers</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.models.html">Django Models - celery.models</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.messaging.html">Messaging - celery.messaging</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.platform.html">Platform Specific - celery.platform</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.timer.html">Timers - celery.timer</a></li>
 <li class="toctree-l2 current"><a class="current reference external" href="">Celery Worker Daemon - celery.bin.celeryd</a></li>
 </ul>

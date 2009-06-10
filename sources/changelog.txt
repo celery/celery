@@ -2,6 +2,12 @@
 Change history
 ==============
 
+0.3.3 [2009-06-08 01:07 P.M CET] askh@opera.com
+-----------------------------------------------
+
+	* The ``PeriodicWorkController`` now sleeps for 1 second between checking
+		for periodic tasks to execute.
+
 0.3.2 [2009-06-08 01:07 P.M CET] askh@opera.com
 -----------------------------------------------
 
