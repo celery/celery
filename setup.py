@@ -63,7 +63,6 @@ setup(
     scripts=["bin/celeryd"],
     zip_safe=False,
     install_requires=[
-        'simplejson',
         'carrot>=0.4.1',
         'django',
     ],
