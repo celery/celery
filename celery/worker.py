@@ -106,8 +106,9 @@ def jail(task_id, task_name, func, args, kwargs):
     else:
         default_backend.mark_as_done(task_id, result)
         retval = result
+    finally:
+        timer_stat.stop()
 
-    timer_stat.stop()
     return retval
 
     

@@ -204,7 +204,6 @@ class StatsCollector(object):
             * Total number of tasks executed.
         
         """
-        print("-" * 64)
         print("Total processing time by task type:")
         for task_name, nsecs in self.total_task_time_running_by_type.items():
             print("\t%s: %s secs. (for a total of %d executed.)" % (
