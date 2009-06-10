@@ -7,7 +7,7 @@ class Statistics(object):
     type = None
 
     def __init__(self, **kwargs):
-        self.enabled = getattr(settings, "CELERY_STATISTICS", False))
+        self.enabled = getattr(settings, "CELERY_STATISTICS", False)
         if not self.type:
             raise NotImplementedError(
                 "Statistic classes must define their type.")
@@ -21,19 +21,19 @@ class Statistics(object):
         publisher.close()
         connection.close()
 
-        @classmethod
-        def start(cls, *args, **kwargs):
-            stat = cls()
-            stat.run()
-            return stat
+    @classmethod
+    def start(cls, *args, **kwargs):
+        stat = cls()
+        stat.run()
+        return stat
 
-        def run(self, *args, **kwargs):
-            if stat.enabled:
-                stat.on_start(*args, **kwargs)
+    def run(self, *args, **kwargs):
+        if stat.enabled:
+            stat.on_start(*args, **kwargs)
 
-        def stop(self, *args, **kwargs):
-            if self.enabled:
-                self.on_finish(*args, **kwargs)
+    def stop(self, *args, **kwargs):
+        if self.enabled:
+            self.on_finish(*args, **kwargs)
 
 
 class TimerStats(Statistics):
@@ -60,22 +60,36 @@ class TaskTimerStats(TimerStats):
 
 
 class StatsCollector(object):
-    allowed_stats = ["task_time_running"]
+    allowed_types = ["task_time_running"]
+    total_tasks_processed = 0
+    total_task_time_running = 0
+    total_task_time_running_by_type = {}
 
-    def run(self):
+    def collect(self):
         connection = DjangoAMQPConnection()
         consumer = StatsConsumer(connection=connection)
         it = consumer.iterqueue(infinite=False)
-        total = 0
         for message in it:
-            data = message.decode()
-            stat_name = data.get("type")
-            if stat_name in self.allowed_stats:
-                handler = getattr(self, stat_name)
-                handler(**data["data"])
-                total += 1
-        return total
+            stats_entry = message.decode()
+            stat_type = stats_entry["type"]
+            if stat_type in self.allowed_types:
+                handler = getattr(self, stat_type)
+                handler(**stats_entry["data"])
+        return self.on_cycle_end()
 
     def task_time_running(self, task_id, task_name, args, kwargs, nsecs):
+        self.total_task_time_running += nsecs
+        self.total_task_time_running_by_type[task_name] = \
+                self.total_task_time_running_by_type.get(task_name, nsecs)
+        self.total_task_time_running_by_type[task_name] += nsecs
         print("Task %s[%s](%s, %s): %d" % (
                 task_id, task_name, args, kwargs, nsecs))
+
+    def on_cycle_end(self):
+        print("-" * 64)
+        print("Total processing time by task type:")
+        for task_name, nsecs in self.total_task_time_running_by_type.items():
+            print("\t%s: %d" % (task_name, nsecs))
+        print("Total task processing time: %d" % (
+            self.total_task_time_running))
+        print("Total tasks processed: %d" % self.total_tasks_processed)

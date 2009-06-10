@@ -20,6 +20,11 @@
 
     Path to pidfile.
 
+.. cmdoption:: -s, --statistics
+
+    Turn on reporting of statistics (remember to flush the statistics message
+    queue from time to time).
+
 .. cmdoption:: -w, --wakeup-after
 
     If the queue is empty, this is the time *in seconds* the
@@ -78,6 +83,9 @@ import atexit
 from daemon import DaemonContext
 from daemon.pidlockfile import PIDLockFile
 
+USE_STATISTICS = getattr(settings, "CELERY_STATISTICS", False)
+settings.CELERY_STATISTICS = USE_STATISTICS
+
 
 def acquire_pidlock(pidfile):
     """Get the :class:`daemon.pidlockfile.PIDLockFile` handler for
@@ -113,8 +121,14 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, daemon=False,
         loglevel=DAEMON_LOG_LEVEL, logfile=DAEMON_LOG_FILE, discard=False,
         pidfile=DAEMON_PID_FILE, queue_wakeup_after=QUEUE_WAKEUP_AFTER,
         umask=0, uid=None, gid=None, working_directory=None, chroot=None,
-        **kwargs):
+        statistics=None, **kwargs):
     """Run the celery daemon."""
+
+    print(">>> Launching celery, please hold on to something...")
+
+    if statistics:
+        settings.CELERY_STATISTICS = statistics
+
     if settings.DATABASE_ENGINE == "sqlite3" and concurrency > 1:
         import warnings
         warnings.warn("The sqlite3 database engine doesn't support "
@@ -130,8 +144,10 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, daemon=False,
         what = "message"
         if discarded_count > 1:
             what = "messages"
-        sys.stderr.write("Discard: Erased %d %s from the queue.\n" % (
+        sys.stderr.write("* Discard: Erased %d %s from the queue.\n" % (
             discarded_count, what))
+    print("* Reporting of statistics is %s..." % (
+        settings.CELERY_STATISTICS and "ON" or "OFF"))
     if daemon:
         # Since without stderr any errors will be silently suppressed,
         # we need to know that we have access to the logfile
@@ -143,7 +159,7 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, daemon=False,
         uid = uid and int(uid) or os.geteuid()
         gid = gid and int(gid) or os.getegid()
         working_directory = working_directory or os.getcwd()
-        sys.stderr.write("Launching celeryd in the background...\n")
+        sys.stderr.write("* Launching celeryd in the background...\n")
         context = DaemonContext(chroot_directory=chroot,
                                 working_directory=working_directory,
                                 umask=umask,
@@ -185,6 +201,10 @@ OPTION_LIST = (
     optparse.make_option('-p', '--pidfile', default=DAEMON_PID_FILE,
             action="store", dest="pidfile",
             help="Path to pidfile."),
+    optparse.make_option('-s', '--statistics', default=USE_STATISTICS,
+            action="store_true", dest="statistics",
+            help="Turn on reporting of statistics (remember to flush the "
+                 "statistics message queue from time to time)."),
     optparse.make_option('-w', '--wakeup-after', default=QUEUE_WAKEUP_AFTER,
             action="store", type="float", dest="queue_wakeup_after",
             help="If the queue is empty, this is the time *in seconds* the "
