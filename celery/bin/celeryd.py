@@ -26,7 +26,7 @@
     daemon sleeps until it wakes up to check if there's any
     new messages on the queue.
 
-.. cmdoption:: -d, --daemon
+.. cmdoption:: -d, --detach, --daemon
 
     Run in the background as a daemon.
 
@@ -35,6 +35,26 @@
     Discard all waiting tasks before the daemon is started.
     **WARNING**: This is unrecoverable, and the tasks will be
     deleted from the messaging server.
+    
+.. cmdoption:: -u, --uid
+
+    User-id to run ``celeryd`` as when in daemon mode.
+
+.. cmdoption:: -g, --gid
+       
+    Group-id to run ``celeryd`` as when in daemon mode.
+
+.. cmdoption:: --umask
+    
+    umask of the process when in daemon mode.
+
+.. cmdoption:: --workdir
+
+    Directory to change to when in daemon mode.
+
+.. cmdoption:: --chroot
+
+    Change root directory to this path when in daemon mode.
 
 """
 import os
@@ -45,7 +65,6 @@ if django_project_dir:
     sys.path.append(django_project_dir)
 
 from django.conf import settings
-from celery.platform import PIDFile, daemonize, remove_pidfile
 from celery.log import emergency_error
 from celery.conf import LOG_LEVELS, DAEMON_LOG_FILE, DAEMON_LOG_LEVEL
 from celery.conf import DAEMON_CONCURRENCY, DAEMON_PID_FILE
@@ -56,11 +75,45 @@ from celery.worker import WorkController
 import traceback
 import optparse
 import atexit
+from daemon import DaemonContext
+from daemon.pidlockfile import PIDLockFile
 
 
-def main(concurrency=DAEMON_CONCURRENCY, daemon=False,
+def acquire_pidlock(pidfile):
+    """Get the :class:`daemon.pidlockfile.PIDLockFile` handler for
+    ``pidfile``.
+
+    If the ``pidfile`` already exists, but the process is not running the
+    ``pidfile`` will be removed, a ``"stale pidfile"`` message is emitted
+    and execution continues as normally. However, if the process is still
+    running the program will exit complaning that the program is already
+    running in the background somewhere.
+
+    """
+    pidlock = PIDLockFile(pidfile)
+    if not pidlock.is_locked():
+        return pidlock
+    pid = pidlock.read_pid()
+    try:
+        os.kill(pid, 0)
+    except os.error, exc:
+        if exc.errno == errno.ESRCH:
+            sys.stderr.write("Stale pidfile exists. Removing it.\n")
+            pidlock.release() 
+            return
+    else:
+        raise SystemExit(
+                "ERROR: Pidfile (%s) already exists.\n"
+                "Seems celeryd is already running? (PID: %d)" % (
+                    pidfile, pid))
+    return pidlock        
+
+
+def run_worker(concurrency=DAEMON_CONCURRENCY, daemon=False,
         loglevel=DAEMON_LOG_LEVEL, logfile=DAEMON_LOG_FILE, discard=False,
-        pidfile=DAEMON_PID_FILE, queue_wakeup_after=QUEUE_WAKEUP_AFTER):
+        pidfile=DAEMON_PID_FILE, queue_wakeup_after=QUEUE_WAKEUP_AFTER,
+        umask=0, uid=None, gid=None, working_directory=None, chroot=None,
+        **kwargs):
     """Run the celery daemon."""
     if settings.DATABASE_ENGINE == "sqlite3" and concurrency > 1:
         import warnings
@@ -68,6 +121,9 @@ def main(concurrency=DAEMON_CONCURRENCY, daemon=False,
                 "concurrency. We'll be using a single process only.",
                 UserWarning)
         concurrency = 1
+    
+    if not isinstance(loglevel, int):
+        loglevel = LOG_LEVELS[loglevel.upper()]
 
     if discard:
         discarded_count = discard_all()
@@ -77,11 +133,24 @@ def main(concurrency=DAEMON_CONCURRENCY, daemon=False,
         sys.stderr.write("Discard: Erased %d %s from the queue.\n" % (
             discarded_count, what))
     if daemon:
+        # Since without stderr any errors will be silently suppressed,
+        # we need to know that we have access to the logfile
+        pidlock = acquire_pidlock(pidfile)
+        if not umask:
+            umask = 0
+        if logfile:
+            open(logfile, "a").close()
+        uid = uid and int(uid) or os.geteuid()
+        gid = gid and int(gid) or os.getegid()
+        working_directory = working_directory or os.getcwd()
         sys.stderr.write("Launching celeryd in the background...\n")
-        pidfile_handler = PIDFile(pidfile)
-        pidfile_handler.check()
-        daemonize(pidfile=pidfile_handler)
-        atexit.register(remove_pidfile, pidfile)
+        context = DaemonContext(chroot_directory=chroot,
+                                working_directory=working_directory,
+                                umask=umask,
+                                pidfile=pidlock,
+                                uid=uid,
+                                gid=gid)
+        context.open()
     else:
         logfile = None # log to stderr when not running as daemon.
 
@@ -121,26 +190,34 @@ OPTION_LIST = (
             help="If the queue is empty, this is the time *in seconds* the "
                  "daemon sleeps until it wakes up to check if there's any "
                  "new messages on the queue."),
-    optparse.make_option('-d', '--daemon', default=False,
+    optparse.make_option('-d', '--detach', '--daemon', default=False,
             action="store_true", dest="daemon",
             help="Run in the background as a daemon."),
-)
+    optparse.make_option('-u', '--uid', default=None,
+            action="store", dest="uid",
+            help="User-id to run celeryd as when in daemon mode."),
+    optparse.make_option('-g', '--gid', default=None,
+            action="store", dest="gid",
+            help="Group-id to run celeryd as when in daemon mode."),
+    optparse.make_option('--umask', default=0,
+            action="store", type="int", dest="umask",
+            help="umask of the process when in daemon mode."),
+    optparse.make_option('--workdir', default=None,
+            action="store", dest="working_directory",
+            help="Directory to change to when in daemon mode."),
+    optparse.make_option('--chroot', default=None,
+            action="store", dest="chroot",
+            help="Change root directory to this path when in daemon mode."),
+    )
 
 
 def parse_options(arguments):
-    """Option parsers for the available options to ``celeryd``."""
+    """Parse the available options to ``celeryd``."""
     parser = optparse.OptionParser(option_list=OPTION_LIST)
     options, values = parser.parse_args(arguments)
-    if not isinstance(options.loglevel, int):
-        options.loglevel = LOG_LEVELS[options.loglevel.upper()]
     return options
+
 
 if __name__ == "__main__":
     options = parse_options(sys.argv[1:])
-    main(concurrency=options.concurrency,
-         daemon=options.daemon,
-         logfile=options.logfile,
-         loglevel=options.loglevel,
-         pidfile=options.pidfile,
-         discard=options.discard,
-         queue_wakeup_after=options.queue_wakeup_after)
+    run_worker(**options)

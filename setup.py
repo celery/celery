@@ -64,6 +64,7 @@ setup(
     zip_safe=False,
     install_requires=[
         'carrot>=0.4.1',
+        'python-daemon',
         'django',
     ],
     cmdclass = {"test": RunTests},
