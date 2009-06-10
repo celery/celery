@@ -84,7 +84,7 @@ def jail(task_id, func, args, kwargs):
     else:
         # Django <= 1.0.2
         cache_scheme = cache_backend.split(":", 1)[0]
-    if "memcached" in scheme:
+    if "memcached" in cache_scheme:
         cache.cache.close()
 
     # Backend process cleanup
