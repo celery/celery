@@ -78,7 +78,13 @@ def jail(task_id, func, args, kwargs):
     # instead of libmemcache (cmemcache). Should find a better solution for
     # this, but for now "memcached" should probably be unique enough of a
     # string to not make problems.
-    if "memcached" in cache.parse_backend_uri(cache.settings.CACHE_BACKEND)[0]:
+    cache_backend = cache.settings.CACHE_BACKEND
+    if hasattr(cache, "parse_backend_uri"):
+        cache_scheme = cache.parse_backend_uri(cache_backend)[0]
+    else:
+        # Django <= 1.0.2
+        cache_scheme = cache_backend.split(":", 1)[0]
+    if "memcached" in scheme:
         cache.cache.close()
 
     # Backend process cleanup
