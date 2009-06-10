@@ -75,9 +75,20 @@ def jail(task_id, task_name, func, args, kwargs):
     from django.db import connection
     connection.close()
 
-    # Reset cache connection
-    from django.core.cache import cache
-    cache.close()
+    # Reset cache connection only if using memcached/libmemcached
+    from django.core import cache
+    # XXX At Opera we use a custom memcached backend that uses libmemcached
+    # instead of libmemcache (cmemcache). Should find a better solution for
+    # this, but for now "memcached" should probably be unique enough of a
+    # string to not make problems.
+    cache_backend = cache.settings.CACHE_BACKEND
+    if hasattr(cache, "parse_backend_uri"):
+        cache_scheme = cache.parse_backend_uri(cache_backend)[0]
+    else:
+        # Django <= 1.0.2
+        cache_scheme = cache_backend.split(":", 1)[0]
+    if "memcached" in scheme:
+        cache.cache.close()
 
     # Backend process cleanup
     default_backend.process_cleanup()

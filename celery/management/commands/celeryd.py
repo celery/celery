@@ -4,8 +4,7 @@ Start the celery daemon from the Django management command.
 
 """
 from django.core.management.base import BaseCommand
-from celery.bin.celeryd import main, OPTION_LIST
-from celery.conf import LOG_LEVELS
+from celery.bin.celeryd import run_worker, OPTION_LIST
 
 
 class Command(BaseCommand):
@@ -15,12 +14,4 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         """Handle the management command."""
-        if not isinstance(options.get('loglevel'), int):
-            options['loglevel'] = LOG_LEVELS[options.get('loglevel').upper()]
-        main(concurrency=options.get('concurrency'),
-             daemon=options.get('daemon'),
-             logfile=options.get('logfile'),
-             discard=options.get('discard'),
-             loglevel=options.get('loglevel'),
-             pidfile=options.get('pidfile'),
-             queue_wakeup_after=options.get('queue_wakeup_after'))
+        run_worker(**options)
