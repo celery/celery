@@ -78,7 +78,7 @@ def jail(task_id, func, args, kwargs):
     # instead of libmemcache (cmemcache). Should find a better solution for
     # this, but for now "memcached" should probably be unique enough of a
     # string to not make problems.
-    if "memcached" in cache.parse_backend_uri(settings.CACHE_BACKEND)[0]:
+    if "memcached" in cache.parse_backend_uri(cache.settings.CACHE_BACKEND)[0]:
         cache.cache.close()
 
     # Backend process cleanup
