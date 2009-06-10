@@ -77,7 +77,7 @@ import optparse
 import atexit
 from daemon import DaemonContext
 from daemon.pidlockfile import PIDLockFile
-
+import errno
 
 def acquire_pidlock(pidfile):
     """Get the :class:`daemon.pidlockfile.PIDLockFile` handler for
