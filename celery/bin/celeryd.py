@@ -148,6 +148,7 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, daemon=False,
             discarded_count, what))
     print("* Reporting of statistics is %s..." % (
         settings.CELERY_STATISTICS and "ON" or "OFF"))
+    context = None
     if daemon:
         # Since without stderr any errors will be silently suppressed,
         # we need to know that we have access to the logfile
@@ -182,7 +183,8 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, daemon=False,
         emergency_error(logfile, "celeryd raised exception %s: %s\n%s" % (
                             e.__class__, e, traceback.format_exc()))
     except:
-        context.close()
+        if context:
+            context.close()
         raise
 
 
