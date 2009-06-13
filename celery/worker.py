@@ -29,7 +29,7 @@ The contents of the full traceback was:
 
 %%(traceback)s
 
-%%(EMAIL_SIGNATURE_SEP)s
+%(EMAIL_SIGNATURE_SEP)s
 Just thought I'd let you know!
 celeryd at %%(hostname)s.
 """ % {"EMAIL_SIGNATURE_SEP": EMAIL_SIGNATURE_SEP}
