@@ -8,8 +8,6 @@ DEFAULT_AMQP_CONSUMER_ROUTING_KEY = "celery"
 DEFAULT_AMQP_CONSUMER_QUEUE = "celery"
 DEFAULT_AMQP_EXCHANGE_TYPE = "direct"
 DEFAULT_DAEMON_CONCURRENCY = 10
-DEFAULT_QUEUE_WAKEUP_AFTER = 0.1
-DEFAULT_EMPTY_MSG_EMIT_EVERY = 5
 DEFAULT_DAEMON_PID_FILE = "celeryd.pid"
 DEFAULT_LOG_FMT = '[%(asctime)s: %(levelname)s/%(processName)s] %(message)s'
 DEFAULT_DAEMON_LOG_LEVEL = "INFO"
@@ -60,28 +58,6 @@ DAEMON_LOG_FILE = getattr(settings, "CELERYD_LOG_FILE",
 """
 DAEMON_LOG_LEVEL = LOG_LEVELS[getattr(settings, "CELERYD_DAEMON_LOG_LEVEL",
                                       DEFAULT_DAEMON_LOG_LEVEL).upper()]
-
-"""
-.. data:: QUEUE_WAKEUP_AFTER
-
-    The time (in seconds) the celery worker should sleep when there's
-    no messages left on the queue. After the time is slept, the worker
-    wakes up and checks the queue again.
-
-"""
-QUEUE_WAKEUP_AFTER = getattr(settings, "CELERYD_QUEUE_WAKEUP_AFTER",
-                             DEFAULT_QUEUE_WAKEUP_AFTER)
-
-"""
-.. data:: EMPTY_MSG_EMIT_EVERY
-
-    How often the celery daemon should write a log message saying there are no
-    messages in the queue. If this is ``None`` or ``0``, it will never print
-    this message.
-
-"""
-EMPTY_MSG_EMIT_EVERY = getattr(settings, "CELERYD_EMPTY_MSG_EMIT_EVERY",
-                               DEFAULT_EMPTY_MSG_EMIT_EVERY)
 
 """
 .. data:: DAEMON_PID_FILE

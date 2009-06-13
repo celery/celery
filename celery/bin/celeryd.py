@@ -20,12 +20,6 @@
 
     Path to pidfile.
 
-.. cmdoption:: -w, --wakeup-after
-
-    If the queue is empty, this is the time *in seconds* the
-    daemon sleeps until it wakes up to check if there's any
-    new messages on the queue.
-
 .. cmdoption:: -d, --detach, --daemon
 
     Run in the background as a daemon.
@@ -68,7 +62,6 @@ from django.conf import settings
 from celery.log import emergency_error
 from celery.conf import LOG_LEVELS, DAEMON_LOG_FILE, DAEMON_LOG_LEVEL
 from celery.conf import DAEMON_CONCURRENCY, DAEMON_PID_FILE
-from celery.conf import QUEUE_WAKEUP_AFTER
 from celery import discovery
 from celery.task import discard_all
 from celery.worker import WorkController
@@ -111,9 +104,8 @@ def acquire_pidlock(pidfile):
 
 def run_worker(concurrency=DAEMON_CONCURRENCY, daemon=False,
         loglevel=DAEMON_LOG_LEVEL, logfile=DAEMON_LOG_FILE, discard=False,
-        pidfile=DAEMON_PID_FILE, queue_wakeup_after=QUEUE_WAKEUP_AFTER,
-        umask=0, uid=None, gid=None, working_directory=None, chroot=None,
-        **kwargs):
+        pidfile=DAEMON_PID_FILE, umask=0, uid=None, gid=None,
+        working_directory=None, chroot=None, **kwargs):
     """Run the celery daemon."""
     if settings.DATABASE_ENGINE == "sqlite3" and concurrency > 1:
         import warnings
@@ -158,7 +150,6 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, daemon=False,
     celeryd = WorkController(concurrency=concurrency,
                                loglevel=loglevel,
                                logfile=logfile,
-                               queue_wakeup_after=queue_wakeup_after,
                                is_detached=daemon)
     try:
         celeryd.run()
@@ -189,11 +180,6 @@ OPTION_LIST = (
     optparse.make_option('-p', '--pidfile', default=DAEMON_PID_FILE,
             action="store", dest="pidfile",
             help="Path to pidfile."),
-    optparse.make_option('-w', '--wakeup-after', default=QUEUE_WAKEUP_AFTER,
-            action="store", type="float", dest="queue_wakeup_after",
-            help="If the queue is empty, this is the time *in seconds* the "
-                 "daemon sleeps until it wakes up to check if there's any "
-                 "new messages on the queue."),
     optparse.make_option('-d', '--detach', '--daemon', default=False,
             action="store_true", dest="daemon",
             help="Run in the background as a daemon."),
