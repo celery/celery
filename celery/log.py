@@ -1,5 +1,4 @@
 """celery.log"""
-import multiprocessing
 import os
 import sys
 import time
@@ -14,6 +13,7 @@ def setup_logger(loglevel=DAEMON_LOG_LEVEL, logfile=None, format=LOG_FORMAT,
 
     Returns logger object.
     """
+    import multiprocessing
     logger = multiprocessing.get_logger()
     for handler in logger.handlers:
         if hasattr(handler, "close"):
