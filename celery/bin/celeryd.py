@@ -82,6 +82,7 @@ import optparse
 import atexit
 from daemon import DaemonContext
 from daemon.pidlockfile import PIDLockFile
+import errno
 
 USE_STATISTICS = getattr(settings, "CELERY_STATISTICS", False)
 settings.CELERY_STATISTICS = USE_STATISTICS
@@ -183,7 +184,7 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, daemon=False,
         emergency_error(logfile, "celeryd raised exception %s: %s\n%s" % (
                             e.__class__, e, traceback.format_exc()))
     except:
-        if context:
+        if daemon:
             context.close()
         raise
 

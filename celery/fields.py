@@ -4,6 +4,7 @@ Custom Django Model Fields.
 
 """
 from django.db import models
+from django.conf import settings
 
 try:
     import cPickle as pickle
@@ -16,6 +17,13 @@ class PickledObject(str):
        a pickled object or not (if the object is an instance of this class
        then it must [well, should] be a pickled one)."""
     pass
+
+
+if settings.DATABASE_ENGINE == "postgresql_psycopg2":
+    import psycopg2.extensions
+    # register PickledObject as a QuotedString otherwise we will see
+    # can't adapt errors from psycopg2.
+    psycopg2.extensions.register_adapter(PickledObject, psycopg2.extensions.QuotedString)
 
 
 class PickledObjectField(models.Field):
