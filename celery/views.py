@@ -8,7 +8,7 @@ from carrot.serialization import serialize as JSON_dump
 def is_task_done(request, task_id):
     """Returns task execute status in JSON format."""
     response_data = {"task": {"id": task_id, "executed": is_done(task_id)}}
-    return HttpResponse(JSON_dump(response_data))
+    return HttpResponse(JSON_dump(response_data), mimetype="application/json")
 
 
 def task_status(request, task_id):
@@ -27,4 +27,4 @@ def task_status(request, task_id):
             "status": status,
             "result": async_result.result,
         }
-    return HttpResponse(JSON_dump({"task": response_data}))
+    return HttpResponse(JSON_dump({"task": response_data}), mimetype="application/json")
