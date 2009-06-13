@@ -108,12 +108,12 @@ exception </em><tt class="descclassname">TaskRegistry.</tt><tt class="descname">
 
 <dl class="method">
 <dt id="celery.registry.TaskRegistry.get_task">
-<tt class="descclassname">TaskRegistry.</tt><tt class="descname">get_task</tt><big>(</big><em>task_name</em><big>)</big><a class="headerlink" href="#celery.registry.TaskRegistry.get_task" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">TaskRegistry.</tt><tt class="descname">get_task</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#celery.registry.TaskRegistry.get_task" title="Permalink to this definition">¶</a></dt>
 <dd>Get task by name.</dd></dl>
 
 <dl class="method">
 <dt id="celery.registry.TaskRegistry.register">
-<tt class="descclassname">TaskRegistry.</tt><tt class="descname">register</tt><big>(</big><em>task</em>, <em>task_name=None</em><big>)</big><a class="headerlink" href="#celery.registry.TaskRegistry.register" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">TaskRegistry.</tt><tt class="descname">register</tt><big>(</big><em>task</em>, <em>name=None</em><big>)</big><a class="headerlink" href="#celery.registry.TaskRegistry.register" title="Permalink to this definition">¶</a></dt>
 <dd><p>Register a task in the task registry.</p>
 <p>Task can either be a regular function, or a class inheriting
 from <a title="celery.task.Task" class="reference external" href="celery.task.html#celery.task.Task"><tt class="xref docutils literal"><span class="pre">celery.task.Task</span></tt></a>.</p>
@@ -121,7 +121,7 @@ from <a title="celery.task.Task" class="reference external" href="celery.task.ht
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>task_name</em> &#8211; By default the <tt class="xref docutils literal"><span class="pre">Task.name</span></tt> attribute on the
+<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>name</em> &#8211; By default the <tt class="xref docutils literal"><span class="pre">Task.name</span></tt> attribute on the
 task is used as the name of the task, but you can override it
 using this option.</td>
 </tr>
@@ -134,14 +134,21 @@ using this option.</td>
 
 <dl class="method">
 <dt id="celery.registry.TaskRegistry.unregister">
-<tt class="descclassname">TaskRegistry.</tt><tt class="descname">unregister</tt><big>(</big><em>task_name</em><big>)</big><a class="headerlink" href="#celery.registry.TaskRegistry.unregister" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">TaskRegistry.</tt><tt class="descname">unregister</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#celery.registry.TaskRegistry.unregister" title="Permalink to this definition">¶</a></dt>
 <dd><p>Unregister task by name.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>task_name</em> &#8211; name of the task to unregister.</td>
+<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>name</em> &#8211; name of the task to unregister, or a</td>
 </tr>
+</tbody>
+</table>
+<p><a title="celery.task.Task" class="reference external" href="celery.task.html#celery.task.Task"><tt class="xref docutils literal"><span class="pre">celery.task.Task</span></tt></a> class with a valid <tt class="docutils literal"><span class="pre">name</span></tt> attribute.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
 <tr class="field"><th class="field-name" colspan="2">Raises <a title="celery.registry.NotRegistered" class="reference internal" href="#celery.registry.NotRegistered">NotRegistered</a>:</th></tr>
 <tr><td>&nbsp;</td><td class="field-body">if the task has not been registered.</td>
 </tr>

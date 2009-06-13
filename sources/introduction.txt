@@ -81,11 +81,27 @@ To install using ``easy_install``,::
 
     $ easy_install celery
 
-If you have downloaded a source tarball you can install it
-by doing the following,::
+Downloading and installing from source
+--------------------------------------
 
+Download the latest version of ``celery`` from
+http://pypi.python.org/pypi/celery/
+
+You can install it by doing the following,::
+
+    $ tar xvfz celery-0.0.0.tar.gz
+    $ cd celery-0.0.0
     $ python setup.py build
     # python setup.py install # as root
+
+Using the development version
+------------------------------
+
+
+You can clone the repository by doing the following::
+
+    $ git clone git@github.com:ask/celery.git celery
+
 
 Usage
 =====
@@ -146,10 +162,10 @@ available, please consult the `API Reference`_
 ``celeryd`` will only be able to process one task at a time, this is
 because SQLite doesn't allow concurrent writes.
 
-Running the celery worker daemon
+Running the celery worker server
 --------------------------------
 
-To test this we'll be running the worker daemon in the foreground, so we can
+To test this we'll be running the worker server in the foreground, so we can
 see what's going on without consulting the logfile::
 
     $ python manage.py celeryd
@@ -158,10 +174,10 @@ see what's going on without consulting the logfile::
 However, in production you'll probably want to run the worker in the
 background as a daemon instead::
 
-    $ python manage.py celeryd --daemon
+    $ python manage.py celeryd --detach
 
 
-For help on command line arguments to the worker daemon, you can execute the
+For help on command line arguments to the worker server, you can execute the
 help command::
 
     $ python manage.py help celeryd
@@ -175,7 +191,7 @@ be defined in the python shell or ipython/bpython. This is because the celery
 worker server needs access to the task function to be able to run it.
 So while it looks like we use the python shell to define the tasks in these
 examples, you can't do it this way. Put them in the ``tasks`` module of your
-Django application. The worker daemon will automatically load any ``tasks.py``
+Django application. The worker server will automatically load any ``tasks.py``
 file for all of the applications listed in ``settings.INSTALLED_APPS``.
 Executing tasks using ``delay`` and ``apply_async`` can be done from the
 python shell, but keep in mind that since arguments are pickled, you can't
@@ -260,6 +276,22 @@ Here's an example of a periodic task:
 
 **Note:** Periodic tasks does not support arguments, as this doesn't
 really make sense.
+
+
+Bug tracker
+===========
+
+If you have any suggestions, bug reports or annoyances please report them
+to our issue tracker at http://github.com/ask/celery/issues/
+
+Contributing
+============
+
+Development of ``celery`` happens at Github: http://github.com/ask/celery
+
+You are highly encouraged to participate in the development
+of ``celery``. If you don't like Github (for some reason) you're welcome
+to send regular patches.
 
 License
 =======

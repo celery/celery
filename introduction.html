@@ -116,10 +116,22 @@ or from source.</p>
 <p>To install using <tt class="docutils literal"><span class="pre">easy_install</span></tt>,:</p>
 <div class="highlight-python"><pre>$ easy_install celery</pre>
 </div>
-<p>If you have downloaded a source tarball you can install it
-by doing the following,:</p>
-<div class="highlight-python"><pre>$ python setup.py build
+<div class="section" id="downloading-and-installing-from-source">
+<h3>Downloading and installing from source<a class="headerlink" href="#downloading-and-installing-from-source" title="Permalink to this headline">¶</a></h3>
+<p>Download the latest version of <tt class="docutils literal"><span class="pre">celery</span></tt> from
+<a class="reference external" href="http://pypi.python.org/pypi/celery/">http://pypi.python.org/pypi/celery/</a></p>
+<p>You can install it by doing the following,:</p>
+<div class="highlight-python"><pre>$ tar xvfz celery-0.0.0.tar.gz
+$ cd celery-0.0.0
+$ python setup.py build
 # python setup.py install # as root</pre>
+</div>
+</div>
+<div class="section" id="using-the-development-version">
+<h3>Using the development version<a class="headerlink" href="#using-the-development-version" title="Permalink to this headline">¶</a></h3>
+<p>You can clone the repository by doing the following:</p>
+<div class="highlight-python"><pre>$ git clone git@github.com:ask/celery.git celery</pre>
+</div>
 </div>
 </div>
 <div class="section" id="usage">
@@ -173,17 +185,17 @@ available, please consult the <a class="reference external" href="http://ask.git
 <tt class="docutils literal"><span class="pre">celeryd</span></tt> will only be able to process one task at a time, this is
 because SQLite doesn&#8217;t allow concurrent writes.</p>
 </div>
-<div class="section" id="running-the-celery-worker-daemon">
-<h3>Running the celery worker daemon<a class="headerlink" href="#running-the-celery-worker-daemon" title="Permalink to this headline">¶</a></h3>
-<p>To test this we&#8217;ll be running the worker daemon in the foreground, so we can
+<div class="section" id="running-the-celery-worker-server">
+<h3>Running the celery worker server<a class="headerlink" href="#running-the-celery-worker-server" title="Permalink to this headline">¶</a></h3>
+<p>To test this we&#8217;ll be running the worker server in the foreground, so we can
 see what&#8217;s going on without consulting the logfile:</p>
 <div class="highlight-python"><pre>$ python manage.py celeryd</pre>
 </div>
 <p>However, in production you&#8217;ll probably want to run the worker in the
 background as a daemon instead:</p>
-<div class="highlight-python"><pre>$ python manage.py celeryd --daemon</pre>
+<div class="highlight-python"><pre>$ python manage.py celeryd --detach</pre>
 </div>
-<p>For help on command line arguments to the worker daemon, you can execute the
+<p>For help on command line arguments to the worker server, you can execute the
 help command:</p>
 <div class="highlight-python"><pre>$ python manage.py help celeryd</pre>
 </div>
@@ -195,7 +207,7 @@ be defined in the python shell or ipython/bpython. This is because the celery
 worker server needs access to the task function to be able to run it.
 So while it looks like we use the python shell to define the tasks in these
 examples, you can&#8217;t do it this way. Put them in the <tt class="docutils literal"><span class="pre">tasks</span></tt> module of your
-Django application. The worker daemon will automatically load any <tt class="docutils literal"><span class="pre">tasks.py</span></tt>
+Django application. The worker server will automatically load any <tt class="docutils literal"><span class="pre">tasks.py</span></tt>
 file for all of the applications listed in <tt class="docutils literal"><span class="pre">settings.INSTALLED_APPS</span></tt>.
 Executing tasks using <tt class="docutils literal"><span class="pre">delay</span></tt> and <tt class="docutils literal"><span class="pre">apply_async</span></tt> can be done from the
 python shell, but keep in mind that since arguments are pickled, you can&#8217;t
@@ -274,6 +286,18 @@ Here&#8217;s an example of a periodic task:</p>
 really make sense.</p>
 </div>
 </div>
+<div class="section" id="bug-tracker">
+<h2>Bug tracker<a class="headerlink" href="#bug-tracker" title="Permalink to this headline">¶</a></h2>
+<p>If you have any suggestions, bug reports or annoyances please report them
+to our issue tracker at <a class="reference external" href="http://github.com/ask/celery/issues/">http://github.com/ask/celery/issues/</a></p>
+</div>
+<div class="section" id="contributing">
+<h2>Contributing<a class="headerlink" href="#contributing" title="Permalink to this headline">¶</a></h2>
+<p>Development of <tt class="docutils literal"><span class="pre">celery</span></tt> happens at Github: <a class="reference external" href="http://github.com/ask/celery">http://github.com/ask/celery</a></p>
+<p>You are highly encouraged to participate in the development
+of <tt class="docutils literal"><span class="pre">celery</span></tt>. If you don&#8217;t like Github (for some reason) you&#8217;re welcome
+to send regular patches.</p>
+</div>
 <div class="section" id="license">
 <h2>License<a class="headerlink" href="#license" title="Permalink to this headline">¶</a></h2>
 <p>This software is licensed under the <tt class="docutils literal"><span class="pre">New</span> <span class="pre">BSD</span> <span class="pre">License</span></tt>. See the <tt class="docutils literal"><span class="pre">LICENSE</span></tt>
@@ -295,6 +319,8 @@ file in the top distribution directory for the full license text.</p>
 <li class="toctree-l2"><a class="reference external" href="#api-reference-documentation">API Reference Documentation</a></li>
 <li class="toctree-l2"><a class="reference external" href="#installation">Installation</a></li>
 <li class="toctree-l2"><a class="reference external" href="#usage">Usage</a></li>
+<li class="toctree-l2"><a class="reference external" href="#bug-tracker">Bug tracker</a></li>
+<li class="toctree-l2"><a class="reference external" href="#contributing">Contributing</a></li>
 <li class="toctree-l2"><a class="reference external" href="#license">License</a></li>
 </ul>
 </li>

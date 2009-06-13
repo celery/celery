@@ -233,6 +233,7 @@ celery.conf.DAEMON_CONCURRENCY data reference/celery.conf.html
 celery.worker.WorkController.logger attribute reference/celery.worker.html
 celery.registry.TaskRegistry.get_all method reference/celery.registry.html
 celery.backends.tyrant.Backend.store_result method reference/celery.backends.tyrant.html
+celery.pool.TaskPool.terminate method reference/celery.pool.html
 celery.timer.TimeoutTimer.tick method reference/celery.timer.html
 TASK_STATUS_PENDING data reference/celery.models.html
 celery.registry.TaskRegistry.get_task method reference/celery.registry.html
