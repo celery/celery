@@ -62,6 +62,7 @@ from django.conf import settings
 from celery.log import emergency_error
 from celery.conf import LOG_LEVELS, DAEMON_LOG_FILE, DAEMON_LOG_LEVEL
 from celery.conf import DAEMON_CONCURRENCY, DAEMON_PID_FILE
+from celery import conf
 from celery import discovery
 from celery.task import discard_all
 from celery.worker import WorkController
@@ -71,6 +72,15 @@ import atexit
 from daemon import DaemonContext
 from daemon.pidlockfile import PIDLockFile
 import errno
+
+STARTUP_INFO_FMT = """
+    * Celery loading with the following configuration
+        * Broker -> amqp://%(vhost)s@%(host)s:%(port)s 
+        * Exchange -> %(exchange)s (%(exchange_type)s)
+        * Consumer -> Queue:%(consumer_queue)s Routing:%(consumer_rkey)s
+        * Concurrency:%(concurrency)s
+""".strip()
+
 
 def acquire_pidlock(pidfile):
     """Get the :class:`daemon.pidlockfile.PIDLockFile` handler for
@@ -99,7 +109,7 @@ def acquire_pidlock(pidfile):
                 "ERROR: Pidfile (%s) already exists.\n"
                 "Seems celeryd is already running? (PID: %d)" % (
                     pidfile, pid))
-    return pidlock        
+    return pidlock
 
 
 def run_worker(concurrency=DAEMON_CONCURRENCY, daemon=False,
@@ -119,11 +129,23 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, daemon=False,
 
     if discard:
         discarded_count = discard_all()
-        what = "message"
-        if discarded_count > 1:
-            what = "messages"
+        what = discard_count > 1 and "messages" or "message"
         sys.stderr.write("Discard: Erased %d %s from the queue.\n" % (
             discarded_count, what))
+    startup_info = STARTUP_INFO_FMT % {
+            "vhost": settings.AMQP_VHOST,
+            "host": settings.AMQP_SERVER,
+            "port": settings.AMQP_PORT,
+            "exchange": conf.AMQP_EXCHANGE,
+            "exchange_type": conf.AMQP_EXCHANGE_TYPE,
+            "consumer_queue": conf.AMQP_CONSUMER_QUEUE,
+            "consumer_rkey": conf.AMQP_CONSUMER_ROUTING_KEY,
+            "publisher_rkey": conf.AMQP_PUBLISHER_ROUTING_KEY,
+            "concurrency": concurrency,
+            "loglevel": loglevel,
+            "pidfile": pidfile,
+    }
+    sys.stderr.write(startup_info + "\n")
     if daemon:
         # Since without stderr any errors will be silently suppressed,
         # we need to know that we have access to the logfile
@@ -135,7 +157,7 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, daemon=False,
         uid = uid and int(uid) or os.geteuid()
         gid = gid and int(gid) or os.getegid()
         working_directory = working_directory or os.getcwd()
-        sys.stderr.write("Launching celeryd in the background...\n")
+        sys.stderr.write("* Launching celeryd in the background...\n")
         context = DaemonContext(chroot_directory=chroot,
                                 working_directory=working_directory,
                                 umask=umask,
