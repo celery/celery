@@ -423,7 +423,7 @@ class WorkController(object):
 
     def run(self):
         """Starts the workers main loop."""
-        log_wait = lambda: self.logger.info("Waiting for queue...")
+        log_wait = lambda: self.logger.debug("Waiting for queue...")
         ev_msg_waiting = EventTimer(log_wait, self.empty_msg_emit_every)
 
         self.pool.run()
