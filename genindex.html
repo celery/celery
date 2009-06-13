@@ -45,7 +45,7 @@
 
    <h1 id="index">Index</h1>
 
-   <a href="#Symbols"><strong>Symbols</strong></a> | <a href="#A"><strong>A</strong></a> | <a href="#B"><strong>B</strong></a> | <a href="#C"><strong>C</strong></a> | <a href="#D"><strong>D</strong></a> | <a href="#E"><strong>E</strong></a> | <a href="#F"><strong>F</strong></a> | <a href="#G"><strong>G</strong></a> | <a href="#I"><strong>I</strong></a> | <a href="#J"><strong>J</strong></a> | <a href="#K"><strong>K</strong></a> | <a href="#L"><strong>L</strong></a> | <a href="#M"><strong>M</strong></a> | <a href="#N"><strong>N</strong></a> | <a href="#O"><strong>O</strong></a> | <a href="#P"><strong>P</strong></a> | <a href="#Q"><strong>Q</strong></a> | <a href="#R"><strong>R</strong></a> | <a href="#S"><strong>S</strong></a> | <a href="#T"><strong>T</strong></a> | <a href="#U"><strong>U</strong></a> | <a href="#W"><strong>W</strong></a> 
+   <a href="#Symbols"><strong>Symbols</strong></a> | <a href="#A"><strong>A</strong></a> | <a href="#B"><strong>B</strong></a> | <a href="#C"><strong>C</strong></a> | <a href="#D"><strong>D</strong></a> | <a href="#E"><strong>E</strong></a> | <a href="#F"><strong>F</strong></a> | <a href="#G"><strong>G</strong></a> | <a href="#I"><strong>I</strong></a> | <a href="#J"><strong>J</strong></a> | <a href="#K"><strong>K</strong></a> | <a href="#L"><strong>L</strong></a> | <a href="#M"><strong>M</strong></a> | <a href="#N"><strong>N</strong></a> | <a href="#O"><strong>O</strong></a> | <a href="#P"><strong>P</strong></a> | <a href="#R"><strong>R</strong></a> | <a href="#S"><strong>S</strong></a> | <a href="#T"><strong>T</strong></a> | <a href="#U"><strong>U</strong></a> | <a href="#W"><strong>W</strong></a> 
 
    <hr />
 
@@ -77,11 +77,11 @@
 <dt>-d, --detach, --daemon</dt>
   <dd><dl>
     <dt><a href="reference/celery.bin.celeryd.html#cmdoption-celeryd-d">celeryd command line option</a></dt>
-  </dl></dd>
+  </dl></dd></dl></td><td width="33%" valign="top"><dl>
 <dt>-f, --logfile</dt>
   <dd><dl>
     <dt><a href="reference/celery.bin.celeryd.html#cmdoption-celeryd-f">celeryd command line option</a></dt>
-  </dl></dd></dl></td><td width="33%" valign="top"><dl>
+  </dl></dd>
 <dt>-g, --gid</dt>
   <dd><dl>
     <dt><a href="reference/celery.bin.celeryd.html#cmdoption-celeryd-g">celeryd command line option</a></dt>
@@ -97,10 +97,6 @@
 <dt>-u, --uid</dt>
   <dd><dl>
     <dt><a href="reference/celery.bin.celeryd.html#cmdoption-celeryd-u">celeryd command line option</a></dt>
-  </dl></dd>
-<dt>-w, --wakeup-after</dt>
-  <dd><dl>
-    <dt><a href="reference/celery.bin.celeryd.html#cmdoption-celeryd-w">celeryd command line option</a></dt>
   </dl></dd>
 </dl></td></tr></table>
 
@@ -184,7 +180,6 @@
     <dt><a href="reference/celery.bin.celeryd.html#cmdoption-celeryd-l">-l, --loglevel</a></dt>
     <dt><a href="reference/celery.bin.celeryd.html#cmdoption-celeryd-p">-p, --pidfile</a></dt>
     <dt><a href="reference/celery.bin.celeryd.html#cmdoption-celeryd-u">-u, --uid</a></dt>
-    <dt><a href="reference/celery.bin.celeryd.html#cmdoption-celeryd-w">-w, --wakeup-after</a></dt>
   </dl></dd></dl></td><td width="33%" valign="top"><dl>
 <dt><a href="reference/celery.backends.base.html#celery.backends.base.BaseBackend.cleanup">cleanup() (celery.backends.base.BaseBackend method)</a></dt>
   <dd><dl>
@@ -229,9 +224,6 @@
 <dl>
 
 <dt><a href="reference/celery.log.html#celery.log.emergency_error">emergency_error() (in module celery.log)</a></dt>
-<dt><a href="reference/celery.worker.html#celery.worker.WorkController.empty_msg_emit_every">empty_msg_emit_every (celery.worker.WorkController attribute)</a></dt>
-<dt><a href="reference/celery.conf.html#celery.conf.EMPTY_MSG_EMIT_EVERY">EMPTY_MSG_EMIT_EVERY (in module celery.conf)</a>, <a href="reference/celery.conf.html#celery.conf.EMPTY_MSG_EMIT_EVERY">[1]</a></dt>
-<dt><a href="reference/celery.worker.html#celery.worker.EmptyQueue">EmptyQueue</a></dt>
 <dt><a href="reference/celery.messaging.html#celery.messaging.TaskPublisher.encoder">encoder() (celery.messaging.TaskPublisher method)</a></dt>
 <dt><a href="reference/celery.timer.html#celery.timer.EventTimer.event">event (celery.timer.EventTimer attribute)</a></dt>
 <dt><a href="reference/celery.timer.html#celery.timer.EventTimer">EventTimer (class in celery.timer)</a></dt>
@@ -251,7 +243,6 @@
 <dt><a href="reference/celery.backends.base.html#celery.backends.base.BaseBackend.exception_to_python">exception_to_python() (celery.backends.base.BaseBackend method)</a></dt>
 <dt><a href="reference/celery.datastructures.html#celery.datastructures.ExceptionInfo">ExceptionInfo (class in celery.datastructures)</a></dt>
 <dt><a href="reference/celery.worker.html#celery.worker.TaskWrapper.execute">execute() (celery.worker.TaskWrapper method)</a></dt>
-<dt><a href="reference/celery.worker.html#celery.worker.WorkController.execute_next_task">execute_next_task() (celery.worker.WorkController method)</a></dt>
 <dt><a href="reference/celery.task.html#celery.task.execute_remote">execute_remote() (in module celery.task)</a></dt>
 <dt><a href="reference/celery.worker.html#celery.worker.TaskWrapper.execute_using_pool">execute_using_pool() (celery.worker.TaskWrapper method)</a></dt>
 <dt><a href="reference/celery.task.html#celery.task.ExecuteRemoteTask">ExecuteRemoteTask (class in celery.task)</a></dt>
@@ -418,14 +409,6 @@
 <dt><a href="reference/celery.worker.html#celery.worker.WorkController.process_task">process_task() (celery.worker.WorkController method)</a></dt>
 </dl></td></tr></table>
 
-<h2 id="Q">Q</h2>
-<table width="100%" class="indextable"><tr><td width="33%" valign="top">
-<dl>
-
-<dt><a href="reference/celery.worker.html#celery.worker.WorkController.queue_wakeup_after">queue_wakeup_after (celery.worker.WorkController attribute)</a></dt>
-<dt><a href="reference/celery.conf.html#celery.conf.QUEUE_WAKEUP_AFTER">QUEUE_WAKEUP_AFTER (in module celery.conf)</a>, <a href="reference/celery.conf.html#celery.conf.QUEUE_WAKEUP_AFTER">[1]</a></dt></dl></td><td width="33%" valign="top"><dl>
-</dl></td></tr></table>
-
 <h2 id="R">R</h2>
 <table width="100%" class="indextable"><tr><td width="33%" valign="top">
 <dl>
@@ -435,7 +418,6 @@
     <dt><a href="reference/celery.result.html#celery.result.TaskSetResult.ready">(celery.result.TaskSetResult method)</a></dt>
   </dl></dd>
 <dt><a href="reference/celery.pool.html#celery.pool.TaskPool.reap">reap() (celery.pool.TaskPool method)</a></dt>
-<dt><a href="reference/celery.worker.html#celery.worker.WorkController.receive_message">receive_message() (celery.worker.WorkController method)</a></dt>
 <dt><a href="reference/celery.registry.html#celery.registry.TaskRegistry.register">register() (celery.registry.TaskRegistry method)</a></dt>
 <dt><a href="reference/celery.task.html#celery.task.TaskSet.remote_execute">remote_execute() (celery.task.TaskSet class method)</a></dt>
 <dt><a href="reference/celery.messaging.html#celery.messaging.TaskPublisher.requeue_task">requeue_task() (celery.messaging.TaskPublisher method)</a></dt>
@@ -463,7 +445,6 @@
 <table width="100%" class="indextable"><tr><td width="33%" valign="top">
 <dl>
 
-<dt><a href="reference/celery.worker.html#celery.worker.WorkController.schedule_retry_tasks">schedule_retry_tasks() (celery.worker.WorkController method)</a></dt>
 <dt><a href="reference/celery.conf.html#celery.conf.SEND_CELERY_TASK_ERROR_EMAILS">SEND_CELERY_TASK_ERROR_EMAILS (in module celery.conf)</a></dt>
 <dt><a href="reference/celery.log.html#celery.log.setup_logger">setup_logger() (in module celery.log)</a></dt>
 <dt><a href="reference/celery.result.html#celery.result.BaseAsyncResult.status">status (celery.result.BaseAsyncResult attribute)</a></dt>

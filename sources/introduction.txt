@@ -277,6 +277,24 @@ Here's an example of a periodic task:
 **Note:** Periodic tasks does not support arguments, as this doesn't
 really make sense.
 
+Getting Help
+============
+
+Mailing list
+------------
+
+Join the `celery-users`_ mailing list for discussion about using and
+the development of celery.
+
+IRC
+---
+
+Come chat with us on IRC. The `#celery`_ channel is located at the `Freenode`_
+network.
+
+.. _`#celery`: irc://irc.freenode.net/celery
+.. _`Freenode`: http://freenode.net
+
 
 Bug tracker
 ===========

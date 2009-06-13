@@ -133,17 +133,15 @@ for more information.</dd></dl>
 <dt>
 <tt class="descclassname">celery.conf.</tt><tt class="descname">DAEMON_LOG_LEVEL</tt></dt>
 <dd><dl class="data">
-<dt id="celery.conf.QUEUE_WAKEUP_AFTER">
-<tt class="descclassname">celery.conf.</tt><tt class="descname">QUEUE_WAKEUP_AFTER</tt><a class="headerlink" href="#celery.conf.QUEUE_WAKEUP_AFTER" title="Permalink to this definition">¶</a></dt>
-<dd>The time (in seconds) the celery worker should sleep when there&#8217;s
-no messages left on the queue. After the time is slept, the worker
-wakes up and checks the queue again.</dd></dl>
+<dt id="celery.conf.DAEMON_PID_FILE">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">DAEMON_PID_FILE</tt><a class="headerlink" href="#celery.conf.DAEMON_PID_FILE" title="Permalink to this definition">¶</a></dt>
+<dd>Full path to the daemon pidfile.</dd></dl>
 
 </dd></dl>
 
 <dl class="data">
-<dt id="celery.conf.DAEMON_PID_FILE">
-<tt class="descclassname">celery.conf.</tt><tt class="descname">DAEMON_PID_FILE</tt><a class="headerlink" href="#celery.conf.DAEMON_PID_FILE" title="Permalink to this definition">¶</a></dt>
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">DAEMON_PID_FILE</tt></dt>
 <dd><dl class="data">
 <dt>
 <tt class="descclassname">celery.conf.</tt><tt class="descname">DAEMON_CONCURRENCY</tt></dt>
@@ -158,16 +156,6 @@ wakes up and checks the queue again.</dd></dl>
 <dt id="celery.conf.LOG_LEVELS">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">LOG_LEVELS</tt><a class="headerlink" href="#celery.conf.LOG_LEVELS" title="Permalink to this definition">¶</a></dt>
 <dd>Mapping of log level names to <tt class="xref docutils literal"><span class="pre">logging</span></tt> module constants.</dd></dl>
-
-</dd></dl>
-
-<dl class="data">
-<dt id="celery.conf.EMPTY_MSG_EMIT_EVERY">
-<tt class="descclassname">celery.conf.</tt><tt class="descname">EMPTY_MSG_EMIT_EVERY</tt><a class="headerlink" href="#celery.conf.EMPTY_MSG_EMIT_EVERY" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="data">
-<dt>
-<tt class="descclassname">celery.conf.</tt><tt class="descname">DAEMON_PID_FILE</tt></dt>
-<dd>Full path to the daemon pidfile.</dd></dl>
 
 </dd></dl>
 
@@ -189,18 +177,6 @@ wakes up and checks the queue again.</dd></dl>
 <tt class="descclassname">celery.conf.</tt><tt class="descname">LOG_FORMAT</tt></dt>
 <dd>The format to use for log messages.
 Default is <tt class="docutils literal"><span class="pre">[%(asctime)s:</span> <span class="pre">%(levelname)s/%(processName)s]</span> <span class="pre">%(message)s</span></tt></dd></dl>
-
-</dd></dl>
-
-<dl class="data">
-<dt>
-<tt class="descclassname">celery.conf.</tt><tt class="descname">QUEUE_WAKEUP_AFTER</tt></dt>
-<dd><dl class="data">
-<dt>
-<tt class="descclassname">celery.conf.</tt><tt class="descname">EMPTY_MSG_EMIT_EVERY</tt></dt>
-<dd>How often the celery daemon should write a log message saying there are no
-messages in the queue. If this is <tt class="xref docutils literal"><span class="pre">None</span></tt> or <tt class="docutils literal"><span class="pre">0</span></tt>, it will never print
-this message.</dd></dl>
 
 </dd></dl>
 

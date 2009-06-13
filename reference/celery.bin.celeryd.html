@@ -74,13 +74,6 @@
 <dd>Path to pidfile.</dd></dl>
 
 <dl class="cmdoption">
-<dt id="cmdoption-celeryd-w">
-<tt class="descname">-w</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">--wakeup-after</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd-w" title="Permalink to this definition">¶</a></dt>
-<dd>If the queue is empty, this is the time <em>in seconds</em> the
-daemon sleeps until it wakes up to check if there&#8217;s any
-new messages on the queue.</dd></dl>
-
-<dl class="cmdoption">
 <dt id="cmdoption-celeryd-d">
 <tt class="descname">-d</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">--detach</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">--daemon</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd-d" title="Permalink to this definition">¶</a></dt>
 <dd>Run in the background as a daemon.</dd></dl>
@@ -136,7 +129,7 @@ running in the background somewhere.</p>
 
 <dl class="function">
 <dt id="celery.bin.celeryd.run_worker">
-<tt class="descclassname">celery.bin.celeryd.</tt><tt class="descname">run_worker</tt><big>(</big><em>concurrency=10</em>, <em>daemon=False</em>, <em>loglevel=20</em>, <em>logfile='celeryd.log'</em>, <em>discard=False</em>, <em>pidfile='celeryd.pid'</em>, <em>queue_wakeup_after=0.10000000000000001</em>, <em>umask=0</em>, <em>uid=None</em>, <em>gid=None</em>, <em>working_directory=None</em>, <em>chroot=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.run_worker" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.bin.celeryd.</tt><tt class="descname">run_worker</tt><big>(</big><em>concurrency=10</em>, <em>daemon=False</em>, <em>loglevel=20</em>, <em>logfile='celeryd.log'</em>, <em>discard=False</em>, <em>pidfile='celeryd.pid'</em>, <em>umask=0</em>, <em>uid=None</em>, <em>gid=None</em>, <em>working_directory=None</em>, <em>chroot=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.run_worker" title="Permalink to this definition">¶</a></dt>
 <dd>Run the celery daemon.</dd></dl>
 
 </div>
