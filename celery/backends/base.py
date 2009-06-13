@@ -1,4 +1,6 @@
 """celery.backends.base"""
+import time
+
 from celery.timer import TimeoutTimer
 try:
     import cPickle as pickle
@@ -173,6 +175,7 @@ class BaseBackend(object):
                 return self.get_result(task_id)
             elif status == "FAILURE":
                 raise self.get_result(task_id)
+            time.sleep(0.5) # avoid hammering the CPU checking status.
             timeout_timer.tick()
 
     def process_cleanup(self):
