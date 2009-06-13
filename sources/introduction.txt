@@ -286,6 +286,8 @@ Mailing list
 Join the `celery-users`_ mailing list for discussion about using and
 the development of celery.
 
+.. _`celery-users`: http://groups.google.com/group/celery-users/
+
 IRC
 ---
 
