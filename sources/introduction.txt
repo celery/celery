@@ -100,7 +100,7 @@ Using the development version
 
 You can clone the repository by doing the following::
 
-    $ git clone git@github.com:ask/celery.git celery
+    $ git clone git://github.com/ask/celery.git celery
 
 
 Usage
@@ -144,7 +144,7 @@ You only need three simple steps to use celery with your Django project.
     3. Configure celery to use the AMQP user and virtual host we created
         before, by adding the following to your ``settings.py``::
 
-            AMQP_HOST = "localhost"
+            AMQP_SERVER = "localhost"
             AMQP_PORT = 5672
             AMQP_USER = "myuser"
             AMQP_PASSWORD = "mypassword"

@@ -130,7 +130,7 @@ $ python setup.py build
 <div class="section" id="using-the-development-version">
 <h3>Using the development version<a class="headerlink" href="#using-the-development-version" title="Permalink to this headline">¶</a></h3>
 <p>You can clone the repository by doing the following:</p>
-<div class="highlight-python"><pre>$ git clone git@github.com:ask/celery.git celery</pre>
+<div class="highlight-python"><pre>$ git clone git://github.com/ask/celery.git celery</pre>
 </div>
 </div>
 </div>
@@ -165,7 +165,7 @@ $ rabbitmqctl map_user_vhost myuser myvhost</pre>
 <li><dl class="first docutils">
 <dt>Configure celery to use the AMQP user and virtual host we created</dt>
 <dd><p class="first">before, by adding the following to your <tt class="docutils literal"><span class="pre">settings.py</span></tt>:</p>
-<div class="last highlight-python"><div class="highlight"><pre><span class="n">AMQP_HOST</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>
+<div class="last highlight-python"><div class="highlight"><pre><span class="n">AMQP_SERVER</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>
 <span class="n">AMQP_PORT</span> <span class="o">=</span> <span class="mf">5672</span>
 <span class="n">AMQP_USER</span> <span class="o">=</span> <span class="s">&quot;myuser&quot;</span>
 <span class="n">AMQP_PASSWORD</span> <span class="o">=</span> <span class="s">&quot;mypassword&quot;</span>

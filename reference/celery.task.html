@@ -480,7 +480,7 @@ celery server(s).</dd></dl>
 
 <dl class="function">
 <dt id="celery.task.apply_async">
-<tt class="descclassname">celery.task.</tt><tt class="descname">apply_async</tt><big>(</big><em>task</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>routing_key=None</em>, <em>immediate=None</em>, <em>mandatory=None</em>, <em>connect_timeout=None</em>, <em>priority=None</em><big>)</big><a class="headerlink" href="#celery.task.apply_async" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.task.</tt><tt class="descname">apply_async</tt><big>(</big><em>task</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>routing_key=None</em>, <em>immediate=None</em>, <em>mandatory=None</em>, <em>connection=None</em>, <em>connect_timeout=None</em>, <em>priority=None</em><big>)</big><a class="headerlink" href="#celery.task.apply_async" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run a task asynchronously by the celery daemon(s).</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -497,6 +497,8 @@ server.</li>
 if the task cannot be routed to a worker immediately.</li>
 <li><em>mandatory</em> &#8211; Mandatory routing. Raises an exception if there&#8217;s
 no running workers able to take on this task.</li>
+<li><em>connection</em> &#8211; Re-use existing AMQP connection.
+The <tt class="docutils literal"><span class="pre">connect_timeout</span></tt> argument is not respected if this is set.</li>
 <li><em>connect_timeout</em> &#8211; The timeout in seconds, before we give up
 on establishing a connection to the AMQP server.</li>
 <li><em>priority</em> &#8211; The task priority, a number between <tt class="docutils literal"><span class="pre">0</span></tt> and <tt class="docutils literal"><span class="pre">9</span></tt>.</li>
