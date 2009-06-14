@@ -5,7 +5,8 @@
 
 .. cmdoption:: -c, --concurrency
 
-    Number of child processes processing the queue.
+    Number of child processes processing the queue. The default
+    is the number of CPUs available on your system.
 
 .. cmdoption:: -f, --logfile
 
@@ -20,6 +21,7 @@
 
     Path to pidfile.
 
+<<<<<<< HEAD:celery/bin/celeryd.py
 .. cmdoption:: -s, --statistics
 
     Turn on reporting of statistics (remember to flush the statistics message
@@ -31,6 +33,8 @@
     daemon sleeps until it wakes up to check if there's any
     new messages on the queue.
 
+=======
+>>>>>>> master:celery/bin/celeryd.py
 .. cmdoption:: -d, --detach, --daemon
 
     Run in the background as a daemon.
@@ -73,10 +77,11 @@ from django.conf import settings
 from celery.log import emergency_error
 from celery.conf import LOG_LEVELS, DAEMON_LOG_FILE, DAEMON_LOG_LEVEL
 from celery.conf import DAEMON_CONCURRENCY, DAEMON_PID_FILE
-from celery.conf import QUEUE_WAKEUP_AFTER
+from celery import conf
 from celery import discovery
 from celery.task import discard_all
 from celery.worker import WorkController
+import multiprocessing
 import traceback
 import optparse
 import atexit
@@ -85,7 +90,16 @@ from daemon.pidlockfile import PIDLockFile
 import errno
 
 USE_STATISTICS = getattr(settings, "CELERY_STATISTICS", False)
+# Make sure the setting exists.
 settings.CELERY_STATISTICS = USE_STATISTICS
+
+STARTUP_INFO_FMT = """
+    * Celery loading with the following configuration
+        * Broker -> amqp://%(vhost)s@%(host)s:%(port)s 
+        * Exchange -> %(exchange)s (%(exchange_type)s)
+        * Consumer -> Queue:%(consumer_queue)s Routing:%(consumer_rkey)s
+        * Concurrency:%(concurrency)s
+""".strip()
 
 
 def acquire_pidlock(pidfile):
@@ -115,20 +129,22 @@ def acquire_pidlock(pidfile):
                 "ERROR: Pidfile (%s) already exists.\n"
                 "Seems celeryd is already running? (PID: %d)" % (
                     pidfile, pid))
-    return pidlock        
+    return pidlock
 
 
 def run_worker(concurrency=DAEMON_CONCURRENCY, daemon=False,
         loglevel=DAEMON_LOG_LEVEL, logfile=DAEMON_LOG_FILE, discard=False,
-        pidfile=DAEMON_PID_FILE, queue_wakeup_after=QUEUE_WAKEUP_AFTER,
-        umask=0, uid=None, gid=None, working_directory=None, chroot=None,
-        statistics=None, **kwargs):
-    """Run the celery daemon."""
+        pidfile=DAEMON_PID_FILE, umask=0, uid=None, gid=None,
+        working_directory=None, chroot=None, statistics=None, **kwargs):
+    """Start a celery worker server."""
 
-    print(">>> Launching celery, please hold on to something...")
+    print(". Launching celery, please hold on to something...")
 
     if statistics:
         settings.CELERY_STATISTICS = statistics
+
+    if not concurrency:
+        concurrency = multiprocessing.cpu_count()
 
     if settings.DATABASE_ENGINE == "sqlite3" and concurrency > 1:
         import warnings
@@ -142,13 +158,27 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, daemon=False,
 
     if discard:
         discarded_count = discard_all()
-        what = "message"
-        if discarded_count > 1:
-            what = "messages"
-        sys.stderr.write("* Discard: Erased %d %s from the queue.\n" % (
-            discarded_count, what))
+        what = discard_count > 1 and "messages" or "message"
+        print("* Discard: Erased %d %s from the queue." % (
+                discarded_count, what))
+    
+    startup_info = STARTUP_INFO_FMT % {
+            "vhost": settings.AMQP_VHOST,
+            "host": settings.AMQP_SERVER,
+            "port": settings.AMQP_PORT,
+            "exchange": conf.AMQP_EXCHANGE,
+            "exchange_type": conf.AMQP_EXCHANGE_TYPE,
+            "consumer_queue": conf.AMQP_CONSUMER_QUEUE,
+            "consumer_rkey": conf.AMQP_CONSUMER_ROUTING_KEY,
+            "publisher_rkey": conf.AMQP_PUBLISHER_ROUTING_KEY,
+            "concurrency": concurrency,
+            "loglevel": loglevel,
+            "pidfile": pidfile,
+    }
+    print(startup_info)
     print("* Reporting of statistics is %s..." % (
         settings.CELERY_STATISTICS and "ON" or "OFF"))
+
     context = None
     if daemon:
         # Since without stderr any errors will be silently suppressed,
@@ -176,7 +206,6 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, daemon=False,
     celeryd = WorkController(concurrency=concurrency,
                                loglevel=loglevel,
                                logfile=logfile,
-                               queue_wakeup_after=queue_wakeup_after,
                                is_detached=daemon)
     try:
         celeryd.run()
@@ -207,6 +236,7 @@ OPTION_LIST = (
     optparse.make_option('-p', '--pidfile', default=DAEMON_PID_FILE,
             action="store", dest="pidfile",
             help="Path to pidfile."),
+<<<<<<< HEAD:celery/bin/celeryd.py
     optparse.make_option('-s', '--statistics', default=USE_STATISTICS,
             action="store_true", dest="statistics",
             help="Turn on reporting of statistics (remember to flush the "
@@ -216,6 +246,8 @@ OPTION_LIST = (
             help="If the queue is empty, this is the time *in seconds* the "
                  "daemon sleeps until it wakes up to check if there's any "
                  "new messages on the queue."),
+=======
+>>>>>>> master:celery/bin/celeryd.py
     optparse.make_option('-d', '--detach', '--daemon', default=False,
             action="store_true", dest="daemon",
             help="Run in the background as a daemon."),

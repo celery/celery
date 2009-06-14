@@ -62,6 +62,8 @@ class PeriodicTaskManager(models.Manager):
         """
         periodic_tasks = tasks.get_all_periodic()
         waiting = []
+        # XXX This will become a lot of queries. Maybe just only create
+        # the rows at init, and then select all later.
         for task_name, task in periodic_tasks.items():
             task_meta, created = self.get_or_create(name=task_name)
             # task_run.every must be a timedelta object.

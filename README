@@ -100,7 +100,7 @@ Using the development version
 
 You can clone the repository by doing the following::
 
-    $ git clone git@github.com:ask/celery.git celery
+    $ git clone git://github.com/ask/celery.git celery
 
 
 Usage
@@ -144,7 +144,7 @@ You only need three simple steps to use celery with your Django project.
     3. Configure celery to use the AMQP user and virtual host we created
         before, by adding the following to your ``settings.py``::
 
-            AMQP_HOST = "localhost"
+            AMQP_SERVER = "localhost"
             AMQP_PORT = 5672
             AMQP_USER = "myuser"
             AMQP_PASSWORD = "mypassword"
@@ -204,6 +204,7 @@ advanced features of celery later.
 This is a task that basically does nothing but take some arguments,
 and return a value:
 
+    >>> from celery.task import Task, tasks
     >>> class MyTask(Task):
     ...     name = "myapp.mytask"
     ...     def run(self, some_arg, **kwargs):
@@ -276,6 +277,26 @@ Here's an example of a periodic task:
 
 **Note:** Periodic tasks does not support arguments, as this doesn't
 really make sense.
+
+Getting Help
+============
+
+Mailing list
+------------
+
+Join the `celery-users`_ mailing list for discussion about using and
+the development of celery.
+
+.. _`celery-users`: http://groups.google.com/group/celery-users/
+
+IRC
+---
+
+Come chat with us on IRC. The `#celery`_ channel is located at the `Freenode`_
+network.
+
+.. _`#celery`: irc://irc.freenode.net/celery
+.. _`Freenode`: http://freenode.net
 
 
 Bug tracker

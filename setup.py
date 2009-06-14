@@ -40,7 +40,7 @@ class RunTests(Command):
         os.chdir(this_dir)
 
 
-install_requires = ["carrot", "django"]
+install_requires = ["carrot"]
 py_version_info = sys.version_info
 py_major_version = py_version_info[0]
 py_minor_version = py_version_info[1]
@@ -65,7 +65,6 @@ setup(
     install_requires=[
         'carrot>=0.4.1',
         'python-daemon',
-        'django',
     ],
     cmdclass = {"test": RunTests},
     classifiers=[
