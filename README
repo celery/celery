@@ -204,6 +204,7 @@ advanced features of celery later.
 This is a task that basically does nothing but take some arguments,
 and return a value:
 
+    >>> from celery.task import Task, tasks
     >>> class MyTask(Task):
     ...     name = "myapp.mytask"
     ...     def run(self, some_arg, **kwargs):
