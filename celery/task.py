@@ -578,3 +578,23 @@ class DeleteExpiredTaskMetaTask(PeriodicTask):
 tasks.register(DeleteExpiredTaskMetaTask)
 
 
+class PingTask(Task):
+    """The task used by :func:`ping`."""
+    name = "celery.ping"
+
+    def run(self, **kwargs):
+        """:returns: the string ``"pong"``."""
+        return "pong"
+tasks.register(PingTask)
+
+
+def ping():
+    """Test if the server is alive.
+
+    Example:
+
+        >>> from celery.task import ping
+        >>> ping()
+        'pong'
+    """
+    return PingTask.apply_async().get()
