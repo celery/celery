@@ -68,7 +68,7 @@ class BaseAsyncResult(object):
 
         """
         status = self.backend.get_status(self.task_id)
-        return status != "PENDING" or status != "RETRY"
+        return status not in ["PENDING", "RETRY"]
 
     def successful(self):
         """Alias to :meth:`is_done`."""
