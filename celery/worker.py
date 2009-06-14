@@ -14,6 +14,7 @@ import multiprocessing
 import traceback
 import threading
 import logging
+import signal
 import socket
 import time
 import sys
@@ -85,9 +86,6 @@ def jail(task_id, func, args, kwargs):
     # Backend process cleanup
     default_backend.process_cleanup()
 
-    # Convert any unicode keys in the keyword arguments to ascii.
-    kwargs = dict([(k.encode("utf-8"), v)
-                        for k, v in kwargs.items()])
     try:
         result = func(*args, **kwargs)
     except (SystemExit, KeyboardInterrupt):
@@ -179,6 +177,11 @@ class TaskWrapper(object):
         task_id = message_data["id"]
         args = message_data["args"]
         kwargs = message_data["kwargs"]
+
+        # Convert any unicode keys in the keyword arguments to ascii.
+        kwargs = dict([(key.encode("utf-8"), value)
+                    for key, value in kwargs.items()])
+
         if task_name not in tasks:
             raise UnknownTask(task_name)
         task_func = tasks[task_name]
@@ -274,7 +277,7 @@ class PeriodicWorkController(threading.Thread):
         super(PeriodicWorkController, self).__init__()
         self._shutdown = threading.Event()
         self._stopped = threading.Event()
-    
+
     def run(self):
         """Don't use :meth:`run`. use :meth:`start`."""
         while True:
