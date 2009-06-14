@@ -66,6 +66,7 @@ from celery import conf
 from celery import discovery
 from celery.task import discard_all
 from celery.worker import WorkController
+import multiprocessing
 import traceback
 import optparse
 import atexit
@@ -117,6 +118,8 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, daemon=False,
         pidfile=DAEMON_PID_FILE, umask=0, uid=None, gid=None,
         working_directory=None, chroot=None, **kwargs):
     """Run the celery daemon."""
+    if not concurrency:
+        concurrency = multiprocessing.cpu_count()
     if settings.DATABASE_ENGINE == "sqlite3" and concurrency > 1:
         import warnings
         warnings.warn("The sqlite3 database engine doesn't support "
