@@ -21,20 +21,11 @@
 
     Path to pidfile.
 
-<<<<<<< HEAD:celery/bin/celeryd.py
 .. cmdoption:: -s, --statistics
 
     Turn on reporting of statistics (remember to flush the statistics message
     queue from time to time).
 
-.. cmdoption:: -w, --wakeup-after
-
-    If the queue is empty, this is the time *in seconds* the
-    daemon sleeps until it wakes up to check if there's any
-    new messages on the queue.
-
-=======
->>>>>>> master:celery/bin/celeryd.py
 .. cmdoption:: -d, --detach, --daemon
 
     Run in the background as a daemon.
@@ -81,6 +72,8 @@ from celery import conf
 from celery import discovery
 from celery.task import discard_all
 from celery.worker import WorkController
+from carrot.connection import DjangoAMQPConnection
+from celery.messaging import TaskConsumer, StatsConsumer
 import multiprocessing
 import traceback
 import optparse
@@ -179,6 +172,13 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, daemon=False,
     print("* Reporting of statistics is %s..." % (
         settings.CELERY_STATISTICS and "ON" or "OFF"))
 
+    print("* Declaring consumers...")
+    conn = DjangoAMQPConnection()
+    TaskConsumer(connection=conn).close()
+    if settings.CELERY_STATISTICS:
+        StatsConsumer(connection=conn).close()
+
+
     context = None
     if daemon:
         # Since without stderr any errors will be silently suppressed,
@@ -236,18 +236,10 @@ OPTION_LIST = (
     optparse.make_option('-p', '--pidfile', default=DAEMON_PID_FILE,
             action="store", dest="pidfile",
             help="Path to pidfile."),
-<<<<<<< HEAD:celery/bin/celeryd.py
     optparse.make_option('-s', '--statistics', default=USE_STATISTICS,
             action="store_true", dest="statistics",
             help="Turn on reporting of statistics (remember to flush the "
                  "statistics message queue from time to time)."),
-    optparse.make_option('-w', '--wakeup-after', default=QUEUE_WAKEUP_AFTER,
-            action="store", type="float", dest="queue_wakeup_after",
-            help="If the queue is empty, this is the time *in seconds* the "
-                 "daemon sleeps until it wakes up to check if there's any "
-                 "new messages on the queue."),
-=======
->>>>>>> master:celery/bin/celeryd.py
     optparse.make_option('-d', '--detach', '--daemon', default=False,
             action="store_true", dest="daemon",
             help="Run in the background as a daemon."),
