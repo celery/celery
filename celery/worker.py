@@ -97,7 +97,6 @@ def jail(task_id, func, args, kwargs):
         default_backend.mark_as_done(task_id, result)
         return result
 
-    
 
 class TaskWrapper(object):
     """Class wrapping a task to be run.
@@ -270,9 +269,9 @@ class PeriodicWorkController(threading.Thread):
     Example
 
         >>> PeriodicWorkController().start()
-    
+
     """
-    
+
     def __init__(self):
         super(PeriodicWorkController, self).__init__()
         self._shutdown = threading.Event()
@@ -286,7 +285,7 @@ class PeriodicWorkController(threading.Thread):
             default_periodic_status_backend.run_periodic_tasks()
             time.sleep(1)
         self._stopped.set() # indicate that we are stopped
-    
+
     def stop(self):
         self._shutdown.set()
         self._stopped.wait() # block until this thread is done
@@ -428,9 +427,9 @@ class WorkController(object):
                 "|".join(map(str, self.pool.get_worker_pids()))))
             if not self.is_detached:
                 time.sleep(1)
-        
+
         try:
-            while True: 
+            while True:
                 it.next()
         except (SystemExit, KeyboardInterrupt):
             self.shutdown()

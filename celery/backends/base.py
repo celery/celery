@@ -182,6 +182,6 @@ class BaseBackend(object):
         """Cleanup actions to do at the end of a task worker process.
 
         See :func:`celery.worker.jail`.
-        
+
         """
         pass
