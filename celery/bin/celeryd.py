@@ -144,7 +144,7 @@ def acquire_pidlock(pidfile):
         if exc.errno == errno.ESRCH:
             sys.stderr.write("Stale pidfile exists. Removing it.\n")
             pidlock.release()
-            return
+            return PIDLockFile(pidfile)
     else:
         raise SystemExit(
                 "ERROR: Pidfile (%s) already exists.\n"
