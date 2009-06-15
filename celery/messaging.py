@@ -16,6 +16,7 @@ except ImportError:
 class TaskPublisher(Publisher):
     """The AMQP Task Publisher class."""
     exchange = conf.AMQP_EXCHANGE
+    exchange_type = conf.AMQP_EXCHANGE_TYPE
     routing_key = conf.AMQP_PUBLISHER_ROUTING_KEY
     encoder = pickle.dumps
 
