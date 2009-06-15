@@ -184,7 +184,7 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
 
     if discard:
         discarded_count = discard_all()
-        what = discard_count > 1 and "messages" or "message"
+        what = discarded_count > 1 and "messages" or "message"
         say("discard: Erased %d %s from the queue.\n" % (
                 discarded_count, what))
 
