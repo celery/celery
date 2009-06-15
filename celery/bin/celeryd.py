@@ -62,7 +62,6 @@ from django.conf import settings
 from celery.log import emergency_error
 from celery.conf import LOG_LEVELS, DAEMON_LOG_FILE, DAEMON_LOG_LEVEL
 from celery.conf import DAEMON_CONCURRENCY, DAEMON_PID_FILE
-from celery.log import setup_logger
 from celery.messaging import TaskConsumer
 from celery import conf
 from celery import discovery
@@ -173,24 +172,16 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
         loglevel = LOG_LEVELS[loglevel.upper()]
     if not detach:
         logfile = None # log to stderr when not running in the background.
-    logger = setup_logger(logfile=logfile, loglevel=loglevel)
-
-    def say(msg):
-        """Log the message using loglevel ``INFO`` if running in the
-        background, else just print the message to ``stdout``."""
-        if detach:
-            return logger.info(msg)
-        print(msg)
 
     if discard:
         discarded_count = discard_all()
         what = discarded_count > 1 and "messages" or "message"
-        say("discard: Erased %d %s from the queue.\n" % (
+        print("discard: Erased %d %s from the queue.\n" % (
                 discarded_count, what))
 
     # Dump configuration to screen so we have some basic information
     # when users sends e-mails.
-    say(STARTUP_INFO_FMT % {
+    print(STARTUP_INFO_FMT % {
             "vhost": settings.AMQP_VHOST,
             "host": settings.AMQP_SERVER,
             "port": settings.AMQP_PORT,
