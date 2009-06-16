@@ -12,7 +12,7 @@ ADMINS = (
     # ('Your Name', 'your_email@domain.com'),
 )
 
-TEST_RUNNER = "yadayada.test.run_tests"
+TEST_RUNNER = "celery.tests.runners.run_tests"
 TEST_APPS = (
     "celery",
 )
