@@ -296,6 +296,7 @@ class PeriodicWorkController(threading.Thread):
         self._stopped.set() # indicate that we are stopped
 
     def stop(self):
+        """Shutdown the thread."""
         self._shutdown.set()
         self._stopped.wait() # block until this thread is done
 
@@ -355,6 +356,7 @@ class WorkController(object):
         self.task_consumer = None
 
     def close_connection(self):
+        """Close the AMQP connection."""
         if self.task_consumer:
             self.task_consumer.close()
         if self.amqp_connection:
@@ -384,6 +386,7 @@ class WorkController(object):
             self.reset_connection()
 
     def _message_callback(self, message_data, message):
+        """The method called when we receive a message."""
         try:
             try:
                 self.process_task(message_data, message)
