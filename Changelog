@@ -9,7 +9,7 @@ Change history
 		``basic.get``. This means we're no longer polling the broker for
 		new messages.
 
-	* **IMPORTANT** Default concurrency is now set to the number of CPU
+	* **IMPORTANT** Default concurrency limit is now set to the number of CPUs
 		available on the system.
 
 	* **IMPORTANT** ``tasks.register``: Renamed ``task_name`` argument to
@@ -23,13 +23,13 @@ Change history
 
 	* The daemon now correctly runs if the pidlock is stale.
 
-	* Now compatible with carrot 0.5.0 (TBA)
+	* Now compatible with carrot 0.4.5
 
 	* Default AMQP connnection timeout is now 4 seconds.
 	* ``AsyncResult.read()`` was always returning ``True``.
 
-	*  Only use README as long_description if the file exists so easy_install don't
-		break. Closes #11.
+	*  Only use README as long_description if the file exists so easy_install
+		doesn't break.
 
 	* ``celery.view``: JSON responses now properly set its mime-type. 
 
@@ -41,17 +41,16 @@ Change history
 
 	* Fixed typo ``AMQP_SERVER`` in documentation to ``AMQP_HOST``.
 
-	* Worker exception e-mails send to admins now works properly.
+	* Worker exception e-mails sent to admins now works properly.
 
 	* No longer depends on ``django``, so installing ``celery`` won't affect
-		the preferred django version installed.
+		the preferred Django version installed.
 
 	* Now works with PostgreSQL (psycopg2) again by registering the
 		``PickledObject`` field.
 
 	* ``celeryd``: Added ``--detach`` option as an alias to ``--daemon``, and
 		it's the term used in the documentation from now on.
-
 
 	* Make sure the pool and periodic task worker thread is terminated
 		properly at exit. (So ``Ctrl-C`` works again).
