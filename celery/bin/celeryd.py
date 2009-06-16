@@ -226,7 +226,7 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
         emergency_error(logfile, "celeryd raised exception %s: %s\n%s" % (
                             e.__class__, e, traceback.format_exc()))
     except:
-        if context:
+        if daemon:
             context.close()
         raise
 
