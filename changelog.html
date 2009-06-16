@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Change history &mdash; Celery v0.3.5 (unstable) documentation</title>
+    <title>Change history &mdash; Celery v0.3.7 (unstable) documentation</title>
     <link rel="stylesheet" href="static/agogo.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
       URL_ROOT:    '',
-      VERSION:     '0.3.5 (unstable)',
+      VERSION:     '0.3.7 (unstable)',
       COLLAPSE_MODINDEX: false,
       FILE_SUFFIX: '.html',
       HAS_SOURCE:  true
@@ -19,14 +19,14 @@
     </script>
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v0.3.5 (unstable) documentation" href="index.html" />
+    <link rel="top" title="Celery v0.3.7 (unstable) documentation" href="index.html" />
     <link rel="prev" title="Celery Worker Daemon - celery.bin.celeryd" href="reference/celery.bin.celeryd.html" /> 
   </head>
   <body>
 
     <div class="header-wrapper">
       <div class="header">
-	<h1><a href="index.html">Celery v0.3.5 (unstable) documentation</a></h1>
+	<h1><a href="index.html">Celery v0.3.7 (unstable) documentation</a></h1>
 	<div class="rel">
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a> |
@@ -47,8 +47,107 @@
 		
   <div class="section" id="change-history">
 <h1>Change history<a class="headerlink" href="#change-history" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="p-m-cet-askh-opera-com">
-<h2>0.3.3 [2009-06-08 01:07 P.M CET] <a class="reference external" href="mailto:askh&#37;&#52;&#48;opera&#46;com">askh<span>&#64;</span>opera<span>&#46;</span>com</a><a class="headerlink" href="#p-m-cet-askh-opera-com" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="xxxx-xx-xx-xx-xx-p-m-cet">
+<h2>0.3.8 [xxxx-xx-xx xx:xx P.M CET]<a class="headerlink" href="#xxxx-xx-xx-xx-xx-p-m-cet" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><dl class="first docutils">
+<dt><strong>IMPORTANT</strong> Use AMQP&#8217;s <tt class="docutils literal"><span class="pre">basic.consume</span></tt> instead of <tt class="docutils literal"><span class="pre">basic.get</span></tt>.</dt>
+<dd><p class="first last">This means we&#8217;re no longer polling the broker for new messages.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><strong>IMPORTANT</strong> Default concurrency is now set to the number of CPU</dt>
+<dd><p class="first last">available on the system.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><strong>IMPORTANT</strong> <tt class="docutils literal"><span class="pre">tasks.register</span></tt>: Renamed <tt class="docutils literal"><span class="pre">task_name</span></tt> argument to</dt>
+<dd><p class="first"><tt class="docutils literal"><span class="pre">name</span></tt>, so</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">tasks</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">task_name</span><span class="o">=</span><span class="s">&quot;mytask&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>has to be replaced with:</p>
+<div class="last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">tasks</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;mytask&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><p class="first">The daemon now correctly runs if the pidlock is stale.</p>
+</li>
+<li><p class="first">Now compatible with carrot 0.5.0 (TBA)</p>
+</li>
+<li><p class="first">Default AMQP connnection timeout is now 4 seconds.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">AsyncResult.read()</span></tt> was always returning <tt class="xref docutils literal"><span class="pre">True</span></tt>.</p>
+</li>
+<li><dl class="first docutils">
+<dt>Only use README as long_description if the file exists so easy_install don&#8217;t</dt>
+<dd><p class="first last">break. Closes #11.</p>
+</dd>
+</dl>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">celery.view</span></tt>: JSON responses now properly set its mime-type.</p>
+</li>
+<li><dl class="first docutils">
+<dt><tt class="docutils literal"><span class="pre">apply_async</span></tt> now has a <tt class="docutils literal"><span class="pre">connection</span></tt> keyword argument so you</dt>
+<dd><p class="first last">can re-use the same AMQP connection if you want to execute
+more than one task.</p>
+</dd>
+</dl>
+</li>
+<li><p class="first">Handle failures in task_status view such that it won&#8217;t throw 500s.</p>
+</li>
+<li><p class="first">Fixed typo <tt class="docutils literal"><span class="pre">AMQP_SERVER</span></tt> in documentation to <tt class="docutils literal"><span class="pre">AMQP_HOST</span></tt>.</p>
+</li>
+<li><p class="first">Worker exception e-mails send to admins now works properly.</p>
+</li>
+<li><dl class="first docutils">
+<dt>No longer depends on <tt class="docutils literal"><span class="pre">django</span></tt>, so installing <tt class="docutils literal"><span class="pre">celery</span></tt> won&#8217;t affect</dt>
+<dd><p class="first last">the preferred django version installed.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Now works with PostgreSQL (psycopg2) again by registering the</dt>
+<dd><p class="first last"><tt class="docutils literal"><span class="pre">PickledObject</span></tt> field.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><tt class="docutils literal"><span class="pre">celeryd</span></tt>: Added <tt class="docutils literal"><span class="pre">--detach</span></tt> option as an alias to <tt class="docutils literal"><span class="pre">--daemon</span></tt>, and</dt>
+<dd><p class="first last">it&#8217;s the term used in the documentation from now on.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Make sure the pool and periodic task worker thread is terminated</dt>
+<dd><p class="first last">properly at exit. (So <tt class="docutils literal"><span class="pre">Ctrl-C</span></tt> works again).</p>
+</dd>
+</dl>
+</li>
+<li><p class="first">Now depends on <tt class="docutils literal"><span class="pre">python-daemon</span></tt>.</p>
+</li>
+<li><p class="first">Removed dependency to <tt class="docutils literal"><span class="pre">simplejson</span></tt></p>
+</li>
+<li><dl class="first docutils">
+<dt>Cache Backend: Re-establishes connection for every task process</dt>
+<dd><p class="first last">if the Django cache backend is memcached/libmemcached.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Tyrant Backend: Now re-establishes the connection for every task</dt>
+<dd><p class="first last">executed.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div>
+<div class="section" id="p-m-cet">
+<h2>0.3.3 [2009-06-08 01:07 P.M CET]<a class="headerlink" href="#p-m-cet" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><dl class="first docutils">
 <dt>The <tt class="docutils literal"><span class="pre">PeriodicWorkController</span></tt> now sleeps for 1 second between checking</dt>
@@ -59,7 +158,7 @@
 </ul>
 </div>
 <div class="section" id="id1">
-<h2>0.3.2 [2009-06-08 01:07 P.M CET] <a class="reference external" href="mailto:askh&#37;&#52;&#48;opera&#46;com">askh<span>&#64;</span>opera<span>&#46;</span>com</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<h2>0.3.2 [2009-06-08 01:07 P.M CET]<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><dl class="first docutils">
 <dt>celeryd: Added option <tt class="docutils literal"><span class="pre">--discard</span></tt>: Discard (delete!) all waiting</dt>
@@ -72,7 +171,7 @@
 </ul>
 </div>
 <div class="section" id="id2">
-<h2>0.3.1 [2009-06-08 01:07 P.M CET] <a class="reference external" href="mailto:askh&#37;&#52;&#48;opera&#46;com">askh<span>&#64;</span>opera<span>&#46;</span>com</a><a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<h2>0.3.1 [2009-06-08 01:07 P.M CET]<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><dl class="first docutils">
 <dt>The <cite>PeriodicTask`</cite> worker is now running in its own thread instead</dt>
@@ -85,7 +184,7 @@
 </ul>
 </div>
 <div class="section" id="id3">
-<h2>0.3.0 [2009-06-08 12:41 P.M CET] <a class="reference external" href="mailto:askh&#37;&#52;&#48;opera&#46;com">askh<span>&#64;</span>opera<span>&#46;</span>com</a><a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
+<h2>0.3.0 [2009-06-08 12:41 P.M CET]<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
 <p><strong>NOTE</strong> This is a development version, for the stable release, please
 see versions 0.2.x.</p>
 <p><strong>VERY IMPORTANT:</strong> Pickle is now the encoder used for serializing task
@@ -182,7 +281,7 @@ Thanks to Vitaly Babiy and Jirka Vejrazka.</p>
 </ul>
 </div>
 <div class="section" id="id4">
-<h2>0.2.0 [2009-05-20 05:14 P.M CET] <a class="reference external" href="mailto:askh&#37;&#52;&#48;opera&#46;com">askh<span>&#64;</span>opera<span>&#46;</span>com</a><a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
+<h2>0.2.0 [2009-05-20 05:14 P.M CET]<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Final release of 0.2.0</li>
 <li>Compatible with carrot version 0.4.0.</li>
@@ -190,8 +289,8 @@ Thanks to Vitaly Babiy and Jirka Vejrazka.</p>
 from the database backend.</li>
 </ul>
 </div>
-<div class="section" id="pre3-2009-05-20-05-14-p-m-cet-askh-opera-com">
-<h2>0.2.0-pre3 [2009-05-20 05:14 P.M CET] <a class="reference external" href="mailto:askh&#37;&#52;&#48;opera&#46;com">askh<span>&#64;</span>opera<span>&#46;</span>com</a><a class="headerlink" href="#pre3-2009-05-20-05-14-p-m-cet-askh-opera-com" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="pre3-2009-05-20-05-14-p-m-cet">
+<h2>0.2.0-pre3 [2009-05-20 05:14 P.M CET]<a class="headerlink" href="#pre3-2009-05-20-05-14-p-m-cet" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><dl class="first docutils">
 <dt><em>Internal release</em>. Improved handling of unpickled exceptions,</dt>
@@ -202,15 +301,15 @@ original exception.</p>
 </li>
 </ul>
 </div>
-<div class="section" id="pre2-2009-05-20-01-56-p-m-cet-askh-opera-com">
-<h2>0.2.0-pre2 [2009-05-20 01:56 P.M CET] <a class="reference external" href="mailto:askh&#37;&#52;&#48;opera&#46;com">askh<span>&#64;</span>opera<span>&#46;</span>com</a><a class="headerlink" href="#pre2-2009-05-20-01-56-p-m-cet-askh-opera-com" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="pre2-2009-05-20-01-56-p-m-cet">
+<h2>0.2.0-pre2 [2009-05-20 01:56 P.M CET]<a class="headerlink" href="#pre2-2009-05-20-01-56-p-m-cet" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Now handles unpickleable exceptions (like the dynimically generated
 subclasses of <tt class="docutils literal"><span class="pre">django.core.exception.MultipleObjectsReturned</span></tt>).</li>
 </ul>
 </div>
-<div class="section" id="pre1-2009-05-20-12-33-p-m-cet-askh-opera-com">
-<h2>0.2.0-pre1 [2009-05-20 12:33 P.M CET] <a class="reference external" href="mailto:askh&#37;&#52;&#48;opera&#46;com">askh<span>&#64;</span>opera<span>&#46;</span>com</a><a class="headerlink" href="#pre1-2009-05-20-12-33-p-m-cet-askh-opera-com" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="pre1-2009-05-20-12-33-p-m-cet">
+<h2>0.2.0-pre1 [2009-05-20 12:33 P.M CET]<a class="headerlink" href="#pre1-2009-05-20-12-33-p-m-cet" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>It&#8217;s getting quite stable, with a lot of new features, so bump
 version to 0.2. This is a pre-release.</li>
@@ -220,7 +319,7 @@ and <tt class="docutils literal"><span class="pre">celery.backends.default_backe
 </ul>
 </div>
 <div class="section" id="id5">
-<h2>0.1.15 [2009-05-19 04:13 P.M CET] <a class="reference external" href="mailto:askh&#37;&#52;&#48;opera&#46;com">askh<span>&#64;</span>opera<span>&#46;</span>com</a><a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
+<h2>0.1.15 [2009-05-19 04:13 P.M CET]<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>The celery daemon was leaking AMQP connections, this should be fixed,
 if you have any problems with too many files open (like <tt class="docutils literal"><span class="pre">emfile</span></tt>
@@ -228,14 +327,14 @@ errors in <tt class="docutils literal"><span class="pre">rabbit.log</span></tt>,
 </ul>
 </div>
 <div class="section" id="id6">
-<h2>0.1.14 [2009-05-19 01:08 P.M CET] <a class="reference external" href="mailto:askh&#37;&#52;&#48;opera&#46;com">askh<span>&#64;</span>opera<span>&#46;</span>com</a><a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h2>
+<h2>0.1.14 [2009-05-19 01:08 P.M CET]<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Fixed a syntax error in the <tt class="docutils literal"><span class="pre">TaskSet</span></tt> class.  (No such variable
 <tt class="docutils literal"><span class="pre">TimeOutError</span></tt>).</li>
 </ul>
 </div>
 <div class="section" id="id7">
-<h2>0.1.13 [2009-05-19 12:36 P.M CET] <a class="reference external" href="mailto:askh&#37;&#52;&#48;opera&#46;com">askh<span>&#64;</span>opera<span>&#46;</span>com</a><a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h2>
+<h2>0.1.13 [2009-05-19 12:36 P.M CET]<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><p class="first">Forgot to add <tt class="docutils literal"><span class="pre">yadayada</span></tt> to install requirements.</p>
 </li>
@@ -257,7 +356,7 @@ $ make html</pre>
 </ul>
 </div>
 <div class="section" id="id8">
-<h2>0.1.12 [2009-05-18 04:38 P.M CET] <a class="reference external" href="mailto:askh&#37;&#52;&#48;opera&#46;com">askh<span>&#64;</span>opera<span>&#46;</span>com</a><a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h2>
+<h2>0.1.12 [2009-05-18 04:38 P.M CET]<a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><p class="first"><tt class="docutils literal"><span class="pre">delay_task()</span></tt> etc. now returns <tt class="docutils literal"><span class="pre">celery.task.AsyncResult</span></tt> object,
 which lets you check the result and any failure that might have
@@ -300,14 +399,14 @@ TT_PORT = 6657; # Port of the Tokyo Tyrant server.</p>
 </ul>
 </div>
 <div class="section" id="id9">
-<h2>0.1.11 [2009-05-12 02:08 P.M CET] <a class="reference external" href="mailto:askh&#37;&#52;&#48;opera&#46;com">askh<span>&#64;</span>opera<span>&#46;</span>com</a><a class="headerlink" href="#id9" title="Permalink to this headline">¶</a></h2>
+<h2>0.1.11 [2009-05-12 02:08 P.M CET]<a class="headerlink" href="#id9" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>The logging system was leaking file descriptors, resulting in
 servers stopping with the EMFILES (too many open files) error. (fixed)</li>
 </ul>
 </div>
 <div class="section" id="id10">
-<h2>0.1.10 [2009-05-11 12:46 P.M CET] <a class="reference external" href="mailto:askh&#37;&#52;&#48;opera&#46;com">askh<span>&#64;</span>opera<span>&#46;</span>com</a><a class="headerlink" href="#id10" title="Permalink to this headline">¶</a></h2>
+<h2>0.1.10 [2009-05-11 12:46 P.M CET]<a class="headerlink" href="#id10" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Tasks now supports both positional arguments and keyword arguments.</li>
 <li>Requires carrot 0.3.8.</li>
@@ -315,7 +414,7 @@ servers stopping with the EMFILES (too many open files) error. (fixed)</li>
 </ul>
 </div>
 <div class="section" id="id11">
-<h2>0.1.8 [2009-05-07 12:27 P.M CET] <a class="reference external" href="mailto:askh&#37;&#52;&#48;opera&#46;com">askh<span>&#64;</span>opera<span>&#46;</span>com</a><a class="headerlink" href="#id11" title="Permalink to this headline">¶</a></h2>
+<h2>0.1.8 [2009-05-07 12:27 P.M CET]<a class="headerlink" href="#id11" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Better test coverage</li>
 <li>More documentation</li>
@@ -324,7 +423,7 @@ servers stopping with the EMFILES (too many open files) error. (fixed)</li>
 </ul>
 </div>
 <div class="section" id="id12">
-<h2>0.1.7 [2009-04-30 1:50 P.M CET] <a class="reference external" href="mailto:askh&#37;&#52;&#48;opera&#46;com">askh<span>&#64;</span>opera<span>&#46;</span>com</a><a class="headerlink" href="#id12" title="Permalink to this headline">¶</a></h2>
+<h2>0.1.7 [2009-04-30 1:50 P.M CET]<a class="headerlink" href="#id12" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Added some unittests</li>
 <li>Can now use the database for task metadata (like if the task has
@@ -337,7 +436,7 @@ and <tt class="docutils literal"><span class="pre">settings.CELERY_AMQP_CONSUMER
 </ul>
 </div>
 <div class="section" id="id13">
-<h2>0.1.6 [2009-04-28 2:13 P.M CET] <a class="reference external" href="mailto:askh&#37;&#52;&#48;opera&#46;com">askh<span>&#64;</span>opera<span>&#46;</span>com</a><a class="headerlink" href="#id13" title="Permalink to this headline">¶</a></h2>
+<h2>0.1.6 [2009-04-28 2:13 P.M CET]<a class="headerlink" href="#id13" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <ul class="simple">
 <li>Introducing <tt class="docutils literal"><span class="pre">TaskSet</span></tt>. A set of subtasks is executed and you can
@@ -372,8 +471,8 @@ the name change request is in <tt class="docutils literal"><span class="pre">doc
 </ul>
 </blockquote>
 </div>
-<div class="section" id="a-m-cet-askh-opera-com">
-<h2>0.1.0 [2009-04-24 11:28 A.M CET] <a class="reference external" href="mailto:askh&#37;&#52;&#48;opera&#46;com">askh<span>&#64;</span>opera<span>&#46;</span>com</a><a class="headerlink" href="#a-m-cet-askh-opera-com" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="a-m-cet">
+<h2>0.1.0 [2009-04-24 11:28 A.M CET]<a class="headerlink" href="#a-m-cet" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Initial release</li>
 </ul>
@@ -392,24 +491,25 @@ the name change request is in <tt class="docutils literal"><span class="pre">doc
 <li class="toctree-l1"><a class="reference external" href="faq.html">Frequently Asked Questions</a></li>
 <li class="toctree-l1"><a class="reference external" href="reference/index.html">Module API Reference</a></li>
 <li class="toctree-l1 current"><a class="current reference external" href="">Change history</a><ul>
-<li class="toctree-l2"><a class="reference external" href="#p-m-cet-askh-opera-com">0.3.3 [2009-06-08 01:07 P.M CET] askh&#64;opera.com</a></li>
-<li class="toctree-l2"><a class="reference external" href="#id1">0.3.2 [2009-06-08 01:07 P.M CET] askh&#64;opera.com</a></li>
-<li class="toctree-l2"><a class="reference external" href="#id2">0.3.1 [2009-06-08 01:07 P.M CET] askh&#64;opera.com</a></li>
-<li class="toctree-l2"><a class="reference external" href="#id3">0.3.0 [2009-06-08 12:41 P.M CET] askh&#64;opera.com</a></li>
-<li class="toctree-l2"><a class="reference external" href="#id4">0.2.0 [2009-05-20 05:14 P.M CET] askh&#64;opera.com</a></li>
-<li class="toctree-l2"><a class="reference external" href="#pre3-2009-05-20-05-14-p-m-cet-askh-opera-com">0.2.0-pre3 [2009-05-20 05:14 P.M CET] askh&#64;opera.com</a></li>
-<li class="toctree-l2"><a class="reference external" href="#pre2-2009-05-20-01-56-p-m-cet-askh-opera-com">0.2.0-pre2 [2009-05-20 01:56 P.M CET] askh&#64;opera.com</a></li>
-<li class="toctree-l2"><a class="reference external" href="#pre1-2009-05-20-12-33-p-m-cet-askh-opera-com">0.2.0-pre1 [2009-05-20 12:33 P.M CET] askh&#64;opera.com</a></li>
-<li class="toctree-l2"><a class="reference external" href="#id5">0.1.15 [2009-05-19 04:13 P.M CET] askh&#64;opera.com</a></li>
-<li class="toctree-l2"><a class="reference external" href="#id6">0.1.14 [2009-05-19 01:08 P.M CET] askh&#64;opera.com</a></li>
-<li class="toctree-l2"><a class="reference external" href="#id7">0.1.13 [2009-05-19 12:36 P.M CET] askh&#64;opera.com</a></li>
-<li class="toctree-l2"><a class="reference external" href="#id8">0.1.12 [2009-05-18 04:38 P.M CET] askh&#64;opera.com</a></li>
-<li class="toctree-l2"><a class="reference external" href="#id9">0.1.11 [2009-05-12 02:08 P.M CET] askh&#64;opera.com</a></li>
-<li class="toctree-l2"><a class="reference external" href="#id10">0.1.10 [2009-05-11 12:46 P.M CET] askh&#64;opera.com</a></li>
-<li class="toctree-l2"><a class="reference external" href="#id11">0.1.8 [2009-05-07 12:27 P.M CET] askh&#64;opera.com</a></li>
-<li class="toctree-l2"><a class="reference external" href="#id12">0.1.7 [2009-04-30 1:50 P.M CET] askh&#64;opera.com</a></li>
-<li class="toctree-l2"><a class="reference external" href="#id13">0.1.6 [2009-04-28 2:13 P.M CET] askh&#64;opera.com</a></li>
-<li class="toctree-l2"><a class="reference external" href="#a-m-cet-askh-opera-com">0.1.0 [2009-04-24 11:28 A.M CET] askh&#64;opera.com</a></li>
+<li class="toctree-l2"><a class="reference external" href="#xxxx-xx-xx-xx-xx-p-m-cet">0.3.8 [xxxx-xx-xx xx:xx P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="#p-m-cet">0.3.3 [2009-06-08 01:07 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="#id1">0.3.2 [2009-06-08 01:07 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="#id2">0.3.1 [2009-06-08 01:07 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="#id3">0.3.0 [2009-06-08 12:41 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="#id4">0.2.0 [2009-05-20 05:14 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="#pre3-2009-05-20-05-14-p-m-cet">0.2.0-pre3 [2009-05-20 05:14 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="#pre2-2009-05-20-01-56-p-m-cet">0.2.0-pre2 [2009-05-20 01:56 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="#pre1-2009-05-20-12-33-p-m-cet">0.2.0-pre1 [2009-05-20 12:33 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="#id5">0.1.15 [2009-05-19 04:13 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="#id6">0.1.14 [2009-05-19 01:08 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="#id7">0.1.13 [2009-05-19 12:36 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="#id8">0.1.12 [2009-05-18 04:38 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="#id9">0.1.11 [2009-05-12 02:08 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="#id10">0.1.10 [2009-05-11 12:46 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="#id11">0.1.8 [2009-05-07 12:27 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="#id12">0.1.7 [2009-04-30 1:50 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="#id13">0.1.6 [2009-04-28 2:13 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="#a-m-cet">0.1.0 [2009-04-24 11:28 A.M CET]</a></li>
 </ul>
 </li>
 </ul>

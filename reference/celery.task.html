@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Tasks - celery.task &mdash; Celery v0.3.5 (unstable) documentation</title>
+    <title>Tasks - celery.task &mdash; Celery v0.3.7 (unstable) documentation</title>
     <link rel="stylesheet" href="../static/agogo.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
       URL_ROOT:    '../',
-      VERSION:     '0.3.5 (unstable)',
+      VERSION:     '0.3.7 (unstable)',
       COLLAPSE_MODINDEX: false,
       FILE_SUFFIX: '.html',
       HAS_SOURCE:  true
@@ -19,7 +19,7 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.3.5 (unstable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.3.7 (unstable) documentation" href="../index.html" />
     <link rel="up" title="Module API Reference" href="index.html" />
     <link rel="next" title="Task Result - celery.result" href="celery.result.html" />
     <link rel="prev" title="Module API Reference" href="index.html" /> 
@@ -28,7 +28,7 @@
 
     <div class="header-wrapper">
       <div class="header">
-	<h1><a href="../index.html">Celery v0.3.5 (unstable) documentation</a></h1>
+	<h1><a href="../index.html">Celery v0.3.7 (unstable) documentation</a></h1>
 	<div class="rel">
           <a href="../genindex.html" title="General Index"
              accesskey="I">index</a> |
@@ -144,6 +144,26 @@ not defined.</td>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">tasks</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">MyPeriodicTask</span><span class="p">)</span>
 </pre></div>
 </div>
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.task.PingTask">
+<em class="property">
+class </em><tt class="descclassname">celery.task.</tt><tt class="descname">PingTask</tt><a class="headerlink" href="#celery.task.PingTask" title="Permalink to this definition">¶</a></dt>
+<dd><p>The task used by <a title="celery.task.ping" class="reference internal" href="#celery.task.ping"><tt class="xref docutils literal"><span class="pre">ping()</span></tt></a>.</p>
+<dl class="method">
+<dt id="celery.task.PingTask.run">
+<tt class="descname">run</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.PingTask.run" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body">the string <tt class="docutils literal"><span class="pre">&quot;pong&quot;</span></tt>.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -440,7 +460,7 @@ celery server(s).</dd></dl>
 
 <dl class="method">
 <dt id="celery.task.TaskSet.run">
-<tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.TaskSet.run" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">run</tt><big>(</big><em>connect_timeout=4</em><big>)</big><a class="headerlink" href="#celery.task.TaskSet.run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run all tasks in the taskset.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -480,7 +500,7 @@ celery server(s).</dd></dl>
 
 <dl class="function">
 <dt id="celery.task.apply_async">
-<tt class="descclassname">celery.task.</tt><tt class="descname">apply_async</tt><big>(</big><em>task</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>routing_key=None</em>, <em>immediate=None</em>, <em>mandatory=None</em>, <em>connection=None</em>, <em>connect_timeout=None</em>, <em>priority=None</em><big>)</big><a class="headerlink" href="#celery.task.apply_async" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.task.</tt><tt class="descname">apply_async</tt><big>(</big><em>task</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>routing_key=None</em>, <em>immediate=None</em>, <em>mandatory=None</em>, <em>connection=None</em>, <em>connect_timeout=4</em>, <em>priority=None</em><big>)</big><a class="headerlink" href="#celery.task.apply_async" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run a task asynchronously by the celery daemon(s).</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -546,7 +566,7 @@ has been registered in the task registry.</p>
 
 <dl class="function">
 <dt id="celery.task.discard_all">
-<tt class="descclassname">celery.task.</tt><tt class="descname">discard_all</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.discard_all" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.task.</tt><tt class="descname">discard_all</tt><big>(</big><em>connect_timeout=4</em><big>)</big><a class="headerlink" href="#celery.task.discard_all" title="Permalink to this definition">¶</a></dt>
 <dd><p>Discard all waiting tasks.</p>
 <p>This will ignore all tasks waiting for execution, and they will
 be deleted from the messaging server.</p>
@@ -643,6 +663,18 @@ defined in the REPL (the objects must have an associated module).</p>
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.task.ping">
+<tt class="descclassname">celery.task.</tt><tt class="descname">ping</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.ping" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test if the server is alive.</p>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">ping</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ping</span><span class="p">()</span>
+<span class="go">&#39;pong&#39;</span>
+</pre></div>
+</div>
 </dd></dl>
 
 </div>

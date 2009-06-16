@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery - Distributed Task Queue for Django. &mdash; Celery v0.3.5 (unstable) documentation</title>
+    <title>celery - Distributed Task Queue for Django. &mdash; Celery v0.3.7 (unstable) documentation</title>
     <link rel="stylesheet" href="static/agogo.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
       URL_ROOT:    '',
-      VERSION:     '0.3.5 (unstable)',
+      VERSION:     '0.3.7 (unstable)',
       COLLAPSE_MODINDEX: false,
       FILE_SUFFIX: '.html',
       HAS_SOURCE:  true
@@ -19,7 +19,7 @@
     </script>
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v0.3.5 (unstable) documentation" href="index.html" />
+    <link rel="top" title="Celery v0.3.7 (unstable) documentation" href="index.html" />
     <link rel="next" title="Frequently Asked Questions" href="faq.html" />
     <link rel="prev" title="Welcome to Celery’s documentation!" href="index.html" /> 
   </head>
@@ -27,7 +27,7 @@
 
     <div class="header-wrapper">
       <div class="header">
-	<h1><a href="index.html">Celery v0.3.5 (unstable) documentation</a></h1>
+	<h1><a href="index.html">Celery v0.3.7 (unstable) documentation</a></h1>
 	<div class="rel">
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a> |
@@ -54,7 +54,7 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Version:</th><td class="field-body">0.3.5</td>
+<tr class="field"><th class="field-name">Version:</th><td class="field-body">0.3.7</td>
 </tr>
 </tbody>
 </table>
@@ -217,7 +217,8 @@ a task class. With this way you can cleanly upgrade the task to use the more
 advanced features of celery later.</p>
 <p>This is a task that basically does nothing but take some arguments,
 and return a value:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">MyTask</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">Task</span><span class="p">,</span> <span class="n">tasks</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">MyTask</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
 <span class="gp">... </span>    <span class="n">name</span> <span class="o">=</span> <span class="s">&quot;myapp.mytask&quot;</span>
 <span class="gp">... </span>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">some_arg</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="gp">... </span>        <span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
