@@ -58,7 +58,7 @@ new messages.</p>
 </dl>
 </li>
 <li><dl class="first docutils">
-<dt><strong>IMPORTANT</strong> Default concurrency is now set to the number of CPU</dt>
+<dt><strong>IMPORTANT</strong> Default concurrency limit is now set to the number of CPUs</dt>
 <dd><p class="first last">available on the system.</p>
 </dd>
 </dl>
@@ -78,15 +78,15 @@ new messages.</p>
 </li>
 <li><p class="first">The daemon now correctly runs if the pidlock is stale.</p>
 </li>
-<li><p class="first">Now compatible with carrot 0.5.0 (TBA)</p>
+<li><p class="first">Now compatible with carrot 0.4.5</p>
 </li>
 <li><p class="first">Default AMQP connnection timeout is now 4 seconds.</p>
 </li>
 <li><p class="first"><tt class="docutils literal"><span class="pre">AsyncResult.read()</span></tt> was always returning <tt class="xref docutils literal"><span class="pre">True</span></tt>.</p>
 </li>
 <li><dl class="first docutils">
-<dt>Only use README as long_description if the file exists so easy_install don&#8217;t</dt>
-<dd><p class="first last">break. Closes #11.</p>
+<dt>Only use README as long_description if the file exists so easy_install</dt>
+<dd><p class="first last">doesn&#8217;t break.</p>
 </dd>
 </dl>
 </li>
@@ -103,11 +103,11 @@ more than one task.</p>
 </li>
 <li><p class="first">Fixed typo <tt class="docutils literal"><span class="pre">AMQP_SERVER</span></tt> in documentation to <tt class="docutils literal"><span class="pre">AMQP_HOST</span></tt>.</p>
 </li>
-<li><p class="first">Worker exception e-mails send to admins now works properly.</p>
+<li><p class="first">Worker exception e-mails sent to admins now works properly.</p>
 </li>
 <li><dl class="first docutils">
 <dt>No longer depends on <tt class="docutils literal"><span class="pre">django</span></tt>, so installing <tt class="docutils literal"><span class="pre">celery</span></tt> won&#8217;t affect</dt>
-<dd><p class="first last">the preferred django version installed.</p>
+<dd><p class="first last">the preferred Django version installed.</p>
 </dd>
 </dl>
 </li>
