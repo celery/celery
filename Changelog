@@ -2,7 +2,7 @@
 Change history
 ==============
 
-0.3.8 [xxxx-xx-xx xx:xx P.M CET] 
+0.3.7 [2008-06-16 11:41 P.M CET] 
 -----------------------------------------------
 
 	* **IMPORTANT** Use AMQP's ``basic.consume`` instead of ``basic.get``.
