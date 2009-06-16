@@ -66,7 +66,7 @@ setup(
     scripts=["bin/celeryd"],
     zip_safe=False,
     install_requires=[
-        'carrot>=0.4.1',
+        'carrot>=0.4.5',
         'python-daemon',
     ],
     cmdclass = {"test": RunTests},

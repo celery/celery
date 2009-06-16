@@ -70,5 +70,6 @@ class TaskConsumer(Consumer):
     exchange = conf.AMQP_EXCHANGE
     routing_key = conf.AMQP_CONSUMER_ROUTING_KEY
     exchange_type = conf.AMQP_EXCHANGE_TYPE
-    auto_ack = True
     decoder = pickle.loads
+    auto_ack = False
+    no_ack = False

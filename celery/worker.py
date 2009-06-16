@@ -131,6 +131,10 @@ class TaskWrapper(object):
 
         Mapping of keyword arguments to apply to the task.
 
+    .. attribute:: message
+
+        The original message sent. Used for acknowledging the message.
+
     """
     success_msg = "Task %(name)s[%(id)s] processed: %(return_value)s"
     fail_msg = """
@@ -359,6 +363,7 @@ class WorkController(object):
         self.close_connection()
         self.amqp_connection = DjangoAMQPConnection()
         self.task_consumer = TaskConsumer(connection=self.amqp_connection)
+        self.task_consumer.register_callback(self._message_callback)
         return self.task_consumer
 
     def connection_diagnostics(self):
@@ -414,7 +419,6 @@ class WorkController(object):
     def run(self):
         """Starts the workers main loop."""
         task_consumer = self.reset_connection()
-        task_consumer.register_callback(self._message_callback)
         it = task_consumer.iterconsume(limit=None)
 
         self.pool.run()
