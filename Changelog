@@ -5,8 +5,9 @@ Change history
 0.3.7 [2008-06-16 11:41 P.M CET] 
 -----------------------------------------------
 
-	* **IMPORTANT** Use AMQP's ``basic.consume`` instead of ``basic.get``.
-		This means we're no longer polling the broker for new messages.
+	* **IMPORTANT** Now uses AMQP's ``basic.consume`` instead of
+		``basic.get``. This means we're no longer polling the broker for
+		new messages.
 
 	* **IMPORTANT** Default concurrency is now set to the number of CPU
 		available on the system.
