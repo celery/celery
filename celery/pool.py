@@ -151,7 +151,6 @@ class TaskPool(object):
 
         self._processes[tid] = [result, callbacks, errbacks, meta]
 
-
     def full(self):
         """Is the pool full?
 
