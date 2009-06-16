@@ -145,13 +145,15 @@ class TaskWrapper(object):
     """
     fail_email_body = TASK_FAIL_EMAIL_BODY
 
-    def __init__(self, task_name, task_id, task_func, args, kwargs, **opts):
+    def __init__(self, task_name, task_id, task_func, args, kwargs,
+            on_acknowledge=None, **opts):
         self.task_name = task_name
         self.task_id = task_id
         self.task_func = task_func
         self.args = args
         self.kwargs = kwargs
         self.logger = kwargs.get("logger")
+        self.on_acknowledge = on_acknowledge
         for opt in ("success_msg", "fail_msg", "fail_email_subject",
                 "fail_email_body"):
             setattr(self, opt, opts.get(opt, getattr(self, opt, None)))
@@ -175,6 +177,8 @@ class TaskWrapper(object):
         :returns: :class:`TaskWrapper` instance.
 
         """
+        # TODO This doesn't really make sense anymore, since the message
+        # is now part of the TaskWrapper instance itself. Needs refactoring.
         task_name = message_data["task"]
         task_id = message_data["id"]
         args = message_data["args"]
@@ -187,7 +191,8 @@ class TaskWrapper(object):
         if task_name not in tasks:
             raise UnknownTask(task_name)
         task_func = tasks[task_name]
-        return cls(task_name, task_id, task_func, args, kwargs, logger=logger)
+        return cls(task_name, task_id, task_func, args, kwargs,
+                    on_acknowledge=message.ack, logger=logger)
 
     def extend_with_default_kwargs(self, loglevel, logfile):
         """Extend the tasks keyword arguments with standard task arguments.
@@ -212,6 +217,8 @@ class TaskWrapper(object):
 
         """
         task_func_kwargs = self.extend_with_default_kwargs(loglevel, logfile)
+        if self.on_acknowledge:
+            self.on_acknowledge()
         return jail(self.task_id, [
                         self.task_func, self.args, task_func_kwargs])
 
@@ -261,6 +268,7 @@ class TaskWrapper(object):
                      self.args, task_func_kwargs]
         return pool.apply_async(jail, args=jail_args,
                 callbacks=[self.on_success], errbacks=[self.on_failure],
+                on_acknowledge=self.on_acknowledge,
                 meta={"task_id": self.task_id, "task_name": self.task_name})
 
 
