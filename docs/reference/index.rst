@@ -12,6 +12,7 @@
     celery.result
     celery.registry
     celery.discovery
+    celery.monitoring
     celery.worker
     celery.pool
     celery.backends
