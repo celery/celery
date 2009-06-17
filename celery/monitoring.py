@@ -7,11 +7,9 @@ from carrot.connection import DjangoAMQPConnection
 from celery.messaging import StatsPublisher, StatsConsumer
 from django.conf import settings
 from django.core.cache import cache
-import socket
 import time
 
-HOSTNAME = socket.gethostname()
-DEFAULT_CACHE_KEY_PREFIX = "celery-statistics-%s" % HOSTNAME
+DEFAULT_CACHE_KEY_PREFIX = "celery-statistics"
 
 
 class Statistics(object):
@@ -173,13 +171,13 @@ class StatsCollector(object):
                 handler(**stats_entry["data"])
 
     def dump_to_cache(self, cache_key_prefix=DEFAULT_CACHE_KEY_PREFIX):
-        cache.add("%s-total_tasks_processed" % cache_key_prefix,
+        cache.set("%s-total_tasks_processed" % cache_key_prefix,
                 self.total_tasks_processed)
-        cache.add("%s-total_tasks_processed_by_type" % cache_key_prefix,
+        cache.set("%s-total_tasks_processed_by_type" % cache_key_prefix,
                     self.total_tasks_processed_by_type)
-        cache.add("%s-total_task_time_running" % cache_key_prefix,
+        cache.set("%s-total_task_time_running" % cache_key_prefix,
                     self.total_task_time_running)
-        cache.add("%s-total_task_time_running_by_type" % cache_key_prefix,
+        cache.set("%s-total_task_time_running_by_type" % cache_key_prefix,
                     self.total_task_time_running_by_type)
 
     def task_time_running(self, task_id, task_name, args, kwargs, nsecs):
