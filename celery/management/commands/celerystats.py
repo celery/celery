@@ -9,7 +9,7 @@ from celery.monitoring import StatsCollector
 
 class Command(BaseCommand):
     """Run the celery daemon."""
-    option_list = BaseCommand.option_list + OPTION_LIST
+    option_list = BaseCommand.option_list
     help = 'Dump and flush the currently available statistics'
 
     def handle(self, *args, **options):
