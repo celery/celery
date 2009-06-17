@@ -21,6 +21,10 @@ class Statistics(object):
 
     **Required handlers**
 
+        * on_start()
+
+        * on_stop()
+
     """
     type = None
 
