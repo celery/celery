@@ -65,6 +65,7 @@ if django_project_dir:
     sys.path.append(django_project_dir)
 
 from django.conf import settings
+from celery import __version__
 from celery.log import emergency_error
 from celery.conf import LOG_LEVELS, DAEMON_LOG_FILE, DAEMON_LOG_LEVEL
 from celery.conf import DAEMON_CONCURRENCY, DAEMON_PID_FILE
@@ -88,11 +89,12 @@ USE_STATISTICS = getattr(settings, "CELERY_STATISTICS", False)
 settings.CELERY_STATISTICS = USE_STATISTICS
 
 STARTUP_INFO_FMT = """
-    * Celery loading with the following configuration
-        * Broker -> amqp://%(vhost)s@%(host)s:%(port)s
-        * Exchange -> %(exchange)s (%(exchange_type)s)
-        * Consumer -> Queue:%(consumer_queue)s Routing:%(consumer_rkey)s
-        * Concurrency:%(concurrency)s
+Configuration ->
+    * Broker -> amqp://%(vhost)s@%(host)s:%(port)s
+    * Exchange -> %(exchange)s (%(exchange_type)s)
+    * Consumer -> Queue:%(consumer_queue)s Routing:%(consumer_rkey)s
+    * Concurrency -> %(concurrency)s
+    * Statistics -> %(statistics)s
 """.strip()
 
 OPTION_LIST = (
@@ -173,7 +175,7 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
         working_directory=None, chroot=None, statistics=None, **kwargs):
     """Starts the celery worker server."""
 
-    print(". Launching celery, please hold on to something...")
+    print("Celery %s is starting." % __version__)
 
     if statistics:
         settings.CELERY_STATISTICS = statistics
@@ -214,9 +216,8 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
             "concurrency": concurrency,
             "loglevel": loglevel,
             "pidfile": pidfile,
+            "statistics": settings.CELERY_STATISTICS and "ON" or "OFF",
     })
-    print("* Reporting of statistics is %s..." % (
-        settings.CELERY_STATISTICS and "ON" or "OFF"))
 
     if detach:
         # Since without stderr any errors will be silently suppressed,
@@ -229,7 +230,6 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
         uid = uid and int(uid) or os.geteuid()
         gid = gid and int(gid) or os.getegid()
         working_directory = working_directory or os.getcwd()
-        print("* Launching celeryd in the background...")
         context = DaemonContext(chroot_directory=chroot,
                                 working_directory=working_directory,
                                 umask=umask,
@@ -243,6 +243,8 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
                             loglevel=loglevel,
                             logfile=logfile,
                             is_detached=detach)
+
+    print("Celery has started.")
     try:
         worker.run()
     except Exception, e:

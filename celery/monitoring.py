@@ -171,6 +171,7 @@ class StatsCollector(object):
                 handler(**stats_entry["data"])
 
     def dump_to_cache(self, cache_key_prefix=DEFAULT_CACHE_KEY_PREFIX):
+        """Store collected statistics in the cache."""
         cache.set("%s-total_tasks_processed" % cache_key_prefix,
                 self.total_tasks_processed)
         cache.set("%s-total_tasks_processed_by_type" % cache_key_prefix,
