@@ -129,6 +129,20 @@ allow that user access to that virtual host::
 
     $ rabbitmqctl add_vhost myvhost
 
+From RabbitMQ version 1.6.0 and onward you have to use the new ACL features
+to allow access::
+
+    $ rabbitmqctl set_permissions -p myvhost myuser "" ".*" ".*"
+
+See the RabbitMQ `Admin Guide`_ for more information about `access control`_.
+
+.. _`Admin Guide`: http://www.rabbitmq.com/admin-guide.html
+
+.. _`access control`: http://www.rabbitmq.com/admin-guide.html#access-control
+
+
+If you are still using version 1.5.0 or below, please use ``map_user_vhost``::
+
     $ rabbitmqctl map_user_vhost myuser myvhost
 
 
