@@ -5,6 +5,7 @@ Working with tasks and task sets.
 """
 from carrot.connection import DjangoAMQPConnection
 from celery.conf import AMQP_CONNECTION_TIMEOUT
+from celery.conf import STATISTICS_COLLECT_INTERVAL
 from celery.messaging import TaskPublisher, TaskConsumer
 from celery.log import setup_logger
 from celery.registry import tasks
@@ -598,3 +599,15 @@ def ping():
         'pong'
     """
     return PingTask.apply_async().get()
+
+
+class CollectStatisticsTask(PeriodicTask):
+    name = "celery.collect-statistics"
+    run_every = timedelta(seconds=STATISTICS_COLLECT_INTERVAL)
+
+    def run(self, **kwargs):
+        from celery.monitoring import StatsCollector
+        stats = StatsCollector()
+        stats.collect()
+        stats.dump_to_cache()
+        return True

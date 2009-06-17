@@ -6,7 +6,12 @@
 from carrot.connection import DjangoAMQPConnection
 from celery.messaging import StatsPublisher, StatsConsumer
 from django.conf import settings
+from django.core.cache import cache
+import socket
 import time
+
+HOSTNAME = socket.gethostname()
+DEFAULT_CACHE_KEY_PREFIX = "celery-statistics-%s" % HOSTNAME
 
 
 class Statistics(object):
@@ -70,6 +75,7 @@ class Statistics(object):
         """What to do when the :meth:`stop` method is called."""
         raise NotImplementedError(
                 "Statistics classes must define a on_stop handler.")
+
 
 class TimerStats(Statistics):
     """A generic timer producing ``celery`` statistics.
@@ -166,6 +172,16 @@ class StatsCollector(object):
                 handler = getattr(self, stat_type)
                 handler(**stats_entry["data"])
 
+    def dump_to_cache(self, cache_key_prefix=DEFAULT_CACHE_KEY_PREFIX):
+        cache.add("%s-total_tasks_processed" % cache_key_prefix,
+                self.total_tasks_processed)
+        cache.add("%s-total_tasks_processed_by_type" % cache_key_prefix,
+                    self.total_tasks_processed_by_type)
+        cache.add("%s-total_task_time_running" % cache_key_prefix,
+                    self.total_task_time_running)
+        cache.add("%s-total_task_time_running_by_type" % cache_key_prefix,
+                    self.total_task_time_running_by_type)
+
     def task_time_running(self, task_id, task_name, args, kwargs, nsecs):
         """Process statistics regarding how long a task has been running
         (the :class:TaskTimerStats` class is responsible for sending these).
@@ -201,7 +217,7 @@ class StatsCollector(object):
 
             * Total task processing time.
 
-            * Total number of tasks executed.
+            * Total number of tasks executed
         
         """
         print("Total processing time by task type:")

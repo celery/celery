@@ -13,6 +13,8 @@ DEFAULT_LOG_FMT = '[%(asctime)s: %(levelname)s/%(processName)s] %(message)s'
 DEFAULT_DAEMON_LOG_LEVEL = "INFO"
 DEFAULT_DAEMON_LOG_FILE = "celeryd.log"
 DEFAULT_AMQP_CONNECTION_TIMEOUT = 4
+DEFAULT_STATISTICS = False
+DEFAULT_STATISTICS_COLLECT_INTERVAL = 60 * 5
 
 """
 .. data:: LOG_LEVELS
@@ -150,3 +152,13 @@ AMQP_CONNECTION_TIMEOUT = getattr(settings, "CELERY_AMQP_CONNECTION_TIMEOUT",
 SEND_CELERY_TASK_ERROR_EMAILS = getattr(settings,
                                         "SEND_CELERY_TASK_ERROR_EMAILS",
                                         not settings.DEBUG)
+
+"""
+.. data:: STATISTICS_COLLECT_INTERVAL
+    The interval in seconds of which the
+    :class:`celery.task.CollectStatisticsTask`` is run.
+
+"""
+STATISTICS_COLLECT_INTERVAL = getattr(settings,
+                                "CELERY_STATISTICS_COLLECT_INTERVAL",
+                                DEFAULT_STATISTICS_COLLECT_INTERVAL)

@@ -104,6 +104,9 @@ OPTION_LIST = (
             help="Discard all waiting tasks before the server is started. "
                  "WARNING: This is unrecoverable, and the tasks will be "
                  "deleted from the messaging server."),
+    optparse.make_option('-s', '--statistics', default=USE_STATISTICS,
+            action="store_true", dest="statistics",
+            help="Collect statistics."),
     optparse.make_option('-f', '--logfile', default=DAEMON_LOG_FILE,
             action="store", dest="logfile",
             help="Path to log file."),
@@ -173,6 +176,9 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
     print(". Launching celery, please hold on to something...")
 
     if statistics:
+        from celery.task import tasks, CollectStatisticsTask
+        tasks.register(CollectStatisticsTask)
+
         settings.CELERY_STATISTICS = statistics
 
     if not concurrency:
@@ -211,7 +217,7 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
             "concurrency": concurrency,
             "loglevel": loglevel,
             "pidfile": pidfile,
-    }
+    })
     print("* Reporting of statistics is %s..." % (
         settings.CELERY_STATISTICS and "ON" or "OFF"))
 
