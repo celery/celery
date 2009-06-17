@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Multiprocessing Worker - celery.worker &mdash; Celery v0.3.7 (unstable) documentation</title>
+    <title>Multiprocessing Worker - celery.worker &mdash; Celery v0.3.10 (unstable) documentation</title>
     <link rel="stylesheet" href="../static/agogo.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
       URL_ROOT:    '../',
-      VERSION:     '0.3.7 (unstable)',
+      VERSION:     '0.3.10 (unstable)',
       COLLAPSE_MODINDEX: false,
       FILE_SUFFIX: '.html',
       HAS_SOURCE:  true
@@ -19,7 +19,7 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.3.7 (unstable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.3.10 (unstable) documentation" href="../index.html" />
     <link rel="up" title="Module API Reference" href="index.html" />
     <link rel="next" title="Task Pool - celery.pool" href="celery.pool.html" />
     <link rel="prev" title="Task Discovery - celery.discovery" href="celery.discovery.html" /> 
@@ -28,7 +28,7 @@
 
     <div class="header-wrapper">
       <div class="header">
-	<h1><a href="../index.html">Celery v0.3.7 (unstable) documentation</a></h1>
+	<h1><a href="../index.html">Celery v0.3.10 (unstable) documentation</a></h1>
 	<div class="rel">
           <a href="../genindex.html" title="General Index"
              accesskey="I">index</a> |
@@ -299,7 +299,7 @@ necessary.</dd></dl>
 
 <dl class="function">
 <dt id="celery.worker.jail">
-<tt class="descclassname">celery.worker.</tt><tt class="descname">jail</tt><big>(</big><em>task_id</em>, <em>func</em>, <em>args</em>, <em>kwargs</em><big>)</big><a class="headerlink" href="#celery.worker.jail" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.worker.</tt><tt class="descname">jail</tt><big>(</big><em>task_id</em>, <em>task_name</em>, <em>func</em>, <em>args</em>, <em>kwargs</em><big>)</big><a class="headerlink" href="#celery.worker.jail" title="Permalink to this definition">¶</a></dt>
 <dd><p>Wraps the task in a jail, which catches all exceptions, and
 saves the status and result of the task execution to the task
 meta backend.</p>
@@ -313,6 +313,7 @@ result, and sets the task status to <tt class="docutils literal"><span class="pr
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><em>task_id</em> &#8211; The id of the task.</li>
+<li><em>task_name</em> &#8211; The name of the task.</li>
 <li><em>func</em> &#8211; Callable object to execute.</li>
 <li><em>args</em> &#8211; List of positional args to pass on to the function.</li>
 <li><em>kwargs</em> &#8211; Keyword arguments mapping to pass on to the function.</li>
