@@ -48,7 +48,10 @@ py_minor_version = py_version_info[1]
 if (py_major_version == 2 and py_minor_version <=5) or py_major_version < 2:
     install_requires.append("multiprocessing")
 
-long_description = codecs.open("README", "r", "utf-8").read()
+if os.path.exists("README"):
+    long_description = codecs.open("README", "r", "utf-8").read()
+else:
+    long_description = "See http://pypi.python.org/pypi/celery"
 
 
 setup(
@@ -63,7 +66,7 @@ setup(
     scripts=["bin/celeryd", "bin/celeryctl"],
     zip_safe=False,
     install_requires=[
-        'carrot>=0.4.1',
+        'carrot>=0.4.5',
         'python-daemon',
     ],
     cmdclass = {"test": RunTests},

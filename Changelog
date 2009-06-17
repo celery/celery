@@ -2,13 +2,76 @@
 Change history
 ==============
 
-0.3.3 [2009-06-08 01:07 P.M CET] askh@opera.com
+0.3.7 [2008-06-16 11:41 P.M CET] 
+-----------------------------------------------
+
+	* **IMPORTANT** Now uses AMQP's ``basic.consume`` instead of
+		``basic.get``. This means we're no longer polling the broker for
+		new messages.
+
+	* **IMPORTANT** Default concurrency limit is now set to the number of CPUs
+		available on the system.
+
+	* **IMPORTANT** ``tasks.register``: Renamed ``task_name`` argument to
+		``name``, so
+
+			>>> tasks.register(func, task_name="mytask")
+
+		has to be replaced with:
+
+			>>> tasks.register(func, name="mytask")
+
+	* The daemon now correctly runs if the pidlock is stale.
+
+	* Now compatible with carrot 0.4.5
+
+	* Default AMQP connnection timeout is now 4 seconds.
+	* ``AsyncResult.read()`` was always returning ``True``.
+
+	*  Only use README as long_description if the file exists so easy_install
+		doesn't break.
+
+	* ``celery.view``: JSON responses now properly set its mime-type. 
+
+	* ``apply_async`` now has a ``connection`` keyword argument so you
+		can re-use the same AMQP connection if you want to execute
+		more than one task.
+
+	* Handle failures in task_status view such that it won't throw 500s.
+
+	* Fixed typo ``AMQP_SERVER`` in documentation to ``AMQP_HOST``.
+
+	* Worker exception e-mails sent to admins now works properly.
+
+	* No longer depends on ``django``, so installing ``celery`` won't affect
+		the preferred Django version installed.
+
+	* Now works with PostgreSQL (psycopg2) again by registering the
+		``PickledObject`` field.
+
+	* ``celeryd``: Added ``--detach`` option as an alias to ``--daemon``, and
+		it's the term used in the documentation from now on.
+
+	* Make sure the pool and periodic task worker thread is terminated
+		properly at exit. (So ``Ctrl-C`` works again).
+
+	* Now depends on ``python-daemon``.
+
+	* Removed dependency to ``simplejson``
+
+	* Cache Backend: Re-establishes connection for every task process
+		if the Django cache backend is memcached/libmemcached.
+
+	* Tyrant Backend: Now re-establishes the connection for every task
+		executed.
+
+0.3.3 [2009-06-08 01:07 P.M CET] 
 -----------------------------------------------
 
 	* The ``PeriodicWorkController`` now sleeps for 1 second between checking
 		for periodic tasks to execute.
 
-0.3.2 [2009-06-08 01:07 P.M CET] askh@opera.com
+0.3.2 [2009-06-08 01:07 P.M CET]
 -----------------------------------------------
 
 	* celeryd: Added option ``--discard``: Discard (delete!) all waiting
@@ -16,7 +79,7 @@ Change history
 
 	* celeryd: The ``--wakeup-after`` option was not handled as a float.
 
-0.3.1 [2009-06-08 01:07 P.M CET] askh@opera.com
+0.3.1 [2009-06-08 01:07 P.M CET]
 -----------------------------------------------
 
 	* The `PeriodicTask`` worker is now running in its own thread instead
@@ -24,7 +87,7 @@ Change history
 
 	* Default ``QUEUE_WAKEUP_AFTER`` has been lowered to ``0.1`` (was ``0.3``)
 
-0.3.0 [2009-06-08 12:41 P.M CET] askh@opera.com
+0.3.0 [2009-06-08 12:41 P.M CET]
 -----------------------------------------------
 
 **NOTE** This is a development version, for the stable release, please
@@ -98,7 +161,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 	* The pool algorithm has been refactored for greater performance and
 		stability.
 
-0.2.0 [2009-05-20 05:14 P.M CET] askh@opera.com
+0.2.0 [2009-05-20 05:14 P.M CET]
 ------------------------------------------------
 
 	* Final release of 0.2.0
@@ -108,20 +171,20 @@ arguments, so be sure to flush your task queue before you upgrade.
 	* Fixes some syntax errors related to fetching results
 	  from the database backend.
 
-0.2.0-pre3 [2009-05-20 05:14 P.M CET] askh@opera.com
+0.2.0-pre3 [2009-05-20 05:14 P.M CET]
 ----------------------------------------------------
 
 	 * *Internal release*. Improved handling of unpickled exceptions,
 	 	get_result() now tries to recreate something looking like the
 	 	original exception.
 
-0.2.0-pre2 [2009-05-20 01:56 P.M CET] askh@opera.com
+0.2.0-pre2 [2009-05-20 01:56 P.M CET]
 ----------------------------------------------------
 
 	* Now handles unpickleable exceptions (like the dynimically generated
 	  subclasses of ``django.core.exception.MultipleObjectsReturned``).
 
-0.2.0-pre1 [2009-05-20 12:33 P.M CET] askh@opera.com
+0.2.0-pre1 [2009-05-20 12:33 P.M CET]
 ----------------------------------------------------
 
 	* It's getting quite stable, with a lot of new features, so bump
@@ -131,20 +194,20 @@ arguments, so be sure to flush your task queue before you upgrade.
 	  been removed. Use ``celery.backends.default_backend.mark_as_read()``, 
 	  and ``celery.backends.default_backend.mark_as_failure()`` instead.
 
-0.1.15 [2009-05-19 04:13 P.M CET] askh@opera.com
+0.1.15 [2009-05-19 04:13 P.M CET]
 ------------------------------------------------
 
 	* The celery daemon was leaking AMQP connections, this should be fixed,
 	  if you have any problems with too many files open (like ``emfile``
 	  errors in ``rabbit.log``, please contact us!
 
-0.1.14 [2009-05-19 01:08 P.M CET] askh@opera.com
+0.1.14 [2009-05-19 01:08 P.M CET]
 ------------------------------------------------
 
 	* Fixed a syntax error in the ``TaskSet`` class.  (No such variable
 	  ``TimeOutError``).
 
-0.1.13 [2009-05-19 12:36 P.M CET] askh@opera.com
+0.1.13 [2009-05-19 12:36 P.M CET]
 ------------------------------------------------
 
 	* Forgot to add ``yadayada`` to install requirements.
@@ -165,7 +228,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 	
 	  and the result will be in ``docs/.build/html``.
 
-0.1.12 [2009-05-18 04:38 P.M CET] askh@opera.com
+0.1.12 [2009-05-18 04:38 P.M CET]
 ------------------------------------------------
 
     * ``delay_task()`` etc. now returns ``celery.task.AsyncResult`` object,
@@ -203,13 +266,13 @@ arguments, so be sure to flush your task queue before you upgrade.
         TT_HOST = "localhost"; # Hostname for the Tokyo Tyrant server.
         TT_PORT = 6657; # Port of the Tokyo Tyrant server.
 
-0.1.11 [2009-05-12 02:08 P.M CET] askh@opera.com
+0.1.11 [2009-05-12 02:08 P.M CET]
 -------------------------------------------------
 
 	* The logging system was leaking file descriptors, resulting in
 	  servers stopping with the EMFILES (too many open files) error. (fixed)
 
-0.1.10 [2009-05-11 12:46 P.M CET] askh@opera.com
+0.1.10 [2009-05-11 12:46 P.M CET]
 -------------------------------------------------
 
 	* Tasks now supports both positional arguments and keyword arguments.
@@ -218,7 +281,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 
 	* The daemon now tries to reconnect if the connection is lost.
 
-0.1.8 [2009-05-07 12:27 P.M CET] askh@opera.com
+0.1.8 [2009-05-07 12:27 P.M CET]
 ------------------------------------------------
 
 	* Better test coverage
@@ -226,7 +289,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 	* celeryd doesn't emit ``Queue is empty`` message if
 	  ``settings.CELERYD_EMPTY_MSG_EMIT_EVERY`` is 0.
 
-0.1.7 [2009-04-30 1:50 P.M CET] askh@opera.com
+0.1.7 [2009-04-30 1:50 P.M CET]
 -----------------------------------------------
 
 	* Added some unittests
@@ -241,7 +304,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 	  ``settings.CELERY_AMQP_EXCHANGE``, ``settings.CELERY_AMQP_ROUTING_KEY``,
 	  and ``settings.CELERY_AMQP_CONSUMER_QUEUE``.
 
-0.1.6 [2009-04-28 2:13 P.M CET] askh@opera.com
+0.1.6 [2009-04-28 2:13 P.M CET]
 -----------------------------------------------
 
 	* Introducing ``TaskSet``. A set of subtasks is executed and you can
@@ -283,7 +346,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 	* Project changed name from ``crunchy`` to ``celery``. The details of
 	  the name change request is in ``docs/name_change_request.txt``.
 
-0.1.0 [2009-04-24 11:28 A.M CET] askh@opera.com
+0.1.0 [2009-04-24 11:28 A.M CET]
 ------------------------------------------------
 
 	* Initial release

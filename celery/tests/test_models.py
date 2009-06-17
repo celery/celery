@@ -57,7 +57,7 @@ class TestModels(unittest.TestCase):
         self.assertTrue(unicode(p).startswith("<PeriodicTask:"))
         self.assertFalse(p in PeriodicTaskMeta.objects.get_waiting_tasks())
         # Have to avoid save() because it applies the auto_now=True.
-        PeriodicTaskMeta.objects.filter(name=p.name).update (
+        PeriodicTaskMeta.objects.filter(name=p.name).update(
                 last_run_at=datetime.now() - (TestPeriodicTask.run_every +
                 timedelta(seconds=10)))
         self.assertTrue(p in PeriodicTaskMeta.objects.get_waiting_tasks())

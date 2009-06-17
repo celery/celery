@@ -27,4 +27,5 @@ def task_status(request, task_id):
             "status": status,
             "result": async_result.result,
         }
-    return HttpResponse(JSON_dump({"task": response_data}), mimetype="application/json")
+    return HttpResponse(JSON_dump({"task": response_data}),
+            mimetype="application/json")

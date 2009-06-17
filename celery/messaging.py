@@ -16,6 +16,7 @@ except ImportError:
 class TaskPublisher(Publisher):
     """The AMQP Task Publisher class."""
     exchange = conf.AMQP_EXCHANGE
+    exchange_type = conf.AMQP_EXCHANGE_TYPE
     routing_key = conf.AMQP_PUBLISHER_ROUTING_KEY
     encoder = pickle.dumps
 
@@ -69,8 +70,9 @@ class TaskConsumer(Consumer):
     exchange = conf.AMQP_EXCHANGE
     routing_key = conf.AMQP_CONSUMER_ROUTING_KEY
     exchange_type = conf.AMQP_EXCHANGE_TYPE
-    auto_ack = True
     decoder = pickle.loads
+    auto_ack = False
+    no_ack = False
 
 
 class StatsPublisher(Publisher):
@@ -84,8 +86,8 @@ class StatsConsumer(Consumer):
     exchange = "celerygraph"
     routing_key = "stats"
     exchange_type = "direct"
-    auto_ack = True
     decoder = pickle.loads
+    no_ack=True
 
     def receive(self, message_data, message):
         pass

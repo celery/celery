@@ -23,7 +23,8 @@ if settings.DATABASE_ENGINE == "postgresql_psycopg2":
     import psycopg2.extensions
     # register PickledObject as a QuotedString otherwise we will see
     # can't adapt errors from psycopg2.
-    psycopg2.extensions.register_adapter(PickledObject, psycopg2.extensions.QuotedString)
+    psycopg2.extensions.register_adapter(PickledObject,
+            psycopg2.extensions.QuotedString)
 
 
 class PickledObjectField(models.Field):

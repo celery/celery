@@ -12,6 +12,7 @@ DEFAULT_DAEMON_PID_FILE = "celeryd.pid"
 DEFAULT_LOG_FMT = '[%(asctime)s: %(levelname)s/%(processName)s] %(message)s'
 DEFAULT_DAEMON_LOG_LEVEL = "INFO"
 DEFAULT_DAEMON_LOG_FILE = "celeryd.log"
+DEFAULT_AMQP_CONNECTION_TIMEOUT = 4
 
 """
 .. data:: LOG_LEVELS
@@ -130,6 +131,15 @@ AMQP_CONSUMER_ROUTING_KEY = getattr(settings,
 AMQP_CONSUMER_QUEUE = getattr(settings, "CELERY_AMQP_CONSUMER_QUEUE",
                               DEFAULT_AMQP_CONSUMER_QUEUE)
 
+"""
+.. data:: AMQP_CONNECTION_TIMEOUT
+
+    The timeout in seconds before we give up establishing a connection
+    to the AMQP server.
+
+"""
+AMQP_CONNECTION_TIMEOUT = getattr(settings, "CELERY_AMQP_CONNECTION_TIMEOUT",
+                                  DEFAULT_AMQP_CONNECTION_TIMEOUT)
 """
 .. data:: SEND_CELERY_TASK_ERROR_EMAILS
 

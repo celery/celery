@@ -86,7 +86,7 @@ class TaskPool(object):
         return self._pool._state == POOL_STATE_RUN
 
     def apply_async(self, target, args=None, kwargs=None, callbacks=None,
-            errbacks=None, meta=None):
+            errbacks=None, on_acknowledge=None, meta=None):
         """Equivalent of the :func:``apply`` built-in function.
 
         All ``callbacks`` and ``errbacks`` should complete immediately since
@@ -107,9 +107,13 @@ class TaskPool(object):
 
         on_return = lambda r: self.on_return(r, tid, callbacks, errbacks, meta)
 
+
+        if self.full():
+            self.wait_for_result()
         result = self._pool.apply_async(target, args, kwargs,
                                            callback=on_return)
-
+        if on_acknowledge:
+            on_acknowledge()
         self.add(result, callbacks, errbacks, tid, meta)
 
         return result
@@ -146,9 +150,6 @@ class TaskPool(object):
         """
 
         self._processes[tid] = [result, callbacks, errbacks, meta]
-
-        if self.full():
-            self.wait_for_result()
 
     def full(self):
         """Is the pool full?

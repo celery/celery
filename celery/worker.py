@@ -104,7 +104,6 @@ def jail(task_id, task_name, func, args, kwargs):
 
     return retval
 
-    
 
 class TaskWrapper(object):
     """Class wrapping a task to be run.
@@ -139,6 +138,10 @@ class TaskWrapper(object):
 
         Mapping of keyword arguments to apply to the task.
 
+    .. attribute:: message
+
+        The original message sent. Used for acknowledging the message.
+
     """
     success_msg = "Task %(name)s[%(id)s] processed: %(return_value)s"
     fail_msg = """
@@ -149,13 +152,15 @@ class TaskWrapper(object):
     """
     fail_email_body = TASK_FAIL_EMAIL_BODY
 
-    def __init__(self, task_name, task_id, task_func, args, kwargs, **opts):
+    def __init__(self, task_name, task_id, task_func, args, kwargs,
+            on_acknowledge=None, **opts):
         self.task_name = task_name
         self.task_id = task_id
         self.task_func = task_func
         self.args = args
         self.kwargs = kwargs
         self.logger = kwargs.get("logger")
+        self.on_acknowledge = on_acknowledge
         for opt in ("success_msg", "fail_msg", "fail_email_subject",
                 "fail_email_body"):
             setattr(self, opt, opts.get(opt, getattr(self, opt, None)))
@@ -169,7 +174,7 @@ class TaskWrapper(object):
                 self.args, self.kwargs)
 
     @classmethod
-    def from_message(cls, message, logger):
+    def from_message(cls, message, message_data, logger):
         """Create a :class:`TaskWrapper` from a task message sent by
         :class:`celery.messaging.TaskPublisher`.
 
@@ -179,7 +184,6 @@ class TaskWrapper(object):
         :returns: :class:`TaskWrapper` instance.
 
         """
-        message_data = message.decode()
         task_name = message_data["task"]
         task_id = message_data["id"]
         args = message_data["args"]
@@ -192,7 +196,8 @@ class TaskWrapper(object):
         if task_name not in tasks:
             raise UnknownTask(task_name)
         task_func = tasks[task_name]
-        return cls(task_name, task_id, task_func, args, kwargs, logger=logger)
+        return cls(task_name, task_id, task_func, args, kwargs,
+                    on_acknowledge=message.ack, logger=logger)
 
     def extend_with_default_kwargs(self, loglevel, logfile):
         """Extend the tasks keyword arguments with standard task arguments.
@@ -217,6 +222,8 @@ class TaskWrapper(object):
 
         """
         task_func_kwargs = self.extend_with_default_kwargs(loglevel, logfile)
+        if self.on_acknowledge:
+            self.on_acknowledge()
         return jail(self.task_id, self.task_name, [
                         self.task_func, self.args, task_func_kwargs])
 
@@ -266,6 +273,7 @@ class TaskWrapper(object):
                      self.args, task_func_kwargs]
         return pool.apply_async(jail, args=jail_args,
                 callbacks=[self.on_success], errbacks=[self.on_failure],
+                on_acknowledge=self.on_acknowledge,
                 meta={"task_id": self.task_id, "task_name": self.task_name})
 
 
@@ -277,9 +285,9 @@ class PeriodicWorkController(threading.Thread):
     Example
 
         >>> PeriodicWorkController().start()
-    
+
     """
-    
+
     def __init__(self):
         super(PeriodicWorkController, self).__init__()
         self._shutdown = threading.Event()
@@ -293,8 +301,9 @@ class PeriodicWorkController(threading.Thread):
             default_periodic_status_backend.run_periodic_tasks()
             time.sleep(1)
         self._stopped.set() # indicate that we are stopped
-    
+
     def stop(self):
+        """Shutdown the thread."""
         self._shutdown.set()
         self._stopped.wait() # block until this thread is done
 
@@ -339,6 +348,7 @@ class WorkController(object):
     loglevel = logging.ERROR
     concurrency = DAEMON_CONCURRENCY
     logfile = DAEMON_LOG_FILE
+    _state = None
 
     def __init__(self, concurrency=None, logfile=None, loglevel=None,
             is_detached=False):
@@ -353,6 +363,7 @@ class WorkController(object):
         self.task_consumer = None
 
     def close_connection(self):
+        """Close the AMQP connection."""
         if self.task_consumer:
             self.task_consumer.close()
         if self.amqp_connection:
@@ -368,6 +379,7 @@ class WorkController(object):
         self.close_connection()
         self.amqp_connection = DjangoAMQPConnection()
         self.task_consumer = TaskConsumer(connection=self.amqp_connection)
+        self.task_consumer.register_callback(self._message_callback)
         return self.task_consumer
 
     def connection_diagnostics(self):
@@ -381,9 +393,10 @@ class WorkController(object):
             self.reset_connection()
 
     def _message_callback(self, message_data, message):
+        """The method called when we receive a message."""
         try:
             try:
-                self.process_task(message)
+                self.process_task(message_data, message)
             except ValueError:
                 # execute_next_task didn't return a r/name/id tuple,
                 # probably because it got an exception.
@@ -393,15 +406,13 @@ class WorkController(object):
             except Exception, exc:
                 self.logger.critical("Message queue raised %s: %s\n%s" % (
                                 exc.__class__, exc, traceback.format_exc()))
-            except:
-                self.shutdown()
-                raise
         except (SystemExit, KeyboardInterrupt):
             self.shutdown()
 
-    def process_task(self, message):
+    def process_task(self, message_data, message):
         """Process task message by passing it to the pool of workers."""
-        task = TaskWrapper.from_message(message, logger=self.logger)
+        task = TaskWrapper.from_message(message, message_data,
+                                        logger=self.logger)
         self.logger.info("Got task from broker: %s[%s]" % (
             task.task_name, task.task_id))
         self.logger.debug("Got a task: %s. Trying to execute it..." % task)
@@ -414,15 +425,19 @@ class WorkController(object):
         return result
 
     def shutdown(self):
+        """Make sure ``celeryd`` exits cleanly."""
         # shut down the periodic work controller thread
+        if self._state != "RUN":
+            return
+        self._state = "TERMINATE"
         self.periodicworkcontroller.stop()
         self.pool.terminate()
         self.close_connection()
 
     def run(self):
         """Starts the workers main loop."""
+        self._state = "RUN"
         task_consumer = self.reset_connection()
-        task_consumer.register_callback(self._message_callback)
         it = task_consumer.iterconsume(limit=None)
 
         self.pool.run()
@@ -435,9 +450,9 @@ class WorkController(object):
                 "|".join(map(str, self.pool.get_worker_pids()))))
             if not self.is_detached:
                 time.sleep(1)
-        
+
         try:
-            while True: 
+            while True:
                 it.next()
         except (SystemExit, KeyboardInterrupt):
             self.shutdown()

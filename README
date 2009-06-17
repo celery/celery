@@ -2,7 +2,7 @@
 celery - Distributed Task Queue for Django.
 ============================================
 
-:Version: 0.3.5
+:Version: 0.3.7
 
 Introduction
 ============
@@ -284,8 +284,8 @@ Getting Help
 Mailing list
 ------------
 
-Join the `celery-users`_ mailing list for discussion about using and
-the development of celery.
+For discussions about the usage, development, and future of celery,
+please join the `celery-users`_ mailing list. 
 
 .. _`celery-users`: http://groups.google.com/group/celery-users/
 

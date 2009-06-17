@@ -5,6 +5,6 @@ include MANIFEST.in
 include LICENSE
 include TODO
 include THANKS
-recursive-include celery *
+recursive-include celery *.py
 recursive-include docs *
 recursive-include testproj *
