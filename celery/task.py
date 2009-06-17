@@ -599,15 +599,3 @@ def ping():
         'pong'
     """
     return PingTask.apply_async().get()
-
-
-class CollectStatisticsTask(PeriodicTask):
-    name = "celery.collect-statistics"
-    run_every = timedelta(seconds=STATISTICS_COLLECT_INTERVAL)
-
-    def run(self, **kwargs):
-        from celery.monitoring import StatsCollector
-        stats = StatsCollector()
-        stats.collect()
-        stats.dump_to_cache()
-        return True

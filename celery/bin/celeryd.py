@@ -176,9 +176,6 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
     print(". Launching celery, please hold on to something...")
 
     if statistics:
-        from celery.task import tasks, CollectStatisticsTask
-        tasks.register(CollectStatisticsTask)
-
         settings.CELERY_STATISTICS = statistics
 
     if not concurrency:
