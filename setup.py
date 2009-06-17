@@ -63,7 +63,7 @@ setup(
     url=celery.__homepage__,
     platforms=["any"],
     packages=find_packages(exclude=['ez_setup']),
-    scripts=["bin/celeryd", "bin/celeryctl"],
+    scripts=["bin/celeryd"],
     zip_safe=False,
     install_requires=[
         'carrot>=0.4.5',
