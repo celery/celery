@@ -58,6 +58,8 @@ Features
       available from a URL like ``celery/<task_id>/status/``. This view
       returns a JSON-serialized data structure containing the task status,
       and the return value if completed, or exception on failure.
+
+    * Supports statistics for profiling and monitoring.
       
 API Reference Documentation
 ===========================
