@@ -157,6 +157,31 @@ class Task(object):
         however if you want a periodic task, you should subclass
         :class:`PeriodicTask` instead.
 
+    .. attribute:: routing_key
+
+        Override the global default ``routing_key``[#f1]_ for this task.
+
+    .. [#f1] ``settings.CELERY_AMQP_PUBLISHER_ROUTING_KEY``
+
+    .. attribute:: mandatory
+
+        If set, the message has mandatory routing. By default the message
+        is silently dropped by the broker if it can't be routed to a queue.
+        However - If the message is mandatory, an exception will be raised
+        instead.
+
+    .. attribute:: immediate:
+            
+        Request immediate delivery. If the message cannot be routed to a
+        task worker immediately, an exception will be raised. This is
+        instead of the default behaviour, where the broker will accept and
+        queue the message, but with no guarantee that the message will ever
+        be consumed.
+
+    .. attribute:: priority:
+    
+        The message priority. A number from ``0`` to ``9``.
+
     :raises NotImplementedError: if the :attr:`name` attribute is not set.
 
     The resulting class is callable, which if called will apply the
@@ -195,12 +220,10 @@ class Task(object):
     """
     name = None
     type = "regular"
-    max_retries = 0 # unlimited
-    retry_interval = timedelta(seconds=2)
-    auto_retry = False
     routing_key = None
     immediate = False
     mandatory = False
+    priority = None
 
     def __init__(self):
         if not self.name:
