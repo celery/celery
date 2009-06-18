@@ -149,15 +149,11 @@ class TaskSetResult(object):
     single entity.
 
     :option taskset_id: see :attr:`taskset_id`.
-    :option subtask_ids: see :attr:`subtask_ids`.
+    :option subtasks see :attr:`subtasks`.
 
     .. attribute:: taskset_id
 
         The UUID of the taskset itself.
-
-    .. attribute:: subtask_ids
-
-        The list of task UUID's for all of the subtasks.
 
     .. attribute:: subtasks
 
@@ -165,10 +161,9 @@ class TaskSetResult(object):
 
     """
 
-    def __init__(self, taskset_id, subtask_ids):
+    def __init__(self, taskset_id, subtasks):
         self.taskset_id = taskset_id
-        self.subtask_ids = subtask_ids
-        self.subtasks = map(AsyncResult, self.subtask_ids)
+        self.subtasks = subtasks
 
     def itersubtasks(self):
         """Taskset subtask iterator.
@@ -239,8 +234,8 @@ class TaskSetResult(object):
         :raises: The exception if any of the tasks raised an exception.
 
         """
-        results = dict([(task_id, AsyncResult(task_id))
-                            for task_id in self.subtask_ids])
+        results = dict([(subtask.task_id, AsyncResult(subtask.task_id))
+                            for subtask in self.subtasks])
         while results:
             for task_id, pending_result in results.items():
                 if pending_result.status == "DONE":

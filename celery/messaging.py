@@ -25,8 +25,8 @@ class TaskPublisher(Publisher):
         return self._delay_task(task_name=task_name, task_args=task_args,
                                 task_kwargs=task_kwargs, **kwargs)
 
-    def delay_task_in_set(self, task_name, taskset_id, task_args,
-            task_kwargs, **kwargs):
+    def delay_task_in_set(self, taskset_id, task_name, task_args, task_kwargs,
+            **kwargs):
         """Delay a task which part of a task set."""
         return self._delay_task(task_name=task_name, part_of_set=taskset_id,
                                 task_args=task_args, task_kwargs=task_kwargs,
@@ -46,7 +46,7 @@ class TaskPublisher(Publisher):
         immediate = kwargs.get("immediate")
         mandatory = kwargs.get("mandatory")
         routing_key = kwargs.get("routing_key")
-
+    
         task_args = task_args or []
         task_kwargs = task_kwargs or {}
         task_id = task_id or str(uuid.uuid4())
