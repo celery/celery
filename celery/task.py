@@ -182,6 +182,11 @@ class Task(object):
     
         The message priority. A number from ``0`` to ``9``.
 
+    .. attribute:: disable_error_emails
+
+        Disable all error e-mails for this task (only applicable if
+        ``settings.SEND_CELERY_ERROR_EMAILS`` is on).
+
     :raises NotImplementedError: if the :attr:`name` attribute is not set.
 
     The resulting class is callable, which if called will apply the
@@ -224,6 +229,7 @@ class Task(object):
     immediate = False
     mandatory = False
     priority = None
+    disable_error_emails = False
 
     def __init__(self):
         if not self.name:
