@@ -2,6 +2,21 @@
 Change history
 ==============
 
+x.x.x [xxxx-xx-xx xx:xx P.M CET] 
+-----------------------------------------------
+
+	*	**IMPORTANT** The ``subtask_ids`` attribute on the ``TaskSetResult``
+		instance has been removed. To get this information instead use:
+
+			>>> subtask_ids = [subtask.task_id for subtask in ts_res.subtasks]
+
+	*	Taskset.run() now respects extra message options from the task class.
+
+	* Should now work on Windows (although running in the background won't
+		work, so using the ``--detach`` argument results in an exception
+		being raised.)
+
+
 0.3.7 [2008-06-16 11:41 P.M CET] 
 -----------------------------------------------
 
