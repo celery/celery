@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Tasks - celery.task &mdash; Celery v0.3.10 (unstable) documentation</title>
+    <title>Tasks - celery.task &mdash; Celery v0.3.11 (unstable) documentation</title>
     <link rel="stylesheet" href="../static/agogo.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
       URL_ROOT:    '../',
-      VERSION:     '0.3.10 (unstable)',
+      VERSION:     '0.3.11 (unstable)',
       COLLAPSE_MODINDEX: false,
       FILE_SUFFIX: '.html',
       HAS_SOURCE:  true
@@ -19,7 +19,7 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.3.10 (unstable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.3.11 (unstable) documentation" href="../index.html" />
     <link rel="up" title="Module API Reference" href="index.html" />
     <link rel="next" title="Task Result - celery.result" href="celery.result.html" />
     <link rel="prev" title="Module API Reference" href="index.html" /> 
@@ -28,7 +28,7 @@
 
     <div class="header-wrapper">
       <div class="header">
-	<h1><a href="../index.html">Celery v0.3.10 (unstable) documentation</a></h1>
+	<h1><a href="../index.html">Celery v0.3.11 (unstable) documentation</a></h1>
 	<div class="rel">
           <a href="../genindex.html" title="General Index"
              accesskey="I">index</a> |
@@ -187,6 +187,45 @@ in the task registry, and passed to <a title="celery.task.delay_task" class="ref
 <dd>The type of task, currently this can be <tt class="docutils literal"><span class="pre">regular</span></tt>, or <tt class="docutils literal"><span class="pre">periodic</span></tt>,
 however if you want a periodic task, you should subclass
 <a title="celery.task.PeriodicTask" class="reference internal" href="#celery.task.PeriodicTask"><tt class="xref docutils literal"><span class="pre">PeriodicTask</span></tt></a> instead.</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.task.Task.routing_key">
+<tt class="descname">routing_key</tt><a class="headerlink" href="#celery.task.Task.routing_key" title="Permalink to this definition">¶</a></dt>
+<dd>Override the global default <a href="#id1"><span class="problematic" id="id2">``</span></a>routing_key``[#f1]_ for this task.</dd></dl>
+
+<table class="docutils footnote" frame="void" id="f1" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[1]</td><td><tt class="docutils literal"><span class="pre">settings.CELERY_AMQP_PUBLISHER_ROUTING_KEY</span></tt></td></tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="celery.task.Task.mandatory">
+<tt class="descname">mandatory</tt><a class="headerlink" href="#celery.task.Task.mandatory" title="Permalink to this definition">¶</a></dt>
+<dd>If set, the message has mandatory routing. By default the message
+is silently dropped by the broker if it can&#8217;t be routed to a queue.
+However - If the message is mandatory, an exception will be raised
+instead.</dd></dl>
+
+<dl class="attribute">
+<dt>
+<tt class="descname">immediate:</tt></dt>
+<dd>Request immediate delivery. If the message cannot be routed to a
+task worker immediately, an exception will be raised. This is
+instead of the default behaviour, where the broker will accept and
+queue the message, but with no guarantee that the message will ever
+be consumed.</dd></dl>
+
+<dl class="attribute">
+<dt>
+<tt class="descname">priority:</tt></dt>
+<dd>The message priority. A number from <tt class="docutils literal"><span class="pre">0</span></tt> to <tt class="docutils literal"><span class="pre">9</span></tt>.</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.task.Task.disable_error_emails">
+<tt class="descname">disable_error_emails</tt><a class="headerlink" href="#celery.task.Task.disable_error_emails" title="Permalink to this definition">¶</a></dt>
+<dd>Disable all error e-mails for this task (only applicable if
+<tt class="docutils literal"><span class="pre">settings.SEND_CELERY_ERROR_EMAILS</span></tt> is on).</dd></dl>
 
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -500,7 +539,7 @@ celery server(s).</dd></dl>
 
 <dl class="function">
 <dt id="celery.task.apply_async">
-<tt class="descclassname">celery.task.</tt><tt class="descname">apply_async</tt><big>(</big><em>task</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>routing_key=None</em>, <em>immediate=None</em>, <em>mandatory=None</em>, <em>connection=None</em>, <em>connect_timeout=4</em>, <em>priority=None</em><big>)</big><a class="headerlink" href="#celery.task.apply_async" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.task.</tt><tt class="descname">apply_async</tt><big>(</big><em>task</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>routing_key=None</em>, <em>immediate=None</em>, <em>mandatory=None</em>, <em>connection=None</em>, <em>connect_timeout=4</em>, <em>priority=None</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.task.apply_async" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run a task asynchronously by the celery daemon(s).</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />

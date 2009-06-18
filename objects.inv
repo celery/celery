@@ -26,6 +26,7 @@ celery.pool.TaskPool.add method reference/celery.pool.html
 celery.backends.base.BaseBackend.get_result method reference/celery.backends.base.html
 celery.task.dmap function reference/celery.task.html
 celery.monitoring.Statistics.on_start method reference/celery.monitoring.html
+celery.task.Task.mandatory attribute reference/celery.task.html
 celery.result.BaseAsyncResult.is_done method reference/celery.result.html
 celery.worker.TaskWrapper.execute method reference/celery.worker.html
 celery.backends.database.Backend.run_periodic_tasks method reference/celery.backends.database.html
@@ -136,7 +137,6 @@ TASK_STATUSES data reference/celery.models.html
 celery.managers.TaskManager.get_task method reference/celery.managers.html
 celery.conf.AMQP_EXCHANGE data reference/celery.conf.html
 celery.datastructures.ExceptionInfo.exception attribute reference/celery.datastructures.html
-celery.result.TaskSetResult.subtask_ids attribute reference/celery.result.html
 PeriodicTaskMeta.delay method reference/celery.models.html
 celery.timer.TimeoutTimer.timeout attribute reference/celery.timer.html
 celery.worker.WorkController.close_connection method reference/celery.worker.html
@@ -181,7 +181,7 @@ celery.worker.TaskWrapper.extend_with_default_kwargs method reference/celery.wor
 celery.result.BaseAsyncResult.task_id attribute reference/celery.result.html
 celery.task.Task.type attribute reference/celery.task.html
 celery.backends.cache.Backend.is_done method reference/celery.backends.cache.html
-celery.task.Task.get_consumer method reference/celery.task.html
+celery.task.Task.routing_key attribute reference/celery.task.html
 celery.pool.TaskPool.logger attribute reference/celery.pool.html
 celery.messaging.TaskPublisher.delay_task_in_set method reference/celery.messaging.html
 celery.backends.base.BaseBackend.UnpickleableExceptionWrapper exception reference/celery.backends.base.html
@@ -212,6 +212,7 @@ celery.backends.base.BaseBackend.UnpickleableExceptionWrapper.exc_cls_name attri
 celery.result.AsyncResult.backend attribute reference/celery.result.html
 celery.task.apply_async function reference/celery.task.html
 celery.result.BaseAsyncResult.result attribute reference/celery.result.html
+celery.task.Task.get_consumer method reference/celery.task.html
 celery.backends.cache.Backend.store_result method reference/celery.backends.cache.html
 celery.result.TaskSetResult.failed method reference/celery.result.html
 celery.pool.TaskPool class reference/celery.pool.html
@@ -277,6 +278,7 @@ celery.result.TaskSetResult.taskset_id attribute reference/celery.result.html
 celery.monitoring.TimerStats class reference/celery.monitoring.html
 TaskMeta.result attribute reference/celery.models.html
 celery.timer.TimeoutTimer.time_start attribute reference/celery.timer.html
+celery.task.Task.disable_error_emails attribute reference/celery.task.html
 celery.task.TaskSet.arguments attribute reference/celery.task.html
 celery.worker.TaskWrapper.task_name attribute reference/celery.worker.html
 celery.backends.tyrant.Backend.open method reference/celery.backends.tyrant.html

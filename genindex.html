@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Index &mdash; Celery v0.3.10 (unstable) documentation</title>
+    <title>Index &mdash; Celery v0.3.11 (unstable) documentation</title>
     <link rel="stylesheet" href="static/agogo.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
       URL_ROOT:    '',
-      VERSION:     '0.3.10 (unstable)',
+      VERSION:     '0.3.11 (unstable)',
       COLLAPSE_MODINDEX: false,
       FILE_SUFFIX: '.html',
       HAS_SOURCE:  true
@@ -19,13 +19,13 @@
     </script>
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v0.3.10 (unstable) documentation" href="index.html" /> 
+    <link rel="top" title="Celery v0.3.11 (unstable) documentation" href="index.html" /> 
   </head>
   <body>
 
     <div class="header-wrapper">
       <div class="header">
-	<h1><a href="index.html">Celery v0.3.10 (unstable) documentation</a></h1>
+	<h1><a href="index.html">Celery v0.3.11 (unstable) documentation</a></h1>
 	<div class="rel">
           <a href="" title="General Index"
              accesskey="I">index</a> |
@@ -215,14 +215,15 @@
 <dt><a href="reference/celery.task.html#celery.task.Task.delay">delay() (celery.task.Task class method)</a></dt>
   <dd><dl>
     <dt><a href="reference/celery.models.html#PeriodicTaskMeta.delay">(PeriodicTaskMeta method)</a></dt>
-  </dl></dd></dl></td><td width="33%" valign="top"><dl>
+  </dl></dd>
 <dt><a href="reference/celery.messaging.html#celery.messaging.TaskPublisher.delay_task">delay_task() (celery.messaging.TaskPublisher method)</a></dt>
   <dd><dl>
     <dt><a href="reference/celery.task.html#celery.task.delay_task">(in module celery.task)</a></dt>
-  </dl></dd>
+  </dl></dd></dl></td><td width="33%" valign="top"><dl>
 <dt><a href="reference/celery.messaging.html#celery.messaging.TaskPublisher.delay_task_in_set">delay_task_in_set() (celery.messaging.TaskPublisher method)</a></dt>
 <dt><a href="reference/celery.managers.html#celery.managers.TaskManager.delete_expired">delete_expired() (celery.managers.TaskManager method)</a></dt>
 <dt><a href="reference/celery.task.html#celery.task.DeleteExpiredTaskMetaTask">DeleteExpiredTaskMetaTask (class in celery.task)</a></dt>
+<dt><a href="reference/celery.task.html#celery.task.Task.disable_error_emails">disable_error_emails (celery.task.Task attribute)</a></dt>
 <dt><a href="reference/celery.task.html#celery.task.discard_all">discard_all() (in module celery.task)</a></dt>
 <dt><a href="reference/celery.task.html#celery.task.dmap">dmap() (in module celery.task)</a></dt>
 <dt><a href="reference/celery.task.html#celery.task.dmap_async">dmap_async() (in module celery.task)</a></dt>
@@ -372,10 +373,11 @@
 <table width="100%" class="indextable"><tr><td width="33%" valign="top">
 <dl>
 
+<dt><a href="reference/celery.task.html#celery.task.Task.mandatory">mandatory (celery.task.Task attribute)</a></dt>
 <dt><a href="reference/celery.task.html#celery.task.TaskSet.map">map() (celery.task.TaskSet class method)</a></dt>
 <dt><a href="reference/celery.task.html#celery.task.TaskSet.map_async">map_async() (celery.task.TaskSet class method)</a></dt>
-<dt><a href="reference/celery.backends.base.html#celery.backends.base.BaseBackend.mark_as_done">mark_as_done() (celery.backends.base.BaseBackend method)</a></dt>
-<dt><a href="reference/celery.backends.base.html#celery.backends.base.BaseBackend.mark_as_failure">mark_as_failure() (celery.backends.base.BaseBackend method)</a></dt></dl></td><td width="33%" valign="top"><dl>
+<dt><a href="reference/celery.backends.base.html#celery.backends.base.BaseBackend.mark_as_done">mark_as_done() (celery.backends.base.BaseBackend method)</a></dt></dl></td><td width="33%" valign="top"><dl>
+<dt><a href="reference/celery.backends.base.html#celery.backends.base.BaseBackend.mark_as_failure">mark_as_failure() (celery.backends.base.BaseBackend method)</a></dt>
 <dt><a href="reference/celery.backends.base.html#celery.backends.base.BaseBackend.mark_as_retry">mark_as_retry() (celery.backends.base.BaseBackend method)</a></dt>
 <dt><a href="reference/celery.worker.html#celery.worker.TaskWrapper.message">message (celery.worker.TaskWrapper attribute)</a></dt>
 </dl></td></tr></table>
@@ -447,6 +449,7 @@
   <dd><dl>
     <dt><a href="reference/celery.models.html#TaskMeta.result">(TaskMeta attribute)</a></dt>
   </dl></dd>
+<dt><a href="reference/celery.task.html#celery.task.Task.routing_key">routing_key (celery.task.Task attribute)</a></dt>
 <dt><a href="reference/celery.monitoring.html#celery.monitoring.Statistics.run">run() (celery.monitoring.Statistics method)</a></dt>
   <dd><dl>
     <dt><a href="reference/celery.pool.html#celery.pool.TaskPool.run">(celery.pool.TaskPool method)</a></dt>
@@ -489,7 +492,6 @@
     <dt><a href="reference/celery.backends.tyrant.html#celery.backends.tyrant.Backend.store_result">(celery.backends.tyrant.Backend method)</a></dt>
     <dt><a href="reference/celery.managers.html#celery.managers.TaskManager.store_result">(celery.managers.TaskManager method)</a></dt>
   </dl></dd>
-<dt><a href="reference/celery.result.html#celery.result.TaskSetResult.subtask_ids">subtask_ids (celery.result.TaskSetResult attribute)</a></dt>
 <dt><a href="reference/celery.result.html#celery.result.TaskSetResult.subtasks">subtasks (celery.result.TaskSetResult attribute)</a></dt>
 <dt><a href="reference/celery.result.html#celery.result.BaseAsyncResult.successful">successful() (celery.result.BaseAsyncResult method)</a></dt>
   <dd><dl>

@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Task Result - celery.result &mdash; Celery v0.3.10 (unstable) documentation</title>
+    <title>Task Result - celery.result &mdash; Celery v0.3.11 (unstable) documentation</title>
     <link rel="stylesheet" href="../static/agogo.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
       URL_ROOT:    '../',
-      VERSION:     '0.3.10 (unstable)',
+      VERSION:     '0.3.11 (unstable)',
       COLLAPSE_MODINDEX: false,
       FILE_SUFFIX: '.html',
       HAS_SOURCE:  true
@@ -19,7 +19,7 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.3.10 (unstable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.3.11 (unstable) documentation" href="../index.html" />
     <link rel="up" title="Module API Reference" href="index.html" />
     <link rel="next" title="Task Registry - celery.registry" href="celery.registry.html" />
     <link rel="prev" title="Tasks - celery.task" href="celery.task.html" /> 
@@ -28,7 +28,7 @@
 
     <div class="header-wrapper">
       <div class="header">
-	<h1><a href="../index.html">Celery v0.3.10 (unstable) documentation</a></h1>
+	<h1><a href="../index.html">Celery v0.3.11 (unstable) documentation</a></h1>
 	<div class="rel">
           <a href="../genindex.html" title="General Index"
              accesskey="I">index</a> |
@@ -202,7 +202,7 @@ exception will be re-raised.</p>
 <dl class="class">
 <dt id="celery.result.TaskSetResult">
 <em class="property">
-class </em><tt class="descclassname">celery.result.</tt><tt class="descname">TaskSetResult</tt><big>(</big><em>taskset_id</em>, <em>subtask_ids</em><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult" title="Permalink to this definition">¶</a></dt>
+class </em><tt class="descclassname">celery.result.</tt><tt class="descname">TaskSetResult</tt><big>(</big><em>taskset_id</em>, <em>subtasks</em><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult" title="Permalink to this definition">¶</a></dt>
 <dd><p>Working with <a title="celery.task.TaskSet" class="reference external" href="celery.task.html#celery.task.TaskSet"><tt class="xref docutils literal"><span class="pre">celery.task.TaskSet</span></tt></a> results.</p>
 <p>An instance of this class is returned by <a title="celery.task.TaskSet.run" class="reference external" href="celery.task.html#celery.task.TaskSet.run"><tt class="xref docutils literal"><span class="pre">celery.task.TaskSet.run()</span></tt></a>.
 It lets you inspect the status and return values of a taskset as a
@@ -214,20 +214,13 @@ single entity.</p>
 <tr class="field"><th class="field-name" colspan="2">Option taskset_id:</th></tr>
 <tr><td>&nbsp;</td><td class="field-body">see <a title="celery.result.TaskSetResult.taskset_id" class="reference internal" href="#celery.result.TaskSetResult.taskset_id"><tt class="xref docutils literal"><span class="pre">taskset_id</span></tt></a>.</td>
 </tr>
-<tr class="field"><th class="field-name" colspan="2">Option subtask_ids:</th></tr>
-<tr><td>&nbsp;</td><td class="field-body">see <a title="celery.result.TaskSetResult.subtask_ids" class="reference internal" href="#celery.result.TaskSetResult.subtask_ids"><tt class="xref docutils literal"><span class="pre">subtask_ids</span></tt></a>.</td>
-</tr>
 </tbody>
 </table>
+<p>:option subtasks see <a title="celery.result.TaskSetResult.subtasks" class="reference internal" href="#celery.result.TaskSetResult.subtasks"><tt class="xref docutils literal"><span class="pre">subtasks</span></tt></a>.</p>
 <dl class="attribute">
 <dt id="celery.result.TaskSetResult.taskset_id">
 <tt class="descname">taskset_id</tt><a class="headerlink" href="#celery.result.TaskSetResult.taskset_id" title="Permalink to this definition">¶</a></dt>
 <dd>The UUID of the taskset itself.</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.result.TaskSetResult.subtask_ids">
-<tt class="descname">subtask_ids</tt><a class="headerlink" href="#celery.result.TaskSetResult.subtask_ids" title="Permalink to this definition">¶</a></dt>
-<dd>The list of task UUID&#8217;s for all of the subtasks.</dd></dl>
 
 <dl class="attribute">
 <dt id="celery.result.TaskSetResult.subtasks">
