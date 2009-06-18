@@ -18,7 +18,8 @@ import pickle
 
 def apply_async(task, args=None, kwargs=None, routing_key=None,
         immediate=None, mandatory=None, connection=None,
-        connect_timeout=AMQP_CONNECTION_TIMEOUT, priority=None):
+        connect_timeout=AMQP_CONNECTION_TIMEOUT, priority=None, 
+        exchange=None):
     """Run a task asynchronously by the celery daemon(s).
 
     :param task: The task to run (a callable object, or a :class:`Task`
@@ -63,7 +64,12 @@ def apply_async(task, args=None, kwargs=None, routing_key=None,
         connection = DjangoAMQPConnection(connect_timeout=connect_timeout)
         need_to_close_connection = True
 
-    publisher = TaskPublisher(connection=connection)
+    publisher_opts = {'routing_key' : routing_key,
+                      'exchange' : exchange }
+    for option_name, option_value in publisher_opts.items():
+        publisher_opts[option_name] = getattr(task, option_name, option_value)
+
+    publisher = TaskPublisher(connection=connection, **publisher_opts)
     task_id = publisher.delay_task(task.name, args, kwargs, **message_opts)
     publisher.close()
     if need_to_close_connection:
@@ -193,6 +199,7 @@ class Task(object):
     routing_key = None
     immediate = False
     mandatory = False
+    exchange = None
 
     def __init__(self):
         if not self.name:
@@ -233,8 +240,14 @@ class Task(object):
             >>> publisher.connection.close()
 
         """
+        
+        kwargs = {}
+        for key in ['exchange', 'routing_key']:
+            kwargs[key] = getattr(self, exchange, None)
+
         return TaskPublisher(connection=DjangoAMQPConnection(
-                                connect_timeout=AMQP_CONNECTION_TIMEOUT))
+                                connect_timeout=AMQP_CONNECTION_TIMEOUT),
+                                **kwargs)
 
     def get_consumer(self):
         """Get a celery task message consumer.

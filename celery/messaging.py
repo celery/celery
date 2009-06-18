@@ -3,7 +3,7 @@
 Sending and Receiving Messages
 
 """
-from carrot.messaging import Publisher, Consumer
+from carrot.messaging import Publisher, Consumer, ConsumerSet
 from celery import conf
 import uuid
 
@@ -63,6 +63,11 @@ class TaskPublisher(Publisher):
                 immediate=immediate, mandatory=mandatory)
         return task_id
 
+
+class TaskConsumerSet(ConsumerSet):
+    
+    def __init__(self, connection, queues=conf.AMQP_CONSUMER_QUEUES, consumers=[], **options):
+        super(TaskConsumerSet, self).__init__(connection, queues=queues, consumers=consumers, **options)
 
 class TaskConsumer(Consumer):
     """The AMQP Task Consumer class."""
