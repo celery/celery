@@ -59,6 +59,11 @@
 """
 import os
 import sys
+CAN_DETACH = True
+try:
+    import resource
+except ImportError:
+    CAN_DETACH = False
 sys.path.append(os.getcwd())
 django_project_dir = os.environ.get("DJANGO_PROJECT_DIR")
 if django_project_dir:
@@ -80,9 +85,6 @@ import multiprocessing
 import traceback
 import optparse
 import atexit
-from daemon import DaemonContext
-from daemon.pidlockfile import PIDLockFile
-import errno
 
 USE_STATISTICS = getattr(settings, "CELERY_STATISTICS", False)
 # Make sure the setting exists.
@@ -150,6 +152,8 @@ def acquire_pidlock(pidfile):
     running in the background somewhere.
 
     """
+    from daemon.pidlockfile import PIDLockFile
+    import errno
     pidlock = PIDLockFile(pidfile)
     if not pidlock.is_locked():
         return pidlock
@@ -219,7 +223,12 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
             "statistics": settings.CELERY_STATISTICS and "ON" or "OFF",
     })
 
+    print("Celery has started.")
     if detach:
+        if not CAN_DETACH:
+            raise RuntimeError(
+                    "This operating system doesn't support detach. ")
+        from daemon import DaemonContext
         # Since without stderr any errors will be silently suppressed,
         # we need to know that we have access to the logfile
         if logfile:
@@ -244,7 +253,6 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
                             logfile=logfile,
                             is_detached=detach)
 
-    print("Celery has started.")
     try:
         worker.run()
     except Exception, e:
