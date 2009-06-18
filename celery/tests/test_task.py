@@ -122,15 +122,15 @@ class TestTaskSet(unittest.TestCase):
         self.assertEquals(ts.total, 9)
 
         taskset_res = ts.run()
-        subtask_ids = taskset_res.subtask_ids
+        subtasks = taskset_res.subtasks
         taskset_id = taskset_res.taskset_id
 
         consumer = IncrementCounterTask().get_consumer()
-        for subtask_id in subtask_ids:
+        for subtask in subtasks:
             m = consumer.decoder(consumer.fetch().body)
             self.assertEquals(m.get("taskset"), taskset_id)
             self.assertEquals(m.get("task"), IncrementCounterTask.name)
-            self.assertEquals(m.get("id"), subtask_id)
+            self.assertEquals(m.get("id"), subtask.task_id)
             IncrementCounterTask().run(
                     increment_by=m.get("kwargs", {}).get("increment_by"))
         self.assertEquals(IncrementCounterTask.count, sum(xrange(1, 10)))
