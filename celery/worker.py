@@ -252,7 +252,7 @@ class TaskWrapper(object):
         self.logger.error(self.fail_msg.strip() % context)
 
         task_obj = tasks.get(task_name, object)
-        send_error_email = SEND_CELERY_TASK_ERROR_EMAILS or not \
+        send_error_email = SEND_CELERY_TASK_ERROR_EMAILS and not \
                 getattr(task_obj, "disable_error_emails", False)
         if send_error_email:
             subject = self.fail_email_subject.strip() % context
