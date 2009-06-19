@@ -258,7 +258,7 @@ So, let's execute the task again, but this time we'll keep track of the task:
     42
     >>> result.result
     42
-    >>> result.success() # returns True if the task didn't end in failure.
+    >>> result.successful() # returns True if the task didn't end in failure.
     True
 
 
