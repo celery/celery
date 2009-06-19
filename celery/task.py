@@ -182,6 +182,14 @@ class Task(object):
     
         The message priority. A number from ``0`` to ``9``.
 
+    .. attribute:: ignore_result
+
+        Don't store the status and return value. This means you can't
+        use the :class:`celery.result.AsyncResult` to check if the task is
+        done, or get its return value. Only use if you need the performance
+        and is able live without these features. Any exceptions raised will
+        store the return value/status as usual.
+
     .. attribute:: disable_error_emails
 
         Disable all error e-mails for this task (only applicable if
@@ -229,6 +237,7 @@ class Task(object):
     immediate = False
     mandatory = False
     priority = None
+    ignore_result = False
     disable_error_emails = False
 
     def __init__(self):

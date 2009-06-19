@@ -63,6 +63,7 @@ def jail(task_id, task_name, func, args, kwargs):
         the exception instance on failure.
 
     """
+    ignore_result = getattr(func, "ignore_result", False)
     timer_stat = TaskTimerStats.start(task_id, task_name, args, kwargs)
 
     # See: http://groups.google.com/group/django-users/browse_thread/
@@ -97,7 +98,8 @@ def jail(task_id, task_name, func, args, kwargs):
         default_backend.mark_as_failure(task_id, exc)
         retval = ExceptionInfo(sys.exc_info())
     else:
-        default_backend.mark_as_done(task_id, result)
+        if not ignore_result:
+            default_backend.mark_as_done(task_id, result)
         retval = result
     finally:
         timer_stat.stop()
