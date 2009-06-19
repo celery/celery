@@ -172,6 +172,7 @@ celery.pool.TaskPool.apply_async method reference/celery.pool.html
 celery.task.ping function reference/celery.task.html
 celery.result.AsyncResult class reference/celery.result.html
 PeriodicTaskMeta.name attribute reference/celery.models.html
+celery.conf.STATISTICS_COLLECT_INTERVAL data reference/celery.conf.html
 celery.monitoring.StatsCollector.collect method reference/celery.monitoring.html
 celery.monitoring.Statistics class reference/celery.monitoring.html
 celery.monitoring.Statistics.run method reference/celery.monitoring.html

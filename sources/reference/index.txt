@@ -26,6 +26,5 @@
     celery.managers
     celery.models
     celery.messaging
-    celery.platform
     celery.timer
     celery.bin.celeryd

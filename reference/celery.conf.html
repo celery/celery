@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Configuration - celery.conf &mdash; Celery v0.3.11 (unstable) documentation</title>
+    <title>Configuration - celery.conf &mdash; Celery v0.3.12 (unstable) documentation</title>
     <link rel="stylesheet" href="../static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.3.11 (unstable)',
+        VERSION:     '0.3.12 (unstable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,7 +19,7 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.3.11 (unstable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.3.12 (unstable) documentation" href="../index.html" />
     <link rel="up" title="Module API Reference" href="index.html" />
     <link rel="next" title="Datastructures - celery.datastructures" href="celery.datastructures.html" />
     <link rel="prev" title="Backend: Tokyo Tyrant - celery.backends.tyrant" href="celery.backends.tyrant.html" /> 
@@ -40,7 +40,7 @@
         <li class="right" >
           <a href="celery.backends.tyrant.html" title="Backend: Tokyo Tyrant - celery.backends.tyrant"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v0.3.11 (unstable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v0.3.12 (unstable) documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Module API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -60,7 +60,7 @@
 <dt id="celery.conf.SEND_CELERY_TASK_ERROR_EMAILS">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">SEND_CELERY_TASK_ERROR_EMAILS</tt><a class="headerlink" href="#celery.conf.SEND_CELERY_TASK_ERROR_EMAILS" title="Permalink to this definition">¶</a></dt>
 <dd>If set to <tt class="xref docutils literal"><span class="pre">True</span></tt>, errors in tasks will be sent to admins by e-mail.
-If unset, it will send the e-mails if DEBUG is False.</dd></dl>
+If unset, it will send the e-mails if <tt class="docutils literal"><span class="pre">settings.DEBUG</span></tt> is False.</dd></dl>
 
 </dd></dl>
 
@@ -195,7 +195,13 @@ Default is <tt class="docutils literal"><span class="pre">[%(asctime)s:</span> <
 <dl class="data">
 <dt>
 <tt class="descclassname">celery.conf.</tt><tt class="descname">SEND_CELERY_TASK_ERROR_EMAILS</tt></dt>
-<dd></dd></dl>
+<dd><dl class="data">
+<dt id="celery.conf.STATISTICS_COLLECT_INTERVAL">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">STATISTICS_COLLECT_INTERVAL</tt><a class="headerlink" href="#celery.conf.STATISTICS_COLLECT_INTERVAL" title="Permalink to this definition">¶</a></dt>
+<dd>The interval in seconds of which the
+<tt class="xref docutils literal"><span class="pre">celery.task.CollectStatisticsTask`</span></tt> is run.</dd></dl>
+
+</dd></dl>
 
 </div>
 
@@ -248,7 +254,7 @@ Default is <tt class="docutils literal"><span class="pre">[%(asctime)s:</span> <
         <li class="right" >
           <a href="celery.backends.tyrant.html" title="Backend: Tokyo Tyrant - celery.backends.tyrant"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v0.3.11 (unstable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v0.3.12 (unstable) documentation</a> &raquo;</li>
           <li><a href="index.html" >Module API Reference</a> &raquo;</li> 
       </ul>
     </div>
