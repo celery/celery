@@ -92,6 +92,7 @@ celery.task.PingTask class reference/celery.task.html
 celery.registry.TaskRegistry.get_all_periodic method reference/celery.registry.html
 PeriodicTaskMeta.last_run_at attribute reference/celery.models.html
 celery.task.Task.get_publisher method reference/celery.task.html
+celery.task.Task.ignore_result attribute reference/celery.task.html
 celery.registry.TaskRegistry.unregister method reference/celery.registry.html
 celery.result.TaskSetResult.itersubtasks method reference/celery.result.html
 celery.bin.celeryd.acquire_pidlock function reference/celery.bin.celeryd.html

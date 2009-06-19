@@ -6,15 +6,15 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>Tasks - celery.task &mdash; Celery v0.3.11 (unstable) documentation</title>
-    <link rel="stylesheet" href="../static/agogo.css" type="text/css" />
+    <link rel="stylesheet" href="../static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-      URL_ROOT:    '../',
-      VERSION:     '0.3.11 (unstable)',
-      COLLAPSE_MODINDEX: false,
-      FILE_SUFFIX: '.html',
-      HAS_SOURCE:  true
+        URL_ROOT:    '../',
+        VERSION:     '0.3.11 (unstable)',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
@@ -25,30 +25,31 @@
     <link rel="prev" title="Module API Reference" href="index.html" /> 
   </head>
   <body>
-
-    <div class="header-wrapper">
-      <div class="header">
-	<h1><a href="../index.html">Celery v0.3.11 (unstable) documentation</a></h1>
-	<div class="rel">
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
           <a href="../genindex.html" title="General Index"
-             accesskey="I">index</a> |
+             accesskey="I">index</a></li>
+        <li class="right" >
           <a href="../modindex.html" title="Global Module Index"
-             accesskey="M">modules</a> |
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
           <a href="celery.result.html" title="Task Result - celery.result"
-             accesskey="N">next</a> |
+             accesskey="N">next</a> |</li>
+        <li class="right" >
           <a href="index.html" title="Module API Reference"
-             accesskey="P">previous</a>
-	</div>
-      </div>
-    </div>
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Celery v0.3.11 (unstable) documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module API Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
 
-    <div class="content-wrapper">
-      <div class="content">
-	<div class="document">
-	  <div class="documentwrapper">
-	    <div class="bodywrapper">
-	      <div class="body">
-		
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
   <div class="section" id="module-celery.task">
 <h1>Tasks - celery.task<a class="headerlink" href="#module-celery.task" title="Permalink to this headline">¶</a></h1>
 <p>Working with tasks and task sets.</p>
@@ -220,6 +221,15 @@ be consumed.</dd></dl>
 <dt>
 <tt class="descname">priority:</tt></dt>
 <dd>The message priority. A number from <tt class="docutils literal"><span class="pre">0</span></tt> to <tt class="docutils literal"><span class="pre">9</span></tt>.</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.task.Task.ignore_result">
+<tt class="descname">ignore_result</tt><a class="headerlink" href="#celery.task.Task.ignore_result" title="Permalink to this definition">¶</a></dt>
+<dd>Don&#8217;t store the status and return value. This means you can&#8217;t
+use the <a title="celery.result.AsyncResult" class="reference external" href="celery.result.html#celery.result.AsyncResult"><tt class="xref docutils literal"><span class="pre">celery.result.AsyncResult</span></tt></a> to check if the task is
+done, or get its return value. Only use if you need the performance
+and is able live without these features. Any exceptions raised will
+store the return value/status as usual.</dd></dl>
 
 <dl class="attribute">
 <dt id="celery.task.Task.disable_error_emails">
@@ -719,79 +729,61 @@ defined in the REPL (the objects must have an associated module).</p>
 </div>
 
 
-	      </div>
-	    </div>
-	  </div>
-	</div>
-	<div class="sidebar">
-	  <h3>Contents</h3>
-	  <ul class="current">
-<li class="toctree-l1"><a class="reference external" href="../introduction.html">celery - Distributed Task Queue for Django.</a></li>
-<li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1 current"><a class="reference external" href="index.html">Module API Reference</a><ul class="current">
-<li class="toctree-l2 current"><a class="current reference external" href="">Tasks - celery.task</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.result.html">Task Result - celery.result</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.registry.html">Task Registry - celery.registry</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.discovery.html">Task Discovery - celery.discovery</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.monitoring.html">Statistics and Monitoring - celery.monitoring</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.worker.html">Multiprocessing Worker - celery.worker</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.pool.html">Task Pool - celery.pool</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.backends.html">Backends - celery.backends</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.backends.base.html">Backend: Base - celery.backends.base</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.backends.database.html">Backend: Database - celery.backends.database</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.backends.cache.html">Backend: Cache - celery.backends.cache</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.backends.tyrant.html">Backend: Tokyo Tyrant - celery.backends.tyrant</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.conf.html">Configuration - celery.conf</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.datastructures.html">Datastructures - celery.datastructures</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.log.html">Logging - celery.log</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.managers.html">Django Model Managers - celery.managers</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.models.html">Django Models - celery.models</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.messaging.html">Messaging - celery.messaging</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.timer.html">Timers - celery.timer</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference external" href="../changelog.html">Change history</a></li>
-</ul>
-
-	  <h3 style="margin-top: 1.5em;">Search</h3>
-	  <form class="search" action="../search.html" method="get">
-            <input type="text" name="q" size="18" />
-            <input type="submit" value="Go" />
-            <input type="hidden" name="check_keywords" value="yes" />
-            <input type="hidden" name="area" value="default" />
-          </form>
-          <p class="searchtip" style="font-size: 90%">
-            Enter search terms or a module, class or function name.
-          </p>
-	</div>
-	<div class="clearer"></div>
+          </div>
+        </div>
       </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="index.html"
+                                  title="previous chapter">Module API Reference</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="celery.result.html"
+                                  title="next chapter">Task Result - celery.result</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../sources/reference/celery.task.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
     </div>
-
-    <div class="footer-wrapper">
-      <div class="footer">
-	<div class="left">
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
           <a href="../genindex.html" title="General Index"
-             >index</a> |
+             >index</a></li>
+        <li class="right" >
           <a href="../modindex.html" title="Global Module Index"
-             >modules</a> |
+             >modules</a> |</li>
+        <li class="right" >
           <a href="celery.result.html" title="Task Result - celery.result"
-             >next</a> |
+             >next</a> |</li>
+        <li class="right" >
           <a href="index.html" title="Module API Reference"
-             >previous</a>
-            <br/>
-            <a href="../sources/reference/celery.task.txt"
-               rel="nofollow">Show Source</a>
-	</div>
-
-	<div class="right">
-	  &copy; Copyright 2009, Ask Solem.<br/>
-	  Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.1.
-	</div>
-	<div class="clearer"></div>
-      </div>
+             >previous</a> |</li>
+        <li><a href="../index.html">Celery v0.3.11 (unstable) documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module API Reference</a> &raquo;</li> 
+      </ul>
     </div>
-
+    <div class="footer">
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.1.
+    </div>
   </body>
 </html>
