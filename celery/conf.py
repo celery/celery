@@ -142,11 +142,12 @@ AMQP_CONSUMER_QUEUE = getattr(settings, "CELERY_AMQP_CONSUMER_QUEUE",
 """
 AMQP_CONNECTION_TIMEOUT = getattr(settings, "CELERY_AMQP_CONNECTION_TIMEOUT",
                                   DEFAULT_AMQP_CONNECTION_TIMEOUT)
+
 """
 .. data:: SEND_CELERY_TASK_ERROR_EMAILS
 
     If set to ``True``, errors in tasks will be sent to admins by e-mail.
-    If unset, it will send the e-mails if DEBUG is False.
+    If unset, it will send the e-mails if ``settings.DEBUG`` is False.
 
 """
 SEND_CELERY_TASK_ERROR_EMAILS = getattr(settings,
@@ -155,6 +156,7 @@ SEND_CELERY_TASK_ERROR_EMAILS = getattr(settings,
 
 """
 .. data:: STATISTICS_COLLECT_INTERVAL
+
     The interval in seconds of which the
     :class:`celery.task.CollectStatisticsTask`` is run.
 

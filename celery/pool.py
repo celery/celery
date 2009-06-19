@@ -17,7 +17,6 @@ class TaskPool(object):
     processes to finish when the queue limit has been reached.
 
     :param limit: see :attr:`limit` attribute.
-
     :param logger: see :attr:`logger` attribute.
 
 
@@ -44,8 +43,7 @@ class TaskPool(object):
     def run(self):
         """Run the task pool.
 
-        Will launch all worker processes so they are ready
-        for processing tasks.
+        Will pre-fork all workers so they're ready to accept tasks.
 
         """
         self._start()
