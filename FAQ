@@ -92,11 +92,12 @@ configuration:
         AMQP_PASSWORD = "secret"
         AMQP_VHOST = "myapp"
         
-        CELERY_AMQP_CONSUMER_QUEUE = "feed_tasks"
         CELERY_AMQP_EXCHANGE = "tasks"
         CELERY_AMQP_PUBLISHER_ROUTING_KEY = "task.regular"
-        CELERY_AMQP_CONSUMER_ROUTING_KEY = "task.feed.#"
         CELERY_AMQP_EXCHANGE_TYPE = "topic"
+        # This is the settings different for this server:
+        CELERY_AMQP_CONSUMER_QUEUE = "feed_tasks"
+        CELERY_AMQP_CONSUMER_ROUTING_KEY = "feed.#"
 
 Now to make a Task run on the ``z`` server you need to set its
 ``routing_key`` attribute so it starts with the words ``"task.feed."``:
@@ -108,7 +109,7 @@ Now to make a Task run on the ``z`` server you need to set its
 
     class FeedImportTask(Task):
         name = "import_feed"
-        routing_key = "task.feed.importer"
+        routing_key = "feed.importer"
 
         def run(self, feed_url):
             # something importing the feed
@@ -121,4 +122,4 @@ You can also override this using the ``routing_key`` argument to
     >>> from celery.task import apply_async
     >>> from myapp.tasks import RefreshFeedTask
     >>> apply_async(RefreshFeedTask, args=["http://cnn.com/rss"],
-    ...             routing_key="task.feed.importer")
+    ...             routing_key="feed.importer")
