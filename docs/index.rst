@@ -14,6 +14,7 @@ Contents:
     faq
     reference/index
     changelog
+    links
 
 
 Indices and tables
