@@ -12,9 +12,25 @@ x.x.x [xxxx-xx-xx xx:xx P.M CET]
 
 	*	Taskset.run() now respects extra message options from the task class.
 
+	* Task: Add attribute ``ignore_result``: Don't store the status and
+		return value. This means you can't use the
+		:class:`celery.result.AsyncResult` to check if the task is
+		done, or get its return value. Only use if you need the performance
+		and is able live without these features. Any exceptions raised will
+		store the return value/status as usual.
+
+	* Task: Add attribute ``disable_error_emails`` to disable sending error
+		emails for that task.
+
 	* Should now work on Windows (although running in the background won't
 		work, so using the ``--detach`` argument results in an exception
 		being raised.)
+
+	* Added support for statistics for profiling and monitoring.
+	    To start sending statistics start ``celeryd`` with the
+	    ``--statistics`` option. Then after a while you can dump the results
+	    by running ``python manage.py celerystats``. See
+	    :mod:`celery.monitoring` for more information.
 
 
 0.3.7 [2008-06-16 11:41 P.M CET] 
