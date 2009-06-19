@@ -127,11 +127,12 @@ configuration:</p>
 <span class="n">AMQP_PASSWORD</span> <span class="o">=</span> <span class="s">&quot;secret&quot;</span>
 <span class="n">AMQP_VHOST</span> <span class="o">=</span> <span class="s">&quot;myapp&quot;</span>
 
-<span class="n">CELERY_AMQP_CONSUMER_QUEUE</span> <span class="o">=</span> <span class="s">&quot;feed_tasks&quot;</span>
 <span class="n">CELERY_AMQP_EXCHANGE</span> <span class="o">=</span> <span class="s">&quot;tasks&quot;</span>
 <span class="n">CELERY_AMQP_PUBLISHER_ROUTING_KEY</span> <span class="o">=</span> <span class="s">&quot;task.regular&quot;</span>
-<span class="n">CELERY_AMQP_CONSUMER_ROUTING_KEY</span> <span class="o">=</span> <span class="s">&quot;task.feed.#&quot;</span>
 <span class="n">CELERY_AMQP_EXCHANGE_TYPE</span> <span class="o">=</span> <span class="s">&quot;topic&quot;</span>
+<span class="c"># This is the settings different for this server:</span>
+<span class="n">CELERY_AMQP_CONSUMER_QUEUE</span> <span class="o">=</span> <span class="s">&quot;feed_tasks&quot;</span>
+<span class="n">CELERY_AMQP_CONSUMER_ROUTING_KEY</span> <span class="o">=</span> <span class="s">&quot;feed.#&quot;</span>
 </pre></div>
 </div>
 </blockquote>
@@ -142,7 +143,7 @@ configuration:</p>
 
 <span class="k">class</span> <span class="nc">FeedImportTask</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
     <span class="n">name</span> <span class="o">=</span> <span class="s">&quot;import_feed&quot;</span>
-    <span class="n">routing_key</span> <span class="o">=</span> <span class="s">&quot;task.feed.importer&quot;</span>
+    <span class="n">routing_key</span> <span class="o">=</span> <span class="s">&quot;feed.importer&quot;</span>
 
     <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feed_url</span><span class="p">):</span>
         <span class="c"># something importing the feed</span>
@@ -154,7 +155,7 @@ configuration:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">apply_async</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">myapp.tasks</span> <span class="kn">import</span> <span class="n">RefreshFeedTask</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">apply_async</span><span class="p">(</span><span class="n">RefreshFeedTask</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="s">&quot;http://cnn.com/rss&quot;</span><span class="p">],</span>
-<span class="gp">... </span>            <span class="n">routing_key</span><span class="o">=</span><span class="s">&quot;task.feed.importer&quot;</span><span class="p">)</span>
+<span class="gp">... </span>            <span class="n">routing_key</span><span class="o">=</span><span class="s">&quot;feed.importer&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
