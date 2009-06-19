@@ -163,7 +163,7 @@ class StatsCollector(object):
 
     def collect(self):
         """Collect any new statistics available since the last time
-        :method:`collect` was executed."""
+        :meth:`collect` was executed."""
         connection = DjangoAMQPConnection()
         consumer = StatsConsumer(connection=connection)
         it = consumer.iterqueue(infinite=False)

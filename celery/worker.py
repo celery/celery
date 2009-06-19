@@ -284,10 +284,10 @@ class TaskWrapper(object):
 
 class PeriodicWorkController(threading.Thread):
     """A thread that continuously checks if there are
-    :class:`celery.task.PeriodicTask`s waiting for execution, and executes
-    them.
+    :class:`celery.task.PeriodicTask` tasks waiting for execution,
+    and executes them.
 
-    Example
+    Example:
 
         >>> PeriodicWorkController().start()
 
@@ -299,7 +299,7 @@ class PeriodicWorkController(threading.Thread):
         self._stopped = threading.Event()
 
     def run(self):
-        """Don't use :meth:`run`. use :meth:`start`."""
+        """Run when you use :meth:`Thread.start`"""
         while True:
             if self._shutdown.isSet():
                 break

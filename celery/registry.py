@@ -57,7 +57,7 @@ class TaskRegistry(UserDict):
         """Unregister task by name.
 
         :param name: name of the task to unregister, or a
-        :class:`celery.task.Task` class with a valid ``name`` attribute.
+            :class:`celery.task.Task` class with a valid ``name`` attribute.
 
         :raises NotRegistered: if the task has not been registered.
 

@@ -159,9 +159,7 @@ class Task(object):
 
     .. attribute:: routing_key
 
-        Override the global default ``routing_key``[#f1]_ for this task.
-
-    .. [#f1] ``settings.CELERY_AMQP_PUBLISHER_ROUTING_KEY``
+        Override the global default ``routing_key`` for this task.
 
     .. attribute:: mandatory
 
@@ -193,7 +191,7 @@ class Task(object):
     .. attribute:: disable_error_emails
 
         Disable all error e-mails for this task (only applicable if
-        ``settings.SEND_CELERY_ERROR_EMAILS`` is on).
+        ``settings.SEND_CELERY_ERROR_EMAILS`` is on.)
 
     :raises NotImplementedError: if the :attr:`name` attribute is not set.
 

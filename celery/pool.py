@@ -136,11 +136,11 @@ class TaskPool(object):
 
         :option callbacks: List of callbacks to execute if the task was
             successful. Must have the function signature:
-                ``mycallback(result, meta)``
+            ``mycallback(result, meta)``
 
         :option errbacks: List of errbacks to execute if the task raised
             and exception. Must have the function signature:
-                ``myerrback(exc, meta)``.
+            ``myerrback(exc, meta)``.
 
         :option tid: The tid for this task (unqiue pool id).
 
@@ -184,11 +184,7 @@ class TaskPool(object):
         return processes_reaped
 
     def get_worker_pids(self):
-        """Returns the process id's of all the pool workers.
-
-        :rtype: list
-
-        """
+        """Returns the process id's of all the pool workers."""
         return [process.pid for process in self._pool._pool]
 
     def on_ready(self, ret_value, callbacks, errbacks, meta):
