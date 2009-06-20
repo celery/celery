@@ -26,7 +26,7 @@ Overview
 
 This is a high level overview of the architecture.
 
-.. image:: http://cloud.github.com/downloads/ask/celery/Celery-Overview-v2.jpg
+.. image:: http://cloud.github.com/downloads/ask/celery/Celery-Overview-v4.jpg
 
 The broker is an AMQP server pushing tasks to the worker servers.
 A worker server is a networked machine running ``celeryd``. This can be one or
@@ -313,7 +313,7 @@ really make sense.
 A look inside the worker
 ========================
 
-.. image:: http://cloud.github.com/downloads/ask/celery/Celery-InsideTheWorker.jpg
+.. image:: http://cloud.github.com/downloads/ask/celery/Celery-InsideTheWorker-v2.jpg
 
 Getting Help
 ============
