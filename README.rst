@@ -231,7 +231,7 @@ python shell, but keep in mind that since arguments are pickled, you can't
 use custom classes defined in the shell session.
 
 While you can use regular functions, the recommended way is to define
-a task class. With this way you can cleanly upgrade the task to use the more
+a task class. This way you can cleanly upgrade the task to use the more
 advanced features of celery later.
 
 This is a task that basically does nothing but take some arguments,
