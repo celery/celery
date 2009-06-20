@@ -310,8 +310,8 @@ Here's an example of a periodic task:
 really make sense.
 
 
-A look inside the worker server
-================================
+A look inside the worker
+========================
 
 .. image:: http://cloud.github.com/downloads/ask/celery/Celery-InsideTheWorker.jpg
 
