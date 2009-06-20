@@ -210,8 +210,8 @@ background, as a daemon::
     $ python manage.py celeryd --detach
 
 
-For help on command line arguments to the worker server, you can execute the
-help command::
+For a complete listing of the command line arguments available, with a short
+description, you can use the help command::
 
     $ python manage.py help celeryd
 
