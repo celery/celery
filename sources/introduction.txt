@@ -313,7 +313,7 @@ really make sense.
 A look inside the worker
 ========================
 
-.. image:: http://cloud.github.com/downloads/ask/celery/Celery-InsideTheWorker-v2.jpg
+.. image:: http://cloud.github.com/downloads/ask/celery/InsideTheWorker-v2.jpg
 
 Getting Help
 ============
