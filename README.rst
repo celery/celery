@@ -52,8 +52,8 @@ Features
     * Supports *periodic tasks*, which makes it a (better) replacement
       for cronjobs.
 
-    * When a task has been executed, the return value is stored using either
-      a MySQL/Oracle/PostgreSQL/SQLite database, memcached,
+    * When a task has been executed, the return value can be stored using
+      either a MySQL/Oracle/PostgreSQL/SQLite database, Memcached,
       or Tokyo Tyrant back-end.
 
     * If the task raises an exception, the exception instance is stored,
@@ -74,8 +74,10 @@ Features
       returns a JSON-serialized data structure containing the task status,
       and the return value if completed, or exception on failure.
 
-    * Supports statistics for profiling and monitoring.
-      
+    * The worker can collect statistics, like, how many tasks has been
+      executed by type, and the time it took to process them. Very useful
+      for monitoring and profiling.
+
 API Reference Documentation
 ===========================
 
