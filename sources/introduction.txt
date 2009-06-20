@@ -21,6 +21,11 @@ plentiful. Implementing these features asynchronously using ``celery`` is
 easy and fun, and the performance improvements can make it more than
 worthwhile.
 
+Overview
+========
+
+.. image:: http://cloud.github.com/downloads/ask/celery/Celery-Overview.jpg
+
 Features
 ========
 
