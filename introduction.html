@@ -73,7 +73,14 @@ worthwhile.</p>
 </div>
 <div class="section" id="overview">
 <h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<p>This is a high level overview of the architecture.</p>
 <img alt="http://cloud.github.com/downloads/ask/celery/Celery-Overview.jpg" src="http://cloud.github.com/downloads/ask/celery/Celery-Overview.jpg" />
+<p>The broker is an AMQP server pushing tasks to the worker servers.
+A worker server is a networked machine running <tt class="docutils literal"><span class="pre">celeryd</span></tt>. This can be one or
+more machines, depending on the workload. See <a href="#id2"><span class="problematic" id="id3">`A look inside the worker`_</span></a> to
+see how the worker server works.</p>
+<p>The result of the task can be stored for later retrieval (called its
+&#8220;tombstone&#8221;).</p>
 </div>
 <div class="section" id="features">
 <h2>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
@@ -298,6 +305,10 @@ Here&#8217;s an example of a periodic task:</p>
 really make sense.</p>
 </div>
 </div>
+<div class="section" id="a-look-inside-the-worker-server">
+<h2>A look inside the worker server<a class="headerlink" href="#a-look-inside-the-worker-server" title="Permalink to this headline">¶</a></h2>
+<img alt="http://cloud.github.com/downloads/ask/celery/Celery-InsideTheWorker.jpg" src="http://cloud.github.com/downloads/ask/celery/Celery-InsideTheWorker.jpg" />
+</div>
 <div class="section" id="getting-help">
 <h2>Getting Help<a class="headerlink" href="#getting-help" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="mailing-list">
@@ -358,6 +369,7 @@ file in the top distribution directory for the full license text.</p>
 <li><a class="reference external" href="#periodic-tasks">Periodic Tasks</a></li>
 </ul>
 </li>
+<li><a class="reference external" href="#a-look-inside-the-worker-server">A look inside the worker server</a></li>
 <li><a class="reference external" href="#getting-help">Getting Help</a><ul>
 <li><a class="reference external" href="#mailing-list">Mailing list</a></li>
 <li><a class="reference external" href="#irc">IRC</a></li>

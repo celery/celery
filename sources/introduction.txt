@@ -24,7 +24,17 @@ worthwhile.
 Overview
 ========
 
+This is a high level overview of the architecture.
+
 .. image:: http://cloud.github.com/downloads/ask/celery/Celery-Overview.jpg
+
+The broker is an AMQP server pushing tasks to the worker servers.
+A worker server is a networked machine running ``celeryd``. This can be one or
+more machines, depending on the workload. See `A look inside the worker`_ to
+see how the worker server works.
+
+The result of the task can be stored for later retrieval (called its
+"tombstone").
 
 Features
 ========
@@ -298,6 +308,12 @@ Here's an example of a periodic task:
 
 **Note:** Periodic tasks does not support arguments, as this doesn't
 really make sense.
+
+
+A look inside the worker server
+================================
+
+.. image:: http://cloud.github.com/downloads/ask/celery/Celery-InsideTheWorker.jpg
 
 Getting Help
 ============
