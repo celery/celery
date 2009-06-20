@@ -204,8 +204,8 @@ see what's going on without consulting the logfile::
     $ python manage.py celeryd
 
 
-However, in production you'll probably want to run the worker in the
-background as a daemon instead::
+However, in production you probably want to run the worker in the
+background, as a daemon:: 
 
     $ python manage.py celeryd --detach
 
