@@ -19,7 +19,8 @@ import pickle
 
 def apply_async(task, args=None, kwargs=None, routing_key=None,
         immediate=None, mandatory=None, connection=None,
-        connect_timeout=AMQP_CONNECTION_TIMEOUT, priority=None, **opts):
+        connect_timeout=AMQP_CONNECTION_TIMEOUT, priority=None, 
+        exchange=None, **opts):
     """Run a task asynchronously by the celery daemon(s).
 
     :param task: The task to run (a callable object, or a :class:`Task`
@@ -50,6 +51,7 @@ def apply_async(task, args=None, kwargs=None, routing_key=None,
     """
     args = args or []
     kwargs = kwargs or {}
+    exchange = exchange or getattr(task, "exchange", None)
     routing_key = routing_key or getattr(task, "routing_key", None)
     immediate = immediate or getattr(task, "immediate", None)
     mandatory = mandatory or getattr(task, "mandatory", None)
@@ -62,7 +64,7 @@ def apply_async(task, args=None, kwargs=None, routing_key=None,
         if not connection:
             connection = DjangoAMQPConnection(connect_timeout=connect_timeout)
             need_to_close_connection = True
-        publisher = TaskPublisher(connection=connection)
+        publisher = TaskPublisher(connection=connection, exchange=exchange)
 
     delay_task = publisher.delay_task
     if taskset_id:
@@ -231,6 +233,7 @@ class Task(object):
     """
     name = None
     type = "regular"
+    exchange = None
     routing_key = None
     immediate = False
     mandatory = False
@@ -264,7 +267,7 @@ class Task(object):
         """
         return setup_logger(**kwargs)
 
-    def get_publisher(self):
+    def get_publisher(self, connect_timeout=AMQP_CONNECTION_TIMEOUT):
         """Get a celery task message publisher.
 
         :rtype: :class:`celery.messaging.TaskPublisher`.
@@ -277,10 +280,13 @@ class Task(object):
             >>> publisher.connection.close()
 
         """
-        return TaskPublisher(connection=DjangoAMQPConnection(
-                                connect_timeout=AMQP_CONNECTION_TIMEOUT))
+       
+        connection = DjangoAMQPConnection(connect_timeout=connect_timeout)
+        return TaskPublisher(connection=connection,
+                             exchange=self.exchange,
+                             routing_key=self.routing_key)
 
-    def get_consumer(self):
+    def get_consumer(self, connect_timeout=AMQP_CONNECTION_TIMEOUT):
         """Get a celery task message consumer.
 
         :rtype: :class:`celery.messaging.TaskConsumer`.
@@ -293,8 +299,9 @@ class Task(object):
             >>> consumer.connection.close()
 
         """
-        return TaskConsumer(connection=DjangoAMQPConnection(
-                                connect_timeout=AMQP_CONNECTION_TIMEOUT))
+        connection = DjangoAMQPConnection(connect_timeout=connect_timeout)
+        return TaskConsumer(connection=connection, exchange=self.exchange,
+                            routing_key=self.routing_key)
 
     @classmethod
     def delay(cls, *args, **kwargs):
@@ -409,7 +416,8 @@ class TaskSet(object):
         """
         taskset_id = str(uuid.uuid4())
         conn = DjangoAMQPConnection(connect_timeout=connect_timeout)
-        publisher = TaskPublisher(connection=conn)
+        publisher = TaskPublisher(connection=conn,
+                                  exchange=self.task.exchange)
         subtasks = [apply_async(self.task, args, kwargs,
                                 taskset_id=taskset_id, publisher=publisher)
                         for args, kwargs in self.arguments]

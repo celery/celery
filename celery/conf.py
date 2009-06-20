@@ -133,6 +133,24 @@ AMQP_CONSUMER_ROUTING_KEY = getattr(settings,
 AMQP_CONSUMER_QUEUE = getattr(settings, "CELERY_AMQP_CONSUMER_QUEUE",
                               DEFAULT_AMQP_CONSUMER_QUEUE)
 
+
+"""
+.. data:: AMQP_CONSUMER_QUEUES
+
+    Dictionary defining multiple AMQP queues.
+
+"""
+DEFAULT_AMQP_CONSUMER_QUEUES = {
+        AMQP_CONSUMER_QUEUE : {
+            "exchange" : AMQP_EXCHANGE,
+            "routing_key" : AMQP_CONSUMER_ROUTING_KEY,
+            "exchange_type" : AMQP_EXCHANGE_TYPE
+        }
+}
+
+AMQP_CONSUMER_QUEUES = getattr(settings, "CELERY_AMQP_CONSUMER_QUEUES",
+                              DEFAULT_AMQP_CONSUMER_QUEUES)
+
 """
 .. data:: AMQP_CONNECTION_TIMEOUT
 
