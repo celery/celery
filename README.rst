@@ -26,7 +26,7 @@ Overview
 
 This is a high level overview of the architecture.
 
-.. image:: http://cloud.github.com/downloads/ask/celery/Celery-Overview-v2.jpg
+.. image:: http://cloud.github.com/downloads/ask/celery/Celery-Overview-v4.jpg
 
 The broker is an AMQP server pushing tasks to the worker servers.
 A worker server is a networked machine running ``celeryd``. This can be one or
@@ -52,8 +52,8 @@ Features
     * Supports *periodic tasks*, which makes it a (better) replacement
       for cronjobs.
 
-    * When a task has been executed, the return value is stored using either
-      a MySQL/Oracle/PostgreSQL/SQLite database, memcached,
+    * When a task has been executed, the return value can be stored using
+      either a MySQL/Oracle/PostgreSQL/SQLite database, Memcached,
       or Tokyo Tyrant back-end.
 
     * If the task raises an exception, the exception instance is stored,
@@ -74,8 +74,10 @@ Features
       returns a JSON-serialized data structure containing the task status,
       and the return value if completed, or exception on failure.
 
-    * Supports statistics for profiling and monitoring.
-      
+    * The worker can collect statistics, like, how many tasks has been
+      executed by type, and the time it took to process them. Very useful
+      for monitoring and profiling.
+
 API Reference Documentation
 ===========================
 
@@ -202,14 +204,14 @@ see what's going on without consulting the logfile::
     $ python manage.py celeryd
 
 
-However, in production you'll probably want to run the worker in the
-background as a daemon instead::
+However, in production you probably want to run the worker in the
+background, as a daemon:: 
 
     $ python manage.py celeryd --detach
 
 
-For help on command line arguments to the worker server, you can execute the
-help command::
+For a complete listing of the command line arguments available, with a short
+description, you can use the help command::
 
     $ python manage.py help celeryd
 
@@ -229,7 +231,7 @@ python shell, but keep in mind that since arguments are pickled, you can't
 use custom classes defined in the shell session.
 
 While you can use regular functions, the recommended way is to define
-a task class. With this way you can cleanly upgrade the task to use the more
+a task class. This way you can cleanly upgrade the task to use the more
 advanced features of celery later.
 
 This is a task that basically does nothing but take some arguments,
@@ -313,7 +315,7 @@ really make sense.
 A look inside the worker
 ========================
 
-.. image:: http://cloud.github.com/downloads/ask/celery/Celery-InsideTheWorker.jpg
+.. image:: http://cloud.github.com/downloads/ask/celery/InsideTheWorker-v2.jpg
 
 Getting Help
 ============
