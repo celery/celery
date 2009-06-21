@@ -64,10 +64,9 @@ class TaskPublisher(Publisher):
         return task_id
 
 
-class TaskConsumerSet(ConsumerSet):
-    
-    def __init__(self, connection, queues=conf.AMQP_CONSUMER_QUEUES, consumers=[], **options):
-        super(TaskConsumerSet, self).__init__(connection, queues=queues, consumers=consumers, **options)
+def get_consumer_set(connection, queues=conf.AMQP_CONSUMER_QUEUES):
+    return ConsumerSet(connection, from_dict=queues, decoder=pickle.loads)
+
 
 class TaskConsumer(Consumer):
     """The AMQP Task Consumer class."""

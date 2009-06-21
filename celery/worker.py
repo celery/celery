@@ -1,6 +1,6 @@
 """celery.worker"""
 from carrot.connection import DjangoAMQPConnection
-from celery.messaging import TaskConsumerSet
+from celery.messaging import get_consumer_set
 from celery.conf import DAEMON_CONCURRENCY, DAEMON_LOG_FILE
 from celery.conf import SEND_CELERY_TASK_ERROR_EMAILS
 from celery.log import setup_logger
@@ -326,7 +326,7 @@ class WorkController(object):
 
     .. attribute:: task_consumer
 
-        The :class:`celery.messaging.TaskConsumerSet` instance used.
+        The :class:`carrot.messaging.ConsumerSet` instance used.
 
     """
     loglevel = logging.ERROR
@@ -362,7 +362,7 @@ class WorkController(object):
         """
         self.close_connection()
         self.amqp_connection = DjangoAMQPConnection()
-        self.task_consumer = TaskConsumerSet(connection=self.amqp_connection)
+        self.task_consumer = get_consumer_set(connection=self.amqp_connection)
         self.task_consumer.register_callback(self._message_callback)
         return self.task_consumer
 
