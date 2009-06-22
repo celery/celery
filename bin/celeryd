@@ -4,4 +4,4 @@ from celery.bin.celeryd import run_worker, parse_options
 
 if __name__ == "__main__":
     options = parse_options(sys.argv[1:])
-    run_worker(**options)
+    run_worker(**vars(options))
