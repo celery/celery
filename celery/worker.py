@@ -66,7 +66,7 @@ def jail(task_id, task_name, func, args, kwargs):
     ignore_result = getattr(func, "ignore_result", False)
     timer_stat = TaskTimerStats.start(task_id, task_name, args, kwargs)
 
-     Backend process cleanup
+    # Backend process cleanup
     default_backend.process_cleanup()
 
     try:

@@ -6,7 +6,7 @@ class Loader(object):
 
     def read_configuration(self):
         from django.conf import settings
-        return {}
+        return settings
 
     def on_task_init(self, task_id, task):
         # See: http://groups.google.com/group/django-users/browse_thread/

@@ -12,7 +12,7 @@ from celery.registry import tasks
 from datetime import timedelta
 from celery.backends import default_backend
 from celery.result import AsyncResult, TaskSetResult
-from django.utils.functional import curry
+from functools import partial as curry
 import uuid
 import pickle
 
