@@ -71,6 +71,7 @@ if django_project_dir:
 
 from django.conf import settings
 from celery import __version__
+from celery.supervisor import OFASupervisor
 from celery.log import emergency_error
 from celery.conf import LOG_LEVELS, DAEMON_LOG_FILE, DAEMON_LOG_LEVEL
 from celery.conf import DAEMON_CONCURRENCY, DAEMON_PID_FILE
@@ -248,18 +249,22 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
         context.open()
 
     discovery.autodiscover()
-    worker = WorkController(concurrency=concurrency,
-                            loglevel=loglevel,
-                            logfile=logfile,
-                            is_detached=detach)
+
+    def run_worker():
+        worker = WorkController(concurrency=concurrency,
+                                loglevel=loglevel,
+                                logfile=logfile,
+                                is_detached=detach)
+        try:
+            worker.run()
+        except Exception, e:
+            emergency_error(logfile, "celeryd raised exception %s: %s\n%s" % (
+                            e.__class__, e, traceback.format_exc()))
 
     try:
-        worker.run()
-    except Exception, e:
-        emergency_error(logfile, "celeryd raised exception %s: %s\n%s" % (
-                            e.__class__, e, traceback.format_exc()))
+        OFASupervisor(target=run_worker).start()
     except:
-        if daemon:
+        if detach:
             context.close()
         raise
 
