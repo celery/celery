@@ -42,6 +42,8 @@ class TaskPublisher(Publisher):
     def _delay_task(self, task_name, task_id=None, part_of_set=None,
             task_args=None, task_kwargs=None, **kwargs):
         """INTERNAL"""
+        eta = kwargs.get("eta")
+        countdown = kwargs.get("countdown")
         priority = kwargs.get("priority")
         immediate = kwargs.get("immediate")
         mandatory = kwargs.get("mandatory")
@@ -55,6 +57,8 @@ class TaskPublisher(Publisher):
             "task": task_name,
             "args": task_args,
             "kwargs": task_kwargs,
+            "countdown": countdown,
+            "eta": eta,
         }
         if part_of_set:
             message_data["taskset"] = part_of_set

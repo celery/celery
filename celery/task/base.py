@@ -3,6 +3,7 @@ from celery.conf import AMQP_CONNECTION_TIMEOUT
 from celery.messaging import TaskPublisher, TaskConsumer
 from celery.log import setup_logger
 from celery.result import TaskSetResult
+from celery.execute import apply_async, delay_task
 from datetime import timedelta
 import uuid
 try:
