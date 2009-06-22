@@ -1,4 +1,5 @@
 from celery.task.base import Task, TaskSet, PeriodicTask
+from celery.registry import tasks
 from datetime import timedelta
 try:
     import cPickle as pickle
