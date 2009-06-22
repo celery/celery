@@ -30,6 +30,10 @@
 
     Run in the background as a daemon.
 
+.. cmdoption:: -S, --supervised
+
+    Restart the worker server if it dies.
+
 .. cmdoption:: --discard
 
     Discard all waiting tasks before the daemon is started.
@@ -124,6 +128,9 @@ OPTION_LIST = (
     optparse.make_option('-d', '--detach', '--daemon', default=False,
             action="store_true", dest="detach",
             help="Run in the background as a daemon."),
+    optparse.make_option('-S', '--supervised', default=False,
+            action="store_true", dest="supervised",
+            help="Restart the worker server if it dies."),
     optparse.make_option('-u', '--uid', default=None,
             action="store", dest="uid",
             help="User-id to run celeryd as when in daemon mode."),
@@ -177,7 +184,8 @@ def acquire_pidlock(pidfile):
 def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
         loglevel=DAEMON_LOG_LEVEL, logfile=DAEMON_LOG_FILE, discard=False,
         pidfile=DAEMON_PID_FILE, umask=0, uid=None, gid=None,
-        working_directory=None, chroot=None, statistics=None, **kwargs):
+        supervised=False, working_directory=None, chroot=None,
+        statistics=None, **kwargs):
     """Starts the celery worker server."""
 
     print("Celery %s is starting." % __version__)
@@ -262,7 +270,10 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
                             e.__class__, e, traceback.format_exc()))
 
     try:
-        OFASupervisor(target=run_worker).start()
+        if supervised:
+            OFASupervisor(target=run_worker).start()
+        else:
+            run_worker()
     except:
         if detach:
             context.close()
