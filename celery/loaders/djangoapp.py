@@ -1,8 +1,7 @@
+from celery.loaders.base import BaseLoader
 
-class Loader(object):
 
-    def __init__(self):
-        self._conf_cache = None
+class Loader(BaseLoader):
 
     def read_configuration(self):
         from django.conf import settings
@@ -33,10 +32,3 @@ class Loader(object):
     def on_worker_init(self):
         from celery.discovery import autodiscover
         autodiscover()
-
-    @property
-    def conf(self):
-        if not self._conf_cache:
-            self._conf_cache = self.read_configuration()
-        return self._conf_cache
-

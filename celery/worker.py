@@ -1,6 +1,7 @@
 """celery.worker"""
 from carrot.connection import DjangoAMQPConnection
 from celery.messaging import TaskConsumer
+from celery.loaders import current_loader
 from celery.conf import DAEMON_CONCURRENCY, DAEMON_LOG_FILE
 from celery.conf import SEND_CELERY_TASK_ERROR_EMAILS
 from celery.log import setup_logger
@@ -65,6 +66,9 @@ def jail(task_id, task_name, func, args, kwargs):
     """
     ignore_result = getattr(func, "ignore_result", False)
     timer_stat = TaskTimerStats.start(task_id, task_name, args, kwargs)
+
+    # Load task pre-init handler
+    current_loader.on_worker_init()
 
     # Backend process cleanup
     default_backend.process_cleanup()

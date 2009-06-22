@@ -1,5 +1,5 @@
 """celery.conf"""
-from django.conf import settings
+from celery.loaders import settings
 import logging
 
 DEFAULT_AMQP_EXCHANGE = "celery"

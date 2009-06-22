@@ -8,7 +8,7 @@ except ImportError:
             "The Tokyo Tyrant backend requires the pytyrant library.")
 
 from celery.backends.base import BaseBackend
-from django.conf import settings
+from celery.loaders import settings
 from carrot.messaging import serialize, deserialize
 try:
     import cPickle as pickle

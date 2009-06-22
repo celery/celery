@@ -1,6 +1,6 @@
 """celery.backends"""
 from functools import partial
-from django.conf import settings
+from celery.loaders import settings
 import sys
 
 DEFAULT_BACKEND = "database"

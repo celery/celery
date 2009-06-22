@@ -5,7 +5,7 @@
 """
 from carrot.connection import DjangoAMQPConnection
 from celery.messaging import StatsPublisher, StatsConsumer
-from django.conf import settings
+from celery.loaders import settings
 from django.core.cache import cache
 import time
 

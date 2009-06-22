@@ -68,12 +68,9 @@ try:
     import resource
 except ImportError:
     CAN_DETACH = False
-sys.path.append(os.getcwd())
-django_project_dir = os.environ.get("DJANGO_PROJECT_DIR")
-if django_project_dir:
-    sys.path.append(django_project_dir)
 
-from django.conf import settings
+from celery.loaders import current_loader
+from celery.loaders import settings
 from celery import __version__
 from celery.supervisor import OFASupervisor
 from celery.log import emergency_error
@@ -256,7 +253,9 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
                                 gid=gid)
         context.open()
 
-    discovery.autodiscover()
+    # Run the worker init handler.
+    # (Usually imports task modules and such.)
+    current_loader.on_worker_init()
 
     def run_worker():
         worker = WorkController(concurrency=concurrency,
