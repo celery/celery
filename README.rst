@@ -1,5 +1,5 @@
 ============================================
-celery - Distributed Task Queue for Django.
+celery - Distributed Task Queue for Python
 ============================================
 
 :Version: 0.3.12
@@ -7,7 +7,7 @@ celery - Distributed Task Queue for Django.
 Introduction
 ============
 
-``celery`` is a distributed task queue framework for Django.
+``celery`` is a distributed task queue framework for Python.
 
 It is used for executing tasks *asynchronously*, routed to one or more
 worker servers, running concurrently using multiprocessing.

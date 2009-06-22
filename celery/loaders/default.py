@@ -10,6 +10,6 @@ class Loader(BaseLoader):
         return settings
 
     def on_worker_init(self):
-        imports = getattr(self.conf, "imports", [])
+        imports = getattr(self.conf, "CELERY_TASK_MODULES", [])
         for module in imports:
             __import__(module, [], [], {''})

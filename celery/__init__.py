@@ -1,4 +1,4 @@
-"""Distributed Task Queue for Django"""
+"""Distributed Task Queue for Python"""
 VERSION = (0, 3, 12)
 __version__ = ".".join(map(str, VERSION))
 __author__ = "Ask Solem"
