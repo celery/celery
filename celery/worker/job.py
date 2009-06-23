@@ -252,4 +252,3 @@ class TaskWrapper(object):
                 callbacks=[self.on_success], errbacks=[self.on_failure],
                 on_acknowledge=self.on_acknowledge,
                 meta={"task_id": self.task_id, "task_name": self.task_name})
-
