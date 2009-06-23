@@ -135,7 +135,7 @@ class WorkController(object):
 
         try:
             self.amqp_listener.start()
-        except (SystemExit, KeyboardInterrupt):
+        finally:
             self.shutdown()
 
     def process_task(self, task):
