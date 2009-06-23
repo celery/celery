@@ -3,6 +3,7 @@ from celery.conf import AMQP_CONNECTION_TIMEOUT
 from celery.result import AsyncResult
 from celery.messaging import TaskPublisher
 from functools import partial as curry
+from datetime import datetime, timedelta
 
 
 def apply_async(task, args=None, kwargs=None, routing_key=None,
@@ -50,6 +51,8 @@ def apply_async(task, args=None, kwargs=None, routing_key=None,
     priority = priority or getattr(task, "priority", None)
     taskset_id = opts.get("taskset_id")
     publisher = opts.get("publisher")
+    if countdown:
+        eta = datetime.now() + timedelta(seconds=countdown)
 
     need_to_close_connection = False
     if not publisher:
@@ -65,7 +68,7 @@ def apply_async(task, args=None, kwargs=None, routing_key=None,
     task_id = delay_task(task.name, args, kwargs,
                          routing_key=routing_key, mandatory=mandatory,
                          immediate=immediate, priority=priority,
-                         countdown=countdown, eta=eta)
+                         eta=eta)
 
     if need_to_close_connection:
         publisher.close()

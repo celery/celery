@@ -43,7 +43,6 @@ class TaskPublisher(Publisher):
             task_args=None, task_kwargs=None, **kwargs):
         """INTERNAL"""
         eta = kwargs.get("eta")
-        countdown = kwargs.get("countdown")
         priority = kwargs.get("priority")
         immediate = kwargs.get("immediate")
         mandatory = kwargs.get("mandatory")
@@ -57,7 +56,6 @@ class TaskPublisher(Publisher):
             "task": task_name,
             "args": task_args,
             "kwargs": task_kwargs,
-            "countdown": countdown,
             "eta": eta,
         }
         if part_of_set:
