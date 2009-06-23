@@ -7,8 +7,7 @@ from functools import partial as curry
 
 def apply_async(task, args=None, kwargs=None, routing_key=None,
         immediate=None, mandatory=None, connection=None,
-        connect_timeout=AMQP_CONNECTION_TIMEOUT, priority=None,
-        eta=None, countdown=None, **opts):
+        connect_timeout=AMQP_CONNECTION_TIMEOUT, priority=None, **opts):
     """Run a task asynchronously by the celery daemon(s).
 
     :param task: The task to run (a callable object, or a :class:`Task`
@@ -17,12 +16,6 @@ def apply_async(task, args=None, kwargs=None, routing_key=None,
     :param args: The positional arguments to pass on to the task (a ``list``).
 
     :param kwargs: The keyword arguments to pass on to the task (a ``dict``)
-
-    :keyword countdown:  Number of seconds in the future that the task
-        should execute.
-
-    :keyword eta: The task won't be run before this date
-        (a :class:`datetime.datetime` object).
 
     :keyword routing_key: The routing key used to route the task to a worker
         server.
@@ -64,8 +57,7 @@ def apply_async(task, args=None, kwargs=None, routing_key=None,
         
     task_id = delay_task(task.name, args, kwargs,
                          routing_key=routing_key, mandatory=mandatory,
-                         immediate=immediate, priority=priority,
-                         countdown=countdown, eta=eta)
+                         immediate=immediate, priority=priority)
 
     if need_to_close_connection:
         publisher.close()
