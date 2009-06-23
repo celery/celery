@@ -171,7 +171,7 @@ def acquire_pidlock(pidfile):
     except os.error, exc:
         if exc.errno == errno.ESRCH:
             sys.stderr.write("Stale pidfile exists. Removing it.\n")
-            pidlock.release()
+            os.unlink(pidfile)
             return PIDLockFile(pidfile)
     else:
         raise SystemExit(

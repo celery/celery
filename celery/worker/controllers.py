@@ -21,8 +21,12 @@ class Mediator(threading.Thread):
             if self._shutdown.isSet():
                 break
             # This blocks until there's a message in the queue.
-            task = self.bucket_queue.get()
-            self.callback(task)
+            try:
+                task = self.bucket_queue.get(timeout=1)
+            except QueueEmpty:
+                pass
+            else:
+                self.callback(task)
         self._stopped.set() # indicate that we are stopped
 
     def stop(self):
