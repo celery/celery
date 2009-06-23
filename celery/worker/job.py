@@ -16,6 +16,8 @@ EMAIL_SIGNATURE_SEP = "-- "
 TASK_FAIL_EMAIL_BODY = """
 Task %%(name)s with id %%(id)s raised exception: %%(exc)s
 
+
+Task was called with args:%%(args)s kwargs:%%(kwargs)s.
 The contents of the full traceback was:
 
 %%(traceback)s
@@ -218,6 +220,8 @@ class TaskWrapper(object):
             "name": task_name,
             "exc": exc_info.exception,
             "traceback": exc_info.traceback,
+            "args": self.args,
+            "kwargs": self.kwargs,
         }
         self.logger.error(self.fail_msg.strip() % context)
 
