@@ -8,7 +8,8 @@ from datetime import datetime, timedelta
 
 def apply_async(task, args=None, kwargs=None, routing_key=None,
         immediate=None, mandatory=None, connection=None,
-        connect_timeout=AMQP_CONNECTION_TIMEOUT, priority=None, **opts):
+        connect_timeout=AMQP_CONNECTION_TIMEOUT, priority=None,
+        countdown=None, eta=None, **opts):
     """Run a task asynchronously by the celery daemon(s).
 
     :param task: The task to run (a callable object, or a :class:`Task`
