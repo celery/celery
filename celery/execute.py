@@ -19,11 +19,22 @@ def apply_async(task, args=None, kwargs=None, routing_key=None,
 
     :param kwargs: The keyword arguments to pass on to the task (a ``dict``)
 
+    :param countdown: Number of seconds into the future that the task should
+        execute. Defaults to immediate delivery (Do not confuse that with
+        the ``immediate`` setting, they are unrelated).
+
+    :param eta: A :class:`datetime.datetime` object that describes the
+        absolute time when the task should execute. May not be specified
+        if ``countdown`` is also supplied. (Do not confuse this with the
+        ``immediate`` setting, they are unrelated).
+
     :keyword routing_key: The routing key used to route the task to a worker
         server.
 
     :keyword immediate: Request immediate delivery. Will raise an exception
         if the task cannot be routed to a worker immediately.
+        (Do not confuse this parameter with the ``countdown`` and ``eta``
+        settings, as they are unrelated).
 
     :keyword mandatory: Mandatory routing. Raises an exception if there's
         no running workers able to take on this task.
