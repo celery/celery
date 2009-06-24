@@ -180,21 +180,26 @@ class WorkController(object):
         self.amqp_listener = AMQPListener(self.bucket_queue, self.hold_queue,
                                           logger=self.logger)
         self.mediator = Mediator(self.bucket_queue, self.safe_process_task)
+        
+        # The order is important here;
+        #   the first in the list is the first to start,
+        # and they must be stopped in reverse order.  
+        self.components = [self.pool,
+                           self.mediator,
+                           self.periodic_work_controller,
+                           self.amqp_listener]
 
     def start(self):
         """Starts the workers main loop."""
         self._state = "RUN"
 
         try:
-            self.pool.run()
-            self.mediator.start()
-            self.periodic_work_controller.start()
-            self.amqp_listener.start()
+            [component.start() for component in self.components]
         finally:
             self.stop()
 
     def safe_process_task(self, task):
-        """Same as :meth:`process_task`, but catch all exceptions
+        """Same as :meth:`process_task`, but catches all exceptions
         the task raises and log them as errors, to make sure the
         worker doesn't die."""
         try:
@@ -224,9 +229,5 @@ class WorkController(object):
         # shut down the periodic work controller thread
         if self._state != "RUN":
             return
-        self._state = "TERMINATE"
-        self.amqp_listener.stop()
-        self.mediator.stop()
-        self.periodic_work_controller.stop()
-        self.pool.terminate()
-        self._state = "STOP"
+
+        [component.stop() for component in reversed(self.components)]

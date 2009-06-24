@@ -10,6 +10,7 @@ import uuid
 
 from multiprocessing.pool import RUN as POOL_STATE_RUN
 from celery.datastructures import ExceptionInfo
+from functools import partial as curry
 
 
 class TaskPool(object):
@@ -39,48 +40,18 @@ class TaskPool(object):
         self._pool = None
         self._processes = None
 
-    def run(self):
+    def start(self):
         """Run the task pool.
 
         Will pre-fork all workers so they're ready to accept tasks.
 
         """
-        self._start()
-
-    def _start(self):
-        """INTERNAL: Starts the pool. Used by :meth:`run`."""
         self._processes = {}
         self._pool = multiprocessing.Pool(processes=self.limit)
 
-    def terminate(self):
+    def stop(self):
         """Terminate the pool."""
         self._pool.terminate()
-
-    def _terminate_and_restart(self):
-        """INTERNAL: Terminate and restart the pool."""
-        try:
-            self.terminate()
-        except OSError:
-            pass
-        self._start()
-
-    def _restart(self):
-        """INTERNAL: Close and restart the pool."""
-        self.logger.info("Closing and restarting the pool...")
-        self._pool.close()
-        timeout_thread = threading.Timer(30.0, self._terminate_and_restart)
-        timeout_thread.start()
-        self._pool.join()
-        timeout_thread.cancel()
-        self._start()
-
-    def _pool_is_running(self):
-        """Check if the pool is in the run state.
-
-        :returns: ``True`` if the pool is running.
-
-        """
-        return self._pool._state == POOL_STATE_RUN
 
     def apply_async(self, target, args=None, kwargs=None, callbacks=None,
             errbacks=None, on_acknowledge=None, meta=None):
@@ -97,56 +68,30 @@ class TaskPool(object):
         meta = meta or {}
         tid = str(uuid.uuid4())
 
-        if not self._pool_is_running():
-            self._start()
-
         self._processed_total = self._process_counter.next()
 
-        on_return = lambda r: self.on_return(r, tid, callbacks, errbacks, meta)
-
+        on_return = curry(self.on_return, tid, callbacks, errbacks, meta)
 
         if self.full():
             self.wait_for_result()
+
         result = self._pool.apply_async(target, args, kwargs,
-                                           callback=on_return)
+                                        callback=on_return)
         if on_acknowledge:
             on_acknowledge()
-        self.add(result, callbacks, errbacks, tid, meta)
+        
+        self._processes[tid] = [result, callbacks, errbacks, meta]
 
         return result
 
-    def on_return(self, ret_val, tid, callbacks, errbacks, meta):
+    def on_return(self, tid, callbacks, errbacks, meta, ret_value):
         """What to do when the process returns."""
         try:
             del(self._processes[tid])
         except KeyError:
             pass
         else:
-            self.on_ready(ret_val, callbacks, errbacks, meta)
-
-    def add(self, result, callbacks, errbacks, tid, meta):
-        """Add a process to the queue.
-
-        If the queue is full, it will wait for the first task to finish,
-        collects its result and remove it from the queue, so it's ready
-        to accept new processes.
-
-        :param result: A :class:`multiprocessing.AsyncResult` instance, as
-            returned by :meth:`multiprocessing.Pool.apply_async`.
-
-        :option callbacks: List of callbacks to execute if the task was
-            successful. Must have the function signature:
-            ``mycallback(result, meta)``
-
-        :option errbacks: List of errbacks to execute if the task raised
-            and exception. Must have the function signature:
-            ``myerrback(exc, meta)``.
-
-        :option tid: The tid for this task (unqiue pool id).
-
-        """
-
-        self._processes[tid] = [result, callbacks, errbacks, meta]
+            self.on_ready(callbacks, errbacks, meta, ret_value)
 
     def full(self):
         """Is the pool full?
@@ -179,7 +124,7 @@ class TaskPool(object):
             except multiprocessing.TimeoutError:
                 continue
             else:
-                self.on_return(ret_value, tid, callbacks, errbacks, meta)
+                self.on_return(tid, callbacks, errbacks, meta, ret_value)
                 processes_reaped += 1
         return processes_reaped
 
@@ -187,14 +132,13 @@ class TaskPool(object):
         """Returns the process id's of all the pool workers."""
         return [process.pid for process in self._pool._pool]
 
-    def on_ready(self, ret_value, callbacks, errbacks, meta):
+    def on_ready(self, callbacks, errbacks, meta, ret_value):
         """What to do when a worker task is ready and its return value has
         been collected."""
 
         if isinstance(ret_value, ExceptionInfo):
             if isinstance(ret_value.exception, KeyboardInterrupt) or \
                     isinstance(ret_value.exception, SystemExit):
-                self.terminate()
                 raise ret_value.exception
             for errback in errbacks:
                 errback(ret_value, meta)
