@@ -264,7 +264,7 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
                                 logfile=logfile,
                                 is_detached=detach)
         try:
-            worker.run()
+            worker.start()
         except Exception, e:
             emergency_error(logfile, "celeryd raised exception %s: %s\n%s" % (
                             e.__class__, e, traceback.format_exc()))
