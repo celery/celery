@@ -1,6 +1,7 @@
 include AUTHORS
 include Changelog
 include README
+include README.rst
 include MANIFEST.in
 include LICENSE
 include TODO

@@ -18,6 +18,7 @@ class TaskPublisher(Publisher):
     exchange = conf.AMQP_EXCHANGE
     exchange_type = conf.AMQP_EXCHANGE_TYPE
     routing_key = conf.AMQP_PUBLISHER_ROUTING_KEY
+    serializer = "pickle"
     encoder = pickle.dumps
 
     def delay_task(self, task_name, task_args, task_kwargs, **kwargs):
