@@ -7,7 +7,8 @@ Documentation for this module is in ``docs/reference/celery.worker.rst``.
 """
 from carrot.connection import DjangoAMQPConnection
 from celery.worker.controllers import Mediator, PeriodicWorkController
-from celery.worker.job import TaskWrapper, UnknownTaskError
+from celery.worker.job import TaskWrapper
+from celery.registry import NotRegistered
 from celery.messaging import TaskConsumer
 from celery.conf import DAEMON_CONCURRENCY, DAEMON_LOG_FILE
 from celery.log import setup_logger
@@ -209,7 +210,7 @@ class WorkController(object):
                 # execute_next_task didn't return a r/name/id tuple,
                 # probably because it got an exception.
                 pass
-            except UnknownTaskError, exc:
+            except NotRegistered, exc:
                 self.logger.info("Unknown task ignored: %s" % (exc))
             except Exception, exc:
                 self.logger.critical("Message queue raised %s: %s\n%s" % (

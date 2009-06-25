@@ -4,7 +4,7 @@ Jobs Executable by the Worker Server.
 
 """
 from celery.conf import SEND_CELERY_TASK_ERROR_EMAILS
-from celery.registry import tasks
+from celery.registry import tasks, NotRegistered
 from celery.datastructures import ExceptionInfo
 from celery.backends import default_backend
 from django.core.mail import mail_admins
@@ -31,11 +31,6 @@ The contents of the full traceback was:
 Just thought I'd let you know!
 celeryd at %%(hostname)s.
 """ % {"EMAIL_SIGNATURE_SEP": EMAIL_SIGNATURE_SEP}
-
-
-class UnknownTaskError(Exception):
-    """Got an unknown task in the queue. The message is requeued and
-    ignored."""
 
 
 def jail(task_id, task_name, func, args, kwargs):
@@ -172,7 +167,7 @@ class TaskWrapper(object):
                 self.args, self.kwargs)
 
     @classmethod
-    def from_message(cls, message, message_data, logger):
+    def from_message(cls, message, message_data, logger=None):
         """Create a :class:`TaskWrapper` from a task message sent by
         :class:`celery.messaging.TaskPublisher`.
 
@@ -192,7 +187,7 @@ class TaskWrapper(object):
                     for key, value in kwargs.items()])
 
         if task_name not in tasks:
-            raise UnknownTaskError(task_name)
+            raise NotRegistered(task_name)
         task_func = tasks[task_name]
         return cls(task_name, task_id, task_func, args, kwargs,
                     on_acknowledge=message.ack, logger=logger)
@@ -222,8 +217,8 @@ class TaskWrapper(object):
         task_func_kwargs = self.extend_with_default_kwargs(loglevel, logfile)
         if self.on_acknowledge:
             self.on_acknowledge()
-        return jail(self.task_id, self.task_name, [
-                        self.task_func, self.args, task_func_kwargs])
+        return jail(self.task_id, self.task_name, self.task_func,
+                    self.args, task_func_kwargs)
 
     def on_success(self, ret_value, meta):
         """The handler used if the task was successfully processed (
