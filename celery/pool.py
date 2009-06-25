@@ -52,6 +52,8 @@ class TaskPool(object):
     def stop(self):
         """Terminate the pool."""
         self._pool.terminate()
+        self._processes = {}
+        self._pool = None
 
     def apply_async(self, target, args=None, kwargs=None, callbacks=None,
             errbacks=None, on_acknowledge=None, meta=None):
