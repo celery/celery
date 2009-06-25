@@ -9,7 +9,9 @@ MAX_RESTART_FREQ = 3
 MAX_RESTART_FREQ_TIME = 10
 
 
-def raise_ping_timeout():
+def raise_ping_timeout(msg):
+    """Raises :exc:`multiprocessing.TimeoutError`, for use in
+    :class:`threading.Timer` callbacks."""
     raise TimeoutError("Supervised: Timed out while pinging process.")
 
 
@@ -24,11 +26,11 @@ class OFASupervisor(object):
 
     :param target: see :attr:`target`.
     :param args: see :attr:`args`.
-    :param kwargs see :attr:`kwargs`.
-    :param join_timeout see :attr:`join_timeout`.
-    :param max_restart_freq see :attr:`max_restart_freq`.
-    :param max_restart_freq_time see :attr:`max_restart_freq_time`.
-    :param check_interval see :attr:`max_restart_freq_time`.
+    :param kwargs: see :attr:`kwargs`.
+    :param join_timeout: see :attr:`join_timeout`.
+    :param max_restart_freq: see :attr:`max_restart_freq`.
+    :param max_restart_freq_time: see :attr:`max_restart_freq_time`.
+    :param check_interval: see :attr:`max_restart_freq_time`.
 
     .. attribute:: target
 
