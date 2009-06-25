@@ -50,8 +50,52 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="backend-tokyo-tyrant-celery-backends-tyrant">
-<h1>Backend: Tokyo Tyrant - celery.backends.tyrant<a class="headerlink" href="#backend-tokyo-tyrant-celery-backends-tyrant" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="module-celery.backends.tyrant">
+<h1>Backend: Tokyo Tyrant - celery.backends.tyrant<a class="headerlink" href="#module-celery.backends.tyrant" title="Permalink to this headline">¶</a></h1>
+<p>celery.backends.tyrant</p>
+<dl class="class">
+<dt id="celery.backends.tyrant.Backend">
+<em class="property">
+class </em><tt class="descclassname">celery.backends.tyrant.</tt><tt class="descname">Backend</tt><big>(</big><em>tyrant_host=None</em>, <em>tyrant_port=None</em><big>)</big><a class="headerlink" href="#celery.backends.tyrant.Backend" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tokyo Cabinet based task backend store.</p>
+<dl class="attribute">
+<dt id="celery.backends.tyrant.Backend.tyrant_host">
+<tt class="descname">tyrant_host</tt><a class="headerlink" href="#celery.backends.tyrant.Backend.tyrant_host" title="Permalink to this definition">¶</a></dt>
+<dd>The hostname to the Tokyo Tyrant server.</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.backends.tyrant.Backend.tyrant_port">
+<tt class="descname">tyrant_port</tt><a class="headerlink" href="#celery.backends.tyrant.Backend.tyrant_port" title="Permalink to this definition">¶</a></dt>
+<dd>The port to the Tokyo Tyrant server.</dd></dl>
+
+<dl class="method">
+<dt id="celery.backends.tyrant.Backend.get_result">
+<tt class="descname">get_result</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.backends.tyrant.Backend.get_result" title="Permalink to this definition">¶</a></dt>
+<dd>Get the result of a task.</dd></dl>
+
+<dl class="method">
+<dt id="celery.backends.tyrant.Backend.get_status">
+<tt class="descname">get_status</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.backends.tyrant.Backend.get_status" title="Permalink to this definition">¶</a></dt>
+<dd>Get the status for a task.</dd></dl>
+
+<dl class="method">
+<dt id="celery.backends.tyrant.Backend.is_done">
+<tt class="descname">is_done</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.backends.tyrant.Backend.is_done" title="Permalink to this definition">¶</a></dt>
+<dd>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task executed successfully.</dd></dl>
+
+<dl class="method">
+<dt id="celery.backends.tyrant.Backend.open">
+<tt class="descname">open</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.backends.tyrant.Backend.open" title="Permalink to this definition">¶</a></dt>
+<dd>Get <tt class="xref docutils literal"><span class="pre">pytyrant.PyTyrant`</span></tt> instance with the current
+server configuration.</dd></dl>
+
+<dl class="method">
+<dt id="celery.backends.tyrant.Backend.store_result">
+<tt class="descname">store_result</tt><big>(</big><em>task_id</em>, <em>result</em>, <em>status</em><big>)</big><a class="headerlink" href="#celery.backends.tyrant.Backend.store_result" title="Permalink to this definition">¶</a></dt>
+<dd>Store task result and status.</dd></dl>
+
+</dd></dl>
+
 </div>
 
 

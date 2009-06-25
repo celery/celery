@@ -5,6 +5,7 @@ celery.backends.base mod reference/celery.backends.base.html
 celery.execute mod reference/celery.execute.html
 celery.bin.celeryd mod reference/celery.bin.celeryd.html
 celery.discovery mod reference/celery.discovery.html
+celery.backends.tyrant mod reference/celery.backends.tyrant.html
 celery.task.builtins mod reference/celery.task.builtins.html
 celery.monitoring mod reference/celery.monitoring.html
 celery.pool mod reference/celery.pool.html
@@ -21,6 +22,7 @@ celery.datastructures mod reference/celery.datastructures.html
 celery.messaging mod reference/celery.messaging.html
 celery.task.base mod reference/celery.task.base.html
 celery.task mod reference/celery.task.html
+celery.views mod reference/celery.views.html
 celery.worker.job mod reference/celery.worker.job.html
 celery.conf mod reference/celery.conf.html
 celery.registry mod reference/celery.registry.html
@@ -36,7 +38,7 @@ celery.result.BaseAsyncResult.is_done method reference/celery.result.html
 celery.task.base.Task.routing_key attribute reference/celery.task.base.html
 celery.backends.database.Backend.run_periodic_tasks method reference/celery.backends.database.html
 celery.result.TaskSetResult.subtasks attribute reference/celery.result.html
-celery.backends.base.BaseBackend.mark_as_done method reference/celery.backends.base.html
+celery.backends.tyrant.Backend.tyrant_port attribute reference/celery.backends.tyrant.html
 celery.result.TaskSetResult.iterate method reference/celery.result.html
 celery.registry.AlreadyRegistered exception reference/celery.registry.html
 celery.backends.base.UnpickleableExceptionWrapper exception reference/celery.backends.base.html
@@ -47,6 +49,7 @@ celery.result.BaseAsyncResult.backend attribute reference/celery.result.html
 celery.fields.PickledObjectField.get_internal_type method reference/celery.fields.html
 celery.worker.controllers.InfinityThread.run method reference/celery.worker.controllers.html
 celery.worker.WorkController.start method reference/celery.worker.html
+celery.views.apply function reference/celery.views.html
 celery.worker.job.TaskWrapper.execute_using_pool method reference/celery.worker.job.html
 celery.messaging.TaskPublisher.encoder method reference/celery.messaging.html
 celery.task.base.TaskSet.join method reference/celery.task.base.html
@@ -54,6 +57,7 @@ celery.datastructures.PositionQueue.full method reference/celery.datastructures.
 celery.discovery.find_related_module function reference/celery.discovery.html
 celery.worker.WorkController.logfile attribute reference/celery.worker.html
 celery.result.BaseAsyncResult.ready method reference/celery.result.html
+celery.worker.AMQPListener.start method reference/celery.worker.html
 celery.registry.TaskRegistry.AlreadyRegistered exception reference/celery.registry.html
 celery.managers.TaskManager.delete_expired method reference/celery.managers.html
 celery.registry.TaskRegistry.filter_types method reference/celery.registry.html
@@ -75,6 +79,7 @@ celery.supervisor.OFASupervisor.args attribute reference/celery.supervisor.html
 celery.backends.get_default_backend_cls data reference/celery.backends.html
 celery.fields.PickledObjectField.get_db_prep_save method reference/celery.fields.html
 celery.monitoring.StatsCollector.dump_to_cache method reference/celery.monitoring.html
+celery.backends.tyrant.Backend.get_result method reference/celery.backends.tyrant.html
 celery.worker.controllers.PeriodicWorkController.process_hold_queue method reference/celery.worker.controllers.html
 celery.result.TaskSetResult.total attribute reference/celery.result.html
 celery.backends.base.find_nearest_pickleable_exception function reference/celery.backends.base.html
@@ -101,7 +106,7 @@ celery.worker.WorkController.process_task method reference/celery.worker.html
 celery.result.TaskSetResult.successful method reference/celery.result.html
 celery.backends.base.BaseBackend.wait_for method reference/celery.backends.base.html
 celery.monitoring.StatsCollector class reference/celery.monitoring.html
-celery.result.AsyncResult class reference/celery.result.html
+celery.backends.base.BaseBackend.mark_as_done method reference/celery.backends.base.html
 celery.registry.TaskRegistry.get_all_periodic method reference/celery.registry.html
 PeriodicTaskMeta.last_run_at attribute reference/celery.models.html
 celery.worker.job.TaskWrapper.execute method reference/celery.worker.job.html
@@ -127,7 +132,7 @@ celery.worker.WorkController class reference/celery.worker.html
 celery.backends.base.BaseBackend.prepare_exception method reference/celery.backends.base.html
 celery.backends.base.TimeoutError exception reference/celery.backends.base.html
 celery.worker.WorkController.periodic_work_controller attribute reference/celery.worker.html
-celery.registry.TaskRegistry.get_all method reference/celery.registry.html
+celery.managers.TaskManager class reference/celery.managers.html
 celery.registry.TaskRegistry.NotRegistered exception reference/celery.registry.html
 celery.datastructures.PositionQueue.length attribute reference/celery.datastructures.html
 celery.datastructures.PositionQueue class reference/celery.datastructures.html
@@ -139,7 +144,7 @@ celery.backends.base.BaseBackend.UnpickleableExceptionWrapper.exc_module attribu
 celery.task.dmap_async function reference/celery.task.html
 celery.supervisor.OFASupervisor class reference/celery.supervisor.html
 celery.worker.job.TaskWrapper.on_failure method reference/celery.worker.job.html
-celery.managers.TaskManager class reference/celery.managers.html
+celery.backends.tyrant.Backend.get_status method reference/celery.backends.tyrant.html
 celery.worker.controllers.InfinityThread.stop method reference/celery.worker.controllers.html
 celery.backends.base.BaseBackend.store_result method reference/celery.backends.base.html
 celery.worker.AMQPListener.logger attribute reference/celery.worker.html
@@ -160,6 +165,7 @@ celery.conf.AMQP_EXCHANGE data reference/celery.conf.html
 celery.datastructures.ExceptionInfo.exception attribute reference/celery.datastructures.html
 celery.task.builtins.AsynchronousMapTask.run method reference/celery.task.builtins.html
 PeriodicTaskMeta.delay method reference/celery.models.html
+celery.worker.WorkController.hold_queue attribute reference/celery.worker.html
 celery.worker.AMQPListener.stop method reference/celery.worker.html
 celery.backends.database.Backend.cleanup method reference/celery.backends.database.html
 celery.task.base.Task.get_consumer method reference/celery.task.base.html
@@ -188,6 +194,7 @@ celery.worker.job.TaskWrapper.task_name attribute reference/celery.worker.job.ht
 celery.worker.controllers.InfinityThread.on_iteration method reference/celery.worker.controllers.html
 celery.monitoring.StatsCollector.total_task_time_running attribute reference/celery.monitoring.html
 celery.monitoring.TimerStats.time_start attribute reference/celery.monitoring.html
+celery.views.task_status function reference/celery.views.html
 celery.task.base.Task.name attribute reference/celery.task.base.html
 celery.backends.base.BaseBackend.UnpickleableExceptionWrapper.exc_args attribute reference/celery.backends.base.html
 TaskMeta.date_done attribute reference/celery.models.html
@@ -196,6 +203,7 @@ celery.pool.TaskPool.stop method reference/celery.pool.html
 celery.task.base.TaskSet.arguments attribute reference/celery.task.base.html
 celery.task.base.Task.delay classmethod reference/celery.task.base.html
 celery.pool.TaskPool.apply_async method reference/celery.pool.html
+celery.result.AsyncResult class reference/celery.result.html
 PeriodicTaskMeta.name attribute reference/celery.models.html
 celery.conf.STATISTICS_COLLECT_INTERVAL data reference/celery.conf.html
 celery.monitoring.StatsCollector.collect method reference/celery.monitoring.html
@@ -203,7 +211,7 @@ celery.monitoring.Statistics class reference/celery.monitoring.html
 celery.monitoring.Statistics.run method reference/celery.monitoring.html
 celery.monitoring.StatsCollector.total_task_time_running_by_type attribute reference/celery.monitoring.html
 celery.backends.base.BaseBackend.is_done method reference/celery.backends.base.html
-celery.registry.TaskRegistry.get_task method reference/celery.registry.html
+celery.backends.tyrant.Backend.is_done method reference/celery.backends.tyrant.html
 celery.result.BaseAsyncResult.task_id attribute reference/celery.result.html
 celery.fields.PickledObjectField class reference/celery.fields.html
 celery.task.base.TaskSet.map classmethod reference/celery.task.base.html
@@ -232,7 +240,8 @@ celery.task.builtins.DeleteExpiredTaskMetaTask class reference/celery.task.built
 celery.worker.job.jail function reference/celery.worker.job.html
 celery.monitoring.Statistics.start classmethod reference/celery.monitoring.html
 celery.worker.WorkController.bucket_queue attribute reference/celery.worker.html
-celery.execute.apply_async function reference/celery.execute.html
+celery.datastructures.PositionQueue.UnfilledPosition class reference/celery.datastructures.html
+celery.registry.TaskRegistry.get_all method reference/celery.registry.html
 celery.worker.controllers.Mediator.bucket_queue attribute reference/celery.worker.controllers.html
 celery.monitoring.Statistics.type attribute reference/celery.monitoring.html
 celery.task.base.Task class reference/celery.task.base.html
@@ -249,8 +258,9 @@ celery.worker.job.TaskWrapper class reference/celery.worker.job.html
 TaskMeta.status attribute reference/celery.models.html
 celery.worker.WorkController.concurrency attribute reference/celery.worker.html
 celery.backends.database.Backend.is_done method reference/celery.backends.database.html
+celery.backends.tyrant.Backend.tyrant_host attribute reference/celery.backends.tyrant.html
 celery.result.TimeoutError exception reference/celery.result.html
-celery.worker.AMQPListener.start method reference/celery.worker.html
+celery.backends.tyrant.Backend class reference/celery.backends.tyrant.html
 TASK_STATUSES_CHOICES data reference/celery.models.html
 celery.utils.chunks function reference/celery.utils.html
 celery.backends.base.BaseBackend.mark_as_retry method reference/celery.backends.base.html
@@ -266,6 +276,7 @@ celery.conf.AMQP_PUBLISHER_ROUTING_KEY data reference/celery.conf.html
 celery.pool.TaskPool.wait_for_result method reference/celery.pool.html
 celery.backends.cache.Backend class reference/celery.backends.cache.html
 celery.task.is_done function reference/celery.task.html
+celery.views.is_task_done function reference/celery.views.html
 celery.worker.controllers.PeriodicWorkController class reference/celery.worker.controllers.html
 celery.conf.LOG_LEVELS data reference/celery.conf.html
 celery.managers.TaskManager.is_done method reference/celery.managers.html
@@ -286,8 +297,9 @@ celery.conf.DAEMON_CONCURRENCY data reference/celery.conf.html
 celery.pool.TaskPool.start method reference/celery.pool.html
 celery.worker.WorkController.logger attribute reference/celery.worker.html
 celery.monitoring.StatsCollector.report method reference/celery.monitoring.html
+celery.backends.tyrant.Backend.store_result method reference/celery.backends.tyrant.html
 TASK_STATUS_PENDING data reference/celery.models.html
-celery.worker.WorkController.hold_queue attribute reference/celery.worker.html
+celery.registry.TaskRegistry.get_task method reference/celery.registry.html
 celery.result.BaseAsyncResult.get method reference/celery.result.html
 celery.worker.AMQPListener.hold_queue attribute reference/celery.worker.html
 celery.conf.DAEMON_PID_FILE data reference/celery.conf.html
@@ -299,7 +311,7 @@ celery.monitoring.TimerStats.on_start method reference/celery.monitoring.html
 celery.task.base.TaskSet.task_name attribute reference/celery.task.base.html
 celery.pool.TaskPool.get_worker_pids method reference/celery.pool.html
 PeriodicTaskMeta.total_run_count attribute reference/celery.models.html
-celery.datastructures.PositionQueue.UnfilledPosition class reference/celery.datastructures.html
+celery.execute.apply_async function reference/celery.execute.html
 celery.result.TaskSetResult.completed_count method reference/celery.result.html
 celery.pool.TaskPool.on_return method reference/celery.pool.html
 celery.messaging.TaskConsumer class reference/celery.messaging.html
@@ -309,4 +321,5 @@ celery.result.TaskSetResult.taskset_id attribute reference/celery.result.html
 celery.monitoring.TimerStats class reference/celery.monitoring.html
 TaskMeta.result attribute reference/celery.models.html
 celery.worker.job.TaskWrapper.from_message classmethod reference/celery.worker.job.html
+celery.backends.tyrant.Backend.open method reference/celery.backends.tyrant.html
 celery.conf.SEND_CELERY_TASK_ERROR_EMAILS data reference/celery.conf.html
