@@ -70,7 +70,7 @@ def apply_async(task, args=None, kwargs=None, routing_key=None,
     delay_task = publisher.delay_task
     if taskset_id:
         delay_task = curry(publisher.delay_task_in_set, taskset_id)
-        
+
     task_id = delay_task(task.name, args, kwargs,
                          routing_key=routing_key, mandatory=mandatory,
                          immediate=immediate, priority=priority,

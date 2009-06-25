@@ -61,7 +61,7 @@ def jail(task_id, task_name, func, args, kwargs):
     """
     ignore_result = getattr(func, "ignore_result", False)
     timer_stat = TaskTimerStats.start(task_id, task_name, args, kwargs)
-        
+
     # See: http://groups.google.com/group/django-users/browse_thread/
     #       thread/78200863d0c07c6d/38402e76cf3233e8?hl=en&lnk=gst&
     #       q=multiprocessing#38402e76cf3233e8

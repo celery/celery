@@ -85,7 +85,7 @@ class TestTaskPool(unittest.TestCase):
         self.assertTrue(scratchpad.get(2))
         self.assertEquals(scratchpad[2]["ret_value"], 400)
         self.assertEquals(scratchpad[2]["meta"], {"foo3": "bar3"})
-        
+
         res3 = p.apply_async(do_something, args=[30], callbacks=[mycallback],
                             meta={"foo4": "bar4"})
 

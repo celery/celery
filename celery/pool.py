@@ -81,7 +81,7 @@ class TaskPool(object):
                                         callback=on_return)
         if on_acknowledge:
             on_acknowledge()
-        
+
         self._processes[tid] = [result, callbacks, errbacks, meta]
 
         return result

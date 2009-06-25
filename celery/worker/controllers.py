@@ -72,9 +72,9 @@ class PeriodicWorkController(threading.Thread):
 
     def run(self):
         """Run the thread.
-        
+
         Should not be used directly, use :meth:`start` instead.
-        
+
         """
         while True:
             if self._shutdown.isSet():

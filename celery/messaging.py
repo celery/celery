@@ -47,7 +47,7 @@ class TaskPublisher(Publisher):
         immediate = kwargs.get("immediate")
         mandatory = kwargs.get("mandatory")
         routing_key = kwargs.get("routing_key")
-    
+
         task_args = task_args or []
         task_kwargs = task_kwargs or {}
         task_id = task_id or str(uuid.uuid4())

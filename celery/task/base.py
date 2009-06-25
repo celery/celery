@@ -44,7 +44,7 @@ class Task(object):
         instead.
 
     .. attribute:: immediate:
-            
+
         Request immediate delivery. If the message cannot be routed to a
         task worker immediately, an exception will be raised. This is
         instead of the default behaviour, where the broker will accept and
@@ -52,7 +52,7 @@ class Task(object):
         be consumed.
 
     .. attribute:: priority:
-    
+
         The message priority. A number from ``0`` to ``9``.
 
     .. attribute:: ignore_result

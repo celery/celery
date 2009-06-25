@@ -11,17 +11,17 @@ def apply(request, task_name, *args):
     Example:
         http://e.com/celery/apply/task_name/arg1/arg2//?kwarg1=a&kwarg2=b
 
-    **NOTE** Use with caution, preferably not make this publicly accessible 
+    **NOTE** Use with caution, preferably not make this publicly accessible
     without ensuring your code is safe!
 
     """
     kwargs = request.method == "POST" and \
             request.POST.copy() or request.GET.copy()
-    kwargs = [(k.encode("utf-8"), v)
-                    for k,v in kwargs.items()]
+    kwargs = [(key.encode("utf-8"), value)
+                    for key, value in kwargs.items()]
     if task_name not in tasks:
         raise Http404("apply: no such task")
-        
+
     task = tasks[task_name]
     result = apply_async(task, args=args, kwargs=kwargs)
     return JSON_dump({"ok": "true", "task_id": result.task_id})
