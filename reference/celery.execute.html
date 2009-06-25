@@ -1,0 +1,190 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Executing Tasks - celery.execute &mdash; Celery v0.3.20 (unstable) documentation</title>
+    <link rel="stylesheet" href="../static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.3.20 (unstable)',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v0.3.20 (unstable) documentation" href="../index.html" />
+    <link rel="up" title="Module API Reference" href="index.html" />
+    <link rel="next" title="Task Result - celery.result" href="celery.result.html" />
+    <link rel="prev" title="Defining Tasks - celery.task.base" href="celery.task.base.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="celery.result.html" title="Task Result - celery.result"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.task.base.html" title="Defining Tasks - celery.task.base"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Celery v0.3.20 (unstable) documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module API Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-celery.execute">
+<h1>Executing Tasks - celery.execute<a class="headerlink" href="#module-celery.execute" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="celery.execute.apply_async">
+<tt class="descclassname">celery.execute.</tt><tt class="descname">apply_async</tt><big>(</big><em>task</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>routing_key=None</em>, <em>immediate=None</em>, <em>mandatory=None</em>, <em>connection=None</em>, <em>connect_timeout=4</em>, <em>priority=None</em>, <em>countdown=None</em>, <em>eta=None</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.execute.apply_async" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run a task asynchronously by the celery daemon(s).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><em>task</em> &#8211; The task to run (a callable object, or a <tt class="xref docutils literal"><span class="pre">Task</span></tt>
+instance</li>
+<li><em>args</em> &#8211; The positional arguments to pass on to the task (a <tt class="docutils literal"><span class="pre">list</span></tt>).</li>
+<li><em>kwargs</em> &#8211; The keyword arguments to pass on to the task (a <tt class="docutils literal"><span class="pre">dict</span></tt>)</li>
+<li><em>countdown</em> &#8211; Number of seconds into the future that the task should
+execute. Defaults to immediate delivery (Do not confuse that with
+the <tt class="docutils literal"><span class="pre">immediate</span></tt> setting, they are unrelated).</li>
+<li><em>eta</em> &#8211; A <tt class="xref docutils literal"><span class="pre">datetime.datetime</span></tt> object that describes the
+absolute time when the task should execute. May not be specified
+if <tt class="docutils literal"><span class="pre">countdown</span></tt> is also supplied. (Do not confuse this with the
+<tt class="docutils literal"><span class="pre">immediate</span></tt> setting, they are unrelated).</li>
+<li><em>routing_key</em> &#8211; The routing key used to route the task to a worker
+server.</li>
+<li><em>immediate</em> &#8211; Request immediate delivery. Will raise an exception
+if the task cannot be routed to a worker immediately.
+(Do not confuse this parameter with the <tt class="docutils literal"><span class="pre">countdown</span></tt> and <tt class="docutils literal"><span class="pre">eta</span></tt>
+settings, as they are unrelated).</li>
+<li><em>mandatory</em> &#8211; Mandatory routing. Raises an exception if there&#8217;s
+no running workers able to take on this task.</li>
+<li><em>connection</em> &#8211; Re-use existing AMQP connection.
+The <tt class="docutils literal"><span class="pre">connect_timeout</span></tt> argument is not respected if this is set.</li>
+<li><em>connect_timeout</em> &#8211; The timeout in seconds, before we give up
+on establishing a connection to the AMQP server.</li>
+<li><em>priority</em> &#8211; The task priority, a number between <tt class="docutils literal"><span class="pre">0</span></tt> and <tt class="docutils literal"><span class="pre">9</span></tt>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.execute.delay_task">
+<tt class="descclassname">celery.execute.</tt><tt class="descname">delay_task</tt><big>(</big><em>task_name</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.execute.delay_task" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delay a task for execution by the <tt class="docutils literal"><span class="pre">celery</span></tt> daemon.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><em>task_name</em> &#8211; the name of a task registered in the task registry.</li>
+<li><em>*args</em> &#8211; positional arguments to pass on to the task.</li>
+<li><em>**kwargs</em> &#8211; keyword arguments to pass on to the task.</li>
+</ul>
+</td>
+</tr>
+<tr class="field"><th class="field-name" colspan="2">Raises <a title="celery.registry.NotRegistered" class="reference external" href="celery.registry.html#celery.registry.NotRegistered">celery.registry.NotRegistered</a>:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first">exception if no such task
+has been registered in the task registry.</p>
+</td>
+</tr>
+<tr class="field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a title="celery.result.AsyncResult" class="reference external" href="celery.result.html#celery.result.AsyncResult"><tt class="xref docutils literal"><span class="pre">celery.result.AsyncResult</span></tt></a>.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Example</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">r</span> <span class="o">=</span> <span class="n">delay_task</span><span class="p">(</span><span class="s">&quot;update_record&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;George Constanza&quot;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="mf">32</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">r</span><span class="o">.</span><span class="n">ready</span><span class="p">()</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">r</span><span class="o">.</span><span class="n">result</span>
+<span class="go">&quot;Record was updated&quot;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="celery.task.base.html"
+                                  title="previous chapter">Defining Tasks - celery.task.base</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="celery.result.html"
+                                  title="next chapter">Task Result - celery.result</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../sources/reference/celery.execute.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.result.html" title="Task Result - celery.result"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.task.base.html" title="Defining Tasks - celery.task.base"
+             >previous</a> |</li>
+        <li><a href="../index.html">Celery v0.3.20 (unstable) documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module API Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.2.
+    </div>
+  </body>
+</html>

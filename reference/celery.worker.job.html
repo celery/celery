@@ -1,0 +1,276 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Executable Jobs - celery.worker.job &mdash; Celery v0.3.20 (unstable) documentation</title>
+    <link rel="stylesheet" href="../static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.3.20 (unstable)',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v0.3.20 (unstable) documentation" href="../index.html" />
+    <link rel="up" title="Module API Reference" href="index.html" />
+    <link rel="next" title="Worker Controller Threads - celery.worker.controllers" href="celery.worker.controllers.html" />
+    <link rel="prev" title="Multiprocessing Worker - celery.worker" href="celery.worker.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="celery.worker.controllers.html" title="Worker Controller Threads - celery.worker.controllers"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.worker.html" title="Multiprocessing Worker - celery.worker"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Celery v0.3.20 (unstable) documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module API Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-celery.worker.job">
+<h1>Executable Jobs - celery.worker.job<a class="headerlink" href="#module-celery.worker.job" title="Permalink to this headline">¶</a></h1>
+<p>Jobs Executable by the Worker Server.</p>
+<dl class="class">
+<dt id="celery.worker.job.TaskWrapper">
+<em class="property">
+class </em><tt class="descclassname">celery.worker.job.</tt><tt class="descname">TaskWrapper</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>task_func</em>, <em>args</em>, <em>kwargs</em>, <em>on_acknowledge=None</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskWrapper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class wrapping a task to be run.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><em>task_name</em> &#8211; see <a title="celery.worker.job.TaskWrapper.task_name" class="reference internal" href="#celery.worker.job.TaskWrapper.task_name"><tt class="xref docutils literal"><span class="pre">task_name</span></tt></a>.</li>
+<li><em>task_id</em> &#8211; see <a title="celery.worker.job.TaskWrapper.task_id" class="reference internal" href="#celery.worker.job.TaskWrapper.task_id"><tt class="xref docutils literal"><span class="pre">task_id</span></tt></a>.</li>
+<li><em>task_func</em> &#8211; see <a title="celery.worker.job.TaskWrapper.task_func" class="reference internal" href="#celery.worker.job.TaskWrapper.task_func"><tt class="xref docutils literal"><span class="pre">task_func</span></tt></a></li>
+<li><em>args</em> &#8211; see <a title="celery.worker.job.TaskWrapper.args" class="reference internal" href="#celery.worker.job.TaskWrapper.args"><tt class="xref docutils literal"><span class="pre">args</span></tt></a></li>
+<li><em>kwargs</em> &#8211; see <a title="celery.worker.job.TaskWrapper.kwargs" class="reference internal" href="#celery.worker.job.TaskWrapper.kwargs"><tt class="xref docutils literal"><span class="pre">kwargs</span></tt></a>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="celery.worker.job.TaskWrapper.task_name">
+<tt class="descname">task_name</tt><a class="headerlink" href="#celery.worker.job.TaskWrapper.task_name" title="Permalink to this definition">¶</a></dt>
+<dd>Kind of task. Must be a name registered in the task registry.</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.worker.job.TaskWrapper.task_id">
+<tt class="descname">task_id</tt><a class="headerlink" href="#celery.worker.job.TaskWrapper.task_id" title="Permalink to this definition">¶</a></dt>
+<dd>UUID of the task.</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.worker.job.TaskWrapper.task_func">
+<tt class="descname">task_func</tt><a class="headerlink" href="#celery.worker.job.TaskWrapper.task_func" title="Permalink to this definition">¶</a></dt>
+<dd>The tasks callable object.</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.worker.job.TaskWrapper.args">
+<tt class="descname">args</tt><a class="headerlink" href="#celery.worker.job.TaskWrapper.args" title="Permalink to this definition">¶</a></dt>
+<dd>List of positional arguments to apply to the task.</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.worker.job.TaskWrapper.kwargs">
+<tt class="descname">kwargs</tt><a class="headerlink" href="#celery.worker.job.TaskWrapper.kwargs" title="Permalink to this definition">¶</a></dt>
+<dd>Mapping of keyword arguments to apply to the task.</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.worker.job.TaskWrapper.message">
+<tt class="descname">message</tt><a class="headerlink" href="#celery.worker.job.TaskWrapper.message" title="Permalink to this definition">¶</a></dt>
+<dd>The original message sent. Used for acknowledging the message.</dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.job.TaskWrapper.execute">
+<tt class="descname">execute</tt><big>(</big><em>loglevel=None</em>, <em>logfile=None</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskWrapper.execute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute the task in a <a title="celery.worker.job.jail" class="reference internal" href="#celery.worker.job.jail"><tt class="xref docutils literal"><span class="pre">jail()</span></tt></a> and store return value
+and status in the task meta backend.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><em>loglevel</em> &#8211; The loglevel used by the task.</li>
+<li><em>logfile</em> &#8211; The logfile used by the task.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.job.TaskWrapper.execute_using_pool">
+<tt class="descname">execute_using_pool</tt><big>(</big><em>pool</em>, <em>loglevel=None</em>, <em>logfile=None</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskWrapper.execute_using_pool" title="Permalink to this definition">¶</a></dt>
+<dd><p>Like <a title="celery.worker.job.TaskWrapper.execute" class="reference internal" href="#celery.worker.job.TaskWrapper.execute"><tt class="xref docutils literal"><span class="pre">execute()</span></tt></a>, but using the <tt class="xref docutils literal"><span class="pre">multiprocessing</span></tt> pool.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><em>pool</em> &#8211; A <tt class="xref docutils literal"><span class="pre">multiprocessing.Pool</span></tt> instance.</li>
+<li><em>loglevel</em> &#8211; The loglevel used by the task.</li>
+<li><em>logfile</em> &#8211; The logfile used by the task.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>:returns <tt class="xref docutils literal"><span class="pre">multiprocessing.AsyncResult</span></tt> instance.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.job.TaskWrapper.extend_with_default_kwargs">
+<tt class="descname">extend_with_default_kwargs</tt><big>(</big><em>loglevel</em>, <em>logfile</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskWrapper.extend_with_default_kwargs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extend the tasks keyword arguments with standard task arguments.</p>
+<p>These are <tt class="docutils literal"><span class="pre">logfile</span></tt>, <tt class="docutils literal"><span class="pre">loglevel</span></tt>, <tt class="docutils literal"><span class="pre">task_id</span></tt> and <tt class="docutils literal"><span class="pre">task_name</span></tt>.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="celery.worker.job.TaskWrapper.from_message">
+<em class="property">
+classmethod </em><tt class="descname">from_message</tt><big>(</big><em>message</em>, <em>message_data</em>, <em>logger=None</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskWrapper.from_message" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a <a title="celery.worker.job.TaskWrapper" class="reference internal" href="#celery.worker.job.TaskWrapper"><tt class="xref docutils literal"><span class="pre">TaskWrapper</span></tt></a> from a task message sent by
+<a title="celery.messaging.TaskPublisher" class="reference external" href="celery.messaging.html#celery.messaging.TaskPublisher"><tt class="xref docutils literal"><span class="pre">celery.messaging.TaskPublisher</span></tt></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name" colspan="2">Raises UnknownTaskError:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body">if the message does not describe a task,
+the message is also rejected.</td>
+</tr>
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><a title="celery.worker.job.TaskWrapper" class="reference internal" href="#celery.worker.job.TaskWrapper"><tt class="xref docutils literal"><span class="pre">TaskWrapper</span></tt></a> instance.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.job.TaskWrapper.on_failure">
+<tt class="descname">on_failure</tt><big>(</big><em>exc_info</em>, <em>meta</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskWrapper.on_failure" title="Permalink to this definition">¶</a></dt>
+<dd>The handler used if the task raised an exception.</dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.job.TaskWrapper.on_success">
+<tt class="descname">on_success</tt><big>(</big><em>ret_value</em>, <em>meta</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskWrapper.on_success" title="Permalink to this definition">¶</a></dt>
+<dd>The handler used if the task was successfully processed (
+without raising an exception).</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.worker.job.jail">
+<tt class="descclassname">celery.worker.job.</tt><tt class="descname">jail</tt><big>(</big><em>task_id</em>, <em>task_name</em>, <em>func</em>, <em>args</em>, <em>kwargs</em><big>)</big><a class="headerlink" href="#celery.worker.job.jail" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wraps the task in a jail, which catches all exceptions, and
+saves the status and result of the task execution to the task
+meta backend.</p>
+<p>If the call was successful, it saves the result to the task result
+backend, and sets the task status to <tt class="docutils literal"><span class="pre">&quot;DONE&quot;</span></tt>.</p>
+<p>If the call results in an exception, it saves the exception as the task
+result, and sets the task status to <tt class="docutils literal"><span class="pre">&quot;FAILURE&quot;</span></tt>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><em>task_id</em> &#8211; The id of the task.</li>
+<li><em>task_name</em> &#8211; The name of the task.</li>
+<li><em>func</em> &#8211; Callable object to execute.</li>
+<li><em>args</em> &#8211; List of positional args to pass on to the function.</li>
+<li><em>kwargs</em> &#8211; Keyword arguments mapping to pass on to the function.</li>
+</ul>
+</td>
+</tr>
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">the function return value on success, or
+the exception instance on failure.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="celery.worker.html"
+                                  title="previous chapter">Multiprocessing Worker - celery.worker</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="celery.worker.controllers.html"
+                                  title="next chapter">Worker Controller Threads - celery.worker.controllers</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../sources/reference/celery.worker.job.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.worker.controllers.html" title="Worker Controller Threads - celery.worker.controllers"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.worker.html" title="Multiprocessing Worker - celery.worker"
+             >previous</a> |</li>
+        <li><a href="../index.html">Celery v0.3.20 (unstable) documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module API Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.2.
+    </div>
+  </body>
+</html>

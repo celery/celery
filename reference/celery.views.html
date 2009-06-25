@@ -1,0 +1,138 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Django Views - celery.views &mdash; Celery v0.3.20 (unstable) documentation</title>
+    <link rel="stylesheet" href="../static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.3.20 (unstable)',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v0.3.20 (unstable) documentation" href="../index.html" />
+    <link rel="up" title="Module API Reference" href="index.html" />
+    <link rel="next" title="Django Model Managers - celery.managers" href="celery.managers.html" />
+    <link rel="prev" title="Multiprocessing Worker - celery.worker" href="celery.utils.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="celery.managers.html" title="Django Model Managers - celery.managers"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.utils.html" title="Multiprocessing Worker - celery.worker"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Celery v0.3.20 (unstable) documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module API Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-celery.views">
+<h1>Django Views - celery.views<a class="headerlink" href="#module-celery.views" title="Permalink to this headline">¶</a></h1>
+<p>celery.views</p>
+<dl class="function">
+<dt id="celery.views.apply">
+<tt class="descclassname">celery.views.</tt><tt class="descname">apply</tt><big>(</big><em>request</em>, <em>task_name</em>, <em>*args</em><big>)</big><a class="headerlink" href="#celery.views.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>View applying a task.</p>
+<dl class="docutils">
+<dt>Example:</dt>
+<dd><a class="reference external" href="http://e.com/celery/apply/task_name/arg1/arg2//?kwarg1=a&amp;kwarg2=b">http://e.com/celery/apply/task_name/arg1/arg2//?kwarg1=a&amp;kwarg2=b</a></dd>
+</dl>
+<p><strong>NOTE</strong> Use with caution, preferably not make this publicly accessible
+without ensuring your code is safe!</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.views.is_task_done">
+<tt class="descclassname">celery.views.</tt><tt class="descname">is_task_done</tt><big>(</big><em>request</em>, <em>task_id</em><big>)</big><a class="headerlink" href="#celery.views.is_task_done" title="Permalink to this definition">¶</a></dt>
+<dd>Returns task execute status in JSON format.</dd></dl>
+
+<dl class="function">
+<dt id="celery.views.task_status">
+<tt class="descclassname">celery.views.</tt><tt class="descname">task_status</tt><big>(</big><em>request</em>, <em>task_id</em><big>)</big><a class="headerlink" href="#celery.views.task_status" title="Permalink to this definition">¶</a></dt>
+<dd>Returns task status and result in JSON format.</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="celery.utils.html"
+                                  title="previous chapter">Multiprocessing Worker - celery.worker</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="celery.managers.html"
+                                  title="next chapter">Django Model Managers - celery.managers</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../sources/reference/celery.views.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.managers.html" title="Django Model Managers - celery.managers"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.utils.html" title="Multiprocessing Worker - celery.worker"
+             >previous</a> |</li>
+        <li><a href="../index.html">Celery v0.3.20 (unstable) documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module API Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.2.
+    </div>
+  </body>
+</html>

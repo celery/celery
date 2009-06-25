@@ -1,0 +1,180 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Worker Controller Threads - celery.worker.controllers &mdash; Celery v0.3.20 (unstable) documentation</title>
+    <link rel="stylesheet" href="../static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.3.20 (unstable)',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v0.3.20 (unstable) documentation" href="../index.html" />
+    <link rel="up" title="Module API Reference" href="index.html" />
+    <link rel="next" title="Task Pool - celery.pool" href="celery.pool.html" />
+    <link rel="prev" title="Executable Jobs - celery.worker.job" href="celery.worker.job.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="celery.pool.html" title="Task Pool - celery.pool"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.worker.job.html" title="Executable Jobs - celery.worker.job"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Celery v0.3.20 (unstable) documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module API Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-celery.worker.controllers">
+<h1>Worker Controller Threads - celery.worker.controllers<a class="headerlink" href="#module-celery.worker.controllers" title="Permalink to this headline">¶</a></h1>
+<p>Worker Controller Threads</p>
+<dl class="class">
+<dt id="celery.worker.controllers.InfinityThread">
+<em class="property">
+class </em><tt class="descclassname">celery.worker.controllers.</tt><tt class="descname">InfinityThread</tt><a class="headerlink" href="#celery.worker.controllers.InfinityThread" title="Permalink to this definition">¶</a></dt>
+<dd><p>Thread running an infinite loop which for every iteration
+calls its <a title="celery.worker.controllers.InfinityThread.on_iteration" class="reference internal" href="#celery.worker.controllers.InfinityThread.on_iteration"><tt class="xref docutils literal"><span class="pre">on_iteration()</span></tt></a> method.</p>
+<p>This also implements graceful shutdown of the thread by providing
+the <a title="celery.worker.controllers.InfinityThread.stop" class="reference internal" href="#celery.worker.controllers.InfinityThread.stop"><tt class="xref docutils literal"><span class="pre">stop()</span></tt></a> method.</p>
+<dl class="method">
+<dt id="celery.worker.controllers.InfinityThread.on_iteration">
+<tt class="descname">on_iteration</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.controllers.InfinityThread.on_iteration" title="Permalink to this definition">¶</a></dt>
+<dd>This is the method called for every iteration and must be
+implemented by every subclass of <a title="celery.worker.controllers.InfinityThread" class="reference internal" href="#celery.worker.controllers.InfinityThread"><tt class="xref docutils literal"><span class="pre">InfinityThread</span></tt></a>.</dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.controllers.InfinityThread.run">
+<tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.controllers.InfinityThread.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the body of the thread.</p>
+<p>To start the thread use <tt class="xref docutils literal"><span class="pre">start()</span></tt> instead.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.controllers.InfinityThread.stop">
+<tt class="descname">stop</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.controllers.InfinityThread.stop" title="Permalink to this definition">¶</a></dt>
+<dd>Gracefully shutdown the thread.</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.worker.controllers.Mediator">
+<em class="property">
+class </em><tt class="descclassname">celery.worker.controllers.</tt><tt class="descname">Mediator</tt><big>(</big><em>bucket_queue</em>, <em>callback</em><big>)</big><a class="headerlink" href="#celery.worker.controllers.Mediator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Thread continuously sending tasks in the queue to the pool.</p>
+<dl class="attribute">
+<dt id="celery.worker.controllers.Mediator.bucket_queue">
+<tt class="descname">bucket_queue</tt><a class="headerlink" href="#celery.worker.controllers.Mediator.bucket_queue" title="Permalink to this definition">¶</a></dt>
+<dd>The task queue, a <tt class="xref docutils literal"><span class="pre">Queue.Queue</span></tt> instance.</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.worker.controllers.Mediator.callback">
+<tt class="descname">callback</tt><a class="headerlink" href="#celery.worker.controllers.Mediator.callback" title="Permalink to this definition">¶</a></dt>
+<dd>The callback used to process tasks retrieved from the
+<a title="celery.worker.controllers.Mediator.bucket_queue" class="reference internal" href="#celery.worker.controllers.Mediator.bucket_queue"><tt class="xref docutils literal"><span class="pre">bucket_queue</span></tt></a>.</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.worker.controllers.PeriodicWorkController">
+<em class="property">
+class </em><tt class="descclassname">celery.worker.controllers.</tt><tt class="descname">PeriodicWorkController</tt><big>(</big><em>bucket_queue</em>, <em>hold_queue</em><big>)</big><a class="headerlink" href="#celery.worker.controllers.PeriodicWorkController" title="Permalink to this definition">¶</a></dt>
+<dd><p>A thread that continuously checks if there are
+<tt class="xref docutils literal"><span class="pre">celery.task.PeriodicTask</span></tt> tasks waiting for execution,
+and executes them. It also finds tasks in the hold queue that is
+ready for execution and moves them to the bucket queue.</p>
+<p>(Tasks in the hold queue are tasks waiting for retry, or with an
+<tt class="docutils literal"><span class="pre">eta</span></tt>/<tt class="docutils literal"><span class="pre">countdown</span></tt>.)</p>
+<dl class="method">
+<dt id="celery.worker.controllers.PeriodicWorkController.process_hold_queue">
+<tt class="descname">process_hold_queue</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.controllers.PeriodicWorkController.process_hold_queue" title="Permalink to this definition">¶</a></dt>
+<dd>Finds paused tasks that are ready for execution and move
+them to the <tt class="xref docutils literal"><span class="pre">bucket_queue</span></tt>.</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="celery.worker.job.html"
+                                  title="previous chapter">Executable Jobs - celery.worker.job</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="celery.pool.html"
+                                  title="next chapter">Task Pool - celery.pool</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../sources/reference/celery.worker.controllers.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.pool.html" title="Task Pool - celery.pool"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.worker.job.html" title="Executable Jobs - celery.worker.job"
+             >previous</a> |</li>
+        <li><a href="../index.html">Celery v0.3.20 (unstable) documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module API Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.2.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,194 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Process Supervisor - celery.supervisor &mdash; Celery v0.3.20 (unstable) documentation</title>
+    <link rel="stylesheet" href="../static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.3.20 (unstable)',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v0.3.20 (unstable) documentation" href="../index.html" />
+    <link rel="up" title="Module API Reference" href="index.html" />
+    <link rel="next" title="Backends - celery.backends" href="celery.backends.html" />
+    <link rel="prev" title="Task Pool - celery.pool" href="celery.pool.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="celery.backends.html" title="Backends - celery.backends"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.pool.html" title="Task Pool - celery.pool"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Celery v0.3.20 (unstable) documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module API Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-celery.supervisor">
+<h1>Process Supervisor - celery.supervisor<a class="headerlink" href="#module-celery.supervisor" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="celery.supervisor.OFASupervisor">
+<em class="property">
+class </em><tt class="descclassname">celery.supervisor.</tt><tt class="descname">OFASupervisor</tt><big>(</big><em>target</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>ping_timeout=30</em>, <em>join_timeout=2</em>, <em>max_restart_freq=3</em>, <em>max_restart_freq_time=10</em>, <em>check_interval=2</em><big>)</big><a class="headerlink" href="#celery.supervisor.OFASupervisor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process supervisor using the <a class="reference external" href="http://erlang.org/doc/design_principles/sup_princ.html#5.3.2">one_for_all</a> strategy.</p>
+<p>However, instead of registering a list of processes, you have one
+process which runs a pool. Makes for an easy implementation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><em>target</em> &#8211; see <a title="celery.supervisor.OFASupervisor.target" class="reference internal" href="#celery.supervisor.OFASupervisor.target"><tt class="xref docutils literal"><span class="pre">target</span></tt></a>.</li>
+<li><em>args</em> &#8211; see <a title="celery.supervisor.OFASupervisor.args" class="reference internal" href="#celery.supervisor.OFASupervisor.args"><tt class="xref docutils literal"><span class="pre">args</span></tt></a>.</li>
+<li><em>kwargs</em> &#8211; see <a title="celery.supervisor.OFASupervisor.kwargs" class="reference internal" href="#celery.supervisor.OFASupervisor.kwargs"><tt class="xref docutils literal"><span class="pre">kwargs</span></tt></a>.</li>
+<li><em>join_timeout</em> &#8211; see <a title="celery.supervisor.OFASupervisor.join_timeout" class="reference internal" href="#celery.supervisor.OFASupervisor.join_timeout"><tt class="xref docutils literal"><span class="pre">join_timeout</span></tt></a>.</li>
+<li><em>max_restart_freq</em> &#8211; see <a title="celery.supervisor.OFASupervisor.max_restart_freq" class="reference internal" href="#celery.supervisor.OFASupervisor.max_restart_freq"><tt class="xref docutils literal"><span class="pre">max_restart_freq</span></tt></a>.</li>
+<li><em>max_restart_freq_time</em> &#8211; see <a title="celery.supervisor.OFASupervisor.max_restart_freq_time" class="reference internal" href="#celery.supervisor.OFASupervisor.max_restart_freq_time"><tt class="xref docutils literal"><span class="pre">max_restart_freq_time</span></tt></a>.</li>
+<li><em>check_interval</em> &#8211; see <a title="celery.supervisor.OFASupervisor.max_restart_freq_time" class="reference internal" href="#celery.supervisor.OFASupervisor.max_restart_freq_time"><tt class="xref docutils literal"><span class="pre">max_restart_freq_time</span></tt></a>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="celery.supervisor.OFASupervisor.target">
+<tt class="descname">target</tt><a class="headerlink" href="#celery.supervisor.OFASupervisor.target" title="Permalink to this definition">¶</a></dt>
+<dd>The target callable to be launched in a new process.</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.supervisor.OFASupervisor.args">
+<tt class="descname">args</tt><a class="headerlink" href="#celery.supervisor.OFASupervisor.args" title="Permalink to this definition">¶</a></dt>
+<dd>The positional arguments to apply to <a title="celery.supervisor.OFASupervisor.target" class="reference internal" href="#celery.supervisor.OFASupervisor.target"><tt class="xref docutils literal"><span class="pre">target</span></tt></a>.</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.supervisor.OFASupervisor.kwargs">
+<tt class="descname">kwargs</tt><a class="headerlink" href="#celery.supervisor.OFASupervisor.kwargs" title="Permalink to this definition">¶</a></dt>
+<dd>The keyword arguments to apply to <a title="celery.supervisor.OFASupervisor.target" class="reference internal" href="#celery.supervisor.OFASupervisor.target"><tt class="xref docutils literal"><span class="pre">target</span></tt></a>.</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.supervisor.OFASupervisor.join_timeout">
+<tt class="descname">join_timeout</tt><a class="headerlink" href="#celery.supervisor.OFASupervisor.join_timeout" title="Permalink to this definition">¶</a></dt>
+<dd>If the process is dead, try to give it a few seconds to join.</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.supervisor.OFASupervisor.max_restart_freq">
+<tt class="descname">max_restart_freq</tt><a class="headerlink" href="#celery.supervisor.OFASupervisor.max_restart_freq" title="Permalink to this definition">¶</a></dt>
+<dd><p>Limit the number of restarts which can occur in a given time interval.</p>
+<p>The max restart frequency is the number of restarts that can occur
+within the interval <a title="celery.supervisor.OFASupervisor.max_restart_freq_time" class="reference internal" href="#celery.supervisor.OFASupervisor.max_restart_freq_time"><tt class="xref docutils literal"><span class="pre">max_restart_freq_time</span></tt></a>.</p>
+<p>The restart mechanism prevents situations where the process repeatedly
+dies for the same reason. If this happens both the process and the
+supervisor is terminated.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.supervisor.OFASupervisor.max_restart_freq_time">
+<tt class="descname">max_restart_freq_time</tt><a class="headerlink" href="#celery.supervisor.OFASupervisor.max_restart_freq_time" title="Permalink to this definition">¶</a></dt>
+<dd>See <a title="celery.supervisor.OFASupervisor.max_restart_freq" class="reference internal" href="#celery.supervisor.OFASupervisor.max_restart_freq"><tt class="xref docutils literal"><span class="pre">max_restart_freq</span></tt></a>.</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.supervisor.OFASupervisor.check_interval">
+<tt class="descname">check_interval</tt><a class="headerlink" href="#celery.supervisor.OFASupervisor.check_interval" title="Permalink to this definition">¶</a></dt>
+<dd>The time in seconds, between process pings.</dd></dl>
+
+<dl class="method">
+<dt id="celery.supervisor.OFASupervisor.start">
+<tt class="descname">start</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.supervisor.OFASupervisor.start" title="Permalink to this definition">¶</a></dt>
+<dd>Launches the <a title="celery.supervisor.OFASupervisor.target" class="reference internal" href="#celery.supervisor.OFASupervisor.target"><tt class="xref docutils literal"><span class="pre">target</span></tt></a> in a seperate process and starts
+supervising it.</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.supervisor.raise_ping_timeout">
+<tt class="descclassname">celery.supervisor.</tt><tt class="descname">raise_ping_timeout</tt><big>(</big><em>msg</em><big>)</big><a class="headerlink" href="#celery.supervisor.raise_ping_timeout" title="Permalink to this definition">¶</a></dt>
+<dd>Raises <tt class="xref docutils literal"><span class="pre">multiprocessing.TimeoutError</span></tt>, for use in
+<tt class="xref docutils literal"><span class="pre">threading.Timer</span></tt> callbacks.</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="celery.pool.html"
+                                  title="previous chapter">Task Pool - celery.pool</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="celery.backends.html"
+                                  title="next chapter">Backends - celery.backends</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../sources/reference/celery.supervisor.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.backends.html" title="Backends - celery.backends"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.pool.html" title="Task Pool - celery.pool"
+             >previous</a> |</li>
+        <li><a href="../index.html">Celery v0.3.20 (unstable) documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module API Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.2.
+    </div>
+  </body>
+</html>
