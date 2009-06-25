@@ -26,9 +26,9 @@ class InfinityThread(threading.Thread):
 
     def run(self):
         """This is the body of the thread.
-        
+
         To start the thread use :meth:`start` instead.
-        
+
         """
         while True:
             if self._shutdown.isSet():
@@ -37,11 +37,11 @@ class InfinityThread(threading.Thread):
         self._stopped.set() # indicate that we are stopped
 
     def on_iteration(self):
-        """This is the method called for every iteration and must be 
+        """This is the method called for every iteration and must be
         implemented by every subclass of :class:`InfinityThread`."""
         raise NotImplementedError(
                 "InfiniteThreads must implement on_iteration")
-    
+
     def stop(self):
         """Gracefully shutdown the thread."""
         self._shutdown.set()

@@ -289,7 +289,7 @@ class TaskSetResult(object):
                     return list(results)
         finally:
             timeout_timer.cancel()
-    
+
     @property
     def total(self):
         """The total number of tasks in the :class:`celery.task.TaskSet`."""

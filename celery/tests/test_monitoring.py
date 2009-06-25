@@ -18,7 +18,7 @@ class TestTaskTimerStats(unittest.TestCase):
         time.sleep(time_sleep)
         time_stop = t.stop()
         self.assertTrue(time_stop)
-        self.assertFalse(time_stop > max_appx) 
+        self.assertFalse(time_stop > max_appx)
         self.assertFalse(time_stop <= min_appx)
 
         strstop = str(time_stop)[0:3]

@@ -32,7 +32,7 @@ class TestJail(unittest.TestCase):
     def test_execute_jail_success(self):
         ret = jail(str(uuid4()), str(uuid4()), mytask, [2], {})
         self.assertEquals(ret, 4)
-    
+
     def test_execute_jail_failure(self):
         ret = jail(str(uuid4()), str(uuid4()), mytask_raising, [4], {})
         self.assertTrue(isinstance(ret, ExceptionInfo))
@@ -58,12 +58,12 @@ class TestJail(unittest.TestCase):
 class TestTaskWrapper(unittest.TestCase):
 
     def test_task_wrapper_attrs(self):
-        tw = TaskWrapper(str(uuid4()), str(uuid4()), mytask, [1], {"f":"x"})
+        tw = TaskWrapper(str(uuid4()), str(uuid4()), mytask, [1], {"f": "x"})
         for attr in ("task_name", "task_id", "args", "kwargs", "logger"):
             self.assertTrue(getattr(tw, attr, None))
 
     def test_task_wrapper_repr(self):
-        tw = TaskWrapper(str(uuid4()), str(uuid4()), mytask, [1], {"f":"x"})
+        tw = TaskWrapper(str(uuid4()), str(uuid4()), mytask, [1], {"f": "x"})
         self.assertTrue(repr(tw))
 
     def test_task_wrapper_mail_attrs(self):
@@ -94,7 +94,8 @@ class TestTaskWrapper(unittest.TestCase):
         self.assertEquals(tw.task_name, body["task"])
         self.assertEquals(tw.task_id, body["id"])
         self.assertEquals(tw.args, body["args"])
-        self.assertEquals(tw.kwargs.keys()[0], u"æØåveéðƒeæ".encode("utf-8"))
+        self.assertEquals(tw.kwargs.keys()[0],
+                          u"æØåveéðƒeæ".encode("utf-8"))
         self.assertFalse(isinstance(tw.kwargs.keys()[0], unicode))
         self.assertEquals(id(mytask), id(tw.task_func))
         self.assertTrue(tw.logger)
@@ -110,7 +111,7 @@ class TestTaskWrapper(unittest.TestCase):
 
     def test_execute(self):
         tid = str(uuid4())
-        tw = TaskWrapper("cu.mytask", tid, mytask, [4], {"f":"x"})
+        tw = TaskWrapper("cu.mytask", tid, mytask, [4], {"f": "x"})
         self.assertEquals(tw.execute(), 256)
         meta = TaskMeta.objects.get(task_id=tid)
         self.assertEquals(meta.result, 256)
@@ -119,7 +120,7 @@ class TestTaskWrapper(unittest.TestCase):
     def test_execute_fail(self):
         tid = str(uuid4())
         tw = TaskWrapper("cu.mytask-raising", tid, mytask_raising, [4],
-                         {"f":"x"})
+                         {"f": "x"})
         self.assertTrue(isinstance(tw.execute(), ExceptionInfo))
         meta = TaskMeta.objects.get(task_id=tid)
         self.assertEquals(meta.status, "FAILURE")
@@ -127,7 +128,7 @@ class TestTaskWrapper(unittest.TestCase):
 
     def test_execute_using_pool(self):
         tid = str(uuid4())
-        tw = TaskWrapper("cu.mytask", tid, mytask, [4], {"f":"x"})
+        tw = TaskWrapper("cu.mytask", tid, mytask, [4], {"f": "x"})
         p = TaskPool(2)
         p.start()
         asyncres = tw.execute_using_pool(p)
@@ -136,7 +137,7 @@ class TestTaskWrapper(unittest.TestCase):
 
     def test_default_kwargs(self):
         tid = str(uuid4())
-        tw = TaskWrapper("cu.mytask", tid, mytask, [4], {"f":"x"})
+        tw = TaskWrapper("cu.mytask", tid, mytask, [4], {"f": "x"})
         self.assertEquals(tw.extend_with_default_kwargs(10, "some_logfile"), {
             "f": "x",
             "logfile": "some_logfile",

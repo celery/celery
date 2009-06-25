@@ -14,7 +14,7 @@ class TestPositionQueue(unittest.TestCase):
         self.assertEquals(q.filled, [])
         self.assertEquals(len(q), 0)
         self.assertFalse(q.full())
-        
+
     def test_position_queue_almost(self):
         q = PositionQueue(length=10)
         q[3] = 3
@@ -24,7 +24,7 @@ class TestPositionQueue(unittest.TestCase):
         self.assertEquals(q.filled, [3, 6, 9])
         self.assertEquals(len(q), 3)
         self.assertFalse(q.full())
-    
+
     def test_position_queue_full(self):
         q = PositionQueue(length=10)
         for i in xrange(10):
