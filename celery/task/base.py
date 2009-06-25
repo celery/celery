@@ -309,7 +309,7 @@ class TaskSet(object):
         :keyword timeout: The time in seconds, how long
             it will wait for results, before the operation times out.
 
-        :raises celery.timer.TimeoutError: if ``timeout`` is not ``None``
+        :raises TimeoutError: if ``timeout`` is not ``None``
             and the operation takes longer than ``timeout`` seconds.
 
         If any of the tasks raises an exception, the exception

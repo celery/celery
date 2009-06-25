@@ -1,11 +1,15 @@
 """celery.backends.base"""
 import time
 
-from celery.timer import TimeoutTimer
+import threading
 try:
     import cPickle as pickle
 except ImportError:
     import pickle
+
+
+class TimeoutError(Exception):
+    """The operation timed out."""
 
 
 def find_nearest_pickleable_exception(exc):
@@ -83,6 +87,7 @@ class BaseBackend(object):
 
     capabilities = []
     UnpickleableExceptionWrapper = UnpickleableExceptionWrapper
+    TimeoutError = TimeoutError
 
     def store_result(self, task_id, result, status):
         """Store the result and status of a task."""
@@ -168,15 +173,22 @@ class BaseBackend(object):
         longer than ``timeout`` seconds.
 
         """
-        timeout_timer = TimeoutTimer(timeout)
-        while True:
-            status = self.get_status(task_id)
-            if status == "DONE":
-                return self.get_result(task_id)
-            elif status == "FAILURE":
-                raise self.get_result(task_id)
-            time.sleep(0.5) # avoid hammering the CPU checking status.
-            timeout_timer.tick()
+
+        def on_timeout():
+            raise TimeoutError("The operation timed out.")
+
+        timeout_timer = threading.Timer(timeout, on_timeout)
+        timeout_timer.start()
+        try:
+            while True:
+                status = self.get_status(task_id)
+                if status == "DONE":
+                    return self.get_result(task_id)
+                elif status == "FAILURE":
+                    raise self.get_result(task_id)
+                time.sleep(0.5) # avoid hammering the CPU checking status.
+        finally:
+            timeout_timer.cancel()
 
     def process_cleanup(self):
         """Cleanup actions to do at the end of a task worker process.
