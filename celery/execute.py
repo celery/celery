@@ -2,6 +2,7 @@ from carrot.connection import DjangoAMQPConnection
 from celery.conf import AMQP_CONNECTION_TIMEOUT
 from celery.result import AsyncResult
 from celery.messaging import TaskPublisher
+from celery.registry import tasks
 from functools import partial as curry
 from datetime import datetime, timedelta
 
