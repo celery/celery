@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Task Result - celery.result &mdash; Celery v0.3.12 (unstable) documentation</title>
+    <title>Task Result - celery.result &mdash; Celery v0.3.20 (unstable) documentation</title>
     <link rel="stylesheet" href="../static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.3.12 (unstable)',
+        VERSION:     '0.3.20 (unstable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,10 +19,10 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.3.12 (unstable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.3.20 (unstable) documentation" href="../index.html" />
     <link rel="up" title="Module API Reference" href="index.html" />
-    <link rel="next" title="Task Registry - celery.registry" href="celery.registry.html" />
-    <link rel="prev" title="Tasks - celery.task" href="celery.task.html" /> 
+    <link rel="next" title="Task Information and Utilities - celery.task" href="celery.task.html" />
+    <link rel="prev" title="Executing Tasks - celery.execute" href="celery.execute.html" /> 
   </head>
   <body>
     <div class="related">
@@ -35,12 +35,12 @@
           <a href="../modindex.html" title="Global Module Index"
              accesskey="M">modules</a> |</li>
         <li class="right" >
-          <a href="celery.registry.html" title="Task Registry - celery.registry"
+          <a href="celery.task.html" title="Task Information and Utilities - celery.task"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="celery.task.html" title="Tasks - celery.task"
+          <a href="celery.execute.html" title="Executing Tasks - celery.execute"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v0.3.12 (unstable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v0.3.20 (unstable) documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Module API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -106,14 +106,20 @@ task meta <a title="celery.result.BaseAsyncResult.backend" class="reference inte
 <tt class="descname">backend</tt><a class="headerlink" href="#celery.result.BaseAsyncResult.backend" title="Permalink to this definition">¶</a></dt>
 <dd>The task result backend used.</dd></dl>
 
+<dl class="exception">
+<dt id="celery.result.BaseAsyncResult.TimeoutError">
+<em class="property">
+exception </em><tt class="descname">TimeoutError</tt><a class="headerlink" href="#celery.result.BaseAsyncResult.TimeoutError" title="Permalink to this definition">¶</a></dt>
+<dd>The operation timed out.</dd></dl>
+
 <dl class="method">
 <dt id="celery.result.BaseAsyncResult.get">
-<tt class="descname">get</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult.get" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseAsyncResult.</tt><tt class="descname">get</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult.get" title="Permalink to this definition">¶</a></dt>
 <dd>Alias to <a title="celery.result.BaseAsyncResult.wait" class="reference internal" href="#celery.result.BaseAsyncResult.wait"><tt class="xref docutils literal"><span class="pre">wait()</span></tt></a>.</dd></dl>
 
 <dl class="method">
 <dt id="celery.result.BaseAsyncResult.is_done">
-<tt class="descname">is_done</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult.is_done" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseAsyncResult.</tt><tt class="descname">is_done</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult.is_done" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task executed successfully.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -127,7 +133,7 @@ task meta <a title="celery.result.BaseAsyncResult.backend" class="reference inte
 
 <dl class="method">
 <dt id="celery.result.BaseAsyncResult.ready">
-<tt class="descname">ready</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult.ready" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseAsyncResult.</tt><tt class="descname">ready</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult.ready" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task executed successfully, or raised
 an exception. If the task is still pending, or is waiting for retry
 then <tt class="xref docutils literal"><span class="pre">False</span></tt> is returned.</p>
@@ -143,14 +149,14 @@ then <tt class="xref docutils literal"><span class="pre">False</span></tt> is re
 
 <dl class="attribute">
 <dt id="celery.result.BaseAsyncResult.result">
-<tt class="descname">result</tt><a class="headerlink" href="#celery.result.BaseAsyncResult.result" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseAsyncResult.</tt><tt class="descname">result</tt><a class="headerlink" href="#celery.result.BaseAsyncResult.result" title="Permalink to this definition">¶</a></dt>
 <dd><p>When the task has been executed, this contains the return value.</p>
 <p>If the task raised an exception, this will be the exception instance.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.result.BaseAsyncResult.status">
-<tt class="descname">status</tt><a class="headerlink" href="#celery.result.BaseAsyncResult.status" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseAsyncResult.</tt><tt class="descname">status</tt><a class="headerlink" href="#celery.result.BaseAsyncResult.status" title="Permalink to this definition">¶</a></dt>
 <dd><p>The current status of the task.</p>
 <p>Can be one of the following:</p>
 <blockquote>
@@ -174,12 +180,12 @@ contains the resulting value.</blockquote>
 
 <dl class="method">
 <dt id="celery.result.BaseAsyncResult.successful">
-<tt class="descname">successful</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult.successful" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseAsyncResult.</tt><tt class="descname">successful</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult.successful" title="Permalink to this definition">¶</a></dt>
 <dd>Alias to <a title="celery.result.BaseAsyncResult.is_done" class="reference internal" href="#celery.result.BaseAsyncResult.is_done"><tt class="xref docutils literal"><span class="pre">is_done()</span></tt></a>.</dd></dl>
 
 <dl class="method">
 <dt id="celery.result.BaseAsyncResult.wait">
-<tt class="descname">wait</tt><big>(</big><em>timeout=None</em><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult.wait" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseAsyncResult.</tt><tt class="descname">wait</tt><big>(</big><em>timeout=None</em><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult.wait" title="Permalink to this definition">¶</a></dt>
 <dd><p>Wait for task, and return the result when it arrives.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -188,7 +194,7 @@ contains the resulting value.</blockquote>
 <tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>timeout</em> &#8211; How long to wait in seconds, before the
 operation times out.</td>
 </tr>
-<tr class="field"><th class="field-name" colspan="2">Raises <a title="celery.timer.TimeoutError" class="reference external" href="celery.timer.html#celery.timer.TimeoutError">celery.timer.TimeoutError</a>:</th></tr>
+<tr class="field"><th class="field-name" colspan="2">Raises <a title="celery.result.TimeoutError" class="reference internal" href="#celery.result.TimeoutError">TimeoutError</a>:</th></tr>
 <tr><td>&nbsp;</td><td class="field-body">if <tt class="docutils literal"><span class="pre">timeout</span></tt> is not <tt class="xref docutils literal"><span class="pre">None</span></tt> and
 the result does not arrive within <tt class="docutils literal"><span class="pre">timeout</span></tt> seconds.</td>
 </tr>
@@ -204,9 +210,9 @@ exception will be re-raised.</p>
 <dt id="celery.result.TaskSetResult">
 <em class="property">
 class </em><tt class="descclassname">celery.result.</tt><tt class="descname">TaskSetResult</tt><big>(</big><em>taskset_id</em>, <em>subtasks</em><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult" title="Permalink to this definition">¶</a></dt>
-<dd><p>Working with <a title="celery.task.TaskSet" class="reference external" href="celery.task.html#celery.task.TaskSet"><tt class="xref docutils literal"><span class="pre">celery.task.TaskSet</span></tt></a> results.</p>
+<dd><p>Working with <tt class="xref docutils literal"><span class="pre">celery.task.TaskSet</span></tt> results.</p>
 <p>An instance of this class is returned by
-<a title="celery.task.TaskSet.run" class="reference external" href="celery.task.html#celery.task.TaskSet.run"><tt class="xref docutils literal"><span class="pre">celery.task.TaskSet.run()</span></tt></a>. It lets you inspect the status and
+<tt class="xref docutils literal"><span class="pre">celery.task.TaskSet.run()</span></tt>. It lets you inspect the status and
 return values of the taskset as a single entity.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -302,7 +308,7 @@ were called.</p>
 <tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>timeout</em> &#8211; The time in seconds, how long
 it will wait for results, before the operation times out.</td>
 </tr>
-<tr class="field"><th class="field-name" colspan="2">Raises <a title="celery.timer.TimeoutError" class="reference external" href="celery.timer.html#celery.timer.TimeoutError">celery.timer.TimeoutError</a>:</th></tr>
+<tr class="field"><th class="field-name" colspan="2">Raises <a title="celery.result.TimeoutError" class="reference internal" href="#celery.result.TimeoutError">TimeoutError</a>:</th></tr>
 <tr><td>&nbsp;</td><td class="field-body">if <tt class="docutils literal"><span class="pre">timeout</span></tt> is not <tt class="xref docutils literal"><span class="pre">None</span></tt>
 and the operation takes longer than <tt class="docutils literal"><span class="pre">timeout</span></tt> seconds.</td>
 </tr>
@@ -353,7 +359,7 @@ successfully (i.e. did not raise an exception).</td>
 <dl class="attribute">
 <dt id="celery.result.TaskSetResult.total">
 <tt class="descname">total</tt><a class="headerlink" href="#celery.result.TaskSetResult.total" title="Permalink to this definition">¶</a></dt>
-<dd>The total number of tasks in the <a title="celery.task.TaskSet" class="reference external" href="celery.task.html#celery.task.TaskSet"><tt class="xref docutils literal"><span class="pre">celery.task.TaskSet</span></tt></a>.</dd></dl>
+<dd>The total number of tasks in the <tt class="xref docutils literal"><span class="pre">celery.task.TaskSet</span></tt>.</dd></dl>
 
 <dl class="method">
 <dt id="celery.result.TaskSetResult.waiting">
@@ -372,6 +378,12 @@ waiting for execution.</td>
 
 </dd></dl>
 
+<dl class="exception">
+<dt id="celery.result.TimeoutError">
+<em class="property">
+exception </em><tt class="descclassname">celery.result.</tt><tt class="descname">TimeoutError</tt><a class="headerlink" href="#celery.result.TimeoutError" title="Permalink to this definition">¶</a></dt>
+<dd>The operation timed out.</dd></dl>
+
 </div>
 
 
@@ -381,11 +393,11 @@ waiting for execution.</td>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
             <h4>Previous topic</h4>
-            <p class="topless"><a href="celery.task.html"
-                                  title="previous chapter">Tasks - celery.task</a></p>
+            <p class="topless"><a href="celery.execute.html"
+                                  title="previous chapter">Executing Tasks - celery.execute</a></p>
             <h4>Next topic</h4>
-            <p class="topless"><a href="celery.registry.html"
-                                  title="next chapter">Task Registry - celery.registry</a></p>
+            <p class="topless"><a href="celery.task.html"
+                                  title="next chapter">Task Information and Utilities - celery.task</a></p>
             <h3>This Page</h3>
             <ul class="this-page-menu">
               <li><a href="../sources/reference/celery.result.txt"
@@ -418,18 +430,18 @@ waiting for execution.</td>
           <a href="../modindex.html" title="Global Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="celery.registry.html" title="Task Registry - celery.registry"
+          <a href="celery.task.html" title="Task Information and Utilities - celery.task"
              >next</a> |</li>
         <li class="right" >
-          <a href="celery.task.html" title="Tasks - celery.task"
+          <a href="celery.execute.html" title="Executing Tasks - celery.execute"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v0.3.12 (unstable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v0.3.20 (unstable) documentation</a> &raquo;</li>
           <li><a href="index.html" >Module API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.2.
     </div>
   </body>
 </html>

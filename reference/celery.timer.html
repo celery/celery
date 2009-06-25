@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Timers - celery.timer &mdash; Celery v0.3.12 (unstable) documentation</title>
+    <title>Timers - celery.timer &mdash; Celery v0.3.20 (unstable) documentation</title>
     <link rel="stylesheet" href="../static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.3.12 (unstable)',
+        VERSION:     '0.3.20 (unstable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,10 +19,10 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.3.12 (unstable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.3.20 (unstable) documentation" href="../index.html" />
     <link rel="up" title="Module API Reference" href="index.html" />
     <link rel="next" title="Celery Worker Daemon - celery.bin.celeryd" href="celery.bin.celeryd.html" />
-    <link rel="prev" title="Messaging - celery.messaging" href="celery.messaging.html" /> 
+    <link rel="prev" title="Django Fields - celery.fields" href="celery.fields.html" /> 
   </head>
   <body>
     <div class="related">
@@ -38,9 +38,9 @@
           <a href="celery.bin.celeryd.html" title="Celery Worker Daemon - celery.bin.celeryd"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="celery.messaging.html" title="Messaging - celery.messaging"
+          <a href="celery.fields.html" title="Django Fields - celery.fields"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v0.3.12 (unstable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v0.3.20 (unstable) documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Module API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -50,79 +50,8 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="module-celery.timer">
-<h1>Timers - celery.timer<a class="headerlink" href="#module-celery.timer" title="Permalink to this headline">¶</a></h1>
-<p>Managing time and events</p>
-<dl class="class">
-<dt id="celery.timer.EventTimer">
-<em class="property">
-class </em><tt class="descclassname">celery.timer.</tt><tt class="descname">EventTimer</tt><big>(</big><em>event</em>, <em>interval=None</em><big>)</big><a class="headerlink" href="#celery.timer.EventTimer" title="Permalink to this definition">¶</a></dt>
-<dd><p>Do something at an interval.</p>
-<dl class="attribute">
-<dt id="celery.timer.EventTimer.interval">
-<tt class="descname">interval</tt><a class="headerlink" href="#celery.timer.EventTimer.interval" title="Permalink to this definition">¶</a></dt>
-<dd>How often we call the event (in seconds).</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.timer.EventTimer.event">
-<tt class="descname">event</tt><a class="headerlink" href="#celery.timer.EventTimer.event" title="Permalink to this definition">¶</a></dt>
-<dd>The event callable to run every <tt class="docutils literal"><span class="pre">interval</span></tt> seconds.</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.timer.EventTimer.last_triggered">
-<tt class="descname">last_triggered</tt><a class="headerlink" href="#celery.timer.EventTimer.last_triggered" title="Permalink to this definition">¶</a></dt>
-<dd>The last time, in unix timestamp format, the event was executed.</dd></dl>
-
-<dl class="method">
-<dt id="celery.timer.EventTimer.tick">
-<tt class="descname">tick</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.timer.EventTimer.tick" title="Permalink to this definition">¶</a></dt>
-<dd><p>Run a event timer clock tick.</p>
-<p>When the interval has run, the event will be triggered.
-If interval is not set, the event will never be triggered.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="exception">
-<dt id="celery.timer.TimeoutError">
-<em class="property">
-exception </em><tt class="descclassname">celery.timer.</tt><tt class="descname">TimeoutError</tt><a class="headerlink" href="#celery.timer.TimeoutError" title="Permalink to this definition">¶</a></dt>
-<dd>The event has timed out.</dd></dl>
-
-<dl class="class">
-<dt id="celery.timer.TimeoutTimer">
-<em class="property">
-class </em><tt class="descclassname">celery.timer.</tt><tt class="descname">TimeoutTimer</tt><big>(</big><em>timeout</em>, <em>timeout_msg='The operation timed out'</em><big>)</big><a class="headerlink" href="#celery.timer.TimeoutTimer" title="Permalink to this definition">¶</a></dt>
-<dd><p>A timer that raises <a title="celery.timer.TimeoutError" class="reference internal" href="#celery.timer.TimeoutError"><tt class="xref docutils literal"><span class="pre">TimeoutError</span></tt></a> exception when the
-time has run out.</p>
-<dl class="attribute">
-<dt id="celery.timer.TimeoutTimer.timeout">
-<tt class="descname">timeout</tt><a class="headerlink" href="#celery.timer.TimeoutTimer.timeout" title="Permalink to this definition">¶</a></dt>
-<dd>The timeout in seconds.</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.timer.TimeoutTimer.time_start">
-<tt class="descname">time_start</tt><a class="headerlink" href="#celery.timer.TimeoutTimer.time_start" title="Permalink to this definition">¶</a></dt>
-<dd>The time when the timeout timer instance was constructed.</dd></dl>
-
-<dl class="method">
-<dt id="celery.timer.TimeoutTimer.tick">
-<tt class="descname">tick</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.timer.TimeoutTimer.tick" title="Permalink to this definition">¶</a></dt>
-<dd><p>Run a timeout timer clock tick.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name" colspan="2">Raises <a title="celery.timer.TimeoutError" class="reference internal" href="#celery.timer.TimeoutError">TimeoutError</a>:</th></tr>
-<tr><td>&nbsp;</td><td class="field-body">when <a title="celery.timer.TimeoutTimer.timeout" class="reference internal" href="#celery.timer.TimeoutTimer.timeout"><tt class="xref docutils literal"><span class="pre">timeout</span></tt></a> seconds has passed.
-If <a title="celery.timer.TimeoutTimer.timeout" class="reference internal" href="#celery.timer.TimeoutTimer.timeout"><tt class="xref docutils literal"><span class="pre">timeout</span></tt></a> is not set, it will never time out.</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-</dd></dl>
-
+  <div class="section" id="timers-celery-timer">
+<h1>Timers - celery.timer<a class="headerlink" href="#timers-celery-timer" title="Permalink to this headline">¶</a></h1>
 </div>
 
 
@@ -132,8 +61,8 @@ If <a title="celery.timer.TimeoutTimer.timeout" class="reference internal" href=
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
             <h4>Previous topic</h4>
-            <p class="topless"><a href="celery.messaging.html"
-                                  title="previous chapter">Messaging - celery.messaging</a></p>
+            <p class="topless"><a href="celery.fields.html"
+                                  title="previous chapter">Django Fields - celery.fields</a></p>
             <h4>Next topic</h4>
             <p class="topless"><a href="celery.bin.celeryd.html"
                                   title="next chapter">Celery Worker Daemon - celery.bin.celeryd</a></p>
@@ -172,15 +101,15 @@ If <a title="celery.timer.TimeoutTimer.timeout" class="reference internal" href=
           <a href="celery.bin.celeryd.html" title="Celery Worker Daemon - celery.bin.celeryd"
              >next</a> |</li>
         <li class="right" >
-          <a href="celery.messaging.html" title="Messaging - celery.messaging"
+          <a href="celery.fields.html" title="Django Fields - celery.fields"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v0.3.12 (unstable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v0.3.20 (unstable) documentation</a> &raquo;</li>
           <li><a href="index.html" >Module API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.2.
     </div>
   </body>
 </html>

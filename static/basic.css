@@ -5,15 +5,6 @@
 
 /* -- main layout ----------------------------------------------------------- */
 
-div.documentwrapper {
-    float: left;
-    width: 100%;
-}
-
-div.bodywrapper {
-    margin: 0 0 0 230px;
-}
-
 div.clearer {
     clear: both;
 }

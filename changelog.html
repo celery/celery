@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Change history &mdash; Celery v0.3.12 (unstable) documentation</title>
+    <title>Change history &mdash; Celery v0.3.20 (unstable) documentation</title>
     <link rel="stylesheet" href="static/nature.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.3.12 (unstable)',
+        VERSION:     '0.3.20 (unstable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,7 +19,7 @@
     </script>
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v0.3.12 (unstable) documentation" href="index.html" />
+    <link rel="top" title="Celery v0.3.20 (unstable) documentation" href="index.html" />
     <link rel="next" title="Interesting Links" href="links.html" />
     <link rel="prev" title="Celery Worker Daemon - celery.bin.celeryd" href="reference/celery.bin.celeryd.html" /> 
   </head>
@@ -39,7 +39,7 @@
         <li class="right" >
           <a href="reference/celery.bin.celeryd.html" title="Celery Worker Daemon - celery.bin.celeryd"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Celery v0.3.12 (unstable) documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v0.3.20 (unstable) documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -50,9 +50,32 @@
             
   <div class="section" id="change-history">
 <h1>Change history<a class="headerlink" href="#change-history" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="x-x-x-xxxx-xx-xx-xx-xx-p-m-cet">
-<h2>x.x.x [xxxx-xx-xx xx:xx P.M CET]<a class="headerlink" href="#x-x-x-xxxx-xx-xx-xx-xx-p-m-cet" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="p-m-cet">
+<h2>0.3.20 [2009-06-25 08:42 P.M CET]<a class="headerlink" href="#p-m-cet" title="Permalink to this headline">¶</a></h2>
 <ul>
+<li><dl class="first docutils">
+<dt>New arguments to <tt class="docutils literal"><span class="pre">apply_async</span></tt> (the advanced version of</dt>
+<dd><p class="first"><tt class="docutils literal"><span class="pre">delay_task</span></tt>), <tt class="docutils literal"><span class="pre">countdown</span></tt> and <tt class="docutils literal"><span class="pre">eta</span></tt>;</p>
+<blockquote class="last">
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="c"># Run 10 seconds into the future.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">res</span> <span class="o">=</span> <span class="n">apply_async</span><span class="p">(</span><span class="n">MyTask</span><span class="p">,</span> <span class="n">countdown</span><span class="o">=</span><span class="mf">10</span><span class="p">);</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="c"># Run 1 day from now</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">res</span> <span class="o">=</span> <span class="n">apply_async</span><span class="p">(</span><span class="n">MyTask</span><span class="p">,</span> <span class="n">eta</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">+</span>
+<span class="gp">... </span>                                                                    <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mf">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</blockquote>
+</dd>
+</dl>
+</li>
+<li><p class="first">Now unlinks the pidfile if it&#8217;s stale.</p>
+</li>
+<li><p class="first">Lots of more tests.</p>
+</li>
+<li><p class="first">Now compatible with carrot &gt;= 0.5.0.</p>
+</li>
 <li><p class="first"><strong>IMPORTANT</strong> The <tt class="docutils literal"><span class="pre">subtask_ids</span></tt> attribute on the <tt class="docutils literal"><span class="pre">TaskSetResult</span></tt>
 instance has been removed. To get this information instead use:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">subtask_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">subtask</span><span class="o">.</span><span class="n">task_id</span> <span class="k">for</span> <span class="n">subtask</span> <span class="ow">in</span> <span class="n">ts_res</span><span class="o">.</span><span class="n">subtasks</span><span class="p">]</span>
@@ -64,7 +87,7 @@ instance has been removed. To get this information instead use:</p>
 <li><dl class="first docutils">
 <dt>Task: Add attribute <tt class="docutils literal"><span class="pre">ignore_result</span></tt>: Don&#8217;t store the status and</dt>
 <dd><p class="first last">return value. This means you can&#8217;t use the
-<a title="celery.result.AsyncResult" class="reference external" href="reference/celery.result.html#celery.result.AsyncResult"><tt class="xref docutils literal"><span class="pre">celery.result.AsyncResult</span></tt></a> to check if the task is
+<tt class="docutils literal"><span class="pre">celery.result.AsyncResult</span></tt> to check if the task is
 done, or get its return value. Only use if you need the performance
 and is able live without these features. Any exceptions raised will
 store the return value/status as usual.</p>
@@ -89,14 +112,50 @@ being raised.)</p>
 <dd><p class="first last">To start sending statistics start <tt class="docutils literal"><span class="pre">celeryd</span></tt> with the
 <tt class="docutils literal"><span class="pre">--statistics</span></tt> option. Then after a while you can dump the results
 by running <tt class="docutils literal"><span class="pre">python</span> <span class="pre">manage.py</span> <span class="pre">celerystats</span></tt>. See
-<a title="" class="reference external" href="reference/celery.monitoring.html#module-celery.monitoring"><tt class="xref docutils literal"><span class="pre">celery.monitoring</span></tt></a> for more information.</p>
+<tt class="docutils literal"><span class="pre">celery.monitoring</span></tt> for more information.</p>
 </dd>
 </dl>
 </li>
+<li><dl class="first docutils">
+<dt>The celery daemon can now be supervised (i.e it is automatically</dt>
+<dd><p class="first last">restarted if it crashes). To use this start celeryd with the
+<tt class="docutils literal"><span class="pre">--supervised</span></tt> option (or alternatively <tt class="docutils literal"><span class="pre">-S</span></tt>).</p>
+</dd>
+</dl>
+</li>
+<li><p class="first">views.apply: View applying a task. Example:</p>
+<div class="highlight-python"><pre>        http://e.com/celery/apply/task_name/arg1/arg2//?kwarg1=a&amp;kwarg2=b
+
+**NOTE** Use with caution, preferably not make this publicly
+accessible without ensuring your code is safe!</pre>
+</div>
+</li>
+<li><p class="first">Refactored celery.task. It&#8217;s now split into three modules:</p>
+<ul>
+<li><p class="first">celery.task</p>
+<blockquote>
+<p>Contains apply_async, delay_task, discard_all, and task
+shortcuts, plus imports objects from celery.task.base and
+celery.task.builtins</p>
+</blockquote>
+</li>
+<li><p class="first">celery.task.base</p>
+<blockquote>
+<p>Contains task base classes: Task, PeriodicTask, TaskSet</p>
+</blockquote>
+</li>
+<li><p class="first">celery.task.builtins</p>
+<blockquote>
+<p>Built-in tasks: PingTask, AsynchronousMapTask,
+ExecuteRemoteTask, ++.</p>
+</blockquote>
+</li>
+</ul>
+</li>
 </ul>
 </div>
-<div class="section" id="p-m-cet">
-<h2>0.3.7 [2008-06-16 11:41 P.M CET]<a class="headerlink" href="#p-m-cet" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id1">
+<h2>0.3.7 [2008-06-16 11:41 P.M CET]<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><dl class="first docutils">
 <dt><strong>IMPORTANT</strong> Now uses AMQP&#8217;s <tt class="docutils literal"><span class="pre">basic.consume</span></tt> instead of</dt>
@@ -195,8 +254,8 @@ more than one task.</p>
 </li>
 </ul>
 </div>
-<div class="section" id="id1">
-<h2>0.3.3 [2009-06-08 01:07 P.M CET]<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id2">
+<h2>0.3.3 [2009-06-08 01:07 P.M CET]<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><dl class="first docutils">
 <dt>The <tt class="docutils literal"><span class="pre">PeriodicWorkController</span></tt> now sleeps for 1 second between checking</dt>
@@ -206,8 +265,8 @@ more than one task.</p>
 </li>
 </ul>
 </div>
-<div class="section" id="id2">
-<h2>0.3.2 [2009-06-08 01:07 P.M CET]<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id3">
+<h2>0.3.2 [2009-06-08 01:07 P.M CET]<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><dl class="first docutils">
 <dt>celeryd: Added option <tt class="docutils literal"><span class="pre">--discard</span></tt>: Discard (delete!) all waiting</dt>
@@ -219,8 +278,8 @@ more than one task.</p>
 </li>
 </ul>
 </div>
-<div class="section" id="id3">
-<h2>0.3.1 [2009-06-08 01:07 P.M CET]<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id4">
+<h2>0.3.1 [2009-06-08 01:07 P.M CET]<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><dl class="first docutils">
 <dt>The <cite>PeriodicTask`</cite> worker is now running in its own thread instead</dt>
@@ -232,8 +291,8 @@ more than one task.</p>
 </li>
 </ul>
 </div>
-<div class="section" id="id4">
-<h2>0.3.0 [2009-06-08 12:41 P.M CET]<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id5">
+<h2>0.3.0 [2009-06-08 12:41 P.M CET]<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
 <p><strong>NOTE</strong> This is a development version, for the stable release, please
 see versions 0.2.x.</p>
 <p><strong>VERY IMPORTANT:</strong> Pickle is now the encoder used for serializing task
@@ -329,8 +388,8 @@ Thanks to Vitaly Babiy and Jirka Vejrazka.</p>
 </li>
 </ul>
 </div>
-<div class="section" id="id5">
-<h2>0.2.0 [2009-05-20 05:14 P.M CET]<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id6">
+<h2>0.2.0 [2009-05-20 05:14 P.M CET]<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Final release of 0.2.0</li>
 <li>Compatible with carrot version 0.4.0.</li>
@@ -367,23 +426,23 @@ been removed. Use <tt class="docutils literal"><span class="pre">celery.backends
 and <tt class="docutils literal"><span class="pre">celery.backends.default_backend.mark_as_failure()</span></tt> instead.</li>
 </ul>
 </div>
-<div class="section" id="id6">
-<h2>0.1.15 [2009-05-19 04:13 P.M CET]<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id7">
+<h2>0.1.15 [2009-05-19 04:13 P.M CET]<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>The celery daemon was leaking AMQP connections, this should be fixed,
 if you have any problems with too many files open (like <tt class="docutils literal"><span class="pre">emfile</span></tt>
 errors in <tt class="docutils literal"><span class="pre">rabbit.log</span></tt>, please contact us!</li>
 </ul>
 </div>
-<div class="section" id="id7">
-<h2>0.1.14 [2009-05-19 01:08 P.M CET]<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id8">
+<h2>0.1.14 [2009-05-19 01:08 P.M CET]<a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Fixed a syntax error in the <tt class="docutils literal"><span class="pre">TaskSet</span></tt> class.  (No such variable
 <tt class="docutils literal"><span class="pre">TimeOutError</span></tt>).</li>
 </ul>
 </div>
-<div class="section" id="id8">
-<h2>0.1.13 [2009-05-19 12:36 P.M CET]<a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id9">
+<h2>0.1.13 [2009-05-19 12:36 P.M CET]<a class="headerlink" href="#id9" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><p class="first">Forgot to add <tt class="docutils literal"><span class="pre">yadayada</span></tt> to install requirements.</p>
 </li>
@@ -404,8 +463,8 @@ $ make html</pre>
 </li>
 </ul>
 </div>
-<div class="section" id="id9">
-<h2>0.1.12 [2009-05-18 04:38 P.M CET]<a class="headerlink" href="#id9" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id10">
+<h2>0.1.12 [2009-05-18 04:38 P.M CET]<a class="headerlink" href="#id10" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><p class="first"><tt class="docutils literal"><span class="pre">delay_task()</span></tt> etc. now returns <tt class="docutils literal"><span class="pre">celery.task.AsyncResult</span></tt> object,
 which lets you check the result and any failure that might have
@@ -447,23 +506,23 @@ TT_PORT = 6657; # Port of the Tokyo Tyrant server.</p>
 </li>
 </ul>
 </div>
-<div class="section" id="id10">
-<h2>0.1.11 [2009-05-12 02:08 P.M CET]<a class="headerlink" href="#id10" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id11">
+<h2>0.1.11 [2009-05-12 02:08 P.M CET]<a class="headerlink" href="#id11" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>The logging system was leaking file descriptors, resulting in
 servers stopping with the EMFILES (too many open files) error. (fixed)</li>
 </ul>
 </div>
-<div class="section" id="id11">
-<h2>0.1.10 [2009-05-11 12:46 P.M CET]<a class="headerlink" href="#id11" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id12">
+<h2>0.1.10 [2009-05-11 12:46 P.M CET]<a class="headerlink" href="#id12" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Tasks now supports both positional arguments and keyword arguments.</li>
 <li>Requires carrot 0.3.8.</li>
 <li>The daemon now tries to reconnect if the connection is lost.</li>
 </ul>
 </div>
-<div class="section" id="id12">
-<h2>0.1.8 [2009-05-07 12:27 P.M CET]<a class="headerlink" href="#id12" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id13">
+<h2>0.1.8 [2009-05-07 12:27 P.M CET]<a class="headerlink" href="#id13" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Better test coverage</li>
 <li>More documentation</li>
@@ -471,8 +530,8 @@ servers stopping with the EMFILES (too many open files) error. (fixed)</li>
 <tt class="docutils literal"><span class="pre">settings.CELERYD_EMPTY_MSG_EMIT_EVERY</span></tt> is 0.</li>
 </ul>
 </div>
-<div class="section" id="id13">
-<h2>0.1.7 [2009-04-30 1:50 P.M CET]<a class="headerlink" href="#id13" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id14">
+<h2>0.1.7 [2009-04-30 1:50 P.M CET]<a class="headerlink" href="#id14" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Added some unittests</li>
 <li>Can now use the database for task metadata (like if the task has
@@ -484,8 +543,8 @@ within the <tt class="docutils literal"><span class="pre">testproj</span></tt> p
 and <tt class="docutils literal"><span class="pre">settings.CELERY_AMQP_CONSUMER_QUEUE</span></tt>.</li>
 </ul>
 </div>
-<div class="section" id="id14">
-<h2>0.1.6 [2009-04-28 2:13 P.M CET]<a class="headerlink" href="#id14" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id15">
+<h2>0.1.6 [2009-04-28 2:13 P.M CET]<a class="headerlink" href="#id15" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <ul class="simple">
 <li>Introducing <tt class="docutils literal"><span class="pre">TaskSet</span></tt>. A set of subtasks is executed and you can
@@ -537,25 +596,25 @@ the name change request is in <tt class="docutils literal"><span class="pre">doc
             <h3><a href="index.html">Table Of Contents</a></h3>
             <ul>
 <li><a class="reference external" href="">Change history</a><ul>
-<li><a class="reference external" href="#x-x-x-xxxx-xx-xx-xx-xx-p-m-cet">x.x.x [xxxx-xx-xx xx:xx P.M CET]</a></li>
-<li><a class="reference external" href="#p-m-cet">0.3.7 [2008-06-16 11:41 P.M CET]</a></li>
-<li><a class="reference external" href="#id1">0.3.3 [2009-06-08 01:07 P.M CET]</a></li>
-<li><a class="reference external" href="#id2">0.3.2 [2009-06-08 01:07 P.M CET]</a></li>
-<li><a class="reference external" href="#id3">0.3.1 [2009-06-08 01:07 P.M CET]</a></li>
-<li><a class="reference external" href="#id4">0.3.0 [2009-06-08 12:41 P.M CET]</a></li>
-<li><a class="reference external" href="#id5">0.2.0 [2009-05-20 05:14 P.M CET]</a></li>
+<li><a class="reference external" href="#p-m-cet">0.3.20 [2009-06-25 08:42 P.M CET]</a></li>
+<li><a class="reference external" href="#id1">0.3.7 [2008-06-16 11:41 P.M CET]</a></li>
+<li><a class="reference external" href="#id2">0.3.3 [2009-06-08 01:07 P.M CET]</a></li>
+<li><a class="reference external" href="#id3">0.3.2 [2009-06-08 01:07 P.M CET]</a></li>
+<li><a class="reference external" href="#id4">0.3.1 [2009-06-08 01:07 P.M CET]</a></li>
+<li><a class="reference external" href="#id5">0.3.0 [2009-06-08 12:41 P.M CET]</a></li>
+<li><a class="reference external" href="#id6">0.2.0 [2009-05-20 05:14 P.M CET]</a></li>
 <li><a class="reference external" href="#pre3-2009-05-20-05-14-p-m-cet">0.2.0-pre3 [2009-05-20 05:14 P.M CET]</a></li>
 <li><a class="reference external" href="#pre2-2009-05-20-01-56-p-m-cet">0.2.0-pre2 [2009-05-20 01:56 P.M CET]</a></li>
 <li><a class="reference external" href="#pre1-2009-05-20-12-33-p-m-cet">0.2.0-pre1 [2009-05-20 12:33 P.M CET]</a></li>
-<li><a class="reference external" href="#id6">0.1.15 [2009-05-19 04:13 P.M CET]</a></li>
-<li><a class="reference external" href="#id7">0.1.14 [2009-05-19 01:08 P.M CET]</a></li>
-<li><a class="reference external" href="#id8">0.1.13 [2009-05-19 12:36 P.M CET]</a></li>
-<li><a class="reference external" href="#id9">0.1.12 [2009-05-18 04:38 P.M CET]</a></li>
-<li><a class="reference external" href="#id10">0.1.11 [2009-05-12 02:08 P.M CET]</a></li>
-<li><a class="reference external" href="#id11">0.1.10 [2009-05-11 12:46 P.M CET]</a></li>
-<li><a class="reference external" href="#id12">0.1.8 [2009-05-07 12:27 P.M CET]</a></li>
-<li><a class="reference external" href="#id13">0.1.7 [2009-04-30 1:50 P.M CET]</a></li>
-<li><a class="reference external" href="#id14">0.1.6 [2009-04-28 2:13 P.M CET]</a></li>
+<li><a class="reference external" href="#id7">0.1.15 [2009-05-19 04:13 P.M CET]</a></li>
+<li><a class="reference external" href="#id8">0.1.14 [2009-05-19 01:08 P.M CET]</a></li>
+<li><a class="reference external" href="#id9">0.1.13 [2009-05-19 12:36 P.M CET]</a></li>
+<li><a class="reference external" href="#id10">0.1.12 [2009-05-18 04:38 P.M CET]</a></li>
+<li><a class="reference external" href="#id11">0.1.11 [2009-05-12 02:08 P.M CET]</a></li>
+<li><a class="reference external" href="#id12">0.1.10 [2009-05-11 12:46 P.M CET]</a></li>
+<li><a class="reference external" href="#id13">0.1.8 [2009-05-07 12:27 P.M CET]</a></li>
+<li><a class="reference external" href="#id14">0.1.7 [2009-04-30 1:50 P.M CET]</a></li>
+<li><a class="reference external" href="#id15">0.1.6 [2009-04-28 2:13 P.M CET]</a></li>
 <li><a class="reference external" href="#a-m-cet">0.1.0 [2009-04-24 11:28 A.M CET]</a></li>
 </ul>
 </li>
@@ -604,12 +663,12 @@ the name change request is in <tt class="docutils literal"><span class="pre">doc
         <li class="right" >
           <a href="reference/celery.bin.celeryd.html" title="Celery Worker Daemon - celery.bin.celeryd"
              >previous</a> |</li>
-        <li><a href="index.html">Celery v0.3.12 (unstable) documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v0.3.20 (unstable) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.2.
     </div>
   </body>
 </html>

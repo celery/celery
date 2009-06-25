@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Multiprocessing Worker - celery.worker &mdash; Celery v0.3.12 (unstable) documentation</title>
+    <title>Multiprocessing Worker - celery.worker &mdash; Celery v0.3.20 (unstable) documentation</title>
     <link rel="stylesheet" href="../static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.3.12 (unstable)',
+        VERSION:     '0.3.20 (unstable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,10 +19,10 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.3.12 (unstable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.3.20 (unstable) documentation" href="../index.html" />
     <link rel="up" title="Module API Reference" href="index.html" />
-    <link rel="next" title="Task Pool - celery.pool" href="celery.pool.html" />
-    <link rel="prev" title="Statistics and Monitoring - celery.monitoring" href="celery.monitoring.html" /> 
+    <link rel="next" title="Executable Jobs - celery.worker.job" href="celery.worker.job.html" />
+    <link rel="prev" title="Messaging - celery.messaging" href="celery.messaging.html" /> 
   </head>
   <body>
     <div class="related">
@@ -35,12 +35,12 @@
           <a href="../modindex.html" title="Global Module Index"
              accesskey="M">modules</a> |</li>
         <li class="right" >
-          <a href="celery.pool.html" title="Task Pool - celery.pool"
+          <a href="celery.worker.job.html" title="Executable Jobs - celery.worker.job"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="celery.monitoring.html" title="Statistics and Monitoring - celery.monitoring"
+          <a href="celery.messaging.html" title="Messaging - celery.messaging"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v0.3.12 (unstable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v0.3.20 (unstable) documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Module API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -52,165 +52,75 @@
             
   <div class="section" id="module-celery.worker">
 <h1>Multiprocessing Worker - celery.worker<a class="headerlink" href="#module-celery.worker" title="Permalink to this headline">¶</a></h1>
-<p>celery.worker</p>
+<p>The Multiprocessing Worker Server</p>
+<p>Documentation for this module is in <tt class="docutils literal"><span class="pre">docs/reference/celery.worker.rst</span></tt>.</p>
 <dl class="class">
-<dt id="celery.worker.PeriodicWorkController">
+<dt id="celery.worker.AMQPListener">
 <em class="property">
-class </em><tt class="descclassname">celery.worker.</tt><tt class="descname">PeriodicWorkController</tt><a class="headerlink" href="#celery.worker.PeriodicWorkController" title="Permalink to this definition">¶</a></dt>
-<dd><p>A thread that continuously checks if there are
-<a title="celery.task.PeriodicTask" class="reference external" href="celery.task.html#celery.task.PeriodicTask"><tt class="xref docutils literal"><span class="pre">celery.task.PeriodicTask</span></tt></a> tasks waiting for execution,
-and executes them.</p>
-<p>Example:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">PeriodicWorkController</span><span class="p">()</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
-</pre></div>
-</div>
-<dl class="method">
-<dt id="celery.worker.PeriodicWorkController.run">
-<tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.PeriodicWorkController.run" title="Permalink to this definition">¶</a></dt>
-<dd>Run when you use <tt class="xref docutils literal"><span class="pre">Thread.start()</span></tt></dd></dl>
-
-<dl class="method">
-<dt id="celery.worker.PeriodicWorkController.stop">
-<tt class="descname">stop</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.PeriodicWorkController.stop" title="Permalink to this definition">¶</a></dt>
-<dd>Shutdown the thread.</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="celery.worker.TaskWrapper">
-<em class="property">
-class </em><tt class="descclassname">celery.worker.</tt><tt class="descname">TaskWrapper</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>task_func</em>, <em>args</em>, <em>kwargs</em>, <em>on_acknowledge=None</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.worker.TaskWrapper" title="Permalink to this definition">¶</a></dt>
-<dd><p>Class wrapping a task to be run.</p>
+class </em><tt class="descclassname">celery.worker.</tt><tt class="descname">AMQPListener</tt><big>(</big><em>bucket_queue</em>, <em>hold_queue</em>, <em>logger</em><big>)</big><a class="headerlink" href="#celery.worker.AMQPListener" title="Permalink to this definition">¶</a></dt>
+<dd><p>Listen for messages received from the AMQP broker and
+move them the the bucket queue for task processing.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><em>task_name</em> &#8211; see <a title="celery.worker.TaskWrapper.task_name" class="reference internal" href="#celery.worker.TaskWrapper.task_name"><tt class="xref docutils literal"><span class="pre">task_name</span></tt></a>.</li>
-<li><em>task_id</em> &#8211; see <a title="celery.worker.TaskWrapper.task_id" class="reference internal" href="#celery.worker.TaskWrapper.task_id"><tt class="xref docutils literal"><span class="pre">task_id</span></tt></a>.</li>
-<li><em>task_func</em> &#8211; see <a title="celery.worker.TaskWrapper.task_func" class="reference internal" href="#celery.worker.TaskWrapper.task_func"><tt class="xref docutils literal"><span class="pre">task_func</span></tt></a></li>
-<li><em>args</em> &#8211; see <a title="celery.worker.TaskWrapper.args" class="reference internal" href="#celery.worker.TaskWrapper.args"><tt class="xref docutils literal"><span class="pre">args</span></tt></a></li>
-<li><em>kwargs</em> &#8211; see <a title="celery.worker.TaskWrapper.kwargs" class="reference internal" href="#celery.worker.TaskWrapper.kwargs"><tt class="xref docutils literal"><span class="pre">kwargs</span></tt></a>.</li>
+<li><em>bucket_queue</em> &#8211; See <a title="celery.worker.AMQPListener.bucket_queue" class="reference internal" href="#celery.worker.AMQPListener.bucket_queue"><tt class="xref docutils literal"><span class="pre">bucket_queue</span></tt></a>.</li>
+<li><em>hold_queue</em> &#8211; See <a title="celery.worker.AMQPListener.hold_queue" class="reference internal" href="#celery.worker.AMQPListener.hold_queue"><tt class="xref docutils literal"><span class="pre">hold_queue</span></tt></a>.</li>
 </ul>
 </td>
 </tr>
 </tbody>
 </table>
 <dl class="attribute">
-<dt id="celery.worker.TaskWrapper.task_name">
-<tt class="descname">task_name</tt><a class="headerlink" href="#celery.worker.TaskWrapper.task_name" title="Permalink to this definition">¶</a></dt>
-<dd>Kind of task. Must be a name registered in the task registry.</dd></dl>
+<dt id="celery.worker.AMQPListener.bucket_queue">
+<tt class="descname">bucket_queue</tt><a class="headerlink" href="#celery.worker.AMQPListener.bucket_queue" title="Permalink to this definition">¶</a></dt>
+<dd>The queue that holds tasks ready for processing immediately.</dd></dl>
 
 <dl class="attribute">
-<dt id="celery.worker.TaskWrapper.task_id">
-<tt class="descname">task_id</tt><a class="headerlink" href="#celery.worker.TaskWrapper.task_id" title="Permalink to this definition">¶</a></dt>
-<dd>UUID of the task.</dd></dl>
+<dt id="celery.worker.AMQPListener.hold_queue">
+<tt class="descname">hold_queue</tt><a class="headerlink" href="#celery.worker.AMQPListener.hold_queue" title="Permalink to this definition">¶</a></dt>
+<dd>The queue that holds paused tasks. Reasons for being paused include
+a countdown/eta or that it&#8217;s waiting for retry.</dd></dl>
 
 <dl class="attribute">
-<dt id="celery.worker.TaskWrapper.task_func">
-<tt class="descname">task_func</tt><a class="headerlink" href="#celery.worker.TaskWrapper.task_func" title="Permalink to this definition">¶</a></dt>
-<dd>The tasks callable object.</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.worker.TaskWrapper.args">
-<tt class="descname">args</tt><a class="headerlink" href="#celery.worker.TaskWrapper.args" title="Permalink to this definition">¶</a></dt>
-<dd>List of positional arguments to apply to the task.</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.worker.TaskWrapper.kwargs">
-<tt class="descname">kwargs</tt><a class="headerlink" href="#celery.worker.TaskWrapper.kwargs" title="Permalink to this definition">¶</a></dt>
-<dd>Mapping of keyword arguments to apply to the task.</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.worker.TaskWrapper.message">
-<tt class="descname">message</tt><a class="headerlink" href="#celery.worker.TaskWrapper.message" title="Permalink to this definition">¶</a></dt>
-<dd>The original message sent. Used for acknowledging the message.</dd></dl>
+<dt id="celery.worker.AMQPListener.logger">
+<tt class="descname">logger</tt><a class="headerlink" href="#celery.worker.AMQPListener.logger" title="Permalink to this definition">¶</a></dt>
+<dd>The logger used.</dd></dl>
 
 <dl class="method">
-<dt id="celery.worker.TaskWrapper.execute">
-<tt class="descname">execute</tt><big>(</big><em>loglevel=None</em>, <em>logfile=None</em><big>)</big><a class="headerlink" href="#celery.worker.TaskWrapper.execute" title="Permalink to this definition">¶</a></dt>
-<dd><p>Execute the task in a <a title="celery.worker.jail" class="reference internal" href="#celery.worker.jail"><tt class="xref docutils literal"><span class="pre">jail()</span></tt></a> and store return value
-and status in the task meta backend.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><em>loglevel</em> &#8211; The loglevel used by the task.</li>
-<li><em>logfile</em> &#8211; The logfile used by the task.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
+<dt id="celery.worker.AMQPListener.close_connection">
+<tt class="descname">close_connection</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.AMQPListener.close_connection" title="Permalink to this definition">¶</a></dt>
+<dd>Close the AMQP connection.</dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.AMQPListener.receive_message">
+<tt class="descname">receive_message</tt><big>(</big><em>message_data</em>, <em>message</em><big>)</big><a class="headerlink" href="#celery.worker.AMQPListener.receive_message" title="Permalink to this definition">¶</a></dt>
+<dd><p>The callback called when a new message is received.</p>
+<p>If the message has an <tt class="docutils literal"><span class="pre">eta</span></tt> we move it to the hold queue,
+otherwise we move it the bucket queue for immediate processing.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="celery.worker.TaskWrapper.execute_using_pool">
-<tt class="descname">execute_using_pool</tt><big>(</big><em>pool</em>, <em>loglevel=None</em>, <em>logfile=None</em><big>)</big><a class="headerlink" href="#celery.worker.TaskWrapper.execute_using_pool" title="Permalink to this definition">¶</a></dt>
-<dd><p>Like <a title="celery.worker.TaskWrapper.execute" class="reference internal" href="#celery.worker.TaskWrapper.execute"><tt class="xref docutils literal"><span class="pre">execute()</span></tt></a>, but using the <tt class="xref docutils literal"><span class="pre">multiprocessing</span></tt> pool.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><em>pool</em> &#8211; A <tt class="xref docutils literal"><span class="pre">multiprocessing.Pool</span></tt> instance.</li>
-<li><em>loglevel</em> &#8211; The loglevel used by the task.</li>
-<li><em>logfile</em> &#8211; The logfile used by the task.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-<p>:returns <tt class="xref docutils literal"><span class="pre">multiprocessing.AsyncResult</span></tt> instance.</p>
+<dt id="celery.worker.AMQPListener.reset_connection">
+<tt class="descname">reset_connection</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.AMQPListener.reset_connection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset the AMQP connection, and reinitialize the
+<a title="celery.messaging.TaskConsumer" class="reference external" href="celery.messaging.html#celery.messaging.TaskConsumer"><tt class="xref docutils literal"><span class="pre">celery.messaging.TaskConsumer</span></tt></a> instance.</p>
+<p>Resets the task consumer in <tt class="xref docutils literal"><span class="pre">task_consumer</span></tt>.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="celery.worker.TaskWrapper.extend_with_default_kwargs">
-<tt class="descname">extend_with_default_kwargs</tt><big>(</big><em>loglevel</em>, <em>logfile</em><big>)</big><a class="headerlink" href="#celery.worker.TaskWrapper.extend_with_default_kwargs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Extend the tasks keyword arguments with standard task arguments.</p>
-<p>These are <tt class="docutils literal"><span class="pre">logfile</span></tt>, <tt class="docutils literal"><span class="pre">loglevel</span></tt>, <tt class="docutils literal"><span class="pre">task_id</span></tt> and <tt class="docutils literal"><span class="pre">task_name</span></tt>.</p>
-</dd></dl>
-
-<dl class="classmethod">
-<dt id="celery.worker.TaskWrapper.from_message">
-<em class="property">
-classmethod </em><tt class="descname">from_message</tt><big>(</big><em>message</em>, <em>message_data</em>, <em>logger</em><big>)</big><a class="headerlink" href="#celery.worker.TaskWrapper.from_message" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a <a title="celery.worker.TaskWrapper" class="reference internal" href="#celery.worker.TaskWrapper"><tt class="xref docutils literal"><span class="pre">TaskWrapper</span></tt></a> from a task message sent by
-<a title="celery.messaging.TaskPublisher" class="reference external" href="celery.messaging.html#celery.messaging.TaskPublisher"><tt class="xref docutils literal"><span class="pre">celery.messaging.TaskPublisher</span></tt></a>.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name" colspan="2">Raises <a title="celery.worker.UnknownTask" class="reference internal" href="#celery.worker.UnknownTask">UnknownTask</a>:</th></tr>
-<tr><td>&nbsp;</td><td class="field-body">if the message does not describe a task,
-the message is also rejected.</td>
-</tr>
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><a title="celery.worker.TaskWrapper" class="reference internal" href="#celery.worker.TaskWrapper"><tt class="xref docutils literal"><span class="pre">TaskWrapper</span></tt></a> instance.</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
+<dt id="celery.worker.AMQPListener.start">
+<tt class="descname">start</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.AMQPListener.start" title="Permalink to this definition">¶</a></dt>
+<dd>Start processing AMQP messages.</dd></dl>
 
 <dl class="method">
-<dt id="celery.worker.TaskWrapper.on_failure">
-<tt class="descname">on_failure</tt><big>(</big><em>exc_info</em>, <em>meta</em><big>)</big><a class="headerlink" href="#celery.worker.TaskWrapper.on_failure" title="Permalink to this definition">¶</a></dt>
-<dd>The handler used if the task raised an exception.</dd></dl>
-
-<dl class="method">
-<dt id="celery.worker.TaskWrapper.on_success">
-<tt class="descname">on_success</tt><big>(</big><em>ret_value</em>, <em>meta</em><big>)</big><a class="headerlink" href="#celery.worker.TaskWrapper.on_success" title="Permalink to this definition">¶</a></dt>
-<dd>The handler used if the task was successfully processed (
-without raising an exception).</dd></dl>
+<dt id="celery.worker.AMQPListener.stop">
+<tt class="descname">stop</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.AMQPListener.stop" title="Permalink to this definition">¶</a></dt>
+<dd>Stop processing AMQP messages and close the connection
+to the broker.</dd></dl>
 
 </dd></dl>
-
-<dl class="exception">
-<dt id="celery.worker.UnknownTask">
-<em class="property">
-exception </em><tt class="descclassname">celery.worker.</tt><tt class="descname">UnknownTask</tt><a class="headerlink" href="#celery.worker.UnknownTask" title="Permalink to this definition">¶</a></dt>
-<dd>Got an unknown task in the queue. The message is requeued and
-ignored.</dd></dl>
 
 <dl class="class">
 <dt id="celery.worker.WorkController">
@@ -253,80 +163,65 @@ class </em><tt class="descclassname">celery.worker.</tt><tt class="descname">Wor
 <dd>The <tt class="xref docutils literal"><span class="pre">logging.Logger</span></tt> instance used for logging.</dd></dl>
 
 <dl class="attribute">
+<dt id="celery.worker.WorkController.is_detached">
+<tt class="descname">is_detached</tt><a class="headerlink" href="#celery.worker.WorkController.is_detached" title="Permalink to this definition">¶</a></dt>
+<dd>Flag describing if the worker is running as a daemon or not.</dd></dl>
+
+<dl class="attribute">
 <dt id="celery.worker.WorkController.pool">
 <tt class="descname">pool</tt><a class="headerlink" href="#celery.worker.WorkController.pool" title="Permalink to this definition">¶</a></dt>
 <dd>The <tt class="xref docutils literal"><span class="pre">multiprocessing.Pool</span></tt> instance used.</dd></dl>
 
 <dl class="attribute">
-<dt id="celery.worker.WorkController.task_consumer">
-<tt class="descname">task_consumer</tt><a class="headerlink" href="#celery.worker.WorkController.task_consumer" title="Permalink to this definition">¶</a></dt>
-<dd>The <a title="celery.messaging.TaskConsumer" class="reference external" href="celery.messaging.html#celery.messaging.TaskConsumer"><tt class="xref docutils literal"><span class="pre">celery.messaging.TaskConsumer</span></tt></a> instance used.</dd></dl>
+<dt id="celery.worker.WorkController.bucket_queue">
+<tt class="descname">bucket_queue</tt><a class="headerlink" href="#celery.worker.WorkController.bucket_queue" title="Permalink to this definition">¶</a></dt>
+<dd>The <tt class="xref docutils literal"><span class="pre">Queue.Queue</span></tt> that holds tasks ready for immediate
+processing.</dd></dl>
 
-<dl class="method">
-<dt id="celery.worker.WorkController.close_connection">
-<tt class="descname">close_connection</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.WorkController.close_connection" title="Permalink to this definition">¶</a></dt>
-<dd>Close the AMQP connection.</dd></dl>
+<dl class="attribute">
+<dt id="celery.worker.WorkController.hold_queue">
+<tt class="descname">hold_queue</tt><a class="headerlink" href="#celery.worker.WorkController.hold_queue" title="Permalink to this definition">¶</a></dt>
+<dd>The <tt class="xref docutils literal"><span class="pre">Queue.Queue</span></tt> that holds paused tasks. Reasons for holding
+back the task include waiting for <tt class="docutils literal"><span class="pre">eta</span></tt> to pass or the task is being
+retried.</dd></dl>
 
-<dl class="method">
-<dt id="celery.worker.WorkController.connection_diagnostics">
-<tt class="descname">connection_diagnostics</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.WorkController.connection_diagnostics" title="Permalink to this definition">¶</a></dt>
-<dd>Diagnose the AMQP connection, and reset connection if
-necessary.</dd></dl>
+<dl class="attribute">
+<dt id="celery.worker.WorkController.periodic_work_controller">
+<tt class="descname">periodic_work_controller</tt><a class="headerlink" href="#celery.worker.WorkController.periodic_work_controller" title="Permalink to this definition">¶</a></dt>
+<dd>Instance of <a title="celery.worker.controllers.PeriodicWorkController" class="reference external" href="celery.worker.controllers.html#celery.worker.controllers.PeriodicWorkController"><tt class="xref docutils literal"><span class="pre">celery.worker.controllers.PeriodicWorkController</span></tt></a>.</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.worker.WorkController.mediator">
+<tt class="descname">mediator</tt><a class="headerlink" href="#celery.worker.WorkController.mediator" title="Permalink to this definition">¶</a></dt>
+<dd>Instance of <a title="celery.worker.controllers.Mediator" class="reference external" href="celery.worker.controllers.html#celery.worker.controllers.Mediator"><tt class="xref docutils literal"><span class="pre">celery.worker.controllers.Mediator</span></tt></a>.</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.worker.WorkController.amqp_listener">
+<tt class="descname">amqp_listener</tt><a class="headerlink" href="#celery.worker.WorkController.amqp_listener" title="Permalink to this definition">¶</a></dt>
+<dd>Instance of <a title="celery.worker.AMQPListener" class="reference internal" href="#celery.worker.AMQPListener"><tt class="xref docutils literal"><span class="pre">AMQPListener</span></tt></a>.</dd></dl>
 
 <dl class="method">
 <dt id="celery.worker.WorkController.process_task">
-<tt class="descname">process_task</tt><big>(</big><em>message_data</em>, <em>message</em><big>)</big><a class="headerlink" href="#celery.worker.WorkController.process_task" title="Permalink to this definition">¶</a></dt>
-<dd>Process task message by passing it to the pool of workers.</dd></dl>
+<tt class="descname">process_task</tt><big>(</big><em>task</em><big>)</big><a class="headerlink" href="#celery.worker.WorkController.process_task" title="Permalink to this definition">¶</a></dt>
+<dd>Process task by sending it to the pool of workers.</dd></dl>
 
 <dl class="method">
-<dt id="celery.worker.WorkController.reset_connection">
-<tt class="descname">reset_connection</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.WorkController.reset_connection" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reset the AMQP connection, and reinitialize the
-<a title="celery.messaging.TaskConsumer" class="reference external" href="celery.messaging.html#celery.messaging.TaskConsumer"><tt class="xref docutils literal"><span class="pre">celery.messaging.TaskConsumer</span></tt></a> instance.</p>
-<p>Resets the task consumer in <a title="celery.worker.WorkController.task_consumer" class="reference internal" href="#celery.worker.WorkController.task_consumer"><tt class="xref docutils literal"><span class="pre">task_consumer</span></tt></a>.</p>
-</dd></dl>
+<dt id="celery.worker.WorkController.safe_process_task">
+<tt class="descname">safe_process_task</tt><big>(</big><em>task</em><big>)</big><a class="headerlink" href="#celery.worker.WorkController.safe_process_task" title="Permalink to this definition">¶</a></dt>
+<dd>Same as <a title="celery.worker.WorkController.process_task" class="reference internal" href="#celery.worker.WorkController.process_task"><tt class="xref docutils literal"><span class="pre">process_task()</span></tt></a>, but catches all exceptions
+the task raises and log them as errors, to make sure the
+worker doesn&#8217;t die.</dd></dl>
 
 <dl class="method">
-<dt id="celery.worker.WorkController.run">
-<tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.WorkController.run" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.worker.WorkController.start">
+<tt class="descname">start</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.WorkController.start" title="Permalink to this definition">¶</a></dt>
 <dd>Starts the workers main loop.</dd></dl>
 
 <dl class="method">
-<dt id="celery.worker.WorkController.shutdown">
-<tt class="descname">shutdown</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.WorkController.shutdown" title="Permalink to this definition">¶</a></dt>
-<dd>Make sure <tt class="docutils literal"><span class="pre">celeryd</span></tt> exits cleanly.</dd></dl>
+<dt id="celery.worker.WorkController.stop">
+<tt class="descname">stop</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.WorkController.stop" title="Permalink to this definition">¶</a></dt>
+<dd>Gracefully shutdown the worker server.</dd></dl>
 
-</dd></dl>
-
-<dl class="function">
-<dt id="celery.worker.jail">
-<tt class="descclassname">celery.worker.</tt><tt class="descname">jail</tt><big>(</big><em>task_id</em>, <em>task_name</em>, <em>func</em>, <em>args</em>, <em>kwargs</em><big>)</big><a class="headerlink" href="#celery.worker.jail" title="Permalink to this definition">¶</a></dt>
-<dd><p>Wraps the task in a jail, which catches all exceptions, and
-saves the status and result of the task execution to the task
-meta backend.</p>
-<p>If the call was successful, it saves the result to the task result
-backend, and sets the task status to <tt class="docutils literal"><span class="pre">&quot;DONE&quot;</span></tt>.</p>
-<p>If the call results in an exception, it saves the exception as the task
-result, and sets the task status to <tt class="docutils literal"><span class="pre">&quot;FAILURE&quot;</span></tt>.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><em>task_id</em> &#8211; The id of the task.</li>
-<li><em>task_name</em> &#8211; The name of the task.</li>
-<li><em>func</em> &#8211; Callable object to execute.</li>
-<li><em>args</em> &#8211; List of positional args to pass on to the function.</li>
-<li><em>kwargs</em> &#8211; Keyword arguments mapping to pass on to the function.</li>
-</ul>
-</td>
-</tr>
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">the function return value on success, or
-the exception instance on failure.</p>
-</td>
-</tr>
-</tbody>
-</table>
 </dd></dl>
 
 </div>
@@ -338,11 +233,11 @@ the exception instance on failure.</p>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
             <h4>Previous topic</h4>
-            <p class="topless"><a href="celery.monitoring.html"
-                                  title="previous chapter">Statistics and Monitoring - celery.monitoring</a></p>
+            <p class="topless"><a href="celery.messaging.html"
+                                  title="previous chapter">Messaging - celery.messaging</a></p>
             <h4>Next topic</h4>
-            <p class="topless"><a href="celery.pool.html"
-                                  title="next chapter">Task Pool - celery.pool</a></p>
+            <p class="topless"><a href="celery.worker.job.html"
+                                  title="next chapter">Executable Jobs - celery.worker.job</a></p>
             <h3>This Page</h3>
             <ul class="this-page-menu">
               <li><a href="../sources/reference/celery.worker.txt"
@@ -375,18 +270,18 @@ the exception instance on failure.</p>
           <a href="../modindex.html" title="Global Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="celery.pool.html" title="Task Pool - celery.pool"
+          <a href="celery.worker.job.html" title="Executable Jobs - celery.worker.job"
              >next</a> |</li>
         <li class="right" >
-          <a href="celery.monitoring.html" title="Statistics and Monitoring - celery.monitoring"
+          <a href="celery.messaging.html" title="Messaging - celery.messaging"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v0.3.12 (unstable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v0.3.20 (unstable) documentation</a> &raquo;</li>
           <li><a href="index.html" >Module API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.2.
     </div>
   </body>
 </html>

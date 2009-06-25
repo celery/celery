@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Task Pool - celery.pool &mdash; Celery v0.3.12 (unstable) documentation</title>
+    <title>Task Pool - celery.pool &mdash; Celery v0.3.20 (unstable) documentation</title>
     <link rel="stylesheet" href="../static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.3.12 (unstable)',
+        VERSION:     '0.3.20 (unstable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,10 +19,10 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.3.12 (unstable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.3.20 (unstable) documentation" href="../index.html" />
     <link rel="up" title="Module API Reference" href="index.html" />
-    <link rel="next" title="Backends - celery.backends" href="celery.backends.html" />
-    <link rel="prev" title="Multiprocessing Worker - celery.worker" href="celery.worker.html" /> 
+    <link rel="next" title="Process Supervisor - celery.supervisor" href="celery.supervisor.html" />
+    <link rel="prev" title="Worker Controller Threads - celery.worker.controllers" href="celery.worker.controllers.html" /> 
   </head>
   <body>
     <div class="related">
@@ -35,12 +35,12 @@
           <a href="../modindex.html" title="Global Module Index"
              accesskey="M">modules</a> |</li>
         <li class="right" >
-          <a href="celery.backends.html" title="Backends - celery.backends"
+          <a href="celery.supervisor.html" title="Process Supervisor - celery.supervisor"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="celery.worker.html" title="Multiprocessing Worker - celery.worker"
+          <a href="celery.worker.controllers.html" title="Worker Controller Threads - celery.worker.controllers"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v0.3.12 (unstable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v0.3.20 (unstable) documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Module API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -83,36 +83,6 @@ we start collecting results.</dd></dl>
 <dd>The logger used for debugging.</dd></dl>
 
 <dl class="method">
-<dt id="celery.pool.TaskPool.add">
-<tt class="descname">add</tt><big>(</big><em>result</em>, <em>callbacks</em>, <em>errbacks</em>, <em>tid</em>, <em>meta</em><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.add" title="Permalink to this definition">¶</a></dt>
-<dd><p>Add a process to the queue.</p>
-<p>If the queue is full, it will wait for the first task to finish,
-collects its result and remove it from the queue, so it&#8217;s ready
-to accept new processes.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>result</em> &#8211; A <tt class="xref docutils literal"><span class="pre">multiprocessing.AsyncResult</span></tt> instance, as
-returned by <tt class="xref docutils literal"><span class="pre">multiprocessing.Pool.apply_async()</span></tt>.</td>
-</tr>
-<tr class="field"><th class="field-name" colspan="2">Option callbacks:</th></tr>
-<tr><td>&nbsp;</td><td class="field-body">List of callbacks to execute if the task was
-successful. Must have the function signature:
-<tt class="docutils literal"><span class="pre">mycallback(result,</span> <span class="pre">meta)</span></tt></td>
-</tr>
-<tr class="field"><th class="field-name" colspan="2">Option errbacks:</th></tr>
-<tr><td>&nbsp;</td><td class="field-body">List of errbacks to execute if the task raised
-and exception. Must have the function signature:
-<tt class="docutils literal"><span class="pre">myerrback(exc,</span> <span class="pre">meta)</span></tt>.</td>
-</tr>
-<tr class="field"><th class="field-name">Option tid:</th><td class="field-body">The tid for this task (unqiue pool id).</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
 <dt id="celery.pool.TaskPool.apply_async">
 <tt class="descname">apply_async</tt><big>(</big><em>target</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>callbacks=None</em>, <em>errbacks=None</em>, <em>on_acknowledge=None</em>, <em>meta=None</em><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.apply_async" title="Permalink to this definition">¶</a></dt>
 <dd><p>Equivalent of the :func:<tt class="docutils literal"><span class="pre">apply</span></tt> built-in function.</p>
@@ -142,13 +112,13 @@ has been reached.</td>
 
 <dl class="method">
 <dt id="celery.pool.TaskPool.on_ready">
-<tt class="descname">on_ready</tt><big>(</big><em>ret_value</em>, <em>callbacks</em>, <em>errbacks</em>, <em>meta</em><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.on_ready" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">on_ready</tt><big>(</big><em>callbacks</em>, <em>errbacks</em>, <em>meta</em>, <em>ret_value</em><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.on_ready" title="Permalink to this definition">¶</a></dt>
 <dd>What to do when a worker task is ready and its return value has
 been collected.</dd></dl>
 
 <dl class="method">
 <dt id="celery.pool.TaskPool.on_return">
-<tt class="descname">on_return</tt><big>(</big><em>ret_val</em>, <em>tid</em>, <em>callbacks</em>, <em>errbacks</em>, <em>meta</em><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.on_return" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">on_return</tt><big>(</big><em>tid</em>, <em>callbacks</em>, <em>errbacks</em>, <em>meta</em>, <em>ret_value</em><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.on_return" title="Permalink to this definition">¶</a></dt>
 <dd>What to do when the process returns.</dd></dl>
 
 <dl class="method">
@@ -157,15 +127,15 @@ been collected.</dd></dl>
 <dd>Reap finished tasks.</dd></dl>
 
 <dl class="method">
-<dt id="celery.pool.TaskPool.run">
-<tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.run" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.pool.TaskPool.start">
+<tt class="descname">start</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.start" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run the task pool.</p>
 <p>Will pre-fork all workers so they&#8217;re ready to accept tasks.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="celery.pool.TaskPool.terminate">
-<tt class="descname">terminate</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.terminate" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.pool.TaskPool.stop">
+<tt class="descname">stop</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.stop" title="Permalink to this definition">¶</a></dt>
 <dd>Terminate the pool.</dd></dl>
 
 <dl class="method">
@@ -186,11 +156,11 @@ been collected.</dd></dl>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
             <h4>Previous topic</h4>
-            <p class="topless"><a href="celery.worker.html"
-                                  title="previous chapter">Multiprocessing Worker - celery.worker</a></p>
+            <p class="topless"><a href="celery.worker.controllers.html"
+                                  title="previous chapter">Worker Controller Threads - celery.worker.controllers</a></p>
             <h4>Next topic</h4>
-            <p class="topless"><a href="celery.backends.html"
-                                  title="next chapter">Backends - celery.backends</a></p>
+            <p class="topless"><a href="celery.supervisor.html"
+                                  title="next chapter">Process Supervisor - celery.supervisor</a></p>
             <h3>This Page</h3>
             <ul class="this-page-menu">
               <li><a href="../sources/reference/celery.pool.txt"
@@ -223,18 +193,18 @@ been collected.</dd></dl>
           <a href="../modindex.html" title="Global Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="celery.backends.html" title="Backends - celery.backends"
+          <a href="celery.supervisor.html" title="Process Supervisor - celery.supervisor"
              >next</a> |</li>
         <li class="right" >
-          <a href="celery.worker.html" title="Multiprocessing Worker - celery.worker"
+          <a href="celery.worker.controllers.html" title="Worker Controller Threads - celery.worker.controllers"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v0.3.12 (unstable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v0.3.20 (unstable) documentation</a> &raquo;</li>
           <li><a href="index.html" >Module API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.2.
     </div>
   </body>
 </html>
