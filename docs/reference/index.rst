@@ -35,5 +35,4 @@
     celery.managers
     celery.models
     celery.fields
-    celery.timer
     celery.bin.celeryd
