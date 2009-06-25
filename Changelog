@@ -2,8 +2,24 @@
 Change history
 ==============
 
-x.x.x [xxxx-xx-xx xx:xx P.M CET] 
+0.3.20 [2009-06-25 08:42 P.M CET] 
 -----------------------------------------------
+
+	* New arguments to ``apply_async`` (the advanced version of
+		``delay_task``), ``countdown`` and ``eta``;
+
+			>>> # Run 10 seconds into the future.
+			>>> res = apply_async(MyTask, countdown=10);
+
+			>>> # Run 1 day from now
+			>>> res = apply_async(MyTask, eta=datetime.now() + 
+			...									timedelta(days=1)
+
+	* Now unlinks the pidfile if it's stale.
+
+	* Lots of more tests.
+
+	* Now compatible with carrot >= 0.5.0.
 
 	*	**IMPORTANT** The ``subtask_ids`` attribute on the ``TaskSetResult``
 		instance has been removed. To get this information instead use:
@@ -14,7 +30,7 @@ x.x.x [xxxx-xx-xx xx:xx P.M CET]
 
 	* Task: Add attribute ``ignore_result``: Don't store the status and
 		return value. This means you can't use the
-		:class:`celery.result.AsyncResult` to check if the task is
+		``celery.result.AsyncResult`` to check if the task is
 		done, or get its return value. Only use if you need the performance
 		and is able live without these features. Any exceptions raised will
 		store the return value/status as usual.
@@ -30,7 +46,35 @@ x.x.x [xxxx-xx-xx xx:xx P.M CET]
 	    To start sending statistics start ``celeryd`` with the
 	    ``--statistics`` option. Then after a while you can dump the results
 	    by running ``python manage.py celerystats``. See
-	    :mod:`celery.monitoring` for more information.
+	    ``celery.monitoring`` for more information.
+
+	* The celery daemon can now be supervised (i.e it is automatically
+		restarted if it crashes). To use this start celeryd with the
+		``--supervised`` option (or alternatively ``-S``).
+
+	* views.apply: View applying a task. Example::
+
+			http://e.com/celery/apply/task_name/arg1/arg2//?kwarg1=a&kwarg2=b
+
+		**NOTE** Use with caution, preferably not make this publicly
+		accessible without ensuring your code is safe!
+
+	* Refactored celery.task. It's now split into three modules:
+
+		* celery.task
+
+			Contains apply_async, delay_task, discard_all, and task
+			shortcuts, plus imports objects from celery.task.base and
+			celery.task.builtins
+
+		* celery.task.base
+
+			Contains task base classes: Task, PeriodicTask, TaskSet
+
+		* celery.task.builtins
+
+			Built-in tasks: PingTask, AsynchronousMapTask,
+			ExecuteRemoteTask, ++.
 
 
 0.3.7 [2008-06-16 11:41 P.M CET] 

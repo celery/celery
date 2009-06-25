@@ -2,7 +2,7 @@
 celery - Distributed Task Queue for Django.
 ============================================
 
-:Version: 0.3.12
+:Version: 0.3.20
 
 Introduction
 ============
