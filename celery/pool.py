@@ -139,8 +139,8 @@ class TaskPool(object):
         been collected."""
 
         if isinstance(ret_value, ExceptionInfo):
-            if isinstance(ret_value.exception, KeyboardInterrupt) or \
-                    isinstance(ret_value.exception, SystemExit):
+            if isinstance(ret_value.exception, (
+                    SystemExit, KeyboardInterrupt)):
                 raise ret_value.exception
             for errback in errbacks:
                 errback(ret_value, meta)
