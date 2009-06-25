@@ -16,10 +16,12 @@
     celery.task.builtins
     celery.discovery
     celery.monitoring
+    celery.messaging
     celery.worker
     celery.worker.job
     celery.worker.controllers
     celery.pool
+    celery.supervisor
     celery.backends
     celery.backends.base
     celery.backends.database
@@ -29,8 +31,9 @@
     celery.datastructures
     celery.log
     celery.utils
+    celery.views
     celery.managers
     celery.models
-    celery.messaging
+    celery.fields
     celery.timer
     celery.bin.celeryd
