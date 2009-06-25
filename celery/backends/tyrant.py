@@ -9,7 +9,10 @@ except ImportError:
 
 from celery.backends.base import BaseBackend
 from django.conf import settings
-from carrot.messaging import serialize, deserialize
+try:
+    import simplejson as json
+except ImportError:
+    from django.utils import simplejson as json
 try:
     import cPickle as pickle
 except ImportError:
@@ -79,7 +82,7 @@ class Backend(BaseBackend):
         elif status == "FAILURE":
             result = self.prepare_exception(result)
         meta = {"status": status, "result": pickle.dumps(result)}
-        self.open()[self._cache_key(task_id)] = serialize(meta)
+        self.open()[self._cache_key(task_id)] = json.dumps(meta)
 
     def get_status(self, task_id):
         """Get the status for a task."""
@@ -104,7 +107,7 @@ class Backend(BaseBackend):
         meta = self.open().get(self._cache_key(task_id))
         if not meta:
             return {"status": "PENDING", "result": None}
-        meta = deserialize(meta)
+        meta = json.loads(meta)
         meta["result"] = pickle.loads(meta.get("result", None))
         if meta.get("status") == "DONE":
             self._cache[task_id] = meta
