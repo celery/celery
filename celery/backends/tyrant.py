@@ -47,6 +47,7 @@ class Backend(BaseBackend):
                             getattr(settings, "TT_HOST", self.tyrant_host)
         self.tyrant_port = tyrant_port or \
                             getattr(settings, "TT_PORT", self.tyrant_port)
+        self.tyrant_port = int(self.tyrant_port)
         if not self.tyrant_host or not self.tyrant_port:
             raise ImproperlyConfigured(
                 "To use the Tokyo Tyrant backend, you have to "
@@ -57,14 +58,24 @@ class Backend(BaseBackend):
 
     def open(self):
         """Get :class:`pytyrant.PyTyrant`` instance with the current
-        server configuration."""
-        if not self._connection:
+        server configuration.
+        
+        The connection is then cached until you do an
+        explicit :meth:`close`.
+        
+        """
+
+        # connection overrides bool()
+        if self._connection is None:
             self._connection = pytyrant.PyTyrant.open(self.tyrant_host,
                                                       self.tyrant_port)
         return self._connection
 
     def close(self):
-        if self._connection:
+        """Close the tyrant connection and remove the cache."""
+
+        # connection overrides bool()
+        if self._connection is not None:
             self._connection.close()
             self._connection = None
 

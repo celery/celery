@@ -23,6 +23,9 @@ AMQP_VHOST = "/"
 AMQP_USER = "guest"
 AMQP_PASSWORD = "guest"
 
+TT_HOST = "localhost"
+TT_PORT = 1978
+
 CELERY_AMQP_EXCHANGE = "testcelery"
 CELERY_AMQP_ROUTING_KEY = "testcelery"
 CELERY_AMQP_CONSUMER_QUEUE = "testcelery"
