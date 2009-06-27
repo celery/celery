@@ -37,7 +37,8 @@ class Backend(KeyValueStoreBackend):
                             getattr(settings, "TT_HOST", self.tyrant_host)
         self.tyrant_port = tyrant_port or \
                             getattr(settings, "TT_PORT", self.tyrant_port)
-        self.tyrant_port = int(self.tyrant_port)
+        if self.tyrant_port:
+            self.tyrant_port = int(self.tyrant_port)
         if not self.tyrant_host or not self.tyrant_port:
             raise ImproperlyConfigured(
                 "To use the Tokyo Tyrant backend, you have to "

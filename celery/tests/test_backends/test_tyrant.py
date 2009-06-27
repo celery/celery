@@ -5,6 +5,7 @@ import socket
 from celery.backends.tyrant import Backend as TyrantBackend
 from django.conf import settings
 from celery.utils import gen_unique_id
+from django.core.exceptions import ImproperlyConfigured
 
 _no_tyrant_msg = "* Tokyo Tyrant not running. Will not execute related tests."
 _no_tyrant_msg_emitted = False
@@ -17,17 +18,20 @@ class SomeClass(object):
 
 
 def get_tyrant_or_None():
-    tb = TyrantBackend()
     try:
-        tb.open()
-    except socket.error, exc:
-        if exc.errno == errno.ECONNREFUSED:
-            if not _no_tyrant_msg_emitted:
-                sys.stderr.write("\n" + _no_tyrant_msg + "\n")
-            return None
-        else:
-            raise
-    return tb
+        tb = TyrantBackend()
+        try:
+            tb.open()
+        except socket.error, exc:
+            if exc.errno == errno.ECONNREFUSED:
+                if not _no_tyrant_msg_emitted:
+                    sys.stderr.write("\n" + _no_tyrant_msg + "\n")
+                return None
+            else:
+                raise
+        return tb
+    except ImproperlyConfigured, exc:
+        return None
 
 
 class TestTyrantBackend(unittest.TestCase):
