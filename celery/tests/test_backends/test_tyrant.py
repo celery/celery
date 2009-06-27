@@ -1,10 +1,10 @@
 import sys
 import unittest
-import uuid
 import errno
 import socket
 from celery.backends.tyrant import Backend as TyrantBackend
 from django.conf import settings
+from celery.utils import gen_unique_id
 
 _no_tyrant_msg = "* Tokyo Tyrant not running. Will not execute related tests."
 _no_tyrant_msg_emitted = False
@@ -48,7 +48,7 @@ class TestTyrantBackend(unittest.TestCase):
         if not tb:
             return
 
-        tid = str(uuid.uuid4())
+        tid = gen_unique_id()
 
         self.assertFalse(tb.is_done(tid))
         self.assertEquals(tb.get_status(tid), "PENDING")
@@ -66,7 +66,7 @@ class TestTyrantBackend(unittest.TestCase):
         if not tb:
             return
     
-        tid2 = str(uuid.uuid4())
+        tid2 = gen_unique_id()
         result = {"foo": "baz", "bar": SomeClass(12345)}
         tb.mark_as_done(tid2, result)
         # is serialized properly.
@@ -79,7 +79,7 @@ class TestTyrantBackend(unittest.TestCase):
         if not tb:
             return
 
-        tid3 = str(uuid.uuid4())
+        tid3 = gen_unique_id()
         try:
             raise KeyError("foo")
         except KeyError, exception:

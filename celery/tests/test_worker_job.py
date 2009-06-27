@@ -6,10 +6,11 @@ from celery.datastructures import ExceptionInfo
 from celery.models import TaskMeta
 from celery.registry import tasks, NotRegistered
 from celery.pool import TaskPool
-from uuid import uuid4
+from celery.utils import gen_unique_id
 from carrot.backends.base import BaseMessage
 import simplejson
 
+uuid4 = gen_unique_id
 
 def mytask(i, **kwargs):
     return i ** i
@@ -30,11 +31,11 @@ get_db_connection.ignore_result = True
 class TestJail(unittest.TestCase):
 
     def test_execute_jail_success(self):
-        ret = jail(str(uuid4()), str(uuid4()), mytask, [2], {})
+        ret = jail(gen_unique_id(), gen_unique_id(), mytask, [2], {})
         self.assertEquals(ret, 4)
 
     def test_execute_jail_failure(self):
-        ret = jail(str(uuid4()), str(uuid4()), mytask_raising, [4], {})
+        ret = jail(gen_unique_id(), gen_unique_id(), mytask_raising, [4], {})
         self.assertTrue(isinstance(ret, ExceptionInfo))
         self.assertEquals(ret.exception.args, (4, ))
 
@@ -49,7 +50,8 @@ class TestJail(unittest.TestCase):
 
         connection.close = monkeypatched_connection_close
 
-        ret = jail(str(uuid4()), str(uuid4()), get_db_connection, [2], {})
+        ret = jail(gen_unique_id(), gen_unique_id(),
+                   get_db_connection, [2], {})
         self.assertTrue(connection._was_closed)
 
         connection.close = old_connection_close
@@ -58,16 +60,18 @@ class TestJail(unittest.TestCase):
 class TestTaskWrapper(unittest.TestCase):
 
     def test_task_wrapper_attrs(self):
-        tw = TaskWrapper(str(uuid4()), str(uuid4()), mytask, [1], {"f": "x"})
+        tw = TaskWrapper(gen_unique_id(), gen_unique_id(),
+                         mytask, [1], {"f": "x"})
         for attr in ("task_name", "task_id", "args", "kwargs", "logger"):
             self.assertTrue(getattr(tw, attr, None))
 
     def test_task_wrapper_repr(self):
-        tw = TaskWrapper(str(uuid4()), str(uuid4()), mytask, [1], {"f": "x"})
+        tw = TaskWrapper(gen_unique_id(), gen_unique_id(),
+                         mytask, [1], {"f": "x"})
         self.assertTrue(repr(tw))
 
     def test_task_wrapper_mail_attrs(self):
-        tw = TaskWrapper(str(uuid4()), str(uuid4()), mytask, [], {})
+        tw = TaskWrapper(gen_unique_id(), gen_unique_id(), mytask, [], {})
         x = tw.success_msg % {"name": tw.task_name,
                               "id": tw.task_id,
                               "return_value": 10}
@@ -84,7 +88,7 @@ class TestTaskWrapper(unittest.TestCase):
         self.assertTrue(x)
 
     def test_from_message(self):
-        body = {"task": "cu.mytask", "id": str(uuid4()),
+        body = {"task": "cu.mytask", "id": gen_unique_id(),
                 "args": [2], "kwargs": {u"æØåveéðƒeæ": "bar"}}
         m = BaseMessage(body=simplejson.dumps(body), backend="foo",
                         content_type="application/json",
@@ -101,7 +105,7 @@ class TestTaskWrapper(unittest.TestCase):
         self.assertTrue(tw.logger)
 
     def test_from_message_nonexistant_task(self):
-        body = {"task": "cu.mytask.doesnotexist", "id": str(uuid4()),
+        body = {"task": "cu.mytask.doesnotexist", "id": gen_unique_id(),
                 "args": [2], "kwargs": {u"æØåveéðƒeæ": "bar"}}
         m = BaseMessage(body=simplejson.dumps(body), backend="foo",
                         content_type="application/json",
@@ -110,7 +114,7 @@ class TestTaskWrapper(unittest.TestCase):
                           m, m.decode())
 
     def test_execute(self):
-        tid = str(uuid4())
+        tid = gen_unique_id(),
         tw = TaskWrapper("cu.mytask", tid, mytask, [4], {"f": "x"})
         self.assertEquals(tw.execute(), 256)
         meta = TaskMeta.objects.get(task_id=tid)
@@ -118,7 +122,7 @@ class TestTaskWrapper(unittest.TestCase):
         self.assertEquals(meta.status, "DONE")
 
     def test_execute_fail(self):
-        tid = str(uuid4())
+        tid = gen_unique_id(),
         tw = TaskWrapper("cu.mytask-raising", tid, mytask_raising, [4],
                          {"f": "x"})
         self.assertTrue(isinstance(tw.execute(), ExceptionInfo))
@@ -127,7 +131,7 @@ class TestTaskWrapper(unittest.TestCase):
         self.assertTrue(isinstance(meta.result, KeyError))
 
     def test_execute_using_pool(self):
-        tid = str(uuid4())
+        tid = gen_unique_id(),
         tw = TaskWrapper("cu.mytask", tid, mytask, [4], {"f": "x"})
         p = TaskPool(2)
         p.start()
@@ -136,7 +140,7 @@ class TestTaskWrapper(unittest.TestCase):
         p.stop()
 
     def test_default_kwargs(self):
-        tid = str(uuid4())
+        tid = gen_unique_id(),
         tw = TaskWrapper("cu.mytask", tid, mytask, [4], {"f": "x"})
         self.assertEquals(tw.extend_with_default_kwargs(10, "some_logfile"), {
             "f": "x",

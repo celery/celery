@@ -3,6 +3,7 @@
 Utility functions
 
 """
+import uuid
 
 
 def chunks(it, n):
@@ -28,3 +29,12 @@ def chunks(it, n):
             acc = []
         acc.append(item)
     yield acc
+
+
+def gen_unique_id(self):
+    """Generate a unique id, having - hopefully - a very small chance of
+    collission.
+    
+    For now this is provided by :func:`uuid.uuid4`.
+    """
+    return str(uuid.uuid4())

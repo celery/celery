@@ -1,9 +1,9 @@
 import unittest
-import uuid
 from datetime import datetime, timedelta
 from celery.models import TaskMeta, PeriodicTaskMeta
 from celery.task import PeriodicTask
 from celery.registry import tasks
+from celery.utils import gen_unique_id
 
 
 class TestPeriodicTask(PeriodicTask):
@@ -14,7 +14,7 @@ class TestPeriodicTask(PeriodicTask):
 class TestModels(unittest.TestCase):
 
     def createTaskMeta(self):
-        id = str(uuid.uuid4())
+        id = gen_unique_id()
         taskmeta, created = TaskMeta.objects.get_or_create(task_id=id)
         return taskmeta
 

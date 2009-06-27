@@ -1,9 +1,9 @@
 import sys
 import unittest
-import uuid
 import errno
 import socket
 from celery.backends.cache import Backend as CacheBackend
+from celery.utils import gen_unique_id
 from django.conf import settings
 
 
@@ -18,7 +18,7 @@ class TestCacheBackend(unittest.TestCase):
     def test_mark_as_done(self):
         cb = CacheBackend()
 
-        tid = str(uuid.uuid4())
+        tid = gen_unique_id()
 
         self.assertFalse(cb.is_done(tid))
         self.assertEquals(cb.get_status(tid), "PENDING")
@@ -34,7 +34,7 @@ class TestCacheBackend(unittest.TestCase):
     def test_is_pickled(self):
         cb = CacheBackend()
     
-        tid2 = str(uuid.uuid4())
+        tid2 = gen_unique_id()
         result = {"foo": "baz", "bar": SomeClass(12345)}
         cb.mark_as_done(tid2, result)
         # is serialized properly.
@@ -45,7 +45,7 @@ class TestCacheBackend(unittest.TestCase):
     def test_mark_as_failure(self):
         cb = CacheBackend()
 
-        tid3 = str(uuid.uuid4())
+        tid3 = gen_unique_id()
         try:
             raise KeyError("foo")
         except KeyError, exception:

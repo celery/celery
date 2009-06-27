@@ -4,8 +4,9 @@ from celery.messaging import TaskPublisher, TaskConsumer
 from celery.log import setup_logger
 from celery.result import TaskSetResult
 from celery.execute import apply_async, delay_task
+from celery.utils import gen_unique_id
 from datetime import timedelta
-import uuid
+
 try:
     import cPickle as pickle
 except ImportError:
@@ -282,7 +283,7 @@ class TaskSet(object):
             [True, True]
 
         """
-        taskset_id = str(uuid.uuid4())
+        taskset_id = gen_unique_id()
         conn = DjangoAMQPConnection(connect_timeout=connect_timeout)
         publisher = TaskPublisher(connection=conn)
         subtasks = [apply_async(self.task, args, kwargs,

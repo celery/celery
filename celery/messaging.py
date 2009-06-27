@@ -5,7 +5,7 @@ Sending and Receiving Messages
 """
 from carrot.messaging import Publisher, Consumer
 from celery import conf
-import uuid
+from celery.utils import gen_unique_id
 
 try:
     import cPickle as pickle
@@ -51,7 +51,7 @@ class TaskPublisher(Publisher):
 
         task_args = task_args or []
         task_kwargs = task_kwargs or {}
-        task_id = task_id or str(uuid.uuid4())
+        task_id = task_id or gen_unique_id()
         message_data = {
             "id": task_id,
             "task": task_name,
