@@ -249,7 +249,7 @@ class KeyValueStoreBackend(BaseBackend):
         meta = self.get(self.get_cache_key_for_task(task_id))
         if not meta:
             return {"status": "PENDING", "result": None}
-        meta = pickle.loads(str(meta)) # Not complete sure if this is correct, but tests pass -vbabiy
+        meta = pickle.loads(str(meta))
         if meta.get("status") == "DONE":
             self._cache[task_id] = meta
         return meta
