@@ -183,8 +183,8 @@ class TaskWrapper(object):
         kwargs = message_data["kwargs"]
 
         # Convert any unicode keys in the keyword arguments to ascii.
-        kwargs = dict([(key.encode("utf-8"), value)
-                    for key, value in kwargs.items()])
+        kwargs = dict((key.encode("utf-8"), value)
+                        for key, value in kwargs.items())
 
         if task_name not in tasks:
             raise NotRegistered(task_name)

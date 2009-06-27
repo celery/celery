@@ -75,9 +75,9 @@ class TaskRegistry(UserDict):
 
     def filter_types(self, type):
         """Return all tasks of a specific type."""
-        return dict([(task_name, task)
+        return dict((task_name, task)
                         for task_name, task in self.data.items()
-                            if task.type == type])
+                            if task.type == type)
 
     def get_all_regular(self):
         """Get all regular task types."""
