@@ -114,7 +114,6 @@ class TestTaskWrapper(unittest.TestCase):
 
     def test_execute(self):
         tid = gen_unique_id()
-        print tid
         tw = TaskWrapper("cu.mytask", tid, mytask, [4], {"f": "x"})
         self.assertEquals(tw.execute(), 256)
         meta = TaskMeta.objects.get(task_id=tid)
