@@ -31,7 +31,7 @@ def chunks(it, n):
     yield acc
 
 
-def gen_unique_id(self):
+def gen_unique_id():
     """Generate a unique id, having - hopefully - a very small chance of
     collission.
     

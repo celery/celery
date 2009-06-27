@@ -10,7 +10,6 @@ from celery.utils import gen_unique_id
 from carrot.backends.base import BaseMessage
 import simplejson
 
-uuid4 = gen_unique_id
 
 def mytask(i, **kwargs):
     return i ** i
