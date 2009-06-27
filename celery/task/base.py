@@ -3,7 +3,7 @@ from celery.conf import AMQP_CONNECTION_TIMEOUT
 from celery.messaging import TaskPublisher, TaskConsumer
 from celery.log import setup_logger
 from celery.result import TaskSetResult
-from celery.execute import apply_async, delay_task
+from celery.execute import apply_async, delay_task, apply
 from celery.utils import gen_unique_id
 from datetime import timedelta
 
@@ -182,7 +182,7 @@ class Task(object):
 
         :rtype: :class:`celery.result.AsyncResult`
 
-        See :func:`delay_task`.
+        See :func:`celery.execute.delay_task`.
 
         """
         return apply_async(cls, args, kwargs)
@@ -197,11 +197,26 @@ class Task(object):
 
         :rtype: :class:`celery.result.AsyncResult`
 
-        See :func:`apply_async`.
+        See :func:`celery.execute.apply_async`.
 
         """
         return apply_async(cls, args, kwargs, **options)
 
+    @classmethod
+    def apply(cls, args=None, kwargs=None, **options):
+        """Execute this task at once, by blocking until the task
+        has finished executing.
+
+        :param args: positional arguments passed on to the task.
+
+        :param kwargs: keyword arguments passed on to the task.
+
+        :rtype: :class:`celery.result.EagerResult`
+
+        See :func:`celery.execute.apply`.
+
+        """
+        return apply(cls, args, kwargs, **options)
 
 class TaskSet(object):
     """A task containing several subtasks, making it possible

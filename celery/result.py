@@ -294,3 +294,41 @@ class TaskSetResult(object):
     def total(self):
         """The total number of tasks in the :class:`celery.task.TaskSet`."""
         return len(self.subtasks)
+
+
+class EagerResult(BaseAsyncResult):
+    """Result that we know has already been executed.  """
+    TimeoutError = TimeoutError
+
+    def __init__(self, task_id, ret_value, status):
+        self.task_id = task_id
+        self._result = ret_value
+        self._status = status
+
+    def is_done(self):
+        """Returns ``True`` if the task executed without failure."""
+        return self.status == "DONE"
+
+    def is_ready(self):
+        """Returns ``True`` if the task has been executed."""
+        return True
+
+    def wait(self, timeout=None):
+        """Wait until the task has been executed and return its result."""
+        if self.status == "DONE":
+            return self.result
+        elif self.status == "FAILURE":
+            raise self.result
+
+    @property
+    def result(self):
+        """The tasks return value"""
+        return self._result
+
+    @property
+    def status(self):
+        """The tasks status"""
+        return self._status
+    
+    def __repr__(self):
+        return "<EagerResult: %s>" % self.task_id

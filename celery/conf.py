@@ -15,6 +15,7 @@ DEFAULT_DAEMON_LOG_FILE = "celeryd.log"
 DEFAULT_AMQP_CONNECTION_TIMEOUT = 4
 DEFAULT_STATISTICS = False
 DEFAULT_STATISTICS_COLLECT_INTERVAL = 60 * 5
+DEFAULT_ALWAYS_EAGER = False
 
 """
 .. data:: LOG_LEVELS
@@ -164,3 +165,15 @@ SEND_CELERY_TASK_ERROR_EMAILS = getattr(settings,
 STATISTICS_COLLECT_INTERVAL = getattr(settings,
                                 "CELERY_STATISTICS_COLLECT_INTERVAL",
                                 DEFAULT_STATISTICS_COLLECT_INTERVAL)
+
+"""
+.. data:: ALWAYS_EAGER
+
+    If this is ``True``, all tasks will be executed locally by blocking
+    until it is finished. ``apply_async`` and ``delay_task`` will return
+    a :class:`celery.result.EagerResult` which emulates the behaviour of
+    an :class:`celery.result.AsyncResult`.
+
+"""
+ALWAYS_EAGER = getattr(settings, "CELERY_ALWAYS_EAGER",
+                       DEFAULT_ALWAYS_EAGER)

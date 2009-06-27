@@ -1,10 +1,12 @@
 from carrot.connection import DjangoAMQPConnection
-from celery.conf import AMQP_CONNECTION_TIMEOUT
-from celery.result import AsyncResult
+from celery.conf import AMQP_CONNECTION_TIMEOUT, ALWAYS_EAGER
+from celery.result import AsyncResult, EagerResult
 from celery.messaging import TaskPublisher
 from celery.registry import tasks
+from celery.utils import gen_unique_id
 from functools import partial as curry
 from datetime import datetime, timedelta
+import inspect
 
 
 def apply_async(task, args=None, kwargs=None, routing_key=None,
@@ -48,6 +50,10 @@ def apply_async(task, args=None, kwargs=None, routing_key=None,
 
     :keyword priority: The task priority, a number between ``0`` and ``9``.
 
+    :keyword eager: Don't actually send the task to the worker servers,
+        but execute them locally at once. This will block until the execution
+        is finished and return an :class:`celery.result.EagerResult` instance.
+
     """
     args = args or []
     kwargs = kwargs or {}
@@ -59,6 +65,9 @@ def apply_async(task, args=None, kwargs=None, routing_key=None,
     publisher = opts.get("publisher")
     if countdown:
         eta = datetime.now() + timedelta(seconds=countdown)
+
+    if ALWAYS_EAGER:
+        return apply(task, args, kwargs)
 
     need_to_close_connection = False
     if not publisher:
@@ -112,3 +121,28 @@ def delay_task(task_name, *args, **kwargs):
                     task_name))
     task = tasks[task_name]
     return apply_async(task, args, kwargs)
+
+
+def apply(task, args, kwargs, **ignored):
+    """Apply the task locally.
+
+    This will block until the task completes, and returns a
+    :class:`celery.result.EagerResult` instance.
+
+    """
+    args = args or []
+    kwargs = kwargs or {}
+    task_id = gen_unique_id()
+
+    # If it's a Task class we need to have to instance
+    # for it to be callable.
+    task = inspect.isclass(task) and task() or task
+
+    try:
+        ret_value = task(*args, **kwargs)
+        status = "DONE"
+    except Exception, exc:
+        ret_value = exc
+        status = "FAILURE"
+
+    return EagerResult(task_id, ret_value, status)
