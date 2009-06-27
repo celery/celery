@@ -50,10 +50,6 @@ def apply_async(task, args=None, kwargs=None, routing_key=None,
 
     :keyword priority: The task priority, a number between ``0`` and ``9``.
 
-    :keyword eager: Don't actually send the task to the worker servers,
-        but execute them locally at once. This will block until the execution
-        is finished and return an :class:`celery.result.EagerResult` instance.
-
     """
     args = args or []
     kwargs = kwargs or {}
