@@ -113,7 +113,8 @@ class TestTaskWrapper(unittest.TestCase):
                           m, m.decode())
 
     def test_execute(self):
-        tid = gen_unique_id(),
+        tid = gen_unique_id()
+        print tid
         tw = TaskWrapper("cu.mytask", tid, mytask, [4], {"f": "x"})
         self.assertEquals(tw.execute(), 256)
         meta = TaskMeta.objects.get(task_id=tid)
@@ -121,7 +122,7 @@ class TestTaskWrapper(unittest.TestCase):
         self.assertEquals(meta.status, "DONE")
 
     def test_execute_fail(self):
-        tid = gen_unique_id(),
+        tid = gen_unique_id()
         tw = TaskWrapper("cu.mytask-raising", tid, mytask_raising, [4],
                          {"f": "x"})
         self.assertTrue(isinstance(tw.execute(), ExceptionInfo))
@@ -130,7 +131,7 @@ class TestTaskWrapper(unittest.TestCase):
         self.assertTrue(isinstance(meta.result, KeyError))
 
     def test_execute_using_pool(self):
-        tid = gen_unique_id(),
+        tid = gen_unique_id()
         tw = TaskWrapper("cu.mytask", tid, mytask, [4], {"f": "x"})
         p = TaskPool(2)
         p.start()
@@ -139,7 +140,7 @@ class TestTaskWrapper(unittest.TestCase):
         p.stop()
 
     def test_default_kwargs(self):
-        tid = gen_unique_id(),
+        tid = gen_unique_id()
         tw = TaskWrapper("cu.mytask", tid, mytask, [4], {"f": "x"})
         self.assertEquals(tw.extend_with_default_kwargs(10, "some_logfile"), {
             "f": "x",
