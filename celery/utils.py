@@ -38,3 +38,9 @@ def gen_unique_id():
     For now this is provided by :func:`uuid.uuid4`.
     """
     return str(uuid.uuid4())
+
+
+def mitemgetter(*keys):
+    """Like :func:`operator.itemgetter` but returns `None` on missing keys
+    instead of raising :exc:`KeyError`."""
+    return lambda dict_: map(dict_.get, keys)
