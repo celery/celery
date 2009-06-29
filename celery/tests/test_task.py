@@ -7,6 +7,7 @@ from celery import task
 from celery import registry
 from celery.log import setup_logger
 from celery import messaging
+from celery.result import EagerResult
 from celery.backends import default_backend
 
 
@@ -23,9 +24,17 @@ class IncrementCounterTask(task.Task):
     name = "c.unittest.increment_counter_task"
     count = 0
 
-    def run(self, increment_by, **kwargs):
+    def run(self, increment_by=1, **kwargs):
         increment_by = increment_by or 1
         self.__class__.count += increment_by
+        return self.__class__.count
+
+
+class RaisingTask(task.Task):
+    name = "c.unittest.raising_task"
+
+    def run(self, **kwargs):
+        raise KeyError("foo")
 
 
 class TestCeleryTasks(unittest.TestCase):
@@ -107,6 +116,7 @@ class TestCeleryTasks(unittest.TestCase):
 class TestTaskSet(unittest.TestCase):
 
     def test_counter_taskset(self):
+        IncrementCounterTask.count = 0
         ts = task.TaskSet(IncrementCounterTask, [
             [[], {}],
             [[], {"increment_by": 2}],
@@ -134,3 +144,28 @@ class TestTaskSet(unittest.TestCase):
             IncrementCounterTask().run(
                     increment_by=m.get("kwargs", {}).get("increment_by"))
         self.assertEquals(IncrementCounterTask.count, sum(xrange(1, 10)))
+
+
+class TestTaskApply(unittest.TestCase):
+
+    def test_apply(self):
+        IncrementCounterTask.count = 0
+
+        e = IncrementCounterTask.apply()
+        self.assertTrue(isinstance(e, EagerResult))
+        self.assertEquals(e.get(), 1)
+        
+        e = IncrementCounterTask.apply(args=[1])
+        self.assertEquals(e.get(), 2)
+        
+        e = IncrementCounterTask.apply(kwargs={"increment_by": 4})
+        self.assertEquals(e.get(), 6)
+
+        self.assertTrue(e.is_done())
+        self.assertTrue(e.is_ready())
+        self.assertTrue(repr(e).startswith("<EagerResult:"))
+
+        f = RaisingTask.apply()
+        self.assertTrue(f.is_ready())
+        self.assertFalse(f.is_done())
+        self.assertRaises(KeyError, f.get)
