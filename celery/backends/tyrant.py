@@ -49,10 +49,10 @@ class Backend(KeyValueStoreBackend):
     def open(self):
         """Get :class:`pytyrant.PyTyrant`` instance with the current
         server configuration.
-        
+
         The connection is then cached until you do an
         explicit :meth:`close`.
-        
+
         """
         # connection overrides bool()
         if self._connection is None:
@@ -75,4 +75,3 @@ class Backend(KeyValueStoreBackend):
 
     def set(self, key, value):
         self.open()[key] = value
-

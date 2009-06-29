@@ -218,6 +218,7 @@ class Task(object):
         """
         return apply(cls, args, kwargs, **options)
 
+
 class TaskSet(object):
     """A task containing several subtasks, making it possible
     to track how many, or when all of the tasks has been completed.

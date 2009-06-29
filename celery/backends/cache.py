@@ -11,4 +11,3 @@ class Backend(KeyValueStoreBackend):
 
     def set(self, key, value):
         cache.set(key, value)
-

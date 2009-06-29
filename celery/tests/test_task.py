@@ -154,10 +154,10 @@ class TestTaskApply(unittest.TestCase):
         e = IncrementCounterTask.apply()
         self.assertTrue(isinstance(e, EagerResult))
         self.assertEquals(e.get(), 1)
-        
+
         e = IncrementCounterTask.apply(args=[1])
         self.assertEquals(e.get(), 2)
-        
+
         e = IncrementCounterTask.apply(kwargs={"increment_by": 4})
         self.assertEquals(e.get(), 6)
 

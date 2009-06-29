@@ -33,7 +33,7 @@ class TestCacheBackend(unittest.TestCase):
 
     def test_is_pickled(self):
         cb = CacheBackend()
-    
+
         tid2 = gen_unique_id()
         result = {"foo": "baz", "bar": SomeClass(12345)}
         cb.mark_as_done(tid2, result)

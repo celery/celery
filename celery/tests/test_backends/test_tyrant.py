@@ -39,7 +39,7 @@ class TestTyrantBackend(unittest.TestCase):
     def test_cached_connection(self):
         tb = get_tyrant_or_None()
         if not tb:
-            return # Skip test 
+            return # Skip test
 
         self.assertTrue(tb._connection is not None)
         tb.close()
@@ -69,7 +69,7 @@ class TestTyrantBackend(unittest.TestCase):
         tb = get_tyrant_or_None()
         if not tb:
             return
-    
+
         tid2 = gen_unique_id()
         result = {"foo": "baz", "bar": SomeClass(12345)}
         tb.mark_as_done(tid2, result)

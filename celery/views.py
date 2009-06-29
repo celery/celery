@@ -5,7 +5,6 @@ from celery.result import AsyncResult
 from anyjson import serialize as JSON_dump
 
 
-
 def apply(request, task_name, *args):
     """View applying a task.
 

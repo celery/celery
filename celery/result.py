@@ -329,6 +329,6 @@ class EagerResult(BaseAsyncResult):
     def status(self):
         """The tasks status"""
         return self._status
-    
+
     def __repr__(self):
         return "<EagerResult: %s>" % self.task_id

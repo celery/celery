@@ -17,7 +17,7 @@ from functools import partial as curry
 class DynamicPool(Pool):
     """Version of :class:`multiprocessing.Pool` that can dynamically grow
     in size."""
-    
+
     def __init__(self, processes=None, initializer=None, initargs=()):
         super(DynamicPool, self).__init__(processes=processes,
                                           initializer=initializer,

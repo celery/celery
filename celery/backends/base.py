@@ -213,10 +213,10 @@ class KeyValueStoreBackend(BaseBackend):
 
     def get(self, key):
         raise NotImplementedError("Must implement the get method.")
-    
+
     def set(self, key, value):
         raise NotImplementedError("Must implement the set method.")
-    
+
     def store_result(self, task_id, result, status):
         """Store task result and status."""
         if status == "DONE":
@@ -229,7 +229,7 @@ class KeyValueStoreBackend(BaseBackend):
     def get_status(self, task_id):
         """Get the status of a task."""
         return self._get_task_meta_for(task_id)["status"]
-    
+
     def get_result(self, task_id):
         """Get the result of a task."""
         meta = self._get_task_meta_for(task_id)
@@ -237,7 +237,7 @@ class KeyValueStoreBackend(BaseBackend):
             return self.exception_to_python(meta["result"])
         else:
             return meta["result"]
-    
+
     def is_done(self, task_id):
         """Returns ``True`` if the task executed successfully."""
         return self.get_status(task_id) == "DONE"

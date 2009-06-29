@@ -39,14 +39,14 @@ class TestAsyncResult(unittest.TestCase):
 
         self.assertTrue(ok_res.is_done())
         self.assertFalse(nok_res.is_done())
-    
+
     def test_sucessful(self):
         ok_res = AsyncResult(self.task1["id"])
         nok_res = AsyncResult(self.task3["id"])
 
         self.assertTrue(ok_res.successful())
         self.assertFalse(nok_res.successful())
-       
+
     def test_str(self):
         ok_res = AsyncResult(self.task1["id"])
         ok2_res = AsyncResult(self.task2["id"])
@@ -54,7 +54,7 @@ class TestAsyncResult(unittest.TestCase):
         self.assertEquals(str(ok_res), self.task1["id"])
         self.assertEquals(str(ok2_res), self.task2["id"])
         self.assertEquals(str(nok_res), self.task3["id"])
-    
+
     def test_repr(self):
         ok_res = AsyncResult(self.task1["id"])
         ok2_res = AsyncResult(self.task2["id"])
@@ -97,7 +97,7 @@ class TestTaskSetResult(unittest.TestCase):
 
         for i, t in enumerate(it):
             self.assertEquals(t.get(), i)
-    
+
     def test___iter__(self):
 
         it = iter(self.ts)
@@ -111,16 +111,16 @@ class TestTaskSetResult(unittest.TestCase):
 
     def test_successful(self):
         self.assertTrue(self.ts.successful())
-    
+
     def test_failed(self):
         self.assertFalse(self.ts.failed())
-    
+
     def test_waiting(self):
         self.assertFalse(self.ts.waiting())
 
     def test_ready(self):
         self.assertTrue(self.ts.ready())
-    
+
     def test_completed_count(self):
         self.assertEquals(self.ts.completed_count(), self.ts.total)
 
@@ -143,7 +143,7 @@ class TestFailedTaskSetResult(TestTaskSetResult):
         save_result(failed)
         failed_res = AsyncResult(failed["id"])
         self.ts = TaskSetResult(gen_unique_id(), subtasks + [failed_res])
-    
+
     def test_itersubtasks(self):
 
         it = self.ts.itersubtasks()
@@ -166,10 +166,10 @@ class TestFailedTaskSetResult(TestTaskSetResult):
 
     def test_join(self):
         self.assertRaises(KeyError, self.ts.join)
-    
+
     def test_successful(self):
         self.assertFalse(self.ts.successful())
-    
+
     def test_failed(self):
         self.assertTrue(self.ts.failed())
 
@@ -186,7 +186,7 @@ class TestTaskSetPending(unittest.TestCase):
 
     def test_ready(self):
         self.assertFalse(self.ts.ready())
-    
+
     def test_waiting(self):
         self.assertTrue(self.ts.waiting())
 
