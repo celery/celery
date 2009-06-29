@@ -14,6 +14,7 @@ bump:
 	contrib/bump -c celery
 
 coverage:
+	[ -d testproj/temp ] || mkdir -p testproj/temp
 	(cd testproj; python manage.py test --figleaf)
 
 test:
