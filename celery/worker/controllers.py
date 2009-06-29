@@ -23,6 +23,7 @@ class InfinityThread(threading.Thread):
         super(InfinityThread, self).__init__()
         self._shutdown = threading.Event()
         self._stopped = threading.Event()
+        self.setDaemon(True)
 
     def run(self):
         """This is the body of the thread.
