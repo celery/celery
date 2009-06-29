@@ -17,6 +17,10 @@ coverage:
 	[ -d testproj/temp ] || mkdir -p testproj/temp
 	(cd testproj; python manage.py test --figleaf)
 
+coverage2:
+	[ -d testproj/temp ] || mkdir -p testproj/temp
+	(cd testproj; python manage.py test --coverage)
+
 test:
 	(cd testproj; python manage.py test)
 
