@@ -11,3 +11,6 @@ autodoc:
 
 bump:
 	contrib/bump -c celery
+
+coverage:
+	(cd testproj; python manage.py test --figleaf)
