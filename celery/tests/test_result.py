@@ -2,6 +2,7 @@ import unittest
 from celery.backends import default_backend
 from celery.result import AsyncResult
 from celery.result import TaskSetResult
+from celery.result import TimeoutError
 from celery.utils import gen_unique_id
 
 
@@ -124,6 +125,15 @@ class TestTaskSetResult(unittest.TestCase):
         self.assertEquals(self.ts.completed_count(), self.ts.total)
 
 
+class TestPendingAsyncResult(unittest.TestCase):
+
+    def setUp(self):
+        self.task = AsyncResult(gen_unique_id())
+
+    def test_result(self):
+        self.assertTrue(self.task.result is None)
+
+
 class TestFailedTaskSetResult(TestTaskSetResult):
 
     def setUp(self):
@@ -147,7 +157,12 @@ class TestFailedTaskSetResult(TestTaskSetResult):
         self.assertEquals(self.ts.completed_count(), self.ts.total - 1)
 
     def test___iter__(self):
-        pass
+        it = iter(self.ts)
+
+        def consume():
+            return list(it)
+
+        self.assertRaises(KeyError, consume)
 
     def test_join(self):
         self.assertRaises(KeyError, self.ts.join)
@@ -157,3 +172,23 @@ class TestFailedTaskSetResult(TestTaskSetResult):
     
     def test_failed(self):
         self.assertTrue(self.ts.failed())
+
+
+class TestTaskSetPending(unittest.TestCase):
+
+    def setUp(self):
+        self.ts = TaskSetResult(gen_unique_id(), [
+                                        AsyncResult(gen_unique_id()),
+                                        AsyncResult(gen_unique_id())])
+
+    def test_completed_count(self):
+        self.assertEquals(self.ts.completed_count(), 0)
+
+    def test_ready(self):
+        self.assertFalse(self.ts.ready())
+    
+    def test_waiting(self):
+        self.assertTrue(self.ts.waiting())
+
+    def x_join(self):
+        self.assertRaises(TimeoutError, self.ts.join, timeout=0.001)
