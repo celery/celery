@@ -10,6 +10,12 @@ from celery.utils import gen_unique_id
 from carrot.backends.base import BaseMessage
 import simplejson
 
+scratch = {"ACK": False}
+
+
+def on_ack():
+    scratch["ACK"] = True
+
 
 def mytask(i, **kwargs):
     return i ** i
@@ -117,6 +123,16 @@ class TestTaskWrapper(unittest.TestCase):
         tw = TaskWrapper("cu.mytask", tid, mytask, [4], {"f": "x"})
         self.assertEquals(tw.execute(), 256)
         meta = TaskMeta.objects.get(task_id=tid)
+        self.assertEquals(meta.result, 256)
+        self.assertEquals(meta.status, "DONE")
+
+    def test_execute_ack(self):
+        tid = gen_unique_id()
+        tw = TaskWrapper("cu.mytask", tid, mytask, [4], {"f": "x"},
+                        on_acknowledge=on_ack)
+        self.assertEquals(tw.execute(), 256)
+        meta = TaskMeta.objects.get(task_id=tid)
+        self.assertTrue(scratch["ACK"])
         self.assertEquals(meta.result, 256)
         self.assertEquals(meta.status, "DONE")
 
