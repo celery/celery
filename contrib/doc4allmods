@@ -2,9 +2,11 @@
 
 PACKAGE="$1"
 SKIP_PACKAGES="$PACKAGE tests management urls"
+SKIP_FILES="celery.bin.rst"
 
 modules=$(find "$PACKAGE" -name "*.py")
 
+failed=0
 for module in $modules; do
     dotted=$(echo $module | sed 's/\//\./g')
     name=${dotted%.__init__.py}
@@ -14,10 +16,16 @@ for module in $modules; do
     for skip_package in $SKIP_PACKAGES; do
         [ $(echo "$name" | cut -d. -f 2) == "$skip_package" ] && skip=1
     done
+    for skip_file in $SKIP_FILES; do
+        [ "$skip_file" == "$rst" ] && skip=1
+    done
     
     if [ $skip -eq 0 ]; then
         if [ ! -f "docs/reference/$rst" ]; then
             echo $rst :: FAIL
+            failed=1
         fi
     fi
 done
+
+exit $failed
