@@ -1,5 +1,5 @@
 from carrot.connection import DjangoAMQPConnection
-from celery.conf import AMQP_CONNECTION_TIMEOUT, ALWAYS_EAGER
+from celery.conf import AMQP_CONNECTION_TIMEOUT
 from celery.result import AsyncResult, EagerResult
 from celery.messaging import TaskPublisher
 from celery.registry import tasks
@@ -62,6 +62,7 @@ def apply_async(task, args=None, kwargs=None, routing_key=None,
     if countdown:
         eta = datetime.now() + timedelta(seconds=countdown)
 
+    from celery.conf import ALWAYS_EAGER
     if ALWAYS_EAGER:
         return apply(task, args, kwargs)
 

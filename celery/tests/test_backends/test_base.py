@@ -1,6 +1,6 @@
 import unittest
 from celery.backends.base import find_nearest_pickleable_exception as fnpe
-from celery.backends.base import BaseBackend
+from celery.backends.base import BaseBackend, KeyValueStoreBackend
 from celery.backends.base import UnpickleableExceptionWrapper
 from django.db.models.base import subclass_exception
 
@@ -14,6 +14,17 @@ Unpickleable = subclass_exception("Unpickleable", KeyError, "foo.module")
 Impossible = subclass_exception("Impossible", object, "foo.module")
 Lookalike = subclass_exception("Lookalike", wrapobject, "foo.module")
 b = BaseBackend()
+
+
+class TestBaseBackendInterface(unittest.TestCase):
+
+    def test_get_status(self):
+        self.assertRaises(NotImplementedError,
+                b.is_done, "SOMExx-N0Nex1stant-IDxx-")
+
+    def test_store_result(self):
+        self.assertRaises(NotImplementedError,
+                b.store_result, "SOMExx-N0nex1stant-IDxx-", 42, "DONE")
 
 
 class TestPickleException(unittest.TestCase):
@@ -46,3 +57,17 @@ class TestPrepareException(unittest.TestCase):
         self.assertTrue(isinstance(x, KeyError))
         y = b.exception_to_python(x)
         self.assertTrue(isinstance(y, KeyError))
+
+
+class TestKeyValueStoreBackendInterface(unittest.TestCase):
+
+    def test_get(self):
+        self.assertRaises(NotImplementedError, KeyValueStoreBackend().get,
+                "a")
+    
+    def test_set(self):
+        self.assertRaises(NotImplementedError, KeyValueStoreBackend().set,
+                "a", 1)
+
+    def test_cleanup(self):
+        self.assertFalse(KeyValueStoreBackend().cleanup())

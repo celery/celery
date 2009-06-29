@@ -6,8 +6,8 @@ from celery.result import TaskSetResult
 from celery.execute import apply_async, delay_task, apply
 from celery.utils import gen_unique_id
 from datetime import timedelta
+from celery.registry import tasks
 from celery.utils import pickle
-
 
 
 class Task(object):
@@ -216,6 +216,44 @@ class Task(object):
         return apply(cls, args, kwargs, **options)
 
 
+class ExecuteRemoteTask(Task):
+    """Execute an arbitrary function or object.
+
+    *Note* You probably want :func:`execute_remote` instead, which this
+    is an internal component of.
+
+    The object must be pickleable, so you can't use lambdas or functions
+    defined in the REPL (that is the python shell, or ``ipython``).
+
+    """
+    name = "celery.execute_remote"
+
+    def run(self, ser_callable, fargs, fkwargs, **kwargs):
+        """
+        :param ser_callable: A pickled function or callable object.
+
+        :param fargs: Positional arguments to apply to the function.
+
+        :param fkwargs: Keyword arguments to apply to the function.
+
+        """
+        callable_ = pickle.loads(ser_callable)
+        return callable_(*fargs, **fkwargs)
+tasks.register(ExecuteRemoteTask)
+
+
+class AsynchronousMapTask(Task):
+    """Task used internally by :func:`dmap_async` and
+    :meth:`TaskSet.map_async`.  """
+    name = "celery.map_async"
+
+    def run(self, serfunc, args, **kwargs):
+        """The method run by ``celeryd``."""
+        timeout = kwargs.get("timeout")
+        return TaskSet.map(pickle.loads(serfunc), args, timeout=timeout)
+tasks.register(AsynchronousMapTask)
+
+
 class TaskSet(object):
     """A task containing several subtasks, making it possible
     to track how many, or when all of the tasks has been completed.
@@ -297,6 +335,13 @@ class TaskSet(object):
 
         """
         taskset_id = gen_unique_id()
+
+        from celery.conf import ALWAYS_EAGER
+        if ALWAYS_EAGER:
+            subtasks = [apply(self.task, args, kwargs)
+                            for args, kwargs in self.arguments]
+            return TaskSetResult(taskset_id, subtasks)
+
         conn = DjangoAMQPConnection(connect_timeout=connect_timeout)
         publisher = TaskPublisher(connection=conn)
         subtasks = [apply_async(self.task, args, kwargs,
@@ -305,15 +350,6 @@ class TaskSet(object):
         publisher.close()
         conn.close()
         return TaskSetResult(taskset_id, subtasks)
-
-    def iterate(self):
-        """Iterate over the results returned after calling :meth:`run`.
-
-        If any of the tasks raises an exception, the exception will
-        be re-raised.
-
-        """
-        return iter(self.run())
 
     def join(self, timeout=None):
         """Gather the results for all of the tasks in the taskset,
