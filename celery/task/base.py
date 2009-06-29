@@ -6,11 +6,8 @@ from celery.result import TaskSetResult
 from celery.execute import apply_async, delay_task, apply
 from celery.utils import gen_unique_id
 from datetime import timedelta
+from celery.utils import pickle
 
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
 
 
 class Task(object):

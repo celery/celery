@@ -7,11 +7,8 @@ from carrot.messaging import Publisher, Consumer
 from celery import conf
 from celery.utils import gen_unique_id
 from celery.utils import mitemgetter
+from celery.utils import pickle
 
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
 
 MSG_OPTIONS = ("mandatory", "priority",
                "immediate", "routing_key")

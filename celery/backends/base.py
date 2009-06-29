@@ -1,13 +1,9 @@
 """celery.backends.base"""
 import time
 import operator
-from functools import partial as curry
-
 import threading
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+from functools import partial as curry
+from celery.utils import pickle
 
 
 class TimeoutError(Exception):

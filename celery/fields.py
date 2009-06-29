@@ -5,11 +5,7 @@ Custom Django Model Fields.
 """
 from django.db import models
 from django.conf import settings
-
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+from celery.utils import pickle
 
 
 class PickledObject(str):

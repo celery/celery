@@ -1,5 +1,5 @@
 import unittest
-import pickle
+from celery.utils import pickle
 
 
 class RegularException(Exception):
