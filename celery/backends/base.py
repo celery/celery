@@ -1,5 +1,7 @@
 """celery.backends.base"""
 import time
+import operator
+from functools import partial as curry
 
 import threading
 try:
@@ -27,13 +29,18 @@ def find_nearest_pickleable_exception(exc):
     :rtype: :exc:`Exception`
 
     """
+
+    unwanted = (Exception, BaseException, object)
+    is_unwanted = lambda exc: any(map(curry(operator.is_, exc), unwanted))
+
     for supercls in exc.__class__.mro():
-        if supercls is Exception:
+        if is_unwanted(supercls):
             # only BaseException and object, from here on down,
             # we don't care about these.
             return None
         try:
-            superexc = supercls(*exc.args)
+            exc_args = getattr(exc, "args", [])
+            superexc = supercls(*exc_args)
             pickle.dumps(superexc)
         except:
             pass
@@ -120,10 +127,8 @@ class BaseBackend(object):
             excwrapper = UnpickleableExceptionWrapper(
                             exc.__class__.__module__,
                             exc.__class__.__name__,
-                            exc.args)
+                            getattr(exc, "args", []))
             return excwrapper
-        else:
-            return exc
 
     def exception_to_python(self, exc):
         """Convert serialized exception to Python exception."""
