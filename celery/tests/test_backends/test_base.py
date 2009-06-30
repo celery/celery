@@ -4,6 +4,7 @@ from celery.backends.base import BaseBackend, KeyValueStoreBackend
 from celery.backends.base import UnpickleableExceptionWrapper
 from django.db.models.base import subclass_exception
 
+
 class wrapobject(object):
 
     def __init__(self, *args, **kwargs):
@@ -64,7 +65,7 @@ class TestKeyValueStoreBackendInterface(unittest.TestCase):
     def test_get(self):
         self.assertRaises(NotImplementedError, KeyValueStoreBackend().get,
                 "a")
-    
+
     def test_set(self):
         self.assertRaises(NotImplementedError, KeyValueStoreBackend().set,
                 "a", 1)

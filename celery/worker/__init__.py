@@ -73,7 +73,7 @@ class AMQPListener(object):
         except NotRegistered, exc:
             self.logger.info("Unknown task ignored: %s" % (exc))
             return
-                
+
         eta = message_data.get("eta")
         if eta:
             self.hold_queue.put((task, eta))

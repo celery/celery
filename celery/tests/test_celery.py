@@ -1,6 +1,7 @@
 import unittest
 import celery
 
+
 class TestInitFile(unittest.TestCase):
 
     def test_version(self):
@@ -13,7 +14,6 @@ class TestInitFile(unittest.TestCase):
         celery.VERSION = (0, 4, 0)
         self.assertTrue(celery.is_stable_release())
         self.assertTrue("(stable)" in celery.version_with_meta())
-
 
     def test_meta(self):
         for m in ("__author__", "__contact__", "__homepage__",

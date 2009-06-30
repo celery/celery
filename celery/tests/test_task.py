@@ -70,7 +70,7 @@ class TestCeleryTasks(unittest.TestCase):
         self.assertTrue(res, sum([operator.add(x, x)
                                     for x in xrange(10)]))
         conf.ALWAYS_EAGER = False
-    
+
     def test_dmap_async(self):
         from celery import conf
         import operator
@@ -127,7 +127,7 @@ class TestCeleryTasks(unittest.TestCase):
         presult2 = task.delay_task(t1.name, name="George Constanza")
         self.assertNextTaskDataEquals(consumer, presult2, t1.name,
                 name="George Constanza")
-        
+
         # With eta.
         presult2 = task.apply_async(t1, kwargs=dict(name="George Constanza"),
                                     eta=datetime.now() + timedelta(days=1))
@@ -171,7 +171,7 @@ class TestTaskSet(unittest.TestCase):
 
     def test_function_taskset(self):
         from celery import conf
-        conf.ALWAYS_EAGER = True 
+        conf.ALWAYS_EAGER = True
         ts = task.TaskSet("cu.return-true", [
             [[1], {}], [[2], {}], [[3], {}], [[4], {}], [[5], {}]])
         res = ts.run()
@@ -243,4 +243,3 @@ class TestPeriodicTask(unittest.TestCase):
             run_every = None
 
         self.assertRaises(NotImplementedError, MyPeriodicTask)
-

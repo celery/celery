@@ -26,7 +26,7 @@ class MockLogger(object):
 
     def error(self, *args, **kwargs):
         pass
-    
+
     def debug(self, *args, **kwargs):
         pass
 
@@ -39,7 +39,7 @@ class MockBackend(object):
 
 
 class MockPool(object):
-    
+
     def __init__(self, *args, **kwargs):
         self.raise_regular = kwargs.get("raise_regular", False)
         self.raise_base = kwargs.get("raise_base", False)
@@ -71,12 +71,12 @@ class MockController(object):
     def stop(self):
         self._stopped = True
 
+
 def create_message(backend, **data):
     data["id"] = gen_unique_id()
     return BaseMessage(backend, body=pickle.dumps(dict(**data)),
                        content_type="application/x-python-serialize",
                        content_encoding="binary")
-
 
 
 class TestAMQPListener(unittest.TestCase):
@@ -120,7 +120,7 @@ class TestAMQPListener(unittest.TestCase):
         self.assertEquals(in_bucket.task_name, "c.u.foo")
         self.assertEquals(in_bucket.execute(), 2 * 4 * 8)
         self.assertRaises(Empty, self.hold_queue.get_nowait)
-    
+
     def test_receieve_message_not_registered(self):
         l = AMQPListener(self.bucket_queue, self.hold_queue, self.logger)
         backend = MockBackend()
@@ -130,7 +130,6 @@ class TestAMQPListener(unittest.TestCase):
         self.assertRaises(Empty, self.bucket_queue.get_nowait)
         self.assertRaises(Empty, self.hold_queue.get_nowait)
 
-    
     def test_receieve_message_eta(self):
         l = AMQPListener(self.bucket_queue, self.hold_queue, self.logger)
         backend = MockBackend()
@@ -175,7 +174,7 @@ class TestWorkController(unittest.TestCase):
         task = TaskWrapper.from_message(m, m.decode())
         worker.safe_process_task(task)
         worker.pool.stop()
-    
+
     def test_safe_process_task_raise_base(self):
         worker = self.worker
         worker.pool = MockPool(raise_base=True)

@@ -23,7 +23,6 @@ class TestStatisticsInterface(unittest.TestCase):
 
 class TestTaskTimerStats(unittest.TestCase):
 
-
     def test_time(self):
         self.assertTimeElapsed(0.5, 1, 0, "0.5")
         self.assertTimeElapsed(0.002, 0.05, 0, "0.0")
@@ -54,7 +53,7 @@ class TestTaskTimerStats(unittest.TestCase):
 
 
 class TestStatsCollector(unittest.TestCase):
-    
+
     def setUp(self):
         conn = DjangoAMQPConnection()
         consumer = StatsConsumer(connection=conn)
@@ -84,7 +83,7 @@ class TestStatsCollector(unittest.TestCase):
         # Collect
         self.s.collect()
         self.assertEquals(self.s.total_tasks_processed, 3)
-      
+
         # Report
         import sys
         from StringIO import StringIO
