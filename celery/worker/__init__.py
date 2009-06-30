@@ -67,8 +67,13 @@ class AMQPListener(object):
         otherwise we move it the bucket queue for immediate processing.
 
         """
-        task = TaskWrapper.from_message(message, message_data,
-                                        logger=self.logger)
+        try:
+            task = TaskWrapper.from_message(message, message_data,
+                                            logger=self.logger)
+        except NotRegistered, exc:
+            self.logger.info("Unknown task ignored: %s" % (exc))
+            return
+                
         eta = message_data.get("eta")
         if eta:
             self.hold_queue.put((task, eta))
@@ -208,14 +213,8 @@ class WorkController(object):
         try:
             try:
                 self.process_task(task)
-            except ValueError:
-                # execute_next_task didn't return a r/name/id tuple,
-                # probably because it got an exception.
-                pass
-            except NotRegistered, exc:
-                self.logger.info("Unknown task ignored: %s" % (exc))
             except Exception, exc:
-                self.logger.critical("Message queue raised %s: %s\n%s" % (
+                self.logger.critical("Internal error %s: %s\n%s" % (
                                 exc.__class__, exc, traceback.format_exc()))
         except (SystemExit, KeyboardInterrupt):
             self.stop()
