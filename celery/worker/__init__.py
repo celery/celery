@@ -79,8 +79,10 @@ class AMQPListener(object):
         """Close the AMQP connection."""
         if self.task_consumer:
             self.task_consumer.close()
+            self.task_consumer = None
         if self.amqp_connection:
             self.amqp_connection.close()
+            self.amqp_connection = None
 
     def reset_connection(self):
         """Reset the AMQP connection, and reinitialize the
