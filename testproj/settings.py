@@ -5,8 +5,12 @@ import sys
 # import source code dir
 sys.path.insert(0, os.path.join(os.getcwd(), os.pardir))
 
+SITE_ID = 300
+
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
+
+ROOT_URLCONF = "urls"
 
 ADMINS = (
     # ('Your Name', 'your_email@domain.com'),
