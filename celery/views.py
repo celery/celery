@@ -17,8 +17,8 @@ def apply(request, task_name, *args):
     """
     kwargs = request.method == "POST" and \
             request.POST.copy() or request.GET.copy()
-    kwargs = [(key.encode("utf-8"), value)
-                    for key, value in kwargs.items()]
+    kwargs = dict((key.encode("utf-8"), value)
+                    for key, value in kwargs.items())
     if task_name not in tasks:
         raise Http404("apply: no such task")
 
