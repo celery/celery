@@ -1,12 +1,17 @@
-from multiprocessing import Process, TimeoutError
+import multiprocessing
 import threading
 import time
+from multiprocessing import TimeoutError
 
 PING_TIMEOUT = 30 # seconds
 JOIN_TIMEOUT = 2
 CHECK_INTERVAL = 2
 MAX_RESTART_FREQ = 3
 MAX_RESTART_FREQ_TIME = 10
+
+
+class MaxRestartsExceededError(Exception):
+    """Restarts exceeded the maximum restart frequency."""
 
 
 def raise_ping_timeout(msg):
@@ -68,6 +73,7 @@ class OFASupervisor(object):
         The time in seconds, between process pings.
 
     """
+    Process = multiprocessing.Process
 
     def __init__(self, target, args=None, kwargs=None,
             ping_timeout=PING_TIMEOUT, join_timeout=JOIN_TIMEOUT,
@@ -91,36 +97,36 @@ class OFASupervisor(object):
 
         def _start_supervised_process():
             """Start the :attr:`target` in a new process."""
-            process = Process(target=target,
-                              args=self.args, kwargs=self.kwargs)
+            process = self.Process(target=target,
+                                   args=self.args, kwargs=self.kwargs)
             process.start()
             return process
 
-        def _restart(self, process):
+        def _restart(process):
             """Terminate the process and restart."""
             process.join(timeout=self.join_timeout)
             process.terminate()
             self.restarts_in_frame += 1
             process = _start_supervised_process()
 
+        process = _start_supervised_process()
         try:
-            process = _start_supervised_process()
             restart_frame = 0
             while True:
                 if restart_frame > self.max_restart_freq_time:
                     if self.restarts_in_frame >= self.max_restart_freq:
-                        raise Exception(
+                        raise MaxRestartsExceededError(
                                 "Supervised: Max restart frequency reached")
                 restart_frame = 0
                 self.restarts_in_frame = 0
 
                 try:
-                    proc_is_alive = self.is_alive(process)
+                    proc_is_alive = self._is_alive(process)
                 except TimeoutError:
                     proc_is_alive = False
 
                 if not proc_is_alive:
-                    self._restart()
+                    _restart(process)
 
                 time.sleep(self.check_interval)
                 restart_frame += self.check_interval
