@@ -29,7 +29,8 @@ def find_nearest_pickleable_exception(exc):
     unwanted = (Exception, BaseException, object)
     is_unwanted = lambda exc: any(map(curry(operator.is_, exc), unwanted))
 
-    for supercls in exc.__class__.mro():
+    mro_ = getattr(exc.__class__, "mro", lambda: [])
+    for supercls in mro_():
         if is_unwanted(supercls):
             # only BaseException and object, from here on down,
             # we don't care about these.
@@ -133,10 +134,6 @@ class BaseBackend(object):
                                                 exc.exc_module)
             return exc_cls(*exc.exc_args)
         return exc
-
-    def mark_as_retry(self, task_id, exc):
-        """Mark task for retry."""
-        return self.store_result(task_id, exc, status="RETRY")
 
     def get_status(self, task_id):
         """Get the status of a task."""

@@ -1,5 +1,5 @@
 import unittest
-from celery.task.builtins import PingTask
+from celery.task.builtins import PingTask, DeleteExpiredTaskMetaTask
 from celery.task.base import ExecuteRemoteTask
 from celery.serialization import pickle
 
@@ -20,3 +20,9 @@ class TestRemoteExecuteTask(unittest.TestCase):
         self.assertEquals(ExecuteRemoteTask.apply(
                             args=[pickle.dumps(some_func), [10], {}]).get(),
                           100)
+
+
+class TestDeleteExpiredTaskMetaTask(unittest.TestCase):
+
+    def test_run(self):
+        DeleteExpiredTaskMetaTask.apply()

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import sys
 import unittest
 from celery.worker.job import jail
 from celery.worker.job import TaskWrapper
@@ -8,7 +9,11 @@ from celery.registry import tasks, NotRegistered
 from celery.pool import TaskPool
 from celery.utils import gen_unique_id
 from carrot.backends.base import BaseMessage
+from StringIO import StringIO
+from celery.log import setup_logger
+from django.core import cache
 import simplejson
+import logging
 
 scratch = {"ACK": False}
 
@@ -48,7 +53,7 @@ class TestJail(unittest.TestCase):
         from django.db import connection
         connection._was_closed = False
         old_connection_close = connection.close
-
+        
         def monkeypatched_connection_close(*args, **kwargs):
             connection._was_closed = True
             return old_connection_close(*args, **kwargs)
@@ -60,6 +65,47 @@ class TestJail(unittest.TestCase):
         self.assertTrue(connection._was_closed)
 
         connection.close = old_connection_close
+
+    def test_django_cache_connection_is_closed(self):
+        old_cache_close = getattr(cache.cache, "close", None)
+        old_backend = cache.settings.CACHE_BACKEND
+        cache.settings.CACHE_BACKEND = "libmemcached"
+        cache._was_closed = False
+        old_cache_parse_backend = getattr(cache, "parse_backend_uri", None)
+
+        def monkeypatched_cache_close(*args, **kwargs):
+            cache._was_closed = True
+
+        cache.cache.close = monkeypatched_cache_close
+
+        jail(gen_unique_id(), gen_unique_id(), mytask, [4], {})
+        self.assertTrue(cache._was_closed)
+        cache.cache.close = old_cache_close
+        cache.settings.CACHE_BACKEND = old_backend
+        if old_cache_parse_backend:
+            cache.parse_backend_uri = old_cache_parse_backend
+
+    def test_django_cache_connection_is_closed_django_1_1(self):
+        old_cache_close = getattr(cache.cache, "close", None)
+        old_backend = cache.settings.CACHE_BACKEND
+        cache.settings.CACHE_BACKEND = "libmemcached"
+        cache._was_closed = False
+        old_cache_parse_backend = getattr(cache, "parse_backend_uri", None)
+        cache.parse_backend_uri = lambda uri: ["libmemcached", "1", "2"]
+
+        def monkeypatched_cache_close(*args, **kwargs):
+            cache._was_closed = True
+
+        cache.cache.close = monkeypatched_cache_close
+
+        jail(gen_unique_id(), gen_unique_id(), mytask, [4], {})
+        self.assertTrue(cache._was_closed)
+        cache.cache.close = old_cache_close
+        cache.settings.CACHE_BACKEND = old_backend
+        if old_cache_parse_backend:
+            cache.parse_backend_uri = old_cache_parse_backend
+        else:
+            del(cache.parse_backend_uri)
 
 
 class TestTaskWrapper(unittest.TestCase):
@@ -163,3 +209,27 @@ class TestTaskWrapper(unittest.TestCase):
             "loglevel": 10,
             "task_id": tw.task_id,
             "task_name": tw.task_name})
+
+    def test_on_failure(self):
+        tid = gen_unique_id()
+        tw = TaskWrapper("cu.mytask", tid, mytask, [4], {"f": "x"})
+        try:
+            raise Exception("Inside unit tests")
+        except Exception:
+            exc_info = ExceptionInfo(sys.exc_info())
+
+        logfh = StringIO()
+        tw.logger.handlers = []
+        tw.logger = setup_logger(logfile=logfh, loglevel=logging.INFO)
+
+        from celery import conf
+        conf.SEND_CELERY_TASK_ERROR_EMAILS = True
+
+        tw.on_failure(exc_info, {"task_id": tid, "task_name": "cu.mytask"})
+        logvalue = logfh.getvalue()
+        self.assertTrue("cu.mytask" in logvalue)
+        self.assertTrue(tid in logvalue)
+        self.assertTrue("ERROR" in logvalue)
+
+        conf.SEND_CELERY_TASK_ERROR_EMAILS = False
+         

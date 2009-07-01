@@ -1,6 +1,10 @@
 import unittest
 from celery.backends.database import Backend
 from celery.utils import gen_unique_id
+from celery.task import PeriodicTask
+from celery import registry
+from celery.models import PeriodicTaskMeta
+from datetime import datetime, timedelta
 
 
 class SomeClass(object):
@@ -9,7 +13,27 @@ class SomeClass(object):
         self.data = data
 
 
+class MyPeriodicTask(PeriodicTask):
+    name = "c.u.my-periodic-task-244"
+    run_every = timedelta(seconds=1)
+
+    def run(self, **kwargs):
+        return 42
+registry.tasks.register(MyPeriodicTask)
+
+
 class TestDatabaseBackend(unittest.TestCase):
+
+    def test_run_periodic_tasks(self):
+        #obj, created = PeriodicTaskMeta.objects.get_or_create(
+        #                    name=MyPeriodicTask.name,
+        #                    defaults={"last_run_at": datetime.now() -
+        #                        timedelta(days=-4)})
+        #if not created:
+        #    obj.last_run_at = datetime.now() - timedelta(days=4)
+        #    obj.save()
+        b = Backend()
+        b.run_periodic_tasks()
 
     def test_backend(self):
         b = Backend()

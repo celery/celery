@@ -89,3 +89,9 @@ class TestPeriodicWorkController(unittest.TestCase):
         hold_queue = Queue()
         m = PeriodicWorkController(bucket_queue, hold_queue)
         m.run_periodic_tasks()
+
+    def test_on_iteration(self):
+        bucket_queue = Queue()
+        hold_queue = Queue()
+        m = PeriodicWorkController(bucket_queue, hold_queue)
+        m.on_iteration()

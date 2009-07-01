@@ -18,6 +18,7 @@ class InfinityThread(threading.Thread):
     the :meth:`stop` method.
 
     """
+    is_infinite = True
 
     def __init__(self):
         super(InfinityThread, self).__init__()
@@ -31,7 +32,7 @@ class InfinityThread(threading.Thread):
         To start the thread use :meth:`start` instead.
 
         """
-        while True:
+        while self.is_infinite:
             if self._shutdown.isSet():
                 break
             self.on_iteration()

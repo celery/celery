@@ -1,4 +1,5 @@
 import unittest
+import types
 from celery.backends.base import find_nearest_pickleable_exception as fnpe
 from celery.backends.base import BaseBackend, KeyValueStoreBackend
 from celery.backends.base import UnpickleableExceptionWrapper
@@ -11,6 +12,7 @@ class wrapobject(object):
         self.args = args
 
 
+Oldstyle = types.ClassType("Oldstyle", (), {})
 Unpickleable = subclass_exception("Unpickleable", KeyError, "foo.module")
 Impossible = subclass_exception("Impossible", object, "foo.module")
 Lookalike = subclass_exception("Lookalike", wrapobject, "foo.module")
@@ -27,8 +29,15 @@ class TestBaseBackendInterface(unittest.TestCase):
         self.assertRaises(NotImplementedError,
                 b.store_result, "SOMExx-N0nex1stant-IDxx-", 42, "DONE")
 
+    def test_get_result(self):
+        self.assertRaises(NotImplementedError,
+                b.get_result, "SOMExx-N0nex1stant-IDxx-")
+
 
 class TestPickleException(unittest.TestCase):
+
+    def test_oldstyle(self):
+        self.assertTrue(fnpe(Oldstyle()) is None)
 
     def test_BaseException(self):
         self.assertTrue(fnpe(Exception()) is None)

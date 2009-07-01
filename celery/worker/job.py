@@ -3,7 +3,6 @@
 Jobs Executable by the Worker Server.
 
 """
-from celery.conf import SEND_CELERY_TASK_ERROR_EMAILS
 from celery.registry import tasks, NotRegistered
 from celery.datastructures import ExceptionInfo
 from celery.backends import default_backend
@@ -233,6 +232,8 @@ class TaskWrapper(object):
 
     def on_failure(self, exc_info, meta):
         """The handler used if the task raised an exception."""
+        from celery.conf import SEND_CELERY_TASK_ERROR_EMAILS
+
         task_id = meta.get("task_id")
         task_name = meta.get("task_name")
         context = {
