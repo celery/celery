@@ -53,7 +53,7 @@ class TestJail(unittest.TestCase):
         from django.db import connection
         connection._was_closed = False
         old_connection_close = connection.close
-        
+
         def monkeypatched_connection_close(*args, **kwargs):
             connection._was_closed = True
             return old_connection_close(*args, **kwargs)
@@ -232,4 +232,3 @@ class TestTaskWrapper(unittest.TestCase):
         self.assertTrue("ERROR" in logvalue)
 
         conf.SEND_CELERY_TASK_ERROR_EMAILS = False
-         

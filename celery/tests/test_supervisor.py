@@ -41,6 +41,7 @@ class MockProcess(object):
     def join(self, timeout=None):
         self._joined = True
 
+
 class TestDiv(unittest.TestCase):
 
     def test_raise_ping_timeout(self):
@@ -52,7 +53,7 @@ class TestOFASupervisor(unittest.TestCase):
     def test_init(self):
         s = OFASupervisor(target=target_one, args=[2, 4, 8], kwargs={})
         s.Process = MockProcess
-    
+
     def test__is_alive(self):
         s = OFASupervisor(target=target_one, args=[2, 4, 8], kwargs={})
         s.Process = MockProcess
@@ -69,7 +70,7 @@ class TestOFASupervisor(unittest.TestCase):
         s.Process = MockProcess
         self.assertRaises(MaxRestartsExceededError, s.start)
         MockProcess.alive = True
-    
+
     def test_start_is_alive_timeout(self):
         MockProcess.alive = True
         MockProcess.timeout_on_is_alive = True

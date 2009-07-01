@@ -4,29 +4,29 @@ from StringIO import StringIO
 import os
 import sys
 import __builtin__
- 
+
 
 @contextmanager
 def mask_modules(*modnames):
     """Ban some modules from being importable inside the context
- 
+
     For example:
- 
+
         >>> with missing_modules("sys"):
         ...     try:
         ...         import sys
         ...     except ImportError:
         ...         print "sys not found"
         sys not found
- 
+
         >>> import sys
         >>> sys.version
         (2, 5, 2, 'final', 0)
- 
+
     """
- 
+
     realimport = __builtin__.__import__
-    
+
     def myimp(name, *args, **kwargs):
         if name in modnames:
             raise ImportError("No module named %s" % name)
