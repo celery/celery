@@ -22,6 +22,7 @@ celery.datastructures mod reference/celery.datastructures.html
 celery.messaging mod reference/celery.messaging.html
 celery.task.base mod reference/celery.task.base.html
 celery.task mod reference/celery.task.html
+celery.views mod reference/celery.views.html
 celery.worker.job mod reference/celery.worker.job.html
 celery.conf mod reference/celery.conf.html
 celery.registry mod reference/celery.registry.html
@@ -54,6 +55,7 @@ celery.result.BaseAsyncResult.backend attribute reference/celery.result.html
 celery.fields.PickledObjectField.get_internal_type method reference/celery.fields.html
 celery.worker.controllers.InfinityThread.run method reference/celery.worker.controllers.html
 celery.worker.WorkController.start method reference/celery.worker.html
+celery.views.apply function reference/celery.views.html
 celery.worker.job.TaskWrapper.execute_using_pool method reference/celery.worker.job.html
 celery.messaging.TaskPublisher.encoder method reference/celery.messaging.html
 celery.worker.controllers.InfinityThread class reference/celery.worker.controllers.html
@@ -203,6 +205,7 @@ celery.monitoring.Statistics.stop method reference/celery.monitoring.html
 celery.result.EagerResult.status attribute reference/celery.result.html
 celery.monitoring.StatsCollector.total_task_time_running attribute reference/celery.monitoring.html
 celery.monitoring.TimerStats.time_start attribute reference/celery.monitoring.html
+celery.views.task_status function reference/celery.views.html
 celery.task.base.Task.name attribute reference/celery.task.base.html
 celery.backends.base.BaseBackend.UnpickleableExceptionWrapper.exc_args attribute reference/celery.backends.base.html
 TaskMeta.date_done attribute reference/celery.models.html
@@ -285,6 +288,7 @@ celery.conf.AMQP_PUBLISHER_ROUTING_KEY data reference/celery.conf.html
 celery.pool.TaskPool.wait_for_result method reference/celery.pool.html
 celery.backends.cache.Backend class reference/celery.backends.cache.html
 celery.task.is_done function reference/celery.task.html
+celery.views.is_task_done function reference/celery.views.html
 celery.worker.controllers.PeriodicWorkController class reference/celery.worker.controllers.html
 celery.conf.LOG_LEVELS data reference/celery.conf.html
 celery.managers.TaskManager.is_done method reference/celery.managers.html

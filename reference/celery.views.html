@@ -50,8 +50,31 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="django-views-celery-views">
-<h1>Django Views - celery.views<a class="headerlink" href="#django-views-celery-views" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="module-celery.views">
+<h1>Django Views - celery.views<a class="headerlink" href="#module-celery.views" title="Permalink to this headline">¶</a></h1>
+<p>celery.views</p>
+<dl class="function">
+<dt id="celery.views.apply">
+<tt class="descclassname">celery.views.</tt><tt class="descname">apply</tt><big>(</big><em>request</em>, <em>task_name</em>, <em>*args</em><big>)</big><a class="headerlink" href="#celery.views.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>View applying a task.</p>
+<dl class="docutils">
+<dt>Example:</dt>
+<dd><a class="reference external" href="http://e.com/celery/apply/task_name/arg1/arg2//?kwarg1=a&amp;kwarg2=b">http://e.com/celery/apply/task_name/arg1/arg2//?kwarg1=a&amp;kwarg2=b</a></dd>
+</dl>
+<p><strong>NOTE</strong> Use with caution, preferably not make this publicly accessible
+without ensuring your code is safe!</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.views.is_task_done">
+<tt class="descclassname">celery.views.</tt><tt class="descname">is_task_done</tt><big>(</big><em>request</em>, <em>task_id</em><big>)</big><a class="headerlink" href="#celery.views.is_task_done" title="Permalink to this definition">¶</a></dt>
+<dd>Returns task execute status in JSON format.</dd></dl>
+
+<dl class="function">
+<dt id="celery.views.task_status">
+<tt class="descclassname">celery.views.</tt><tt class="descname">task_status</tt><big>(</big><em>request</em>, <em>task_id</em><big>)</big><a class="headerlink" href="#celery.views.task_status" title="Permalink to this definition">¶</a></dt>
+<dd>Returns task status and result in JSON format.</dd></dl>
+
 </div>
 
 
