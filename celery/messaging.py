@@ -7,7 +7,7 @@ from carrot.messaging import Publisher, Consumer
 from celery import conf
 from celery.utils import gen_unique_id
 from celery.utils import mitemgetter
-from celery.utils import pickle
+from celery.serialization import pickle
 
 
 MSG_OPTIONS = ("mandatory", "priority",

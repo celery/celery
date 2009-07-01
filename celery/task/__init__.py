@@ -13,7 +13,7 @@ from celery.task.base import ExecuteRemoteTask
 from celery.task.base import AsynchronousMapTask
 from celery.task.builtins import DeleteExpiredTaskMetaTask, PingTask
 from celery.execute import apply_async, delay_task
-from celery.utils import pickle
+from celery.serialization import pickle
 
 
 def discard_all(connect_timeout=AMQP_CONNECTION_TIMEOUT):

@@ -5,11 +5,6 @@ Utility functions
 """
 import uuid
 
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
-
 
 def chunks(it, n):
     """Split an iterator into chunks with ``n`` elements each.

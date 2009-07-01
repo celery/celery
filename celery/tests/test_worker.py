@@ -7,7 +7,8 @@ from celery.worker import AMQPListener, WorkController
 from multiprocessing import get_logger
 from carrot.backends.base import BaseMessage
 from celery import registry
-from celery.utils import pickle, gen_unique_id
+from celery.serialization import pickle
+from celery.utils import gen_unique_id
 from datetime import datetime, timedelta
 
 

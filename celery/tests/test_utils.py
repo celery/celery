@@ -1,3 +1,4 @@
+import sys
 import unittest
 from celery.utils import chunks
 

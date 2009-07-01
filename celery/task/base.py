@@ -7,7 +7,7 @@ from celery.execute import apply_async, delay_task, apply
 from celery.utils import gen_unique_id
 from datetime import timedelta
 from celery.registry import tasks
-from celery.utils import pickle
+from celery.serialization import pickle
 
 
 class Task(object):

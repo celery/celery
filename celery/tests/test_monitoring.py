@@ -1,8 +1,10 @@
+from __future__ import with_statement
 import unittest
 import time
 from celery.monitoring import TaskTimerStats, Statistics, StatsCollector
 from carrot.connection import DjangoAMQPConnection
 from celery.messaging import StatsConsumer
+from celery.tests.utils import OverrideStdout
 
 
 class PartialStatistics(Statistics):
@@ -85,16 +87,11 @@ class TestStatsCollector(unittest.TestCase):
         self.assertEquals(self.s.total_tasks_processed, 3)
 
         # Report
-        import sys
-        from StringIO import StringIO
-        out = StringIO()
-        sys.stdout = out
-        self.s.report()
-        sys.stdout = sys.__stdout__
-
-        output = out.getvalue()
-        self.assertTrue(
-                "Total processing time by task type:" in output)
+        with OverrideStdout() as outs:
+            stdout, stderr = outs
+            self.s.report()
+            self.assertTrue(
+                "Total processing time by task type:" in stdout.getvalue())
 
         # Dump to cache
         self.s.dump_to_cache()

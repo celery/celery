@@ -3,7 +3,7 @@ import time
 import operator
 import threading
 from functools import partial as curry
-from celery.utils import pickle
+from celery.serialization import pickle
 
 
 class TimeoutError(Exception):
