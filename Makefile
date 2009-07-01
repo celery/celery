@@ -35,5 +35,5 @@ releaseok: pep8 autodoc test
 removepyc:
 	find . -name "*.pyc" | xargs rm
 
-release: releaseok removepyc ghdocs
+release: releaseok ghdocs removepyc
 
