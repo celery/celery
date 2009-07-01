@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Backend: Tokyo Tyrant - celery.backends.tyrant &mdash; Celery v0.3.20 (unstable) documentation</title>
+    <title>Backend: Tokyo Tyrant - celery.backends.tyrant &mdash; Celery v0.4.0 (stable) documentation</title>
     <link rel="stylesheet" href="../static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.3.20 (unstable)',
+        VERSION:     '0.4.0 (stable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,7 +19,7 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.3.20 (unstable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.4.0 (stable) documentation" href="../index.html" />
     <link rel="up" title="Module API Reference" href="index.html" />
     <link rel="next" title="Configuration - celery.conf" href="celery.conf.html" />
     <link rel="prev" title="Backend: Cache - celery.backends.cache" href="celery.backends.cache.html" /> 
@@ -40,7 +40,7 @@
         <li class="right" >
           <a href="celery.backends.cache.html" title="Backend: Cache - celery.backends.cache"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v0.3.20 (unstable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v0.4.0 (stable) documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Module API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -69,30 +69,18 @@ class </em><tt class="descclassname">celery.backends.tyrant.</tt><tt class="desc
 <dd>The port to the Tokyo Tyrant server.</dd></dl>
 
 <dl class="method">
-<dt id="celery.backends.tyrant.Backend.get_result">
-<tt class="descname">get_result</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.backends.tyrant.Backend.get_result" title="Permalink to this definition">¶</a></dt>
-<dd>Get the result of a task.</dd></dl>
-
-<dl class="method">
-<dt id="celery.backends.tyrant.Backend.get_status">
-<tt class="descname">get_status</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.backends.tyrant.Backend.get_status" title="Permalink to this definition">¶</a></dt>
-<dd>Get the status for a task.</dd></dl>
-
-<dl class="method">
-<dt id="celery.backends.tyrant.Backend.is_done">
-<tt class="descname">is_done</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.backends.tyrant.Backend.is_done" title="Permalink to this definition">¶</a></dt>
-<dd>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task executed successfully.</dd></dl>
+<dt id="celery.backends.tyrant.Backend.close">
+<tt class="descname">close</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.backends.tyrant.Backend.close" title="Permalink to this definition">¶</a></dt>
+<dd>Close the tyrant connection and remove the cache.</dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.tyrant.Backend.open">
 <tt class="descname">open</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.backends.tyrant.Backend.open" title="Permalink to this definition">¶</a></dt>
-<dd>Get <tt class="xref docutils literal"><span class="pre">pytyrant.PyTyrant`</span></tt> instance with the current
-server configuration.</dd></dl>
-
-<dl class="method">
-<dt id="celery.backends.tyrant.Backend.store_result">
-<tt class="descname">store_result</tt><big>(</big><em>task_id</em>, <em>result</em>, <em>status</em><big>)</big><a class="headerlink" href="#celery.backends.tyrant.Backend.store_result" title="Permalink to this definition">¶</a></dt>
-<dd>Store task result and status.</dd></dl>
+<dd><p>Get <tt class="xref docutils literal"><span class="pre">pytyrant.PyTyrant`</span></tt> instance with the current
+server configuration.</p>
+<p>The connection is then cached until you do an
+explicit <a title="celery.backends.tyrant.Backend.close" class="reference internal" href="#celery.backends.tyrant.Backend.close"><tt class="xref docutils literal"><span class="pre">close()</span></tt></a>.</p>
+</dd></dl>
 
 </dd></dl>
 
@@ -147,13 +135,13 @@ server configuration.</dd></dl>
         <li class="right" >
           <a href="celery.backends.cache.html" title="Backend: Cache - celery.backends.cache"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v0.3.20 (unstable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v0.4.0 (stable) documentation</a> &raquo;</li>
           <li><a href="index.html" >Module API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.2.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.1.
     </div>
   </body>
 </html>
