@@ -2,6 +2,19 @@
 Change history
 ==============
 
+0.4.0 [2009-07-01 07:29 P.M CET] 
+-----------------------------------------------
+
+	* Adds eager execution. celery.execute.apply|Task.apply executes the
+	  function blocking until the task is done, for API compatiblity it
+	  returns an ``celery.result.EagerResult`` instance. You can configure
+	  celery to always run tasks locally by setting the
+	  ``CELERY_ALWAYS_EAGER`` setting to ``True``.
+
+	* Now depends on ``anyjson``.
+
+	* 99% coverage using python coverage 3.0.
+
 0.3.20 [2009-06-25 08:42 P.M CET] 
 -----------------------------------------------
 
