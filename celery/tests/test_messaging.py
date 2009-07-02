@@ -12,5 +12,3 @@ class TestMsgOptions(unittest.TestCase):
         result = extract_msg_options(testing)
         self.assertEquals(result["mandatory"], True)
         self.assertEquals(result["routing_key"], "foo.xuzzy")
-
-        
