@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Change history &mdash; Celery v0.4.0 (stable) documentation</title>
+    <title>Change history &mdash; Celery v0.4.1 (stable) documentation</title>
     <link rel="stylesheet" href="static/nature.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.4.0 (stable)',
+        VERSION:     '0.4.1 (stable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,7 +19,7 @@
     </script>
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v0.4.0 (stable) documentation" href="index.html" />
+    <link rel="top" title="Celery v0.4.1 (stable) documentation" href="index.html" />
     <link rel="next" title="Interesting Links" href="links.html" />
     <link rel="prev" title="Celery Worker Daemon - celery.bin.celeryd" href="reference/celery.bin.celeryd.html" /> 
   </head>
@@ -39,7 +39,7 @@
         <li class="right" >
           <a href="reference/celery.bin.celeryd.html" title="Celery Worker Daemon - celery.bin.celeryd"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Celery v0.4.0 (stable) documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v0.4.1 (stable) documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -51,24 +51,30 @@
   <div class="section" id="change-history">
 <h1>Change history<a class="headerlink" href="#change-history" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="p-m-cet">
-<h2>0.4.0 [2009-07-01 07:29 P.M CET]<a class="headerlink" href="#p-m-cet" title="Permalink to this headline">¶</a></h2>
+<h2>0.4.1 [2009-07-02 01:42 P.M CET]<a class="headerlink" href="#p-m-cet" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li>Adds eager execution. celery.execute.apply|Task.apply executes the
+<li>Fixed a bug with parsing the message options (<tt class="docutils literal"><span class="pre">mandatory</span></tt>,
+<tt class="docutils literal"><span class="pre">routing_key</span></tt>, <tt class="docutils literal"><span class="pre">priority</span></tt>, <tt class="docutils literal"><span class="pre">immediate</span></tt>)</li>
+</ul>
+</div>
+<div class="section" id="id1">
+<h2>0.4.0 [2009-07-01 07:29 P.M CET]<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Adds eager execution. <tt class="docutils literal"><span class="pre">celery.execute.apply``|``Task.apply</span></tt> executes the
 function blocking until the task is done, for API compatiblity it
 returns an <tt class="docutils literal"><span class="pre">celery.result.EagerResult</span></tt> instance. You can configure
 celery to always run tasks locally by setting the
 <tt class="docutils literal"><span class="pre">CELERY_ALWAYS_EAGER</span></tt> setting to <tt class="xref docutils literal"><span class="pre">True</span></tt>.</li>
 <li>Now depends on <tt class="docutils literal"><span class="pre">anyjson</span></tt>.</li>
-<li>99% coverage using python coverage 3.0.</li>
+<li>99% coverage using python <tt class="docutils literal"><span class="pre">coverage</span></tt> 3.0.</li>
 </ul>
 </div>
-<div class="section" id="id1">
-<h2>0.3.20 [2009-06-25 08:42 P.M CET]<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id2">
+<h2>0.3.20 [2009-06-25 08:42 P.M CET]<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
 <ul>
-<li><dl class="first docutils">
-<dt>New arguments to <tt class="docutils literal"><span class="pre">apply_async</span></tt> (the advanced version of</dt>
-<dd><p class="first"><tt class="docutils literal"><span class="pre">delay_task</span></tt>), <tt class="docutils literal"><span class="pre">countdown</span></tt> and <tt class="docutils literal"><span class="pre">eta</span></tt>;</p>
-<blockquote class="last">
+<li><p class="first">New arguments to <tt class="docutils literal"><span class="pre">apply_async</span></tt> (the advanced version of
+<tt class="docutils literal"><span class="pre">delay_task</span></tt>), <tt class="docutils literal"><span class="pre">countdown</span></tt> and <tt class="docutils literal"><span class="pre">eta</span></tt>;</p>
+<blockquote>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="c"># Run 10 seconds into the future.</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">res</span> <span class="o">=</span> <span class="n">apply_async</span><span class="p">(</span><span class="n">MyTask</span><span class="p">,</span> <span class="n">countdown</span><span class="o">=</span><span class="mf">10</span><span class="p">);</span>
 </pre></div>
@@ -79,8 +85,6 @@ celery to always run tasks locally by setting the
 </pre></div>
 </div>
 </blockquote>
-</dd>
-</dl>
 </li>
 <li><p class="first">Now unlinks the pidfile if it&#8217;s stale.</p>
 </li>
@@ -94,106 +98,81 @@ instance has been removed. To get this information instead use:</p>
 </pre></div>
 </div>
 </li>
-<li><p class="first">Taskset.run() now respects extra message options from the task class.</p>
+<li><p class="first"><tt class="docutils literal"><span class="pre">Taskset.run()</span></tt> now respects extra message options from the task class.</p>
 </li>
-<li><dl class="first docutils">
-<dt>Task: Add attribute <tt class="docutils literal"><span class="pre">ignore_result</span></tt>: Don&#8217;t store the status and</dt>
-<dd><p class="first last">return value. This means you can&#8217;t use the
+<li><p class="first">Task: Add attribute <tt class="docutils literal"><span class="pre">ignore_result</span></tt>: Don&#8217;t store the status and
+return value. This means you can&#8217;t use the
 <tt class="docutils literal"><span class="pre">celery.result.AsyncResult</span></tt> to check if the task is
 done, or get its return value. Only use if you need the performance
 and is able live without these features. Any exceptions raised will
 store the return value/status as usual.</p>
-</dd>
-</dl>
 </li>
-<li><dl class="first docutils">
-<dt>Task: Add attribute <tt class="docutils literal"><span class="pre">disable_error_emails</span></tt> to disable sending error</dt>
-<dd><p class="first last">emails for that task.</p>
-</dd>
-</dl>
+<li><p class="first">Task: Add attribute <tt class="docutils literal"><span class="pre">disable_error_emails</span></tt> to disable sending error
+emails for that task.</p>
 </li>
-<li><dl class="first docutils">
-<dt>Should now work on Windows (although running in the background won&#8217;t</dt>
-<dd><p class="first last">work, so using the <tt class="docutils literal"><span class="pre">--detach</span></tt> argument results in an exception
+<li><p class="first">Should now work on Windows (although running in the background won&#8217;t
+work, so using the <tt class="docutils literal"><span class="pre">--detach</span></tt> argument results in an exception
 being raised.)</p>
-</dd>
-</dl>
 </li>
-<li><dl class="first docutils">
-<dt>Added support for statistics for profiling and monitoring.</dt>
-<dd><p class="first last">To start sending statistics start <tt class="docutils literal"><span class="pre">celeryd</span></tt> with the
+<li><p class="first">Added support for statistics for profiling and monitoring.
+To start sending statistics start <tt class="docutils literal"><span class="pre">celeryd</span></tt> with the
 <tt class="docutils literal"><span class="pre">--statistics</span></tt> option. Then after a while you can dump the results
 by running <tt class="docutils literal"><span class="pre">python</span> <span class="pre">manage.py</span> <span class="pre">celerystats</span></tt>. See
 <tt class="docutils literal"><span class="pre">celery.monitoring</span></tt> for more information.</p>
-</dd>
-</dl>
 </li>
-<li><dl class="first docutils">
-<dt>The celery daemon can now be supervised (i.e it is automatically</dt>
-<dd><p class="first last">restarted if it crashes). To use this start celeryd with the
+<li><p class="first">The celery daemon can now be supervised (i.e it is automatically
+restarted if it crashes). To use this start celeryd with the
 <tt class="docutils literal"><span class="pre">--supervised</span></tt> option (or alternatively <tt class="docutils literal"><span class="pre">-S</span></tt>).</p>
-</dd>
-</dl>
 </li>
 <li><p class="first">views.apply: View applying a task. Example:</p>
-<div class="highlight-python"><pre>        http://e.com/celery/apply/task_name/arg1/arg2//?kwarg1=a&amp;kwarg2=b
-
-**NOTE** Use with caution, preferably not make this publicly
-accessible without ensuring your code is safe!</pre>
+<div class="highlight-python"><pre>http://e.com/celery/apply/task_name/arg1/arg2//?kwarg1=a&amp;kwarg2=b</pre>
 </div>
+<p><strong>NOTE</strong> Use with caution, preferably not make this publicly
+accessible without ensuring your code is safe!</p>
 </li>
-<li><p class="first">Refactored celery.task. It&#8217;s now split into three modules:</p>
+<li><p class="first">Refactored <tt class="docutils literal"><span class="pre">celery.task</span></tt>. It&#8217;s now split into three modules:</p>
 <ul>
 <li><p class="first">celery.task</p>
 <blockquote>
-<p>Contains apply_async, delay_task, discard_all, and task
-shortcuts, plus imports objects from celery.task.base and
-celery.task.builtins</p>
+<p>Contains <tt class="docutils literal"><span class="pre">apply_async</span></tt>, <tt class="docutils literal"><span class="pre">delay_task</span></tt>, <tt class="docutils literal"><span class="pre">discard_all</span></tt>, and task
+shortcuts, plus imports objects from <tt class="docutils literal"><span class="pre">celery.task.base</span></tt> and
+<tt class="docutils literal"><span class="pre">celery.task.builtins</span></tt></p>
 </blockquote>
 </li>
 <li><p class="first">celery.task.base</p>
 <blockquote>
-<p>Contains task base classes: Task, PeriodicTask, TaskSet</p>
+<p>Contains task base classes: <tt class="docutils literal"><span class="pre">Task</span></tt>, <tt class="docutils literal"><span class="pre">PeriodicTask</span></tt>,
+<tt class="docutils literal"><span class="pre">TaskSet</span></tt>, <tt class="docutils literal"><span class="pre">AsynchronousMapTask</span></tt>, <tt class="docutils literal"><span class="pre">ExecuteRemoteTask</span></tt>.</p>
 </blockquote>
 </li>
 <li><p class="first">celery.task.builtins</p>
 <blockquote>
-<p>Built-in tasks: PingTask, AsynchronousMapTask,
-ExecuteRemoteTask, ++.</p>
+<p>Built-in tasks: <tt class="docutils literal"><span class="pre">PingTask</span></tt>, <tt class="docutils literal"><span class="pre">DeleteExpiredTaskMetaTask</span></tt>.</p>
 </blockquote>
 </li>
 </ul>
 </li>
 </ul>
 </div>
-<div class="section" id="id2">
-<h2>0.3.7 [2008-06-16 11:41 P.M CET]<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id3">
+<h2>0.3.7 [2008-06-16 11:41 P.M CET]<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
 <ul>
-<li><dl class="first docutils">
-<dt><strong>IMPORTANT</strong> Now uses AMQP&#8217;s <tt class="docutils literal"><span class="pre">basic.consume</span></tt> instead of</dt>
-<dd><p class="first last"><tt class="docutils literal"><span class="pre">basic.get</span></tt>. This means we&#8217;re no longer polling the broker for
+<li><p class="first"><strong>IMPORTANT</strong> Now uses AMQP&#8217;s <tt class="docutils literal"><span class="pre">basic.consume</span></tt> instead of
+<tt class="docutils literal"><span class="pre">basic.get</span></tt>. This means we&#8217;re no longer polling the broker for
 new messages.</p>
-</dd>
-</dl>
 </li>
-<li><dl class="first docutils">
-<dt><strong>IMPORTANT</strong> Default concurrency limit is now set to the number of CPUs</dt>
-<dd><p class="first last">available on the system.</p>
-</dd>
-</dl>
+<li><p class="first"><strong>IMPORTANT</strong> Default concurrency limit is now set to the number of CPUs
+available on the system.</p>
 </li>
-<li><dl class="first docutils">
-<dt><strong>IMPORTANT</strong> <tt class="docutils literal"><span class="pre">tasks.register</span></tt>: Renamed <tt class="docutils literal"><span class="pre">task_name</span></tt> argument to</dt>
-<dd><p class="first"><tt class="docutils literal"><span class="pre">name</span></tt>, so</p>
+<li><p class="first"><strong>IMPORTANT</strong> <tt class="docutils literal"><span class="pre">tasks.register</span></tt>: Renamed <tt class="docutils literal"><span class="pre">task_name</span></tt> argument to
+<tt class="docutils literal"><span class="pre">name</span></tt>, so</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">tasks</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">task_name</span><span class="o">=</span><span class="s">&quot;mytask&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>has to be replaced with:</p>
-<div class="last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">tasks</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;mytask&quot;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">tasks</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;mytask&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-</dd>
-</dl>
 </li>
 <li><p class="first">The daemon now correctly runs if the pidlock is stale.</p>
 </li>
@@ -203,20 +182,14 @@ new messages.</p>
 </li>
 <li><p class="first"><tt class="docutils literal"><span class="pre">AsyncResult.read()</span></tt> was always returning <tt class="xref docutils literal"><span class="pre">True</span></tt>.</p>
 </li>
-<li><dl class="first docutils">
-<dt>Only use README as long_description if the file exists so easy_install</dt>
-<dd><p class="first last">doesn&#8217;t break.</p>
-</dd>
-</dl>
+<li><p class="first">Only use README as long_description if the file exists so easy_install
+doesn&#8217;t break.</p>
 </li>
 <li><p class="first"><tt class="docutils literal"><span class="pre">celery.view</span></tt>: JSON responses now properly set its mime-type.</p>
 </li>
-<li><dl class="first docutils">
-<dt><tt class="docutils literal"><span class="pre">apply_async</span></tt> now has a <tt class="docutils literal"><span class="pre">connection</span></tt> keyword argument so you</dt>
-<dd><p class="first last">can re-use the same AMQP connection if you want to execute
+<li><p class="first"><tt class="docutils literal"><span class="pre">apply_async</span></tt> now has a <tt class="docutils literal"><span class="pre">connection</span></tt> keyword argument so you
+can re-use the same AMQP connection if you want to execute
 more than one task.</p>
-</dd>
-</dl>
 </li>
 <li><p class="first">Handle failures in task_status view such that it won&#8217;t throw 500s.</p>
 </li>
@@ -224,50 +197,32 @@ more than one task.</p>
 </li>
 <li><p class="first">Worker exception e-mails sent to admins now works properly.</p>
 </li>
-<li><dl class="first docutils">
-<dt>No longer depends on <tt class="docutils literal"><span class="pre">django</span></tt>, so installing <tt class="docutils literal"><span class="pre">celery</span></tt> won&#8217;t affect</dt>
-<dd><p class="first last">the preferred Django version installed.</p>
-</dd>
-</dl>
+<li><p class="first">No longer depends on <tt class="docutils literal"><span class="pre">django</span></tt>, so installing <tt class="docutils literal"><span class="pre">celery</span></tt> won&#8217;t affect
+the preferred Django version installed.</p>
 </li>
-<li><dl class="first docutils">
-<dt>Now works with PostgreSQL (psycopg2) again by registering the</dt>
-<dd><p class="first last"><tt class="docutils literal"><span class="pre">PickledObject</span></tt> field.</p>
-</dd>
-</dl>
+<li><p class="first">Now works with PostgreSQL (psycopg2) again by registering the
+<tt class="docutils literal"><span class="pre">PickledObject</span></tt> field.</p>
 </li>
-<li><dl class="first docutils">
-<dt><tt class="docutils literal"><span class="pre">celeryd</span></tt>: Added <tt class="docutils literal"><span class="pre">--detach</span></tt> option as an alias to <tt class="docutils literal"><span class="pre">--daemon</span></tt>, and</dt>
-<dd><p class="first last">it&#8217;s the term used in the documentation from now on.</p>
-</dd>
-</dl>
+<li><p class="first"><tt class="docutils literal"><span class="pre">celeryd</span></tt>: Added <tt class="docutils literal"><span class="pre">--detach</span></tt> option as an alias to <tt class="docutils literal"><span class="pre">--daemon</span></tt>, and
+it&#8217;s the term used in the documentation from now on.</p>
 </li>
-<li><dl class="first docutils">
-<dt>Make sure the pool and periodic task worker thread is terminated</dt>
-<dd><p class="first last">properly at exit. (So <tt class="docutils literal"><span class="pre">Ctrl-C</span></tt> works again).</p>
-</dd>
-</dl>
+<li><p class="first">Make sure the pool and periodic task worker thread is terminated
+properly at exit. (So <tt class="docutils literal"><span class="pre">Ctrl-C</span></tt> works again).</p>
 </li>
 <li><p class="first">Now depends on <tt class="docutils literal"><span class="pre">python-daemon</span></tt>.</p>
 </li>
 <li><p class="first">Removed dependency to <tt class="docutils literal"><span class="pre">simplejson</span></tt></p>
 </li>
-<li><dl class="first docutils">
-<dt>Cache Backend: Re-establishes connection for every task process</dt>
-<dd><p class="first last">if the Django cache backend is memcached/libmemcached.</p>
-</dd>
-</dl>
+<li><p class="first">Cache Backend: Re-establishes connection for every task process
+if the Django cache backend is memcached/libmemcached.</p>
 </li>
-<li><dl class="first docutils">
-<dt>Tyrant Backend: Now re-establishes the connection for every task</dt>
-<dd><p class="first last">executed.</p>
-</dd>
-</dl>
+<li><p class="first">Tyrant Backend: Now re-establishes the connection for every task
+executed.</p>
 </li>
 </ul>
 </div>
-<div class="section" id="id3">
-<h2>0.3.3 [2009-06-08 01:07 P.M CET]<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id4">
+<h2>0.3.3 [2009-06-08 01:07 P.M CET]<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><dl class="first docutils">
 <dt>The <tt class="docutils literal"><span class="pre">PeriodicWorkController</span></tt> now sleeps for 1 second between checking</dt>
@@ -277,64 +232,46 @@ more than one task.</p>
 </li>
 </ul>
 </div>
-<div class="section" id="id4">
-<h2>0.3.2 [2009-06-08 01:07 P.M CET]<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
-<ul>
-<li><dl class="first docutils">
-<dt>celeryd: Added option <tt class="docutils literal"><span class="pre">--discard</span></tt>: Discard (delete!) all waiting</dt>
-<dd><p class="first last">messages in the queue.</p>
-</dd>
-</dl>
-</li>
-<li><p class="first">celeryd: The <tt class="docutils literal"><span class="pre">--wakeup-after</span></tt> option was not handled as a float.</p>
-</li>
-</ul>
-</div>
 <div class="section" id="id5">
-<h2>0.3.1 [2009-06-08 01:07 P.M CET]<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
-<ul>
-<li><dl class="first docutils">
-<dt>The <cite>PeriodicTask`</cite> worker is now running in its own thread instead</dt>
-<dd><p class="first last">of blocking the <tt class="docutils literal"><span class="pre">TaskController</span></tt> loop.</p>
-</dd>
-</dl>
-</li>
-<li><p class="first">Default <tt class="docutils literal"><span class="pre">QUEUE_WAKEUP_AFTER</span></tt> has been lowered to <tt class="docutils literal"><span class="pre">0.1</span></tt> (was <tt class="docutils literal"><span class="pre">0.3</span></tt>)</p>
-</li>
+<h2>0.3.2 [2009-06-08 01:07 P.M CET]<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>celeryd: Added option <tt class="docutils literal"><span class="pre">--discard</span></tt>: Discard (delete!) all waiting
+messages in the queue.</li>
+<li>celeryd: The <tt class="docutils literal"><span class="pre">--wakeup-after</span></tt> option was not handled as a float.</li>
 </ul>
 </div>
 <div class="section" id="id6">
-<h2>0.3.0 [2009-06-08 12:41 P.M CET]<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h2>
+<h2>0.3.1 [2009-06-08 01:07 P.M CET]<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>The <cite>PeriodicTask`</cite> worker is now running in its own thread instead
+of blocking the <tt class="docutils literal"><span class="pre">TaskController</span></tt> loop.</li>
+<li>Default <tt class="docutils literal"><span class="pre">QUEUE_WAKEUP_AFTER</span></tt> has been lowered to <tt class="docutils literal"><span class="pre">0.1</span></tt> (was <tt class="docutils literal"><span class="pre">0.3</span></tt>)</li>
+</ul>
+</div>
+<div class="section" id="id7">
+<h2>0.3.0 [2009-06-08 12:41 P.M CET]<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h2>
 <p><strong>NOTE</strong> This is a development version, for the stable release, please
 see versions 0.2.x.</p>
 <p><strong>VERY IMPORTANT:</strong> Pickle is now the encoder used for serializing task
 arguments, so be sure to flush your task queue before you upgrade.</p>
 <ul>
-<li><dl class="first docutils">
-<dt><strong>IMPORTANT</strong> TaskSet.run() now returns a celery.result.TaskSetResult</dt>
-<dd><p class="first last">instance, which lets you inspect the status and return values of a
+<li><p class="first"><strong>IMPORTANT</strong> TaskSet.run() now returns a celery.result.TaskSetResult
+instance, which lets you inspect the status and return values of a
 taskset as it was a single entity.</p>
-</dd>
-</dl>
 </li>
 <li><p class="first"><strong>IMPORTANT</strong> Celery now depends on carrot &gt;= 0.4.1.</p>
 </li>
-<li><dl class="first docutils">
-<dt>The celery daemon now sends task errors to the registered admin e-mails.</dt>
-<dd><p class="first last">To turn off this feature, set <tt class="docutils literal"><span class="pre">SEND_CELERY_TASK_ERROR_EMAILS</span></tt> to
+<li><p class="first">The celery daemon now sends task errors to the registered admin e-mails.
+To turn off this feature, set <tt class="docutils literal"><span class="pre">SEND_CELERY_TASK_ERROR_EMAILS</span></tt> to
 <tt class="xref docutils literal"><span class="pre">False</span></tt> in your <tt class="docutils literal"><span class="pre">settings.py</span></tt>. Thanks to Grégoire Cachet.</p>
-</dd>
-</dl>
 </li>
 <li><p class="first">You can now run the celery daemon by using <tt class="docutils literal"><span class="pre">manage.py</span></tt>:</p>
-<div class="highlight-python"><pre>        $ python manage.py celeryd
-
-Thanks to Grégoire Cachet.</pre>
+<div class="highlight-python"><pre>$ python manage.py celeryd</pre>
 </div>
+<p>Thanks to Grégoire Cachet.</p>
 </li>
-<li><dl class="first docutils">
-<dt>Added support for message priorities, topic exchanges, custom routing</dt>
-<dd><p class="first">keys for tasks. This means we have introduced
+<li><p class="first">Added support for message priorities, topic exchanges, custom routing
+keys for tasks. This means we have introduced
 <tt class="docutils literal"><span class="pre">celery.task.apply_async</span></tt>, a new way of executing tasks.</p>
 <p>You can use <tt class="docutils literal"><span class="pre">celery.task.delay</span></tt> and <tt class="docutils literal"><span class="pre">celery.Task.delay</span></tt> like usual, but
 if you want greater control over the message sent, you want
@@ -348,60 +285,31 @@ been renamed, while others are new:</p>
 <span class="n">CELERY_AMQP_EXCHANGE_TYPE</span>
 </pre></div>
 </div>
-<p class="last">See the entry <a class="reference external" href="http://bit.ly/celery_AMQP_routing">Can I send some tasks to only some servers?</a> in the
+<p>See the entry <a class="reference external" href="http://bit.ly/celery_AMQP_routing">Can I send some tasks to only some servers?</a> in the
 <a class="reference external" href="http://ask.github.com/celery/faq.html">FAQ</a> for more information.</p>
-</dd>
-</dl>
 </li>
 </ul>
-<ul>
-<li><dl class="first docutils">
-<dt>Task errors are now logged using loglevel <tt class="docutils literal"><span class="pre">ERROR</span></tt> instead of <tt class="docutils literal"><span class="pre">INFO</span></tt>,</dt>
-<dd><p class="first last">and backtraces are dumped. Thanks to Grégoire Cachet.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt>Make every new worker process re-establish it&#8217;s Django DB connection,</dt>
-<dd><p class="first last">this solving the &#8220;MySQL connection died?&#8221; exceptions.
-Thanks to Vitaly Babiy and Jirka Vejrazka.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt><strong>IMOPORTANT</strong> Now using pickle to encode task arguments. This means you</dt>
-<dd><p class="first last">now can pass complex python objects to tasks as arguments.</p>
-</dd>
-</dl>
-</li>
-<li><p class="first">Removed dependency on <tt class="docutils literal"><span class="pre">yadayada</span></tt>.</p>
-</li>
-<li><p class="first">Added a FAQ, see <tt class="docutils literal"><span class="pre">docs/faq.rst</span></tt>.</p>
-</li>
-<li><dl class="first docutils">
-<dt>Now converts any unicode keys in task <tt class="docutils literal"><span class="pre">kwargs</span></tt> to regular strings.</dt>
-<dd><p class="first last">Thanks Vitaly Babiy.</p>
-</dd>
-</dl>
-</li>
-<li><p class="first">Renamed the <tt class="docutils literal"><span class="pre">TaskDaemon</span></tt> to <tt class="docutils literal"><span class="pre">WorkController</span></tt>.</p>
-</li>
-<li><dl class="first docutils">
-<dt><tt class="docutils literal"><span class="pre">celery.datastructures.TaskProcessQueue</span></tt> is now renamed to</dt>
-<dd><p class="first last"><tt class="docutils literal"><span class="pre">celery.pool.TaskPool</span></tt>.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt>The pool algorithm has been refactored for greater performance and</dt>
-<dd><p class="first last">stability.</p>
-</dd>
-</dl>
-</li>
+<ul class="simple">
+<li>Task errors are now logged using loglevel <tt class="docutils literal"><span class="pre">ERROR</span></tt> instead of <tt class="docutils literal"><span class="pre">INFO</span></tt>,
+and backtraces are dumped. Thanks to Grégoire Cachet.</li>
+<li>Make every new worker process re-establish it&#8217;s Django DB connection,
+this solving the &#8220;MySQL connection died?&#8221; exceptions.
+Thanks to Vitaly Babiy and Jirka Vejrazka.</li>
+<li><strong>IMOPORTANT</strong> Now using pickle to encode task arguments. This means you
+now can pass complex python objects to tasks as arguments.</li>
+<li>Removed dependency to <tt class="docutils literal"><span class="pre">yadayada</span></tt>.</li>
+<li>Added a FAQ, see <tt class="docutils literal"><span class="pre">docs/faq.rst</span></tt>.</li>
+<li>Now converts any unicode keys in task <tt class="docutils literal"><span class="pre">kwargs</span></tt> to regular strings.
+Thanks Vitaly Babiy.</li>
+<li>Renamed the <tt class="docutils literal"><span class="pre">TaskDaemon</span></tt> to <tt class="docutils literal"><span class="pre">WorkController</span></tt>.</li>
+<li><tt class="docutils literal"><span class="pre">celery.datastructures.TaskProcessQueue</span></tt> is now renamed to
+<tt class="docutils literal"><span class="pre">celery.pool.TaskPool</span></tt>.</li>
+<li>The pool algorithm has been refactored for greater performance and
+stability.</li>
 </ul>
 </div>
-<div class="section" id="id7">
-<h2>0.2.0 [2009-05-20 05:14 P.M CET]<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id8">
+<h2>0.2.0 [2009-05-20 05:14 P.M CET]<a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Final release of 0.2.0</li>
 <li>Compatible with carrot version 0.4.0.</li>
@@ -411,14 +319,10 @@ from the database backend.</li>
 </div>
 <div class="section" id="pre3-2009-05-20-05-14-p-m-cet">
 <h2>0.2.0-pre3 [2009-05-20 05:14 P.M CET]<a class="headerlink" href="#pre3-2009-05-20-05-14-p-m-cet" title="Permalink to this headline">¶</a></h2>
-<ul>
-<li><dl class="first docutils">
-<dt><em>Internal release</em>. Improved handling of unpickled exceptions,</dt>
-<dd><p class="first last">get_result() now tries to recreate something looking like the
-original exception.</p>
-</dd>
-</dl>
-</li>
+<ul class="simple">
+<li><em>Internal release</em>. Improved handling of unpickled exceptions,
+<tt class="docutils literal"><span class="pre">get_result</span></tt> now tries to recreate something looking like the
+original exception.</li>
 </ul>
 </div>
 <div class="section" id="pre2-2009-05-20-01-56-p-m-cet">
@@ -438,23 +342,23 @@ been removed. Use <tt class="docutils literal"><span class="pre">celery.backends
 and <tt class="docutils literal"><span class="pre">celery.backends.default_backend.mark_as_failure()</span></tt> instead.</li>
 </ul>
 </div>
-<div class="section" id="id8">
-<h2>0.1.15 [2009-05-19 04:13 P.M CET]<a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id9">
+<h2>0.1.15 [2009-05-19 04:13 P.M CET]<a class="headerlink" href="#id9" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>The celery daemon was leaking AMQP connections, this should be fixed,
 if you have any problems with too many files open (like <tt class="docutils literal"><span class="pre">emfile</span></tt>
 errors in <tt class="docutils literal"><span class="pre">rabbit.log</span></tt>, please contact us!</li>
 </ul>
 </div>
-<div class="section" id="id9">
-<h2>0.1.14 [2009-05-19 01:08 P.M CET]<a class="headerlink" href="#id9" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id10">
+<h2>0.1.14 [2009-05-19 01:08 P.M CET]<a class="headerlink" href="#id10" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Fixed a syntax error in the <tt class="docutils literal"><span class="pre">TaskSet</span></tt> class.  (No such variable
 <tt class="docutils literal"><span class="pre">TimeOutError</span></tt>).</li>
 </ul>
 </div>
-<div class="section" id="id10">
-<h2>0.1.13 [2009-05-19 12:36 P.M CET]<a class="headerlink" href="#id10" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id11">
+<h2>0.1.13 [2009-05-19 12:36 P.M CET]<a class="headerlink" href="#id11" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><p class="first">Forgot to add <tt class="docutils literal"><span class="pre">yadayada</span></tt> to install requirements.</p>
 </li>
@@ -475,8 +379,8 @@ $ make html</pre>
 </li>
 </ul>
 </div>
-<div class="section" id="id11">
-<h2>0.1.12 [2009-05-18 04:38 P.M CET]<a class="headerlink" href="#id11" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id12">
+<h2>0.1.12 [2009-05-18 04:38 P.M CET]<a class="headerlink" href="#id12" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><p class="first"><tt class="docutils literal"><span class="pre">delay_task()</span></tt> etc. now returns <tt class="docutils literal"><span class="pre">celery.task.AsyncResult</span></tt> object,
 which lets you check the result and any failure that might have
@@ -507,34 +411,36 @@ distributed to the celery server. Example:</p>
 </div>
 </blockquote>
 </li>
-<li><p class="first">Refactored the task metadata cache and database backends, and added a new backend for Tokyo Tyrant. You can set the backend in your django settings file. e.g</p>
-<blockquote>
-<p>CELERY_BACKEND = &#8220;database&#8221;; # Uses the database</p>
-<p>CELERY_BACKEND = &#8220;cache&#8221;; # Uses the django cache framework</p>
-<p>CELERY_BACKEND = &#8220;tyrant&#8221;; # Uses Tokyo Tyrant
-TT_HOST = &#8220;localhost&#8221;; # Hostname for the Tokyo Tyrant server.
-TT_PORT = 6657; # Port of the Tokyo Tyrant server.</p>
-</blockquote>
+<li><p class="first">Refactored the task metadata cache and database backends, and added
+a new backend for Tokyo Tyrant. You can set the backend in your django
+settings file. e.g:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_BACKEND</span> <span class="o">=</span> <span class="s">&quot;database&quot;</span><span class="p">;</span> <span class="c"># Uses the database</span>
+<span class="n">CELERY_BACKEND</span> <span class="o">=</span> <span class="s">&quot;cache&quot;</span><span class="p">;</span> <span class="c"># Uses the django cache framework</span>
+<span class="n">CELERY_BACKEND</span> <span class="o">=</span> <span class="s">&quot;tyrant&quot;</span><span class="p">;</span> <span class="c"># Uses Tokyo Tyrant</span>
+<span class="n">TT_HOST</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span><span class="p">;</span> <span class="c"># Hostname for the Tokyo Tyrant server.</span>
+<span class="n">TT_PORT</span> <span class="o">=</span> <span class="mf">6657</span><span class="p">;</span> <span class="c"># Port of the Tokyo Tyrant server.</span>
+</pre></div>
+</div>
 </li>
 </ul>
 </div>
-<div class="section" id="id12">
-<h2>0.1.11 [2009-05-12 02:08 P.M CET]<a class="headerlink" href="#id12" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id13">
+<h2>0.1.11 [2009-05-12 02:08 P.M CET]<a class="headerlink" href="#id13" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>The logging system was leaking file descriptors, resulting in
 servers stopping with the EMFILES (too many open files) error. (fixed)</li>
 </ul>
 </div>
-<div class="section" id="id13">
-<h2>0.1.10 [2009-05-11 12:46 P.M CET]<a class="headerlink" href="#id13" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id14">
+<h2>0.1.10 [2009-05-11 12:46 P.M CET]<a class="headerlink" href="#id14" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Tasks now supports both positional arguments and keyword arguments.</li>
 <li>Requires carrot 0.3.8.</li>
 <li>The daemon now tries to reconnect if the connection is lost.</li>
 </ul>
 </div>
-<div class="section" id="id14">
-<h2>0.1.8 [2009-05-07 12:27 P.M CET]<a class="headerlink" href="#id14" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id15">
+<h2>0.1.8 [2009-05-07 12:27 P.M CET]<a class="headerlink" href="#id15" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Better test coverage</li>
 <li>More documentation</li>
@@ -542,8 +448,8 @@ servers stopping with the EMFILES (too many open files) error. (fixed)</li>
 <tt class="docutils literal"><span class="pre">settings.CELERYD_EMPTY_MSG_EMIT_EVERY</span></tt> is 0.</li>
 </ul>
 </div>
-<div class="section" id="id15">
-<h2>0.1.7 [2009-04-30 1:50 P.M CET]<a class="headerlink" href="#id15" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id16">
+<h2>0.1.7 [2009-04-30 1:50 P.M CET]<a class="headerlink" href="#id16" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Added some unittests</li>
 <li>Can now use the database for task metadata (like if the task has
@@ -555,25 +461,31 @@ within the <tt class="docutils literal"><span class="pre">testproj</span></tt> p
 and <tt class="docutils literal"><span class="pre">settings.CELERY_AMQP_CONSUMER_QUEUE</span></tt>.</li>
 </ul>
 </div>
-<div class="section" id="id16">
-<h2>0.1.6 [2009-04-28 2:13 P.M CET]<a class="headerlink" href="#id16" title="Permalink to this headline">¶</a></h2>
-<blockquote>
-<ul class="simple">
-<li>Introducing <tt class="docutils literal"><span class="pre">TaskSet</span></tt>. A set of subtasks is executed and you can
-find out how many, or if all them, are done (excellent for progress bars and such)</li>
-<li>Now catches all exceptions when running <tt class="docutils literal"><span class="pre">Task.__call__</span></tt>, so the
+<div class="section" id="id17">
+<h2>0.1.6 [2009-04-28 2:13 P.M CET]<a class="headerlink" href="#id17" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><p class="first">Introducing <tt class="docutils literal"><span class="pre">TaskSet</span></tt>. A set of subtasks is executed and you can
+find out how many, or if all them, are done (excellent for progress
+bars and such)</p>
+</li>
+<li><p class="first">Now catches all exceptions when running <tt class="docutils literal"><span class="pre">Task.__call__</span></tt>, so the
 daemon doesn&#8217;t die. This does&#8217;t happen for pure functions yet, only
-<tt class="docutils literal"><span class="pre">Task</span></tt> classes.</li>
-<li><tt class="docutils literal"><span class="pre">autodiscover()</span></tt> now works with zipped eggs.</li>
-<li>celeryd: Now adds curernt working directory to <tt class="docutils literal"><span class="pre">sys.path</span></tt> for
-convenience.</li>
-<li>The <tt class="docutils literal"><span class="pre">run_every</span></tt> attribute of <tt class="docutils literal"><span class="pre">PeriodicTask</span></tt> classes can now be a
-<tt class="docutils literal"><span class="pre">datetime.timedelta()</span></tt> object.</li>
-<li>celeryd: You can now set the <tt class="docutils literal"><span class="pre">DJANGO_PROJECT_DIR</span></tt> variable
-for <tt class="docutils literal"><span class="pre">celeryd</span></tt> and it will add that to <tt class="docutils literal"><span class="pre">sys.path</span></tt> for easy launching.</li>
-<li>Can now check if a task has been executed or not via HTTP.</li>
-</ul>
-<p>You can do this by including the celery <tt class="docutils literal"><span class="pre">urls.py</span></tt> into your project,</p>
+<tt class="docutils literal"><span class="pre">Task</span></tt> classes.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">autodiscover()</span></tt> now works with zipped eggs.</p>
+</li>
+<li><p class="first">celeryd: Now adds curernt working directory to <tt class="docutils literal"><span class="pre">sys.path</span></tt> for
+convenience.</p>
+</li>
+<li><p class="first">The <tt class="docutils literal"><span class="pre">run_every</span></tt> attribute of <tt class="docutils literal"><span class="pre">PeriodicTask</span></tt> classes can now be a
+<tt class="docutils literal"><span class="pre">datetime.timedelta()</span></tt> object.</p>
+</li>
+<li><p class="first">celeryd: You can now set the <tt class="docutils literal"><span class="pre">DJANGO_PROJECT_DIR</span></tt> variable
+for <tt class="docutils literal"><span class="pre">celeryd</span></tt> and it will add that to <tt class="docutils literal"><span class="pre">sys.path</span></tt> for easy launching.</p>
+</li>
+<li><p class="first">Can now check if a task has been executed or not via HTTP.</p>
+</li>
+<li><p class="first">You can do this by including the celery <tt class="docutils literal"><span class="pre">urls.py</span></tt> into your project,</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">url</span><span class="p">(</span><span class="s">r&#39;^celery/$&#39;</span><span class="p">,</span> <span class="n">include</span><span class="p">(</span><span class="s">&quot;celery.urls&quot;</span><span class="p">))</span>
 </pre></div>
 </div>
@@ -583,13 +495,15 @@ for <tt class="docutils literal"><span class="pre">celeryd</span></tt> and it wi
 <p>this will return a JSON dictionary like e.g:</p>
 <div class="highlight-python"><pre>&gt;&gt;&gt; {"task": {"id": $task_id, "executed": true}}</pre>
 </div>
-<ul class="simple">
-<li><tt class="docutils literal"><span class="pre">delay_task</span></tt> now returns string id, not <tt class="docutils literal"><span class="pre">uuid.UUID</span></tt> instance.</li>
-<li>Now has <tt class="docutils literal"><span class="pre">PeriodicTasks</span></tt>, to have <tt class="docutils literal"><span class="pre">cron</span></tt> like functionality.</li>
-<li>Project changed name from <tt class="docutils literal"><span class="pre">crunchy</span></tt> to <tt class="docutils literal"><span class="pre">celery</span></tt>. The details of
-the name change request is in <tt class="docutils literal"><span class="pre">docs/name_change_request.txt</span></tt>.</li>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">delay_task</span></tt> now returns string id, not <tt class="docutils literal"><span class="pre">uuid.UUID</span></tt> instance.</p>
+</li>
+<li><p class="first">Now has <tt class="docutils literal"><span class="pre">PeriodicTasks</span></tt>, to have <tt class="docutils literal"><span class="pre">cron</span></tt> like functionality.</p>
+</li>
+<li><p class="first">Project changed name from <tt class="docutils literal"><span class="pre">crunchy</span></tt> to <tt class="docutils literal"><span class="pre">celery</span></tt>. The details of
+the name change request is in <tt class="docutils literal"><span class="pre">docs/name_change_request.txt</span></tt>.</p>
+</li>
 </ul>
-</blockquote>
 </div>
 <div class="section" id="a-m-cet">
 <h2>0.1.0 [2009-04-24 11:28 A.M CET]<a class="headerlink" href="#a-m-cet" title="Permalink to this headline">¶</a></h2>
@@ -608,26 +522,27 @@ the name change request is in <tt class="docutils literal"><span class="pre">doc
             <h3><a href="index.html">Table Of Contents</a></h3>
             <ul>
 <li><a class="reference external" href="">Change history</a><ul>
-<li><a class="reference external" href="#p-m-cet">0.4.0 [2009-07-01 07:29 P.M CET]</a></li>
-<li><a class="reference external" href="#id1">0.3.20 [2009-06-25 08:42 P.M CET]</a></li>
-<li><a class="reference external" href="#id2">0.3.7 [2008-06-16 11:41 P.M CET]</a></li>
-<li><a class="reference external" href="#id3">0.3.3 [2009-06-08 01:07 P.M CET]</a></li>
-<li><a class="reference external" href="#id4">0.3.2 [2009-06-08 01:07 P.M CET]</a></li>
-<li><a class="reference external" href="#id5">0.3.1 [2009-06-08 01:07 P.M CET]</a></li>
-<li><a class="reference external" href="#id6">0.3.0 [2009-06-08 12:41 P.M CET]</a></li>
-<li><a class="reference external" href="#id7">0.2.0 [2009-05-20 05:14 P.M CET]</a></li>
+<li><a class="reference external" href="#p-m-cet">0.4.1 [2009-07-02 01:42 P.M CET]</a></li>
+<li><a class="reference external" href="#id1">0.4.0 [2009-07-01 07:29 P.M CET]</a></li>
+<li><a class="reference external" href="#id2">0.3.20 [2009-06-25 08:42 P.M CET]</a></li>
+<li><a class="reference external" href="#id3">0.3.7 [2008-06-16 11:41 P.M CET]</a></li>
+<li><a class="reference external" href="#id4">0.3.3 [2009-06-08 01:07 P.M CET]</a></li>
+<li><a class="reference external" href="#id5">0.3.2 [2009-06-08 01:07 P.M CET]</a></li>
+<li><a class="reference external" href="#id6">0.3.1 [2009-06-08 01:07 P.M CET]</a></li>
+<li><a class="reference external" href="#id7">0.3.0 [2009-06-08 12:41 P.M CET]</a></li>
+<li><a class="reference external" href="#id8">0.2.0 [2009-05-20 05:14 P.M CET]</a></li>
 <li><a class="reference external" href="#pre3-2009-05-20-05-14-p-m-cet">0.2.0-pre3 [2009-05-20 05:14 P.M CET]</a></li>
 <li><a class="reference external" href="#pre2-2009-05-20-01-56-p-m-cet">0.2.0-pre2 [2009-05-20 01:56 P.M CET]</a></li>
 <li><a class="reference external" href="#pre1-2009-05-20-12-33-p-m-cet">0.2.0-pre1 [2009-05-20 12:33 P.M CET]</a></li>
-<li><a class="reference external" href="#id8">0.1.15 [2009-05-19 04:13 P.M CET]</a></li>
-<li><a class="reference external" href="#id9">0.1.14 [2009-05-19 01:08 P.M CET]</a></li>
-<li><a class="reference external" href="#id10">0.1.13 [2009-05-19 12:36 P.M CET]</a></li>
-<li><a class="reference external" href="#id11">0.1.12 [2009-05-18 04:38 P.M CET]</a></li>
-<li><a class="reference external" href="#id12">0.1.11 [2009-05-12 02:08 P.M CET]</a></li>
-<li><a class="reference external" href="#id13">0.1.10 [2009-05-11 12:46 P.M CET]</a></li>
-<li><a class="reference external" href="#id14">0.1.8 [2009-05-07 12:27 P.M CET]</a></li>
-<li><a class="reference external" href="#id15">0.1.7 [2009-04-30 1:50 P.M CET]</a></li>
-<li><a class="reference external" href="#id16">0.1.6 [2009-04-28 2:13 P.M CET]</a></li>
+<li><a class="reference external" href="#id9">0.1.15 [2009-05-19 04:13 P.M CET]</a></li>
+<li><a class="reference external" href="#id10">0.1.14 [2009-05-19 01:08 P.M CET]</a></li>
+<li><a class="reference external" href="#id11">0.1.13 [2009-05-19 12:36 P.M CET]</a></li>
+<li><a class="reference external" href="#id12">0.1.12 [2009-05-18 04:38 P.M CET]</a></li>
+<li><a class="reference external" href="#id13">0.1.11 [2009-05-12 02:08 P.M CET]</a></li>
+<li><a class="reference external" href="#id14">0.1.10 [2009-05-11 12:46 P.M CET]</a></li>
+<li><a class="reference external" href="#id15">0.1.8 [2009-05-07 12:27 P.M CET]</a></li>
+<li><a class="reference external" href="#id16">0.1.7 [2009-04-30 1:50 P.M CET]</a></li>
+<li><a class="reference external" href="#id17">0.1.6 [2009-04-28 2:13 P.M CET]</a></li>
 <li><a class="reference external" href="#a-m-cet">0.1.0 [2009-04-24 11:28 A.M CET]</a></li>
 </ul>
 </li>
@@ -676,12 +591,12 @@ the name change request is in <tt class="docutils literal"><span class="pre">doc
         <li class="right" >
           <a href="reference/celery.bin.celeryd.html" title="Celery Worker Daemon - celery.bin.celeryd"
              >previous</a> |</li>
-        <li><a href="index.html">Celery v0.4.0 (stable) documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v0.4.1 (stable) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.2.
     </div>
   </body>
 </html>

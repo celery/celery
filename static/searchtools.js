@@ -341,9 +341,9 @@ var Search = {
       }
       for (var prefix in descrefs) {
         for (var name in descrefs[prefix]) {
-          if (name.toLowerCase().indexOf(object) > -1) {
+          var fullname = (prefix ? prefix + '.' : '') + name;
+          if (fullname.toLowerCase().indexOf(object) > -1) {
             match = descrefs[prefix][name];
-            fullname = (prefix ? prefix + '.' : '') + name;
             descr = desctypes[match[1]] + _(', in ') + titles[match[0]];
             objectResults.push([filenames[match[0]], fullname, '#'+fullname, descr]);
           }
