@@ -13,7 +13,7 @@ from celery.serialization import pickle
 MSG_OPTIONS = ("mandatory", "priority",
                "immediate", "routing_key")
 
-get_msg_options = mitemgetter(MSG_OPTIONS)
+get_msg_options = mitemgetter(*MSG_OPTIONS)
 
 extract_msg_options = lambda d: dict(zip(MSG_OPTIONS, get_msg_options(d)))
 
