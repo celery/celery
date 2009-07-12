@@ -171,8 +171,11 @@ class StatsCollector(object):
             stats_entry = message.decode()
             stat_type = stats_entry["type"]
             if stat_type in self.allowed_types:
+                # Decode keys to unicode for use as kwargs.
+                data = dict((key.encode("utf-8"), value)
+                                for key, value in stats_entry["data"].items())
                 handler = getattr(self, stat_type)
-                handler(**stats_entry["data"])
+                handler(**data)
 
     def dump_to_cache(self, cache_key_prefix=DEFAULT_CACHE_KEY_PREFIX):
         """Store collected statistics in the cache."""
