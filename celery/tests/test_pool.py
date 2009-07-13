@@ -29,8 +29,6 @@ class TestTaskPool(unittest.TestCase):
         p = TaskPool(limit=2)
         self.assertEquals(p.limit, 2)
         self.assertTrue(isinstance(p.logger, logging.Logger))
-        self.assertEquals(p._processed_total, 0)
-        self.assertEquals(p._process_counter.next(), 1)
         self.assertTrue(p._pool is None)
         self.assertTrue(p._processes is None)
 
