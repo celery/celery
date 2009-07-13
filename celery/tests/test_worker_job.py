@@ -72,6 +72,7 @@ class TestJail(unittest.TestCase):
         cache.settings.CACHE_BACKEND = "libmemcached"
         cache._was_closed = False
         old_cache_parse_backend = getattr(cache, "parse_backend_uri", None)
+        delattr(cache, 'parse_backend_uri')
 
         def monkeypatched_cache_close(*args, **kwargs):
             cache._was_closed = True
