@@ -18,5 +18,6 @@ class TestDiscovery(unittest.TestCase):
             self.assertDiscovery()
 
     def test_discovery_with_broken(self):
-        settings.INSTALLED_APPS = settings.INSTALLED_APPS + ["xxxnot.aexist"]
-        self.assertDiscovery()
+        if "someapp" in settings.INSTALLED_APPS:
+            settings.INSTALLED_APPS = settings.INSTALLED_APPS + ["xxxnot.aexist"]
+            self.assertDiscovery()
