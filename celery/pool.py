@@ -4,11 +4,8 @@ Process Pools.
 
 """
 import multiprocessing
-import itertools
-import threading
 
-from multiprocessing.pool import Pool, worker
-from multiprocessing.pool import RUN as POOL_STATE_RUN
+from multiprocessing.pool import Pool
 from celery.datastructures import ExceptionInfo
 from celery.utils import gen_unique_id
 from functools import partial as curry
@@ -53,7 +50,7 @@ class TaskPool(object):
         self._pool = None
 
     def apply_async(self, target, args=None, kwargs=None, callbacks=None,
-            errbacks=None, on_acknowledge=None, meta=None):
+            errbacks=None, meta=None):
         """Equivalent of the :func:``apply`` built-in function.
 
         All ``callbacks`` and ``errbacks`` should complete immediately since
@@ -71,8 +68,6 @@ class TaskPool(object):
 
         result = self._pool.apply_async(target, args, kwargs,
                                         callback=on_return)
-        if on_acknowledge:
-            on_acknowledge()
 
         self._processes[tid] = [result, callbacks, errbacks, meta]
 

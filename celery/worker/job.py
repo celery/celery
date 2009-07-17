@@ -32,7 +32,7 @@ celeryd at %%(hostname)s.
 """ % {"EMAIL_SIGNATURE_SEP": EMAIL_SIGNATURE_SEP}
 
 
-def jail(task_id, task_name, func, args, kwargs):
+def jail(task_id, task_name, func, args, kwargs, on_acknowledge=None):
     """Wraps the task in a jail, which catches all exceptions, and
     saves the status and result of the task execution to the task
     meta backend.
@@ -79,6 +79,10 @@ def jail(task_id, task_name, func, args, kwargs):
 
     # Backend process cleanup
     default_backend.process_cleanup()
+
+    # Handle task acknowledgement.
+    if on_acknowledge:
+        on_acknowledge()
 
     try:
         result = func(*args, **kwargs)
@@ -214,10 +218,8 @@ class TaskWrapper(object):
 
         """
         task_func_kwargs = self.extend_with_default_kwargs(loglevel, logfile)
-        if self.on_acknowledge:
-            self.on_acknowledge()
         return jail(self.task_id, self.task_name, self.task_func,
-                    self.args, task_func_kwargs)
+                    self.args, task_func_kwargs, self.on_acknowledge)
 
     def on_success(self, ret_value, meta):
         """The handler used if the task was successfully processed (
@@ -269,8 +271,7 @@ class TaskWrapper(object):
         """
         task_func_kwargs = self.extend_with_default_kwargs(loglevel, logfile)
         jail_args = [self.task_id, self.task_name, self.task_func,
-                     self.args, task_func_kwargs]
+                     self.args, task_func_kwargs, self.on_acknowledge]
         return pool.apply_async(jail, args=jail_args,
                 callbacks=[self.on_success], errbacks=[self.on_failure],
-                on_acknowledge=self.on_acknowledge,
                 meta={"task_id": self.task_id, "task_name": self.task_name})
