@@ -240,7 +240,6 @@ and return a value:
     >>> from celery.task import Task
     >>> from celery.registry import tasks
     >>> class MyTask(Task):
-    ...     name = "myapp.mytask"
     ...     def run(self, some_arg, **kwargs):
     ...         logger = self.get_logger(**kwargs)
     ...         logger.info("Did something: %s" % some_arg)
@@ -301,7 +300,6 @@ Here's an example of a periodic task:
     >>> from celery.registry import tasks
     >>> from datetime import timedelta
     >>> class MyPeriodicTask(PeriodicTask):
-    ...     name = "foo.my-periodic-task"
     ...     run_every = timedelta(seconds=30)
     ...
     ...     def run(self, **kwargs):

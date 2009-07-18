@@ -108,9 +108,9 @@ class TestCeleryTasks(unittest.TestCase):
         self.assertTrue(T1()(),
                 "Task class runs run() when called")
 
-        # task without name raises NotImplementedError
+        # task name generated out of class module + name.
         T2 = self.createTaskCls("T2")
-        self.assertRaises(NotImplementedError, T2)
+        self.assertEquals(T2().name, "celery.tests.test_task.T2")
 
         registry.tasks.register(T1)
         t1 = T1()

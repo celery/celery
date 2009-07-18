@@ -113,7 +113,8 @@ class Task(object):
 
     def __init__(self):
         if not self.name:
-            raise NotImplementedError("Tasks must define a name attribute.")
+            self.name = ".".join([self.__class__.__module__,
+                                  self.__class__.__name__])
 
     def __call__(self, *args, **kwargs):
         return self.run(*args, **kwargs)
