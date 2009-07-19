@@ -198,7 +198,6 @@ celery.registry.TaskRegistry.register method reference/celery.registry.html
 celery.worker.AMQPListener.hold_queue attribute reference/celery.worker.html
 celery.worker.controllers.InfinityThread.on_iteration method reference/celery.worker.controllers.html
 celery.conf.DAEMON_LOG_FILE data reference/celery.conf.html
-celery.pool.TaskPool.reap method reference/celery.pool.html
 celery.backends.base.BaseBackend.create_exception_cls method reference/celery.backends.base.html
 celery.worker.WorkController.amqp_listener attribute reference/celery.worker.html
 celery.monitoring.Statistics.stop method reference/celery.monitoring.html
@@ -285,7 +284,6 @@ celery.monitoring.Statistics.on_stop method reference/celery.monitoring.html
 TASK_STATUS_DONE data reference/celery.models.html
 celery.backends.base.UnpickleableExceptionWrapper.exc_cls_name attribute reference/celery.backends.base.html
 celery.conf.AMQP_PUBLISHER_ROUTING_KEY data reference/celery.conf.html
-celery.pool.TaskPool.wait_for_result method reference/celery.pool.html
 celery.backends.cache.Backend class reference/celery.backends.cache.html
 celery.task.is_done function reference/celery.task.html
 celery.views.is_task_done function reference/celery.views.html

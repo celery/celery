@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Index &mdash; Celery v0.4.1 (stable) documentation</title>
+    <title>Index &mdash; Celery v0.4.2 (stable) documentation</title>
     <link rel="stylesheet" href="static/nature.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.4.1 (stable)',
+        VERSION:     '0.4.2 (stable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,7 +19,7 @@
     </script>
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v0.4.1 (stable) documentation" href="index.html" /> 
+    <link rel="top" title="Celery v0.4.2 (stable) documentation" href="index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -31,7 +31,7 @@
         <li class="right" >
           <a href="modindex.html" title="Global Module Index"
              accesskey="M">modules</a> |</li>
-        <li><a href="index.html">Celery v0.4.1 (stable) documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v0.4.2 (stable) documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -503,7 +503,6 @@
   <dd><dl>
     <dt><a href="reference/celery.result.html#celery.result.TaskSetResult.ready">(celery.result.TaskSetResult method)</a></dt>
   </dl></dd>
-<dt><a href="reference/celery.pool.html#celery.pool.TaskPool.reap">reap() (celery.pool.TaskPool method)</a></dt>
 <dt><a href="reference/celery.worker.html#celery.worker.AMQPListener.receive_message">receive_message() (celery.worker.AMQPListener method)</a></dt>
 <dt><a href="reference/celery.registry.html#celery.registry.TaskRegistry.register">register() (celery.registry.TaskRegistry method)</a></dt>
 <dt><a href="reference/celery.task.base.html#celery.task.base.TaskSet.remote_execute">remote_execute() (celery.task.base.TaskSet class method)</a></dt>
@@ -514,7 +513,7 @@
     <dt><a href="reference/celery.models.html#TaskMeta.result">(TaskMeta attribute)</a></dt>
     <dt><a href="reference/celery.result.html#celery.result.EagerResult.result">(celery.result.EagerResult attribute)</a></dt>
   </dl></dd>
-<dt><a href="reference/celery.task.base.html#celery.task.base.Task.routing_key">routing_key (celery.task.base.Task attribute)</a></dt></dl></td><td width="33%" valign="top"><dl>
+<dt><a href="reference/celery.task.base.html#celery.task.base.Task.routing_key">routing_key (celery.task.base.Task attribute)</a></dt>
 <dt><a href="reference/celery.monitoring.html#celery.monitoring.Statistics.run">run() (celery.monitoring.Statistics method)</a></dt>
   <dd><dl>
     <dt><a href="reference/celery.supervisor.html#celery.supervisor.OFASupervisor.Process.run">(celery.supervisor.OFASupervisor.Process method)</a></dt>
@@ -525,7 +524,7 @@
     <dt><a href="reference/celery.task.builtins.html#celery.task.builtins.DeleteExpiredTaskMetaTask.run">(celery.task.builtins.DeleteExpiredTaskMetaTask method)</a></dt>
     <dt><a href="reference/celery.task.builtins.html#celery.task.builtins.PingTask.run">(celery.task.builtins.PingTask method)</a></dt>
     <dt><a href="reference/celery.worker.controllers.html#celery.worker.controllers.InfinityThread.run">(celery.worker.controllers.InfinityThread method)</a></dt>
-  </dl></dd>
+  </dl></dd></dl></td><td width="33%" valign="top"><dl>
 <dt><a href="reference/celery.task.base.html#celery.task.base.PeriodicTask.run_every">run_every (celery.task.base.PeriodicTask attribute)</a></dt>
 <dt><a href="reference/celery.backends.database.html#celery.backends.database.Backend.run_periodic_tasks">run_periodic_tasks() (celery.backends.database.Backend method)</a></dt>
 <dt><a href="reference/celery.bin.celeryd.html#celery.bin.celeryd.run_worker">run_worker() (in module celery.bin.celeryd)</a></dt>
@@ -651,8 +650,7 @@
   <dd><dl>
     <dt><a href="reference/celery.result.html#celery.result.EagerResult.wait">(celery.result.EagerResult method)</a></dt>
   </dl></dd>
-<dt><a href="reference/celery.backends.base.html#celery.backends.base.BaseBackend.wait_for">wait_for() (celery.backends.base.BaseBackend method)</a></dt>
-<dt><a href="reference/celery.pool.html#celery.pool.TaskPool.wait_for_result">wait_for_result() (celery.pool.TaskPool method)</a></dt></dl></td><td width="33%" valign="top"><dl>
+<dt><a href="reference/celery.backends.base.html#celery.backends.base.BaseBackend.wait_for">wait_for() (celery.backends.base.BaseBackend method)</a></dt></dl></td><td width="33%" valign="top"><dl>
 <dt><a href="reference/celery.result.html#celery.result.TaskSetResult.waiting">waiting() (celery.result.TaskSetResult method)</a></dt>
 <dt><a href="reference/celery.worker.html#celery.worker.WorkController">WorkController (class in celery.worker)</a></dt>
 </dl></td></tr></table>
@@ -693,12 +691,12 @@
         <li class="right" >
           <a href="modindex.html" title="Global Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">Celery v0.4.1 (stable) documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v0.4.2 (stable) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.2.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.1.
     </div>
   </body>
 </html>

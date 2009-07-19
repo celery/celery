@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Task Pool - celery.pool &mdash; Celery v0.4.1 (stable) documentation</title>
+    <title>Task Pool - celery.pool &mdash; Celery v0.4.2 (stable) documentation</title>
     <link rel="stylesheet" href="../static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.4.1 (stable)',
+        VERSION:     '0.4.2 (stable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,7 +19,7 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.4.1 (stable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.4.2 (stable) documentation" href="../index.html" />
     <link rel="up" title="Module API Reference" href="index.html" />
     <link rel="next" title="Process Supervisor - celery.supervisor" href="celery.supervisor.html" />
     <link rel="prev" title="Worker Controller Threads - celery.worker.controllers" href="celery.worker.controllers.html" /> 
@@ -40,7 +40,7 @@
         <li class="right" >
           <a href="celery.worker.controllers.html" title="Worker Controller Threads - celery.worker.controllers"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v0.4.1 (stable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v0.4.2 (stable) documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Module API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -57,8 +57,7 @@
 <dt id="celery.pool.TaskPool">
 <em class="property">
 class </em><tt class="descclassname">celery.pool.</tt><tt class="descname">TaskPool</tt><big>(</big><em>limit</em>, <em>logger=None</em><big>)</big><a class="headerlink" href="#celery.pool.TaskPool" title="Permalink to this definition">¶</a></dt>
-<dd><p>Pool of running child processes, which starts waiting for the
-processes to finish when the queue limit has been reached.</p>
+<dd><p>Process Pool for processing tasks in parallel.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -74,8 +73,7 @@ processes to finish when the queue limit has been reached.</p>
 <dl class="attribute">
 <dt id="celery.pool.TaskPool.limit">
 <tt class="descname">limit</tt><a class="headerlink" href="#celery.pool.TaskPool.limit" title="Permalink to this definition">¶</a></dt>
-<dd>The number of processes that can run simultaneously until
-we start collecting results.</dd></dl>
+<dd>The number of processes that can run simultaneously.</dd></dl>
 
 <dl class="attribute">
 <dt id="celery.pool.TaskPool.logger">
@@ -84,7 +82,7 @@ we start collecting results.</dd></dl>
 
 <dl class="method">
 <dt id="celery.pool.TaskPool.apply_async">
-<tt class="descname">apply_async</tt><big>(</big><em>target</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>callbacks=None</em>, <em>errbacks=None</em>, <em>on_acknowledge=None</em>, <em>meta=None</em><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.apply_async" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">apply_async</tt><big>(</big><em>target</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>callbacks=None</em>, <em>errbacks=None</em>, <em>meta=None</em><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.apply_async" title="Permalink to this definition">¶</a></dt>
 <dd><p>Equivalent of the :func:<tt class="docutils literal"><span class="pre">apply</span></tt> built-in function.</p>
 <p>All <tt class="docutils literal"><span class="pre">callbacks</span></tt> and <tt class="docutils literal"><span class="pre">errbacks</span></tt> should complete immediately since
 otherwise the thread which handles the result will get blocked.</p>
@@ -122,11 +120,6 @@ been collected.</dd></dl>
 <dd>What to do when the process returns.</dd></dl>
 
 <dl class="method">
-<dt id="celery.pool.TaskPool.reap">
-<tt class="descname">reap</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.reap" title="Permalink to this definition">¶</a></dt>
-<dd>Reap finished tasks.</dd></dl>
-
-<dl class="method">
 <dt id="celery.pool.TaskPool.start">
 <tt class="descname">start</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.start" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run the task pool.</p>
@@ -137,13 +130,6 @@ been collected.</dd></dl>
 <dt id="celery.pool.TaskPool.stop">
 <tt class="descname">stop</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.stop" title="Permalink to this definition">¶</a></dt>
 <dd>Terminate the pool.</dd></dl>
-
-<dl class="method">
-<dt id="celery.pool.TaskPool.wait_for_result">
-<tt class="descname">wait_for_result</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.wait_for_result" title="Permalink to this definition">¶</a></dt>
-<dd><p>Waits for the first process in the pool to finish.</p>
-<p>This operation is blocking.</p>
-</dd></dl>
 
 </dd></dl>
 
@@ -198,13 +184,13 @@ been collected.</dd></dl>
         <li class="right" >
           <a href="celery.worker.controllers.html" title="Worker Controller Threads - celery.worker.controllers"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v0.4.1 (stable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v0.4.2 (stable) documentation</a> &raquo;</li>
           <li><a href="index.html" >Module API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.2.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.1.
     </div>
   </body>
 </html>
