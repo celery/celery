@@ -12,7 +12,7 @@ Contents:
     :maxdepth: 3
 
     introduction
-    tutorials
+    tutorials/index
     faq
     reference/index
     changelog
