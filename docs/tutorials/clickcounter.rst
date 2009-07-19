@@ -235,4 +235,4 @@ even possible to update the click count using a single UPDATE query?
 
 If you have any questions regarding this tutorial, please send a mail to the
 mailing-list or come join us in the #celery IRC channel at Freenode:
-    http://celeryq.org/introduction.html#getting-help
+http://celeryq.org/introduction.html#getting-help
