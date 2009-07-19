@@ -257,6 +257,10 @@ At this point, the task has been sent to the message broker. The message
 broker will hold on to the task until a celery worker server has successfully
 picked it up.
 
+*Note* If everything is just hanging when you execute ``delay``, please check
+that RabbitMQ is running, and that the user/password has access to the virtual
+host you configured earlier.
+
 Right now we have to check the celery worker logfiles to know what happened with
 the task. This is because we didn't keep the ``AsyncResult`` object returned
 by ``delay``.
