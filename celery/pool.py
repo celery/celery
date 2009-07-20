@@ -50,7 +50,7 @@ class TaskPool(object):
         self._pool = None
 
     def apply_async(self, target, args=None, kwargs=None, callbacks=None,
-            errbacks=None, meta=None):
+            errbacks=None, on_ack=None, meta=None):
         """Equivalent of the :func:``apply`` built-in function.
 
         All ``callbacks`` and ``errbacks`` should complete immediately since
@@ -64,7 +64,8 @@ class TaskPool(object):
         meta = meta or {}
         tid = gen_unique_id()
 
-        on_return = curry(self.on_return, tid, callbacks, errbacks, meta)
+        on_return = curry(self.on_return, tid, callbacks, errbacks,
+                          on_ack, meta)
 
         result = self._pool.apply_async(target, args, kwargs,
                                         callback=on_return)
@@ -73,8 +74,13 @@ class TaskPool(object):
 
         return result
 
-    def on_return(self, tid, callbacks, errbacks, meta, ret_value):
+    def on_return(self, tid, callbacks, errbacks, on_ack, meta, ret_value):
         """What to do when the process returns."""
+
+        # Acknowledge the task as being processed.
+        if on_ack:
+            on_ack()
+
         try:
             del(self._processes[tid])
         except KeyError:

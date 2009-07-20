@@ -32,7 +32,7 @@ celeryd at %%(hostname)s.
 """ % {"EMAIL_SIGNATURE_SEP": EMAIL_SIGNATURE_SEP}
 
 
-def jail(task_id, task_name, func, args, kwargs, on_acknowledge=None):
+def jail(task_id, task_name, func, args, kwargs):
     """Wraps the task in a jail, which catches all exceptions, and
     saves the status and result of the task execution to the task
     meta backend.
@@ -79,10 +79,6 @@ def jail(task_id, task_name, func, args, kwargs, on_acknowledge=None):
 
     # Backend process cleanup
     default_backend.process_cleanup()
-
-    # Handle task acknowledgement.
-    if on_acknowledge:
-        on_acknowledge()
 
     try:
         result = func(*args, **kwargs)
@@ -149,14 +145,14 @@ class TaskWrapper(object):
     fail_email_body = TASK_FAIL_EMAIL_BODY
 
     def __init__(self, task_name, task_id, task_func, args, kwargs,
-            on_acknowledge=None, **opts):
+            on_ack=None, **opts):
         self.task_name = task_name
         self.task_id = task_id
         self.task_func = task_func
         self.args = args
         self.kwargs = kwargs
         self.logger = kwargs.get("logger")
-        self.on_acknowledge = on_acknowledge
+        self.on_ack = on_ack
         for opt in ("success_msg", "fail_msg", "fail_email_subject",
                 "fail_email_body"):
             setattr(self, opt, opts.get(opt, getattr(self, opt, None)))
@@ -193,7 +189,7 @@ class TaskWrapper(object):
             raise NotRegistered(task_name)
         task_func = tasks[task_name]
         return cls(task_name, task_id, task_func, args, kwargs,
-                    on_acknowledge=message.ack, logger=logger)
+                    on_ack=message.ack, logger=logger)
 
     def extend_with_default_kwargs(self, loglevel, logfile):
         """Extend the tasks keyword arguments with standard task arguments.
@@ -218,8 +214,11 @@ class TaskWrapper(object):
 
         """
         task_func_kwargs = self.extend_with_default_kwargs(loglevel, logfile)
+        # acknowledge task as being processed.
+        if self.on_ack:
+            self.on_ack()
         return jail(self.task_id, self.task_name, self.task_func,
-                    self.args, task_func_kwargs, self.on_acknowledge)
+                    self.args, task_func_kwargs)
 
     def on_success(self, ret_value, meta):
         """The handler used if the task was successfully processed (
@@ -271,7 +270,8 @@ class TaskWrapper(object):
         """
         task_func_kwargs = self.extend_with_default_kwargs(loglevel, logfile)
         jail_args = [self.task_id, self.task_name, self.task_func,
-                     self.args, task_func_kwargs, self.on_acknowledge]
+                     self.args, task_func_kwargs]
         return pool.apply_async(jail, args=jail_args,
                 callbacks=[self.on_success], errbacks=[self.on_failure],
+                on_ack=self.on_ack,
                 meta={"task_id": self.task_id, "task_name": self.task_name})
