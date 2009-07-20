@@ -76,8 +76,12 @@ class AMQPListener(object):
 
         eta = message_data.get("eta")
         if eta:
+            self.logger.info("Got task from broker: %s[%s] eta:[%s]" % (
+                    task.task_name, task.task_id, eta))
             self.hold_queue.put((task, eta))
         else:
+            self.logger.info("Got task from broker: %s[%s]" % (
+                    task.task_name, task.task_id))
             self.bucket_queue.put(task)
 
     def close_connection(self):
@@ -221,8 +225,6 @@ class WorkController(object):
 
     def process_task(self, task):
         """Process task by sending it to the pool of workers."""
-        self.logger.info("Got task from broker: %s[%s]" % (
-                task.task_name, task.task_id))
         task.execute_using_pool(self.pool, self.loglevel, self.logfile)
 
     def stop(self):
