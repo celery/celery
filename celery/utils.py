@@ -44,3 +44,8 @@ def mitemgetter(*keys):
     """Like :func:`operator.itemgetter` but returns `None` on missing keys
     instead of raising :exc:`KeyError`."""
     return lambda dict_: map(dict_.get, keys)
+
+
+def get_full_cls_name(cls):
+    return ".".join([cls.__name__,
+                     cls.__module__])

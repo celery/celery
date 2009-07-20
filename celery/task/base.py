@@ -4,7 +4,7 @@ from celery.messaging import TaskPublisher, TaskConsumer
 from celery.log import setup_logger
 from celery.result import TaskSetResult
 from celery.execute import apply_async, delay_task, apply
-from celery.utils import gen_unique_id
+from celery.utils import gen_unique_id, get_full_cls_name
 from datetime import timedelta
 from celery.registry import tasks
 from celery.serialization import pickle
@@ -112,10 +112,9 @@ class Task(object):
     disable_error_emails = False
 
     def __init__(self):
-        if not self.name:
-            self.name = ".".join([self.__class__.__module__,
-                                  self.__class__.__name__])
-
+        if not self.__class__.name:
+            self.__class__.name = get_full_cls_name(self.__class__)
+                                  
     def __call__(self, *args, **kwargs):
         return self.run(*args, **kwargs)
 
