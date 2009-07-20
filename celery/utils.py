@@ -47,5 +47,5 @@ def mitemgetter(*keys):
 
 
 def get_full_cls_name(cls):
-    return ".".join([cls.__name__,
-                     cls.__module__])
+    return ".".join([cls.__module__,
+                     cls.__name__])
