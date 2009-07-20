@@ -114,7 +114,7 @@ class Task(object):
     def __init__(self):
         if not self.__class__.name:
             self.__class__.name = get_full_cls_name(self.__class__)
-                                  
+
     def __call__(self, *args, **kwargs):
         return self.run(*args, **kwargs)
 
