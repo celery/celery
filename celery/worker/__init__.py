@@ -224,7 +224,6 @@ class WorkController(object):
         self.logger.info("Got task from broker: %s[%s]" % (
                 task.task_name, task.task_id))
         task.execute_using_pool(self.pool, self.loglevel, self.logfile)
-        self.logger.debug("Task %s has been executed." % task)
 
     def stop(self):
         """Gracefully shutdown the worker server."""
