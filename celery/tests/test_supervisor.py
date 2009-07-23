@@ -1,5 +1,5 @@
 import unittest
-from celery.supervisor import raise_ping_timeout, OFASupervisor
+from celery.supervisor import OFASupervisor
 from celery.supervisor import TimeoutError, MaxRestartsExceededError
 
 
@@ -42,26 +42,11 @@ class MockProcess(object):
         self._joined = True
 
 
-class TestDiv(unittest.TestCase):
-
-    def test_raise_ping_timeout(self):
-        self.assertRaises(TimeoutError, raise_ping_timeout, "timed out")
-
-
 class TestOFASupervisor(unittest.TestCase):
 
     def test_init(self):
         s = OFASupervisor(target=target_one, args=[2, 4, 8], kwargs={})
         s.Process = MockProcess
-
-    def test__is_alive(self):
-        s = OFASupervisor(target=target_one, args=[2, 4, 8], kwargs={})
-        s.Process = MockProcess
-        proc = MockProcess(target_one, [2, 4, 8], {})
-        proc.start()
-        self.assertTrue(s._is_alive(proc))
-        proc.alive = False
-        self.assertFalse(s._is_alive(proc))
 
     def test_start(self):
         MockProcess.alive = False

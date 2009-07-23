@@ -6,7 +6,7 @@ Asynchronous result types.
 from celery.backends import default_backend
 from celery.datastructures import PositionQueue
 from itertools import imap
-import threading
+import time
 
 
 class TimeoutError(Exception):
@@ -269,26 +269,26 @@ class TaskSetResult(object):
 
         """
 
+        time_start = time.time()
+
         def on_timeout():
             raise TimeoutError("The operation timed out.")
 
-        timeout_timer = threading.Timer(timeout, on_timeout)
         results = PositionQueue(length=self.total)
 
-        timeout_timer.start()
-        try:
-            while True:
-                for position, pending_result in enumerate(self.subtasks):
-                    if pending_result.status == "DONE":
-                        results[position] = pending_result.result
-                    elif pending_result.status == "FAILURE":
-                        raise pending_result.result
-                if results.full():
-                    # Make list copy, so the returned type is not a position
-                    # queue.
-                    return list(results)
-        finally:
-            timeout_timer.cancel()
+        while True:
+            for position, pending_result in enumerate(self.subtasks):
+                if pending_result.status == "DONE":
+                    results[position] = pending_result.result
+                elif pending_result.status == "FAILURE":
+                    raise pending_result.result
+            if results.full():
+                # Make list copy, so the returned type is not a position
+                # queue.
+                return list(results)
+            else:
+                if time.time() >= time_start + timeout:
+                    on_timeout()
 
     @property
     def total(self):

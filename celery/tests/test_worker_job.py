@@ -177,7 +177,7 @@ class TestTaskWrapper(unittest.TestCase):
     def test_execute_ack(self):
         tid = gen_unique_id()
         tw = TaskWrapper("cu.mytask", tid, mytask, [4], {"f": "x"},
-                        on_acknowledge=on_ack)
+                        on_ack=on_ack)
         self.assertEquals(tw.execute(), 256)
         meta = TaskMeta.objects.get(task_id=tid)
         self.assertTrue(scratch["ACK"])

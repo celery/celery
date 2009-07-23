@@ -1,9 +1,7 @@
 import multiprocessing
-import threading
 import time
 from multiprocessing import TimeoutError
 
-PING_TIMEOUT = 30 # seconds
 JOIN_TIMEOUT = 2
 CHECK_INTERVAL = 2
 MAX_RESTART_FREQ = 3
@@ -12,12 +10,6 @@ MAX_RESTART_FREQ_TIME = 10
 
 class MaxRestartsExceededError(Exception):
     """Restarts exceeded the maximum restart frequency."""
-
-
-def raise_ping_timeout(msg):
-    """Raises :exc:`multiprocessing.TimeoutError`, for use in
-    :class:`threading.Timer` callbacks."""
-    raise TimeoutError("Supervised: Timed out while pinging process.")
 
 
 class OFASupervisor(object):
@@ -76,14 +68,13 @@ class OFASupervisor(object):
     Process = multiprocessing.Process
 
     def __init__(self, target, args=None, kwargs=None,
-            ping_timeout=PING_TIMEOUT, join_timeout=JOIN_TIMEOUT,
+            join_timeout=JOIN_TIMEOUT,
             max_restart_freq = MAX_RESTART_FREQ,
             max_restart_freq_time=MAX_RESTART_FREQ_TIME,
             check_interval=CHECK_INTERVAL):
         self.target = target
         self.args = args or []
         self.kwargs = kwargs or {}
-        self.ping_timeout = ping_timeout
         self.join_timeout = join_timeout
         self.check_interval = check_interval
         self.max_restart_freq = max_restart_freq
@@ -121,7 +112,7 @@ class OFASupervisor(object):
                 self.restarts_in_frame = 0
 
                 try:
-                    proc_is_alive = self._is_alive(process)
+                    proc_is_alive = process.is_alive()
                 except TimeoutError:
                     proc_is_alive = False
 
@@ -132,16 +123,3 @@ class OFASupervisor(object):
                 restart_frame += self.check_interval
         finally:
             process.join()
-
-    def _is_alive(self, process):
-        """Sends a ping to the target process to see if it's alive.
-
-        :rtype bool:
-
-        """
-        timeout_timer = threading.Timer(self.ping_timeout, raise_ping_timeout)
-        try:
-            alive = process.is_alive()
-        finally:
-            timeout_timer.cancel()
-        return alive

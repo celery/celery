@@ -1,7 +1,6 @@
 """celery.backends.base"""
 import time
 import operator
-import threading
 from functools import partial as curry
 from celery.serialization import pickle
 
@@ -172,21 +171,20 @@ class BaseBackend(object):
 
         """
 
-        def on_timeout():
-            raise TimeoutError("The operation timed out.")
+        sleep_inbetween = 0.5
+        time_elapsed = 0.0
 
-        timeout_timer = threading.Timer(timeout, on_timeout)
-        timeout_timer.start()
-        try:
-            while True:
-                status = self.get_status(task_id)
-                if status == "DONE":
-                    return self.get_result(task_id)
-                elif status == "FAILURE":
-                    raise self.get_result(task_id)
-                time.sleep(0.5) # avoid hammering the CPU checking status.
-        finally:
-            timeout_timer.cancel()
+        while True:
+            status = self.get_status(task_id)
+            if status == "DONE":
+                return self.get_result(task_id)
+            elif status == "FAILURE":
+                raise self.get_result(task_id)
+            # avoid hammering the CPU checking status.
+            time.sleep(sleep_inbetween) 
+            time_elapsed += sleep_inbetween
+            if timeout and time_elapsed >= timeout:
+                raise TimeoutError("The operation timed out.")
 
     def process_cleanup(self):
         """Cleanup actions to do at the end of a task worker process.
