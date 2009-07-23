@@ -26,6 +26,21 @@ celeryd is not doing anything, just hanging
 --------------------------------------------
 
 **Answer:** See `MySQL is throwing deadlock errors, what can I do?`_.
+            or `Why is Task.delay/apply\* just hanging?`.
+
+Why is Task.delay/apply\* just hanging?`
+----------------------------------------
+
+**Answer:** :mod:`amqplib` hangs if it isn't able to authenticate to the
+AMQP server, so make sure you are able to access the configured vhost using
+the user and password.
+
+Why won't celeryd run on FreeBSD?
+---------------------------------
+
+**Answer:** multiprocessing.Pool requires a working POSIX semaphore
+implementation which isn't enabled in FreeBSD by default. You have to enable
+POSIX semaphores in the kernel and manually recompile multiprocessing.
 
 I'm having ``IntegrityError: Duplicate Key`` errors. Why?
 ----------------------------------------------------------
