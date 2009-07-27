@@ -91,9 +91,3 @@ class TestTaskPool(unittest.TestCase):
         self.assertEquals(scratchpad[3]["meta"], {"foo4": "bar4"})
 
         p.stop()
-
-    def test_get_worker_pids(self):
-        p = TaskPool(5)
-        p.start()
-        self.assertEquals(len(p.get_worker_pids()), 5)
-        p.stop()
