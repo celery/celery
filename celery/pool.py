@@ -92,8 +92,8 @@ class DynamicPool(Pool):
         dead_count = 0
         for process in self._pool:
             if self.is_dead(process):
-                logger.info("DynamicPool: Found dead process %s (PID: %s)" % (
-                    (process, process.pid))
+                logger.info("DynamicPool: Found dead process (PID: %s)" % (
+                    process.pid))
                 dead_count += 1
             else:
                 new_pool.append(process)

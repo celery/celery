@@ -63,7 +63,6 @@ class OFASupervisor(object):
     Process = multiprocessing.Process
 
     def __init__(self, target, args=None, kwargs=None,
-            join_timeout=JOIN_TIMEOUT,
             max_restart_freq=MAX_RESTART_FREQ,
             max_restart_freq_time=MAX_RESTART_FREQ_TIME,
             check_interval=CHECK_INTERVAL):
