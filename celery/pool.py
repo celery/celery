@@ -3,6 +3,7 @@
 Process Pools.
 
 """
+import time
 import multiprocessing
 
 from multiprocessing.pool import Pool, worker
@@ -101,8 +102,12 @@ class PoolSupervisor(object):
             return False
         time_exceeded = time.time() > self.max_restart_frame_time + \
                 self.max_restart_freq_time
-        if time_exceeded and self.restarts_in_frame >= self.max_restart_freq:
-            return True
+        if time_exceeded:
+            if self.restarts_in_frame >= self.max_restart_freq:
+                return True
+            self.restart_frame_time = time.time()
+        return False
+        
           
     def supervise(self):
         dead = self.target.replace_dead_workers()
