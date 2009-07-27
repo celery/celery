@@ -16,7 +16,7 @@ from functools import partial as curry
 
 def pid_is_dead(pid):
     try:
-        return kill(pid, 0)
+        return os.kill(pid, 0)
     except OSError, err:
         if err.errno == errno.ESRCH:
             return True # No such process.
@@ -71,7 +71,12 @@ class DynamicPool(Pool):
             return True
     
         # Then try to ping the process using its pipe.
-        return not process.is_alive()
+        try:
+            proc_is_alive = process.is_alive()
+        except OSError:
+            return True
+        else:
+            return not proc_is_alive
 
     def replace_dead_workers(self):
         dead_processes = filter(self.is_dead, self._pool)
