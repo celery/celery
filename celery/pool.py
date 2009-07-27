@@ -67,6 +67,8 @@ class TaskPool(object):
         on_return = curry(self.on_return, tid, callbacks, errbacks,
                           on_ack, meta)
 
+        self.logger.debug("TaskPool: Apply %s (args:%s kwargs:%s)" % (
+            target, args, kwargs))
         result = self._pool.apply_async(target, args, kwargs,
                                         callback=on_return)
 

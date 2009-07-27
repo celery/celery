@@ -289,4 +289,4 @@ def parse_options(arguments):
 
 if __name__ == "__main__":
     options = parse_options(sys.argv[1:])
-    run_worker(**options)
+    run_worker(**vars(options))

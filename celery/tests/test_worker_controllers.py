@@ -8,6 +8,14 @@ from celery.worker.controllers import Mediator, PeriodicWorkController
 from celery.worker.controllers import InfinityThread
 
 
+class MockTask(object):
+    task_id = 1234
+    task_name = "mocktask"
+
+    def __init__(self, value, **kwargs):
+        self.value = value
+
+
 class MyInfinityThread(InfinityThread):
 
     def on_iteration(self):
@@ -54,10 +62,10 @@ class TestMediator(unittest.TestCase):
         got = {}
 
         def mycallback(value):
-            got["value"] = value
+            got["value"] = value.value
 
         m = Mediator(bucket_queue, mycallback)
-        bucket_queue.put("George Constanza")
+        bucket_queue.put(MockTask("George Constanza"))
 
         m.on_iteration()
 
@@ -73,16 +81,19 @@ class TestPeriodicWorkController(unittest.TestCase):
 
         m.process_hold_queue()
 
-        hold_queue.put(("task1", datetime.now() - timedelta(days=1)))
+        hold_queue.put((MockTask("task1"),
+                        datetime.now() - timedelta(days=1)))
 
         m.process_hold_queue()
         self.assertRaises(Empty, hold_queue.get_nowait)
-        self.assertEquals(bucket_queue.get_nowait(), "task1")
+        self.assertEquals(bucket_queue.get_nowait().value, "task1")
         tomorrow = datetime.now() + timedelta(days=1)
-        hold_queue.put(("task2", tomorrow))
+        hold_queue.put((MockTask("task2"), tomorrow))
         m.process_hold_queue()
         self.assertRaises(Empty, bucket_queue.get_nowait)
-        self.assertEquals(hold_queue.get_nowait(), ("task2", tomorrow))
+        value, eta = hold_queue.get_nowait()
+        self.assertEquals(value.value, "task2")
+        self.assertEquals(eta, tomorrow)
 
     def test_run_periodic_tasks(self):
         bucket_queue = Queue()
