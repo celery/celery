@@ -62,7 +62,7 @@ class DynamicPool(Pool):
 
     def grow(self, size=1):
         """Add ``size`` new workers to the pool."""
-        map(self._add_worker, range(size))
+        map(self.add_worker, range(size))
 
     def is_dead(self, process):
         # First try to see if the process is actually running,
