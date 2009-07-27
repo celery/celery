@@ -24,7 +24,6 @@ class OFASupervisor(object):
     :param target: see :attr:`target`.
     :param args: see :attr:`args`.
     :param kwargs: see :attr:`kwargs`.
-    :param join_timeout: see :attr:`join_timeout`.
     :param max_restart_freq: see :attr:`max_restart_freq`.
     :param max_restart_freq_time: see :attr:`max_restart_freq_time`.
     :param check_interval: see :attr:`max_restart_freq_time`.
@@ -40,10 +39,6 @@ class OFASupervisor(object):
     .. attribute:: kwargs
 
         The keyword arguments to apply to :attr:`target`.
-
-    .. attribute:: join_timeout
-
-        If the process is dead, try to give it a few seconds to join.
 
     .. attribute:: max_restart_freq
 
@@ -69,7 +64,7 @@ class OFASupervisor(object):
 
     def __init__(self, target, args=None, kwargs=None,
             join_timeout=JOIN_TIMEOUT,
-            max_restart_freq = MAX_RESTART_FREQ,
+            max_restart_freq=MAX_RESTART_FREQ,
             max_restart_freq_time=MAX_RESTART_FREQ_TIME,
             check_interval=CHECK_INTERVAL):
         self.target = target

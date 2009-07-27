@@ -3,6 +3,7 @@ from django.db import models
 from django.db import connection
 from celery.registry import tasks
 from datetime import datetime, timedelta
+from django.conf import settings
 import random
 
 # server_drift can be negative, but timedelta supports addition on
@@ -58,6 +59,8 @@ class PeriodicTaskManager(models.Manager):
 
     def lock(self):
         """Lock the periodic task table for reading."""
+        if settings.DATABASE_ENGINE != "mysql":
+            return
         cursor = connection.cursor()
         table = self.model._meta.db_table
         cursor.execute("LOCK TABLES %s READ" % table)
@@ -66,6 +69,8 @@ class PeriodicTaskManager(models.Manager):
 
     def unlock(self):
         """Unlock the periodic task table."""
+        if settings.DATABASE_ENGINE != "mysql":
+            return
         cursor = connection.cursor()
         table = self.model._meta.db_table
         cursor.execute("UNLOCK TABLES")

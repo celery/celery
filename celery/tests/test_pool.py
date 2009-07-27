@@ -30,16 +30,13 @@ class TestTaskPool(unittest.TestCase):
         self.assertEquals(p.limit, 2)
         self.assertTrue(isinstance(p.logger, logging.Logger))
         self.assertTrue(p._pool is None)
-        self.assertTrue(p._processes is None)
 
     def x_start_stop(self):
         p = TaskPool(limit=2)
         p.start()
         self.assertTrue(p._pool)
-        self.assertTrue(isinstance(p._processes, dict))
         p.stop()
         self.assertTrue(p._pool is None)
-        self.assertFalse(p._processes)
 
     def x_apply(self):
         p = TaskPool(limit=2)
@@ -93,14 +90,6 @@ class TestTaskPool(unittest.TestCase):
         self.assertEquals(scratchpad[3]["ret_value"], 900)
         self.assertEquals(scratchpad[3]["meta"], {"foo4": "bar4"})
 
-        p.stop()
-
-    def test_is_full(self):
-        p = TaskPool(2)
-        p.start()
-        self.assertFalse(p.full())
-        results = [p.apply_async(long_something) for i in xrange(4)]
-        self.assertTrue(p.full())
         p.stop()
 
     def test_get_worker_pids(self):
