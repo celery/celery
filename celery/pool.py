@@ -44,9 +44,17 @@ class DynamicPool(Pool):
         """Returns the process id's of all the pool workers."""
         return [process.pid for process in self.processes]
 
+    def is_alive(self, process):
+        try:
+            proc_is_alive = process.is_alive()
+        except OSError:
+            return False
+        else:
+            return proc_is_alive
+
     def replace_dead_workers(self):
         dead = [process for process in self.processes
-                            if not process.is_alive()]
+                            if not self.is_alive(process)]
         if dead:
             dead_pids = [process.pid for process in dead]
             self._pool = [process for process in self._pool
@@ -88,8 +96,10 @@ class PoolSupervisor(object):
 
     """
 
-    def __init__(self, target, max_restart_freq=MAX_RESTART_FREQ,
-                               max_restart_freq_time=MAX_RESTART_FREQ_TIME):
+    def __init__(self, target, logger=None,
+            max_restart_freq=MAX_RESTART_FREQ,
+            max_restart_freq_time=MAX_RESTART_FREQ_TIME):
+        self.logger = logger or multiprocessing.get_logger()
         self.target = target
         self.max_restart_freq = max_restart_freq * len(target.processes)
         self.max_restart_freq_time = max_restart_freq_time
@@ -107,11 +117,14 @@ class PoolSupervisor(object):
                 return True
             self.restart_frame_time = time.time()
         return False
-        
           
     def supervise(self):
+        self.logger.debug("PoolSupervisor: Finding dead worker processes...")
         dead = self.target.replace_dead_workers()
         if dead:
+            self.logger.info(
+                "PoolSupervisor: Replaced %s dead pool workers..." % (
+                    len(dead)))
             self.restarts_in_frame += len(dead)
             if self.restart_freq_exceeded():
                 raise MaxRestartsExceededError(
