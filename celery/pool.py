@@ -38,17 +38,48 @@ def reap_process(pid):
         raise
     return is_dead
 
+    
+def process_is_dead(process):
+    # Make sure PID is an integer (no idea why this happens).
+    try:
+        int(process.pid)
+    except (TypeError, ValueError):
+        return True
+
+    # Try to see if the process is actually running,
+    # and reap zombie proceses while we're at it.
+
+    if reap_process(process.pid):
+        return True
+    
+    # Then try to ping the process using its pipe.
+    try:
+        proc_is_alive = process.is_alive()
+    except OSError:
+        return True
+    else:
+        return not proc_is_alive
+
 
 class DynamicPool(Pool):
     """Version of :class:`multiprocessing.Pool` that can dynamically grow
     in size."""
 
     def __init__(self, processes=None, initializer=None, initargs=()):
+
+        if processes is None:
+            try:
+                processes = cpu_count()
+            except NotImplementedError:
+                processes = 1
+
         super(DynamicPool, self).__init__(processes=processes,
                                           initializer=initializer,
                                           initargs=initargs)
         self._initializer = initializer
         self._initargs = initargs
+        self._size = processes
+        self.logger = multiprocessing.get_logger()
 
     def add_worker(self):
         """Add another worker to the pool."""
@@ -65,44 +96,26 @@ class DynamicPool(Pool):
         [self.add_worker() for i in range(size)]
 
     def is_dead(self, process):
-        # Make sure PID is an integer (no idea why this happens).
-        try:
-            int(process.pid)
-        except (TypeError, ValueError):
+        if process_is_dead(process):
+            self.logger.info("DynamicPool: Found dead process (PID: %s)" % (
+                process.pid))
             return True
+        return False
 
-        # Try to see if the process is actually running,
-        # and reap zombie proceses while we're at it.
-
-        if reap_process(process.pid):
-            return True
-    
-        # Then try to ping the process using its pipe.
-        try:
-            proc_is_alive = process.is_alive()
-        except OSError:
-            return True
-        else:
-            return not proc_is_alive
+    def bring_out_the_dead(self):
+        dead = []
+        alive = []
+        for process in self._pool:
+            if process and process.pid:
+                if self.is_dead(process):
+                    dead += [process]
+                else:
+                    alive += [process]
+        return dead, alive 
 
     def replace_dead_workers(self):
-        logger = multiprocessing.get_logger()
-
-        new_pool = []
-        dead_count = 0
-        for process in self._pool:
-            if self.is_dead(process):
-                logger.info("DynamicPool: Found dead process (PID: %s)" % (
-                    process.pid))
-                dead_count += 1
-            else:
-                new_pool.append(process)
-
-        if dead_count:
-            self.grow(dead_count)
-            self._pool = new_pool
-
-        return dead_count
+        dead, self._pool = self.bring_out_the_dead()
+        self.grow(self._size if len(dead) > self._size else len(dead))
 
 
 class TaskPool(object):
