@@ -15,6 +15,11 @@ from functools import partial as curry
 
 
 def pid_is_dead(pid):
+    """Check if a process is not running by PID.
+   
+    :rtype bool:
+
+    """
     try:
         return os.kill(pid, 0)
     except OSError, err:
@@ -27,6 +32,12 @@ def pid_is_dead(pid):
 
 
 def reap_process(pid):
+    """Reap process if the process is a zombie.
+   
+    :returns: ``True`` if process was reaped or is not running,
+        ``False`` otherwise.
+
+    """
     if pid_is_dead(pid):
         return True
 
@@ -40,6 +51,20 @@ def reap_process(pid):
 
     
 def process_is_dead(process):
+    """Check if process is not running anymore.
+
+    First it finds out if the process is running by sending
+    signal 0. Then if the process is a child process, and is running
+    it finds out if it's a zombie process and reaps it.
+    If the process is running and is not a zombie it tries to send
+    a ping through the process pipe.
+
+    :param process: A :class:`multiprocessing.Process` instance.
+
+    :returns: ``True`` if the process is not running, ``False`` otherwise.
+
+    """
+
     # Make sure PID is an integer (no idea why this happens).
     try:
         int(process.pid)
@@ -92,29 +117,42 @@ class DynamicPool(Pool):
         w.start()
 
     def grow(self, size=1):
-        """Add ``size`` new workers to the pool."""
+        """Add workers to the pool.
+       
+        :keyword size: Number of workers to add (default: 1)
+        
+        """
         [self.add_worker() for i in range(size)]
 
-    def is_dead(self, process):
+    def _is_dead(self, process):
+        """Try to find out if the process is dead.
+
+        :rtype bool:
+
+        """
         if process_is_dead(process):
             self.logger.info("DynamicPool: Found dead process (PID: %s)" % (
                 process.pid))
             return True
         return False
 
-    def bring_out_the_dead(self):
-        dead = []
-        alive = []
+    def _bring_out_the_dead(self):
+        """Sort out dead process from pool.
+
+        :returns: Tuple of two lists, the first list with dead processes,
+            the second with active processes.
+
+        """
+        dead, alive = [], []
         for process in self._pool:
             if process and process.pid:
-                if self.is_dead(process):
-                    dead += [process]
-                else:
-                    alive += [process]
+                dest = dead if self._is_dead(process) else alive
+                dest.append(process)
         return dead, alive 
 
     def replace_dead_workers(self):
-        dead, self._pool = self.bring_out_the_dead()
+        """Replace dead workers in the pool by spawning new ones."""
+        dead, self._pool = self._bring_out_the_dead()
         self.grow(self._size if len(dead) > self._size else len(dead))
 
 
