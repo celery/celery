@@ -1,0 +1,157 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Common Task Strategies - celery.task.strategy &mdash; Celery v0.4.12 (stable) documentation</title>
+    <link rel="stylesheet" href="../static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.4.12 (stable)',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v0.4.12 (stable) documentation" href="../index.html" />
+    <link rel="up" title="Module API Reference" href="index.html" />
+    <link rel="next" title="Task Discovery - celery.discovery" href="celery.discovery.html" />
+    <link rel="prev" title="Built-in Task Classes - celery.task.builtins" href="celery.task.builtins.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="celery.discovery.html" title="Task Discovery - celery.discovery"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.task.builtins.html" title="Built-in Task Classes - celery.task.builtins"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Celery v0.4.12 (stable) documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module API Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-celery.task.strategy">
+<h1>Common Task Strategies - celery.task.strategy<a class="headerlink" href="#module-celery.task.strategy" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="celery.task.strategy.even_time_distribution">
+<tt class="descclassname">celery.task.strategy.</tt><tt class="descname">even_time_distribution</tt><big>(</big><em>task</em>, <em>size</em>, <em>time_window</em>, <em>iterable</em>, <em>**apply_kwargs</em><big>)</big><a class="headerlink" href="#celery.task.strategy.even_time_distribution" title="Permalink to this definition">¶</a></dt>
+<dd><p>With an iterator yielding task args, kwargs tuples, evenly distribute
+the processing of its tasks throughout the time window available.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><em>task</em> &#8211; The kind of task (a <a title="celery.task.base.Task" class="reference external" href="celery.task.base.html#celery.task.base.Task"><tt class="xref docutils literal"><span class="pre">celery.task.base.Task</span></tt></a>.)</li>
+<li><em>size</em> &#8211; Total number of elements the iterator gives.</li>
+<li><em>time_window</em> &#8211; Total time available, in minutes.</li>
+<li><em>iterable</em> &#8211; Iterable yielding task args, kwargs tuples.</li>
+<li><em>**apply_kwargs</em> &#8211; Additional keyword arguments to be passed on to
+<a title="celery.execute.apply_async" class="reference external" href="celery.execute.html#celery.execute.apply_async"><tt class="xref docutils literal"><span class="pre">celery.execute.apply_async()</span></tt></a>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Example</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">RefreshAllFeeds</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
+<span class="gp">...</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="n">feeds</span> <span class="o">=</span> <span class="n">Feed</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+<span class="gp">... </span>        <span class="n">total</span> <span class="o">=</span> <span class="n">feeds</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+<span class="gp">...</span>
+<span class="gp">... </span>        <span class="n">time_window</span> <span class="o">=</span> <span class="n">REFRESH_FEEDS_EVERY_INTERVAL_MINUTES</span>
+<span class="gp">...</span>
+<span class="gp">... </span>        <span class="k">def</span> <span class="nf">iter_feed_task_args</span><span class="p">(</span><span class="n">iterable</span><span class="p">):</span>
+<span class="gp">... </span>            <span class="k">for</span> <span class="n">feed</span> <span class="ow">in</span> <span class="n">iterable</span><span class="p">:</span>
+<span class="gp">... </span>                <span class="k">yield</span> <span class="p">([</span><span class="n">feed</span><span class="o">.</span><span class="n">feed_url</span><span class="p">],</span> <span class="p">{})</span> <span class="c"># args, kwargs tuple</span>
+<span class="gp">...</span>
+<span class="gp">... </span>        <span class="n">it</span> <span class="o">=</span> <span class="n">iter_feed_task_args</span><span class="p">(</span><span class="n">feeds</span><span class="o">.</span><span class="n">iterator</span><span class="p">())</span>
+<span class="gp">...</span>
+<span class="gp">... </span>        <span class="n">even_time_distribution</span><span class="p">(</span><span class="n">RefreshFeedTask</span><span class="p">,</span> <span class="n">total</span><span class="p">,</span>
+<span class="gp">... </span>                               <span class="n">time_window</span><span class="p">,</span> <span class="n">it</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="celery.task.builtins.html"
+                                  title="previous chapter">Built-in Task Classes - celery.task.builtins</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="celery.discovery.html"
+                                  title="next chapter">Task Discovery - celery.discovery</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../sources/reference/celery.task.strategy.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.discovery.html" title="Task Discovery - celery.discovery"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.task.builtins.html" title="Built-in Task Classes - celery.task.builtins"
+             >previous</a> |</li>
+        <li><a href="../index.html">Celery v0.4.12 (stable) documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module API Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.1.
+    </div>
+  </body>
+</html>
