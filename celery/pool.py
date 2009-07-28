@@ -112,7 +112,7 @@ class DynamicPool(Pool):
         self._pool.append(w)
         self.logger.debug(
             "DynamicPool: Started pool worker %s (PID: %s, Poolsize: %d)" %(
-                w.name, w.pid, len(self._pool))
+                w.name, w.pid, len(self._pool)))
 
     def grow(self, size=1):
         """Add workers to the pool.
