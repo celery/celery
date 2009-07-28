@@ -9,6 +9,7 @@ include THANKS
 recursive-include celery *.py
 recursive-include docs *
 recursive-include testproj *
+recursive-include contrib *
 prune testproj/*.pyc
 prune docs/*.pyc
 prune contrib/*.pyc
