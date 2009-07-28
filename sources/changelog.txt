@@ -2,6 +2,52 @@
 Change history
 ==============
 
+0.4.12 [2009-07-28 04:43 P.M CET]
+
+* The task pool is now supervised, so if a pool worker crashes,
+	goes away or stops responding, it is automatically replaced with
+	a new one.
+
+* Task.name is now automatically generated out of class module+name, e.g.
+	``"djangotwitter.tasks.UpdateStatusesTask"``. Very convenient. No idea why
+	we didn't do this before. Some documentation is updated to not manually
+	specify a task name.
+
+* New Tutorial: Creating a click counter using carrot and celery
+
+* The periodic task table is now locked for reading while getting
+	periodic task status.
+
+* A lot more debugging information is now available by turning on the
+	``DEBUG`` loglevel (``--loglevel=DEBUG``).
+
+* Functions/methods with a timeout argument now works correctly.
+
+* New: ``celery.strategy.even_time_distribution``: 
+	With an iterator yielding task args, kwargs tuples, evenly distribute
+	the processing of its tasks throughout the time window available.
+
+* Log message ``Unknown task ignored...`` now has loglevel ``ERROR``
+
+* Log message ``"Got task from broker"`` is now emitted for all tasks, even if
+	the task has an ETA (estimated time of arrival). Also the message now
+	includes the ETA for the task (if any).
+
+* Acknowledgement now happens in the pool callback. Can't do ack in the job
+	target, as it's not pickleable (can't share AMQP connection, etc)).
+
+* Added note about .delay hanging in README
+
+* Tests now passing in Django 1.1
+
+* Fixed discovery to make sure app is in INSTALLED_APPS
+
+* Previously overrided pool behaviour (process reap, wait until pool worker
+	available, etc.) is now handled by ``multiprocessing.Pool`` itself.
+
+* Convert statistics data to unicode for use as kwargs. Thanks Lucy!
+
+
 0.4.1 [2009-07-02 01:42 P.M CET]
 --------------------------------
 

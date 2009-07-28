@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Frequently Asked Questions &mdash; Celery v0.4.2 (stable) documentation</title>
+    <title>Frequently Asked Questions &mdash; Celery v0.4.12 (stable) documentation</title>
     <link rel="stylesheet" href="static/nature.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.4.2 (stable)',
+        VERSION:     '0.4.12 (stable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,7 +19,7 @@
     </script>
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v0.4.2 (stable) documentation" href="index.html" />
+    <link rel="top" title="Celery v0.4.12 (stable) documentation" href="index.html" />
     <link rel="next" title="Module API Reference" href="reference/index.html" />
     <link rel="prev" title="Tutorial: Creating a click counter using carrot and celery" href="tutorials/clickcounter.html" /> 
   </head>
@@ -39,7 +39,7 @@
         <li class="right" >
           <a href="tutorials/clickcounter.html" title="Tutorial: Creating a click counter using carrot and celery"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Celery v0.4.2 (stable) documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v0.4.12 (stable) documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -67,7 +67,22 @@ Transaction Model and Locking</a> in the MySQL user manual.</p>
 </div>
 <div class="section" id="celeryd-is-not-doing-anything-just-hanging">
 <h3>celeryd is not doing anything, just hanging<a class="headerlink" href="#celeryd-is-not-doing-anything-just-hanging" title="Permalink to this headline">¶</a></h3>
-<p><strong>Answer:</strong> See <a class="reference internal" href="#mysql-is-throwing-deadlock-errors-what-can-i-do">MySQL is throwing deadlock errors, what can I do?</a>.</p>
+<dl class="docutils">
+<dt><strong>Answer:</strong> See <a class="reference internal" href="#mysql-is-throwing-deadlock-errors-what-can-i-do">MySQL is throwing deadlock errors, what can I do?</a>.</dt>
+<dd>or <cite>Why is Task.delay/apply* just hanging?</cite>.</dd>
+</dl>
+</div>
+<div class="section" id="why-is-task-delay-apply-just-hanging">
+<h3>Why is Task.delay/apply* just hanging?`<a class="headerlink" href="#why-is-task-delay-apply-just-hanging" title="Permalink to this headline">¶</a></h3>
+<p><strong>Answer:</strong> <tt class="xref docutils literal"><span class="pre">amqplib</span></tt> hangs if it isn&#8217;t able to authenticate to the
+AMQP server, so make sure you are able to access the configured vhost using
+the user and password.</p>
+</div>
+<div class="section" id="why-won-t-celeryd-run-on-freebsd">
+<h3>Why won&#8217;t celeryd run on FreeBSD?<a class="headerlink" href="#why-won-t-celeryd-run-on-freebsd" title="Permalink to this headline">¶</a></h3>
+<p><strong>Answer:</strong> multiprocessing.Pool requires a working POSIX semaphore
+implementation which isn&#8217;t enabled in FreeBSD by default. You have to enable
+POSIX semaphores in the kernel and manually recompile multiprocessing.</p>
 </div>
 <div class="section" id="i-m-having-integrityerror-duplicate-key-errors-why">
 <h3>I&#8217;m having <tt class="docutils literal"><span class="pre">IntegrityError:</span> <span class="pre">Duplicate</span> <span class="pre">Key</span></tt> errors. Why?<a class="headerlink" href="#i-m-having-integrityerror-duplicate-key-errors-why" title="Permalink to this headline">¶</a></h3>
@@ -199,6 +214,8 @@ configuration:</p>
 <li><a class="reference external" href="#questions">Questions</a><ul>
 <li><a class="reference external" href="#mysql-is-throwing-deadlock-errors-what-can-i-do">MySQL is throwing deadlock errors, what can I do?</a></li>
 <li><a class="reference external" href="#celeryd-is-not-doing-anything-just-hanging">celeryd is not doing anything, just hanging</a></li>
+<li><a class="reference external" href="#why-is-task-delay-apply-just-hanging">Why is Task.delay/apply* just hanging?`</a></li>
+<li><a class="reference external" href="#why-won-t-celeryd-run-on-freebsd">Why won&#8217;t celeryd run on FreeBSD?</a></li>
 <li><a class="reference external" href="#i-m-having-integrityerror-duplicate-key-errors-why">I&#8217;m having <tt class="docutils literal"><span class="pre">IntegrityError:</span> <span class="pre">Duplicate</span> <span class="pre">Key</span></tt> errors. Why?</a></li>
 <li><a class="reference external" href="#why-won-t-my-task-run">Why won&#8217;t my Task run?</a></li>
 <li><a class="reference external" href="#why-won-t-my-periodic-task-run">Why won&#8217;t my Periodic Task run?</a></li>
@@ -254,7 +271,7 @@ configuration:</p>
         <li class="right" >
           <a href="tutorials/clickcounter.html" title="Tutorial: Creating a click counter using carrot and celery"
              >previous</a> |</li>
-        <li><a href="index.html">Celery v0.4.2 (stable) documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v0.4.12 (stable) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

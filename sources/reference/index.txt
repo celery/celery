@@ -14,6 +14,7 @@
     celery.task
     celery.registry
     celery.task.builtins
+    celery.task.strategy
     celery.discovery
     celery.monitoring
     celery.messaging

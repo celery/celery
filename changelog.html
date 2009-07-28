@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Change history &mdash; Celery v0.4.2 (stable) documentation</title>
+    <title>Change history &mdash; Celery v0.4.12 (stable) documentation</title>
     <link rel="stylesheet" href="static/nature.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.4.2 (stable)',
+        VERSION:     '0.4.12 (stable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,7 +19,7 @@
     </script>
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v0.4.2 (stable) documentation" href="index.html" />
+    <link rel="top" title="Celery v0.4.12 (stable) documentation" href="index.html" />
     <link rel="next" title="Interesting Links" href="links.html" />
     <link rel="prev" title="Celery Worker Daemon - celery.bin.celeryd" href="reference/celery.bin.celeryd.html" /> 
   </head>
@@ -39,7 +39,7 @@
         <li class="right" >
           <a href="reference/celery.bin.celeryd.html" title="Celery Worker Daemon - celery.bin.celeryd"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Celery v0.4.2 (stable) documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v0.4.12 (stable) documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -50,6 +50,76 @@
             
   <div class="section" id="change-history">
 <h1>Change history<a class="headerlink" href="#change-history" title="Permalink to this headline">¶</a></h1>
+<p>0.4.12 [2009-07-28 04:43 P.M CET]</p>
+<ul>
+<li><dl class="first docutils">
+<dt>The task pool is now supervised, so if a pool worker crashes,</dt>
+<dd><p class="first last">goes away or stops responding, it is automatically replaced with
+a new one.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Task.name is now automatically generated out of class module+name, e.g.</dt>
+<dd><p class="first last"><tt class="docutils literal"><span class="pre">&quot;djangotwitter.tasks.UpdateStatusesTask&quot;</span></tt>. Very convenient. No idea why
+we didn&#8217;t do this before. Some documentation is updated to not manually
+specify a task name.</p>
+</dd>
+</dl>
+</li>
+<li><p class="first">New Tutorial: Creating a click counter using carrot and celery</p>
+</li>
+<li><dl class="first docutils">
+<dt>The periodic task table is now locked for reading while getting</dt>
+<dd><p class="first last">periodic task status.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>A lot more debugging information is now available by turning on the</dt>
+<dd><p class="first last"><tt class="docutils literal"><span class="pre">DEBUG</span></tt> loglevel (<tt class="docutils literal"><span class="pre">--loglevel=DEBUG</span></tt>).</p>
+</dd>
+</dl>
+</li>
+<li><p class="first">Functions/methods with a timeout argument now works correctly.</p>
+</li>
+<li><dl class="first docutils">
+<dt>New: <tt class="docutils literal"><span class="pre">celery.strategy.even_time_distribution</span></tt>:</dt>
+<dd><p class="first last">With an iterator yielding task args, kwargs tuples, evenly distribute
+the processing of its tasks throughout the time window available.</p>
+</dd>
+</dl>
+</li>
+<li><p class="first">Log message <tt class="docutils literal"><span class="pre">Unknown</span> <span class="pre">task</span> <span class="pre">ignored...</span></tt> now has loglevel <tt class="docutils literal"><span class="pre">ERROR</span></tt></p>
+</li>
+<li><dl class="first docutils">
+<dt>Log message <tt class="docutils literal"><span class="pre">&quot;Got</span> <span class="pre">task</span> <span class="pre">from</span> <span class="pre">broker&quot;</span></tt> is now emitted for all tasks, even if</dt>
+<dd><p class="first last">the task has an ETA (estimated time of arrival). Also the message now
+includes the ETA for the task (if any).</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Acknowledgement now happens in the pool callback. Can&#8217;t do ack in the job</dt>
+<dd><p class="first last">target, as it&#8217;s not pickleable (can&#8217;t share AMQP connection, etc)).</p>
+</dd>
+</dl>
+</li>
+<li><p class="first">Added note about .delay hanging in README</p>
+</li>
+<li><p class="first">Tests now passing in Django 1.1</p>
+</li>
+<li><p class="first">Fixed discovery to make sure app is in INSTALLED_APPS</p>
+</li>
+<li><dl class="first docutils">
+<dt>Previously overrided pool behaviour (process reap, wait until pool worker</dt>
+<dd><p class="first last">available, etc.) is now handled by <tt class="docutils literal"><span class="pre">multiprocessing.Pool</span></tt> itself.</p>
+</dd>
+</dl>
+</li>
+<li><p class="first">Convert statistics data to unicode for use as kwargs. Thanks Lucy!</p>
+</li>
+</ul>
 <div class="section" id="p-m-cet">
 <h2>0.4.1 [2009-07-02 01:42 P.M CET]<a class="headerlink" href="#p-m-cet" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
@@ -591,7 +661,7 @@ the name change request is in <tt class="docutils literal"><span class="pre">doc
         <li class="right" >
           <a href="reference/celery.bin.celeryd.html" title="Celery Worker Daemon - celery.bin.celeryd"
              >previous</a> |</li>
-        <li><a href="index.html">Celery v0.4.2 (stable) documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v0.4.12 (stable) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

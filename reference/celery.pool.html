@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Task Pool - celery.pool &mdash; Celery v0.4.2 (stable) documentation</title>
+    <title>Task Pool - celery.pool &mdash; Celery v0.4.12 (stable) documentation</title>
     <link rel="stylesheet" href="../static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.4.2 (stable)',
+        VERSION:     '0.4.12 (stable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,7 +19,7 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.4.2 (stable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.4.12 (stable) documentation" href="../index.html" />
     <link rel="up" title="Module API Reference" href="index.html" />
     <link rel="next" title="Process Supervisor - celery.supervisor" href="celery.supervisor.html" />
     <link rel="prev" title="Worker Controller Threads - celery.worker.controllers" href="celery.worker.controllers.html" /> 
@@ -40,7 +40,7 @@
         <li class="right" >
           <a href="celery.worker.controllers.html" title="Worker Controller Threads - celery.worker.controllers"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v0.4.2 (stable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v0.4.12 (stable) documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Module API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -53,6 +53,48 @@
   <div class="section" id="module-celery.pool">
 <h1>Task Pool - celery.pool<a class="headerlink" href="#module-celery.pool" title="Permalink to this headline">¶</a></h1>
 <p>Process Pools.</p>
+<dl class="class">
+<dt id="celery.pool.DynamicPool">
+<em class="property">
+class </em><tt class="descclassname">celery.pool.</tt><tt class="descname">DynamicPool</tt><big>(</big><em>processes=None</em>, <em>initializer=None</em>, <em>initargs=()</em><big>)</big><a class="headerlink" href="#celery.pool.DynamicPool" title="Permalink to this definition">¶</a></dt>
+<dd><p>Version of <tt class="xref docutils literal"><span class="pre">multiprocessing.Pool</span></tt> that can dynamically grow
+in size.</p>
+<dl class="method">
+<dt id="celery.pool.DynamicPool.add_worker">
+<tt class="descname">add_worker</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.pool.DynamicPool.add_worker" title="Permalink to this definition">¶</a></dt>
+<dd>Add another worker to the pool.</dd></dl>
+
+<dl class="method">
+<dt id="celery.pool.DynamicPool.grow">
+<tt class="descname">grow</tt><big>(</big><em>size=1</em><big>)</big><a class="headerlink" href="#celery.pool.DynamicPool.grow" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add workers to the pool.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>size</em> &#8211; Number of workers to add (default: 1)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.pool.DynamicPool.replace_dead_workers">
+<tt class="descname">replace_dead_workers</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.pool.DynamicPool.replace_dead_workers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Replace dead workers in the pool by spawning new ones.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body">number of dead processes replaced, or <tt class="xref docutils literal"><span class="pre">None</span></tt> if all
+processes are alive and running.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="class">
 <dt id="celery.pool.TaskPool">
 <em class="property">
@@ -82,31 +124,11 @@ class </em><tt class="descclassname">celery.pool.</tt><tt class="descname">TaskP
 
 <dl class="method">
 <dt id="celery.pool.TaskPool.apply_async">
-<tt class="descname">apply_async</tt><big>(</big><em>target</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>callbacks=None</em>, <em>errbacks=None</em>, <em>meta=None</em><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.apply_async" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">apply_async</tt><big>(</big><em>target</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>callbacks=None</em>, <em>errbacks=None</em>, <em>on_ack=None</em>, <em>meta=None</em><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.apply_async" title="Permalink to this definition">¶</a></dt>
 <dd><p>Equivalent of the :func:<tt class="docutils literal"><span class="pre">apply</span></tt> built-in function.</p>
 <p>All <tt class="docutils literal"><span class="pre">callbacks</span></tt> and <tt class="docutils literal"><span class="pre">errbacks</span></tt> should complete immediately since
 otherwise the thread which handles the result will get blocked.</p>
 </dd></dl>
-
-<dl class="method">
-<dt id="celery.pool.TaskPool.full">
-<tt class="descname">full</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.full" title="Permalink to this definition">¶</a></dt>
-<dd><p>Is the pool full?</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><tt class="xref docutils literal"><span class="pre">True</span></tt> if the maximum number of concurrent processes
-has been reached.</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.pool.TaskPool.get_worker_pids">
-<tt class="descname">get_worker_pids</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.get_worker_pids" title="Permalink to this definition">¶</a></dt>
-<dd>Returns the process id&#8217;s of all the pool workers.</dd></dl>
 
 <dl class="method">
 <dt id="celery.pool.TaskPool.on_ready">
@@ -116,7 +138,7 @@ been collected.</dd></dl>
 
 <dl class="method">
 <dt id="celery.pool.TaskPool.on_return">
-<tt class="descname">on_return</tt><big>(</big><em>tid</em>, <em>callbacks</em>, <em>errbacks</em>, <em>meta</em>, <em>ret_value</em><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.on_return" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">on_return</tt><big>(</big><em>callbacks</em>, <em>errbacks</em>, <em>on_ack</em>, <em>meta</em>, <em>ret_value</em><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.on_return" title="Permalink to this definition">¶</a></dt>
 <dd>What to do when the process returns.</dd></dl>
 
 <dl class="method">
@@ -131,6 +153,56 @@ been collected.</dd></dl>
 <tt class="descname">stop</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.stop" title="Permalink to this definition">¶</a></dt>
 <dd>Terminate the pool.</dd></dl>
 
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.pool.pid_is_dead">
+<tt class="descclassname">celery.pool.</tt><tt class="descname">pid_is_dead</tt><big>(</big><em>pid</em><big>)</big><a class="headerlink" href="#celery.pool.pid_is_dead" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if a process is not running by PID.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Rtype bool:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.pool.process_is_dead">
+<tt class="descclassname">celery.pool.</tt><tt class="descname">process_is_dead</tt><big>(</big><em>process</em><big>)</big><a class="headerlink" href="#celery.pool.process_is_dead" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if process is not running anymore.</p>
+<p>First it finds out if the process is running by sending
+signal 0. Then if the process is a child process, and is running
+it finds out if it&#8217;s a zombie process and reaps it.
+If the process is running and is not a zombie it tries to send
+a ping through the process pipe.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>process</em> &#8211; A <tt class="xref docutils literal"><span class="pre">multiprocessing.Process</span></tt> instance.</td>
+</tr>
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><tt class="xref docutils literal"><span class="pre">True</span></tt> if the process is not running, <tt class="xref docutils literal"><span class="pre">False</span></tt> otherwise.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.pool.reap_process">
+<tt class="descclassname">celery.pool.</tt><tt class="descname">reap_process</tt><big>(</big><em>pid</em><big>)</big><a class="headerlink" href="#celery.pool.reap_process" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reap process if the process is a zombie.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><tt class="xref docutils literal"><span class="pre">True</span></tt> if process was reaped or is not running,
+<tt class="xref docutils literal"><span class="pre">False</span></tt> otherwise.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </div>
@@ -184,7 +256,7 @@ been collected.</dd></dl>
         <li class="right" >
           <a href="celery.worker.controllers.html" title="Worker Controller Threads - celery.worker.controllers"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v0.4.2 (stable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v0.4.12 (stable) documentation</a> &raquo;</li>
           <li><a href="index.html" >Module API Reference</a> &raquo;</li> 
       </ul>
     </div>
