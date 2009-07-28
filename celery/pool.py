@@ -101,8 +101,23 @@ class DynamicPool(Pool):
         self._size = processes
         self.logger = multiprocessing.get_logger()
 
+    def _my_cleanup(self):
+        from multiprocessing.process import _current_process
+        for p in list(_current_process._children):
+            discard = False
+            try:
+                status = p._popen.poll()
+            except OSError:
+                discard = True
+            else:
+                if status is not None:
+                    discard = True
+            if discard:
+                _current_process._children.discard(p)
+
     def add_worker(self):
         """Add another worker to the pool."""
+        self._my_cleanup()
         w = self.Process(target=worker,
                          args=(self._inqueue, self._outqueue,
                                self._initializer, self._initargs))
