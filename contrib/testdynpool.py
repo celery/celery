@@ -42,7 +42,7 @@ def workpool():
     time.sleep(2)
     pool.replace_dead_workers()
     do_work(pool)
-  
+
 
 if __name__ == "__main__":
     workpool()

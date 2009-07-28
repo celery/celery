@@ -17,7 +17,7 @@ from operator import isNumberType
 
 def pid_is_dead(pid):
     """Check if a process is not running by PID.
-   
+
     :rtype bool:
 
     """
@@ -34,7 +34,7 @@ def pid_is_dead(pid):
 
 def reap_process(pid):
     """Reap process if the process is a zombie.
-   
+
     :returns: ``True`` if process was reaped or is not running,
         ``False`` otherwise.
 
@@ -50,7 +50,7 @@ def reap_process(pid):
         raise
     return is_dead
 
-    
+
 def process_is_dead(process):
     """Check if process is not running anymore.
 
@@ -71,7 +71,7 @@ def process_is_dead(process):
 
     if reap_process(process.pid):
         return True
-    
+
     # Then try to ping the process using its pipe.
     try:
         proc_is_alive = process.is_alive()
@@ -131,9 +131,9 @@ class DynamicPool(Pool):
 
     def grow(self, size=1):
         """Add workers to the pool.
-       
+
         :keyword size: Number of workers to add (default: 1)
-        
+
         """
         [self.add_worker() for i in range(size)]
 
@@ -161,11 +161,11 @@ class DynamicPool(Pool):
             if process and process.pid and isNumberType(process.pid):
                 dest = dead if self._is_dead(process) else alive
                 dest.append(process)
-        return dead, alive 
+        return dead, alive
 
     def replace_dead_workers(self):
         """Replace dead workers in the pool by spawning new ones.
-        
+
         :returns: number of dead processes replaced, or ``None`` if all
             processes are alive and running.
 
@@ -246,7 +246,6 @@ class TaskPool(object):
 
         return self._pool.apply_async(target, args, kwargs,
                                         callback=on_return)
-
 
     def on_return(self, callbacks, errbacks, on_ack, meta, ret_value):
         """What to do when the process returns."""

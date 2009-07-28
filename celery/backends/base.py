@@ -181,7 +181,7 @@ class BaseBackend(object):
             elif status == "FAILURE":
                 raise self.get_result(task_id)
             # avoid hammering the CPU checking status.
-            time.sleep(sleep_inbetween) 
+            time.sleep(sleep_inbetween)
             time_elapsed += sleep_inbetween
             if timeout and time_elapsed >= timeout:
                 raise TimeoutError("The operation timed out.")
