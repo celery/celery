@@ -64,12 +64,13 @@ class OFASupervisor(object):
 
     def __init__(self, target, args=None, kwargs=None,
             max_restart_freq=MAX_RESTART_FREQ,
+            join_timeout=JOIN_TIMEOUT,
             max_restart_freq_time=MAX_RESTART_FREQ_TIME,
             check_interval=CHECK_INTERVAL):
         self.target = target
+        self.join_timeout = join_timeout
         self.args = args or []
         self.kwargs = kwargs or {}
-        self.join_timeout = join_timeout
         self.check_interval = check_interval
         self.max_restart_freq = max_restart_freq
         self.max_restart_freq_time = max_restart_freq_time
