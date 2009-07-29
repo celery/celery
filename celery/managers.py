@@ -87,6 +87,14 @@ class PeriodicTaskManager(models.Manager):
             task_meta, created = self.get_or_create(name=task_name)
 
     def is_time(self, last_run_at, run_every):
+        """Check if if it is time to run the periodic task.
+
+        :param last_run_at: Last time the periodic task was run.
+        :param run_every: How often to run the periodic task.
+
+        :rtype bool:
+
+        """
         run_every_drifted = run_every + SERVER_DRIFT
         run_at = last_run_at + run_every_drifted
         if datetime.now() > run_at:
