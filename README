@@ -78,6 +78,9 @@ Features
       executed by type, and the time it took to process them. Very useful
       for monitoring and profiling.
 
+    * Pool workers are supervised, so if for some reason a worker crashes
+        it is automatically replaced by a new worker.
+
 API Reference Documentation
 ===========================
 
