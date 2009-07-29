@@ -60,6 +60,7 @@ try:
 except ImportError:
     pass
 else:
-    INSTALLED_APPS += ("test_extensions", )
+    pass
+    #INSTALLED_APPS += ("test_extensions", )
 
 SEND_CELERY_TASK_ERROR_EMAILS = False
