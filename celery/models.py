@@ -42,7 +42,7 @@ class PeriodicTaskMeta(models.Model):
     """Information about a Periodic Task."""
     name = models.CharField(_(u"name"), max_length=255, unique=True)
     last_run_at = models.DateTimeField(_(u"last time run"),
-                                       blank=True, 
+                                       blank=True,
                                        default=datetime.fromtimestamp(0))
     total_run_count = models.PositiveIntegerField(_(u"total run count"),
                                                   default=0)
