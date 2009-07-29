@@ -221,6 +221,7 @@ class KeyValueStoreBackend(BaseBackend):
             result = self.prepare_exception(result)
         meta = {"status": status, "result": result}
         self.set(self.get_cache_key_for_task(task_id), pickle.dumps(meta))
+        return result
 
     def get_status(self, task_id):
         """Get the status of a task."""

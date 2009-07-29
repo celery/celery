@@ -24,7 +24,8 @@ class Backend(BaseBackend):
             result = self.prepare_result(result)
         elif status == "FAILURE":
             result = self.prepare_exception(result)
-        return TaskMeta.objects.store_result(task_id, result, status)
+        TaskMeta.objects.store_result(task_id, result, status)
+        return result
 
     def is_done(self, task_id):
         """Returns ``True`` if task with ``task_id`` has been executed."""
