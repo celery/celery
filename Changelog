@@ -2,7 +2,17 @@
 Change history
 ==============
 
-0.4.12 [2009-07-28 04:43 P.M CET]
+0.6.0 [2009-07-29 01:59 P.M CET]
+--------------------------------
+
+**IMPORTANT CHANGES**
+
+* Fixed a bug where tasks raising unpickleable exceptions crashed pool
+	workers. So if you've had pool workers mysteriously dissapearing, or
+	problems with celeryd stopping working, this has been fixed in this
+	version.
+
+* Fixed a race condition with periodic tasks.
 
 * The task pool is now supervised, so if a pool worker crashes,
 	goes away or stops responding, it is automatically replaced with
@@ -13,7 +23,23 @@ Change history
 	we didn't do this before. Some documentation is updated to not manually
 	specify a task name.
 
+**NEWS**
+
+* Tested with Django 1.1
+
 * New Tutorial: Creating a click counter using carrot and celery
+
+* Database entries for periodic tasks are now created at ``celeryd``
+	startup instead of for each check (which has been a forgotten TODO/XXX
+	in the code for a long time)
+
+* New settings variable: ``CELERY_TASK_RESULT_EXPIRES``
+	Time (in seconds, or a :class:`datetime.timedelta` object) for when after
+	stored task results are deleted. For the moment this only works for the
+	database backend.
+
+* ``celeryd`` now emits a debug log message for which periodic tasks
+	has been launched.
 
 * The periodic task table is now locked for reading while getting
 	periodic task status.
@@ -46,7 +72,6 @@ Change history
 	available, etc.) is now handled by ``multiprocessing.Pool`` itself.
 
 * Convert statistics data to unicode for use as kwargs. Thanks Lucy!
-
 
 0.4.1 [2009-07-02 01:42 P.M CET]
 --------------------------------
