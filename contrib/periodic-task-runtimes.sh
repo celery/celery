@@ -36,7 +36,7 @@ get_processed_date_for_task () {
     host="$1"
     ssh "$USER@$host" "
         grep '$query' $CELERYD_LOGFILE | \
-            grep 'processed:' | \
+            grep 'Got task from broker:' | \
             perl -nle'
                 /^\[(.+?): INFO/; print \$1' | \
             sed 's/\s*$//'
