@@ -38,7 +38,8 @@ get_processed_date_for_task () {
         grep '$query' $CELERYD_LOGFILE | \
             grep 'Got task from broker:' | \
             perl -nle'
-                /^\[(.+?): INFO/; print \$1' | \
+                /^\[(.+?): INFO.+?Got task from broker:(.+?)\s*/;
+                print \"[\$1] $host \$2\"' | \
             sed 's/\s*$//'
     "
 }
