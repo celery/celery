@@ -2,6 +2,7 @@
 from django.db import models
 from django.db import connection
 from celery.registry import tasks
+from celery.conf import TASK_RESULT_EXPIRES
 from datetime import datetime, timedelta
 from django.conf import settings
 import random
@@ -25,8 +26,7 @@ class TaskManager(models.Manager):
 
     def get_all_expired(self):
         """Get all expired task results."""
-        # TODO Make the timedelta configurable
-        return self.filter(date_done__lt=datetime.now() - timedelta(days=5))
+        return self.filter(date_done__lt=datetime.now() - TASK_RESULT_EXPIRES)
 
     def delete_expired(self):
         """Delete all expired task results."""
