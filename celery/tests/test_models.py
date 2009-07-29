@@ -19,7 +19,8 @@ class TestModels(unittest.TestCase):
         return taskmeta
 
     def createPeriodicTaskMeta(self, name):
-        ptaskmeta, created = PeriodicTaskMeta.objects.get_or_create(name=name)
+        ptaskmeta, created = PeriodicTaskMeta.objects.get_or_create(name=name,
+                defaults={"last_run_at": datetime.now()})
         return ptaskmeta
 
     def test_taskmeta(self):
@@ -56,10 +57,9 @@ class TestModels(unittest.TestCase):
         # check that repr works.
         self.assertTrue(unicode(p).startswith("<PeriodicTask:"))
         self.assertFalse(p in PeriodicTaskMeta.objects.get_waiting_tasks())
-        # Have to avoid save() because it applies the auto_now=True.
-        PeriodicTaskMeta.objects.filter(name=p.name).update(
-                last_run_at=datetime.now() - (TestPeriodicTask.run_every +
-                timedelta(seconds=10)))
+        p.last_run_at = datetime.now() - (TestPeriodicTask.run_every +
+                timedelta(seconds=10))
+        p.save()
         self.assertTrue(p in PeriodicTaskMeta.objects.get_waiting_tasks())
         self.assertTrue(isinstance(p.task, TestPeriodicTask))
 

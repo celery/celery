@@ -8,6 +8,7 @@ from celery.registry import tasks
 from celery.managers import TaskManager, PeriodicTaskManager
 from celery.fields import PickledObjectField
 from django.utils.translation import ugettext_lazy as _
+from datetime import datetime
 
 TASK_STATUS_PENDING = "PENDING"
 TASK_STATUS_RETRY = "RETRY"
@@ -41,7 +42,8 @@ class PeriodicTaskMeta(models.Model):
     """Information about a Periodic Task."""
     name = models.CharField(_(u"name"), max_length=255, unique=True)
     last_run_at = models.DateTimeField(_(u"last time run"),
-                                       auto_now=True, blank=True)
+                                       blank=True, 
+                                       default=datetime.fromtimestamp(0))
     total_run_count = models.PositiveIntegerField(_(u"total run count"),
                                                   default=0)
 

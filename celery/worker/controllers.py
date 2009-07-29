@@ -101,6 +101,9 @@ class PeriodicWorkController(InfinityThread):
         self.hold_queue = hold_queue
         self.bucket_queue = bucket_queue
 
+        # Do backend-specific periodic task initialization.
+        default_periodic_status_backend.init_periodic_tasks()
+
     def on_iteration(self):
         logger = get_logger()
         logger.debug("PeriodicWorkController: Running periodic tasks...")

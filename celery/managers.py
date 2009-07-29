@@ -77,22 +77,45 @@ class PeriodicTaskManager(models.Manager):
         row = cursor.fetchone()
         return row
 
+    def init_entries(self):
+        """Add entries for all registered periodic tasks.
+
+        Should be run at worker start.
+        """
+        periodic_tasks = tasks.get_all_periodic()
+        for task_name in periodic_tasks.keys():
+            task_meta, created = self.get_or_create(name=task_name)
+
+    def is_time(self, last_run_at, run_every):
+        run_every_drifted = run_every + SERVER_DRIFT
+        run_at = last_run_at + run_every_drifted
+        if datetime.now() > run_at:
+            return True
+        return False
+
     def get_waiting_tasks(self):
         """Get all waiting periodic tasks.
 
         :returns: list of :class:`celery.models.PeriodicTaskMeta` objects.
         """
         periodic_tasks = tasks.get_all_periodic()
+
+        # Find all periodic tasks to be run.
         waiting = []
-        # XXX This will become a lot of queries. Maybe just only create
-        # the rows at init, and then select all later.
-        for task_name, task in periodic_tasks.items():
-            self.lock()
-            task_meta, created = self.get_or_create(name=task_name)
-            # task_run.every must be a timedelta object.
-            run_every_drifted = task.run_every + SERVER_DRIFT
-            run_at = task_meta.last_run_at + run_every_drifted
-            if datetime.now() > run_at:
-                waiting.append(task_meta)
-            self.unlock()
+        for task_meta in self.all():
+            if task_meta.name in periodic_tasks:
+                task = periodic_tasks[task_meta.name]
+                run_every = task.run_every
+                if self.is_time(task_meta.last_run_at, run_every):
+                    # Get the object again to be sure noone else
+                    # has already taken care of it.
+                    self.lock()
+                    try:
+                        secure = self.get(pk=task_meta.pk)
+                        if self.is_time(secure.last_run_at, run_every):
+                            secure.last_run_at = datetime.now()
+                            secure.save()
+                            waiting.append(secure)
+                    finally:
+                        self.unlock()
         return waiting

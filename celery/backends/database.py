@@ -12,6 +12,10 @@ class Backend(BaseBackend):
         super(Backend, self).__init__(*args, **kwargs)
         self._cache = {}
 
+    def init_periodic_tasks(self):
+        """Create entries for all periodic tasks in the database."""
+        PeriodicTaskMeta.objects.init_entries()
+
     def run_periodic_tasks(self):
         """Run all waiting periodic tasks.
 
