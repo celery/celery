@@ -111,7 +111,12 @@ class PeriodicWorkController(InfinityThread):
         time.sleep(1)
 
     def run_periodic_tasks(self):
-        default_periodic_status_backend.run_periodic_tasks()
+        logger = get_logger()
+        applied = default_periodic_status_backend.run_periodic_tasks()
+        for task, task_id in applied:
+            logger.debug(
+                "PeriodicWorkController: Periodic task %s applied (%s)" % (
+                    task.name, task_id))
 
     def process_hold_queue(self):
         """Finds paused tasks that are ready for execution and move

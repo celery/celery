@@ -13,10 +13,18 @@ class Backend(BaseBackend):
         self._cache = {}
 
     def run_periodic_tasks(self):
-        """Run all waiting periodic tasks."""
+        """Run all waiting periodic tasks.
+
+        :returns: a list of ``(task, task_id)`` tuples containing
+            the task class and id for the resulting tasks applied.
+
+        """
         waiting_tasks = PeriodicTaskMeta.objects.get_waiting_tasks()
+        task_id_tuples = []
         for waiting_task in waiting_tasks:
-            waiting_task.delay()
+            task_id = waiting_task.delay()
+            task_id_tuples.append((waiting_task, task_id))
+        return task_id_tuples
 
     def store_result(self, task_id, result, status):
         """Mark task as done (executed)."""
