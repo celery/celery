@@ -87,7 +87,7 @@ def jail(task_id, task_name, func, args, kwargs):
     except Exception, exc:
         stored_exc = default_backend.mark_as_failure(task_id, exc)
         type_, _, tb = sys.exc_info()
-        retval = ExceptionInfo((type_, stored_exc, tb)
+        retval = ExceptionInfo((type_, stored_exc, tb))
     else:
         if not ignore_result:
             default_backend.mark_as_done(task_id, result)
