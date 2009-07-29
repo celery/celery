@@ -5,7 +5,7 @@ from Queue import Queue, Empty
 from datetime import datetime, timedelta
 
 from celery.worker.controllers import Mediator, PeriodicWorkController
-from celery.worker.controllers import InfinityThread
+from celery.worker.controllers import BackgroundThread
 
 
 class MockTask(object):
@@ -16,26 +16,27 @@ class MockTask(object):
         self.value = value
 
 
-class MyInfinityThread(InfinityThread):
+class MyBackgroundThread(BackgroundThread):
 
     def on_iteration(self):
         import time
         time.sleep(1)
 
 
-class TestInfinityThread(unittest.TestCase):
+class TestBackgroundThread(unittest.TestCase):
 
     def test_on_iteration(self):
-        self.assertRaises(NotImplementedError, InfinityThread().on_iteration)
+        self.assertRaises(NotImplementedError,
+                BackgroundThread().on_iteration)
 
     def test_run(self):
-        t = MyInfinityThread()
+        t = MyBackgroundThread()
         t._shutdown.set()
         t.run()
         self.assertTrue(t._stopped.isSet())
 
     def test_start_stop(self):
-        t = MyInfinityThread()
+        t = MyBackgroundThread()
         t.start()
         self.assertFalse(t._shutdown.isSet())
         self.assertFalse(t._stopped.isSet())
