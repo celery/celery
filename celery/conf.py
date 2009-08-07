@@ -1,5 +1,6 @@
 """celery.conf"""
 from django.conf import settings
+from datetime import timedelta
 import logging
 
 DEFAULT_AMQP_EXCHANGE = "celery"
@@ -15,6 +16,8 @@ DEFAULT_DAEMON_LOG_FILE = "celeryd.log"
 DEFAULT_AMQP_CONNECTION_TIMEOUT = 4
 DEFAULT_STATISTICS = False
 DEFAULT_STATISTICS_COLLECT_INTERVAL = 60 * 5
+DEFAULT_ALWAYS_EAGER = False
+DEFAULT_TASK_RESULT_EXPIRES = timedelta(days=5)
 
 """
 .. data:: LOG_LEVELS
@@ -182,3 +185,29 @@ SEND_CELERY_TASK_ERROR_EMAILS = getattr(settings,
 STATISTICS_COLLECT_INTERVAL = getattr(settings,
                                 "CELERY_STATISTICS_COLLECT_INTERVAL",
                                 DEFAULT_STATISTICS_COLLECT_INTERVAL)
+
+"""
+.. data:: ALWAYS_EAGER
+
+    If this is ``True``, all tasks will be executed locally by blocking
+    until it is finished. ``apply_async`` and ``delay_task`` will return
+    a :class:`celery.result.EagerResult` which emulates the behaviour of
+    an :class:`celery.result.AsyncResult`.
+
+"""
+ALWAYS_EAGER = getattr(settings, "CELERY_ALWAYS_EAGER",
+                       DEFAULT_ALWAYS_EAGER)
+
+"""
+.. data: TASK_RESULT_EXPIRES
+
+    Time (in seconds, or a :class:`datetime.timedelta` object) for when after
+    stored task results are deleted. For the moment this only works for the
+    database backend.
+"""
+TASK_RESULT_EXPIRES = getattr(settings, "CELERY_TASK_RESULT_EXPIRES",
+                              DEFAULT_TASK_RESULT_EXPIRES)
+
+# Make sure TASK_RESULT_EXPIRES is a timedelta.
+if isinstance(TASK_RESULT_EXPIRES, int):
+    TASK_RESULT_EXPIRES = timedelta(seconds=TASK_RESULT_EXPIRES)

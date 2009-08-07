@@ -7,12 +7,15 @@ from celery import task
 from celery import registry
 from celery.log import setup_logger
 from celery import messaging
+from celery.result import EagerResult
 from celery.backends import default_backend
+from datetime import datetime, timedelta
 
 
 def return_True(self, **kwargs):
     # Task run functions can't be closures/lambdas, as they're pickled.
     return True
+registry.tasks.register(return_True, "cu.return-true")
 
 
 def raise_exception(self, **kwargs):
@@ -23,9 +26,17 @@ class IncrementCounterTask(task.Task):
     name = "c.unittest.increment_counter_task"
     count = 0
 
-    def run(self, increment_by, **kwargs):
+    def run(self, increment_by=1, **kwargs):
         increment_by = increment_by or 1
         self.__class__.count += increment_by
+        return self.__class__.count
+
+
+class RaisingTask(task.Task):
+    name = "c.unittest.raising_task"
+
+    def run(self, **kwargs):
+        raise KeyError("foo")
 
 
 class TestCeleryTasks(unittest.TestCase):
@@ -38,13 +49,46 @@ class TestCeleryTasks(unittest.TestCase):
         cls.run = return_True
         return cls
 
+    def test_ping(self):
+        from celery import conf
+        conf.ALWAYS_EAGER = True
+        self.assertEquals(task.ping(), 'pong')
+        conf.ALWAYS_EAGER = False
+
+    def test_execute_remote(self):
+        from celery import conf
+        conf.ALWAYS_EAGER = True
+        self.assertEquals(task.execute_remote(return_True, ["foo"]).get(),
+                          True)
+        conf.ALWAYS_EAGER = False
+
+    def test_dmap(self):
+        from celery import conf
+        import operator
+        conf.ALWAYS_EAGER = True
+        res = task.dmap(operator.add, zip(xrange(10), xrange(10)))
+        self.assertTrue(res, sum([operator.add(x, x)
+                                    for x in xrange(10)]))
+        conf.ALWAYS_EAGER = False
+
+    def test_dmap_async(self):
+        from celery import conf
+        import operator
+        conf.ALWAYS_EAGER = True
+        res = task.dmap_async(operator.add, zip(xrange(10), xrange(10)))
+        self.assertTrue(res.get(), sum([operator.add(x, x)
+                                            for x in xrange(10)]))
+        conf.ALWAYS_EAGER = False
+
     def assertNextTaskDataEquals(self, consumer, presult, task_name,
-            **kwargs):
+            test_eta=False, **kwargs):
         next_task = consumer.fetch()
-        task_data = consumer.decoder(next_task.body)
+        task_data = next_task.decode()
         self.assertEquals(task_data["id"], presult.task_id)
         self.assertEquals(task_data["task"], task_name)
         task_kwargs = task_data.get("kwargs", {})
+        if test_eta:
+            self.assertTrue(isinstance(task_data.get("eta"), datetime))
         for arg_name, arg_value in kwargs.items():
             self.assertEquals(task_kwargs.get(arg_name), arg_value)
 
@@ -64,9 +108,9 @@ class TestCeleryTasks(unittest.TestCase):
         self.assertTrue(T1()(),
                 "Task class runs run() when called")
 
-        # task without name raises NotImplementedError
+        # task name generated out of class module + name.
         T2 = self.createTaskCls("T2")
-        self.assertRaises(NotImplementedError, T2)
+        self.assertEquals(T2().name, "celery.tests.test_task.T2")
 
         registry.tasks.register(T1)
         t1 = T1()
@@ -83,6 +127,18 @@ class TestCeleryTasks(unittest.TestCase):
         presult2 = task.delay_task(t1.name, name="George Constanza")
         self.assertNextTaskDataEquals(consumer, presult2, t1.name,
                 name="George Constanza")
+
+        # With eta.
+        presult2 = task.apply_async(t1, kwargs=dict(name="George Constanza"),
+                                    eta=datetime.now() + timedelta(days=1))
+        self.assertNextTaskDataEquals(consumer, presult2, t1.name,
+                name="George Constanza", test_eta=True)
+
+        # With countdown.
+        presult2 = task.apply_async(t1, kwargs=dict(name="George Constanza"),
+                                    countdown=10)
+        self.assertNextTaskDataEquals(consumer, presult2, t1.name,
+                name="George Constanza", test_eta=True)
 
         self.assertRaises(registry.tasks.NotRegistered, task.delay_task,
                 "some.task.that.should.never.exist.X.X.X.X.X")
@@ -103,10 +159,28 @@ class TestCeleryTasks(unittest.TestCase):
         publisher = t1.get_publisher()
         self.assertTrue(isinstance(publisher, messaging.TaskPublisher))
 
+    def test_get_logger(self):
+        T1 = self.createTaskCls("T1", "c.unittest.t.t1")
+        t1 = T1()
+        logfh = StringIO()
+        logger = t1.get_logger(logfile=logfh, loglevel=0)
+        self.assertTrue(logger)
+
 
 class TestTaskSet(unittest.TestCase):
 
+    def test_function_taskset(self):
+        from celery import conf
+        conf.ALWAYS_EAGER = True
+        ts = task.TaskSet("cu.return-true", [
+            [[1], {}], [[2], {}], [[3], {}], [[4], {}], [[5], {}]])
+        res = ts.run()
+        self.assertEquals(res.join(), [True, True, True, True, True])
+
+        conf.ALWAYS_EAGER = False
+
     def test_counter_taskset(self):
+        IncrementCounterTask.count = 0
         ts = task.TaskSet(IncrementCounterTask, [
             [[], {}],
             [[], {"increment_by": 2}],
@@ -134,3 +208,38 @@ class TestTaskSet(unittest.TestCase):
             IncrementCounterTask().run(
                     increment_by=m.get("kwargs", {}).get("increment_by"))
         self.assertEquals(IncrementCounterTask.count, sum(xrange(1, 10)))
+
+
+class TestTaskApply(unittest.TestCase):
+
+    def test_apply(self):
+        IncrementCounterTask.count = 0
+
+        e = IncrementCounterTask.apply()
+        self.assertTrue(isinstance(e, EagerResult))
+        self.assertEquals(e.get(), 1)
+
+        e = IncrementCounterTask.apply(args=[1])
+        self.assertEquals(e.get(), 2)
+
+        e = IncrementCounterTask.apply(kwargs={"increment_by": 4})
+        self.assertEquals(e.get(), 6)
+
+        self.assertTrue(e.is_done())
+        self.assertTrue(e.is_ready())
+        self.assertTrue(repr(e).startswith("<EagerResult:"))
+
+        f = RaisingTask.apply()
+        self.assertTrue(f.is_ready())
+        self.assertFalse(f.is_done())
+        self.assertRaises(KeyError, f.get)
+
+
+class TestPeriodicTask(unittest.TestCase):
+
+    def test_interface(self):
+
+        class MyPeriodicTask(task.PeriodicTask):
+            run_every = None
+
+        self.assertRaises(NotImplementedError, MyPeriodicTask)

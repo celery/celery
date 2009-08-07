@@ -1,10 +1,13 @@
-import unittest
-
+from __future__ import with_statement
+import os
 import sys
 import logging
+import unittest
 import multiprocessing
 from StringIO import StringIO
 from celery.log import setup_logger, emergency_error
+from celery.tests.utils import OverrideStdout
+from tempfile import mktemp
 
 
 class TestLog(unittest.TestCase):
@@ -48,3 +51,35 @@ class TestLog(unittest.TestCase):
         emergency_error(sio, "Testing emergency error facility")
         self.assertEquals(sio.getvalue().rpartition(":")[2].strip(),
                              "Testing emergency error facility")
+
+    def test_setup_logger_no_handlers_stream(self):
+        from multiprocessing import get_logger
+        l = get_logger()
+        l.handlers = []
+        with OverrideStdout() as outs:
+            stdout, stderr = outs
+            l = setup_logger(logfile=stderr, loglevel=logging.INFO)
+            l.info("The quick brown fox...")
+            self.assertTrue("The quick brown fox..." in stderr.getvalue())
+
+    def test_setup_logger_no_handlers_file(self):
+        from multiprocessing import get_logger
+        l = get_logger()
+        l.handlers = []
+        tempfile = mktemp(suffix="unittest", prefix="celery")
+        l = setup_logger(logfile=tempfile, loglevel=0)
+        self.assertTrue(isinstance(l.handlers[0], logging.FileHandler))
+
+    def test_emergency_error_stderr(self):
+        with OverrideStdout() as outs:
+            stdout, stderr = outs
+            emergency_error(None, "The lazy dog crawls under the fast fox")
+            self.assertTrue("The lazy dog crawls under the fast fox" in \
+                                stderr.getvalue())
+
+    def test_emergency_error_file(self):
+        tempfile = mktemp(suffix="unittest", prefix="celery")
+        emergency_error(tempfile, "Vandelay Industries")
+        with open(tempfile, "r") as tempfilefh:
+            self.assertTrue("Vandelay Industries" in "".join(tempfilefh))
+        os.unlink(tempfile)

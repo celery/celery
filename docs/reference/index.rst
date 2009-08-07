@@ -7,14 +7,22 @@
 
 .. toctree::
     :maxdepth: 2
-    
-    celery.task
+
+    celery.task.base
+    celery.execute 
     celery.result
+    celery.task
     celery.registry
+    celery.task.builtins
+    celery.task.strategy
     celery.discovery
     celery.monitoring
+    celery.messaging
     celery.worker
+    celery.worker.job
+    celery.worker.controllers
     celery.pool
+    celery.supervisor
     celery.backends
     celery.backends.base
     celery.backends.database
@@ -23,8 +31,9 @@
     celery.conf
     celery.datastructures
     celery.log
+    celery.utils
+    celery.views
     celery.managers
     celery.models
-    celery.messaging
-    celery.timer
+    celery.fields
     celery.bin.celeryd

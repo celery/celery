@@ -1,142 +1,13 @@
-"""
-
-Working with tasks and task sets.
-
-"""
 from carrot.connection import DjangoAMQPConnection
 from celery.conf import AMQP_CONNECTION_TIMEOUT
-from celery.conf import STATISTICS_COLLECT_INTERVAL
 from celery.messaging import TaskPublisher, TaskConsumer
 from celery.log import setup_logger
-from celery.registry import tasks
+from celery.result import TaskSetResult
+from celery.execute import apply_async, delay_task, apply
+from celery.utils import gen_unique_id, get_full_cls_name
 from datetime import timedelta
-from celery.backends import default_backend
-from celery.result import AsyncResult, TaskSetResult
-from django.utils.functional import curry
-import uuid
-import pickle
-
-
-def apply_async(task, args=None, kwargs=None, routing_key=None,
-        immediate=None, mandatory=None, connection=None,
-        connect_timeout=AMQP_CONNECTION_TIMEOUT, priority=None, 
-        exchange=None, **opts):
-    """Run a task asynchronously by the celery daemon(s).
-
-    :param task: The task to run (a callable object, or a :class:`Task`
-        instance
-
-    :param args: The positional arguments to pass on to the task (a ``list``).
-
-    :param kwargs: The keyword arguments to pass on to the task (a ``dict``)
-
-
-    :keyword routing_key: The routing key used to route the task to a worker
-        server.
-
-    :keyword immediate: Request immediate delivery. Will raise an exception
-        if the task cannot be routed to a worker immediately.
-
-    :keyword mandatory: Mandatory routing. Raises an exception if there's
-        no running workers able to take on this task.
-
-    :keyword connection: Re-use existing AMQP connection.
-        The ``connect_timeout`` argument is not respected if this is set.
-
-    :keyword connect_timeout: The timeout in seconds, before we give up
-        on establishing a connection to the AMQP server.
-
-    :keyword priority: The task priority, a number between ``0`` and ``9``.
-
-    """
-    args = args or []
-    kwargs = kwargs or {}
-    exchange = exchange or getattr(task, "exchange", None)
-    routing_key = routing_key or getattr(task, "routing_key", None)
-    immediate = immediate or getattr(task, "immediate", None)
-    mandatory = mandatory or getattr(task, "mandatory", None)
-    priority = priority or getattr(task, "priority", None)
-    taskset_id = opts.get("taskset_id")
-    publisher = opts.get("publisher")
-
-    need_to_close_connection = False
-    if not publisher:
-        if not connection:
-            connection = DjangoAMQPConnection(connect_timeout=connect_timeout)
-            need_to_close_connection = True
-        publisher = TaskPublisher(connection=connection, exchange=exchange)
-
-    delay_task = publisher.delay_task
-    if taskset_id:
-        delay_task = curry(publisher.delay_task_in_set, taskset_id)
-        
-    task_id = delay_task(task.name, args, kwargs,
-                         routing_key=routing_key, mandatory=mandatory,
-                         immediate=immediate, priority=priority)
-
-    if need_to_close_connection:
-        publisher.close()
-        connection.close()
-
-    return AsyncResult(task_id)
-
-
-def delay_task(task_name, *args, **kwargs):
-    """Delay a task for execution by the ``celery`` daemon.
-
-    :param task_name: the name of a task registered in the task registry.
-
-    :param \*args: positional arguments to pass on to the task.
-
-    :param \*\*kwargs: keyword arguments to pass on to the task.
-
-    :raises celery.registry.NotRegistered: exception if no such task
-        has been registered in the task registry.
-
-    :rtype: :class:`celery.result.AsyncResult`.
-
-    Example
-
-        >>> r = delay_task("update_record", name="George Constanza", age=32)
-        >>> r.ready()
-        True
-        >>> r.result
-        "Record was updated"
-
-    """
-    if task_name not in tasks:
-        raise tasks.NotRegistered(
-                "Task with name %s not registered in the task registry." % (
-                    task_name))
-    task = tasks[task_name]
-    return apply_async(task, args, kwargs)
-
-
-def discard_all(connect_timeout=AMQP_CONNECTION_TIMEOUT):
-    """Discard all waiting tasks.
-
-    This will ignore all tasks waiting for execution, and they will
-    be deleted from the messaging server.
-
-    :returns: the number of tasks discarded.
-
-    :rtype: int
-
-    """
-    amqp_connection = DjangoAMQPConnection(connect_timeout=connect_timeout)
-    consumer = TaskConsumer(connection=amqp_connection)
-    discarded_count = consumer.discard_all()
-    amqp_connection.close()
-    return discarded_count
-
-
-def is_done(task_id):
-    """Returns ``True`` if task with ``task_id`` has been executed.
-
-    :rtype: bool
-
-    """
-    return default_backend.is_done(task_id)
+from celery.registry import tasks
+from celery.serialization import pickle
 
 
 class Task(object):
@@ -171,7 +42,7 @@ class Task(object):
         instead.
 
     .. attribute:: immediate:
-            
+
         Request immediate delivery. If the message cannot be routed to a
         task worker immediately, an exception will be raised. This is
         instead of the default behaviour, where the broker will accept and
@@ -179,7 +50,7 @@ class Task(object):
         be consumed.
 
     .. attribute:: priority:
-    
+
         The message priority. A number from ``0`` to ``9``.
 
     .. attribute:: ignore_result
@@ -242,8 +113,8 @@ class Task(object):
     disable_error_emails = False
 
     def __init__(self):
-        if not self.name:
-            raise NotImplementedError("Tasks must define a name attribute.")
+        if not self.__class__.name:
+            self.__class__.name = get_full_cls_name(self.__class__)
 
     def __call__(self, *args, **kwargs):
         return self.run(*args, **kwargs)
@@ -313,7 +184,7 @@ class Task(object):
 
         :rtype: :class:`celery.result.AsyncResult`
 
-        See :func:`delay_task`.
+        See :func:`celery.execute.delay_task`.
 
         """
         return apply_async(cls, args, kwargs)
@@ -328,10 +199,64 @@ class Task(object):
 
         :rtype: :class:`celery.result.AsyncResult`
 
-        See :func:`apply_async`.
+        See :func:`celery.execute.apply_async`.
 
         """
         return apply_async(cls, args, kwargs, **options)
+
+    @classmethod
+    def apply(cls, args=None, kwargs=None, **options):
+        """Execute this task at once, by blocking until the task
+        has finished executing.
+
+        :param args: positional arguments passed on to the task.
+
+        :param kwargs: keyword arguments passed on to the task.
+
+        :rtype: :class:`celery.result.EagerResult`
+
+        See :func:`celery.execute.apply`.
+
+        """
+        return apply(cls, args, kwargs, **options)
+
+
+class ExecuteRemoteTask(Task):
+    """Execute an arbitrary function or object.
+
+    *Note* You probably want :func:`execute_remote` instead, which this
+    is an internal component of.
+
+    The object must be pickleable, so you can't use lambdas or functions
+    defined in the REPL (that is the python shell, or ``ipython``).
+
+    """
+    name = "celery.execute_remote"
+
+    def run(self, ser_callable, fargs, fkwargs, **kwargs):
+        """
+        :param ser_callable: A pickled function or callable object.
+
+        :param fargs: Positional arguments to apply to the function.
+
+        :param fkwargs: Keyword arguments to apply to the function.
+
+        """
+        callable_ = pickle.loads(ser_callable)
+        return callable_(*fargs, **fkwargs)
+tasks.register(ExecuteRemoteTask)
+
+
+class AsynchronousMapTask(Task):
+    """Task used internally by :func:`dmap_async` and
+    :meth:`TaskSet.map_async`.  """
+    name = "celery.map_async"
+
+    def run(self, serfunc, args, **kwargs):
+        """The method run by ``celeryd``."""
+        timeout = kwargs.get("timeout")
+        return TaskSet.map(pickle.loads(serfunc), args, timeout=timeout)
+tasks.register(AsynchronousMapTask)
 
 
 class TaskSet(object):
@@ -414,7 +339,14 @@ class TaskSet(object):
             [True, True]
 
         """
-        taskset_id = str(uuid.uuid4())
+        taskset_id = gen_unique_id()
+
+        from celery.conf import ALWAYS_EAGER
+        if ALWAYS_EAGER:
+            subtasks = [apply(self.task, args, kwargs)
+                            for args, kwargs in self.arguments]
+            return TaskSetResult(taskset_id, subtasks)
+
         conn = DjangoAMQPConnection(connect_timeout=connect_timeout)
         publisher = TaskPublisher(connection=conn,
                                   exchange=self.task.exchange)
@@ -425,15 +357,6 @@ class TaskSet(object):
         conn.close()
         return TaskSetResult(taskset_id, subtasks)
 
-    def iterate(self):
-        """Iterate over the results returned after calling :meth:`run`.
-
-        If any of the tasks raises an exception, the exception will
-        be re-raised.
-
-        """
-        return iter(self.run())
-
     def join(self, timeout=None):
         """Gather the results for all of the tasks in the taskset,
         and return a list with them ordered by the order of which they
@@ -442,7 +365,7 @@ class TaskSet(object):
         :keyword timeout: The time in seconds, how long
             it will wait for results, before the operation times out.
 
-        :raises celery.timer.TimeoutError: if ``timeout`` is not ``None``
+        :raises TimeoutError: if ``timeout`` is not ``None``
             and the operation takes longer than ``timeout`` seconds.
 
         If any of the tasks raises an exception, the exception
@@ -477,54 +400,6 @@ class TaskSet(object):
         """
         serfunc = pickle.dumps(func)
         return AsynchronousMapTask.delay(serfunc, args, timeout=timeout)
-
-
-def dmap(func, args, timeout=None):
-    """Distribute processing of the arguments and collect the results.
-
-    Example
-
-        >>> from celery.task import map
-        >>> import operator
-        >>> dmap(operator.add, [[2, 2], [4, 4], [8, 8]])
-        [4, 8, 16]
-
-    """
-    return TaskSet.map(func, args, timeout=timeout)
-
-
-class AsynchronousMapTask(Task):
-    """Task used internally by :func:`dmap_async` and
-    :meth:`TaskSet.map_async`.  """
-    name = "celery.map_async"
-
-    def run(self, serfunc, args, **kwargs):
-        """The method run by ``celeryd``."""
-        timeout = kwargs.get("timeout")
-        return TaskSet.map(pickle.loads(serfunc), args, timeout=timeout)
-tasks.register(AsynchronousMapTask)
-
-
-def dmap_async(func, args, timeout=None):
-    """Distribute processing of the arguments and collect the results
-    asynchronously.
-
-    :returns: :class:`celery.result.AsyncResult` object.
-
-    Example
-
-        >>> from celery.task import dmap_async
-        >>> import operator
-        >>> presult = dmap_async(operator.add, [[2, 2], [4, 4], [8, 8]])
-        >>> presult
-        <AsyncResult: 373550e8-b9a0-4666-bc61-ace01fa4f91d>
-        >>> presult.status
-        'DONE'
-        >>> presult.result
-        [4, 8, 16]
-
-    """
-    return TaskSet.map_async(func, args, timeout=timeout)
 
 
 class PeriodicTask(Task):
@@ -568,87 +443,3 @@ class PeriodicTask(Task):
             self.run_every = timedelta(seconds=self.run_every)
 
         super(PeriodicTask, self).__init__()
-
-
-class ExecuteRemoteTask(Task):
-    """Execute an arbitrary function or object.
-
-    *Note* You probably want :func:`execute_remote` instead, which this
-    is an internal component of.
-
-    The object must be pickleable, so you can't use lambdas or functions
-    defined in the REPL (that is the python shell, or ``ipython``).
-
-    """
-    name = "celery.execute_remote"
-
-    def run(self, ser_callable, fargs, fkwargs, **kwargs):
-        """
-        :param ser_callable: A pickled function or callable object.
-
-        :param fargs: Positional arguments to apply to the function.
-
-        :param fkwargs: Keyword arguments to apply to the function.
-
-        """
-        callable_ = pickle.loads(ser_callable)
-        return callable_(*fargs, **fkwargs)
-tasks.register(ExecuteRemoteTask)
-
-
-def execute_remote(func, *args, **kwargs):
-    """Execute arbitrary function/object remotely.
-
-    :param func: A callable function or object.
-
-    :param \*args: Positional arguments to apply to the function.
-
-    :param \*\*kwargs: Keyword arguments to apply to the function.
-
-    The object must be picklable, so you can't use lambdas or functions
-    defined in the REPL (the objects must have an associated module).
-
-    :returns: class:`celery.result.AsyncResult`.
-
-    """
-    return ExecuteRemoteTask.delay(pickle.dumps(func), args, kwargs)
-
-
-class DeleteExpiredTaskMetaTask(PeriodicTask):
-    """A periodic task that deletes expired task metadata every day.
-
-    This runs the current backend's
-    :meth:`celery.backends.base.BaseBackend.cleanup` method.
-
-    """
-    name = "celery.delete_expired_task_meta"
-    run_every = timedelta(days=1)
-
-    def run(self, **kwargs):
-        """The method run by ``celeryd``."""
-        logger = self.get_logger(**kwargs)
-        logger.info("Deleting expired task meta objects...")
-        default_backend.cleanup()
-tasks.register(DeleteExpiredTaskMetaTask)
-
-
-class PingTask(Task):
-    """The task used by :func:`ping`."""
-    name = "celery.ping"
-
-    def run(self, **kwargs):
-        """:returns: the string ``"pong"``."""
-        return "pong"
-tasks.register(PingTask)
-
-
-def ping():
-    """Test if the server is alive.
-
-    Example:
-
-        >>> from celery.task import ping
-        >>> ping()
-        'pong'
-    """
-    return PingTask.apply_async().get()

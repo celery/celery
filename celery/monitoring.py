@@ -14,7 +14,7 @@ DEFAULT_CACHE_KEY_PREFIX = "celery-statistics"
 
 class Statistics(object):
     """Base class for classes publishing celery statistics.
-    
+
     .. attribute:: type
 
         **REQUIRED** The type of statistics this class handles.
@@ -97,7 +97,7 @@ class TimerStats(Statistics):
         self.args = args
         self.kwargs = kwargs
         self.time_start = time.time()
-    
+
     def on_finish(self):
         """What to do when the timers :meth:`stop` method is called.
 
@@ -120,7 +120,7 @@ class TaskTimerStats(TimerStats):
 
 class StatsCollector(object):
     """Collect and report Celery statistics.
-    
+
     **NOTE**: Please run only one collector at any time, or your stats
         will be skewed.
 
@@ -142,14 +142,14 @@ class StatsCollector(object):
         instance.
 
     .. attribute:: total_task_time_running_by_type
-        
+
         A dictionary of task names and their total running time in seconds,
         counting all the tasks that has been run since the first time
         :meth:`collect` was executed on this class instance.
 
     **NOTE**: You have to run :meth:`collect` for these attributes
         to be filled.
-        
+
 
     """
 
@@ -171,8 +171,11 @@ class StatsCollector(object):
             stats_entry = message.decode()
             stat_type = stats_entry["type"]
             if stat_type in self.allowed_types:
+                # Decode keys to unicode for use as kwargs.
+                data = dict((key.encode("utf-8"), value)
+                                for key, value in stats_entry["data"].items())
                 handler = getattr(self, stat_type)
-                handler(**stats_entry["data"])
+                handler(**data)
 
     def dump_to_cache(self, cache_key_prefix=DEFAULT_CACHE_KEY_PREFIX):
         """Store collected statistics in the cache."""
@@ -221,7 +224,7 @@ class StatsCollector(object):
             * Total task processing time.
 
             * Total number of tasks executed
-        
+
         """
         print("Total processing time by task type:")
         for task_name, nsecs in self.total_task_time_running_by_type.items():

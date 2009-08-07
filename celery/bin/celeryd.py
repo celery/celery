@@ -30,6 +30,10 @@
 
     Run in the background as a daemon.
 
+.. cmdoption:: -S, --supervised
+
+    Restart the worker server if it dies.
+
 .. cmdoption:: --discard
 
     Discard all waiting tasks before the daemon is started.
@@ -71,6 +75,7 @@ if django_project_dir:
 
 from django.conf import settings
 from celery import __version__
+from celery.supervisor import OFASupervisor
 from celery.log import emergency_error
 from celery.conf import LOG_LEVELS, DAEMON_LOG_FILE, DAEMON_LOG_LEVEL
 from celery.conf import DAEMON_CONCURRENCY, DAEMON_PID_FILE
@@ -123,6 +128,9 @@ OPTION_LIST = (
     optparse.make_option('-d', '--detach', '--daemon', default=False,
             action="store_true", dest="detach",
             help="Run in the background as a daemon."),
+    optparse.make_option('-S', '--supervised', default=False,
+            action="store_true", dest="supervised",
+            help="Restart the worker server if it dies."),
     optparse.make_option('-u', '--uid', default=None,
             action="store", dest="uid",
             help="User-id to run celeryd as when in daemon mode."),
@@ -163,7 +171,7 @@ def acquire_pidlock(pidfile):
     except os.error, exc:
         if exc.errno == errno.ESRCH:
             sys.stderr.write("Stale pidfile exists. Removing it.\n")
-            pidlock.release()
+            os.unlink(pidfile)
             return PIDLockFile(pidfile)
     else:
         raise SystemExit(
@@ -176,7 +184,8 @@ def acquire_pidlock(pidfile):
 def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
         loglevel=DAEMON_LOG_LEVEL, logfile=DAEMON_LOG_FILE, discard=False,
         pidfile=DAEMON_PID_FILE, umask=0, uid=None, gid=None,
-        working_directory=None, chroot=None, statistics=None, **kwargs):
+        supervised=False, working_directory=None, chroot=None,
+        statistics=None, **kwargs):
     """Starts the celery worker server."""
 
     print("Celery %s is starting." % __version__)
@@ -248,18 +257,25 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
         context.open()
 
     discovery.autodiscover()
-    worker = WorkController(concurrency=concurrency,
-                            loglevel=loglevel,
-                            logfile=logfile,
-                            is_detached=detach)
+
+    def run_worker():
+        worker = WorkController(concurrency=concurrency,
+                                loglevel=loglevel,
+                                logfile=logfile,
+                                is_detached=detach)
+        try:
+            worker.start()
+        except Exception, e:
+            emergency_error(logfile, "celeryd raised exception %s: %s\n%s" % (
+                            e.__class__, e, traceback.format_exc()))
 
     try:
-        worker.run()
-    except Exception, e:
-        emergency_error(logfile, "celeryd raised exception %s: %s\n%s" % (
-                            e.__class__, e, traceback.format_exc()))
+        if supervised:
+            OFASupervisor(target=run_worker).start()
+        else:
+            run_worker()
     except:
-        if daemon:
+        if detach:
             context.close()
         raise
 
@@ -273,4 +289,4 @@ def parse_options(arguments):
 
 if __name__ == "__main__":
     options = parse_options(sys.argv[1:])
-    run_worker(**options)
+    run_worker(**vars(options))

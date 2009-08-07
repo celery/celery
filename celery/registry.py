@@ -1,5 +1,6 @@
 """celery.registry"""
 from celery import discovery
+from celery.utils import get_full_cls_name
 from UserDict import UserDict
 
 
@@ -38,7 +39,8 @@ class TaskRegistry(UserDict):
 
         """
         is_class = hasattr(task, "run")
-
+        if is_class:
+            task = task() # instantiate Task class
         if not name:
             name = getattr(task, "name")
 
@@ -46,12 +48,11 @@ class TaskRegistry(UserDict):
             raise self.AlreadyRegistered(
                     "Task with name %s is already registered." % name)
 
-        if is_class:
-            self.data[name] = task() # instantiate Task class
-        else:
+        if not is_class:
             task.name = name
             task.type = "regular"
-            self.data[name] = task
+
+        self.data[name] = task
 
     def unregister(self, name):
         """Unregister task by name.
@@ -75,9 +76,9 @@ class TaskRegistry(UserDict):
 
     def filter_types(self, type):
         """Return all tasks of a specific type."""
-        return dict([(task_name, task)
+        return dict((task_name, task)
                         for task_name, task in self.data.items()
-                            if task.type == type])
+                            if task.type == type)
 
     def get_all_regular(self):
         """Get all regular task types."""

@@ -1,9 +1,9 @@
 import unittest
-import uuid
 from datetime import datetime, timedelta
 from celery.models import TaskMeta, PeriodicTaskMeta
 from celery.task import PeriodicTask
 from celery.registry import tasks
+from celery.utils import gen_unique_id
 
 
 class TestPeriodicTask(PeriodicTask):
@@ -14,12 +14,13 @@ class TestPeriodicTask(PeriodicTask):
 class TestModels(unittest.TestCase):
 
     def createTaskMeta(self):
-        id = str(uuid.uuid4())
+        id = gen_unique_id()
         taskmeta, created = TaskMeta.objects.get_or_create(task_id=id)
         return taskmeta
 
     def createPeriodicTaskMeta(self, name):
-        ptaskmeta, created = PeriodicTaskMeta.objects.get_or_create(name=name)
+        ptaskmeta, created = PeriodicTaskMeta.objects.get_or_create(name=name,
+                defaults={"last_run_at": datetime.now()})
         return ptaskmeta
 
     def test_taskmeta(self):
@@ -56,10 +57,9 @@ class TestModels(unittest.TestCase):
         # check that repr works.
         self.assertTrue(unicode(p).startswith("<PeriodicTask:"))
         self.assertFalse(p in PeriodicTaskMeta.objects.get_waiting_tasks())
-        # Have to avoid save() because it applies the auto_now=True.
-        PeriodicTaskMeta.objects.filter(name=p.name).update(
-                last_run_at=datetime.now() - (TestPeriodicTask.run_every +
-                timedelta(seconds=10)))
+        p.last_run_at = datetime.now() - (TestPeriodicTask.run_every +
+                timedelta(seconds=10))
+        p.save()
         self.assertTrue(p in PeriodicTaskMeta.objects.get_waiting_tasks())
         self.assertTrue(isinstance(p.task, TestPeriodicTask))
 
