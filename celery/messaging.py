@@ -64,8 +64,8 @@ class TaskPublisher(Publisher):
         return task_id
 
 
-def get_consumer_set(connection, queues=conf.AMQP_CONSUMER_QUEUES):
-    return ConsumerSet(connection, from_dict=queues, decoder=pickle.loads)
+def get_consumer_set(connection, queues=conf.AMQP_CONSUMER_QUEUES, **options):
+    return ConsumerSet(connection, from_dict=queues, **options)
 
 
 class TaskConsumer(Consumer):

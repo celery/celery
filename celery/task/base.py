@@ -34,6 +34,10 @@ class Task(object):
 
         Override the global default ``routing_key`` for this task.
 
+    .. attribute:: exchange
+
+        Override the global default ``exchange`` for this task.
+
     .. attribute:: mandatory
 
         If set, the message has mandatory routing. By default the message
@@ -77,7 +81,6 @@ class Task(object):
 
         >>> from celery.task import tasks, Task
         >>> class MyTask(Task):
-        ...     name = "mytask"
         ...
         ...     def run(self, some_arg=None, **kwargs):
         ...         logger = self.get_logger(**kwargs)

@@ -92,7 +92,6 @@ class TestAMQPListener(unittest.TestCase):
         l = AMQPListener(self.bucket_queue, self.hold_queue, self.logger)
 
         c = l.reset_connection()
-        self.assertTrue(isinstance(c, TaskConsumer))
         self.assertTrue(c is l.task_consumer)
         self.assertTrue(isinstance(l.amqp_connection, AMQPConnection))
 
@@ -101,7 +100,6 @@ class TestAMQPListener(unittest.TestCase):
         self.assertTrue(l.task_consumer is None)
 
         c = l.reset_connection()
-        self.assertTrue(isinstance(c, TaskConsumer))
         self.assertTrue(c is l.task_consumer)
         self.assertTrue(isinstance(l.amqp_connection, AMQPConnection))
 

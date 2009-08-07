@@ -9,10 +9,10 @@ from datetime import datetime, timedelta
 import inspect
 
 
-def apply_async(task, args=None, kwargs=None, routing_key=None,
-        immediate=None, mandatory=None, connection=None,
-        connect_timeout=AMQP_CONNECTION_TIMEOUT, priority=None,
-        countdown=None, eta=None, **opts):
+def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
+        routing_key=None, exchange=None,
+        immediate=None, mandatory=None, priority=None, connection=None,
+        connect_timeout=AMQP_CONNECTION_TIMEOUT, **opts):
     """Run a task asynchronously by the celery daemon(s).
 
     :param task: The task to run (a callable object, or a :class:`Task`
@@ -34,6 +34,9 @@ def apply_async(task, args=None, kwargs=None, routing_key=None,
     :keyword routing_key: The routing key used to route the task to a worker
         server.
 
+    :keyword exchange: The named exchange to send the task to. Defaults to
+        :attr:`celery.task.base.Task.exchange`.
+
     :keyword immediate: Request immediate delivery. Will raise an exception
         if the task cannot be routed to a worker immediately.
         (Do not confuse this parameter with the ``countdown`` and ``eta``
@@ -54,6 +57,7 @@ def apply_async(task, args=None, kwargs=None, routing_key=None,
     args = args or []
     kwargs = kwargs or {}
     routing_key = routing_key or getattr(task, "routing_key", None)
+    exchange = exchange or getattr(task, "exchange", None)
     immediate = immediate or getattr(task, "immediate", None)
     mandatory = mandatory or getattr(task, "mandatory", None)
     priority = priority or getattr(task, "priority", None)
@@ -78,9 +82,9 @@ def apply_async(task, args=None, kwargs=None, routing_key=None,
         delay_task = curry(publisher.delay_task_in_set, taskset_id)
 
     task_id = delay_task(task.name, args, kwargs,
-                         routing_key=routing_key, mandatory=mandatory,
-                         immediate=immediate, priority=priority,
-                         eta=eta)
+                         routing_key=routing_key, exchange=exchange,
+                         mandatory=mandatory, immediate=immediate,
+                         priority=priority, eta=eta)
 
     if need_to_close_connection:
         publisher.close()

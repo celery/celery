@@ -9,7 +9,7 @@ from carrot.connection import DjangoAMQPConnection
 from celery.worker.controllers import Mediator, PeriodicWorkController
 from celery.worker.job import TaskWrapper
 from celery.registry import NotRegistered
-from celery.messaging import TaskConsumer
+from celery.messaging import get_consumer_set
 from celery.conf import DAEMON_CONCURRENCY, DAEMON_LOG_FILE
 from celery.log import setup_logger
 from celery.pool import TaskPool
@@ -101,7 +101,7 @@ class AMQPListener(object):
 
     def reset_connection(self):
         """Reset the AMQP connection, and reinitialize the
-        :class:`celery.messaging.TaskConsumer` instance.
+        :class:`carrot.messaging.ConsumerSet` instance.
 
         Resets the task consumer in :attr:`task_consumer`.
 
@@ -110,7 +110,7 @@ class AMQPListener(object):
                 "AMQPListener: Re-establishing connection to the broker...")
         self.close_connection()
         self.amqp_connection = DjangoAMQPConnection()
-        self.task_consumer = TaskConsumer(connection=self.amqp_connection)
+        self.task_consumer = get_consumer_set(connection=self.amqp_connection)
         self.task_consumer.register_callback(self.receive_message)
         return self.task_consumer
 
