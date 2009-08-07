@@ -2,7 +2,7 @@
 Change history
 ==============
 
-0.6.0 [2009-07-29 01:59 P.M CET]
+0.6.0 [2009-08-07 06:54 A.M CET]
 --------------------------------
 
 **IMPORTANT CHANGES**
@@ -34,7 +34,7 @@ Change history
 	in the code for a long time)
 
 * New settings variable: ``CELERY_TASK_RESULT_EXPIRES``
-	Time (in seconds, or a :class:`datetime.timedelta` object) for when after
+	Time (in seconds, or a `datetime.timedelta` object) for when after
 	stored task results are deleted. For the moment this only works for the
 	database backend.
 
@@ -42,7 +42,8 @@ Change history
 	has been launched.
 
 * The periodic task table is now locked for reading while getting
-	periodic task status.
+	periodic task status. (MySQL only so far, seeking patches for other
+	engines)
 
 * A lot more debugging information is now available by turning on the
 	``DEBUG`` loglevel (``--loglevel=DEBUG``).

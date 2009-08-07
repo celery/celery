@@ -13,34 +13,34 @@ SERVER_DRIFT = timedelta(seconds=random.vonmisesvariate(1, 4))
 
 
 class TableLock(object):
-   """Base class for database table locks. Also works as a NOOP lock."""
-  
-   def __init__(self, table, type="read"):
+    """Base class for database table locks. Also works as a NOOP lock."""
+
+    def __init__(self, table, type="read"):
         self.table = table
         self.type = type
         self.cursor = None
 
-   def lock_table(self):
-       """Lock the table."""
-       pass
+    def lock_table(self):
+        """Lock the table."""
+        pass
 
-   def unlock_table(self):
-       """Release previously locked tables."""
-       pass
+    def unlock_table(self):
+        """Release previously locked tables."""
+        pass
 
-   @classmethod
-   def acquire(cls, table, type=None):
-       """Acquire table lock."""
-       lock = cls(table, type)
-       lock.lock_table()
-       return lock
+    @classmethod
+    def acquire(cls, table, type=None):
+        """Acquire table lock."""
+        lock = cls(table, type)
+        lock.lock_table()
+        return lock
 
-   def release(self):
-       """Release the lock."""
-       self.unlock_table()
-       if self.cursor:
-           self.cursor.close()
-           self.cursor = None
+    def release(self):
+        """Release the lock."""
+        self.unlock_table()
+        if self.cursor:
+            self.cursor.close()
+            self.cursor = None
 
 
 class MySQLTableLock(TableLock):
@@ -49,7 +49,8 @@ class MySQLTableLock(TableLock):
     def lock_table(self):
         """Lock MySQL table."""
         self.cursor = connection.cursor()
-        self.cursor.execute("LOCK TABLES %s %s" % (self.table, self.type.upper()))
+        self.cursor.execute("LOCK TABLES %s %s" % (
+            self.table, self.type.upper()))
 
     def unlock_table(self):
         """Unlock MySQL table."""
