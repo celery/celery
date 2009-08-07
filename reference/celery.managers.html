@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Django Model Managers - celery.managers &mdash; Celery v0.4.12 (stable) documentation</title>
+    <title>Django Model Managers - celery.managers &mdash; Celery v0.4.13 (stable) documentation</title>
     <link rel="stylesheet" href="../static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.4.12 (stable)',
+        VERSION:     '0.4.13 (stable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,7 +19,7 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.4.12 (stable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.4.13 (stable) documentation" href="../index.html" />
     <link rel="up" title="Module API Reference" href="index.html" />
     <link rel="next" title="Django Models - celery.models" href="celery.models.html" />
     <link rel="prev" title="Django Views - celery.views" href="celery.views.html" /> 
@@ -40,7 +40,7 @@
         <li class="right" >
           <a href="celery.views.html" title="Django Views - celery.views"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v0.4.12 (stable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v0.4.13 (stable) documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Module API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -53,6 +53,23 @@
   <div class="section" id="module-celery.managers">
 <h1>Django Model Managers - celery.managers<a class="headerlink" href="#module-celery.managers" title="Permalink to this headline">¶</a></h1>
 <p>celery.managers</p>
+<dl class="class">
+<dt id="celery.managers.MySQLTableLock">
+<em class="property">
+class </em><tt class="descclassname">celery.managers.</tt><tt class="descname">MySQLTableLock</tt><big>(</big><em>table</em>, <em>type='read'</em><big>)</big><a class="headerlink" href="#celery.managers.MySQLTableLock" title="Permalink to this definition">¶</a></dt>
+<dd><p>Table lock support for MySQL.</p>
+<dl class="method">
+<dt id="celery.managers.MySQLTableLock.lock_table">
+<tt class="descname">lock_table</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.managers.MySQLTableLock.lock_table" title="Permalink to this definition">¶</a></dt>
+<dd>Lock MySQL table.</dd></dl>
+
+<dl class="method">
+<dt id="celery.managers.MySQLTableLock.unlock_table">
+<tt class="descname">unlock_table</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.managers.MySQLTableLock.unlock_table" title="Permalink to this definition">¶</a></dt>
+<dd>Unlock MySQL table.</dd></dl>
+
+</dd></dl>
+
 <dl class="class">
 <dt id="celery.managers.PeriodicTaskManager">
 <em class="property">
@@ -73,14 +90,59 @@ class </em><tt class="descclassname">celery.managers.</tt><tt class="descname">P
 </dd></dl>
 
 <dl class="method">
-<dt id="celery.managers.PeriodicTaskManager.lock">
-<tt class="descname">lock</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.managers.PeriodicTaskManager.lock" title="Permalink to this definition">¶</a></dt>
-<dd>Lock the periodic task table for reading.</dd></dl>
+<dt id="celery.managers.PeriodicTaskManager.init_entries">
+<tt class="descname">init_entries</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.managers.PeriodicTaskManager.init_entries" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add entries for all registered periodic tasks.</p>
+<p>Should be run at worker start.</p>
+</dd></dl>
 
 <dl class="method">
-<dt id="celery.managers.PeriodicTaskManager.unlock">
-<tt class="descname">unlock</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.managers.PeriodicTaskManager.unlock" title="Permalink to this definition">¶</a></dt>
-<dd>Unlock the periodic task table.</dd></dl>
+<dt id="celery.managers.PeriodicTaskManager.is_time">
+<tt class="descname">is_time</tt><big>(</big><em>last_run_at</em>, <em>run_every</em><big>)</big><a class="headerlink" href="#celery.managers.PeriodicTaskManager.is_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if if it is time to run the periodic task.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><em>last_run_at</em> &#8211; Last time the periodic task was run.</li>
+<li><em>run_every</em> &#8211; How often to run the periodic task.</li>
+</ul>
+</td>
+</tr>
+<tr class="field"><th class="field-name">Rtype bool:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.managers.TableLock">
+<em class="property">
+class </em><tt class="descclassname">celery.managers.</tt><tt class="descname">TableLock</tt><big>(</big><em>table</em>, <em>type='read'</em><big>)</big><a class="headerlink" href="#celery.managers.TableLock" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class for database table locks. Also works as a NOOP lock.</p>
+<dl class="classmethod">
+<dt id="celery.managers.TableLock.acquire">
+<em class="property">
+classmethod </em><tt class="descname">acquire</tt><big>(</big><em>table</em>, <em>type=None</em><big>)</big><a class="headerlink" href="#celery.managers.TableLock.acquire" title="Permalink to this definition">¶</a></dt>
+<dd>Acquire table lock.</dd></dl>
+
+<dl class="method">
+<dt id="celery.managers.TableLock.lock_table">
+<tt class="descname">lock_table</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.managers.TableLock.lock_table" title="Permalink to this definition">¶</a></dt>
+<dd>Lock the table.</dd></dl>
+
+<dl class="method">
+<dt id="celery.managers.TableLock.release">
+<tt class="descname">release</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.managers.TableLock.release" title="Permalink to this definition">¶</a></dt>
+<dd>Release the lock.</dd></dl>
+
+<dl class="method">
+<dt id="celery.managers.TableLock.unlock_table">
+<tt class="descname">unlock_table</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.managers.TableLock.unlock_table" title="Permalink to this definition">¶</a></dt>
+<dd>Release previously locked tables.</dd></dl>
 
 </dd></dl>
 
@@ -133,6 +195,11 @@ possible status values.</li>
 
 </dd></dl>
 
+<dl class="attribute">
+<dt id="celery.managers.table_lock">
+<tt class="descclassname">celery.managers.</tt><tt class="descname">table_lock</tt><a class="headerlink" href="#celery.managers.table_lock" title="Permalink to this definition">¶</a></dt>
+<dd>alias of <a title="celery.managers.TableLock" class="reference internal" href="#celery.managers.TableLock"><tt class="xref docutils literal"><span class="pre">TableLock</span></tt></a></dd></dl>
+
 </div>
 
 
@@ -184,13 +251,13 @@ possible status values.</li>
         <li class="right" >
           <a href="celery.views.html" title="Django Views - celery.views"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v0.4.12 (stable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v0.4.13 (stable) documentation</a> &raquo;</li>
           <li><a href="index.html" >Module API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.2.
     </div>
   </body>
 </html>

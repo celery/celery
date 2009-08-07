@@ -2,7 +2,7 @@
  celery - Distributed Task Queue for Django.
 =============================================
 
-:Version: 0.4.12
+:Version: 0.4.13
 
 Introduction
 ============
@@ -77,6 +77,9 @@ Features
     * The worker can collect statistics, like, how many tasks has been
       executed by type, and the time it took to process them. Very useful
       for monitoring and profiling.
+
+    * Pool workers are supervised, so if for some reason a worker crashes
+        it is automatically replaced by a new worker.
 
 API Reference Documentation
 ===========================

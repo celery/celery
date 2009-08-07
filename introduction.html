@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery - Distributed Task Queue for Django. &mdash; Celery v0.4.12 (stable) documentation</title>
+    <title>celery - Distributed Task Queue for Django. &mdash; Celery v0.4.13 (stable) documentation</title>
     <link rel="stylesheet" href="static/nature.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.4.12 (stable)',
+        VERSION:     '0.4.13 (stable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,7 +19,7 @@
     </script>
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v0.4.12 (stable) documentation" href="index.html" />
+    <link rel="top" title="Celery v0.4.13 (stable) documentation" href="index.html" />
     <link rel="next" title="Tutorials" href="tutorials/index.html" />
     <link rel="prev" title="Celery - The Django Task Queue" href="index.html" /> 
   </head>
@@ -39,7 +39,7 @@
         <li class="right" >
           <a href="index.html" title="Celery - The Django Task Queue"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Celery v0.4.12 (stable) documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v0.4.13 (stable) documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -54,7 +54,7 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Version:</th><td class="field-body">0.4.12</td>
+<tr class="field"><th class="field-name">Version:</th><td class="field-body">0.4.13</td>
 </tr>
 </tbody>
 </table>
@@ -84,35 +84,52 @@ see how the worker server works.</p>
 </div>
 <div class="section" id="features">
 <h2>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li>Uses AMQP messaging (RabbitMQ, ZeroMQ) to route tasks to the
-worker servers.</li>
-<li>You can run as many worker servers as you want, and still
-be <em>guaranteed that the task is only executed once.</em></li>
-<li>Tasks are executed <em>concurrently</em> using the Python 2.6
+<ul>
+<li><p class="first">Uses AMQP messaging (RabbitMQ, ZeroMQ) to route tasks to the
+worker servers.</p>
+</li>
+<li><p class="first">You can run as many worker servers as you want, and still
+be <em>guaranteed that the task is only executed once.</em></p>
+</li>
+<li><p class="first">Tasks are executed <em>concurrently</em> using the Python 2.6
 <tt class="docutils literal"><span class="pre">multiprocessing</span></tt> module (also available as a back-port
-to older python versions)</li>
-<li>Supports <em>periodic tasks</em>, which makes it a (better) replacement
-for cronjobs.</li>
-<li>When a task has been executed, the return value can be stored using
+to older python versions)</p>
+</li>
+<li><p class="first">Supports <em>periodic tasks</em>, which makes it a (better) replacement
+for cronjobs.</p>
+</li>
+<li><p class="first">When a task has been executed, the return value can be stored using
 either a MySQL/Oracle/PostgreSQL/SQLite database, Memcached,
-or Tokyo Tyrant back-end.</li>
-<li>If the task raises an exception, the exception instance is stored,
-instead of the return value.</li>
-<li>All tasks has a Universally Unique Identifier (UUID), which is the
-task id, used for querying task status and return values.</li>
-<li>Supports <em>task-sets</em>, which is a task consisting of several sub-tasks.
+or Tokyo Tyrant back-end.</p>
+</li>
+<li><p class="first">If the task raises an exception, the exception instance is stored,
+instead of the return value.</p>
+</li>
+<li><p class="first">All tasks has a Universally Unique Identifier (UUID), which is the
+task id, used for querying task status and return values.</p>
+</li>
+<li><p class="first">Supports <em>task-sets</em>, which is a task consisting of several sub-tasks.
 You can find out how many, or if all of the sub-tasks has been executed.
-Excellent for progress-bar like functionality.</li>
-<li>Has a <tt class="docutils literal"><span class="pre">map</span></tt> like function that uses tasks, called <tt class="docutils literal"><span class="pre">dmap</span></tt>.</li>
-<li>However, you rarely want to wait for these results in a web-environment.
+Excellent for progress-bar like functionality.</p>
+</li>
+<li><p class="first">Has a <tt class="docutils literal"><span class="pre">map</span></tt> like function that uses tasks, called <tt class="docutils literal"><span class="pre">dmap</span></tt>.</p>
+</li>
+<li><p class="first">However, you rarely want to wait for these results in a web-environment.
 You&#8217;d rather want to use Ajax to poll the task status, which is
 available from a URL like <tt class="docutils literal"><span class="pre">celery/&lt;task_id&gt;/status/</span></tt>. This view
 returns a JSON-serialized data structure containing the task status,
-and the return value if completed, or exception on failure.</li>
-<li>The worker can collect statistics, like, how many tasks has been
+and the return value if completed, or exception on failure.</p>
+</li>
+<li><p class="first">The worker can collect statistics, like, how many tasks has been
 executed by type, and the time it took to process them. Very useful
-for monitoring and profiling.</li>
+for monitoring and profiling.</p>
+</li>
+<li><dl class="first docutils">
+<dt>Pool workers are supervised, so if for some reason a worker crashes</dt>
+<dd><p class="first last">it is automatically replaced by a new worker.</p>
+</dd>
+</dl>
+</li>
 </ul>
 </div>
 <div class="section" id="api-reference-documentation">
@@ -430,12 +447,12 @@ file in the top distribution directory for the full license text.</p>
         <li class="right" >
           <a href="index.html" title="Celery - The Django Task Queue"
              >previous</a> |</li>
-        <li><a href="index.html">Celery v0.4.12 (stable) documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v0.4.13 (stable) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.2.
     </div>
   </body>
 </html>
