@@ -151,7 +151,6 @@ Now to make a Task run on the ``z`` server you need to set its
     from celery.task import Task
 
     class FeedImportTask(Task):
-        name = "import_feed"
         routing_key = "feed.importer"
 
         def run(self, feed_url):
