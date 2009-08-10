@@ -9,7 +9,6 @@ from datetime import datetime
 from multiprocessing import get_logger
 import traceback
 import threading
-import socket
 import time
 
 
