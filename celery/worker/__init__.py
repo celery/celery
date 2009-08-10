@@ -136,7 +136,7 @@ class AMQPListener(object):
     def _open_connection(self):
         """Retries connecting to the AMQP broker over time.
 
-        See :func:`carrot.utils.retry_over_time`.
+        See :func:`celery.utils.retry_over_time`.
 
         """
 
