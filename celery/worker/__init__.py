@@ -279,7 +279,7 @@ class WorkController(object):
             except Exception, exc:
                 self.logger.critical("Internal error %s: %s\n%s" % (
                                 exc.__class__, exc, traceback.format_exc()))
-        except:
+        except (SystemExit, KeyboardInterrupt):
             self.stop()
 
     def process_task(self, task):
