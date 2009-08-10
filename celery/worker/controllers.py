@@ -7,7 +7,9 @@ from celery.backends import default_periodic_status_backend
 from Queue import Empty as QueueEmpty
 from datetime import datetime
 from multiprocessing import get_logger
+import traceback
 import threading
+import socket
 import time
 
 
@@ -120,7 +122,12 @@ class PeriodicWorkController(BackgroundThread):
     def on_iteration(self):
         logger = get_logger()
         logger.debug("PeriodicWorkController: Running periodic tasks...")
-        self.run_periodic_tasks()
+        try:
+            self.run_periodic_tasks()
+        except Exception, exc:
+            logger.error(
+                "PeriodicWorkController got exception: %s\n%s" % (
+                    exc, traceback.format_exc()))
         logger.debug("PeriodicWorkController: Processing hold queue...")
         self.process_hold_queue()
         logger.debug("PeriodicWorkController: Going to sleep...")
