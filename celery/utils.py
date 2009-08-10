@@ -55,6 +55,7 @@ def get_full_cls_name(cls):
     return ".".join([cls.__module__,
                      cls.__name__])
 
+
 def repeatlast(it):
     """Iterate over all elements in the iterator, and when its exhausted
     yield the last value infinitely."""

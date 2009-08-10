@@ -52,7 +52,7 @@ class AMQPListener(object):
 
     def start(self):
         """Start the consumer.
-        
+
         If the connection is lost, it tries to re-establish the connection
         over time and restart consuming messages.
 
@@ -78,7 +78,7 @@ class AMQPListener(object):
 
         while True:
             it.next()
-        
+
     def stop(self):
         """Stop processing AMQP messages and close the connection
         to the broker."""
@@ -139,7 +139,7 @@ class AMQPListener(object):
         See :func:`carrot.utils.retry_over_time`.
 
         """
-        
+
         def _connection_error_handler(exc, interval):
             """Callback handler for connection errors."""
             self.logger.error("AMQP Listener: Connection Error: %s. " % exc

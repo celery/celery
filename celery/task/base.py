@@ -154,7 +154,7 @@ class Task(object):
             >>> publisher.connection.close()
 
         """
-       
+
         connection = DjangoAMQPConnection(connect_timeout=connect_timeout)
         return TaskPublisher(connection=connection,
                              exchange=self.exchange,
