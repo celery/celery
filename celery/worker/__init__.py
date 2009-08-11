@@ -63,7 +63,7 @@ class AMQPListener(object):
             try:
                 self.consume_messages()
             except (socket.error,
-                    self.amqp_connection.AMQPConnectionException):
+                    self.amqp_connection.ConnectionException):
                 self.logger.error("AMQPListener: Connection to broker lost. "
                                 + "Trying to re-establish connection...")
 
