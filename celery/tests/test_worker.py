@@ -1,6 +1,6 @@
 import unittest
 from Queue import Queue, Empty
-from carrot.connection import AMQPConnection
+from carrot.connection import BrokerConnection
 from celery.messaging import TaskConsumer
 from celery.worker.job import TaskWrapper
 from celery.worker import AMQPListener, WorkController
@@ -92,16 +92,14 @@ class TestAMQPListener(unittest.TestCase):
         l = AMQPListener(self.bucket_queue, self.hold_queue, self.logger)
 
         c = l.reset_connection()
-        self.assertTrue(c is l.task_consumer)
-        self.assertTrue(isinstance(l.amqp_connection, AMQPConnection))
+        self.assertTrue(isinstance(l.amqp_connection, BrokerConnection))
 
         l.close_connection()
         self.assertTrue(l.amqp_connection is None)
         self.assertTrue(l.task_consumer is None)
 
         c = l.reset_connection()
-        self.assertTrue(c is l.task_consumer)
-        self.assertTrue(isinstance(l.amqp_connection, AMQPConnection))
+        self.assertTrue(isinstance(l.amqp_connection, BrokerConnection))
 
         l.stop()
         self.assertTrue(l.amqp_connection is None)

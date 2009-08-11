@@ -1,4 +1,4 @@
-from carrot.connection import DjangoAMQPConnection
+from carrot.connection import DjangoBrokerConnection
 from celery.conf import AMQP_CONNECTION_TIMEOUT
 from celery.messaging import TaskPublisher, TaskConsumer
 from celery.log import setup_logger
@@ -155,7 +155,7 @@ class Task(object):
 
         """
 
-        connection = DjangoAMQPConnection(connect_timeout=connect_timeout)
+        connection = DjangoBrokerConnection(connect_timeout=connect_timeout)
         return TaskPublisher(connection=connection,
                              exchange=self.exchange,
                              routing_key=self.routing_key)
@@ -173,7 +173,7 @@ class Task(object):
             >>> consumer.connection.close()
 
         """
-        connection = DjangoAMQPConnection(connect_timeout=connect_timeout)
+        connection = DjangoBrokerConnection(connect_timeout=connect_timeout)
         return TaskConsumer(connection=connection, exchange=self.exchange,
                             routing_key=self.routing_key)
 
@@ -350,7 +350,7 @@ class TaskSet(object):
                             for args, kwargs in self.arguments]
             return TaskSetResult(taskset_id, subtasks)
 
-        conn = DjangoAMQPConnection(connect_timeout=connect_timeout)
+        conn = DjangoBrokerConnection(connect_timeout=connect_timeout)
         publisher = TaskPublisher(connection=conn,
                                   exchange=self.task.exchange)
         subtasks = [apply_async(self.task, args, kwargs,

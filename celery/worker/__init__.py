@@ -5,7 +5,7 @@ The Multiprocessing Worker Server
 Documentation for this module is in ``docs/reference/celery.worker.rst``.
 
 """
-from carrot.connection import DjangoAMQPConnection
+from carrot.connection import DjangoBrokerConnection
 from celery.worker.controllers import Mediator, PeriodicWorkController
 from celery.worker.job import TaskWrapper
 from celery.registry import NotRegistered
@@ -147,7 +147,7 @@ class AMQPListener(object):
 
         def _establish_connection():
             """Establish a connection to the AMQP broker."""
-            conn = DjangoAMQPConnection()
+            conn = DjangoBrokerConnection()
             connected = conn.connection # Connection is established lazily.
             return conn
 

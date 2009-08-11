@@ -1,4 +1,4 @@
-from carrot.connection import DjangoAMQPConnection
+from carrot.connection import DjangoBrokerConnection
 from celery.conf import AMQP_CONNECTION_TIMEOUT
 from celery.result import AsyncResult, EagerResult
 from celery.messaging import TaskPublisher
@@ -73,7 +73,8 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
     need_to_close_connection = False
     if not publisher:
         if not connection:
-            connection = DjangoAMQPConnection(connect_timeout=connect_timeout)
+            connection = DjangoBrokerConnection(
+                            connect_timeout=connect_timeout)
             need_to_close_connection = True
         publisher = TaskPublisher(connection=connection)
 

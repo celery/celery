@@ -3,7 +3,7 @@
     Publishing Statistics and Monitoring Celery.
 
 """
-from carrot.connection import DjangoAMQPConnection
+from carrot.connection import DjangoBrokerConnection
 from celery.messaging import StatsPublisher, StatsConsumer
 from django.conf import settings
 from django.core.cache import cache
@@ -44,7 +44,7 @@ class Statistics(object):
         """
         if not self.enabled:
             return
-        connection = DjangoAMQPConnection()
+        connection = DjangoBrokerConnection()
         publisher = StatsPublisher(connection=connection)
         publisher.send({"type": self.type, "data": data})
         publisher.close()
@@ -164,7 +164,7 @@ class StatsCollector(object):
     def collect(self):
         """Collect any new statistics available since the last time
         :meth:`collect` was executed."""
-        connection = DjangoAMQPConnection()
+        connection = DjangoBrokerConnection()
         consumer = StatsConsumer(connection=connection)
         it = consumer.iterqueue(infinite=False)
         for message in it:

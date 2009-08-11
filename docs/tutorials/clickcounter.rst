@@ -105,14 +105,14 @@ On to the code...
 
 .. code-block:: python
 
-    from carrot.connection import DjangoAMQPConnection
+    from carrot.connection import DjangoBrokerConnection
     from carrot.messaging import Publisher, Consumer
     from clickmuncher.models import Click
 
 
     def send_increment_clicks(for_url):
         """Send a message for incrementing the click count for an URL."""
-        connection = DjangoAMQPConnection()
+        connection = DjangoBrokerConnection()
         publisher = Publisher(connection=connection,
                               exchange="clicks",
                               routing_key="increment_click",
@@ -127,7 +127,7 @@ On to the code...
     def process_clicks():
         """Process all currently gathered clicks by saving them to the
         database."""
-        connection = DjangoAMQPConnection()
+        connection = DjangoBrokerConnection()
         consumer = Consumer(connection=connection,
                             queue="clicks",
                             exchange="clicks",

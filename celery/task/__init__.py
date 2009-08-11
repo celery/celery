@@ -3,7 +3,7 @@
 Working with tasks and task sets.
 
 """
-from carrot.connection import DjangoAMQPConnection
+from carrot.connection import DjangoBrokerConnection
 from celery.messaging import TaskConsumer
 from celery.conf import AMQP_CONNECTION_TIMEOUT
 from celery.registry import tasks
@@ -27,7 +27,7 @@ def discard_all(connect_timeout=AMQP_CONNECTION_TIMEOUT):
     :rtype: int
 
     """
-    amqp_connection = DjangoAMQPConnection(connect_timeout=connect_timeout)
+    amqp_connection = DjangoBrokerConnection(connect_timeout=connect_timeout)
     consumer = TaskConsumer(connection=amqp_connection)
     discarded_count = consumer.discard_all()
     amqp_connection.close()

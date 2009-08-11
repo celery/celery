@@ -1,7 +1,7 @@
 import settings
 from django.core.management import setup_environ
 setup_environ(settings)
-from carrot.connection import DjangoAMQPConnection
+from carrot.connection import DjangoBrokerConnection
 from carrot.messaging import Messaging
 from amqplib import client_0_8 as amqp
 from celery.task import dmap
@@ -61,20 +61,20 @@ def _recv2():
 
 
 def send_a_message(msg):
-    conn = DjangoAMQPConnection()
+    conn = DjangoBrokerConnection()
     MyMessager(connection=conn).send({"message": msg})
     conn.close()
 
 
 def discard_all():
-    conn = DjangoAMQPConnection()
+    conn = DjangoBrokerConnection()
     MyMessager(connection=conn).consumer.discard_all()
     conn.close()
 
 
 def receive_a_message():
     logger = get_logger()
-    conn = DjangoAMQPConnection()
+    conn = DjangoBrokerConnection()
     m = MyMessager(connection=conn).fetch()
     if m:
         msg = simplejson.loads(m.body)

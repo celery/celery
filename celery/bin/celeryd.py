@@ -79,13 +79,10 @@ from celery.supervisor import OFASupervisor
 from celery.log import emergency_error
 from celery.conf import LOG_LEVELS, DAEMON_LOG_FILE, DAEMON_LOG_LEVEL
 from celery.conf import DAEMON_CONCURRENCY, DAEMON_PID_FILE
-from celery.messaging import TaskConsumer
 from celery import conf
 from celery import discovery
 from celery.task import discard_all
 from celery.worker import WorkController
-from carrot.connection import DjangoAMQPConnection
-from celery.messaging import TaskConsumer, StatsConsumer
 import multiprocessing
 import traceback
 import optparse
