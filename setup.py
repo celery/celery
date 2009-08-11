@@ -42,7 +42,7 @@ class RunTests(Command):
 
 install_requires = ["django-unittest-depth",
                     "anyjson",
-                    "carrot>=0.5.0",
+                    "carrot>=0.5.2",
                     "python-daemon"]
 py_version_info = sys.version_info
 py_major_version = py_version_info[0]
