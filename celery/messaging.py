@@ -57,6 +57,7 @@ class TaskPublisher(Publisher):
             "retries": kwargs.get("retries", 0),
             "eta": kwargs.get("eta"),
         }
+
         if part_of_set:
             message_data["taskset"] = part_of_set
 

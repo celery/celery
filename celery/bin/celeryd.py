@@ -215,9 +215,9 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
     # Dump configuration to screen so we have some basic information
     # when users sends e-mails.
     print(STARTUP_INFO_FMT % {
-            "vhost": settings.AMQP_VHOST,
-            "host": settings.AMQP_SERVER,
-            "port": settings.AMQP_PORT,
+            "vhost": getattr(settings, "AMQP_VHOST", "(default)"),
+            "host": getattr(settings, "AMQP_SERVER", "(default)"),
+            "port": getattr(settings, "AMQP_PORT", "(default)"),
             "exchange": conf.AMQP_EXCHANGE,
             "exchange_type": conf.AMQP_EXCHANGE_TYPE,
             "consumer_queue": conf.AMQP_CONSUMER_QUEUE,
