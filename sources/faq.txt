@@ -97,8 +97,8 @@ same worker when it has been restarted), so to properly purge the queue of
 waiting tasks you have to stop all the workers, and then discard the tasks
 using ``discard_all``.
 
-Can I use celery with ActiveMQ/Stomp?
-----------------------------
+Can I use celery with ActiveMQ/STOMP?
+-------------------------------------
 
 **Answer**: Yes. But this is very experimental for now.
 
