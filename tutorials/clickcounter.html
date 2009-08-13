@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Tutorial: Creating a click counter using carrot and celery &mdash; Celery v0.4.13 (stable) documentation</title>
+    <title>Tutorial: Creating a click counter using carrot and celery &mdash; Celery v0.6.0 (stable) documentation</title>
     <link rel="stylesheet" href="../static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.4.13 (stable)',
+        VERSION:     '0.6.0 (stable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,7 +19,7 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.4.13 (stable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.6.0 (stable) documentation" href="../index.html" />
     <link rel="up" title="Tutorials" href="index.html" />
     <link rel="next" title="Frequently Asked Questions" href="../faq.html" />
     <link rel="prev" title="Tutorials" href="index.html" /> 
@@ -40,7 +40,7 @@
         <li class="right" >
           <a href="index.html" title="Tutorials"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v0.4.13 (stable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v0.6.0 (stable) documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Tutorials</a> &raquo;</li> 
       </ul>
     </div>  
@@ -140,14 +140,14 @@ without doing it.</p>
 </ul>
 <p>On to the code...</p>
 <p><em>clickmuncher/messaging.py</em>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">carrot.connection</span> <span class="kn">import</span> <span class="n">DjangoAMQPConnection</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">carrot.connection</span> <span class="kn">import</span> <span class="n">DjangoBrokerConnection</span>
 <span class="kn">from</span> <span class="nn">carrot.messaging</span> <span class="kn">import</span> <span class="n">Publisher</span><span class="p">,</span> <span class="n">Consumer</span>
 <span class="kn">from</span> <span class="nn">clickmuncher.models</span> <span class="kn">import</span> <span class="n">Click</span>
 
 
 <span class="k">def</span> <span class="nf">send_increment_clicks</span><span class="p">(</span><span class="n">for_url</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Send a message for incrementing the click count for an URL.&quot;&quot;&quot;</span>
-    <span class="n">connection</span> <span class="o">=</span> <span class="n">DjangoAMQPConnection</span><span class="p">()</span>
+    <span class="n">connection</span> <span class="o">=</span> <span class="n">DjangoBrokerConnection</span><span class="p">()</span>
     <span class="n">publisher</span> <span class="o">=</span> <span class="n">Publisher</span><span class="p">(</span><span class="n">connection</span><span class="o">=</span><span class="n">connection</span><span class="p">,</span>
                           <span class="n">exchange</span><span class="o">=</span><span class="s">&quot;clicks&quot;</span><span class="p">,</span>
                           <span class="n">routing_key</span><span class="o">=</span><span class="s">&quot;increment_click&quot;</span><span class="p">,</span>
@@ -162,7 +162,7 @@ without doing it.</p>
 <span class="k">def</span> <span class="nf">process_clicks</span><span class="p">():</span>
     <span class="sd">&quot;&quot;&quot;Process all currently gathered clicks by saving them to the</span>
 <span class="sd">    database.&quot;&quot;&quot;</span>
-    <span class="n">connection</span> <span class="o">=</span> <span class="n">DjangoAMQPConnection</span><span class="p">()</span>
+    <span class="n">connection</span> <span class="o">=</span> <span class="n">DjangoBrokerConnection</span><span class="p">()</span>
     <span class="n">consumer</span> <span class="o">=</span> <span class="n">Consumer</span><span class="p">(</span><span class="n">connection</span><span class="o">=</span><span class="n">connection</span><span class="p">,</span>
                         <span class="n">queue</span><span class="o">=</span><span class="s">&quot;clicks&quot;</span><span class="p">,</span>
                         <span class="n">exchange</span><span class="o">=</span><span class="s">&quot;clicks&quot;</span><span class="p">,</span>
@@ -321,7 +321,7 @@ mailing-list or come join us in the #celery IRC channel at Freenode:
         <li class="right" >
           <a href="index.html" title="Tutorials"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v0.4.13 (stable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v0.6.0 (stable) documentation</a> &raquo;</li>
           <li><a href="index.html" >Tutorials</a> &raquo;</li> 
       </ul>
     </div>

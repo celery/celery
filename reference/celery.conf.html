@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Configuration - celery.conf &mdash; Celery v0.4.13 (stable) documentation</title>
+    <title>Configuration - celery.conf &mdash; Celery v0.6.0 (stable) documentation</title>
     <link rel="stylesheet" href="../static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.4.13 (stable)',
+        VERSION:     '0.6.0 (stable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,7 +19,7 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.4.13 (stable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.6.0 (stable) documentation" href="../index.html" />
     <link rel="up" title="Module API Reference" href="index.html" />
     <link rel="next" title="Datastructures - celery.datastructures" href="celery.datastructures.html" />
     <link rel="prev" title="Backend: Tokyo Tyrant - celery.backends.tyrant" href="celery.backends.tyrant.html" /> 
@@ -40,7 +40,7 @@
         <li class="right" >
           <a href="celery.backends.tyrant.html" title="Backend: Tokyo Tyrant - celery.backends.tyrant"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v0.4.13 (stable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v0.6.0 (stable) documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Module API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -59,6 +59,20 @@
 <dd></dd></dl>
 
 <dl class="data">
+<dt id="celery.conf.AMQP_CONNECTION_RETRY">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONNECTION_RETRY</tt><a class="headerlink" href="#celery.conf.AMQP_CONNECTION_RETRY" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="data">
+<dt id="celery.conf.AMQP_CONNECTION_MAX_RETRIES">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONNECTION_MAX_RETRIES</tt><a class="headerlink" href="#celery.conf.AMQP_CONNECTION_MAX_RETRIES" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Maximum number of retries before we give up re-establishing a connection
+to the AMQP broker.</p>
+<p>If this is set to <tt class="docutils literal"><span class="pre">0</span></tt> or <tt class="xref docutils literal"><span class="pre">None</span></tt>, we will retry forever.</p>
+<p>Default is <tt class="docutils literal"><span class="pre">100</span></tt> retries.</p>
+</dd></dl>
+
+<dl class="data">
 <dt id="celery.conf.AMQP_CONNECTION_TIMEOUT">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONNECTION_TIMEOUT</tt><a class="headerlink" href="#celery.conf.AMQP_CONNECTION_TIMEOUT" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="data">
@@ -72,6 +86,16 @@ If unset, it will send the e-mails if <tt class="docutils literal"><span class="
 <dl class="data">
 <dt id="celery.conf.AMQP_CONSUMER_QUEUE">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONSUMER_QUEUE</tt><a class="headerlink" href="#celery.conf.AMQP_CONSUMER_QUEUE" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="data">
+<dt id="celery.conf.AMQP_CONSUMER_QUEUES">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONSUMER_QUEUES</tt><a class="headerlink" href="#celery.conf.AMQP_CONSUMER_QUEUES" title="Permalink to this definition">¶</a></dt>
+<dd>Dictionary defining multiple AMQP queues.</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONSUMER_QUEUES</tt></dt>
 <dd><dl class="data">
 <dt>
 <tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONNECTION_TIMEOUT</tt></dt>
@@ -167,8 +191,8 @@ for more information.</dd></dl>
 </dd></dl>
 
 <dl class="data">
-<dt id="celery.conf.DEFAULT_TASK_RESULT_EXPIRES">
-<tt class="descclassname">celery.conf.</tt><tt class="descname">DEFAULT_TASK_RESULT_EXPIRES</tt><a class="headerlink" href="#celery.conf.DEFAULT_TASK_RESULT_EXPIRES" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.conf.DEFAULT_AMQP_CONNECTION_MAX_RETRIES">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">DEFAULT_AMQP_CONNECTION_MAX_RETRIES</tt><a class="headerlink" href="#celery.conf.DEFAULT_AMQP_CONNECTION_MAX_RETRIES" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="data">
 <dt id="celery.conf.LOG_LEVELS">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">LOG_LEVELS</tt><a class="headerlink" href="#celery.conf.LOG_LEVELS" title="Permalink to this definition">¶</a></dt>
@@ -272,7 +296,7 @@ an <a title="celery.result.AsyncResult" class="reference external" href="celery.
         <li class="right" >
           <a href="celery.backends.tyrant.html" title="Backend: Tokyo Tyrant - celery.backends.tyrant"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v0.4.13 (stable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v0.6.0 (stable) documentation</a> &raquo;</li>
           <li><a href="index.html" >Module API Reference</a> &raquo;</li> 
       </ul>
     </div>

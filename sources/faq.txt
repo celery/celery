@@ -97,6 +97,78 @@ same worker when it has been restarted), so to properly purge the queue of
 waiting tasks you have to stop all the workers, and then discard the tasks
 using ``discard_all``.
 
+Can I use celery with ActiveMQ/Stomp?
+----------------------------
+
+**Answer**: Yes. But this is very experimental for now.
+
+First you have to use the ``master`` branch of ``celery``::
+
+    $ git clone git://github.com/ask/celery.git
+    $ cd celery
+    $ sudo python setup.py install
+    $ cd ..
+
+Then you need to install the ``stompbackend`` branch of ``carrot``:
+
+    $ git clone git://github.com/ask/carrot.git
+    $ cd carrot
+    $ git checkout stompbackend
+    $ sudo python setup.py install
+    $ cd ..
+
+And my fork of ``python-stomp`` which adds non-blocking support::
+
+    $ hg clone http://bitbucket.org/asksol/python-stomp/
+    $ cd python-stomp
+    $ sudo python setup.py install
+    $ cd ..
+
+In this example we will use a queue called ``celery`` which we created in
+the ActiveMQ web admin interface.
+
+**Note**: For ActiveMQ the queue name has to have ``"/queue/"`` prepended to
+it. i.e. the queue ``celery`` becomes ``/queue/celery``.
+
+Since a STOMP queue is a single named entity and it doesn't have the
+routing capabilities of AMQP you need to set both the ``queue``, and
+``exchange`` settings to your queue name. This is a minor inconvenience since
+carrot needs to maintain the same interface for both AMQP and STOMP (obviously
+the one with the most capabilities won).
+
+Use the following specific settings in your ``settings.py``:
+
+.. code-block:: python
+
+    # Makes python-stomp the default backend for carrot.
+    CARROT_BACKEND = "pystomp"
+
+    # STOMP hostname and port settings.
+    AMQP_HOST = "localhost"
+    AMQP_PORT = 61613
+
+    # The queue name to use (both queue and exchange must be set to the
+    # same queue name when using STOMP!!!)
+    CELERY_AMQP_CONSUMER_QUEUE = "/queue/celery"
+    CELERY_AMQP_EXCHANGE = "/queue/celery" 
+   
+Now you can go on reading the tutorial in the README, ignoring any AMQP
+specific options. 
+
+Which features are not supported when using STOMP?
+--------------------------------------------------
+
+This is a (possible incomplete) list of features not available when
+using the STOMP backend:
+
+    * routing keys
+
+    * exchange types (direct, topic, headers, etc)
+
+    * immediate
+
+    * mandatory
+
 Can I send some tasks to only some servers?
 --------------------------------------------
 
@@ -151,7 +223,6 @@ Now to make a Task run on the ``z`` server you need to set its
     from celery.task import Task
 
     class FeedImportTask(Task):
-        name = "import_feed"
         routing_key = "feed.importer"
 
         def run(self, feed_url):

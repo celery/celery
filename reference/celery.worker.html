@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Multiprocessing Worker - celery.worker &mdash; Celery v0.4.13 (stable) documentation</title>
+    <title>Multiprocessing Worker - celery.worker &mdash; Celery v0.6.0 (stable) documentation</title>
     <link rel="stylesheet" href="../static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.4.13 (stable)',
+        VERSION:     '0.6.0 (stable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,7 +19,7 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.4.13 (stable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.6.0 (stable) documentation" href="../index.html" />
     <link rel="up" title="Module API Reference" href="index.html" />
     <link rel="next" title="Executable Jobs - celery.worker.job" href="celery.worker.job.html" />
     <link rel="prev" title="Messaging - celery.messaging" href="celery.messaging.html" /> 
@@ -40,7 +40,7 @@
         <li class="right" >
           <a href="celery.messaging.html" title="Messaging - celery.messaging"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v0.4.13 (stable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v0.6.0 (stable) documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Module API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -94,6 +94,11 @@ a countdown/eta or that it&#8217;s waiting for retry.</dd></dl>
 <dd>Close the AMQP connection.</dd></dl>
 
 <dl class="method">
+<dt id="celery.worker.AMQPListener.consume_messages">
+<tt class="descname">consume_messages</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.AMQPListener.consume_messages" title="Permalink to this definition">¶</a></dt>
+<dd>Consume messages forever (or until an exception is raised).</dd></dl>
+
+<dl class="method">
 <dt id="celery.worker.AMQPListener.receive_message">
 <tt class="descname">receive_message</tt><big>(</big><em>message_data</em>, <em>message</em><big>)</big><a class="headerlink" href="#celery.worker.AMQPListener.receive_message" title="Permalink to this definition">¶</a></dt>
 <dd><p>The callback called when a new message is received.</p>
@@ -105,14 +110,17 @@ otherwise we move it the bucket queue for immediate processing.</p>
 <dt id="celery.worker.AMQPListener.reset_connection">
 <tt class="descname">reset_connection</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.AMQPListener.reset_connection" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reset the AMQP connection, and reinitialize the
-<a title="celery.messaging.TaskConsumer" class="reference external" href="celery.messaging.html#celery.messaging.TaskConsumer"><tt class="xref docutils literal"><span class="pre">celery.messaging.TaskConsumer</span></tt></a> instance.</p>
+<tt class="xref docutils literal"><span class="pre">carrot.messaging.ConsumerSet</span></tt> instance.</p>
 <p>Resets the task consumer in <tt class="xref docutils literal"><span class="pre">task_consumer</span></tt>.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="celery.worker.AMQPListener.start">
 <tt class="descname">start</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.AMQPListener.start" title="Permalink to this definition">¶</a></dt>
-<dd>Start processing AMQP messages.</dd></dl>
+<dd><p>Start the consumer.</p>
+<p>If the connection is lost, it tries to re-establish the connection
+over time and restart consuming messages.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.worker.AMQPListener.stop">
@@ -275,7 +283,7 @@ worker doesn&#8217;t die.</dd></dl>
         <li class="right" >
           <a href="celery.messaging.html" title="Messaging - celery.messaging"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v0.4.13 (stable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v0.6.0 (stable) documentation</a> &raquo;</li>
           <li><a href="index.html" >Module API Reference</a> &raquo;</li> 
       </ul>
     </div>

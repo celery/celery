@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Executing Tasks - celery.execute &mdash; Celery v0.4.13 (stable) documentation</title>
+    <title>Executing Tasks - celery.execute &mdash; Celery v0.6.0 (stable) documentation</title>
     <link rel="stylesheet" href="../static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.4.13 (stable)',
+        VERSION:     '0.6.0 (stable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,7 +19,7 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.4.13 (stable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.6.0 (stable) documentation" href="../index.html" />
     <link rel="up" title="Module API Reference" href="index.html" />
     <link rel="next" title="Task Result - celery.result" href="celery.result.html" />
     <link rel="prev" title="Defining Tasks - celery.task.base" href="celery.task.base.html" /> 
@@ -40,7 +40,7 @@
         <li class="right" >
           <a href="celery.task.base.html" title="Defining Tasks - celery.task.base"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v0.4.13 (stable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v0.6.0 (stable) documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Module API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -62,7 +62,7 @@
 
 <dl class="function">
 <dt id="celery.execute.apply_async">
-<tt class="descclassname">celery.execute.</tt><tt class="descname">apply_async</tt><big>(</big><em>task</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>routing_key=None</em>, <em>immediate=None</em>, <em>mandatory=None</em>, <em>connection=None</em>, <em>connect_timeout=4</em>, <em>priority=None</em>, <em>countdown=None</em>, <em>eta=None</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.execute.apply_async" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.execute.</tt><tt class="descname">apply_async</tt><big>(</big><em>task</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>countdown=None</em>, <em>eta=None</em>, <em>routing_key=None</em>, <em>exchange=None</em>, <em>immediate=None</em>, <em>mandatory=None</em>, <em>priority=None</em>, <em>connection=None</em>, <em>connect_timeout=4</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.execute.apply_async" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run a task asynchronously by the celery daemon(s).</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -82,6 +82,8 @@ if <tt class="docutils literal"><span class="pre">countdown</span></tt> is also 
 <tt class="docutils literal"><span class="pre">immediate</span></tt> setting, they are unrelated).</li>
 <li><em>routing_key</em> &#8211; The routing key used to route the task to a worker
 server.</li>
+<li><em>exchange</em> &#8211; The named exchange to send the task to. Defaults to
+<a title="celery.task.base.Task.exchange" class="reference external" href="celery.task.base.html#celery.task.base.Task.exchange"><tt class="xref docutils literal"><span class="pre">celery.task.base.Task.exchange</span></tt></a>.</li>
 <li><em>immediate</em> &#8211; Request immediate delivery. Will raise an exception
 if the task cannot be routed to a worker immediately.
 (Do not confuse this parameter with the <tt class="docutils literal"><span class="pre">countdown</span></tt> and <tt class="docutils literal"><span class="pre">eta</span></tt>
@@ -186,7 +188,7 @@ has been registered in the task registry.</p>
         <li class="right" >
           <a href="celery.task.base.html" title="Defining Tasks - celery.task.base"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v0.4.13 (stable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v0.6.0 (stable) documentation</a> &raquo;</li>
           <li><a href="index.html" >Module API Reference</a> &raquo;</li> 
       </ul>
     </div>
