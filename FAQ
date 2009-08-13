@@ -109,7 +109,7 @@ First you have to use the ``master`` branch of ``celery``::
     $ sudo python setup.py install
     $ cd ..
 
-Then you need to install the ``stompbackend`` branch of ``carrot``:
+Then you need to install the ``stompbackend`` branch of ``carrot``::
 
     $ git clone git://github.com/ask/carrot.git
     $ cd carrot
