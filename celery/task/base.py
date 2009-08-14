@@ -10,6 +10,10 @@ from celery.registry import tasks
 from celery.serialization import pickle
 
 
+class MaxRetriesExceededError(Exception):
+    """The tasks max restart limit has been exceeded."""
+
+
 class Task(object):
     """A task that can be delayed for execution by the ``celery`` daemon.
 
@@ -56,6 +60,16 @@ class Task(object):
     .. attribute:: priority:
 
         The message priority. A number from ``0`` to ``9``.
+
+    .. attribute:: max_retries
+
+        Maximum number of retries before giving up (i.e. raising the last
+        resulting exception). Default is ``3``.
+
+    .. attribute:: default_retry_delay
+
+        Defeault time in seconds before a retry of the task should be
+        executed. Default is a 1 minute delay.
 
     .. attribute:: ignore_result
 
@@ -114,6 +128,10 @@ class Task(object):
     priority = None
     ignore_result = False
     disable_error_emails = False
+    max_retries = 3
+    default_retry_delay = 60
+
+    MaxRetriesExceededError = MaxRetriesExceededError
 
     def __init__(self):
         if not self.__class__.name:
@@ -207,6 +225,34 @@ class Task(object):
         """
         return apply_async(cls, args, kwargs, **options)
 
+    def retry(self, args, kwargs, **options):
+        """Retry the task.
+
+        Example
+
+            >>> class TwitterPostStatusTask(Task):
+            ... 
+            ...     def run(self, username, password, message, **kwargs):
+            ...         twitter = Twitter(username, password)
+            ...         try:
+            ...             twitter.post_status(message)
+            ...         except twitter.FailWhale, exc:
+            ...             # Retry in 5 minutes.
+            ...             self.retry([username, password, message], kwargs,
+            ...                        countdown=60 * 5, exc=exc)
+
+        """
+        options["retries"] = kwargs.pop("task_retries", 0) + 1
+        options["task_id"] = kwargs.pop("task_id", None)
+        options["countdown"] = options.get("countdown",
+                                           self.default_retry_delay)
+        exc = options.pop("exc", MaxRetriesExceededError(
+            "Can't retry %s[%s] args:%s kwargs:%s" % (
+                self.name, options["task_id"], args, kwargs)))
+        if options["retries"] > self.max_retries:
+            raise exc
+        return self.apply_async(args=args, kwargs=kwargs, **options)
+        
     @classmethod
     def apply(cls, args=None, kwargs=None, **options):
         """Execute this task at once, by blocking until the task

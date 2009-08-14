@@ -10,7 +10,7 @@ import inspect
 
 
 def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
-        routing_key=None, exchange=None,
+        routing_key=None, exchange=None, task_id=None,
         immediate=None, mandatory=None, priority=None, connection=None,
         connect_timeout=AMQP_CONNECTION_TIMEOUT, **opts):
     """Run a task asynchronously by the celery daemon(s).
@@ -63,6 +63,7 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
     priority = priority or getattr(task, "priority", None)
     taskset_id = opts.get("taskset_id")
     publisher = opts.get("publisher")
+    retries = opts.get("retries")
     if countdown:
         eta = datetime.now() + timedelta(seconds=countdown)
 
@@ -83,6 +84,7 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
         delay_task = curry(publisher.delay_task_in_set, taskset_id)
 
     task_id = delay_task(task.name, args, kwargs,
+                         task_id=task_id, retries=retries,
                          routing_key=routing_key, exchange=exchange,
                          mandatory=mandatory, immediate=immediate,
                          priority=priority, eta=eta)

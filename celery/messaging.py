@@ -38,11 +38,6 @@ class TaskPublisher(Publisher):
                                 task_args=task_args, task_kwargs=task_kwargs,
                                 **kwargs)
 
-    def retry_task(self, task_name, task_id, delivery_info, **kwargs):
-        kwargs["routing_key"] = delivery_info.get("routing_key")
-        kwargs["retries"] = kwargs.get("retries", 0) + 1
-        self._delay_task(task_name, task_id, **kwargs)
-
     def _delay_task(self, task_name, task_id=None, part_of_set=None,
             task_args=None, task_kwargs=None, **kwargs):
         """INTERNAL"""

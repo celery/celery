@@ -198,12 +198,13 @@ class TaskWrapper(object):
         These are ``logfile``, ``loglevel``, ``task_id`` and ``task_name``.
 
         """
+        kwargs = dict(self.kwargs)
         task_func_kwargs = {"logfile": logfile,
                             "loglevel": loglevel,
                             "task_id": self.task_id,
                             "task_name": self.task_name}
-        task_func_kwargs.update(self.kwargs)
-        return task_func_kwargs
+        kwargs.update(task_func_kwargs)
+        return kwargs
 
     def execute(self, loglevel=None, logfile=None):
         """Execute the task in a :func:`jail` and store return value
