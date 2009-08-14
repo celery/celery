@@ -6,6 +6,7 @@ from celery.registry import tasks
 from celery.utils import gen_unique_id
 from functools import partial as curry
 from datetime import datetime, timedelta
+from multiprocessing import get_logger
 import inspect
 
 
@@ -127,7 +128,7 @@ def delay_task(task_name, *args, **kwargs):
     return apply_async(task, args, kwargs)
 
 
-def apply(task, args, kwargs, **ignored):
+def apply(task, args, kwargs, **options):
     """Apply the task locally.
 
     This will block until the task completes, and returns a
@@ -137,10 +138,18 @@ def apply(task, args, kwargs, **ignored):
     args = args or []
     kwargs = kwargs or {}
     task_id = gen_unique_id()
+    retries = options.get("retries", 0)
 
     # If it's a Task class we need to have to instance
     # for it to be callable.
     task = inspect.isclass(task) and task() or task
+
+    kwargs.update({"task_name": task.name,
+                   "task_id": task_id,
+                   "task_retries": retries,
+                   "task_is_eager": True,
+                   "logfile": None,
+                   "loglevel": 0})
 
     try:
         ret_value = task(*args, **kwargs)

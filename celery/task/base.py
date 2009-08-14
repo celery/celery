@@ -2,7 +2,7 @@ from carrot.connection import DjangoBrokerConnection
 from celery.conf import AMQP_CONNECTION_TIMEOUT
 from celery.messaging import TaskPublisher, TaskConsumer
 from celery.log import setup_logger
-from celery.result import TaskSetResult
+from celery.result import TaskSetResult, EagerResult
 from celery.execute import apply_async, delay_task, apply
 from celery.utils import gen_unique_id, get_full_cls_name
 from datetime import timedelta
@@ -258,11 +258,20 @@ class Task(object):
         options["task_id"] = kwargs.pop("task_id", None)
         options["countdown"] = options.get("countdown",
                                            self.default_retry_delay)
-        exc = exc or MaxRetriesExceededError(
+        exc = exc or self.MaxRetriesExceededError(
                 "Can't retry %s[%s] args:%s kwargs:%s" % (
                     self.name, options["task_id"], args, kwargs))
         if options["retries"] > self.max_retries:
             raise exc
+
+        # If task was executed eagerly using apply(),
+        # then the retry must also be executed eagerly.
+        if kwargs.get("task_is_eager", False):
+            result = self.apply(args=args, kwargs=kwargs, **options)
+            if isinstance(result, EagerResult):
+                return result.get()
+            return result
+
         return self.apply_async(args=args, kwargs=kwargs, **options)
         
     @classmethod
