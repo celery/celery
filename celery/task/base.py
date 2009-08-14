@@ -63,8 +63,7 @@ class Task(object):
 
     .. attribute:: max_retries
 
-        Maximum number of retries before giving up (i.e. raising the last
-        resulting exception). Default is ``3``.
+        Maximum number of retries before giving up.
 
     .. attribute:: default_retry_delay
 
@@ -215,18 +214,31 @@ class Task(object):
         """Delay this task for execution by the ``celery`` daemon(s).
 
         :param args: positional arguments passed on to the task.
-
         :param kwargs: keyword arguments passed on to the task.
+        :keyword \*\*options: Any keyword arguments to pass on to
+            :func:`celery.execute.apply_async`.
+
+        See :func:`celery.execute.apply_async` for more information.
 
         :rtype: :class:`celery.result.AsyncResult`
 
-        See :func:`celery.execute.apply_async`.
 
         """
         return apply_async(cls, args, kwargs, **options)
 
-    def retry(self, args, kwargs, **options):
+    def retry(self, args, kwargs, exc=None, **options):
         """Retry the task.
+
+        :param args: Positional arguments to retry with.
+        :param kwargs: Keyword arguments to retry with.
+        :keyword exc: Optional exception to raise instead of
+            :exc:`MaxRestartsExceededError` when the max restart limit has
+            been exceeded.
+        :keyword countdown: Time in seconds to delay the retry for.
+        :keyword eta: Explicit time and date to run the retry at (must be a
+            :class:`datetime.datetime` instance).
+        :keyword \*\*options: Any extra options to pass on to
+            meth:`apply_async`. See :func:`celery.execute.apply_async`.
 
         Example
 
@@ -246,9 +258,9 @@ class Task(object):
         options["task_id"] = kwargs.pop("task_id", None)
         options["countdown"] = options.get("countdown",
                                            self.default_retry_delay)
-        exc = options.pop("exc", MaxRetriesExceededError(
-            "Can't retry %s[%s] args:%s kwargs:%s" % (
-                self.name, options["task_id"], args, kwargs)))
+        exc = exc or MaxRetriesExceededError(
+                "Can't retry %s[%s] args:%s kwargs:%s" % (
+                    self.name, options["task_id"], args, kwargs))
         if options["retries"] > self.max_retries:
             raise exc
         return self.apply_async(args=args, kwargs=kwargs, **options)
