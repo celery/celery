@@ -10,6 +10,7 @@ from celery.loaders import current_loader
 from django.core.mail import mail_admins
 from celery.monitoring import TaskTimerStats
 from celery.task.base import RetryTaskError
+from celery import signals
 import multiprocessing
 import traceback
 import socket
@@ -59,7 +60,9 @@ def jail(task_id, task_name, func, args, kwargs):
     timer_stat = TaskTimerStats.start(task_id, task_name, args, kwargs)
 
     # Run task loader init handler.
-    current_loader.on_worker_init()
+    current_loader.on_task_init(task_id, func)
+    signals.task_prerun.send(sender=func, task_id=task_id, task=func,
+                             args=args, kwargs=kwargs)
 
     # Backend process cleanup
     default_backend.process_cleanup()
@@ -101,6 +104,9 @@ def jail(task_id, task_name, func, args, kwargs):
         retval = result
     finally:
         timer_stat.stop()
+
+    signals.task_postrun.send(sender=func, task_id=task_id, task=func,
+                              args=args, kwargs=kwargs, retval=retval)
 
     return retval
 
