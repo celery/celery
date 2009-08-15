@@ -242,11 +242,17 @@ class Task(object):
         :keyword exc: Optional exception to raise instead of
             :exc:`MaxRestartsExceededError` when the max restart limit has
             been exceeded.
+        :keyword throw: Do not raise the :exc:`RetryTaskError` exception,
+            that tells the worker that the task is to be retried.
         :keyword countdown: Time in seconds to delay the retry for.
         :keyword eta: Explicit time and date to run the retry at (must be a
             :class:`datetime.datetime` instance).
         :keyword \*\*options: Any extra options to pass on to
             meth:`apply_async`. See :func:`celery.execute.apply_async`.
+
+        :raises RetryTaskError: To tell the worker that the task has been
+            re-sent for retry. This always happens except if the ``throw``
+            keyword argument has been explicitly set to ``False``.
 
         Example
 
