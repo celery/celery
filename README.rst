@@ -1,13 +1,15 @@
-============================================
-celery - Distributed Task Queue for Python
-============================================
+===================================================
+ celery - Distributed Task Queue for Django/Python
+===================================================
 
-:Version: 0.3.20
+:Version: 0.6.0
 
 Introduction
 ============
 
-``celery`` is a distributed task queue framework for Python.
+**NOTE:** See the FAQ for information about using celery outside of Django.
+
+``celery`` is a distributed task queue framework for Django/Python.
 
 It is used for executing tasks *asynchronously*, routed to one or more
 worker servers, running concurrently using multiprocessing.
@@ -77,6 +79,9 @@ Features
     * The worker can collect statistics, like, how many tasks has been
       executed by type, and the time it took to process them. Very useful
       for monitoring and profiling.
+
+    * Pool workers are supervised, so if for some reason a worker crashes
+        it is automatically replaced by a new worker.
 
 API Reference Documentation
 ===========================
@@ -256,6 +261,10 @@ you greater control of the task execution).
 At this point, the task has been sent to the message broker. The message
 broker will hold on to the task until a celery worker server has successfully
 picked it up.
+
+*Note* If everything is just hanging when you execute ``delay``, please check
+that RabbitMQ is running, and that the user/password has access to the virtual
+host you configured earlier.
 
 Right now we have to check the celery worker logfiles to know what happened with
 the task. This is because we didn't keep the ``AsyncResult`` object returned
