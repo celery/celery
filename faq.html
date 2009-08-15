@@ -264,12 +264,13 @@ configuration:</p>
 </div>
 <div class="section" id="can-i-use-celery-without-django">
 <h3>Can I use celery without Django?<a class="headerlink" href="#can-i-use-celery-without-django" title="Permalink to this headline">¶</a></h3>
-<p><strong>Answer:</strong> Yes. But you have to either create a custom loader, or use the
-default loader with a configuration file.</p>
-</div>
-</div>
-<div class="section" id="using-the-default-loader">
-<h2>Using the default loader<a class="headerlink" href="#using-the-default-loader" title="Permalink to this headline">¶</a></h2>
+<p><strong>Answer:</strong> Yes.</p>
+<p>Celery uses something called loaders to read/setup configuration, import
+modules that registers tasks and to decide what happens when a task is
+executed. Currently there are two loaders, the default loader and the Django
+loader. If you want to use celery without a Django project, you either have to
+use the default loader, or a write a loader of your own.</p>
+<p>The rest of this answer describes how to use the default loader.</p>
 <p>You need a configuration file named <tt class="docutils literal"><span class="pre">celeryconfig.py</span></tt>, either in the
 directory you run <tt class="docutils literal"><span class="pre">celeryd</span></tt> in, or in a Python library path where it is
 able to find it. The configuration file can contain any of the settings
@@ -313,6 +314,7 @@ run <tt class="docutils literal"><span class="pre">celeryinit</span></tt> to cre
 </div>
 </div>
 </div>
+</div>
 
 
           </div>
@@ -339,7 +341,6 @@ run <tt class="docutils literal"><span class="pre">celeryinit</span></tt> to cre
 <li><a class="reference external" href="#can-i-use-celery-without-django">Can I use celery without Django?</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#using-the-default-loader">Using the default loader</a></li>
 </ul>
 </li>
 </ul>
