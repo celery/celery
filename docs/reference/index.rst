@@ -13,6 +13,7 @@
     celery.result
     celery.task
     celery.registry
+    celery.signals
     celery.task.builtins
     celery.task.strategy
     celery.discovery
