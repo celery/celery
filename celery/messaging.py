@@ -3,14 +3,19 @@
 Sending and Receiving Messages
 
 """
-from carrot.messaging import Publisher, Consumer
+from carrot.messaging import Publisher, Consumer, ConsumerSet
 from celery import conf
-import uuid
+from celery.utils import gen_unique_id
+from celery.utils import mitemgetter
+from celery.serialization import pickle
 
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+
+MSG_OPTIONS = ("mandatory", "priority",
+               "immediate", "routing_key")
+
+get_msg_options = mitemgetter(*MSG_OPTIONS)
+
+extract_msg_options = lambda d: dict(zip(MSG_OPTIONS, get_msg_options(d)))
 
 
 class TaskPublisher(Publisher):
@@ -18,6 +23,7 @@ class TaskPublisher(Publisher):
     exchange = conf.AMQP_EXCHANGE
     exchange_type = conf.AMQP_EXCHANGE_TYPE
     routing_key = conf.AMQP_PUBLISHER_ROUTING_KEY
+    serializer = "pickle"
     encoder = pickle.dumps
 
     def delay_task(self, task_name, task_args, task_kwargs, **kwargs):
@@ -32,36 +38,30 @@ class TaskPublisher(Publisher):
                                 task_args=task_args, task_kwargs=task_kwargs,
                                 **kwargs)
 
-    def requeue_task(self, task_name, task_id, task_args, task_kwargs,
-            part_of_set=None, **kwargs):
-        """Requeue a failed task."""
-        return self._delay_task(task_name=task_name, part_of_set=part_of_set,
-                                task_id=task_id, task_args=task_args,
-                                task_kwargs=task_kwargs, **kwargs)
-
     def _delay_task(self, task_name, task_id=None, part_of_set=None,
             task_args=None, task_kwargs=None, **kwargs):
         """INTERNAL"""
-        priority = kwargs.get("priority")
-        immediate = kwargs.get("immediate")
-        mandatory = kwargs.get("mandatory")
-        routing_key = kwargs.get("routing_key")
-    
-        task_args = task_args or []
-        task_kwargs = task_kwargs or {}
-        task_id = task_id or str(uuid.uuid4())
+
+        task_id = task_id or gen_unique_id()
+
         message_data = {
-            "id": task_id,
             "task": task_name,
-            "args": task_args,
-            "kwargs": task_kwargs,
+            "id": task_id,
+            "args": task_args or [],
+            "kwargs": task_kwargs or {},
+            "retries": kwargs.get("retries", 0),
+            "eta": kwargs.get("eta"),
         }
+
         if part_of_set:
             message_data["taskset"] = part_of_set
-        self.send(message_data,
-                routing_key=routing_key, priority=priority,
-                immediate=immediate, mandatory=mandatory)
+
+        self.send(message_data, **extract_msg_options(kwargs))
         return task_id
+
+
+def get_consumer_set(connection, queues=conf.AMQP_CONSUMER_QUEUES, **options):
+    return ConsumerSet(connection, from_dict=queues, **options)
 
 
 class TaskConsumer(Consumer):
@@ -88,6 +88,3 @@ class StatsConsumer(Consumer):
     exchange_type = "direct"
     decoder = pickle.loads
     no_ack=True
-
-    def receive(self, message_data, message):
-        pass

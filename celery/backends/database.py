@@ -12,11 +12,23 @@ class Backend(BaseBackend):
         super(Backend, self).__init__(*args, **kwargs)
         self._cache = {}
 
+    def init_periodic_tasks(self):
+        """Create entries for all periodic tasks in the database."""
+        PeriodicTaskMeta.objects.init_entries()
+
     def run_periodic_tasks(self):
-        """Run all waiting periodic tasks."""
+        """Run all waiting periodic tasks.
+
+        :returns: a list of ``(task, task_id)`` tuples containing
+            the task class and id for the resulting tasks applied.
+
+        """
         waiting_tasks = PeriodicTaskMeta.objects.get_waiting_tasks()
+        task_id_tuples = []
         for waiting_task in waiting_tasks:
-            waiting_task.delay()
+            task_id = waiting_task.delay()
+            task_id_tuples.append((waiting_task, task_id))
+        return task_id_tuples
 
     def store_result(self, task_id, result, status):
         """Mark task as done (executed)."""
@@ -24,7 +36,8 @@ class Backend(BaseBackend):
             result = self.prepare_result(result)
         elif status == "FAILURE":
             result = self.prepare_exception(result)
-        return TaskMeta.objects.store_result(task_id, result, status)
+        TaskMeta.objects.store_result(task_id, result, status)
+        return result
 
     def is_done(self, task_id):
         """Returns ``True`` if task with ``task_id`` has been executed."""

@@ -1,5 +1,6 @@
 """celery.conf"""
 from celery.loaders import settings
+from datetime import timedelta
 import logging
 
 DEFAULT_AMQP_EXCHANGE = "celery"
@@ -15,6 +16,10 @@ DEFAULT_DAEMON_LOG_FILE = "celeryd.log"
 DEFAULT_AMQP_CONNECTION_TIMEOUT = 4
 DEFAULT_STATISTICS = False
 DEFAULT_STATISTICS_COLLECT_INTERVAL = 60 * 5
+DEFAULT_ALWAYS_EAGER = False
+DEFAULT_TASK_RESULT_EXPIRES = timedelta(days=5)
+DEFAULT_AMQP_CONNECTION_RETRY = True
+DEFAULT_AMQP_CONNECTION_MAX_RETRIES = 100
 
 """
 .. data:: LOG_LEVELS
@@ -133,6 +138,24 @@ AMQP_CONSUMER_ROUTING_KEY = getattr(settings,
 AMQP_CONSUMER_QUEUE = getattr(settings, "CELERY_AMQP_CONSUMER_QUEUE",
                               DEFAULT_AMQP_CONSUMER_QUEUE)
 
+
+"""
+.. data:: AMQP_CONSUMER_QUEUES
+
+    Dictionary defining multiple AMQP queues.
+
+"""
+DEFAULT_AMQP_CONSUMER_QUEUES = {
+        AMQP_CONSUMER_QUEUE: {
+            "exchange": AMQP_EXCHANGE,
+            "routing_key": AMQP_CONSUMER_ROUTING_KEY,
+            "exchange_type": AMQP_EXCHANGE_TYPE,
+        }
+}
+
+AMQP_CONSUMER_QUEUES = getattr(settings, "CELERY_AMQP_CONSUMER_QUEUES",
+                              DEFAULT_AMQP_CONSUMER_QUEUES)
+
 """
 .. data:: AMQP_CONNECTION_TIMEOUT
 
@@ -164,3 +187,57 @@ SEND_CELERY_TASK_ERROR_EMAILS = getattr(settings,
 STATISTICS_COLLECT_INTERVAL = getattr(settings,
                                 "CELERY_STATISTICS_COLLECT_INTERVAL",
                                 DEFAULT_STATISTICS_COLLECT_INTERVAL)
+
+"""
+.. data:: ALWAYS_EAGER
+
+    If this is ``True``, all tasks will be executed locally by blocking
+    until it is finished. ``apply_async`` and ``delay_task`` will return
+    a :class:`celery.result.EagerResult` which emulates the behaviour of
+    an :class:`celery.result.AsyncResult`.
+
+"""
+ALWAYS_EAGER = getattr(settings, "CELERY_ALWAYS_EAGER",
+                       DEFAULT_ALWAYS_EAGER)
+
+"""
+.. data: TASK_RESULT_EXPIRES
+
+    Time (in seconds, or a :class:`datetime.timedelta` object) for when after
+    stored task results are deleted. For the moment this only works for the
+    database backend.
+"""
+TASK_RESULT_EXPIRES = getattr(settings, "CELERY_TASK_RESULT_EXPIRES",
+                              DEFAULT_TASK_RESULT_EXPIRES)
+
+# Make sure TASK_RESULT_EXPIRES is a timedelta.
+if isinstance(TASK_RESULT_EXPIRES, int):
+    TASK_RESULT_EXPIRES = timedelta(seconds=TASK_RESULT_EXPIRES)
+
+"""
+.. data:: AMQP_CONNECTION_RETRY
+
+Automatically try to re-establish the connection to the AMQP broker if
+it's lost. The time between retries is increased for each retry, and is
+not exhausted before :data:`AMQP_CONNECTION_MAX_RETRIES` is exceeded.
+
+On by default.
+
+"""
+AMQP_CONNECTION_RETRY = getattr(settings, "AMQP_CONNECTION_RETRY",
+                                DEFAULT_AMQP_CONNECTION_RETRY)
+
+"""
+.. data:: AMQP_CONNECTION_MAX_RETRIES
+
+Maximum number of retries before we give up re-establishing a connection
+to the AMQP broker.
+
+If this is set to ``0`` or ``None``, we will retry forever.
+
+Default is ``100`` retries.
+
+"""
+AMQP_CONNECTION_MAX_RETRIES = getattr(settings,
+                                      "AMQP_CONNECTION_MAX_RETRIES",
+                                      DEFAULT_AMQP_CONNECTION_MAX_RETRIES)

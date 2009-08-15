@@ -1,16 +1,15 @@
-from multiprocessing import Process, TimeoutError
-import threading
+import multiprocessing
 import time
+from multiprocessing import TimeoutError
 
-PING_TIMEOUT = 30 # seconds
 JOIN_TIMEOUT = 2
 CHECK_INTERVAL = 2
 MAX_RESTART_FREQ = 3
 MAX_RESTART_FREQ_TIME = 10
 
 
-def raise_ping_timeout():
-    raise TimeoutError("Supervised: Timed out while pinging process.")
+class MaxRestartsExceededError(Exception):
+    """Restarts exceeded the maximum restart frequency."""
 
 
 class OFASupervisor(object):
@@ -24,11 +23,10 @@ class OFASupervisor(object):
 
     :param target: see :attr:`target`.
     :param args: see :attr:`args`.
-    :param kwargs see :attr:`kwargs`.
-    :param join_timeout see :attr:`join_timeout`.
-    :param max_restart_freq see :attr:`max_restart_freq`.
-    :param max_restart_freq_time see :attr:`max_restart_freq_time`.
-    :param check_interval see :attr:`max_restart_freq_time`.
+    :param kwargs: see :attr:`kwargs`.
+    :param max_restart_freq: see :attr:`max_restart_freq`.
+    :param max_restart_freq_time: see :attr:`max_restart_freq_time`.
+    :param check_interval: see :attr:`max_restart_freq_time`.
 
     .. attribute:: target
 
@@ -41,10 +39,6 @@ class OFASupervisor(object):
     .. attribute:: kwargs
 
         The keyword arguments to apply to :attr:`target`.
-
-    .. attribute:: join_timeout
-
-        If the process is dead, try to give it a few seconds to join.
 
     .. attribute:: max_restart_freq
 
@@ -66,17 +60,17 @@ class OFASupervisor(object):
         The time in seconds, between process pings.
 
     """
+    Process = multiprocessing.Process
 
     def __init__(self, target, args=None, kwargs=None,
-            ping_timeout=PING_TIMEOUT, join_timeout=JOIN_TIMEOUT,
-            max_restart_freq = MAX_RESTART_FREQ,
+            max_restart_freq=MAX_RESTART_FREQ,
+            join_timeout=JOIN_TIMEOUT,
             max_restart_freq_time=MAX_RESTART_FREQ_TIME,
             check_interval=CHECK_INTERVAL):
         self.target = target
+        self.join_timeout = join_timeout
         self.args = args or []
         self.kwargs = kwargs or {}
-        self.ping_timeout = ping_timeout
-        self.join_timeout = join_timeout
         self.check_interval = check_interval
         self.max_restart_freq = max_restart_freq
         self.max_restart_freq_time = max_restart_freq_time
@@ -89,51 +83,38 @@ class OFASupervisor(object):
 
         def _start_supervised_process():
             """Start the :attr:`target` in a new process."""
-            process = Process(target=target,
-                              args=self.args, kwargs=self.kwargs)
+            process = self.Process(target=target,
+                                   args=self.args, kwargs=self.kwargs)
             process.start()
             return process
 
-        def _restart(self, process):
+        def _restart(process):
             """Terminate the process and restart."""
             process.join(timeout=self.join_timeout)
             process.terminate()
             self.restarts_in_frame += 1
             process = _start_supervised_process()
 
+        process = _start_supervised_process()
         try:
-            process = _start_supervised_process()
             restart_frame = 0
             while True:
                 if restart_frame > self.max_restart_freq_time:
                     if self.restarts_in_frame >= self.max_restart_freq:
-                        raise Exception(
+                        raise MaxRestartsExceededError(
                                 "Supervised: Max restart frequency reached")
                 restart_frame = 0
                 self.restarts_in_frame = 0
 
                 try:
-                    proc_is_alive = self.is_alive(process)
+                    proc_is_alive = process.is_alive()
                 except TimeoutError:
                     proc_is_alive = False
 
                 if not proc_is_alive:
-                    self._restart()
+                    _restart(process)
 
                 time.sleep(self.check_interval)
                 restart_frame += self.check_interval
         finally:
             process.join()
-
-    def _is_alive(self, process):
-        """Sends a ping to the target process to see if it's alive.
-
-        :rtype bool:
-
-        """
-        timeout_timer = threading.Timer(self.ping_timeout, raise_ping_timeout)
-        try:
-            alive = process.is_alive()
-        finally:
-            timeout_timer.cancel()
-        return alive

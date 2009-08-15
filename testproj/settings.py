@@ -5,8 +5,12 @@ import sys
 # import source code dir
 sys.path.insert(0, os.path.join(os.getcwd(), os.pardir))
 
+SITE_ID = 300
+
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
+
+ROOT_URLCONF = "urls"
 
 ADMINS = (
     # ('Your Name', 'your_email@domain.com'),
@@ -23,11 +27,12 @@ AMQP_VHOST = "/"
 AMQP_USER = "guest"
 AMQP_PASSWORD = "guest"
 
+TT_HOST = "localhost"
+TT_PORT = 1978
+
 CELERY_AMQP_EXCHANGE = "testcelery"
 CELERY_AMQP_ROUTING_KEY = "testcelery"
 CELERY_AMQP_CONSUMER_QUEUE = "testcelery"
-
-CELERY_TASK_META_USE_DB = True
 
 MANAGERS = ADMINS
 
@@ -53,4 +58,7 @@ try:
 except ImportError:
     pass
 else:
-    INSTALLED_APPS += ("test_extensions", )
+    pass
+    #INSTALLED_APPS += ("test_extensions", )
+
+SEND_CELERY_TASK_ERROR_EMAILS = False

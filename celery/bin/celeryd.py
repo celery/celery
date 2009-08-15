@@ -76,13 +76,10 @@ from celery.supervisor import OFASupervisor
 from celery.log import emergency_error
 from celery.conf import LOG_LEVELS, DAEMON_LOG_FILE, DAEMON_LOG_LEVEL
 from celery.conf import DAEMON_CONCURRENCY, DAEMON_PID_FILE
-from celery.messaging import TaskConsumer
 from celery import conf
 from celery import discovery
 from celery.task import discard_all
 from celery.worker import WorkController
-from carrot.connection import DjangoAMQPConnection
-from celery.messaging import TaskConsumer, StatsConsumer
 import multiprocessing
 import traceback
 import optparse
@@ -168,7 +165,7 @@ def acquire_pidlock(pidfile):
     except os.error, exc:
         if exc.errno == errno.ESRCH:
             sys.stderr.write("Stale pidfile exists. Removing it.\n")
-            pidlock.release()
+            os.unlink(pidfile)
             return PIDLockFile(pidfile)
     else:
         raise SystemExit(
@@ -215,9 +212,9 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
     # Dump configuration to screen so we have some basic information
     # when users sends e-mails.
     print(STARTUP_INFO_FMT % {
-            "vhost": settings.AMQP_VHOST,
-            "host": settings.AMQP_SERVER,
-            "port": settings.AMQP_PORT,
+            "vhost": getattr(settings, "AMQP_VHOST", "(default)"),
+            "host": getattr(settings, "AMQP_SERVER", "(default)"),
+            "port": getattr(settings, "AMQP_PORT", "(default)"),
             "exchange": conf.AMQP_EXCHANGE,
             "exchange_type": conf.AMQP_EXCHANGE_TYPE,
             "consumer_queue": conf.AMQP_CONSUMER_QUEUE,
@@ -263,7 +260,7 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
                                 logfile=logfile,
                                 is_detached=detach)
         try:
-            worker.run()
+            worker.start()
         except Exception, e:
             emergency_error(logfile, "celeryd raised exception %s: %s\n%s" % (
                             e.__class__, e, traceback.format_exc()))
@@ -288,4 +285,4 @@ def parse_options(arguments):
 
 if __name__ == "__main__":
     options = parse_options(sys.argv[1:])
-    run_worker(**options)
+    run_worker(**vars(options))

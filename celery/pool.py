@@ -3,18 +3,183 @@
 Process Pools.
 
 """
+import os
+import time
+import errno
 import multiprocessing
-import itertools
-import threading
-import uuid
 
-from multiprocessing.pool import RUN as POOL_STATE_RUN
+from multiprocessing.pool import Pool, worker
 from celery.datastructures import ExceptionInfo
+from celery.utils import gen_unique_id
+from functools import partial as curry
+from operator import isNumberType
+
+
+def pid_is_dead(pid):
+    """Check if a process is not running by PID.
+
+    :rtype bool:
+
+    """
+    try:
+        return os.kill(pid, 0)
+    except OSError, err:
+        if err.errno == errno.ESRCH:
+            return True # No such process.
+        elif err.errno == errno.EPERM:
+            return False # Operation not permitted.
+        else:
+            raise
+
+
+def reap_process(pid):
+    """Reap process if the process is a zombie.
+
+    :returns: ``True`` if process was reaped or is not running,
+        ``False`` otherwise.
+
+    """
+    if pid_is_dead(pid):
+        return True
+
+    try:
+        is_dead, _ = os.waitpid(pid, os.WNOHANG)
+    except OSError, err:
+        if err.errno == errno.ECHILD:
+            return False # No child processes.
+        raise
+    return is_dead
+
+
+def process_is_dead(process):
+    """Check if process is not running anymore.
+
+    First it finds out if the process is running by sending
+    signal 0. Then if the process is a child process, and is running
+    it finds out if it's a zombie process and reaps it.
+    If the process is running and is not a zombie it tries to send
+    a ping through the process pipe.
+
+    :param process: A :class:`multiprocessing.Process` instance.
+
+    :returns: ``True`` if the process is not running, ``False`` otherwise.
+
+    """
+
+    # Try to see if the process is actually running,
+    # and reap zombie proceses while we're at it.
+
+    if reap_process(process.pid):
+        return True
+
+    # Then try to ping the process using its pipe.
+    try:
+        proc_is_alive = process.is_alive()
+    except OSError:
+        return True
+    else:
+        return not proc_is_alive
+
+
+class DynamicPool(Pool):
+    """Version of :class:`multiprocessing.Pool` that can dynamically grow
+    in size."""
+
+    def __init__(self, processes=None, initializer=None, initargs=()):
+
+        if processes is None:
+            try:
+                processes = cpu_count()
+            except NotImplementedError:
+                processes = 1
+
+        super(DynamicPool, self).__init__(processes=processes,
+                                          initializer=initializer,
+                                          initargs=initargs)
+        self._initializer = initializer
+        self._initargs = initargs
+        self._size = processes
+        self.logger = multiprocessing.get_logger()
+
+    def _my_cleanup(self):
+        from multiprocessing.process import _current_process
+        for p in list(_current_process._children):
+            discard = False
+            try:
+                status = p._popen.poll()
+            except OSError:
+                discard = True
+            else:
+                if status is not None:
+                    discard = True
+            if discard:
+                _current_process._children.discard(p)
+
+    def add_worker(self):
+        """Add another worker to the pool."""
+        self._my_cleanup()
+        w = self.Process(target=worker,
+                         args=(self._inqueue, self._outqueue,
+                               self._initializer, self._initargs))
+        w.name = w.name.replace("Process", "PoolWorker")
+        w.daemon = True
+        w.start()
+        self._pool.append(w)
+        self.logger.debug(
+            "DynamicPool: Started pool worker %s (PID: %s, Poolsize: %d)" %(
+                w.name, w.pid, len(self._pool)))
+
+    def grow(self, size=1):
+        """Add workers to the pool.
+
+        :keyword size: Number of workers to add (default: 1)
+
+        """
+        [self.add_worker() for i in range(size)]
+
+    def _is_dead(self, process):
+        """Try to find out if the process is dead.
+
+        :rtype bool:
+
+        """
+        if process_is_dead(process):
+            self.logger.info("DynamicPool: Found dead process (PID: %s)" % (
+                process.pid))
+            return True
+        return False
+
+    def _bring_out_the_dead(self):
+        """Sort out dead process from pool.
+
+        :returns: Tuple of two lists, the first list with dead processes,
+            the second with active processes.
+
+        """
+        dead, alive = [], []
+        for process in self._pool:
+            if process and process.pid and isNumberType(process.pid):
+                dest = dead if self._is_dead(process) else alive
+                dest.append(process)
+        return dead, alive
+
+    def replace_dead_workers(self):
+        """Replace dead workers in the pool by spawning new ones.
+
+        :returns: number of dead processes replaced, or ``None`` if all
+            processes are alive and running.
+
+        """
+        dead, alive = self._bring_out_the_dead()
+        if dead:
+            dead_count = len(dead)
+            self._pool = alive
+            self.grow(self._size if dead_count > self._size else dead_count)
+            return dead_count
 
 
 class TaskPool(object):
-    """Pool of running child processes, which starts waiting for the
-    processes to finish when the queue limit has been reached.
+    """Process Pool for processing tasks in parallel.
 
     :param limit: see :attr:`limit` attribute.
     :param logger: see :attr:`logger` attribute.
@@ -22,8 +187,7 @@ class TaskPool(object):
 
     .. attribute:: limit
 
-        The number of processes that can run simultaneously until
-        we start collecting results.
+        The number of processes that can run simultaneously.
 
     .. attribute:: logger
 
@@ -34,56 +198,31 @@ class TaskPool(object):
     def __init__(self, limit, logger=None):
         self.limit = limit
         self.logger = logger or multiprocessing.get_logger()
-        self._process_counter = itertools.count(1)
-        self._processed_total = 0
         self._pool = None
-        self._processes = None
 
-    def run(self):
+    def start(self):
         """Run the task pool.
 
         Will pre-fork all workers so they're ready to accept tasks.
 
         """
-        self._start()
+        self._pool = DynamicPool(processes=self.limit)
 
-    def _start(self):
-        """INTERNAL: Starts the pool. Used by :meth:`run`."""
-        self._processes = {}
-        self._pool = multiprocessing.Pool(processes=self.limit)
-
-    def terminate(self):
+    def stop(self):
         """Terminate the pool."""
         self._pool.terminate()
+        self._pool = None
 
-    def _terminate_and_restart(self):
-        """INTERNAL: Terminate and restart the pool."""
-        try:
-            self.terminate()
-        except OSError:
-            pass
-        self._start()
-
-    def _restart(self):
-        """INTERNAL: Close and restart the pool."""
-        self.logger.info("Closing and restarting the pool...")
-        self._pool.close()
-        timeout_thread = threading.Timer(30.0, self._terminate_and_restart)
-        timeout_thread.start()
-        self._pool.join()
-        timeout_thread.cancel()
-        self._start()
-
-    def _pool_is_running(self):
-        """Check if the pool is in the run state.
-
-        :returns: ``True`` if the pool is running.
-
-        """
-        return self._pool._state == POOL_STATE_RUN
+    def replace_dead_workers(self):
+        self.logger.debug("TaskPool: Finding dead pool processes...")
+        dead_count = self._pool.replace_dead_workers()
+        if dead_count:
+            self.logger.info(
+                "TaskPool: Replaced %d dead pool workers..." % (
+                    dead_count))
 
     def apply_async(self, target, args=None, kwargs=None, callbacks=None,
-            errbacks=None, on_acknowledge=None, meta=None):
+            errbacks=None, on_ack=None, meta=None):
         """Equivalent of the :func:``apply`` built-in function.
 
         All ``callbacks`` and ``errbacks`` should complete immediately since
@@ -95,106 +234,35 @@ class TaskPool(object):
         callbacks = callbacks or []
         errbacks = errbacks or []
         meta = meta or {}
-        tid = str(uuid.uuid4())
 
-        if not self._pool_is_running():
-            self._start()
-
-        self._processed_total = self._process_counter.next()
-
-        on_return = lambda r: self.on_return(r, tid, callbacks, errbacks, meta)
+        on_return = curry(self.on_return, callbacks, errbacks,
+                          on_ack, meta)
 
 
-        if self.full():
-            self.wait_for_result()
-        result = self._pool.apply_async(target, args, kwargs,
-                                           callback=on_return)
-        if on_acknowledge:
-            on_acknowledge()
-        self.add(result, callbacks, errbacks, tid, meta)
+        self.logger.debug("TaskPool: Apply %s (args:%s kwargs:%s)" % (
+            target, args, kwargs))
 
-        return result
+        self.replace_dead_workers()
 
-    def on_return(self, ret_val, tid, callbacks, errbacks, meta):
+        return self._pool.apply_async(target, args, kwargs,
+                                        callback=on_return)
+
+    def on_return(self, callbacks, errbacks, on_ack, meta, ret_value):
         """What to do when the process returns."""
-        try:
-            del(self._processes[tid])
-        except KeyError:
-            pass
-        else:
-            self.on_ready(ret_val, callbacks, errbacks, meta)
 
-    def add(self, result, callbacks, errbacks, tid, meta):
-        """Add a process to the queue.
+        # Acknowledge the task as being processed.
+        if on_ack:
+            on_ack()
 
-        If the queue is full, it will wait for the first task to finish,
-        collects its result and remove it from the queue, so it's ready
-        to accept new processes.
+        self.on_ready(callbacks, errbacks, meta, ret_value)
 
-        :param result: A :class:`multiprocessing.AsyncResult` instance, as
-            returned by :meth:`multiprocessing.Pool.apply_async`.
-
-        :option callbacks: List of callbacks to execute if the task was
-            successful. Must have the function signature:
-            ``mycallback(result, meta)``
-
-        :option errbacks: List of errbacks to execute if the task raised
-            and exception. Must have the function signature:
-            ``myerrback(exc, meta)``.
-
-        :option tid: The tid for this task (unqiue pool id).
-
-        """
-
-        self._processes[tid] = [result, callbacks, errbacks, meta]
-
-    def full(self):
-        """Is the pool full?
-
-        :returns: ``True`` if the maximum number of concurrent processes
-            has been reached.
-
-        """
-        return len(self._processes.values()) >= self.limit
-
-    def wait_for_result(self):
-        """Waits for the first process in the pool to finish.
-
-        This operation is blocking.
-
-        """
-        while True:
-            if self.reap():
-                break
-
-    def reap(self):
-        """Reap finished tasks."""
-        self.logger.debug("Reaping processes...")
-        processes_reaped = 0
-        for process_no, entry in enumerate(self._processes.items()):
-            tid, process_info = entry
-            result, callbacks, errbacks, meta = process_info
-            try:
-                ret_value = result.get(timeout=0.3)
-            except multiprocessing.TimeoutError:
-                continue
-            else:
-                self.on_return(ret_value, tid, callbacks, errbacks, meta)
-                processes_reaped += 1
-        return processes_reaped
-
-    def get_worker_pids(self):
-        """Returns the process id's of all the pool workers."""
-        return [process.pid for process in self._pool._pool]
-
-    def on_ready(self, ret_value, callbacks, errbacks, meta):
+    def on_ready(self, callbacks, errbacks, meta, ret_value):
         """What to do when a worker task is ready and its return value has
         been collected."""
 
         if isinstance(ret_value, ExceptionInfo):
-            if isinstance(ret_value.exception, KeyboardInterrupt) or \
-                    isinstance(ret_value.exception, SystemExit):
-                self.terminate()
+            if isinstance(ret_value.exception, (
+                    SystemExit, KeyboardInterrupt)):
                 raise ret_value.exception
             for errback in errbacks:
                 errback(ret_value, meta)

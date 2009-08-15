@@ -26,6 +26,21 @@ celeryd is not doing anything, just hanging
 --------------------------------------------
 
 **Answer:** See `MySQL is throwing deadlock errors, what can I do?`_.
+            or `Why is Task.delay/apply\* just hanging?`.
+
+Why is Task.delay/apply\* just hanging?`
+----------------------------------------
+
+**Answer:** :mod:`amqplib` hangs if it isn't able to authenticate to the
+AMQP server, so make sure you are able to access the configured vhost using
+the user and password.
+
+Why won't celeryd run on FreeBSD?
+---------------------------------
+
+**Answer:** multiprocessing.Pool requires a working POSIX semaphore
+implementation which isn't enabled in FreeBSD by default. You have to enable
+POSIX semaphores in the kernel and manually recompile multiprocessing.
 
 I'm having ``IntegrityError: Duplicate Key`` errors. Why?
 ----------------------------------------------------------
@@ -52,15 +67,120 @@ if it's able to find the task, or if some other error is happening.
 Why won't my Periodic Task run?
 -------------------------------
 
-See `Why won't my Task run?`_.
+**Answer:** See `Why won't my Task run?`_.
+
+How do I discard all waiting tasks?
+------------------------------------
+
+**Answer:** Use ``celery.task.discard_all()``, like this:
+
+    >>> from celery.task import discard_all
+    >>> discard_all()
+    1753
+
+The number ``1753`` is the number of messages deleted.
+
+You can also start celeryd with the ``--discard`` argument which will
+accomplish the same thing.
+
+I've discarded messages, but there are still messages left in the queue?
+------------------------------------------------------------------------
+
+**Answer:** Tasks are acknowledged (removed from the queue) as soon
+as they are actually executed. After the worker has received a task, it will
+take some time until it is actually executed, especially if there are a lot
+of tasks already waiting for execution. Messages that are not acknowledged are
+hold on to by the worker until it closes the connection to the broker (AMQP
+server). When that connection is closed (e.g because the worker was stopped)
+the tasks will be re-sent by the broker to the next available worker (or the
+same worker when it has been restarted), so to properly purge the queue of
+waiting tasks you have to stop all the workers, and then discard the tasks
+using ``discard_all``.
+
+Can I use celery with ActiveMQ/STOMP?
+-------------------------------------
+
+**Answer**: Yes. But this is somewhat experimental for now.
+It is certainly working ok for me in a test configuration, but it has not
+been tested in production like RabbitMQ. If you have any problems with
+using STOMP and celery, please report the bugs to the issue tracker:
+
+    http://github.com/ask/celery/issues/
+
+First you have to use the ``master`` branch of ``celery``::
+
+    $ git clone git://github.com/ask/celery.git
+    $ cd celery
+    $ sudo python setup.py install
+    $ cd ..
+
+Then you need to install the ``stompbackend`` branch of ``carrot``::
+
+    $ git clone git://github.com/ask/carrot.git
+    $ cd carrot
+    $ git checkout stompbackend
+    $ sudo python setup.py install
+    $ cd ..
+
+And my fork of ``python-stomp`` which adds non-blocking support::
+
+    $ hg clone http://bitbucket.org/asksol/python-stomp/
+    $ cd python-stomp
+    $ sudo python setup.py install
+    $ cd ..
+
+In this example we will use a queue called ``celery`` which we created in
+the ActiveMQ web admin interface.
+
+**Note**: For ActiveMQ the queue name has to have ``"/queue/"`` prepended to
+it. i.e. the queue ``celery`` becomes ``/queue/celery``.
+
+Since a STOMP queue is a single named entity and it doesn't have the
+routing capabilities of AMQP you need to set both the ``queue``, and
+``exchange`` settings to your queue name. This is a minor inconvenience since
+carrot needs to maintain the same interface for both AMQP and STOMP (obviously
+the one with the most capabilities won).
+
+Use the following specific settings in your ``settings.py``:
+
+.. code-block:: python
+
+    # Makes python-stomp the default backend for carrot.
+    CARROT_BACKEND = "stomp"
+
+    # STOMP hostname and port settings.
+    AMQP_HOST = "localhost"
+    AMQP_PORT = 61613
+
+    # The queue name to use (both queue and exchange must be set to the
+    # same queue name when using STOMP)
+    CELERY_AMQP_CONSUMER_QUEUE = "/queue/celery"
+    CELERY_AMQP_EXCHANGE = "/queue/celery" 
+   
+Now you can go on reading the tutorial in the README, ignoring any AMQP
+specific options. 
+
+Which features are not supported when using STOMP?
+--------------------------------------------------
+
+This is a (possible incomplete) list of features not available when
+using the STOMP backend:
+
+    * routing keys
+
+    * exchange types (direct, topic, headers, etc)
+
+    * immediate
+
+    * mandatory
 
 Can I send some tasks to only some servers?
 --------------------------------------------
 
-As of now there is only one use-case that works like this, and that is
-tasks of type ``A`` can be sent to servers ``x`` and ``y``, while tasks
-of type ``B`` can be sent to server ``z``. One server can't handle more than
-one routing_key, but this is coming in a later release.
+**Answer:** As of now there is only one use-case that works like this,
+and that is tasks of type ``A`` can be sent to servers ``x`` and ``y``,
+while tasks of type ``B`` can be sent to server ``z``. One server can't
+handle more than one routing_key, but this is coming in a later release.
 
 Say you have two servers, ``x``, and ``y`` that handles regular tasks,
 and one server ``z``, that only handles feed related tasks, you can use this
@@ -108,7 +228,6 @@ Now to make a Task run on the ``z`` server you need to set its
     from celery.task import Task
 
     class FeedImportTask(Task):
-        name = "import_feed"
         routing_key = "feed.importer"
 
         def run(self, feed_url):
@@ -123,3 +242,4 @@ You can also override this using the ``routing_key`` argument to
     >>> from myapp.tasks import RefreshFeedTask
     >>> apply_async(RefreshFeedTask, args=["http://cnn.com/rss"],
     ...             routing_key="feed.importer")
+

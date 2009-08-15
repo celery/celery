@@ -2,7 +2,7 @@
 celery - Distributed Task Queue for Python
 ============================================
 
-:Version: 0.3.12
+:Version: 0.3.20
 
 Introduction
 ============
@@ -237,9 +237,9 @@ advanced features of celery later.
 This is a task that basically does nothing but take some arguments,
 and return a value:
 
-    >>> from celery.task import Task, tasks
+    >>> from celery.task import Task
+    >>> from celery.registry import tasks
     >>> class MyTask(Task):
-    ...     name = "myapp.mytask"
     ...     def run(self, some_arg, **kwargs):
     ...         logger = self.get_logger(**kwargs)
     ...         logger.info("Did something: %s" % some_arg)
@@ -296,10 +296,10 @@ Periodic Tasks
 Periodic tasks are tasks that are run every ``n`` seconds. 
 Here's an example of a periodic task:
 
-    >>> from celery.task import tasks, PeriodicTask
+    >>> from celery.task import PeriodicTask
+    >>> from celery.registry import tasks
     >>> from datetime import timedelta
     >>> class MyPeriodicTask(PeriodicTask):
-    ...     name = "foo.my-periodic-task"
     ...     run_every = timedelta(seconds=30)
     ...
     ...     def run(self, **kwargs):
