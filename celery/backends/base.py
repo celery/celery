@@ -105,6 +105,11 @@ class BaseBackend(object):
         """Mark task as executed with failure. Stores the execption."""
         return self.store_result(task_id, exc, status="FAILURE")
 
+    def mark_as_retry(self, task_id, exc):
+        """Mark task as being retries. Stores the current
+        exception (if any)."""
+        return self.store_result(task_id, exc, status="RETRY")
+
     def create_exception_cls(self, name, module, parent=None):
         """Dynamically create an exception class."""
         if not parent:
