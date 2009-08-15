@@ -1,6 +1,6 @@
 # Sphinx inventory version 1
 # Project: Celery
-# Version: 0.6
+# Version: 0.7
 celery.backends.base mod reference/celery.backends.base.html
 celery.execute mod reference/celery.execute.html
 celery.task.strategy mod reference/celery.task.strategy.html
