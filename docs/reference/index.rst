@@ -19,6 +19,7 @@
     celery.loaders
     celery.loaders.base
     celery.loaders.default
+    celery.loaders.djangoapp
     celery.discovery
     celery.monitoring
     celery.messaging
