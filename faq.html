@@ -271,6 +271,21 @@ executed. Currently there are two loaders, the default loader and the Django
 loader. If you want to use celery without a Django project, you either have to
 use the default loader, or a write a loader of your own.</p>
 <p>The rest of this answer describes how to use the default loader.</p>
+<p>First of all, installation. You need to get the development version of
+celery from github:</p>
+<div class="highlight-python"><pre>$ git clone git://github.com/ask/celery.git
+$ cd celery
+# python setup.py install # as root</pre>
+</div>
+<p>While it is possible to use celery from outside of Django, we still need
+Django itself to run, this is to use the ORM and cache-framework, etc.
+Duplicating these features would be time consuming and mostly pointless, so
+we decided that having a dependency on Django itself was a good thing.
+Install Django using your favorite install tool, <tt class="docutils literal"><span class="pre">easy_install</span></tt>, <tt class="docutils literal"><span class="pre">pip</span></tt>, or
+whatever:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># easy_install django # as root</span>
+</pre></div>
+</div>
 <p>You need a configuration file named <tt class="docutils literal"><span class="pre">celeryconfig.py</span></tt>, either in the
 directory you run <tt class="docutils literal"><span class="pre">celeryd</span></tt> in, or in a Python library path where it is
 able to find it. The configuration file can contain any of the settings
