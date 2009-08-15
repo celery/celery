@@ -257,6 +257,22 @@ use the default loader, or a write a loader of your own.
 
 The rest of this answer describes how to use the default loader.
 
+First of all, installation. You need to get the development version of
+celery from github::
+
+    $ git clone git://github.com/ask/celery.git
+    $ cd celery
+    # python setup.py install # as root
+
+While it is possible to use celery from outside of Django, we still need
+Django itself to run, this is to use the ORM and cache-framework, etc.
+Duplicating these features would be time consuming and mostly pointless, so
+we decided that having a dependency on Django itself was a good thing.
+Install Django using your favorite install tool, ``easy_install``, ``pip``, or
+whatever::
+
+    # easy_install django # as root
+
 You need a configuration file named ``celeryconfig.py``, either in the
 directory you run ``celeryd`` in, or in a Python library path where it is
 able to find it. The configuration file can contain any of the settings
