@@ -100,7 +100,12 @@ using ``discard_all``.
 Can I use celery with ActiveMQ/STOMP?
 -------------------------------------
 
-**Answer**: Yes. But this is very experimental for now.
+**Answer**: Yes. But this is somewhat experimental for now.
+It is certainly working ok for me in a test configuration, but it has not
+been tested in production like RabbitMQ. If you have any problems with
+using STOMP and celery, please report the bugs to the issue tracker:
+
+    http://github.com/ask/celery/issues/
 
 First you have to use the ``master`` branch of ``celery``::
 
@@ -141,14 +146,14 @@ Use the following specific settings in your ``settings.py``:
 .. code-block:: python
 
     # Makes python-stomp the default backend for carrot.
-    CARROT_BACKEND = "pystomp"
+    CARROT_BACKEND = "stomp"
 
     # STOMP hostname and port settings.
     AMQP_HOST = "localhost"
     AMQP_PORT = 61613
 
     # The queue name to use (both queue and exchange must be set to the
-    # same queue name when using STOMP!!!)
+    # same queue name when using STOMP)
     CELERY_AMQP_CONSUMER_QUEUE = "/queue/celery"
     CELERY_AMQP_EXCHANGE = "/queue/celery" 
    
@@ -238,3 +243,57 @@ You can also override this using the ``routing_key`` argument to
     >>> apply_async(RefreshFeedTask, args=["http://cnn.com/rss"],
     ...             routing_key="feed.importer")
 
+
+Can I use celery without Django?
+--------------------------------
+
+**Answer:** Yes. But you have to either create a custom loader, or use the
+default loader with a configuration file.
+
+Using the default loader
+========================
+
+You need a configuration file named ``celeryconfig.py``, either in the
+directory you run ``celeryd`` in, or in a Python library path where it is
+able to find it. The configuration file can contain any of the settings
+described in :mod:`celery.conf`, and in additional if you're using the
+database backend you have to configure the database. Here is an example
+configuration using the database backend with MySQL:
+
+.. code-block:: python
+
+    # Broker configuration
+    AMQP_SERVER = "localhost"
+    AMQP_PORT = "5672"
+    AMQP_VHOST = "celery"
+    AMQP_USER = "celery"
+    AMQP_PASSWORD = "celerysecret"
+    CARROT_BACKEND="amqp"
+
+    # Using the database backend.
+    CELERY_BACKEND = "database"
+
+    # Number of processes that processes tasks simultaneously.
+    CELERYD_CONCURRENCY = 8
+
+    # Modules to import when celeryd starts.
+    # This must import every module where you register tasks so celeryd
+    # is able to find and run them.
+    CELERY_IMPORTS = ("mytaskmodule1", "mytaskmodule2")
+    
+Now with this configuration file in the current directory you have to
+run ``celeryinit`` to create the database tables::
+
+    $ celeryinit
+
+Then you should be able to successfully run ``celeryd``::
+
+    $ celeryd --loglevel=INFO
+
+and send a task from a python shell (note that it must be able to import
+``celeryconfig.py``):
+
+    >>> from celery.task.builtins import PingTask
+    >>> result = PingTask.apply_async()
+    >>> result.get()
+    'pong'

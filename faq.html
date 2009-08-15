@@ -134,7 +134,12 @@ using <tt class="docutils literal"><span class="pre">discard_all</span></tt>.</p
 </div>
 <div class="section" id="can-i-use-celery-with-activemq-stomp">
 <h3>Can I use celery with ActiveMQ/STOMP?<a class="headerlink" href="#can-i-use-celery-with-activemq-stomp" title="Permalink to this headline">¶</a></h3>
-<p><strong>Answer</strong>: Yes. But this is very experimental for now.</p>
+<p><strong>Answer</strong>: Yes. But this is somewhat experimental for now.
+It is certainly working ok for me in a test configuration, but it has not
+been tested in production like RabbitMQ. If you have any problems with
+using STOMP and celery, please report the bugs to the issue tracker:</p>
+<blockquote>
+<a class="reference external" href="http://github.com/ask/celery/issues/">http://github.com/ask/celery/issues/</a></blockquote>
 <p>First you have to use the <tt class="docutils literal"><span class="pre">master</span></tt> branch of <tt class="docutils literal"><span class="pre">celery</span></tt>:</p>
 <div class="highlight-python"><pre>$ git clone git://github.com/ask/celery.git
 $ cd celery
@@ -165,14 +170,14 @@ carrot needs to maintain the same interface for both AMQP and STOMP (obviously
 the one with the most capabilities won).</p>
 <p>Use the following specific settings in your <tt class="docutils literal"><span class="pre">settings.py</span></tt>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># Makes python-stomp the default backend for carrot.</span>
-<span class="n">CARROT_BACKEND</span> <span class="o">=</span> <span class="s">&quot;pystomp&quot;</span>
+<span class="n">CARROT_BACKEND</span> <span class="o">=</span> <span class="s">&quot;stomp&quot;</span>
 
 <span class="c"># STOMP hostname and port settings.</span>
 <span class="n">AMQP_HOST</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>
 <span class="n">AMQP_PORT</span> <span class="o">=</span> <span class="mf">61613</span>
 
 <span class="c"># The queue name to use (both queue and exchange must be set to the</span>
-<span class="c"># same queue name when using STOMP!!!)</span>
+<span class="c"># same queue name when using STOMP)</span>
 <span class="n">CELERY_AMQP_CONSUMER_QUEUE</span> <span class="o">=</span> <span class="s">&quot;/queue/celery&quot;</span>
 <span class="n">CELERY_AMQP_EXCHANGE</span> <span class="o">=</span> <span class="s">&quot;/queue/celery&quot;</span>
 </pre></div>
@@ -257,6 +262,55 @@ configuration:</p>
 </pre></div>
 </div>
 </div>
+<div class="section" id="can-i-use-celery-without-django">
+<h3>Can I use celery without Django?<a class="headerlink" href="#can-i-use-celery-without-django" title="Permalink to this headline">¶</a></h3>
+<p><strong>Answer:</strong> Yes. But you have to either create a custom loader, or use the
+default loader with a configuration file.</p>
+</div>
+</div>
+<div class="section" id="using-the-default-loader">
+<h2>Using the default loader<a class="headerlink" href="#using-the-default-loader" title="Permalink to this headline">¶</a></h2>
+<p>You need a configuration file named <tt class="docutils literal"><span class="pre">celeryconfig.py</span></tt>, either in the
+directory you run <tt class="docutils literal"><span class="pre">celeryd</span></tt> in, or in a Python library path where it is
+able to find it. The configuration file can contain any of the settings
+described in <a title="" class="reference external" href="reference/celery.conf.html#module-celery.conf"><tt class="xref docutils literal"><span class="pre">celery.conf</span></tt></a>, and in additional if you&#8217;re using the
+database backend you have to configure the database. Here is an example
+configuration using the database backend with MySQL:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># Broker configuration</span>
+<span class="n">AMQP_SERVER</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>
+<span class="n">AMQP_PORT</span> <span class="o">=</span> <span class="s">&quot;5672&quot;</span>
+<span class="n">AMQP_VHOST</span> <span class="o">=</span> <span class="s">&quot;celery&quot;</span>
+<span class="n">AMQP_USER</span> <span class="o">=</span> <span class="s">&quot;celery&quot;</span>
+<span class="n">AMQP_PASSWORD</span> <span class="o">=</span> <span class="s">&quot;celerysecret&quot;</span>
+<span class="n">CARROT_BACKEND</span><span class="o">=</span><span class="s">&quot;amqp&quot;</span>
+
+<span class="c"># Using the database backend.</span>
+<span class="n">CELERY_BACKEND</span> <span class="o">=</span> <span class="s">&quot;database&quot;</span>
+
+<span class="c"># Number of processes that processes tasks simultaneously.</span>
+<span class="n">CELERYD_CONCURRENCY</span> <span class="o">=</span> <span class="mf">8</span>
+
+<span class="c"># Modules to import when celeryd starts.</span>
+<span class="c"># This must import every module where you register tasks so celeryd</span>
+<span class="c"># is able to find and run them.</span>
+<span class="n">CELERY_IMPORTS</span> <span class="o">=</span> <span class="p">(</span><span class="s">&quot;mytaskmodule1&quot;</span><span class="p">,</span> <span class="s">&quot;mytaskmodule2&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now with this configuration file in the current directory you have to
+run <tt class="docutils literal"><span class="pre">celeryinit</span></tt> to create the database tables:</p>
+<div class="highlight-python"><pre>$ celeryinit</pre>
+</div>
+<p>Then you should be able to successfully run <tt class="docutils literal"><span class="pre">celeryd</span></tt>:</p>
+<div class="highlight-python"><pre>$ celeryd --loglevel=INFO</pre>
+</div>
+<p>and send a task from a python shell (note that it must be able to import
+<tt class="docutils literal"><span class="pre">celeryconfig.py</span></tt>):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task.builtins</span> <span class="kn">import</span> <span class="n">PingTask</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">PingTask</span><span class="o">.</span><span class="n">apply_async</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+<span class="go">&#39;pong&#39;</span>
+</pre></div>
+</div>
 </div>
 </div>
 
@@ -282,8 +336,10 @@ configuration:</p>
 <li><a class="reference external" href="#can-i-use-celery-with-activemq-stomp">Can I use celery with ActiveMQ/STOMP?</a></li>
 <li><a class="reference external" href="#which-features-are-not-supported-when-using-stomp">Which features are not supported when using STOMP?</a></li>
 <li><a class="reference external" href="#can-i-send-some-tasks-to-only-some-servers">Can I send some tasks to only some servers?</a></li>
+<li><a class="reference external" href="#can-i-use-celery-without-django">Can I use celery without Django?</a></li>
 </ul>
 </li>
+<li><a class="reference external" href="#using-the-default-loader">Using the default loader</a></li>
 </ul>
 </li>
 </ul>

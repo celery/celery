@@ -151,6 +151,12 @@ exception </em><tt class="descclassname">BaseBackend.</tt><tt class="descname">U
 <dd>Mark task as executed with failure. Stores the execption.</dd></dl>
 
 <dl class="method">
+<dt id="celery.backends.base.BaseBackend.mark_as_retry">
+<tt class="descclassname">BaseBackend.</tt><tt class="descname">mark_as_retry</tt><big>(</big><em>task_id</em>, <em>exc</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.mark_as_retry" title="Permalink to this definition">¶</a></dt>
+<dd>Mark task as being retries. Stores the current
+exception (if any).</dd></dl>
+
+<dl class="method">
 <dt id="celery.backends.base.BaseBackend.prepare_exception">
 <tt class="descclassname">BaseBackend.</tt><tt class="descname">prepare_exception</tt><big>(</big><em>exc</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.prepare_exception" title="Permalink to this definition">¶</a></dt>
 <dd>Prepare exception for serialization.</dd></dl>

@@ -54,7 +54,7 @@
 <h1>Executing Tasks - celery.execute<a class="headerlink" href="#module-celery.execute" title="Permalink to this headline">¶</a></h1>
 <dl class="function">
 <dt id="celery.execute.apply">
-<tt class="descclassname">celery.execute.</tt><tt class="descname">apply</tt><big>(</big><em>task</em>, <em>args</em>, <em>kwargs</em>, <em>**ignored</em><big>)</big><a class="headerlink" href="#celery.execute.apply" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.execute.</tt><tt class="descname">apply</tt><big>(</big><em>task</em>, <em>args</em>, <em>kwargs</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.execute.apply" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apply the task locally.</p>
 <p>This will block until the task completes, and returns a
 <a title="celery.result.EagerResult" class="reference external" href="celery.result.html#celery.result.EagerResult"><tt class="xref docutils literal"><span class="pre">celery.result.EagerResult</span></tt></a> instance.</p>
@@ -62,7 +62,7 @@
 
 <dl class="function">
 <dt id="celery.execute.apply_async">
-<tt class="descclassname">celery.execute.</tt><tt class="descname">apply_async</tt><big>(</big><em>task</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>countdown=None</em>, <em>eta=None</em>, <em>routing_key=None</em>, <em>exchange=None</em>, <em>immediate=None</em>, <em>mandatory=None</em>, <em>priority=None</em>, <em>connection=None</em>, <em>connect_timeout=4</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.execute.apply_async" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.execute.</tt><tt class="descname">apply_async</tt><big>(</big><em>task</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>countdown=None</em>, <em>eta=None</em>, <em>routing_key=None</em>, <em>exchange=None</em>, <em>task_id=None</em>, <em>immediate=None</em>, <em>mandatory=None</em>, <em>priority=None</em>, <em>connection=None</em>, <em>connect_timeout=4</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.execute.apply_async" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run a task asynchronously by the celery daemon(s).</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />

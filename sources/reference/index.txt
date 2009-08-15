@@ -13,8 +13,13 @@
     celery.result
     celery.task
     celery.registry
+    celery.signals
     celery.task.builtins
     celery.task.strategy
+    celery.loaders
+    celery.loaders.base
+    celery.loaders.default
+    celery.loaders.djangoapp
     celery.discovery
     celery.monitoring
     celery.messaging

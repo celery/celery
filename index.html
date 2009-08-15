@@ -5,7 +5,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Celery - The Django Task Queue &mdash; Celery v0.6.0 (stable) documentation</title>
+    <title>Celery - Distributed Task Queue &mdash; Celery v0.6.0 (stable) documentation</title>
     <link rel="stylesheet" href="static/nature.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
@@ -20,7 +20,7 @@
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
     <link rel="top" title="Celery v0.6.0 (stable) documentation" href="" />
-    <link rel="next" title="celery - Distributed Task Queue for Django." href="introduction.html" /> 
+    <link rel="next" title="celery - Distributed Task Queue for Django/Python" href="introduction.html" /> 
   </head>
   <body>
     <div class="related">
@@ -33,7 +33,7 @@
           <a href="modindex.html" title="Global Module Index"
              accesskey="M">modules</a> |</li>
         <li class="right" >
-          <a href="introduction.html" title="celery - Distributed Task Queue for Django."
+          <a href="introduction.html" title="celery - Distributed Task Queue for Django/Python"
              accesskey="N">next</a> |</li>
         <li><a href="">Celery v0.6.0 (stable) documentation</a> &raquo;</li> 
       </ul>
@@ -44,11 +44,11 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="celery-the-django-task-queue">
-<h1>Celery - The Django Task Queue<a class="headerlink" href="#celery-the-django-task-queue" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="celery-distributed-task-queue">
+<h1>Celery - Distributed Task Queue<a class="headerlink" href="#celery-distributed-task-queue" title="Permalink to this headline">¶</a></h1>
 <p>Contents:</p>
 <ul>
-<li class="toctree-l1"><a class="reference external" href="introduction.html">celery - Distributed Task Queue for Django.</a><ul>
+<li class="toctree-l1"><a class="reference external" href="introduction.html">celery - Distributed Task Queue for Django/Python</a><ul>
 <li class="toctree-l2"><a class="reference external" href="introduction.html#introduction">Introduction</a></li>
 <li class="toctree-l2"><a class="reference external" href="introduction.html#overview">Overview</a></li>
 <li class="toctree-l2"><a class="reference external" href="introduction.html#features">Features</a></li>
@@ -105,8 +105,10 @@
 <li class="toctree-l3"><a class="reference external" href="faq.html#can-i-use-celery-with-activemq-stomp">Can I use celery with ActiveMQ/STOMP?</a></li>
 <li class="toctree-l3"><a class="reference external" href="faq.html#which-features-are-not-supported-when-using-stomp">Which features are not supported when using STOMP?</a></li>
 <li class="toctree-l3"><a class="reference external" href="faq.html#can-i-send-some-tasks-to-only-some-servers">Can I send some tasks to only some servers?</a></li>
+<li class="toctree-l3"><a class="reference external" href="faq.html#can-i-use-celery-without-django">Can I use celery without Django?</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference external" href="faq.html#using-the-default-loader">Using the default loader</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference external" href="reference/index.html">Module API Reference</a><ul>
@@ -115,8 +117,13 @@
 <li class="toctree-l2"><a class="reference external" href="reference/celery.result.html">Task Result - celery.result</a></li>
 <li class="toctree-l2"><a class="reference external" href="reference/celery.task.html">Task Information and Utilities - celery.task</a></li>
 <li class="toctree-l2"><a class="reference external" href="reference/celery.registry.html">Task Registry - celery.registry</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.signals.html">Signals - celery.signals</a></li>
 <li class="toctree-l2"><a class="reference external" href="reference/celery.task.builtins.html">Built-in Task Classes - celery.task.builtins</a></li>
 <li class="toctree-l2"><a class="reference external" href="reference/celery.task.strategy.html">Common Task Strategies - celery.task.strategy</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.loaders.html">Loaders - celery.loaders</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.loaders.base.html">Loader Base Classes - celery.loaders.base</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.loaders.djangoapp.html">Django Loader - celery.loaders.djangoapp</a></li>
 <li class="toctree-l2"><a class="reference external" href="reference/celery.discovery.html">Task Discovery - celery.discovery</a></li>
 <li class="toctree-l2"><a class="reference external" href="reference/celery.monitoring.html">Statistics and Monitoring - celery.monitoring</a></li>
 <li class="toctree-l2"><a class="reference external" href="reference/celery.messaging.html">Messaging - celery.messaging</a></li>
@@ -193,7 +200,7 @@
         <div class="sphinxsidebarwrapper">
             <h3><a href="">Table Of Contents</a></h3>
             <ul>
-<li><a class="reference external" href="">Celery - The Django Task Queue</a><ul>
+<li><a class="reference external" href="">Celery - Distributed Task Queue</a><ul>
 <li><a class="reference external" href="#indices-and-tables">Indices and tables</a></li>
 </ul>
 </li>
@@ -201,7 +208,7 @@
 
             <h4>Next topic</h4>
             <p class="topless"><a href="introduction.html"
-                                  title="next chapter">celery - Distributed Task Queue for Django.</a></p>
+                                  title="next chapter">celery - Distributed Task Queue for Django/Python</a></p>
             <h3>This Page</h3>
             <ul class="this-page-menu">
               <li><a href="sources/index.txt"
@@ -234,7 +241,7 @@
           <a href="modindex.html" title="Global Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="introduction.html" title="celery - Distributed Task Queue for Django."
+          <a href="introduction.html" title="celery - Distributed Task Queue for Django/Python"
              >next</a> |</li>
         <li><a href="">Celery v0.6.0 (stable) documentation</a> &raquo;</li> 
       </ul>
