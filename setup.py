@@ -66,7 +66,7 @@ setup(
     url=celery.__homepage__,
     platforms=["any"],
     packages=find_packages(exclude=['ez_setup']),
-    scripts=["bin/celeryd"],
+    scripts=["bin/celeryd", "bin/celeryinit"],
     zip_safe=False,
     install_requires=install_requires,
     extra_requires={

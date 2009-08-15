@@ -3,7 +3,7 @@
 class BaseLoader(object):
     _conf_cache = None
 
-    def on_task_preinit(self, task_id, task):
+    def on_task_init(self, task_id, task):
         pass
 
     def on_worker_init(self):
