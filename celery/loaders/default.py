@@ -14,8 +14,15 @@ def wanted_module_item(item):
 
 
 class Loader(BaseLoader):
+    """The default loader.
+
+    See the FAQ for example usage.
+
+    """
 
     def read_configuration(self):
+        """Read configuration from ``celeryconf.py`` and configure
+        celery and Django so it can be used by regular Python."""
         config = dict(DEFAULT_SETTINGS)
         import celeryconfig
         usercfg = dict((key, getattr(celeryconfig, key))
@@ -30,6 +37,13 @@ class Loader(BaseLoader):
         return settings
 
     def on_worker_init(self):
+        """Imports modules at worker init so tasks can be registered
+        and used by the worked.
+
+        The list of modules to import is taken from the ``CELERY_IMPORTS``
+        setting in ``celeryconf.py``.
+
+        """
         imports = getattr(self.conf, "CELERY_IMPORTS", [])
         for module in imports:
             __import__(module, [], [], [''])
