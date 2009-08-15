@@ -253,7 +253,7 @@ Celery uses something called loaders to read/setup configuration, import
 modules that registers tasks and to decide what happens when a task is
 executed. Currently there are two loaders, the default loader and the Django
 loader. If you want to use celery without a Django project, you either have to
-use the default loader, or a write a loader of your own.
+use the default loader, or write a loader of your own.
 
 The rest of this answer describes how to use the default loader.
 
