@@ -100,7 +100,12 @@ using ``discard_all``.
 Can I use celery with ActiveMQ/STOMP?
 -------------------------------------
 
-**Answer**: Yes. But this is very experimental for now.
+**Answer**: Yes. But this is somewhat experimental for now.
+It is certainly working ok for me in a test configuration, but it has not
+been tested in production like RabbitMQ. If you have any problems with
+using STOMP and celery, please report the bugs to the issue tracker:
+
+    http://github.com/ask/celery/issues/
 
 First you have to use the ``master`` branch of ``celery``::
 
@@ -141,14 +146,14 @@ Use the following specific settings in your ``settings.py``:
 .. code-block:: python
 
     # Makes python-stomp the default backend for carrot.
-    CARROT_BACKEND = "pystomp"
+    CARROT_BACKEND = "stomp"
 
     # STOMP hostname and port settings.
     AMQP_HOST = "localhost"
     AMQP_PORT = 61613
 
     # The queue name to use (both queue and exchange must be set to the
-    # same queue name when using STOMP!!!)
+    # same queue name when using STOMP)
     CELERY_AMQP_CONSUMER_QUEUE = "/queue/celery"
     CELERY_AMQP_EXCHANGE = "/queue/celery" 
    
