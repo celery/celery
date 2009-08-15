@@ -17,21 +17,19 @@ class Loader(BaseLoader):
 
     def read_configuration(self):
         config = dict(DEFAULT_SETTINGS)
-        try:
-            import celeryconfig
-        except ImportError:
-            pass
-        else:
-            usercfg = dict((key, getattr(celeryconfig, key))
+        import celeryconfig
+        usercfg = dict((key, getattr(celeryconfig, key))
                             for key in dir(celeryconfig)
                                 if wanted_module_item(key))
         config.update(usercfg)
         from django.conf import settings
         if not settings.configured:
-            settings.configure(**config)
+            settings.configure()
+        for config_key, config_value in usercfg.items():
+            setattr(settings, config_key, config_value)
         return settings
 
     def on_worker_init(self):
-        imports = getattr(self.conf, "CELERY_TASK_MODULES", [])
+        imports = getattr(self.conf, "CELERY_IMPORTS", [])
         for module in imports:
             __import__(module, [], [], [''])
