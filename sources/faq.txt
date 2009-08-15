@@ -276,6 +276,11 @@ configuration using the database backend with MySQL:
 
     # Using the database backend.
     CELERY_BACKEND = "database"
+    DATABASE_ENGINE = "mysql" # see Django docs for a description of these.
+    DATABASE_NAME = "mydb"
+    DATABASE_HOST = "mydb.example.org"
+    DATABASE_USER = "myuser"
+    DATABASE_PASSWORD = "mysecret"
 
     # Number of processes that processes tasks simultaneously.
     CELERYD_CONCURRENCY = 8
