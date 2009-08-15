@@ -247,11 +247,15 @@ You can also override this using the ``routing_key`` argument to
 Can I use celery without Django?
 --------------------------------
 
-**Answer:** Yes. But you have to either create a custom loader, or use the
-default loader with a configuration file.
+**Answer:** Yes.
 
-Using the default loader
-========================
+Celery uses something called loaders to read/setup configuration, import
+modules that registers tasks and to decide what happens when a task is
+executed. Currently there are two loaders, the default loader and the Django
+loader. If you want to use celery without a Django project, you either have to
+use the default loader, or a write a loader of your own.
+
+The rest of this answer describes how to use the default loader.
 
 You need a configuration file named ``celeryconfig.py``, either in the
 directory you run ``celeryd`` in, or in a Python library path where it is
