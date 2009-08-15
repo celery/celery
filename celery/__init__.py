@@ -1,4 +1,4 @@
-"""Distributed Task Queue for Django"""
+"""Distributed Task Queue for Django/Python"""
 
 VERSION = (0, 6, 0)
 
