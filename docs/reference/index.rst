@@ -17,6 +17,7 @@
     celery.task.builtins
     celery.task.strategy
     celery.loaders
+    celery.loaders.base
     celery.discovery
     celery.monitoring
     celery.messaging
