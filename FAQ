@@ -243,3 +243,57 @@ You can also override this using the ``routing_key`` argument to
     >>> apply_async(RefreshFeedTask, args=["http://cnn.com/rss"],
     ...             routing_key="feed.importer")
 
+
+Can I use celery without Django?
+--------------------------------
+
+**Answer:** Yes. But you have to either create a custom loader, or use the
+default loader with a configuration file.
+
+Using the default loader
+========================
+
+You need a configuration file named ``celeryconfig.py``, either in the
+directory you run ``celeryd`` in, or in a Python library path where it is
+able to find it. The configuration file can contain any of the settings
+described in :mod:`celery.conf`, and in additional if you're using the
+database backend you have to configure the database. Here is an example
+configuration using the database backend with MySQL:
+
+.. code-block:: python
+
+    # Broker configuration
+    AMQP_SERVER = "localhost"
+    AMQP_PORT = "5672"
+    AMQP_VHOST = "celery"
+    AMQP_USER = "celery"
+    AMQP_PASSWORD = "celerysecret"
+    CARROT_BACKEND="amqp"
+
+    # Using the database backend.
+    CELERY_BACKEND = "database"
+
+    # Number of processes that processes tasks simultaneously.
+    CELERYD_CONCURRENCY = 8
+
+    # Modules to import when celeryd starts.
+    # This must import every module where you register tasks so celeryd
+    # is able to find and run them.
+    CELERY_IMPORTS = ("mytaskmodule1", "mytaskmodule2")
+    
+Now with this configuration file in the current directory you have to
+run ``celeryinit`` to create the database tables::
+
+    $ celeryinit
+
+Then you should be able to successfully run ``celeryd``::
+
+    $ celeryd --loglevel=INFO
+
+and send a task from a python shell (note that it must be able to import
+``celeryconfig.py``):
+
+    >>> from celery.task.builtins import PingTask
+    >>> result = PingTask.apply_async()
+    >>> result.get()
+    'pong'
