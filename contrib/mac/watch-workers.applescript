@@ -1,5 +1,5 @@
 set broker to "h8.opera.com"
-set workers to {"h8.opera.com", "h9.opera.com", "h10.opera.com"}
+set workers to {"h6.opera.com", "h8.opera.com", "h9.opera.com", "h10.opera.com"}
 tell application "iTerm"
     activate
     set myterm to (make new terminal)
