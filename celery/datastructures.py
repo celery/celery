@@ -78,15 +78,15 @@ def consume_queue(queue):
     while True:
         try:
             yield queue.get_nowait()
-        except QueueEmpty, exc:
-            raise StopIteration()
+        except QueueEmpty:
+            break
 
 
 class SharedCounter(object):
     """An integer that can be updated by several threads at once.
 
     Please note that the final value is not synchronized, this means
-    that you should not update the value on a previous value, the only
+    that you should not update the value by using a previous value, the only
     reliable operations are increment and decrement.
 
     Example
@@ -111,13 +111,13 @@ class SharedCounter(object):
         self._value = initial_value
         self._modify_queue = Queue()
 
-    def increment(self):
-        """Increment the value by one."""
-        self += 1
+    def increment(self, n=1):
+        """Increment value."""
+        self += n
 
-    def decrement(self):
-        """Decrement the value by one."""
-        self -= 1
+    def decrement(self, n=1):
+        """Decrement value."""
+        self -= n
         
     def _update_value(self):
         self._value += sum(consume_queue(self._modify_queue))
@@ -135,8 +135,7 @@ class SharedCounter(object):
 
     def __int__(self):
         """``int(self) -> int``"""
-        self._update_value()
-        return self._value
+        return self._update_value()
 
     def __repr__(self):
         return "<SharedCounter: int(%s)>" % str(int(self))
