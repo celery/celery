@@ -104,11 +104,11 @@ class AMQPListener(object):
 
         eta = message_data.get("eta")
         if eta:
+            self.prefetch_count.increment()
             self.logger.info("Got task from broker: %s[%s] eta:[%s]" % (
                     task.task_name, task.task_id, eta))
             self.hold_queue.put((task, eta, self.prefetch_count.decrement))
         else:
-            self.prefetch_count.decrement()
             self.logger.info("Got task from broker: %s[%s]" % (
                     task.task_name, task.task_id))
             self.bucket_queue.put(task)
