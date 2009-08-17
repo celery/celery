@@ -136,10 +136,11 @@ class TestAMQPListener(unittest.TestCase):
         l.receive_message(m.decode(), m)
 
         in_hold = self.hold_queue.get_nowait()
-        self.assertEquals(len(in_hold), 2)
-        task, eta = in_hold
+        self.assertEquals(len(in_hold), 3)
+        task, eta, on_accept = in_hold
         self.assertTrue(isinstance(task, TaskWrapper))
         self.assertTrue(isinstance(eta, datetime))
+        self.assertTrue(callable(on_accept))
         self.assertEquals(task.task_name, "c.u.foo")
         self.assertEquals(task.execute(), 2 * 4 * 8)
         self.assertRaises(Empty, self.bucket_queue.get_nowait)

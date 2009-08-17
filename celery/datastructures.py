@@ -4,6 +4,8 @@ Custom Datastructures
 
 """
 from UserList import UserList
+from Queue import Queue
+from Queue import Empty as QueueEmpty
 import traceback
 
 
@@ -70,3 +72,71 @@ class ExceptionInfo(object):
 
     def __str__(self):
         return str(self.exception)
+
+
+def consume_queue(queue):
+    while True:
+        try:
+            yield queue.get_nowait()
+        except QueueEmpty, exc:
+            raise StopIteration()
+
+
+class SharedCounter(object):
+    """An integer that can be updated by several threads at once.
+
+    Please note that the final value is not synchronized, this means
+    that you should not update the value on a previous value, the only
+    reliable operations are increment and decrement.
+
+    Example
+
+        >>> max_clients = SharedCounter(initial_value=10)
+
+        # Thread one
+        >>> max_clients += 1 # OK (safe)
+
+        # Thread two
+        >>> max_clients -= 3 # OK (safe)
+
+        # Main thread
+        >>> if client >= int(max_clients): # Max clients now at 8
+        ...    wait()
+
+
+        >>> max_client = max_clients + 10 # NOT OK (unsafe)
+
+    """
+    def __init__(self, initial_value):
+        self._value = initial_value
+        self._modify_queue = Queue()
+
+    def increment(self):
+        """Increment the value by one."""
+        self += 1
+
+    def decrement(self):
+        """Decrement the value by one."""
+        self -= 1
+        
+    def _update_value(self):
+        self._value += sum(consume_queue(self._modify_queue))
+        return self._value
+    
+    def __iadd__(self, y):
+        """``self += y``"""
+        self._modify_queue.put(y * +1)
+        return self
+
+    def __isub__(self, y):
+        """``self -= y``"""
+        self._modify_queue.put(y * -1)
+        return self
+
+    def __int__(self):
+        """``int(self) -> int``"""
+        self._update_value()
+        return self._value
+
+    def __repr__(self):
+        return "<SharedCounter: int(%s)>" % str(int(self))

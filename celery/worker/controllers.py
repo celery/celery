@@ -147,17 +147,19 @@ class PeriodicWorkController(BackgroundThread):
         try:
             logger.debug(
                 "PeriodicWorkController: Getting next task from hold queue..")
-            task, eta = self.hold_queue.get_nowait()
+            task, eta, on_accept = self.hold_queue.get_nowait()
         except QueueEmpty:
             logger.debug("PeriodicWorkController: Hold queue is empty")
             return
+
         if datetime.now() >= eta:
             logger.debug(
                 "PeriodicWorkController: Time to run %s[%s] (%s)..." % (
                     task.task_name, task.task_id, eta))
+            on_accept() # Run the accept task callback.
             self.bucket_queue.put(task)
         else:
             logger.debug(
                 "PeriodicWorkController: ETA not ready for %s[%s] (%s)..." % (
                     task.task_name, task.task_id, eta))
-            self.hold_queue.put((task, eta))
+            self.hold_queue.put((task, eta, on_accept))

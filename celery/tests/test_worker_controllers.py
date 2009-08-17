@@ -79,20 +79,25 @@ class TestPeriodicWorkController(unittest.TestCase):
         bucket_queue = Queue()
         hold_queue = Queue()
         m = PeriodicWorkController(bucket_queue, hold_queue)
-
         m.process_hold_queue()
 
+        scratchpad = {}
+        def on_accept():
+            scratchpad["accepted"] = True
+
         hold_queue.put((MockTask("task1"),
-                        datetime.now() - timedelta(days=1)))
+                        datetime.now() - timedelta(days=1),
+                        on_accept))
 
         m.process_hold_queue()
         self.assertRaises(Empty, hold_queue.get_nowait)
+        self.assertTrue(scratchpad.get("accepted"))
         self.assertEquals(bucket_queue.get_nowait().value, "task1")
         tomorrow = datetime.now() + timedelta(days=1)
-        hold_queue.put((MockTask("task2"), tomorrow))
+        hold_queue.put((MockTask("task2"), tomorrow, on_accept))
         m.process_hold_queue()
         self.assertRaises(Empty, bucket_queue.get_nowait)
-        value, eta = hold_queue.get_nowait()
+        value, eta, on_accept = hold_queue.get_nowait()
         self.assertEquals(value.value, "task2")
         self.assertEquals(eta, tomorrow)
 
