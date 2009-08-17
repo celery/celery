@@ -107,13 +107,11 @@ class AMQPListener(object):
             self.logger.info("Got task from broker: %s[%s] eta:[%s]" % (
                     task.task_name, task.task_id, eta))
             self.hold_queue.put((task, eta, self.prefetch_count.decrement))
-            self.prefetch_count.increment()
         else:
             self.prefetch_count.decrement()
             self.logger.info("Got task from broker: %s[%s]" % (
                     task.task_name, task.task_id))
             self.bucket_queue.put(task)
-
 
     def close_connection(self):
         """Close the AMQP connection."""
