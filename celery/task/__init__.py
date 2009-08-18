@@ -48,7 +48,7 @@ def dmap(func, args, timeout=None):
 
     Example
 
-        >>> from celery.task import map
+        >>> from celery.task import dmap
         >>> import operator
         >>> dmap(operator.add, [[2, 2], [4, 4], [8, 8]])
         [4, 8, 16]
