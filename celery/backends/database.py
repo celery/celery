@@ -30,13 +30,14 @@ class Backend(BaseBackend):
             task_id_tuples.append((waiting_task, task_id))
         return task_id_tuples
 
-    def store_result(self, task_id, result, status):
-        """Mark task as done (executed)."""
+    def store_result(self, task_id, result, status, traceback=None):
+        """Store return value and status of an executed task."""
         if status == "DONE":
             result = self.prepare_result(result)
         elif status == "FAILURE":
             result = self.prepare_exception(result)
-        TaskMeta.objects.store_result(task_id, result, status)
+        TaskMeta.objects.store_result(task_id, result, status,
+                                      traceback=None)
         return result
 
     def is_done(self, task_id):
@@ -46,6 +47,10 @@ class Backend(BaseBackend):
     def get_status(self, task_id):
         """Get the status of a task."""
         return self._get_task_meta_for(task_id).status
+
+    def get_traceback(self, task_id):
+        """Get the traceback of a failed task."""
+        return self._get_task_meta_for(task_id).traceback
 
     def get_result(self, task_id):
         """Get the result for a task."""

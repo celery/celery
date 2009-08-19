@@ -54,7 +54,7 @@ class Backend(BaseBackend):
                         auto_delete=True,
                         routing_key=routing_key)
 
-    def store_result(self, task_id, result, status):
+    def store_result(self, task_id, result, status, traceback=None):
         """Send task return value and status."""
         if status == "DONE":
             result = self.prepare_result(result)
@@ -64,15 +64,14 @@ class Backend(BaseBackend):
 
         meta = {"task_id": task_id,
                 "result": result,
-                "status": status}
+                "status": status,
+                "traceback": traceback}
 
         connection = self.connection
         publisher = self._publisher_for_task_id(task_id, connection)
         publisher.send(meta, serializer="pickle")
         publisher.close()
 
-        print("SENT %s RESULT: %s TO %s" % (
-            status, result, task_id.replace("-", "")))
         return result
 
     def is_done(self, task_id):
@@ -82,6 +81,10 @@ class Backend(BaseBackend):
     def get_status(self, task_id):
         """Get the status of a task."""
         return self._get_task_meta_for(task_id)["status"]
+
+    def get_traceback(self, task_id):
+        """Get the traceback for a failed task."""
+        return self._get_task_meta_for(task_id)["traceback"]
 
     def _get_task_meta_for(self, task_id):
 

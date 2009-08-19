@@ -99,6 +99,11 @@ class BaseAsyncResult(object):
         return None
 
     @property
+    def traceback(self):
+        """Get the traceback of a failed task."""
+        return self.backend.get_traceback(self.task_id)
+
+    @property
     def status(self):
         """The current status of the task.
 
@@ -300,10 +305,11 @@ class EagerResult(BaseAsyncResult):
     """Result that we know has already been executed.  """
     TimeoutError = TimeoutError
 
-    def __init__(self, task_id, ret_value, status):
+    def __init__(self, task_id, ret_value, status, traceback=None):
         self.task_id = task_id
         self._result = ret_value
         self._status = status
+        self._traceback = traceback
 
     def is_done(self):
         """Returns ``True`` if the task executed without failure."""
@@ -329,6 +335,11 @@ class EagerResult(BaseAsyncResult):
     def status(self):
         """The tasks status"""
         return self._status
+
+    @property
+    def traceback(self):
+        """The traceback if the task failed."""
+        return self._traceback
 
     def __repr__(self):
         return "<EagerResult: %s>" % self.task_id

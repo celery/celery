@@ -80,7 +80,7 @@ class TaskManager(models.Manager):
         """Delete all expired task results."""
         self.get_all_expired().delete()
 
-    def store_result(self, task_id, result, status):
+    def store_result(self, task_id, result, status, traceback=None):
         """Store the result and status of a task.
 
         :param task_id: task id
@@ -92,13 +92,18 @@ class TaskManager(models.Manager):
             :meth:`celery.result.AsyncResult.get_status` for a list of
             possible status values.
 
+        :keyword traceback: The traceback at the point of exception (if the
+            task failed).
+
         """
         task, created = self.get_or_create(task_id=task_id, defaults={
                                             "status": status,
-                                            "result": result})
+                                            "result": result,
+                                            "traceback": traceback})
         if not created:
             task.status = status
             task.result = result
+            task.traceback = traceback
             task.save()
 
 

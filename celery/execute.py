@@ -7,6 +7,7 @@ from celery.utils import gen_unique_id
 from functools import partial as curry
 from datetime import datetime, timedelta
 from multiprocessing import get_logger
+import traceback
 import inspect
 
 
@@ -154,8 +155,10 @@ def apply(task, args, kwargs, **options):
     try:
         ret_value = task(*args, **kwargs)
         status = "DONE"
+        tb = None
     except Exception, exc:
         ret_value = exc
+        tb = traceback.format_stack()
         status = "FAILURE"
 
-    return EagerResult(task_id, ret_value, status)
+    return EagerResult(task_id, ret_value, status, traceback=tb)

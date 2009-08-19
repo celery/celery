@@ -101,14 +101,16 @@ class BaseBackend(object):
         """Mark task as successfully executed."""
         return self.store_result(task_id, result, status="DONE")
 
-    def mark_as_failure(self, task_id, exc):
+    def mark_as_failure(self, task_id, exc, traceback=None):
         """Mark task as executed with failure. Stores the execption."""
-        return self.store_result(task_id, exc, status="FAILURE")
+        return self.store_result(task_id, exc, status="FAILURE",
+                                 traceback=traceback)
 
-    def mark_as_retry(self, task_id, exc):
+    def mark_as_retry(self, task_id, exc, traceback=None):
         """Mark task as being retries. Stores the current
         exception (if any)."""
-        return self.store_result(task_id, exc, status="RETRY")
+        return self.store_result(task_id, exc, status="RETRY",
+                                 traceback=traceback)
 
     def create_exception_cls(self, name, module, parent=None):
         """Dynamically create an exception class."""
@@ -154,6 +156,11 @@ class BaseBackend(object):
         """Get the result of a task."""
         raise NotImplementedError(
                 "get_result is not supported by this backend.")
+
+    def get_traceback(self, task_id):
+        """Get the traceback for a failed task."""
+        raise NotImplementedError(
+                "get_traceback is not supported by this backend.")
 
     def is_done(self, task_id):
         """Returns ``True`` if the task was successfully executed."""
@@ -218,13 +225,13 @@ class KeyValueStoreBackend(BaseBackend):
     def set(self, key, value):
         raise NotImplementedError("Must implement the set method.")
 
-    def store_result(self, task_id, result, status):
+    def store_result(self, task_id, result, status, traceback=None):
         """Store task result and status."""
         if status == "DONE":
             result = self.prepare_result(result)
         elif status == "FAILURE":
             result = self.prepare_exception(result)
-        meta = {"status": status, "result": result}
+        meta = {"status": status, "result": result, "traceback": traceback}
         self.set(self.get_cache_key_for_task(task_id), pickle.dumps(meta))
         return result
 
@@ -239,6 +246,11 @@ class KeyValueStoreBackend(BaseBackend):
             return self.exception_to_python(meta["result"])
         else:
             return meta["result"]
+
+    def get_traceback(self, task_id):
+        """Get the traceback for a failed task."""
+        meta = self._get_task_meta_for(task_id)
+        return meta["traceback"]
 
     def is_done(self, task_id):
         """Returns ``True`` if the task executed successfully."""

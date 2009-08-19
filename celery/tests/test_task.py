@@ -310,6 +310,7 @@ class TestTaskApply(unittest.TestCase):
         f = RaisingTask.apply()
         self.assertTrue(f.is_ready())
         self.assertFalse(f.is_done())
+        self.assertTrue(f.traceback)
         self.assertRaises(KeyError, f.get)
 
 

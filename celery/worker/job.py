@@ -73,29 +73,30 @@ def jail(task_id, task_name, func, args, kwargs):
         raise
     except RetryTaskError, exc:
         ### Task is to be retried.
+        type_, _, tb = sys.exc_info()
 
         # RetryTaskError stores both a small message describing the retry
         # and the original exception.
         message, orig_exc = exc.args
-        default_backend.mark_as_retry(task_id, orig_exc)
+        default_backend.mark_as_retry(task_id, orig_exc, tb)
 
         # Create a simpler version of the RetryTaskError that stringifies
         # the original exception instead of including the exception instance.
         # This is for reporting the retry in logs, e-mail etc, while
         # guaranteeing pickleability.
         expanded_msg = "%s: %s" % (message, str(orig_exc))
-        type_, _, tb = sys.exc_info()
         retval = ExceptionInfo((type_,
                                 type_(expanded_msg, None),
                                 tb))
     except Exception, exc:
         ### Task ended in failure.
+        type_, _, tb = sys.exc_info()
+
         # mark_as_failure returns an exception that is guaranteed to
         # be pickleable.
-        stored_exc = default_backend.mark_as_failure(task_id, exc)
+        stored_exc = default_backend.mark_as_failure(task_id, exc, tb)
 
         # wrap exception info + traceback and return it to caller.
-        type_, _, tb = sys.exc_info()
         retval = ExceptionInfo((type_, stored_exc, tb))
     else:
         ### Task executed successfully.
