@@ -5,7 +5,7 @@ The Multiprocessing Worker Server
 Documentation for this module is in ``docs/reference/celery.worker.rst``.
 
 """
-from carrot.connection import DjangoBrokerConnection
+from carrot.connection import DjangoBrokerConnection, AMQPConnectionException
 from celery.worker.controllers import Mediator, PeriodicWorkController
 from celery.worker.job import TaskWrapper
 from celery.registry import NotRegistered
@@ -65,8 +65,7 @@ class AMQPListener(object):
             self.reset_connection()
             try:
                 self.consume_messages()
-            except (socket.error,
-                    self.amqp_connection.ConnectionException):
+            except (socket.error, AMQPConnectionException):
                 self.logger.error("AMQPListener: Connection to broker lost. "
                                 + "Trying to re-establish connection...")
 
@@ -299,3 +298,5 @@ class WorkController(object):
             return
 
         [component.stop() for component in reversed(self.components)]
+
+        self._state = "STOP"

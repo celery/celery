@@ -80,6 +80,7 @@ from celery import conf
 from celery import discovery
 from celery.task import discard_all
 from celery.worker import WorkController
+from signal import signal, SIGHUP
 import multiprocessing
 import traceback
 import optparse
@@ -254,11 +255,16 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
     # (Usually imports task modules and such.)
     current_loader.on_worker_init()
 
+
     def run_worker():
         worker = WorkController(concurrency=concurrency,
                                 loglevel=loglevel,
                                 logfile=logfile,
                                 is_detached=detach)
+
+        # Install signal handler that restarts celeryd on SIGHUP
+        install_restart_signal_handler(worker)
+
         try:
             worker.start()
         except Exception, e:
@@ -274,6 +280,27 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
         if detach:
             context.close()
         raise
+
+
+def install_restart_signal_handler(worker):
+    """Installs a signal handler that restarts the current program
+    when it receives the ``SIGHUP`` signal.
+    """
+
+    def restart_self(signum, frame):
+        """Signal handler restarting the current python program."""
+        worker.logger.info("Restarting celeryd (%s)" % (
+            " ".join(sys.argv)))
+        if worker.is_detached:
+            pid = os.fork()
+            if pid:
+                worker.stop()
+                sys.exit(0)
+        else:
+            worker.stop()
+        os.execve(sys.executable, [sys.executable] + sys.argv, os.environ)
+
+    signal(SIGHUP, restart_self)
 
 
 def parse_options(arguments):
