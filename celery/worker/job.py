@@ -43,6 +43,10 @@ def jail(task_id, task_name, func, args, kwargs):
     If the call was successful, it saves the result to the task result
     backend, and sets the task status to ``"DONE"``.
 
+    If the call raises :exc:`celery.task.base.RetryTaskError`, it extracts
+    the original exception, uses that as the result and sets the task status
+    to ``"RETRY"``.
+
     If the call results in an exception, it saves the exception as the task
     result, and sets the task status to ``"FAILURE"``.
 
@@ -73,12 +77,13 @@ def jail(task_id, task_name, func, args, kwargs):
         raise
     except RetryTaskError, exc:
         ### Task is to be retried.
-        type_, _, tb = sys.exc_info()
+        type_, value_, tb = sys.exc_info()
+        strtb = "\n".join(traceback.format_exception(type_, value_, tb))
 
         # RetryTaskError stores both a small message describing the retry
         # and the original exception.
         message, orig_exc = exc.args
-        default_backend.mark_as_retry(task_id, orig_exc, tb)
+        default_backend.mark_as_retry(task_id, orig_exc, strtb)
 
         # Create a simpler version of the RetryTaskError that stringifies
         # the original exception instead of including the exception instance.
@@ -90,11 +95,12 @@ def jail(task_id, task_name, func, args, kwargs):
                                 tb))
     except Exception, exc:
         ### Task ended in failure.
-        type_, _, tb = sys.exc_info()
+        type_, value_, tb = sys.exc_info()
+        strtb = "\n".join(traceback.format_exception(type_, value_, tb))
 
         # mark_as_failure returns an exception that is guaranteed to
         # be pickleable.
-        stored_exc = default_backend.mark_as_failure(task_id, exc, tb)
+        stored_exc = default_backend.mark_as_failure(task_id, exc, strtb)
 
         # wrap exception info + traceback and return it to caller.
         retval = ExceptionInfo((type_, stored_exc, tb))
