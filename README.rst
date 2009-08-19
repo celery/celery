@@ -41,8 +41,9 @@ The result of the task can be stored for later retrieval (called its
 Features
 ========
 
-    * Uses AMQP messaging (RabbitMQ, ZeroMQ) to route tasks to the
-      worker servers.
+    * Uses AMQP messaging (RabbitMQ, ZeroMQ, Qpid) to route tasks to the
+      worker servers. Experimental support for STOMP (ActiveMQ) is also 
+      available.
 
     * You can run as many worker servers as you want, and still
       be *guaranteed that the task is only executed once.*
@@ -56,13 +57,21 @@ Features
 
     * When a task has been executed, the return value can be stored using
       either a MySQL/Oracle/PostgreSQL/SQLite database, Memcached,
-      or Tokyo Tyrant back-end.
+      or Tokyo Tyrant back-end. For high-performance you can also use
+      AMQP to publish results.
 
     * If the task raises an exception, the exception instance is stored,
       instead of the return value.
 
     * All tasks has a Universally Unique Identifier (UUID), which is the
       task id, used for querying task status and return values.
+
+    * Tasks can be retried if they fail, with a configurable maximum number
+      of retries.
+
+    * Tasks can be configured to run at a specific time and date in the
+      future (ETA) or you can set a countdown in seconds for when the
+      task should be executed.
 
     * Supports *task-sets*, which is a task consisting of several sub-tasks.
       You can find out how many, or if all of the sub-tasks has been executed.
@@ -82,6 +91,9 @@ Features
 
     * Pool workers are supervised, so if for some reason a worker crashes
         it is automatically replaced by a new worker.
+
+    * Can be configured to send e-mails to the administrators when a task
+      fails.
 
 API Reference Documentation
 ===========================
@@ -121,10 +133,9 @@ You can install it by doing the following,::
 Using the development version
 ------------------------------
 
-
 You can clone the repository by doing the following::
 
-    $ git clone git://github.com/ask/celery.git celery
+    $ git clone git://github.com/ask/celery.git
 
 
 Usage
