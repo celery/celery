@@ -136,7 +136,7 @@ class Task(object):
     ignore_result = False
     disable_error_emails = False
     max_retries = 3
-    default_retry_delay = 60
+    default_retry_delay = 3 * 60
 
     MaxRetriesExceededError = MaxRetriesExceededError
 
