@@ -263,7 +263,7 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
                                 is_detached=detach)
 
         # Install signal handler that restarts celeryd on SIGHUP
-        install_restart_signal_handler(worker, context)
+        install_restart_signal_handler(worker)
 
         try:
             worker.start()
@@ -282,7 +282,7 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
         raise
 
 
-def install_restart_signal_handler(worker, context):
+def install_restart_signal_handler(worker):
     """Installs a signal handler that restarts the current program
     when it receives the ``SIGHUP`` signal.
     """
@@ -295,7 +295,6 @@ def install_restart_signal_handler(worker, context):
             pid = os.fork()
             if pid:
                 worker.stop()
-                context.close()
                 sys.exit(0)
         else:
             worker.stop()
