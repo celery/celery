@@ -117,6 +117,42 @@ class </em><tt class="descname">UnfilledPosition</tt><big>(</big><em>position</e
 
 </dd></dl>
 
+<dl class="class">
+<dt id="celery.datastructures.SharedCounter">
+<em class="property">
+class </em><tt class="descclassname">celery.datastructures.</tt><tt class="descname">SharedCounter</tt><big>(</big><em>initial_value</em><big>)</big><a class="headerlink" href="#celery.datastructures.SharedCounter" title="Permalink to this definition">¶</a></dt>
+<dd><p>An integer that can be updated by several threads at once.</p>
+<p>Please note that the final value is not synchronized, this means
+that you should not update the value by using a previous value, the only
+reliable operations are increment and decrement.</p>
+<p>Example</p>
+<blockquote>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">max_clients</span> <span class="o">=</span> <span class="n">SharedCounter</span><span class="p">(</span><span class="n">initial_value</span><span class="o">=</span><span class="mf">10</span><span class="p">)</span>
+</pre></div>
+</div>
+<p># Thread one
+&gt;&gt;&gt; max_clients += 1 # OK (safe)</p>
+<p># Thread two
+&gt;&gt;&gt; max_clients -= 3 # OK (safe)</p>
+<p># Main thread
+&gt;&gt;&gt; if client &gt;= int(max_clients): # Max clients now at 8
+...    wait()</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">max_client</span> <span class="o">=</span> <span class="n">max_clients</span> <span class="o">+</span> <span class="mf">10</span> <span class="c"># NOT OK (unsafe)</span>
+</pre></div>
+</div>
+</blockquote>
+<dl class="method">
+<dt id="celery.datastructures.SharedCounter.decrement">
+<tt class="descname">decrement</tt><big>(</big><em>n=1</em><big>)</big><a class="headerlink" href="#celery.datastructures.SharedCounter.decrement" title="Permalink to this definition">¶</a></dt>
+<dd>Decrement value.</dd></dl>
+
+<dl class="method">
+<dt id="celery.datastructures.SharedCounter.increment">
+<tt class="descname">increment</tt><big>(</big><em>n=1</em><big>)</big><a class="headerlink" href="#celery.datastructures.SharedCounter.increment" title="Permalink to this definition">¶</a></dt>
+<dd>Increment value.</dd></dl>
+
+</dd></dl>
+
 </div>
 
 

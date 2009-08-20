@@ -183,6 +183,11 @@ contains the resulting value.</blockquote>
 <tt class="descclassname">BaseAsyncResult.</tt><tt class="descname">successful</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult.successful" title="Permalink to this definition">¶</a></dt>
 <dd>Alias to <a title="celery.result.BaseAsyncResult.is_done" class="reference internal" href="#celery.result.BaseAsyncResult.is_done"><tt class="xref docutils literal"><span class="pre">is_done()</span></tt></a>.</dd></dl>
 
+<dl class="attribute">
+<dt id="celery.result.BaseAsyncResult.traceback">
+<tt class="descclassname">BaseAsyncResult.</tt><tt class="descname">traceback</tt><a class="headerlink" href="#celery.result.BaseAsyncResult.traceback" title="Permalink to this definition">¶</a></dt>
+<dd>Get the traceback of a failed task.</dd></dl>
+
 <dl class="method">
 <dt id="celery.result.BaseAsyncResult.wait">
 <tt class="descclassname">BaseAsyncResult.</tt><tt class="descname">wait</tt><big>(</big><em>timeout=None</em><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult.wait" title="Permalink to this definition">¶</a></dt>
@@ -209,7 +214,7 @@ exception will be re-raised.</p>
 <dl class="class">
 <dt id="celery.result.EagerResult">
 <em class="property">
-class </em><tt class="descclassname">celery.result.</tt><tt class="descname">EagerResult</tt><big>(</big><em>task_id</em>, <em>ret_value</em>, <em>status</em><big>)</big><a class="headerlink" href="#celery.result.EagerResult" title="Permalink to this definition">¶</a></dt>
+class </em><tt class="descclassname">celery.result.</tt><tt class="descname">EagerResult</tt><big>(</big><em>task_id</em>, <em>ret_value</em>, <em>status</em>, <em>traceback=None</em><big>)</big><a class="headerlink" href="#celery.result.EagerResult" title="Permalink to this definition">¶</a></dt>
 <dd><p>Result that we know has already been executed.</p>
 <dl class="exception">
 <dt id="celery.result.EagerResult.TimeoutError">
@@ -236,6 +241,11 @@ exception </em><tt class="descname">TimeoutError</tt><a class="headerlink" href=
 <dt id="celery.result.EagerResult.status">
 <tt class="descclassname">EagerResult.</tt><tt class="descname">status</tt><a class="headerlink" href="#celery.result.EagerResult.status" title="Permalink to this definition">¶</a></dt>
 <dd>The tasks status</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.result.EagerResult.traceback">
+<tt class="descclassname">EagerResult.</tt><tt class="descname">traceback</tt><a class="headerlink" href="#celery.result.EagerResult.traceback" title="Permalink to this definition">¶</a></dt>
+<dd>The traceback if the task failed.</dd></dl>
 
 <dl class="method">
 <dt id="celery.result.EagerResult.wait">

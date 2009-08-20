@@ -173,7 +173,7 @@ class </em><tt class="descclassname">celery.managers.</tt><tt class="descname">T
 
 <dl class="method">
 <dt id="celery.managers.TaskManager.store_result">
-<tt class="descname">store_result</tt><big>(</big><em>task_id</em>, <em>result</em>, <em>status</em><big>)</big><a class="headerlink" href="#celery.managers.TaskManager.store_result" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">store_result</tt><big>(</big><em>task_id</em>, <em>result</em>, <em>status</em>, <em>traceback=None</em><big>)</big><a class="headerlink" href="#celery.managers.TaskManager.store_result" title="Permalink to this definition">¶</a></dt>
 <dd><p>Store the result and status of a task.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -186,6 +186,8 @@ instance raised by the task.</li>
 <li><em>status</em> &#8211; Task status. See
 <tt class="xref docutils literal"><span class="pre">celery.result.AsyncResult.get_status()</span></tt> for a list of
 possible status values.</li>
+<li><em>traceback</em> &#8211; The traceback at the point of exception (if the
+task failed).</li>
 </ul>
 </td>
 </tr>

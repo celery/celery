@@ -2,9 +2,6 @@
  Frequently Asked Questions
 ============================
 
-Questions
-=========
-
 MySQL is throwing deadlock errors, what can I do?
 -------------------------------------------------
 

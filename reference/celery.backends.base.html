@@ -136,6 +136,11 @@ exception </em><tt class="descclassname">BaseBackend.</tt><tt class="descname">U
 <dd>Get the status of a task.</dd></dl>
 
 <dl class="method">
+<dt id="celery.backends.base.BaseBackend.get_traceback">
+<tt class="descclassname">BaseBackend.</tt><tt class="descname">get_traceback</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.get_traceback" title="Permalink to this definition">¶</a></dt>
+<dd>Get the traceback for a failed task.</dd></dl>
+
+<dl class="method">
 <dt id="celery.backends.base.BaseBackend.is_done">
 <tt class="descclassname">BaseBackend.</tt><tt class="descname">is_done</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.is_done" title="Permalink to this definition">¶</a></dt>
 <dd>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task was successfully executed.</dd></dl>
@@ -147,12 +152,12 @@ exception </em><tt class="descclassname">BaseBackend.</tt><tt class="descname">U
 
 <dl class="method">
 <dt id="celery.backends.base.BaseBackend.mark_as_failure">
-<tt class="descclassname">BaseBackend.</tt><tt class="descname">mark_as_failure</tt><big>(</big><em>task_id</em>, <em>exc</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.mark_as_failure" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseBackend.</tt><tt class="descname">mark_as_failure</tt><big>(</big><em>task_id</em>, <em>exc</em>, <em>traceback=None</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.mark_as_failure" title="Permalink to this definition">¶</a></dt>
 <dd>Mark task as executed with failure. Stores the execption.</dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.base.BaseBackend.mark_as_retry">
-<tt class="descclassname">BaseBackend.</tt><tt class="descname">mark_as_retry</tt><big>(</big><em>task_id</em>, <em>exc</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.mark_as_retry" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseBackend.</tt><tt class="descname">mark_as_retry</tt><big>(</big><em>task_id</em>, <em>exc</em>, <em>traceback=None</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.mark_as_retry" title="Permalink to this definition">¶</a></dt>
 <dd>Mark task as being retries. Stores the current
 exception (if any).</dd></dl>
 

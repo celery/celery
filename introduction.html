@@ -20,7 +20,7 @@
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
     <link rel="top" title="Celery v0.7.0 (unstable) documentation" href="index.html" />
-    <link rel="next" title="Tutorials" href="tutorials/index.html" />
+    <link rel="next" title="Cookbook" href="cookbook/index.html" />
     <link rel="prev" title="Celery - Distributed Task Queue" href="index.html" /> 
   </head>
   <body>
@@ -34,7 +34,7 @@
           <a href="modindex.html" title="Global Module Index"
              accesskey="M">modules</a> |</li>
         <li class="right" >
-          <a href="tutorials/index.html" title="Tutorials"
+          <a href="cookbook/index.html" title="Cookbook"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="index.html" title="Celery - Distributed Task Queue"
@@ -86,8 +86,9 @@ see how the worker server works.</p>
 <div class="section" id="features">
 <h2>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
 <ul>
-<li><p class="first">Uses AMQP messaging (RabbitMQ, ZeroMQ) to route tasks to the
-worker servers.</p>
+<li><p class="first">Uses AMQP messaging (RabbitMQ, ZeroMQ, Qpid) to route tasks to the
+worker servers. Experimental support for STOMP (ActiveMQ) is also
+available.</p>
 </li>
 <li><p class="first">You can run as many worker servers as you want, and still
 be <em>guaranteed that the task is only executed once.</em></p>
@@ -101,13 +102,21 @@ for cronjobs.</p>
 </li>
 <li><p class="first">When a task has been executed, the return value can be stored using
 either a MySQL/Oracle/PostgreSQL/SQLite database, Memcached,
-or Tokyo Tyrant back-end.</p>
+or Tokyo Tyrant back-end. For high-performance you can also use
+AMQP to publish results.</p>
 </li>
 <li><p class="first">If the task raises an exception, the exception instance is stored,
 instead of the return value.</p>
 </li>
 <li><p class="first">All tasks has a Universally Unique Identifier (UUID), which is the
 task id, used for querying task status and return values.</p>
+</li>
+<li><p class="first">Tasks can be retried if they fail, with a configurable maximum number
+of retries.</p>
+</li>
+<li><p class="first">Tasks can be configured to run at a specific time and date in the
+future (ETA) or you can set a countdown in seconds for when the
+task should be executed.</p>
 </li>
 <li><p class="first">Supports <em>task-sets</em>, which is a task consisting of several sub-tasks.
 You can find out how many, or if all of the sub-tasks has been executed.
@@ -130,6 +139,9 @@ for monitoring and profiling.</p>
 <dd><p class="first last">it is automatically replaced by a new worker.</p>
 </dd>
 </dl>
+</li>
+<li><p class="first">Can be configured to send e-mails to the administrators when a task
+fails.</p>
 </li>
 </ul>
 </div>
@@ -162,7 +174,7 @@ $ python setup.py build
 <div class="section" id="using-the-development-version">
 <h3>Using the development version<a class="headerlink" href="#using-the-development-version" title="Permalink to this headline">¶</a></h3>
 <p>You can clone the repository by doing the following:</p>
-<div class="highlight-python"><pre>$ git clone git://github.com/ask/celery.git celery</pre>
+<div class="highlight-python"><pre>$ git clone git://github.com/ask/celery.git</pre>
 </div>
 </div>
 </div>
@@ -409,8 +421,8 @@ file in the top distribution directory for the full license text.</p>
             <p class="topless"><a href="index.html"
                                   title="previous chapter">Celery - Distributed Task Queue</a></p>
             <h4>Next topic</h4>
-            <p class="topless"><a href="tutorials/index.html"
-                                  title="next chapter">Tutorials</a></p>
+            <p class="topless"><a href="cookbook/index.html"
+                                  title="next chapter">Cookbook</a></p>
             <h3>This Page</h3>
             <ul class="this-page-menu">
               <li><a href="sources/introduction.txt"
@@ -443,7 +455,7 @@ file in the top distribution directory for the full license text.</p>
           <a href="modindex.html" title="Global Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="tutorials/index.html" title="Tutorials"
+          <a href="cookbook/index.html" title="Cookbook"
              >next</a> |</li>
         <li class="right" >
           <a href="index.html" title="Celery - Distributed Task Queue"

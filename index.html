@@ -53,61 +53,37 @@
 <li class="toctree-l2"><a class="reference external" href="introduction.html#overview">Overview</a></li>
 <li class="toctree-l2"><a class="reference external" href="introduction.html#features">Features</a></li>
 <li class="toctree-l2"><a class="reference external" href="introduction.html#api-reference-documentation">API Reference Documentation</a></li>
-<li class="toctree-l2"><a class="reference external" href="introduction.html#installation">Installation</a><ul>
-<li class="toctree-l3"><a class="reference external" href="introduction.html#downloading-and-installing-from-source">Downloading and installing from source</a></li>
-<li class="toctree-l3"><a class="reference external" href="introduction.html#using-the-development-version">Using the development version</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference external" href="introduction.html#usage">Usage</a><ul>
-<li class="toctree-l3"><a class="reference external" href="introduction.html#installing-rabbitmq">Installing RabbitMQ</a></li>
-<li class="toctree-l3"><a class="reference external" href="introduction.html#setting-up-rabbitmq">Setting up RabbitMQ</a></li>
-<li class="toctree-l3"><a class="reference external" href="introduction.html#configuring-your-django-project-to-use-celery">Configuring your Django project to use Celery</a></li>
-<li class="toctree-l3"><a class="reference external" href="introduction.html#running-the-celery-worker-server">Running the celery worker server</a></li>
-<li class="toctree-l3"><a class="reference external" href="introduction.html#defining-and-executing-tasks">Defining and executing tasks</a></li>
-<li class="toctree-l3"><a class="reference external" href="introduction.html#auto-discovery-of-tasks">Auto-discovery of tasks</a></li>
-<li class="toctree-l3"><a class="reference external" href="introduction.html#periodic-tasks">Periodic Tasks</a></li>
-</ul>
-</li>
+<li class="toctree-l2"><a class="reference external" href="introduction.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference external" href="introduction.html#usage">Usage</a></li>
 <li class="toctree-l2"><a class="reference external" href="introduction.html#a-look-inside-the-worker">A look inside the worker</a></li>
-<li class="toctree-l2"><a class="reference external" href="introduction.html#getting-help">Getting Help</a><ul>
-<li class="toctree-l3"><a class="reference external" href="introduction.html#mailing-list">Mailing list</a></li>
-<li class="toctree-l3"><a class="reference external" href="introduction.html#irc">IRC</a></li>
-</ul>
-</li>
+<li class="toctree-l2"><a class="reference external" href="introduction.html#getting-help">Getting Help</a></li>
 <li class="toctree-l2"><a class="reference external" href="introduction.html#bug-tracker">Bug tracker</a></li>
 <li class="toctree-l2"><a class="reference external" href="introduction.html#contributing">Contributing</a></li>
 <li class="toctree-l2"><a class="reference external" href="introduction.html#license">License</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference external" href="tutorials/index.html">Tutorials</a><ul>
-<li class="toctree-l2"><a class="reference external" href="tutorials/clickcounter.html">Tutorial: Creating a click counter using carrot and celery</a><ul>
-<li class="toctree-l3"><a class="reference external" href="tutorials/clickcounter.html#introduction">Introduction</a></li>
-<li class="toctree-l3"><a class="reference external" href="tutorials/clickcounter.html#the-model">The model</a></li>
-<li class="toctree-l3"><a class="reference external" href="tutorials/clickcounter.html#using-carrot-to-send-clicks-as-messages">Using carrot to send clicks as messages</a></li>
-<li class="toctree-l3"><a class="reference external" href="tutorials/clickcounter.html#view-and-urls">View and URLs</a></li>
-<li class="toctree-l3"><a class="reference external" href="tutorials/clickcounter.html#creating-the-periodic-task">Creating the periodic task</a></li>
-<li class="toctree-l3"><a class="reference external" href="tutorials/clickcounter.html#finishing">Finishing</a></li>
+<li class="toctree-l1"><a class="reference external" href="cookbook/index.html">Cookbook</a><ul>
+<li class="toctree-l2"><a class="reference external" href="cookbook/task-retries.html">Retrying Tasks</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference external" href="tutorials/index.html">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference external" href="tutorials/clickcounter.html">Tutorial: Creating a click counter using carrot and celery</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference external" href="faq.html">Frequently Asked Questions</a><ul>
-<li class="toctree-l2"><a class="reference external" href="faq.html#questions">Questions</a><ul>
-<li class="toctree-l3"><a class="reference external" href="faq.html#mysql-is-throwing-deadlock-errors-what-can-i-do">MySQL is throwing deadlock errors, what can I do?</a></li>
-<li class="toctree-l3"><a class="reference external" href="faq.html#celeryd-is-not-doing-anything-just-hanging">celeryd is not doing anything, just hanging</a></li>
-<li class="toctree-l3"><a class="reference external" href="faq.html#why-is-task-delay-apply-just-hanging">Why is Task.delay/apply* just hanging?`</a></li>
-<li class="toctree-l3"><a class="reference external" href="faq.html#why-won-t-celeryd-run-on-freebsd">Why won&#8217;t celeryd run on FreeBSD?</a></li>
-<li class="toctree-l3"><a class="reference external" href="faq.html#i-m-having-integrityerror-duplicate-key-errors-why">I&#8217;m having <tt class="docutils literal"><span class="pre">IntegrityError:</span> <span class="pre">Duplicate</span> <span class="pre">Key</span></tt> errors. Why?</a></li>
-<li class="toctree-l3"><a class="reference external" href="faq.html#why-won-t-my-task-run">Why won&#8217;t my Task run?</a></li>
-<li class="toctree-l3"><a class="reference external" href="faq.html#why-won-t-my-periodic-task-run">Why won&#8217;t my Periodic Task run?</a></li>
-<li class="toctree-l3"><a class="reference external" href="faq.html#how-do-i-discard-all-waiting-tasks">How do I discard all waiting tasks?</a></li>
-<li class="toctree-l3"><a class="reference external" href="faq.html#i-ve-discarded-messages-but-there-are-still-messages-left-in-the-queue">I&#8217;ve discarded messages, but there are still messages left in the queue?</a></li>
-<li class="toctree-l3"><a class="reference external" href="faq.html#can-i-use-celery-with-activemq-stomp">Can I use celery with ActiveMQ/STOMP?</a></li>
-<li class="toctree-l3"><a class="reference external" href="faq.html#which-features-are-not-supported-when-using-stomp">Which features are not supported when using STOMP?</a></li>
-<li class="toctree-l3"><a class="reference external" href="faq.html#can-i-send-some-tasks-to-only-some-servers">Can I send some tasks to only some servers?</a></li>
-<li class="toctree-l3"><a class="reference external" href="faq.html#can-i-use-celery-without-django">Can I use celery without Django?</a></li>
-</ul>
-</li>
+<li class="toctree-l2"><a class="reference external" href="faq.html#mysql-is-throwing-deadlock-errors-what-can-i-do">MySQL is throwing deadlock errors, what can I do?</a></li>
+<li class="toctree-l2"><a class="reference external" href="faq.html#celeryd-is-not-doing-anything-just-hanging">celeryd is not doing anything, just hanging</a></li>
+<li class="toctree-l2"><a class="reference external" href="faq.html#why-is-task-delay-apply-just-hanging">Why is Task.delay/apply* just hanging?`</a></li>
+<li class="toctree-l2"><a class="reference external" href="faq.html#why-won-t-celeryd-run-on-freebsd">Why won&#8217;t celeryd run on FreeBSD?</a></li>
+<li class="toctree-l2"><a class="reference external" href="faq.html#i-m-having-integrityerror-duplicate-key-errors-why">I&#8217;m having <tt class="docutils literal"><span class="pre">IntegrityError:</span> <span class="pre">Duplicate</span> <span class="pre">Key</span></tt> errors. Why?</a></li>
+<li class="toctree-l2"><a class="reference external" href="faq.html#why-won-t-my-task-run">Why won&#8217;t my Task run?</a></li>
+<li class="toctree-l2"><a class="reference external" href="faq.html#why-won-t-my-periodic-task-run">Why won&#8217;t my Periodic Task run?</a></li>
+<li class="toctree-l2"><a class="reference external" href="faq.html#how-do-i-discard-all-waiting-tasks">How do I discard all waiting tasks?</a></li>
+<li class="toctree-l2"><a class="reference external" href="faq.html#i-ve-discarded-messages-but-there-are-still-messages-left-in-the-queue">I&#8217;ve discarded messages, but there are still messages left in the queue?</a></li>
+<li class="toctree-l2"><a class="reference external" href="faq.html#can-i-use-celery-with-activemq-stomp">Can I use celery with ActiveMQ/STOMP?</a></li>
+<li class="toctree-l2"><a class="reference external" href="faq.html#which-features-are-not-supported-when-using-stomp">Which features are not supported when using STOMP?</a></li>
+<li class="toctree-l2"><a class="reference external" href="faq.html#can-i-send-some-tasks-to-only-some-servers">Can I send some tasks to only some servers?</a></li>
+<li class="toctree-l2"><a class="reference external" href="faq.html#can-i-use-celery-without-django">Can I use celery without Django?</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference external" href="reference/index.html">Module API Reference</a><ul>

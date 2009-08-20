@@ -74,6 +74,11 @@ class </em><tt class="descclassname">celery.backends.database.</tt><tt class="de
 <dd>Get the status of a task.</dd></dl>
 
 <dl class="method">
+<dt id="celery.backends.database.Backend.get_traceback">
+<tt class="descname">get_traceback</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.backends.database.Backend.get_traceback" title="Permalink to this definition">¶</a></dt>
+<dd>Get the traceback of a failed task.</dd></dl>
+
+<dl class="method">
 <dt id="celery.backends.database.Backend.init_periodic_tasks">
 <tt class="descname">init_periodic_tasks</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.backends.database.Backend.init_periodic_tasks" title="Permalink to this definition">¶</a></dt>
 <dd>Create entries for all periodic tasks in the database.</dd></dl>
@@ -100,8 +105,8 @@ the task class and id for the resulting tasks applied.</td>
 
 <dl class="method">
 <dt id="celery.backends.database.Backend.store_result">
-<tt class="descname">store_result</tt><big>(</big><em>task_id</em>, <em>result</em>, <em>status</em><big>)</big><a class="headerlink" href="#celery.backends.database.Backend.store_result" title="Permalink to this definition">¶</a></dt>
-<dd>Mark task as done (executed).</dd></dl>
+<tt class="descname">store_result</tt><big>(</big><em>task_id</em>, <em>result</em>, <em>status</em>, <em>traceback=None</em><big>)</big><a class="headerlink" href="#celery.backends.database.Backend.store_result" title="Permalink to this definition">¶</a></dt>
+<dd>Store return value and status of an executed task.</dd></dl>
 
 </dd></dl>
 
