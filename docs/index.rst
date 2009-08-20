@@ -9,9 +9,10 @@
 Contents:
 
 .. toctree::
-    :maxdepth: 3
+    :maxdepth: 2
 
     introduction
+    cookbook/index
     tutorials/index
     faq
     reference/index
