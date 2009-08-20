@@ -1,0 +1,164 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Retrying Tasks &mdash; Celery v0.7.0 (unstable) documentation</title>
+    <link rel="stylesheet" href="../static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.7.0 (unstable)',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v0.7.0 (unstable) documentation" href="../index.html" />
+    <link rel="up" title="Cookbook" href="index.html" />
+    <link rel="next" title="Tutorials" href="../tutorials/index.html" />
+    <link rel="prev" title="Cookbook" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="../tutorials/index.html" title="Tutorials"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Cookbook"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Celery v0.7.0 (unstable) documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Cookbook</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="retrying-tasks">
+<h1>Retrying Tasks<a class="headerlink" href="#retrying-tasks" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="retrying-a-task-if-something-fails">
+<h2>Retrying a task if something fails<a class="headerlink" href="#retrying-a-task-if-something-fails" title="Permalink to this headline">¶</a></h2>
+<p>Simply use <a title="celery.task.base.Task.retry" class="reference external" href="../reference/celery.task.base.html#celery.task.base.Task.retry"><tt class="xref docutils literal"><span class="pre">celery.task.base.Task.retry()</span></tt></a> to re-sent the task, it will
+do the right thing, and respect the <a title="celery.task.base.Task.max_retries" class="reference external" href="../reference/celery.task.base.html#celery.task.base.Task.max_retries"><tt class="xref docutils literal"><span class="pre">celery.task.base.Task.max_retries</span></tt></a>
+attribute.</p>
+<div class="highlight-python"><pre>class SendTwitterStatusTask(Task):
+
+    def run(self, oauth, tweet, \*\*kwargs):
+        try:
+            twitter = Twitter(oauth)
+            twitter.update_status(tweet)
+        except (Twitter.FailWhaleError, Twitter.LoginError), exc:
+            self.retry(args=[oauth, tweet], kwargs=\*\*kwargs, exc=exc)</pre>
+</div>
+<p>Here we used the <tt class="docutils literal"><span class="pre">exc</span></tt> argument to pass the current exception to
+<a title="celery.task.base.Task.retry" class="reference external" href="../reference/celery.task.base.html#celery.task.base.Task.retry"><tt class="xref docutils literal"><span class="pre">celery.task.base.Task.retry()</span></tt></a>. At each step of the retry this exception
+is available as the tombstone (result) of the task, when
+<a title="celery.task.base.Task.max_retries" class="reference external" href="../reference/celery.task.base.html#celery.task.base.Task.max_retries"><tt class="xref docutils literal"><span class="pre">celery.task.base.Task.max_retries</span></tt></a> has been exceeded this is the exception
+raised. However, if an <tt class="docutils literal"><span class="pre">exc</span></tt> argument is not provided the
+<a title="celery.task.base.RetryTaskError" class="reference external" href="../reference/celery.task.base.html#celery.task.base.RetryTaskError"><tt class="xref docutils literal"><span class="pre">celery.task.base.RetryTaskError</span></tt></a> exception is raised instead.</p>
+</div>
+<div class="section" id="setting-a-custom-delay-for-retries">
+<h2>Setting a custom delay for retries.<a class="headerlink" href="#setting-a-custom-delay-for-retries" title="Permalink to this headline">¶</a></h2>
+<p>The default countdown is in the tasks
+<a title="celery.task.base.Task.default_retry_delay" class="reference external" href="../reference/celery.task.base.html#celery.task.base.Task.default_retry_delay"><tt class="xref docutils literal"><span class="pre">celery.task.base.Task.default_retry_delay</span></tt></a> attribute, which by
+default is set to 3 minutes.</p>
+<p>You can also provide the <tt class="docutils literal"><span class="pre">countdown</span></tt> argument to
+<a title="celery.task.base.Task.retry" class="reference external" href="../reference/celery.task.base.html#celery.task.base.Task.retry"><tt class="xref docutils literal"><span class="pre">celery.task.base.Task.retry()</span></tt></a> to override this default.</p>
+<div class="highlight-python"><pre>class MyTask(Task):
+    default_retry_delay = 30 * 60 # retry in 30 minutes
+
+    def run(self, x, y, \*\*kwargs):
+        try:
+            ...
+        except Exception, exc:
+            self.retry([x, y], \*\*kwargs, exc=exc,
+                       countdown=60 # override the default and
+                                    # retry in 1 minute</pre>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="../index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="">Retrying Tasks</a><ul>
+<li><a class="reference external" href="#retrying-a-task-if-something-fails">Retrying a task if something fails</a></li>
+<li><a class="reference external" href="#setting-a-custom-delay-for-retries">Setting a custom delay for retries.</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="index.html"
+                                  title="previous chapter">Cookbook</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="../tutorials/index.html"
+                                  title="next chapter">Tutorials</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../sources/cookbook/task-retries.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../tutorials/index.html" title="Tutorials"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Cookbook"
+             >previous</a> |</li>
+        <li><a href="../index.html">Celery v0.7.0 (unstable) documentation</a> &raquo;</li>
+          <li><a href="index.html" >Cookbook</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.2.
+    </div>
+  </body>
+</html>
