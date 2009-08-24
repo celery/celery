@@ -3,9 +3,10 @@
 Utility functions
 
 """
-import uuid
 import time
 from itertools import repeat
+from uuid import UUID, uuid4, _uuid_generate_random
+import ctypes
 
 noop = lambda *args, **kwargs: None
 
@@ -41,6 +42,11 @@ def gen_unique_id():
 
     For now this is provided by :func:`uuid.uuid4`.
     """
+    # Workaround for http://bugs.python.org/issue4607
+    if _uuid_generate_random:
+        buffer = ctypes.create_string_buffer(16)
+        _uuid_generate_random(buffer)
+        return str(UUID(bytes=buffer.raw))
     return str(uuid.uuid4())
 
 
