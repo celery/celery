@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
 import unittest
-from celery.worker.job import jail
+from celery.execute import ExecuteWrapper
 from celery.worker.job import TaskWrapper
 from celery.datastructures import ExceptionInfo
 from celery.models import TaskMeta
@@ -16,6 +16,10 @@ import simplejson
 import logging
 
 scratch = {"ACK": False}
+
+
+def jail(task_id, task_name, fun, args, kwargs):
+    return ExecuteWrapper(fun, task_id, task_name, args, kwargs)()
 
 
 def on_ack():

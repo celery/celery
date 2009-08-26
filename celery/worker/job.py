@@ -4,15 +4,10 @@ Jobs Executable by the Worker Server.
 
 """
 from celery.registry import tasks, NotRegistered
-from celery.datastructures import ExceptionInfo
-from celery.backends import default_backend
-from celery.loaders import current_loader
+from celery.execute import ExecuteWrapper
+from celery.utils import noop
 from django.core.mail import mail_admins
-from celery.monitoring import TaskTimerStats
-from celery.task.base import RetryTaskError
-from celery import signals
 import multiprocessing
-import traceback
 import socket
 import sys
 
@@ -33,89 +28,6 @@ The contents of the full traceback was:
 Just thought I'd let you know!
 celeryd at %%(hostname)s.
 """ % {"EMAIL_SIGNATURE_SEP": EMAIL_SIGNATURE_SEP}
-
-
-def jail(task_id, task_name, func, args, kwargs):
-    """Wraps the task in a jail, which catches all exceptions, and
-    saves the status and result of the task execution to the task
-    meta backend.
-
-    If the call was successful, it saves the result to the task result
-    backend, and sets the task status to ``"DONE"``.
-
-    If the call raises :exc:`celery.task.base.RetryTaskError`, it extracts
-    the original exception, uses that as the result and sets the task status
-    to ``"RETRY"``.
-
-    If the call results in an exception, it saves the exception as the task
-    result, and sets the task status to ``"FAILURE"``.
-
-    :param task_id: The id of the task.
-    :param task_name: The name of the task.
-    :param func: Callable object to execute.
-    :param args: List of positional args to pass on to the function.
-    :param kwargs: Keyword arguments mapping to pass on to the function.
-
-    :returns: the function return value on success, or
-        the exception instance on failure.
-
-    """
-    ignore_result = getattr(func, "ignore_result", False)
-    timer_stat = TaskTimerStats.start(task_id, task_name, args, kwargs)
-
-    # Run task loader init handler.
-    current_loader.on_task_init(task_id, func)
-    signals.task_prerun.send(sender=func, task_id=task_id, task=func,
-                             args=args, kwargs=kwargs)
-
-    # Backend process cleanup
-    default_backend.process_cleanup()
-
-    try:
-        result = func(*args, **kwargs)
-    except (SystemExit, KeyboardInterrupt):
-        raise
-    except RetryTaskError, exc:
-        ### Task is to be retried.
-        type_, value_, tb = sys.exc_info()
-        strtb = "\n".join(traceback.format_exception(type_, value_, tb))
-
-        # RetryTaskError stores both a small message describing the retry
-        # and the original exception.
-        message, orig_exc = exc.args
-        default_backend.mark_as_retry(task_id, orig_exc, strtb)
-
-        # Create a simpler version of the RetryTaskError that stringifies
-        # the original exception instead of including the exception instance.
-        # This is for reporting the retry in logs, e-mail etc, while
-        # guaranteeing pickleability.
-        expanded_msg = "%s: %s" % (message, str(orig_exc))
-        retval = ExceptionInfo((type_,
-                                type_(expanded_msg, None),
-                                tb))
-    except Exception, exc:
-        ### Task ended in failure.
-        type_, value_, tb = sys.exc_info()
-        strtb = "\n".join(traceback.format_exception(type_, value_, tb))
-
-        # mark_as_failure returns an exception that is guaranteed to
-        # be pickleable.
-        stored_exc = default_backend.mark_as_failure(task_id, exc, strtb)
-
-        # wrap exception info + traceback and return it to caller.
-        retval = ExceptionInfo((type_, stored_exc, tb))
-    else:
-        ### Task executed successfully.
-        if not ignore_result:
-            default_backend.mark_as_done(task_id, result)
-        retval = result
-    finally:
-        timer_stat.stop()
-
-    signals.task_postrun.send(sender=func, task_id=task_id, task=func,
-                              args=args, kwargs=kwargs, retval=retval)
-
-    return retval
 
 
 class TaskWrapper(object):
@@ -166,7 +78,7 @@ class TaskWrapper(object):
     fail_email_body = TASK_FAIL_EMAIL_BODY
 
     def __init__(self, task_name, task_id, task_func, args, kwargs,
-            on_ack=None, retries=0, **opts):
+            on_ack=noop, retries=0, **opts):
         self.task_name = task_name
         self.task_id = task_id
         self.task_func = task_func
@@ -229,22 +141,43 @@ class TaskWrapper(object):
         kwargs.update(task_func_kwargs)
         return kwargs
 
+    def _executeable(self, loglevel=None, logfile=None):
+        """Get the :class:`celery.execute.ExecuteWrapper` for this task."""
+        task_func_kwargs = self.extend_with_default_kwargs(loglevel, logfile)
+        return ExecuteWrapper(self.task_func, self.task_id, self.task_name,
+                              self.args, task_func_kwargs)
+
     def execute(self, loglevel=None, logfile=None):
-        """Execute the task in a :func:`jail` and store return value
-        and status in the task meta backend.
+        """Execute the task in a :class:`celery.execute.ExecuteWrapper`.
 
         :keyword loglevel: The loglevel used by the task.
 
         :keyword logfile: The logfile used by the task.
 
         """
-        task_func_kwargs = self.extend_with_default_kwargs(loglevel, logfile)
         # acknowledge task as being processed.
-        if self.on_ack:
-            self.on_ack()
-        return jail(self.task_id, self.task_name, self.task_func,
-                    self.args, task_func_kwargs)
+        self.on_ack()
 
+        return self._executeable(loglevel, logfile)()
+
+    def execute_using_pool(self, pool, loglevel=None, logfile=None):
+        """Like :meth:`execute`, but using the :mod:`multiprocessing` pool.
+
+        :param pool: A :class:`multiprocessing.Pool` instance.
+
+        :keyword loglevel: The loglevel used by the task.
+
+        :keyword logfile: The logfile used by the task.
+
+        :returns :class:`multiprocessing.AsyncResult` instance.
+
+        """
+        wrapper = self._executeable(loglevel, logfile)
+        return pool.apply_async(wrapper,
+                callbacks=[self.on_success], errbacks=[self.on_failure],
+                on_ack=self.on_ack,
+                meta={"task_id": self.task_id, "task_name": self.task_name})
+    
     def on_success(self, ret_value, meta):
         """The handler used if the task was successfully processed (
         without raising an exception)."""
@@ -281,22 +214,3 @@ class TaskWrapper(object):
             body = self.fail_email_body.strip() % context
             mail_admins(subject, body, fail_silently=True)
 
-    def execute_using_pool(self, pool, loglevel=None, logfile=None):
-        """Like :meth:`execute`, but using the :mod:`multiprocessing` pool.
-
-        :param pool: A :class:`multiprocessing.Pool` instance.
-
-        :keyword loglevel: The loglevel used by the task.
-
-        :keyword logfile: The logfile used by the task.
-
-        :returns :class:`multiprocessing.AsyncResult` instance.
-
-        """
-        task_func_kwargs = self.extend_with_default_kwargs(loglevel, logfile)
-        jail_args = [self.task_id, self.task_name, self.task_func,
-                     self.args, task_func_kwargs]
-        return pool.apply_async(jail, args=jail_args,
-                callbacks=[self.on_success], errbacks=[self.on_failure],
-                on_ack=self.on_ack,
-                meta={"task_id": self.task_id, "task_name": self.task_name})

@@ -3,10 +3,16 @@ from celery.conf import AMQP_CONNECTION_TIMEOUT
 from celery.result import AsyncResult, EagerResult
 from celery.messaging import TaskPublisher
 from celery.registry import tasks
-from celery.utils import gen_unique_id
+from celery.utils import gen_unique_id, noop
 from functools import partial as curry
 from datetime import datetime, timedelta
 from multiprocessing import get_logger
+from celery.exceptions import RetryTaskError
+from celery.datastructures import ExceptionInfo
+from celery.backends import default_backend
+from celery.loaders import current_loader
+from celery.monitoring import TaskTimerStats
+from celery import signals
 import sys
 import traceback
 import inspect
@@ -164,3 +170,147 @@ def apply(task, args, kwargs, **options):
         status = "FAILURE"
 
     return EagerResult(task_id, ret_value, status, traceback=strtb)
+
+
+class ExecuteWrapper(object):
+    """Wraps the task in a jail, which catches all exceptions, and
+    saves the status and result of the task execution to the task
+    meta backend.
+    
+    If the call was successful, it saves the result to the task result
+    backend, and sets the task status to ``"DONE"``.
+
+    If the call raises :exc:`celery.task.base.RetryTaskError`, it extracts
+    the original exception, uses that as the result and sets the task status
+    to ``"RETRY"``.
+
+    If the call results in an exception, it saves the exception as the task
+    result, and sets the task status to ``"FAILURE"``.
+
+   
+    :param fun: Callable object to execute.
+    :param task_id: The unique id of the task.
+    :param task_name: Name of the task.
+    :param args: List of positional args to pass on to the function.
+    :param kwargs: Keyword arguments mapping to pass on to the function.
+
+    :returns: the function return value on success, or
+        the exception instance on failure.
+
+    
+    """
+
+    def __init__(self, fun, task_id, task_name, args=None, kwargs=None):
+        self.fun = fun
+        self.task_id = task_id
+        self.task_name = task_name
+        self.args = args or []
+        self.kwargs = kwargs or {}
+
+    def __call__(self, *args, **kwargs):
+        return self.execute()
+
+    def execute(self):
+        # Convenience variables
+        fun = self.fun
+        task_id = self.task_id
+        task_name = self.task_name
+        args = self.args
+        kwargs = self.kwargs
+
+        # Run task loader init handler.
+        current_loader.on_task_init(task_id, fun)
+
+        # Backend process cleanup
+        default_backend.process_cleanup()
+      
+        # Send pre-run signal.
+        signals.task_prerun.send(sender=fun, task_id=task_id, task=fun,
+                                 args=args, kwargs=kwargs)
+
+        retval = None
+        timer_stat = TaskTimerStats.start(task_id, task_name, args, kwargs)
+        try:
+            result = fun(*args, **kwargs)
+        except (SystemExit, KeyboardInterrupt):
+            raise
+        except RetryTaskError, exc:
+            retval = self.handle_retry(exc, sys.exc_info())
+        except Exception, exc:
+            retval = self.handle_failure(exc, sys.exc_info())
+        else:
+            retval = self.handle_success(result)
+        finally:
+            timer_stat.stop()
+
+        # Send post-run signal.
+        signals.task_postrun.send(sender=fun, task_id=task_id, task=fun,
+                                  args=args, kwargs=kwargs, retval=retval)
+
+        return retval
+
+    def handle_success(self, retval):
+        """Handle successful execution.
+
+        Saves the result to the current result store (skipped if the callable
+            has a ``ignore_result`` attribute set to ``True``).
+
+        If the callable has a ``on_success`` function, it as called with
+        ``retval`` as argument.
+
+        :param retval: The return value.
+
+        """
+        if not getattr(self.fun, "ignore_result", False):
+            default_backend.mark_as_done(self.task_id, retval)
+
+        # Run success handler last to be sure the status is saved.
+        success_handler = getattr(self.fun, "on_success", noop)
+        success_handler(retval)
+
+        return retval
+
+    def handle_retry(self, exc, exc_info):
+        """Handle retry exception."""
+        ### Task is to be retried.
+        type_, value_, tb = exc_info
+        strtb = "\n".join(traceback.format_exception(type_, value_, tb))
+
+        # RetryTaskError stores both a small message describing the retry
+        # and the original exception.
+        message, orig_exc = exc.args
+        default_backend.mark_as_retry(self.task_id, orig_exc, strtb)
+
+        # Create a simpler version of the RetryTaskError that stringifies
+        # the original exception instead of including the exception instance.
+        # This is for reporting the retry in logs, e-mail etc, while
+        # guaranteeing pickleability.
+        expanded_msg = "%s: %s" % (message, str(orig_exc))
+        retval = ExceptionInfo((type_,
+                                type_(expanded_msg, None),
+                                tb))
+
+        # Run retry handler last to be sure the status is saved.
+        retry_handler = getattr(self.fun, "on_retry", noop)
+        retry_handler(exc)
+
+        return retval
+
+    def handle_failure(self, exc, exc_info):
+        """Handle exception."""
+        ### Task ended in failure.
+        type_, value_, tb = exc_info
+        strtb = "\n".join(traceback.format_exception(type_, value_, tb))
+
+        # mark_as_failure returns an exception that is guaranteed to
+        # be pickleable.
+        stored_exc = default_backend.mark_as_failure(self.task_id, exc, strtb)
+
+        # wrap exception info + traceback and return it to caller.
+        retval = ExceptionInfo((type_, stored_exc, tb))
+
+        # Run error handler last to be sure the status is stored.
+        error_handler = getattr(self.fun, "on_failure", noop)
+        error_handler(stored_exc)
+
+        return retval
