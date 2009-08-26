@@ -550,7 +550,9 @@ class PeriodicTask(Task):
                     "Periodic tasks must have a run_every attribute")
 
         # If run_every is a integer, convert it to timedelta seconds.
-        if isinstance(self.run_every, int):
-            self.run_every = timedelta(seconds=self.run_every)
+        # Operate on the original class attribute so anyone accessing
+        # it directly gets the right value.
+        if isinstance(self.__class__.run_every, int):
+            self.__class__.run_every = timedelta(seconds=self.run_every)
 
         super(PeriodicTask, self).__init__()
