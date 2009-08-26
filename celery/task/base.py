@@ -8,18 +8,7 @@ from celery.utils import gen_unique_id, get_full_cls_name
 from datetime import timedelta
 from celery.registry import tasks
 from celery.serialization import pickle
-
-
-class MaxRetriesExceededError(Exception):
-    """The tasks max restart limit has been exceeded."""
-
-
-class RetryTaskError(Exception):
-    """The task is to be retried later."""
-
-    def __init__(self, message, exc, *args, **kwargs):
-        self.exc = exc
-        super(RetryTaskError, self).__init__(message, exc, *args, **kwargs)
+from celery.exceptions import MaxRetriesExceededError, RetryTaskError
 
 
 class Task(object):
@@ -242,7 +231,8 @@ class Task(object):
         :keyword exc: Optional exception to raise instead of
             :exc:`MaxRestartsExceededError` when the max restart limit has
             been exceeded.
-        :keyword throw: Do not raise the :exc:`RetryTaskError` exception,
+        :keyword throw: Do not raise the
+            :exc:`celery.exceptions.RetryTaskError` exception,
             that tells the worker that the task is to be retried.
         :keyword countdown: Time in seconds to delay the retry for.
         :keyword eta: Explicit time and date to run the retry at (must be a
@@ -250,9 +240,10 @@ class Task(object):
         :keyword \*\*options: Any extra options to pass on to
             meth:`apply_async`. See :func:`celery.execute.apply_async`.
 
-        :raises RetryTaskError: To tell the worker that the task has been
-            re-sent for retry. This always happens except if the ``throw``
-            keyword argument has been explicitly set to ``False``.
+        :raises celery.exceptions.RetryTaskError: To tell the worker that the
+            task has been re-sent for retry. This always happens except if
+            the ``throw`` keyword argument has been explicitly set
+            to ``False``.
 
         Example
 
@@ -292,7 +283,38 @@ class Task(object):
         if throw:
             message = "Retry in %d seconds." % options["countdown"]
             raise RetryTaskError(message, exc)
-       
+
+
+    def on_retry(self, exc):
+        """Retry handler.
+
+        This is run by the worker when the task is to be retried.
+
+        :param exc: The exception sent to :meth:`retry`.
+
+        """
+        pass
+
+    def on_failure(self, exc):
+        """Error handler.
+
+        This is run by the worker when the task fails.
+
+        :param exc: The exception raised by the task.
+
+        """
+        pass
+
+    def on_success(self, retval):
+        """Success handler.
+
+        This is run by the worker when the task executed successfully.
+
+        :param retval: The return value of the task.
+     
+        """
+        pass
+
     @classmethod
     def apply(cls, args=None, kwargs=None, **options):
         """Execute this task at once, by blocking until the task
