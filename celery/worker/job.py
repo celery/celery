@@ -175,30 +175,25 @@ class TaskWrapper(object):
         wrapper = self._executeable(loglevel, logfile)
         return pool.apply_async(wrapper,
                 callbacks=[self.on_success], errbacks=[self.on_failure],
-                on_ack=self.on_ack,
-                meta={"task_id": self.task_id, "task_name": self.task_name})
+                on_ack=self.on_ack)
     
-    def on_success(self, ret_value, meta):
+    def on_success(self, ret_value):
         """The handler used if the task was successfully processed (
         without raising an exception)."""
-        task_id = meta.get("task_id")
-        task_name = meta.get("task_name")
         msg = self.success_msg.strip() % {
-                "id": task_id,
-                "name": task_name,
+                "id": self.task_id,
+                "name": self.task_name,
                 "return_value": ret_value}
         self.logger.info(msg)
 
-    def on_failure(self, exc_info, meta):
+    def on_failure(self, exc_info):
         """The handler used if the task raised an exception."""
         from celery.conf import SEND_CELERY_TASK_ERROR_EMAILS
 
-        task_id = meta.get("task_id")
-        task_name = meta.get("task_name")
         context = {
             "hostname": socket.gethostname(),
-            "id": task_id,
-            "name": task_name,
+            "id": self.task_id,
+            "name": self.task_name,
             "exc": exc_info.exception,
             "traceback": exc_info.traceback,
             "args": self.args,
@@ -206,11 +201,10 @@ class TaskWrapper(object):
         }
         self.logger.error(self.fail_msg.strip() % context)
 
-        task_obj = tasks.get(task_name, object)
+        task_obj = tasks.get(self.task_name, object)
         send_error_email = SEND_CELERY_TASK_ERROR_EMAILS and not \
                 getattr(task_obj, "disable_error_emails", False)
         if send_error_email:
             subject = self.fail_email_subject.strip() % context
             body = self.fail_email_body.strip() % context
             mail_admins(subject, body, fail_silently=True)
-

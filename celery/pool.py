@@ -10,7 +10,7 @@ import multiprocessing
 
 from multiprocessing.pool import Pool, worker
 from celery.datastructures import ExceptionInfo
-from celery.utils import gen_unique_id
+from celery.utils import noop
 from functools import partial as curry
 from operator import isNumberType
 
@@ -222,7 +222,7 @@ class TaskPool(object):
                     dead_count))
 
     def apply_async(self, target, args=None, kwargs=None, callbacks=None,
-            errbacks=None, on_ack=None, meta=None):
+            errbacks=None, on_ack=noop):
         """Equivalent of the :func:``apply`` built-in function.
 
         All ``callbacks`` and ``errbacks`` should complete immediately since
@@ -233,11 +233,8 @@ class TaskPool(object):
         kwargs = kwargs or {}
         callbacks = callbacks or []
         errbacks = errbacks or []
-        meta = meta or {}
 
-        on_return = curry(self.on_return, callbacks, errbacks,
-                          on_ack, meta)
-
+        on_ready = curry(self.on_ready, callbacks, errbacks, on_ack)
 
         self.logger.debug("TaskPool: Apply %s (args:%s kwargs:%s)" % (
             target, args, kwargs))
@@ -245,27 +242,18 @@ class TaskPool(object):
         self.replace_dead_workers()
 
         return self._pool.apply_async(target, args, kwargs,
-                                        callback=on_return)
+                                        callback=on_ready)
 
-    def on_return(self, callbacks, errbacks, on_ack, meta, ret_value):
-        """What to do when the process returns."""
-
-        # Acknowledge the task as being processed.
-        if on_ack:
-            on_ack()
-
-        self.on_ready(callbacks, errbacks, meta, ret_value)
-
-    def on_ready(self, callbacks, errbacks, meta, ret_value):
+    def on_ready(self, callbacks, errbacks, on_ack, ret_value):
         """What to do when a worker task is ready and its return value has
         been collected."""
+        # Acknowledge the task as being processed.
+        on_ack()
 
         if isinstance(ret_value, ExceptionInfo):
             if isinstance(ret_value.exception, (
                     SystemExit, KeyboardInterrupt)):
                 raise ret_value.exception
-            for errback in errbacks:
-                errback(ret_value, meta)
+            [errback(ret_value) for errback in errbacks]
         else:
-            for callback in callbacks:
-                callback(ret_value, meta)
+            [callback(ret_value) for callback in callbacks]

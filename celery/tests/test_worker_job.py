@@ -232,7 +232,7 @@ class TestTaskWrapper(unittest.TestCase):
         from celery import conf
         conf.SEND_CELERY_TASK_ERROR_EMAILS = True
 
-        tw.on_failure(exc_info, {"task_id": tid, "task_name": "cu.mytask"})
+        tw.on_failure(exc_info)
         logvalue = logfh.getvalue()
         self.assertTrue("cu.mytask" in logvalue)
         self.assertTrue(tid in logvalue)
