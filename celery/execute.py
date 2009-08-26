@@ -180,7 +180,7 @@ class ExecuteWrapper(object):
     If the call was successful, it saves the result to the task result
     backend, and sets the task status to ``"DONE"``.
 
-    If the call raises :exc:`celery.task.base.RetryTaskError`, it extracts
+    If the call raises :exc:`celery.exceptions.RetryTaskError`, it extracts
     the original exception, uses that as the result and sets the task status
     to ``"RETRY"``.
 
