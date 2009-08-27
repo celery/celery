@@ -43,3 +43,4 @@
     celery.models
     celery.fields
     celery.bin.celeryd
+    celery.bin.celeryinit
