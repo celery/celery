@@ -1,8 +1,8 @@
 import unittest
 import types
-from celery.backends.base import find_nearest_pickleable_exception as fnpe
 from celery.backends.base import BaseBackend, KeyValueStoreBackend
-from celery.backends.base import UnpickleableExceptionWrapper
+from celery.serialization import find_nearest_pickleable_exception as fnpe
+from celery.serialization import UnpickleableExceptionWrapper
 from django.db.models.base import subclass_exception
 
 
