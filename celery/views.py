@@ -43,6 +43,7 @@ def task_status(request, task_id):
             "id": task_id,
             "status": status,
             "result": result.args[0],
+            "traceback": result.traceback,
         }
     else:
         response_data = {
