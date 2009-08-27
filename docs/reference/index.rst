@@ -32,6 +32,7 @@
     celery.backends.base
     celery.backends.database
     celery.backends.cache
+    celery.backends.amqp
     celery.backends.tyrant
     celery.conf
     celery.datastructures
