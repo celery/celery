@@ -19,3 +19,7 @@ class NotRegistered(Exception):
 
 class AlreadyRegistered(Exception):
     """The task is already registered."""
+
+
+class TimeoutError(Exception):
+    """The operation timed out."""

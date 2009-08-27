@@ -5,12 +5,9 @@ Asynchronous result types.
 """
 from celery.backends import default_backend
 from celery.datastructures import PositionQueue
+from celery.exceptions import TimeoutError
 from itertools import imap
 import time
-
-
-class TimeoutError(Exception):
-    """The operation timed out."""
 
 
 class BaseAsyncResult(object):
@@ -56,8 +53,8 @@ class BaseAsyncResult(object):
         :keyword timeout: How long to wait in seconds, before the
             operation times out.
 
-        :raises TimeoutError: if ``timeout`` is not ``None`` and
-            the result does not arrive within ``timeout`` seconds.
+        :raises celery.exceptions.TimeoutError: if ``timeout`` is not ``None``
+            and the result does not arrive within ``timeout`` seconds.
 
         If the remote call raised an exception then that
         exception will be re-raised.
@@ -264,7 +261,7 @@ class TaskSetResult(object):
         :keyword timeout: The time in seconds, how long
             it will wait for results, before the operation times out.
 
-        :raises TimeoutError: if ``timeout`` is not ``None``
+        :raises celery.exceptions.TimeoutError: if ``timeout`` is not ``None``
             and the operation takes longer than ``timeout`` seconds.
 
         If any of the tasks raises an exception, the exception

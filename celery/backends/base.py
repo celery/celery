@@ -3,10 +3,7 @@ import time
 import operator
 from functools import partial as curry
 from celery.serialization import pickle
-
-
-class TimeoutError(Exception):
-    """The operation timed out."""
+from celery.exceptions import TimeoutError
 
 
 def find_nearest_pickleable_exception(exc):
@@ -178,8 +175,8 @@ class BaseBackend(object):
         will be re-raised by :func:`wait_for`.
 
         If ``timeout`` is not ``None``, this raises the
-        :class:`celery.timer.TimeoutError` exception if the operation takes
-        longer than ``timeout`` seconds.
+        :class:`celery.exceptions.TimeoutError` exception if the operation
+        takes longer than ``timeout`` seconds.
 
         """
 
