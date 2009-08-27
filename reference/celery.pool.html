@@ -124,7 +124,7 @@ class </em><tt class="descclassname">celery.pool.</tt><tt class="descname">TaskP
 
 <dl class="method">
 <dt id="celery.pool.TaskPool.apply_async">
-<tt class="descname">apply_async</tt><big>(</big><em>target</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>callbacks=None</em>, <em>errbacks=None</em>, <em>on_ack=None</em>, <em>meta=None</em><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.apply_async" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">apply_async</tt><big>(</big><em>target</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>callbacks=None</em>, <em>errbacks=None</em>, <em>on_ack=&lt;function &lt;lambda&gt; at 0x21a7c70&gt;</em><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.apply_async" title="Permalink to this definition">¶</a></dt>
 <dd><p>Equivalent of the :func:<tt class="docutils literal"><span class="pre">apply</span></tt> built-in function.</p>
 <p>All <tt class="docutils literal"><span class="pre">callbacks</span></tt> and <tt class="docutils literal"><span class="pre">errbacks</span></tt> should complete immediately since
 otherwise the thread which handles the result will get blocked.</p>
@@ -132,14 +132,9 @@ otherwise the thread which handles the result will get blocked.</p>
 
 <dl class="method">
 <dt id="celery.pool.TaskPool.on_ready">
-<tt class="descname">on_ready</tt><big>(</big><em>callbacks</em>, <em>errbacks</em>, <em>meta</em>, <em>ret_value</em><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.on_ready" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">on_ready</tt><big>(</big><em>callbacks</em>, <em>errbacks</em>, <em>on_ack</em>, <em>ret_value</em><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.on_ready" title="Permalink to this definition">¶</a></dt>
 <dd>What to do when a worker task is ready and its return value has
 been collected.</dd></dl>
-
-<dl class="method">
-<dt id="celery.pool.TaskPool.on_return">
-<tt class="descname">on_return</tt><big>(</big><em>callbacks</em>, <em>errbacks</em>, <em>on_ack</em>, <em>meta</em>, <em>ret_value</em><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.on_return" title="Permalink to this definition">¶</a></dt>
-<dd>What to do when the process returns.</dd></dl>
 
 <dl class="method">
 <dt id="celery.pool.TaskPool.start">

@@ -52,6 +52,71 @@
             
   <div class="section" id="module-celery.execute">
 <h1>Executing Tasks - celery.execute<a class="headerlink" href="#module-celery.execute" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="celery.execute.ExecuteWrapper">
+<em class="property">
+class </em><tt class="descclassname">celery.execute.</tt><tt class="descname">ExecuteWrapper</tt><big>(</big><em>fun</em>, <em>task_id</em>, <em>task_name</em>, <em>args=None</em>, <em>kwargs=None</em><big>)</big><a class="headerlink" href="#celery.execute.ExecuteWrapper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wraps the task in a jail, which catches all exceptions, and
+saves the status and result of the task execution to the task
+meta backend.</p>
+<p>If the call was successful, it saves the result to the task result
+backend, and sets the task status to <tt class="docutils literal"><span class="pre">&quot;DONE&quot;</span></tt>.</p>
+<p>If the call raises <a title="celery.exceptions.RetryTaskError" class="reference external" href="celery.exceptions.html#celery.exceptions.RetryTaskError"><tt class="xref docutils literal"><span class="pre">celery.exceptions.RetryTaskError</span></tt></a>, it extracts
+the original exception, uses that as the result and sets the task status
+to <tt class="docutils literal"><span class="pre">&quot;RETRY&quot;</span></tt>.</p>
+<p>If the call results in an exception, it saves the exception as the task
+result, and sets the task status to <tt class="docutils literal"><span class="pre">&quot;FAILURE&quot;</span></tt>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><em>fun</em> &#8211; Callable object to execute.</li>
+<li><em>task_id</em> &#8211; The unique id of the task.</li>
+<li><em>task_name</em> &#8211; Name of the task.</li>
+<li><em>args</em> &#8211; List of positional args to pass on to the function.</li>
+<li><em>kwargs</em> &#8211; Keyword arguments mapping to pass on to the function.</li>
+</ul>
+</td>
+</tr>
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">the function return value on success, or
+the exception instance on failure.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="celery.execute.ExecuteWrapper.handle_failure">
+<tt class="descname">handle_failure</tt><big>(</big><em>exc</em>, <em>exc_info</em><big>)</big><a class="headerlink" href="#celery.execute.ExecuteWrapper.handle_failure" title="Permalink to this definition">¶</a></dt>
+<dd>Handle exception.</dd></dl>
+
+<dl class="method">
+<dt id="celery.execute.ExecuteWrapper.handle_retry">
+<tt class="descname">handle_retry</tt><big>(</big><em>exc</em>, <em>exc_info</em><big>)</big><a class="headerlink" href="#celery.execute.ExecuteWrapper.handle_retry" title="Permalink to this definition">¶</a></dt>
+<dd>Handle retry exception.</dd></dl>
+
+<dl class="method">
+<dt id="celery.execute.ExecuteWrapper.handle_success">
+<tt class="descname">handle_success</tt><big>(</big><em>retval</em><big>)</big><a class="headerlink" href="#celery.execute.ExecuteWrapper.handle_success" title="Permalink to this definition">¶</a></dt>
+<dd><p>Handle successful execution.</p>
+<dl class="docutils">
+<dt>Saves the result to the current result store (skipped if the callable</dt>
+<dd>has a <tt class="docutils literal"><span class="pre">ignore_result</span></tt> attribute set to <tt class="xref docutils literal"><span class="pre">True</span></tt>).</dd>
+</dl>
+<p>If the callable has a <tt class="docutils literal"><span class="pre">on_success</span></tt> function, it as called with
+<tt class="docutils literal"><span class="pre">retval</span></tt> as argument.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>retval</em> &#8211; The return value.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="function">
 <dt id="celery.execute.apply">
 <tt class="descclassname">celery.execute.</tt><tt class="descname">apply</tt><big>(</big><em>task</em>, <em>args</em>, <em>kwargs</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.execute.apply" title="Permalink to this definition">¶</a></dt>
@@ -117,7 +182,7 @@ on establishing a connection to the AMQP server.</li>
 </ul>
 </td>
 </tr>
-<tr class="field"><th class="field-name" colspan="2">Raises <a title="celery.registry.NotRegistered" class="reference external" href="celery.registry.html#celery.registry.NotRegistered">celery.registry.NotRegistered</a>:</th></tr>
+<tr class="field"><th class="field-name" colspan="2">Raises <a title="celery.exceptions.NotRegistered" class="reference external" href="celery.exceptions.html#celery.exceptions.NotRegistered">celery.exceptions.NotRegistered</a>:</th></tr>
 <tr><td>&nbsp;</td><td class="field-body"><p class="first">exception if no such task
 has been registered in the task registry.</p>
 </td>

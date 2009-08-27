@@ -53,18 +53,6 @@
   <div class="section" id="module-celery.registry">
 <h1>Task Registry - celery.registry<a class="headerlink" href="#module-celery.registry" title="Permalink to this headline">¶</a></h1>
 <p>celery.registry</p>
-<dl class="exception">
-<dt id="celery.registry.AlreadyRegistered">
-<em class="property">
-exception </em><tt class="descclassname">celery.registry.</tt><tt class="descname">AlreadyRegistered</tt><a class="headerlink" href="#celery.registry.AlreadyRegistered" title="Permalink to this definition">¶</a></dt>
-<dd>The task is already registered.</dd></dl>
-
-<dl class="exception">
-<dt id="celery.registry.NotRegistered">
-<em class="property">
-exception </em><tt class="descclassname">celery.registry.</tt><tt class="descname">NotRegistered</tt><a class="headerlink" href="#celery.registry.NotRegistered" title="Permalink to this definition">¶</a></dt>
-<dd>The task is not registered.</dd></dl>
-
 <dl class="class">
 <dt id="celery.registry.TaskRegistry">
 <em class="property">
@@ -126,7 +114,7 @@ from <tt class="xref docutils literal"><span class="pre">celery.task.Task</span>
 task is used as the name of the task, but you can override it
 using this option.</td>
 </tr>
-<tr class="field"><th class="field-name" colspan="2">Raises <a title="celery.registry.AlreadyRegistered" class="reference internal" href="#celery.registry.AlreadyRegistered">AlreadyRegistered</a>:</th></tr>
+<tr class="field"><th class="field-name" colspan="2">Raises <a title="celery.registry.TaskRegistry.AlreadyRegistered" class="reference internal" href="#celery.registry.TaskRegistry.AlreadyRegistered">AlreadyRegistered</a>:</th></tr>
 <tr><td>&nbsp;</td><td class="field-body">if the task is already registered.</td>
 </tr>
 </tbody>
@@ -144,8 +132,9 @@ using this option.</td>
 <tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>name</em> &#8211; name of the task to unregister, or a
 <tt class="xref docutils literal"><span class="pre">celery.task.Task</span></tt> class with a valid <tt class="docutils literal"><span class="pre">name</span></tt> attribute.</td>
 </tr>
-<tr class="field"><th class="field-name" colspan="2">Raises <a title="celery.registry.NotRegistered" class="reference internal" href="#celery.registry.NotRegistered">NotRegistered</a>:</th></tr>
-<tr><td>&nbsp;</td><td class="field-body">if the task has not been registered.</td>
+<tr class="field"><th class="field-name" colspan="2">Raises <a title="celery.exceptions.NotRegistered" class="reference external" href="celery.exceptions.html#celery.exceptions.NotRegistered">celery.exceptions.NotRegistered</a>:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body">if the task has not
+been registered.</td>
 </tr>
 </tbody>
 </table>

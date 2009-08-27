@@ -94,12 +94,6 @@ defined in the REPL (that is the python shell, or <tt class="docutils literal"><
 
 </dd></dl>
 
-<dl class="exception">
-<dt id="celery.task.base.MaxRetriesExceededError">
-<em class="property">
-exception </em><tt class="descclassname">celery.task.base.</tt><tt class="descname">MaxRetriesExceededError</tt><a class="headerlink" href="#celery.task.base.MaxRetriesExceededError" title="Permalink to this definition">¶</a></dt>
-<dd>The tasks max restart limit has been exceeded.</dd></dl>
-
 <dl class="class">
 <dt id="celery.task.base.PeriodicTask">
 <em class="property">
@@ -137,12 +131,6 @@ not defined.</td>
 </pre></div>
 </div>
 </dd></dl>
-
-<dl class="exception">
-<dt id="celery.task.base.RetryTaskError">
-<em class="property">
-exception </em><tt class="descclassname">celery.task.base.</tt><tt class="descname">RetryTaskError</tt><big>(</big><em>message</em>, <em>exc</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.base.RetryTaskError" title="Permalink to this definition">¶</a></dt>
-<dd>The task is to be retried later.</dd></dl>
 
 <dl class="class">
 <dt id="celery.task.base.Task">
@@ -395,6 +383,51 @@ with this object, i.e.:</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="celery.task.base.Task.on_failure">
+<tt class="descclassname">Task.</tt><tt class="descname">on_failure</tt><big>(</big><em>exc</em><big>)</big><a class="headerlink" href="#celery.task.base.Task.on_failure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Error handler.</p>
+<p>This is run by the worker when the task fails.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>exc</em> &#8211; The exception raised by the task.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.task.base.Task.on_retry">
+<tt class="descclassname">Task.</tt><tt class="descname">on_retry</tt><big>(</big><em>exc</em><big>)</big><a class="headerlink" href="#celery.task.base.Task.on_retry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retry handler.</p>
+<p>This is run by the worker when the task is to be retried.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>exc</em> &#8211; The exception sent to <a title="celery.task.base.Task.retry" class="reference internal" href="#celery.task.base.Task.retry"><tt class="xref docutils literal"><span class="pre">retry()</span></tt></a>.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.task.base.Task.on_success">
+<tt class="descclassname">Task.</tt><tt class="descname">on_success</tt><big>(</big><em>retval</em><big>)</big><a class="headerlink" href="#celery.task.base.Task.on_success" title="Permalink to this definition">¶</a></dt>
+<dd><p>Success handler.</p>
+<p>This is run by the worker when the task executed successfully.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>retval</em> &#8211; The return value of the task.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="celery.task.base.Task.retry">
 <tt class="descclassname">Task.</tt><tt class="descname">retry</tt><big>(</big><em>args</em>, <em>kwargs</em>, <em>exc=None</em>, <em>throw=True</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.task.base.Task.retry" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retry the task.</p>
@@ -408,7 +441,8 @@ with this object, i.e.:</p>
 <li><em>exc</em> &#8211; Optional exception to raise instead of
 <tt class="xref docutils literal"><span class="pre">MaxRestartsExceededError</span></tt> when the max restart limit has
 been exceeded.</li>
-<li><em>throw</em> &#8211; Do not raise the <a title="celery.task.base.RetryTaskError" class="reference internal" href="#celery.task.base.RetryTaskError"><tt class="xref docutils literal"><span class="pre">RetryTaskError</span></tt></a> exception,
+<li><em>throw</em> &#8211; Do not raise the
+<a title="celery.exceptions.RetryTaskError" class="reference external" href="celery.exceptions.html#celery.exceptions.RetryTaskError"><tt class="xref docutils literal"><span class="pre">celery.exceptions.RetryTaskError</span></tt></a> exception,
 that tells the worker that the task is to be retried.</li>
 <li><em>countdown</em> &#8211; Time in seconds to delay the retry for.</li>
 <li><em>eta</em> &#8211; Explicit time and date to run the retry at (must be a
@@ -418,10 +452,11 @@ meth:<cite>apply_async</cite>. See <a title="celery.execute.apply_async" class="
 </ul>
 </td>
 </tr>
-<tr class="field"><th class="field-name" colspan="2">Raises <a title="celery.task.base.RetryTaskError" class="reference internal" href="#celery.task.base.RetryTaskError">RetryTaskError</a>:</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first last">To tell the worker that the task has been
-re-sent for retry. This always happens except if the <tt class="docutils literal"><span class="pre">throw</span></tt>
-keyword argument has been explicitly set to <tt class="xref docutils literal"><span class="pre">False</span></tt>.</p>
+<tr class="field"><th class="field-name" colspan="2">Raises <a title="celery.exceptions.RetryTaskError" class="reference external" href="celery.exceptions.html#celery.exceptions.RetryTaskError">celery.exceptions.RetryTaskError</a>:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first last">To tell the worker that the
+task has been re-sent for retry. This always happens except if
+the <tt class="docutils literal"><span class="pre">throw</span></tt> keyword argument has been explicitly set
+to <tt class="xref docutils literal"><span class="pre">False</span></tt>.</p>
 </td>
 </tr>
 </tbody>

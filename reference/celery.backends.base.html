@@ -64,61 +64,11 @@ class </em><tt class="descclassname">celery.backends.base.</tt><tt class="descna
 exception </em><tt class="descname">TimeoutError</tt><a class="headerlink" href="#celery.backends.base.BaseBackend.TimeoutError" title="Permalink to this definition">¶</a></dt>
 <dd>The operation timed out.</dd></dl>
 
-<dl class="exception">
-<dt id="celery.backends.base.BaseBackend.UnpickleableExceptionWrapper">
-<em class="property">
-exception </em><tt class="descclassname">BaseBackend.</tt><tt class="descname">UnpickleableExceptionWrapper</tt><big>(</big><em>exc_module</em>, <em>exc_cls_name</em>, <em>exc_args</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.UnpickleableExceptionWrapper" title="Permalink to this definition">¶</a></dt>
-<dd><p>Wraps unpickleable exceptions.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><em>exc_module</em> &#8211; see <a title="celery.backends.base.BaseBackend.UnpickleableExceptionWrapper.exc_module" class="reference internal" href="#celery.backends.base.BaseBackend.UnpickleableExceptionWrapper.exc_module"><tt class="xref docutils literal"><span class="pre">exc_module</span></tt></a>.</li>
-<li><em>exc_cls_name</em> &#8211; see <a title="celery.backends.base.BaseBackend.UnpickleableExceptionWrapper.exc_cls_name" class="reference internal" href="#celery.backends.base.BaseBackend.UnpickleableExceptionWrapper.exc_cls_name"><tt class="xref docutils literal"><span class="pre">exc_cls_name</span></tt></a>.</li>
-<li><em>exc_args</em> &#8211; see <a title="celery.backends.base.BaseBackend.UnpickleableExceptionWrapper.exc_args" class="reference internal" href="#celery.backends.base.BaseBackend.UnpickleableExceptionWrapper.exc_args"><tt class="xref docutils literal"><span class="pre">exc_args</span></tt></a></li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-<dl class="attribute">
-<dt id="celery.backends.base.BaseBackend.UnpickleableExceptionWrapper.exc_module">
-<tt class="descname">exc_module</tt><a class="headerlink" href="#celery.backends.base.BaseBackend.UnpickleableExceptionWrapper.exc_module" title="Permalink to this definition">¶</a></dt>
-<dd>The module of the original exception.</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.backends.base.BaseBackend.UnpickleableExceptionWrapper.exc_cls_name">
-<tt class="descname">exc_cls_name</tt><a class="headerlink" href="#celery.backends.base.BaseBackend.UnpickleableExceptionWrapper.exc_cls_name" title="Permalink to this definition">¶</a></dt>
-<dd>The name of the original exception class.</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.backends.base.BaseBackend.UnpickleableExceptionWrapper.exc_args">
-<tt class="descname">exc_args</tt><a class="headerlink" href="#celery.backends.base.BaseBackend.UnpickleableExceptionWrapper.exc_args" title="Permalink to this definition">¶</a></dt>
-<dd>The arguments for the original exception.</dd></dl>
-
-<p>Example</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">try</span><span class="p">:</span>
-<span class="gp">... </span>    <span class="n">something_raising_unpickleable_exc</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
-<span class="gp">... </span>    <span class="n">exc</span> <span class="o">=</span> <span class="n">UnpickleableException</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__module__</span><span class="p">,</span>
-<span class="gp">... </span>                                <span class="n">e</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
-<span class="gp">... </span>                                <span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
-<span class="gp">... </span>    <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span> <span class="c"># Works fine.</span>
-</pre></div>
-</div>
-</dd></dl>
-
 <dl class="method">
 <dt id="celery.backends.base.BaseBackend.cleanup">
 <tt class="descclassname">BaseBackend.</tt><tt class="descname">cleanup</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.cleanup" title="Permalink to this definition">¶</a></dt>
 <dd>Backend cleanup. Is run by
 <tt class="xref docutils literal"><span class="pre">celery.task.DeleteExpiredTaskMetaTask</span></tt>.</dd></dl>
-
-<dl class="method">
-<dt id="celery.backends.base.BaseBackend.create_exception_cls">
-<tt class="descclassname">BaseBackend.</tt><tt class="descname">create_exception_cls</tt><big>(</big><em>name</em>, <em>module</em>, <em>parent=None</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.create_exception_cls" title="Permalink to this definition">¶</a></dt>
-<dd>Dynamically create an exception class.</dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.base.BaseBackend.exception_to_python">
@@ -190,84 +140,10 @@ exception (if any).</dd></dl>
 <p>If the task raises an exception, this exception
 will be re-raised by <a title="celery.backends.base.BaseBackend.wait_for" class="reference internal" href="#celery.backends.base.BaseBackend.wait_for"><tt class="xref docutils literal"><span class="pre">wait_for()</span></tt></a>.</p>
 <p>If <tt class="docutils literal"><span class="pre">timeout</span></tt> is not <tt class="xref docutils literal"><span class="pre">None</span></tt>, this raises the
-<tt class="xref docutils literal"><span class="pre">celery.timer.TimeoutError</span></tt> exception if the operation takes
-longer than <tt class="docutils literal"><span class="pre">timeout</span></tt> seconds.</p>
+<a title="celery.exceptions.TimeoutError" class="reference external" href="celery.exceptions.html#celery.exceptions.TimeoutError"><tt class="xref docutils literal"><span class="pre">celery.exceptions.TimeoutError</span></tt></a> exception if the operation
+takes longer than <tt class="docutils literal"><span class="pre">timeout</span></tt> seconds.</p>
 </dd></dl>
 
-</dd></dl>
-
-<dl class="exception">
-<dt id="celery.backends.base.TimeoutError">
-<em class="property">
-exception </em><tt class="descclassname">celery.backends.base.</tt><tt class="descname">TimeoutError</tt><a class="headerlink" href="#celery.backends.base.TimeoutError" title="Permalink to this definition">¶</a></dt>
-<dd>The operation timed out.</dd></dl>
-
-<dl class="exception">
-<dt id="celery.backends.base.UnpickleableExceptionWrapper">
-<em class="property">
-exception </em><tt class="descclassname">celery.backends.base.</tt><tt class="descname">UnpickleableExceptionWrapper</tt><big>(</big><em>exc_module</em>, <em>exc_cls_name</em>, <em>exc_args</em><big>)</big><a class="headerlink" href="#celery.backends.base.UnpickleableExceptionWrapper" title="Permalink to this definition">¶</a></dt>
-<dd><p>Wraps unpickleable exceptions.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><em>exc_module</em> &#8211; see <a title="celery.backends.base.UnpickleableExceptionWrapper.exc_module" class="reference internal" href="#celery.backends.base.UnpickleableExceptionWrapper.exc_module"><tt class="xref docutils literal"><span class="pre">exc_module</span></tt></a>.</li>
-<li><em>exc_cls_name</em> &#8211; see <a title="celery.backends.base.UnpickleableExceptionWrapper.exc_cls_name" class="reference internal" href="#celery.backends.base.UnpickleableExceptionWrapper.exc_cls_name"><tt class="xref docutils literal"><span class="pre">exc_cls_name</span></tt></a>.</li>
-<li><em>exc_args</em> &#8211; see <a title="celery.backends.base.UnpickleableExceptionWrapper.exc_args" class="reference internal" href="#celery.backends.base.UnpickleableExceptionWrapper.exc_args"><tt class="xref docutils literal"><span class="pre">exc_args</span></tt></a></li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-<dl class="attribute">
-<dt id="celery.backends.base.UnpickleableExceptionWrapper.exc_module">
-<tt class="descname">exc_module</tt><a class="headerlink" href="#celery.backends.base.UnpickleableExceptionWrapper.exc_module" title="Permalink to this definition">¶</a></dt>
-<dd>The module of the original exception.</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.backends.base.UnpickleableExceptionWrapper.exc_cls_name">
-<tt class="descname">exc_cls_name</tt><a class="headerlink" href="#celery.backends.base.UnpickleableExceptionWrapper.exc_cls_name" title="Permalink to this definition">¶</a></dt>
-<dd>The name of the original exception class.</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.backends.base.UnpickleableExceptionWrapper.exc_args">
-<tt class="descname">exc_args</tt><a class="headerlink" href="#celery.backends.base.UnpickleableExceptionWrapper.exc_args" title="Permalink to this definition">¶</a></dt>
-<dd>The arguments for the original exception.</dd></dl>
-
-<p>Example</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">try</span><span class="p">:</span>
-<span class="gp">... </span>    <span class="n">something_raising_unpickleable_exc</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
-<span class="gp">... </span>    <span class="n">exc</span> <span class="o">=</span> <span class="n">UnpickleableException</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__module__</span><span class="p">,</span>
-<span class="gp">... </span>                                <span class="n">e</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
-<span class="gp">... </span>                                <span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
-<span class="gp">... </span>    <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span> <span class="c"># Works fine.</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="function">
-<dt id="celery.backends.base.find_nearest_pickleable_exception">
-<tt class="descclassname">celery.backends.base.</tt><tt class="descname">find_nearest_pickleable_exception</tt><big>(</big><em>exc</em><big>)</big><a class="headerlink" href="#celery.backends.base.find_nearest_pickleable_exception" title="Permalink to this definition">¶</a></dt>
-<dd><p>With an exception instance, iterate over its super classes (by mro)
-and find the first super exception that is pickleable. It does
-not go below <tt class="xref docutils literal"><span class="pre">Exception</span></tt> (i.e. it skips <tt class="xref docutils literal"><span class="pre">Exception</span></tt>,
-<tt class="xref docutils literal"><span class="pre">BaseException</span></tt> and <tt class="xref docutils literal"><span class="pre">object</span></tt>). If that happens
-you should use <tt class="xref docutils literal"><span class="pre">UnpickleableException</span></tt> instead.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>exc</em> &#8211; An exception instance.</td>
-</tr>
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body">the nearest exception if it&#8217;s not <tt class="xref docutils literal"><span class="pre">Exception</span></tt> or below,
-if it is it returns <tt class="xref docutils literal"><span class="pre">None</span></tt>.</td>
-</tr>
-<tr class="field"><th class="field-name">Return type:</th><td class="field-body"><tt class="xref docutils literal"><span class="pre">Exception</span></tt></td>
-</tr>
-</tbody>
-</table>
 </dd></dl>
 
 </div>

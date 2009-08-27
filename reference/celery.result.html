@@ -199,9 +199,9 @@ contains the resulting value.</blockquote>
 <tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>timeout</em> &#8211; How long to wait in seconds, before the
 operation times out.</td>
 </tr>
-<tr class="field"><th class="field-name" colspan="2">Raises <a title="celery.result.TimeoutError" class="reference internal" href="#celery.result.TimeoutError">TimeoutError</a>:</th></tr>
-<tr><td>&nbsp;</td><td class="field-body">if <tt class="docutils literal"><span class="pre">timeout</span></tt> is not <tt class="xref docutils literal"><span class="pre">None</span></tt> and
-the result does not arrive within <tt class="docutils literal"><span class="pre">timeout</span></tt> seconds.</td>
+<tr class="field"><th class="field-name" colspan="2">Raises <a title="celery.exceptions.TimeoutError" class="reference external" href="celery.exceptions.html#celery.exceptions.TimeoutError">celery.exceptions.TimeoutError</a>:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body">if <tt class="docutils literal"><span class="pre">timeout</span></tt> is not <tt class="xref docutils literal"><span class="pre">None</span></tt>
+and the result does not arrive within <tt class="docutils literal"><span class="pre">timeout</span></tt> seconds.</td>
 </tr>
 </tbody>
 </table>
@@ -356,7 +356,7 @@ were called.</p>
 <tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>timeout</em> &#8211; The time in seconds, how long
 it will wait for results, before the operation times out.</td>
 </tr>
-<tr class="field"><th class="field-name" colspan="2">Raises <a title="celery.result.TimeoutError" class="reference internal" href="#celery.result.TimeoutError">TimeoutError</a>:</th></tr>
+<tr class="field"><th class="field-name" colspan="2">Raises <a title="celery.exceptions.TimeoutError" class="reference external" href="celery.exceptions.html#celery.exceptions.TimeoutError">celery.exceptions.TimeoutError</a>:</th></tr>
 <tr><td>&nbsp;</td><td class="field-body">if <tt class="docutils literal"><span class="pre">timeout</span></tt> is not <tt class="xref docutils literal"><span class="pre">None</span></tt>
 and the operation takes longer than <tt class="docutils literal"><span class="pre">timeout</span></tt> seconds.</td>
 </tr>
@@ -425,12 +425,6 @@ waiting for execution.</td>
 </dd></dl>
 
 </dd></dl>
-
-<dl class="exception">
-<dt id="celery.result.TimeoutError">
-<em class="property">
-exception </em><tt class="descclassname">celery.result.</tt><tt class="descname">TimeoutError</tt><a class="headerlink" href="#celery.result.TimeoutError" title="Permalink to this definition">¶</a></dt>
-<dd>The operation timed out.</dd></dl>
 
 </div>
 
