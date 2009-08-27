@@ -11,3 +11,11 @@ class RetryTaskError(Exception):
     def __init__(self, message, exc, *args, **kwargs):
         self.exc = exc
         super(RetryTaskError, self).__init__(message, exc, *args, **kwargs)
+
+
+class NotRegistered(Exception):
+    """The task is not registered."""
+
+
+class AlreadyRegistered(Exception):
+    """The task is already registered."""

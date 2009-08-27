@@ -114,7 +114,7 @@ def delay_task(task_name, *args, **kwargs):
 
     :param \*\*kwargs: keyword arguments to pass on to the task.
 
-    :raises celery.registry.NotRegistered: exception if no such task
+    :raises celery.exceptions.NotRegistered: exception if no such task
         has been registered in the task registry.
 
     :rtype: :class:`celery.result.AsyncResult`.

@@ -1,15 +1,8 @@
 """celery.registry"""
 from celery import discovery
 from celery.utils import get_full_cls_name
+from celery.exceptions import NotRegistered, AlreadyRegistered
 from UserDict import UserDict
-
-
-class NotRegistered(Exception):
-    """The task is not registered."""
-
-
-class AlreadyRegistered(Exception):
-    """The task is already registered."""
 
 
 class TaskRegistry(UserDict):
@@ -60,7 +53,8 @@ class TaskRegistry(UserDict):
         :param name: name of the task to unregister, or a
             :class:`celery.task.Task` class with a valid ``name`` attribute.
 
-        :raises NotRegistered: if the task has not been registered.
+        :raises celery.exceptions.NotRegistered: if the task has not
+            been registered.
 
         """
         if hasattr(name, "run"):

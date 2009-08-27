@@ -8,7 +8,7 @@ Documentation for this module is in ``docs/reference/celery.worker.rst``.
 from carrot.connection import DjangoBrokerConnection, AMQPConnectionException
 from celery.worker.controllers import Mediator, PeriodicWorkController
 from celery.worker.job import TaskWrapper
-from celery.registry import NotRegistered
+from celery.exceptions import NotRegistered
 from celery.messaging import get_consumer_set
 from celery.conf import DAEMON_CONCURRENCY, DAEMON_LOG_FILE
 from celery.conf import AMQP_CONNECTION_RETRY, AMQP_CONNECTION_MAX_RETRIES
