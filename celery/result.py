@@ -292,7 +292,8 @@ class TaskSetResult(object):
                 # queue.
                 return list(results)
             else:
-                if time.time() >= time_start + timeout:
+                if timeout is not None and \
+                        time.time() >= time_start + timeout:
                     on_timeout()
 
     @property
