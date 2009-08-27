@@ -37,17 +37,18 @@ def task_status(request, task_id):
     """Returns task status and result in JSON format."""
     async_result = AsyncResult(task_id)
     status = async_result.status
-    if status == "FAILURE":
+    result = async_result.result
+    if status in ("FAILURE", "RETRY"):
         response_data = {
             "id": task_id,
             "status": status,
-            "result": async_result.result.args[0],
+            "result": result.args[0],
         }
     else:
         response_data = {
             "id": task_id,
             "status": status,
-            "result": async_result.result,
+            "result": result,
         }
     return HttpResponse(JSON_dump({"task": response_data}),
             mimetype="application/json")
