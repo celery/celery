@@ -233,10 +233,13 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
             raise RuntimeError(
                     "This operating system doesn't support detach. ")
         from daemon import DaemonContext
+        from celery.log import setup_logger, redirect_stdouts_to_logger
+
         # Since without stderr any errors will be silently suppressed,
         # we need to know that we have access to the logfile
         if logfile:
             open(logfile, "a").close()
+
         pidlock = acquire_pidlock(pidfile)
         if not umask:
             umask = 0
@@ -250,6 +253,9 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
                                 uid=uid,
                                 gid=gid)
         context.open()
+        logger = setup_logger(loglevel, logfile)
+        redirect_stdouts_to_logger(logger, loglevel)
+        
 
     # Run the worker init handler.
     # (Usually imports task modules and such.)

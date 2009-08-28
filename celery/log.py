@@ -49,3 +49,66 @@ def emergency_error(logfile, message):
                     "message": message})
     if logfh_needs_to_close:
         logfh.close()
+
+
+def redirect_stdouts_to_logger(logger, loglevel=None):
+    """Redirect :class:`sys.stdout` and :class:`sys.stderr` to a 
+    logging instance.
+
+    :param logger: The :class:`logging.Logger` instance to redirect to.
+    :param loglevel: The loglevel redirected messages will be logged as.
+
+    """
+    proxy = LoggingProxy(logger, loglevel)
+    sys.stdout = sys.__stdout__ = proxy
+    sys.stderr = sys.__stderr__ = proxy
+    return proxy
+
+
+class LoggingProxy(object):
+    """Forward file object to :class:`logging.Logger` instance.
+
+    :param logger: The :class:`logging.Logger` instance to forward to.
+    :param loglevel: Loglevel to use when writing messages.
+
+    """
+    mode = "w"
+    name = None
+    closed = False
+
+    def __init__(self, logger, loglevel=logging.INFO):
+        self.logger = logger
+        self.loglevel = loglevel
+
+    def write(self, data):
+        """Write message to logging object."""
+        if not self.closed:
+            self.logger.log(self.loglevel, data)
+
+    def writelines(self, sequence):
+        """``writelines(sequence_of_strings) -> None``.
+        
+        Write the strings to the file.
+    
+        The sequence can be any iterable object producing strings.
+        This is equivalent to calling :meth:`write` for each string.
+
+        """
+        map(self.write, sequence)
+
+    def flush(self):
+        """This object is not buffered so any :meth:`flush` requests
+        are ignored."""
+        pass
+
+    def close(self):
+        """When the object is closed, no write requests are forwarded to
+        the logging object anymore."""
+        self.closed = True
+
+    def isatty(self):
+        """Always returns ``False``. Just here for file support."""
+        return False
+
+    def fileno(self):
+        return None
