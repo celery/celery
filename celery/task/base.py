@@ -16,6 +16,9 @@ class Task(object):
 
     All subclasses of :class:`Task` must define the :meth:`run` method,
     which is the actual method the ``celery`` daemon executes.
+    The :meth:`run` method must always take the positional keyword arguments
+    (\*\*kwargs), this is because of the standard arguments always passed to
+    a task (see :meth:`run` for more info)
 
     The :meth:`run` method supports both positional, and keyword arguments.
 
@@ -137,12 +140,47 @@ class Task(object):
         return self.run(*args, **kwargs)
 
     def run(self, *args, **kwargs):
-        """*REQUIRED* The actual task.
+        """The body of the task executed by the worker.
 
-        All subclasses of :class:`Task` must define the run method.
+        The following standard keyword arguments is passed by the worker:
 
-        :raises NotImplementedError: by default, so you have to override
-            this method in your subclass.
+            * task_id
+
+                Unique id of the currently executing task.
+
+            * task_name
+
+                Name of the currently executing task (same as :attr:`name`)
+
+            * logfile
+
+                Name of the worker log file.
+
+            * loglevel
+
+                The current loglevel, an integer mapping to one of the
+                following values: ``logging.DEBUG``, ``logging.INFO``,
+                ``logging.ERROR``, ``logging.CRITICAL``, ``logging.WARNING``,
+                ``logging.FATAL``.
+
+        Additional standard keyword arguments may be added in the future,
+        so the :meth:`run` method must always take an arbitrary list of
+        keyword arguments (\*\*kwargs).
+
+        Example:
+
+        .. code-block:: python
+
+            def run(self, x, y): # WRONG!
+                return x * y
+
+        Will fail with an exception because the worker can't send the default
+        arguments. The correct way to define the run method would be:
+
+        .. code-block:: python
+
+            def run(self, x, y, **kwargs): # CORRECT!
+                return x * y
 
         """
         raise NotImplementedError("Tasks must define a run method.")
