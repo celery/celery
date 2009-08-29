@@ -1,0 +1,151 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Django Fields - celery.fields &mdash; Celery v0.7.0 (unstable) documentation</title>
+    <link rel="stylesheet" href="../static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.7.0 (unstable)',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v0.7.0 (unstable) documentation" href="../index.html" />
+    <link rel="up" title="Module API Reference" href="index.html" />
+    <link rel="next" title="Celery Worker Daemon - celery.bin.celeryd" href="celery.bin.celeryd.html" />
+    <link rel="prev" title="Django Models - celery.models" href="celery.models.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="celery.bin.celeryd.html" title="Celery Worker Daemon - celery.bin.celeryd"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.models.html" title="Django Models - celery.models"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Celery v0.7.0 (unstable) documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module API Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-celery.fields">
+<h1>Django Fields - celery.fields<a class="headerlink" href="#module-celery.fields" title="Permalink to this headline">¶</a></h1>
+<p>Custom Django Model Fields.</p>
+<dl class="class">
+<dt id="celery.fields.PickledObject">
+<em class="property">
+class </em><tt class="descclassname">celery.fields.</tt><tt class="descname">PickledObject</tt><a class="headerlink" href="#celery.fields.PickledObject" title="Permalink to this definition">¶</a></dt>
+<dd>A subclass of string so it can be told whether a string is
+a pickled object or not (if the object is an instance of this class
+then it must [well, should] be a pickled one).</dd></dl>
+
+<dl class="class">
+<dt id="celery.fields.PickledObjectField">
+<em class="property">
+class </em><tt class="descclassname">celery.fields.</tt><tt class="descname">PickledObjectField</tt><big>(</big><em>verbose_name=None</em>, <em>name=None</em>, <em>primary_key=False</em>, <em>max_length=None</em>, <em>unique=False</em>, <em>blank=False</em>, <em>null=False</em>, <em>db_index=False</em>, <em>rel=None</em>, <em>default=&lt;class django.db.models.fields.NOT_PROVIDED at 0x214ce70&gt;</em>, <em>editable=True</em>, <em>serialize=True</em>, <em>unique_for_date=None</em>, <em>unique_for_month=None</em>, <em>unique_for_year=None</em>, <em>choices=None</em>, <em>help_text=''</em>, <em>db_column=None</em>, <em>db_tablespace=None</em>, <em>auto_created=False</em><big>)</big><a class="headerlink" href="#celery.fields.PickledObjectField" title="Permalink to this definition">¶</a></dt>
+<dd><p>A field that automatically pickles/unpickles its value.</p>
+<dl class="method">
+<dt id="celery.fields.PickledObjectField.get_db_prep_lookup">
+<tt class="descname">get_db_prep_lookup</tt><big>(</big><em>lookup_type</em>, <em>value</em><big>)</big><a class="headerlink" href="#celery.fields.PickledObjectField.get_db_prep_lookup" title="Permalink to this definition">¶</a></dt>
+<dd>get_db_prep_lookup</dd></dl>
+
+<dl class="method">
+<dt id="celery.fields.PickledObjectField.get_db_prep_save">
+<tt class="descname">get_db_prep_save</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#celery.fields.PickledObjectField.get_db_prep_save" title="Permalink to this definition">¶</a></dt>
+<dd>get_db_prep_save</dd></dl>
+
+<dl class="method">
+<dt id="celery.fields.PickledObjectField.get_internal_type">
+<tt class="descname">get_internal_type</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.fields.PickledObjectField.get_internal_type" title="Permalink to this definition">¶</a></dt>
+<dd>The database field type used by this field.</dd></dl>
+
+<dl class="method">
+<dt id="celery.fields.PickledObjectField.to_python">
+<tt class="descname">to_python</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#celery.fields.PickledObjectField.to_python" title="Permalink to this definition">¶</a></dt>
+<dd>Convert the database value to a python value.</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="celery.models.html"
+                                  title="previous chapter">Django Models - celery.models</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="celery.bin.celeryd.html"
+                                  title="next chapter">Celery Worker Daemon - celery.bin.celeryd</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../sources/reference/celery.fields.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.bin.celeryd.html" title="Celery Worker Daemon - celery.bin.celeryd"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.models.html" title="Django Models - celery.models"
+             >previous</a> |</li>
+        <li><a href="../index.html">Celery v0.7.0 (unstable) documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module API Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.2.
+    </div>
+  </body>
+</html>

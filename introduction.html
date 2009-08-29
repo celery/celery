@@ -1,0 +1,471 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>celery - Distributed Task Queue for Django/Python &mdash; Celery v0.7.0 (unstable) documentation</title>
+    <link rel="stylesheet" href="static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.7.0 (unstable)',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="static/jquery.js"></script>
+    <script type="text/javascript" src="static/doctools.js"></script>
+    <link rel="top" title="Celery v0.7.0 (unstable) documentation" href="index.html" />
+    <link rel="next" title="Cookbook" href="cookbook/index.html" />
+    <link rel="prev" title="Celery - Distributed Task Queue" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="cookbook/index.html" title="Cookbook"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Celery - Distributed Task Queue"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Celery v0.7.0 (unstable) documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="celery-distributed-task-queue-for-django-python">
+<h1>celery - Distributed Task Queue for Django/Python<a class="headerlink" href="#celery-distributed-task-queue-for-django-python" title="Permalink to this headline">¶</a></h1>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Version:</th><td class="field-body">0.7.0</td>
+</tr>
+</tbody>
+</table>
+<div class="section" id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p><strong>NOTE:</strong> See the FAQ for information about using celery outside of Django.</p>
+<p><tt class="docutils literal"><span class="pre">celery</span></tt> is a distributed task queue framework for Django/Python.</p>
+<p>It is used for executing tasks <em>asynchronously</em>, routed to one or more
+worker servers, running concurrently using multiprocessing.</p>
+<p>It is designed to solve certain problems related to running websites
+demanding high-availability and performance.</p>
+<p>It is perfect for filling caches, posting updates to twitter, mass
+downloading data like syndication feeds or web scraping. Use-cases are
+plentiful. Implementing these features asynchronously using <tt class="docutils literal"><span class="pre">celery</span></tt> is
+easy and fun, and the performance improvements can make it more than
+worthwhile.</p>
+</div>
+<div class="section" id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<p>This is a high level overview of the architecture.</p>
+<img alt="http://cloud.github.com/downloads/ask/celery/Celery-Overview-v4.jpg" src="http://cloud.github.com/downloads/ask/celery/Celery-Overview-v4.jpg" />
+<p>The broker is an AMQP server pushing tasks to the worker servers.
+A worker server is a networked machine running <tt class="docutils literal"><span class="pre">celeryd</span></tt>. This can be one or
+more machines, depending on the workload. See <a class="reference internal" href="#a-look-inside-the-worker">A look inside the worker</a> to
+see how the worker server works.</p>
+<p>The result of the task can be stored for later retrieval (called its
+&#8220;tombstone&#8221;).</p>
+</div>
+<div class="section" id="features">
+<h2>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><p class="first">Uses AMQP messaging (RabbitMQ, ZeroMQ, Qpid) to route tasks to the
+worker servers. Experimental support for STOMP (ActiveMQ) is also
+available.</p>
+</li>
+<li><p class="first">You can run as many worker servers as you want, and still
+be <em>guaranteed that the task is only executed once.</em></p>
+</li>
+<li><p class="first">Tasks are executed <em>concurrently</em> using the Python 2.6
+<tt class="docutils literal"><span class="pre">multiprocessing</span></tt> module (also available as a back-port
+to older python versions)</p>
+</li>
+<li><p class="first">Supports <em>periodic tasks</em>, which makes it a (better) replacement
+for cronjobs.</p>
+</li>
+<li><p class="first">When a task has been executed, the return value can be stored using
+either a MySQL/Oracle/PostgreSQL/SQLite database, Memcached,
+or Tokyo Tyrant back-end. For high-performance you can also use
+AMQP to publish results.</p>
+</li>
+<li><p class="first">If the task raises an exception, the exception instance is stored,
+instead of the return value.</p>
+</li>
+<li><p class="first">All tasks has a Universally Unique Identifier (UUID), which is the
+task id, used for querying task status and return values.</p>
+</li>
+<li><p class="first">Tasks can be retried if they fail, with a configurable maximum number
+of retries.</p>
+</li>
+<li><p class="first">Tasks can be configured to run at a specific time and date in the
+future (ETA) or you can set a countdown in seconds for when the
+task should be executed.</p>
+</li>
+<li><p class="first">Supports <em>task-sets</em>, which is a task consisting of several sub-tasks.
+You can find out how many, or if all of the sub-tasks has been executed.
+Excellent for progress-bar like functionality.</p>
+</li>
+<li><p class="first">Has a <tt class="docutils literal"><span class="pre">map</span></tt> like function that uses tasks, called <tt class="docutils literal"><span class="pre">dmap</span></tt>.</p>
+</li>
+<li><p class="first">However, you rarely want to wait for these results in a web-environment.
+You&#8217;d rather want to use Ajax to poll the task status, which is
+available from a URL like <tt class="docutils literal"><span class="pre">celery/&lt;task_id&gt;/status/</span></tt>. This view
+returns a JSON-serialized data structure containing the task status,
+and the return value if completed, or exception on failure.</p>
+</li>
+<li><p class="first">The worker can collect statistics, like, how many tasks has been
+executed by type, and the time it took to process them. Very useful
+for monitoring and profiling.</p>
+</li>
+<li><dl class="first docutils">
+<dt>Pool workers are supervised, so if for some reason a worker crashes</dt>
+<dd><p class="first last">it is automatically replaced by a new worker.</p>
+</dd>
+</dl>
+</li>
+<li><p class="first">Can be configured to send e-mails to the administrators when a task
+fails.</p>
+</li>
+</ul>
+</div>
+<div class="section" id="api-reference-documentation">
+<h2>API Reference Documentation<a class="headerlink" href="#api-reference-documentation" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference external" href="http://ask.github.com/celery/">API Reference</a> is hosted at Github
+(<a class="reference external" href="http://ask.github.com/celery">http://ask.github.com/celery</a>)</p>
+</div>
+<div class="section" id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<p>You can install <tt class="docutils literal"><span class="pre">celery</span></tt> either via the Python Package Index (PyPI)
+or from source.</p>
+<p>To install using <tt class="docutils literal"><span class="pre">pip</span></tt>,:</p>
+<div class="highlight-python"><pre>$ pip install celery</pre>
+</div>
+<p>To install using <tt class="docutils literal"><span class="pre">easy_install</span></tt>,:</p>
+<div class="highlight-python"><pre>$ easy_install celery</pre>
+</div>
+<div class="section" id="downloading-and-installing-from-source">
+<h3>Downloading and installing from source<a class="headerlink" href="#downloading-and-installing-from-source" title="Permalink to this headline">¶</a></h3>
+<p>Download the latest version of <tt class="docutils literal"><span class="pre">celery</span></tt> from
+<a class="reference external" href="http://pypi.python.org/pypi/celery/">http://pypi.python.org/pypi/celery/</a></p>
+<p>You can install it by doing the following,:</p>
+<div class="highlight-python"><pre>$ tar xvfz celery-0.0.0.tar.gz
+$ cd celery-0.0.0
+$ python setup.py build
+# python setup.py install # as root</pre>
+</div>
+</div>
+<div class="section" id="using-the-development-version">
+<h3>Using the development version<a class="headerlink" href="#using-the-development-version" title="Permalink to this headline">¶</a></h3>
+<p>You can clone the repository by doing the following:</p>
+<div class="highlight-python"><pre>$ git clone git://github.com/ask/celery.git</pre>
+</div>
+</div>
+</div>
+<div class="section" id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="installing-rabbitmq">
+<h3>Installing RabbitMQ<a class="headerlink" href="#installing-rabbitmq" title="Permalink to this headline">¶</a></h3>
+<p>See <a class="reference external" href="http://www.rabbitmq.com/install.html">Installing RabbitMQ</a> over at RabbitMQ&#8217;s website. For Mac OS X
+see <a class="reference external" href="http://playtype.net/past/2008/10/9/installing_rabbitmq_on_osx/">Installing RabbitMQ on OS X</a>.</p>
+</div>
+<div class="section" id="setting-up-rabbitmq">
+<h3>Setting up RabbitMQ<a class="headerlink" href="#setting-up-rabbitmq" title="Permalink to this headline">¶</a></h3>
+<p>To use celery we need to create a RabbitMQ user, a virtual host and
+allow that user access to that virtual host:</p>
+<div class="highlight-python"><pre>$ rabbitmqctl add_user myuser mypassword
+
+$ rabbitmqctl add_vhost myvhost</pre>
+</div>
+<p>From RabbitMQ version 1.6.0 and onward you have to use the new ACL features
+to allow access:</p>
+<div class="highlight-python"><pre>$ rabbitmqctl set_permissions -p myvhost myuser "" ".*" ".*"</pre>
+</div>
+<p>See the RabbitMQ <a class="reference external" href="http://www.rabbitmq.com/admin-guide.html">Admin Guide</a> for more information about <a class="reference external" href="http://www.rabbitmq.com/admin-guide.html#access-control">access control</a>.</p>
+<p>If you are still using version 1.5.0 or below, please use <tt class="docutils literal"><span class="pre">map_user_vhost</span></tt>:</p>
+<div class="highlight-python"><pre>$ rabbitmqctl map_user_vhost myuser myvhost</pre>
+</div>
+</div>
+<div class="section" id="configuring-your-django-project-to-use-celery">
+<h3>Configuring your Django project to use Celery<a class="headerlink" href="#configuring-your-django-project-to-use-celery" title="Permalink to this headline">¶</a></h3>
+<p>You only need three simple steps to use celery with your Django project.</p>
+<ol class="arabic">
+<li><p class="first">Add <tt class="docutils literal"><span class="pre">celery</span></tt> to <tt class="docutils literal"><span class="pre">INSTALLED_APPS</span></tt>.</p>
+</li>
+<li><p class="first">Create the celery database tables:</p>
+<div class="highlight-python"><pre>$ python manage.py syncdb</pre>
+</div>
+</li>
+<li><dl class="first docutils">
+<dt>Configure celery to use the AMQP user and virtual host we created</dt>
+<dd><p class="first">before, by adding the following to your <tt class="docutils literal"><span class="pre">settings.py</span></tt>:</p>
+<div class="last highlight-python"><div class="highlight"><pre><span class="n">AMQP_SERVER</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>
+<span class="n">AMQP_PORT</span> <span class="o">=</span> <span class="mf">5672</span>
+<span class="n">AMQP_USER</span> <span class="o">=</span> <span class="s">&quot;myuser&quot;</span>
+<span class="n">AMQP_PASSWORD</span> <span class="o">=</span> <span class="s">&quot;mypassword&quot;</span>
+<span class="n">AMQP_VHOST</span> <span class="o">=</span> <span class="s">&quot;myvhost&quot;</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+</ol>
+<p>That&#8217;s it.</p>
+<p>There are more options available, like how many processes you want to process
+work in parallel (the <tt class="docutils literal"><span class="pre">CELERY_CONCURRENCY</span></tt> setting), and the backend used
+for storing task statuses. But for now, this should do. For all of the options
+available, please consult the <a class="reference external" href="http://ask.github.com/celery/">API Reference</a></p>
+<p><strong>Note</strong>: If you&#8217;re using SQLite as the Django database back-end,
+<tt class="docutils literal"><span class="pre">celeryd</span></tt> will only be able to process one task at a time, this is
+because SQLite doesn&#8217;t allow concurrent writes.</p>
+</div>
+<div class="section" id="running-the-celery-worker-server">
+<h3>Running the celery worker server<a class="headerlink" href="#running-the-celery-worker-server" title="Permalink to this headline">¶</a></h3>
+<p>To test this we&#8217;ll be running the worker server in the foreground, so we can
+see what&#8217;s going on without consulting the logfile:</p>
+<div class="highlight-python"><pre>$ python manage.py celeryd</pre>
+</div>
+<p>However, in production you probably want to run the worker in the
+background, as a daemon:</p>
+<div class="highlight-python"><pre>$ python manage.py celeryd --detach</pre>
+</div>
+<p>For a complete listing of the command line arguments available, with a short
+description, you can use the help command:</p>
+<div class="highlight-python"><pre>$ python manage.py help celeryd</pre>
+</div>
+</div>
+<div class="section" id="defining-and-executing-tasks">
+<h3>Defining and executing tasks<a class="headerlink" href="#defining-and-executing-tasks" title="Permalink to this headline">¶</a></h3>
+<p><strong>Please note</strong> All of these tasks has to be stored in a real module, they can&#8217;t
+be defined in the python shell or ipython/bpython. This is because the celery
+worker server needs access to the task function to be able to run it.
+So while it looks like we use the python shell to define the tasks in these
+examples, you can&#8217;t do it this way. Put them in the <tt class="docutils literal"><span class="pre">tasks</span></tt> module of your
+Django application. The worker server will automatically load any <tt class="docutils literal"><span class="pre">tasks.py</span></tt>
+file for all of the applications listed in <tt class="docutils literal"><span class="pre">settings.INSTALLED_APPS</span></tt>.
+Executing tasks using <tt class="docutils literal"><span class="pre">delay</span></tt> and <tt class="docutils literal"><span class="pre">apply_async</span></tt> can be done from the
+python shell, but keep in mind that since arguments are pickled, you can&#8217;t
+use custom classes defined in the shell session.</p>
+<p>While you can use regular functions, the recommended way is to define
+a task class. This way you can cleanly upgrade the task to use the more
+advanced features of celery later.</p>
+<p>This is a task that basically does nothing but take some arguments,
+and return a value:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">Task</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.registry</span> <span class="kn">import</span> <span class="n">tasks</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">MyTask</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">some_arg</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<span class="gp">... </span>        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Did something: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">some_arg</span><span class="p">)</span>
+<span class="gp">... </span>        <span class="k">return</span> <span class="mf">42</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tasks</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">MyTask</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now if we want to execute this task, we can use the <tt class="docutils literal"><span class="pre">delay</span></tt> method of the
+task class (this is a handy shortcut to the <tt class="docutils literal"><span class="pre">apply_async</span></tt> method which gives
+you greater control of the task execution).</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">myapp.tasks</span> <span class="kn">import</span> <span class="n">MyTask</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">MyTask</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">some_arg</span><span class="o">=</span><span class="s">&quot;foo&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>At this point, the task has been sent to the message broker. The message
+broker will hold on to the task until a celery worker server has successfully
+picked it up.</p>
+<p><em>Note</em> If everything is just hanging when you execute <tt class="docutils literal"><span class="pre">delay</span></tt>, please check
+that RabbitMQ is running, and that the user/password has access to the virtual
+host you configured earlier.</p>
+<p>Right now we have to check the celery worker logfiles to know what happened with
+the task. This is because we didn&#8217;t keep the <tt class="docutils literal"><span class="pre">AsyncResult</span></tt> object returned
+by <tt class="docutils literal"><span class="pre">delay</span></tt>.</p>
+<p>The <tt class="docutils literal"><span class="pre">AsyncResult</span></tt> lets us find the state of the task, wait for the task to
+finish and get its return value (or exception if the task failed).</p>
+<p>So, let&#8217;s execute the task again, but this time we&#8217;ll keep track of the task:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">MyTask</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="s">&quot;do_something&quot;</span><span class="p">,</span> <span class="n">some_arg</span><span class="o">=</span><span class="s">&quot;foo bar baz&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">ready</span><span class="p">()</span> <span class="c"># returns True if the task has finished processing.</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">result</span> <span class="c"># task is not ready, so no return value yet.</span>
+<span class="go">None</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>   <span class="c"># Waits until the task is done and return the retval.</span>
+<span class="go">42</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">result</span>
+<span class="go">42</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">successful</span><span class="p">()</span> <span class="c"># returns True if the task didn&#39;t end in failure.</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>If the task raises an exception, the <tt class="docutils literal"><span class="pre">result.success()</span></tt> will be <tt class="xref docutils literal"><span class="pre">False</span></tt>,
+and <tt class="docutils literal"><span class="pre">result.result</span></tt> will contain the exception instance raised.</p>
+</div>
+<div class="section" id="auto-discovery-of-tasks">
+<h3>Auto-discovery of tasks<a class="headerlink" href="#auto-discovery-of-tasks" title="Permalink to this headline">¶</a></h3>
+<p><tt class="docutils literal"><span class="pre">celery</span></tt> has an auto-discovery feature like the Django Admin, that
+automatically loads any <tt class="docutils literal"><span class="pre">tasks.py</span></tt> module in the applications listed
+in <tt class="docutils literal"><span class="pre">settings.INSTALLED_APPS</span></tt>. This autodiscovery is used by the celery
+worker to find registered tasks for your Django project.</p>
+</div>
+<div class="section" id="periodic-tasks">
+<h3>Periodic Tasks<a class="headerlink" href="#periodic-tasks" title="Permalink to this headline">¶</a></h3>
+<p>Periodic tasks are tasks that are run every <tt class="docutils literal"><span class="pre">n</span></tt> seconds.
+Here&#8217;s an example of a periodic task:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">PeriodicTask</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.registry</span> <span class="kn">import</span> <span class="n">tasks</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">timedelta</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">MyPeriodicTask</span><span class="p">(</span><span class="n">PeriodicTask</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">run_every</span> <span class="o">=</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="mf">30</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<span class="gp">... </span>        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Running periodic task!&quot;</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tasks</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">MyPeriodicTask</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Note:</strong> Periodic tasks does not support arguments, as this doesn&#8217;t
+really make sense.</p>
+</div>
+</div>
+<div class="section" id="a-look-inside-the-worker">
+<h2>A look inside the worker<a class="headerlink" href="#a-look-inside-the-worker" title="Permalink to this headline">¶</a></h2>
+<img alt="http://cloud.github.com/downloads/ask/celery/InsideTheWorker-v2.jpg" src="http://cloud.github.com/downloads/ask/celery/InsideTheWorker-v2.jpg" />
+</div>
+<div class="section" id="getting-help">
+<h2>Getting Help<a class="headerlink" href="#getting-help" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="mailing-list">
+<h3>Mailing list<a class="headerlink" href="#mailing-list" title="Permalink to this headline">¶</a></h3>
+<p>For discussions about the usage, development, and future of celery,
+please join the <a class="reference external" href="http://groups.google.com/group/celery-users/">celery-users</a> mailing list.</p>
+</div>
+<div class="section" id="irc">
+<h3>IRC<a class="headerlink" href="#irc" title="Permalink to this headline">¶</a></h3>
+<p>Come chat with us on IRC. The <a class="reference external" href="irc://irc.freenode.net/celery">#celery</a> channel is located at the <a class="reference external" href="http://freenode.net">Freenode</a>
+network.</p>
+</div>
+</div>
+<div class="section" id="bug-tracker">
+<h2>Bug tracker<a class="headerlink" href="#bug-tracker" title="Permalink to this headline">¶</a></h2>
+<p>If you have any suggestions, bug reports or annoyances please report them
+to our issue tracker at <a class="reference external" href="http://github.com/ask/celery/issues/">http://github.com/ask/celery/issues/</a></p>
+</div>
+<div class="section" id="contributing">
+<h2>Contributing<a class="headerlink" href="#contributing" title="Permalink to this headline">¶</a></h2>
+<p>Development of <tt class="docutils literal"><span class="pre">celery</span></tt> happens at Github: <a class="reference external" href="http://github.com/ask/celery">http://github.com/ask/celery</a></p>
+<p>You are highly encouraged to participate in the development
+of <tt class="docutils literal"><span class="pre">celery</span></tt>. If you don&#8217;t like Github (for some reason) you&#8217;re welcome
+to send regular patches.</p>
+</div>
+<div class="section" id="license">
+<h2>License<a class="headerlink" href="#license" title="Permalink to this headline">¶</a></h2>
+<p>This software is licensed under the <tt class="docutils literal"><span class="pre">New</span> <span class="pre">BSD</span> <span class="pre">License</span></tt>. See the <tt class="docutils literal"><span class="pre">LICENSE</span></tt>
+file in the top distribution directory for the full license text.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="">celery - Distributed Task Queue for Django/Python</a><ul>
+<li><a class="reference external" href="#introduction">Introduction</a></li>
+<li><a class="reference external" href="#overview">Overview</a></li>
+<li><a class="reference external" href="#features">Features</a></li>
+<li><a class="reference external" href="#api-reference-documentation">API Reference Documentation</a></li>
+<li><a class="reference external" href="#installation">Installation</a><ul>
+<li><a class="reference external" href="#downloading-and-installing-from-source">Downloading and installing from source</a></li>
+<li><a class="reference external" href="#using-the-development-version">Using the development version</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#usage">Usage</a><ul>
+<li><a class="reference external" href="#installing-rabbitmq">Installing RabbitMQ</a></li>
+<li><a class="reference external" href="#setting-up-rabbitmq">Setting up RabbitMQ</a></li>
+<li><a class="reference external" href="#configuring-your-django-project-to-use-celery">Configuring your Django project to use Celery</a></li>
+<li><a class="reference external" href="#running-the-celery-worker-server">Running the celery worker server</a></li>
+<li><a class="reference external" href="#defining-and-executing-tasks">Defining and executing tasks</a></li>
+<li><a class="reference external" href="#auto-discovery-of-tasks">Auto-discovery of tasks</a></li>
+<li><a class="reference external" href="#periodic-tasks">Periodic Tasks</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#a-look-inside-the-worker">A look inside the worker</a></li>
+<li><a class="reference external" href="#getting-help">Getting Help</a><ul>
+<li><a class="reference external" href="#mailing-list">Mailing list</a></li>
+<li><a class="reference external" href="#irc">IRC</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#bug-tracker">Bug tracker</a></li>
+<li><a class="reference external" href="#contributing">Contributing</a></li>
+<li><a class="reference external" href="#license">License</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="index.html"
+                                  title="previous chapter">Celery - Distributed Task Queue</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="cookbook/index.html"
+                                  title="next chapter">Cookbook</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="sources/introduction.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="cookbook/index.html" title="Cookbook"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Celery - Distributed Task Queue"
+             >previous</a> |</li>
+        <li><a href="index.html">Celery v0.7.0 (unstable) documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.2.
+    </div>
+  </body>
+</html>

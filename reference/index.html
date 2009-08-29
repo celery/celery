@@ -1,0 +1,161 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Module API Reference &mdash; Celery v0.7.0 (unstable) documentation</title>
+    <link rel="stylesheet" href="../static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.7.0 (unstable)',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v0.7.0 (unstable) documentation" href="../index.html" />
+    <link rel="next" title="Defining Tasks - celery.task.base" href="celery.task.base.html" />
+    <link rel="prev" title="Frequently Asked Questions" href="../faq.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="celery.task.base.html" title="Defining Tasks - celery.task.base"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../faq.html" title="Frequently Asked Questions"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Celery v0.7.0 (unstable) documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-api-reference">
+<h1>Module API Reference<a class="headerlink" href="#module-api-reference" title="Permalink to this headline">¶</a></h1>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Release:</th><td class="field-body">0.7</td>
+</tr>
+<tr class="field"><th class="field-name">Date:</th><td class="field-body">August 27, 2009</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="celery.task.base.html">Defining Tasks - celery.task.base</a></li>
+<li class="toctree-l1"><a class="reference external" href="celery.execute.html">Executing Tasks - celery.execute</a></li>
+<li class="toctree-l1"><a class="reference external" href="celery.result.html">Task Result - celery.result</a></li>
+<li class="toctree-l1"><a class="reference external" href="celery.task.html">Task Information and Utilities - celery.task</a></li>
+<li class="toctree-l1"><a class="reference external" href="celery.registry.html">Task Registry - celery.registry</a></li>
+<li class="toctree-l1"><a class="reference external" href="celery.signals.html">Signals - celery.signals</a></li>
+<li class="toctree-l1"><a class="reference external" href="celery.exceptions.html">Exceptions - celery.exceptions</a></li>
+<li class="toctree-l1"><a class="reference external" href="celery.task.builtins.html">Built-in Task Classes - celery.task.builtins</a></li>
+<li class="toctree-l1"><a class="reference external" href="celery.task.strategy.html">Common Task Strategies - celery.task.strategy</a></li>
+<li class="toctree-l1"><a class="reference external" href="celery.loaders.html">Loaders - celery.loaders</a></li>
+<li class="toctree-l1"><a class="reference external" href="celery.loaders.base.html">Loader Base Classes - celery.loaders.base</a></li>
+<li class="toctree-l1"><a class="reference external" href="celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
+<li class="toctree-l1"><a class="reference external" href="celery.loaders.djangoapp.html">Django Loader - celery.loaders.djangoapp</a></li>
+<li class="toctree-l1"><a class="reference external" href="celery.discovery.html">Task Discovery - celery.discovery</a></li>
+<li class="toctree-l1"><a class="reference external" href="celery.monitoring.html">Statistics and Monitoring - celery.monitoring</a></li>
+<li class="toctree-l1"><a class="reference external" href="celery.messaging.html">Messaging - celery.messaging</a></li>
+<li class="toctree-l1"><a class="reference external" href="celery.worker.html">Multiprocessing Worker - celery.worker</a></li>
+<li class="toctree-l1"><a class="reference external" href="celery.worker.job.html">Executable Jobs - celery.worker.job</a></li>
+<li class="toctree-l1"><a class="reference external" href="celery.worker.controllers.html">Worker Controller Threads - celery.worker.controllers</a></li>
+<li class="toctree-l1"><a class="reference external" href="celery.pool.html">Task Pool - celery.pool</a></li>
+<li class="toctree-l1"><a class="reference external" href="celery.supervisor.html">Process Supervisor - celery.supervisor</a></li>
+<li class="toctree-l1"><a class="reference external" href="celery.backends.html">Backends - celery.backends</a></li>
+<li class="toctree-l1"><a class="reference external" href="celery.backends.base.html">Backend: Base - celery.backends.base</a></li>
+<li class="toctree-l1"><a class="reference external" href="celery.backends.database.html">Backend: Database - celery.backends.database</a></li>
+<li class="toctree-l1"><a class="reference external" href="celery.backends.cache.html">Backend: Cache - celery.backends.cache</a></li>
+<li class="toctree-l1"><a class="reference external" href="celery.backends.amqp.html">Backend: AMQP - celery.backends.amqp</a></li>
+<li class="toctree-l1"><a class="reference external" href="celery.backends.tyrant.html">Backend: Tokyo Tyrant - celery.backends.tyrant</a></li>
+<li class="toctree-l1"><a class="reference external" href="celery.conf.html">Configuration - celery.conf</a></li>
+<li class="toctree-l1"><a class="reference external" href="celery.datastructures.html">Datastructures - celery.datastructures</a></li>
+<li class="toctree-l1"><a class="reference external" href="celery.log.html">Logging - celery.log</a></li>
+<li class="toctree-l1"><a class="reference external" href="celery.utils.html">Multiprocessing Worker - celery.worker</a></li>
+<li class="toctree-l1"><a class="reference external" href="celery.views.html">Django Views - celery.views</a></li>
+<li class="toctree-l1"><a class="reference external" href="celery.managers.html">Django Model Managers - celery.managers</a></li>
+<li class="toctree-l1"><a class="reference external" href="celery.models.html">Django Models - celery.models</a></li>
+<li class="toctree-l1"><a class="reference external" href="celery.fields.html">Django Fields - celery.fields</a></li>
+<li class="toctree-l1"><a class="reference external" href="celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
+<li class="toctree-l1"><a class="reference external" href="celery.bin.celeryinit.html">Celery Initialize - celery.bin.celeryinit</a></li>
+</ul>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="../faq.html"
+                                  title="previous chapter">Frequently Asked Questions</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="celery.task.base.html"
+                                  title="next chapter">Defining Tasks - celery.task.base</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../sources/reference/index.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.task.base.html" title="Defining Tasks - celery.task.base"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../faq.html" title="Frequently Asked Questions"
+             >previous</a> |</li>
+        <li><a href="../index.html">Celery v0.7.0 (unstable) documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.2.
+    </div>
+  </body>
+</html>

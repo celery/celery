@@ -1,0 +1,147 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Backend: Tokyo Tyrant - celery.backends.tyrant &mdash; Celery v0.7.0 (unstable) documentation</title>
+    <link rel="stylesheet" href="../static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.7.0 (unstable)',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v0.7.0 (unstable) documentation" href="../index.html" />
+    <link rel="up" title="Module API Reference" href="index.html" />
+    <link rel="next" title="Configuration - celery.conf" href="celery.conf.html" />
+    <link rel="prev" title="Backend: AMQP - celery.backends.amqp" href="celery.backends.amqp.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="celery.conf.html" title="Configuration - celery.conf"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.backends.amqp.html" title="Backend: AMQP - celery.backends.amqp"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Celery v0.7.0 (unstable) documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module API Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-celery.backends.tyrant">
+<h1>Backend: Tokyo Tyrant - celery.backends.tyrant<a class="headerlink" href="#module-celery.backends.tyrant" title="Permalink to this headline">¶</a></h1>
+<p>celery.backends.tyrant</p>
+<dl class="class">
+<dt id="celery.backends.tyrant.Backend">
+<em class="property">
+class </em><tt class="descclassname">celery.backends.tyrant.</tt><tt class="descname">Backend</tt><big>(</big><em>tyrant_host=None</em>, <em>tyrant_port=None</em><big>)</big><a class="headerlink" href="#celery.backends.tyrant.Backend" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tokyo Cabinet based task backend store.</p>
+<dl class="attribute">
+<dt id="celery.backends.tyrant.Backend.tyrant_host">
+<tt class="descname">tyrant_host</tt><a class="headerlink" href="#celery.backends.tyrant.Backend.tyrant_host" title="Permalink to this definition">¶</a></dt>
+<dd>The hostname to the Tokyo Tyrant server.</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.backends.tyrant.Backend.tyrant_port">
+<tt class="descname">tyrant_port</tt><a class="headerlink" href="#celery.backends.tyrant.Backend.tyrant_port" title="Permalink to this definition">¶</a></dt>
+<dd>The port to the Tokyo Tyrant server.</dd></dl>
+
+<dl class="method">
+<dt id="celery.backends.tyrant.Backend.close">
+<tt class="descname">close</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.backends.tyrant.Backend.close" title="Permalink to this definition">¶</a></dt>
+<dd>Close the tyrant connection and remove the cache.</dd></dl>
+
+<dl class="method">
+<dt id="celery.backends.tyrant.Backend.open">
+<tt class="descname">open</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.backends.tyrant.Backend.open" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get <tt class="xref docutils literal"><span class="pre">pytyrant.PyTyrant`</span></tt> instance with the current
+server configuration.</p>
+<p>The connection is then cached until you do an
+explicit <a title="celery.backends.tyrant.Backend.close" class="reference internal" href="#celery.backends.tyrant.Backend.close"><tt class="xref docutils literal"><span class="pre">close()</span></tt></a>.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="celery.backends.amqp.html"
+                                  title="previous chapter">Backend: AMQP - celery.backends.amqp</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="celery.conf.html"
+                                  title="next chapter">Configuration - celery.conf</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../sources/reference/celery.backends.tyrant.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.conf.html" title="Configuration - celery.conf"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.backends.amqp.html" title="Backend: AMQP - celery.backends.amqp"
+             >previous</a> |</li>
+        <li><a href="../index.html">Celery v0.7.0 (unstable) documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module API Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.2.
+    </div>
+  </body>
+</html>

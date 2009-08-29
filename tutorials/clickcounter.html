@@ -1,0 +1,333 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Tutorial: Creating a click counter using carrot and celery &mdash; Celery v0.7.0 (unstable) documentation</title>
+    <link rel="stylesheet" href="../static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.7.0 (unstable)',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v0.7.0 (unstable) documentation" href="../index.html" />
+    <link rel="up" title="Tutorials" href="index.html" />
+    <link rel="next" title="Frequently Asked Questions" href="../faq.html" />
+    <link rel="prev" title="Tutorials" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="../faq.html" title="Frequently Asked Questions"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Tutorials"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Celery v0.7.0 (unstable) documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Tutorials</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="tutorial-creating-a-click-counter-using-carrot-and-celery">
+<h1>Tutorial: Creating a click counter using carrot and celery<a class="headerlink" href="#tutorial-creating-a-click-counter-using-carrot-and-celery" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>A click counter should be easy, right? Just a simple view that increments
+a click in the DB and forwards you to the real destination.</p>
+<p>This would work well for most sites, but when traffic starts to increase,
+you are likely to bump into problems. One database write for every click is
+not good if you have millions of clicks a day.</p>
+<p>So what can you do? In this tutorial we will send the individual clicks as
+messages using <tt class="docutils literal"><span class="pre">carrot</span></tt>, and then process them later with a <tt class="docutils literal"><span class="pre">celery</span></tt>
+periodic task.</p>
+<p>Celery and carrot is excellent in tandem, and while this might not be
+the perfect example, you&#8217;ll at least see one example how of they can be used
+to solve a task.</p>
+</div>
+<div class="section" id="the-model">
+<h2>The model<a class="headerlink" href="#the-model" title="Permalink to this headline">¶</a></h2>
+<p>The model is simple, <tt class="docutils literal"><span class="pre">Click</span></tt> has the URL as primary key and a number of
+clicks for that URL. Its manager, <tt class="docutils literal"><span class="pre">ClickManager</span></tt> implements the
+<tt class="docutils literal"><span class="pre">increment_clicks</span></tt> method, which takes a URL and by how much to increment
+its count by.</p>
+<p><em>clickmuncher/models.py</em>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">models</span>
+<span class="kn">from</span> <span class="nn">django.utils.translation</span> <span class="kn">import</span> <span class="n">ugettext_lazy</span> <span class="k">as</span> <span class="n">_</span>
+
+
+<span class="k">class</span> <span class="nc">ClickManager</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Manager</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">increment_clicks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">for_url</span><span class="p">,</span> <span class="n">increment_by</span><span class="o">=</span><span class="mf">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Increment the click count for an URL.</span>
+
+<span class="sd">            &gt;&gt;&gt; Click.objects.increment_clicks(&quot;http://google.com&quot;, 10)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">click</span><span class="p">,</span> <span class="n">created</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">for_url</span><span class="p">,</span>
+                                <span class="n">defaults</span><span class="o">=</span><span class="p">{</span><span class="s">&quot;click_count&quot;</span><span class="p">:</span> <span class="n">increment_by</span><span class="p">})</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">created</span><span class="p">:</span>
+            <span class="n">click</span><span class="o">.</span><span class="n">click_count</span> <span class="o">+=</span> <span class="n">increment_by</span>
+            <span class="n">click</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">click</span><span class="o">.</span><span class="n">click_count</span>
+
+
+<span class="k">class</span> <span class="nc">Click</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">URLField</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s">u&quot;URL&quot;</span><span class="p">),</span> <span class="n">verify_exists</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">click_count</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">PositiveIntegerField</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s">u&quot;click_count&quot;</span><span class="p">),</span>
+                                              <span class="n">default</span><span class="o">=</span><span class="mf">0</span><span class="p">)</span>
+
+    <span class="n">objects</span> <span class="o">=</span> <span class="n">ClickManager</span><span class="p">()</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">verbose_name</span> <span class="o">=</span> <span class="n">_</span><span class="p">(</span><span class="s">u&quot;URL clicks&quot;</span><span class="p">)</span>
+        <span class="n">verbose_name_plural</span> <span class="o">=</span> <span class="n">_</span><span class="p">(</span><span class="s">u&quot;URL clicks&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="using-carrot-to-send-clicks-as-messages">
+<h2>Using carrot to send clicks as messages<a class="headerlink" href="#using-carrot-to-send-clicks-as-messages" title="Permalink to this headline">¶</a></h2>
+<p>The model is normal django stuff, nothing new there. But now we get on to
+the messaging. It has been a tradition for me to put the projects messaging
+related code in its own <tt class="docutils literal"><span class="pre">messaging.py</span></tt> module, and I will continue to do so
+here so maybe you can adopt this practice. In this module we have two
+functions:</p>
+<ul>
+<li><p class="first"><tt class="docutils literal"><span class="pre">send_increment_clicks</span></tt></p>
+<p>This function sends a simple message to the broker. The message body only
+contains the URL we want to increment as plain-text, so the exchange and
+routing key play a role here. We use an exchange called <tt class="docutils literal"><span class="pre">clicks</span></tt>, with a
+routing key of <tt class="docutils literal"><span class="pre">increment_click</span></tt>, so any consumer binding a queue to
+this exchange using this routing key will receive these messages.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">process_clicks</span></tt></p>
+<p>This function processes all currently gathered clicks sent using
+<tt class="docutils literal"><span class="pre">send_increment_clicks</span></tt>. Instead of issuing one database query for every
+click it processes all of the messages first, calculates the new click count
+and issues one update per URL. A message that has been received will not be
+deleted from the broker until it has been acknowledged by the receiver, so
+if the reciever dies in the middle of processing the message, it will be
+re-sent at a later point in time. This guarantees delivery and we respect
+this feature here by not acknowledging the message until the clicks has
+actually been written to disk.</p>
+<p><strong>Note</strong>: This could probably be optimized further with
+some hand-written SQL, but it will do for now. Let&#8217;s say it&#8217;s an excersise
+left for the picky reader, albeit a discouraged one if you can survive
+without doing it.</p>
+</li>
+</ul>
+<p>On to the code...</p>
+<p><em>clickmuncher/messaging.py</em>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">carrot.connection</span> <span class="kn">import</span> <span class="n">DjangoBrokerConnection</span>
+<span class="kn">from</span> <span class="nn">carrot.messaging</span> <span class="kn">import</span> <span class="n">Publisher</span><span class="p">,</span> <span class="n">Consumer</span>
+<span class="kn">from</span> <span class="nn">clickmuncher.models</span> <span class="kn">import</span> <span class="n">Click</span>
+
+
+<span class="k">def</span> <span class="nf">send_increment_clicks</span><span class="p">(</span><span class="n">for_url</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Send a message for incrementing the click count for an URL.&quot;&quot;&quot;</span>
+    <span class="n">connection</span> <span class="o">=</span> <span class="n">DjangoBrokerConnection</span><span class="p">()</span>
+    <span class="n">publisher</span> <span class="o">=</span> <span class="n">Publisher</span><span class="p">(</span><span class="n">connection</span><span class="o">=</span><span class="n">connection</span><span class="p">,</span>
+                          <span class="n">exchange</span><span class="o">=</span><span class="s">&quot;clicks&quot;</span><span class="p">,</span>
+                          <span class="n">routing_key</span><span class="o">=</span><span class="s">&quot;increment_click&quot;</span><span class="p">,</span>
+                          <span class="n">exchange_type</span><span class="o">=</span><span class="s">&quot;direct&quot;</span><span class="p">)</span>
+
+    <span class="n">publisher</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">for_url</span><span class="p">)</span>
+
+    <span class="n">publisher</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="n">connection</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">process_clicks</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Process all currently gathered clicks by saving them to the</span>
+<span class="sd">    database.&quot;&quot;&quot;</span>
+    <span class="n">connection</span> <span class="o">=</span> <span class="n">DjangoBrokerConnection</span><span class="p">()</span>
+    <span class="n">consumer</span> <span class="o">=</span> <span class="n">Consumer</span><span class="p">(</span><span class="n">connection</span><span class="o">=</span><span class="n">connection</span><span class="p">,</span>
+                        <span class="n">queue</span><span class="o">=</span><span class="s">&quot;clicks&quot;</span><span class="p">,</span>
+                        <span class="n">exchange</span><span class="o">=</span><span class="s">&quot;clicks&quot;</span><span class="p">,</span>
+                        <span class="n">routing_key</span><span class="o">=</span><span class="s">&quot;increment_click&quot;</span><span class="p">,</span>
+                        <span class="n">exchange_type</span><span class="o">=</span><span class="s">&quot;direct&quot;</span><span class="p">)</span>
+
+    <span class="c"># First process the messages: save the number of clicks</span>
+    <span class="c"># for every URL.</span>
+    <span class="n">clicks_for_url</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">messages_for_url</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">message</span> <span class="ow">in</span> <span class="n">consumer</span><span class="o">.</span><span class="n">iterqueue</span><span class="p">():</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">body</span>
+        <span class="n">clicks_for_url</span><span class="p">[</span><span class="n">url</span><span class="p">]</span> <span class="o">=</span> <span class="n">clicks_for_url</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="mf">0</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1</span>
+        <span class="c"># We also need to keep the message objects so we can ack the</span>
+        <span class="c"># messages as processed when we are finished with them.</span>
+        <span class="k">if</span> <span class="n">url</span> <span class="ow">in</span> <span class="n">messages_for_url</span><span class="p">:</span>
+            <span class="n">messages_for_url</span><span class="p">[</span><span class="n">url</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">messages_for_url</span><span class="p">[</span><span class="n">url</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">message</span><span class="p">]</span>
+
+    <span class="c"># Then increment the clicks in the database so we only need</span>
+    <span class="c"># one UPDATE/INSERT for each URL.</span>
+    <span class="k">for</span> <span class="n">url</span><span class="p">,</span> <span class="n">click_count</span> <span class="ow">in</span> <span class="n">clicks_for_urls</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">Click</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">increment_clicks</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">click_count</span><span class="p">)</span>
+        <span class="c"># Now that the clicks has been registered for this URL we can</span>
+        <span class="c"># acknowledge the messages</span>
+        <span class="p">[</span><span class="n">message</span><span class="o">.</span><span class="n">ack</span><span class="p">()</span> <span class="k">for</span> <span class="n">message</span> <span class="ow">in</span> <span class="n">messages_for_url</span><span class="p">[</span><span class="n">url</span><span class="p">]]</span>
+
+    <span class="n">consumer</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="n">connection</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="view-and-urls">
+<h2>View and URLs<a class="headerlink" href="#view-and-urls" title="Permalink to this headline">¶</a></h2>
+<p>This is also simple stuff, don&#8217;t think I have to explain this code to you.
+The interface is as follows, if you have a link to <a class="reference external" href="http://google.com">http://google.com</a> you
+would want to count the clicks for, you replace the URL with:</p>
+<blockquote>
+<a class="reference external" href="http://mysite/clickmuncher/count/?u=http://google.com">http://mysite/clickmuncher/count/?u=http://google.com</a></blockquote>
+<p>and the <tt class="docutils literal"><span class="pre">count</span></tt> view will send off an increment message and forward you to
+that site.</p>
+<p><em>clickmuncher/views.py</em>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">django.http</span> <span class="kn">import</span> <span class="n">HttpResponseRedirect</span>
+<span class="kn">from</span> <span class="nn">clickmuncher.messaging</span> <span class="kn">import</span> <span class="n">send_increment_clicks</span>
+
+
+<span class="k">def</span> <span class="nf">count</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="p">[</span><span class="s">&quot;u&quot;</span><span class="p">]</span>
+    <span class="n">send_increment_clicks</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">HttpResponseRedirect</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><em>clickmuncher/urls.py</em>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">django.conf.urls.defaults</span> <span class="kn">import</span> <span class="n">patterns</span><span class="p">,</span> <span class="n">url</span>
+<span class="kn">from</span> <span class="nn">clickmuncher</span> <span class="kn">import</span> <span class="n">views</span>
+
+<span class="n">urlpatterns</span> <span class="o">=</span> <span class="n">patterns</span><span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">,</span>
+    <span class="n">url</span><span class="p">(</span><span class="s">r&#39;^$&#39;</span><span class="p">,</span> <span class="n">views</span><span class="o">.</span><span class="n">count</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;clickmuncher-count&quot;</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="creating-the-periodic-task">
+<h2>Creating the periodic task<a class="headerlink" href="#creating-the-periodic-task" title="Permalink to this headline">¶</a></h2>
+<p>Processing the clicks every 30 minutes is easy using celery periodic tasks.</p>
+<p><em>clickmuncher/tasks.py</em>:</p>
+<div class="highlight-python"><pre>from celery.task import PeriodicTask
+from celery.registry import tasks
+from clickmuncher.messaging import process_clicks
+from datetime import timedelta
+
+
+class ProcessClicksTask(PeriodicTask):
+    run_every = timedelta(minutes=30)
+
+    def run(self, \*\*kwargs):
+        process_clicks()
+tasks.register(ProcessClicksTask)</pre>
+</div>
+<p>We subclass from <a title="celery.task.base.PeriodicTask" class="reference external" href="../reference/celery.task.base.html#celery.task.base.PeriodicTask"><tt class="xref docutils literal"><span class="pre">celery.task.base.PeriodicTask</span></tt></a>, set the <tt class="docutils literal"><span class="pre">run_every</span></tt>
+attribute and in the body of the task just call the <tt class="docutils literal"><span class="pre">process_clicks</span></tt>
+function we wrote earlier. Finally, we register the task in the task registry
+so the celery workers is able to recognize and find it.</p>
+</div>
+<div class="section" id="finishing">
+<h2>Finishing<a class="headerlink" href="#finishing" title="Permalink to this headline">¶</a></h2>
+<p>There are still ways to improve this application. The URLs could be cleaned
+so the url <a class="reference external" href="http://google.com">http://google.com</a> and <a class="reference external" href="http://google.com/">http://google.com/</a> is the same. Maybe it&#8217;s
+even possible to update the click count using a single UPDATE query?</p>
+<p>If you have any questions regarding this tutorial, please send a mail to the
+mailing-list or come join us in the #celery IRC channel at Freenode:
+<a class="reference external" href="http://celeryq.org/introduction.html#getting-help">http://celeryq.org/introduction.html#getting-help</a></p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="../index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="">Tutorial: Creating a click counter using carrot and celery</a><ul>
+<li><a class="reference external" href="#introduction">Introduction</a></li>
+<li><a class="reference external" href="#the-model">The model</a></li>
+<li><a class="reference external" href="#using-carrot-to-send-clicks-as-messages">Using carrot to send clicks as messages</a></li>
+<li><a class="reference external" href="#view-and-urls">View and URLs</a></li>
+<li><a class="reference external" href="#creating-the-periodic-task">Creating the periodic task</a></li>
+<li><a class="reference external" href="#finishing">Finishing</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="index.html"
+                                  title="previous chapter">Tutorials</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="../faq.html"
+                                  title="next chapter">Frequently Asked Questions</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../sources/tutorials/clickcounter.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../faq.html" title="Frequently Asked Questions"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Tutorials"
+             >previous</a> |</li>
+        <li><a href="../index.html">Celery v0.7.0 (unstable) documentation</a> &raquo;</li>
+          <li><a href="index.html" >Tutorials</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.2.
+    </div>
+  </body>
+</html>

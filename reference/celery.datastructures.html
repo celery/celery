@@ -1,0 +1,216 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Datastructures - celery.datastructures &mdash; Celery v0.7.0 (unstable) documentation</title>
+    <link rel="stylesheet" href="../static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.7.0 (unstable)',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v0.7.0 (unstable) documentation" href="../index.html" />
+    <link rel="up" title="Module API Reference" href="index.html" />
+    <link rel="next" title="Logging - celery.log" href="celery.log.html" />
+    <link rel="prev" title="Configuration - celery.conf" href="celery.conf.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="celery.log.html" title="Logging - celery.log"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.conf.html" title="Configuration - celery.conf"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Celery v0.7.0 (unstable) documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module API Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-celery.datastructures">
+<h1>Datastructures - celery.datastructures<a class="headerlink" href="#module-celery.datastructures" title="Permalink to this headline">¶</a></h1>
+<p>Custom Datastructures</p>
+<dl class="class">
+<dt id="celery.datastructures.ExceptionInfo">
+<em class="property">
+class </em><tt class="descclassname">celery.datastructures.</tt><tt class="descname">ExceptionInfo</tt><big>(</big><em>exc_info</em><big>)</big><a class="headerlink" href="#celery.datastructures.ExceptionInfo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Exception wrapping an exception and its traceback.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>exc_info</em> &#8211; The exception tuple info as returned by
+<tt class="xref docutils literal"><span class="pre">traceback.format_exception()</span></tt>.</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="celery.datastructures.ExceptionInfo.exception">
+<tt class="descname">exception</tt><a class="headerlink" href="#celery.datastructures.ExceptionInfo.exception" title="Permalink to this definition">¶</a></dt>
+<dd>The original exception.</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.datastructures.ExceptionInfo.traceback">
+<tt class="descname">traceback</tt><a class="headerlink" href="#celery.datastructures.ExceptionInfo.traceback" title="Permalink to this definition">¶</a></dt>
+<dd>A traceback from the point when <a title="celery.datastructures.ExceptionInfo.exception" class="reference internal" href="#celery.datastructures.ExceptionInfo.exception"><tt class="xref docutils literal"><span class="pre">exception</span></tt></a> was raised.</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.datastructures.PositionQueue">
+<em class="property">
+class </em><tt class="descclassname">celery.datastructures.</tt><tt class="descname">PositionQueue</tt><big>(</big><em>length</em><big>)</big><a class="headerlink" href="#celery.datastructures.PositionQueue" title="Permalink to this definition">¶</a></dt>
+<dd><p>A positional queue of a specific length, with slots that are either
+filled or unfilled. When all of the positions are filled, the queue
+is considered <a title="celery.datastructures.PositionQueue.full" class="reference internal" href="#celery.datastructures.PositionQueue.full"><tt class="xref docutils literal"><span class="pre">full()</span></tt></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>length</em> &#8211; see <a title="celery.datastructures.PositionQueue.length" class="reference internal" href="#celery.datastructures.PositionQueue.length"><tt class="xref docutils literal"><span class="pre">length</span></tt></a>.</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="celery.datastructures.PositionQueue.length">
+<tt class="descname">length</tt><a class="headerlink" href="#celery.datastructures.PositionQueue.length" title="Permalink to this definition">¶</a></dt>
+<dd>The number of items required for the queue to be considered full.</dd></dl>
+
+<dl class="class">
+<dt id="celery.datastructures.PositionQueue.UnfilledPosition">
+<em class="property">
+class </em><tt class="descname">UnfilledPosition</tt><big>(</big><em>position</em><big>)</big><a class="headerlink" href="#celery.datastructures.PositionQueue.UnfilledPosition" title="Permalink to this definition">¶</a></dt>
+<dd>Describes an unfilled slot.</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.datastructures.PositionQueue.filled">
+<tt class="descclassname">PositionQueue.</tt><tt class="descname">filled</tt><a class="headerlink" href="#celery.datastructures.PositionQueue.filled" title="Permalink to this definition">¶</a></dt>
+<dd>Returns the filled slots as a list.</dd></dl>
+
+<dl class="method">
+<dt id="celery.datastructures.PositionQueue.full">
+<tt class="descclassname">PositionQueue.</tt><tt class="descname">full</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.datastructures.PositionQueue.full" title="Permalink to this definition">¶</a></dt>
+<dd>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if all of the slots has been filled.</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.datastructures.SharedCounter">
+<em class="property">
+class </em><tt class="descclassname">celery.datastructures.</tt><tt class="descname">SharedCounter</tt><big>(</big><em>initial_value</em><big>)</big><a class="headerlink" href="#celery.datastructures.SharedCounter" title="Permalink to this definition">¶</a></dt>
+<dd><p>An integer that can be updated by several threads at once.</p>
+<p>Please note that the final value is not synchronized, this means
+that you should not update the value by using a previous value, the only
+reliable operations are increment and decrement.</p>
+<p>Example</p>
+<blockquote>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">max_clients</span> <span class="o">=</span> <span class="n">SharedCounter</span><span class="p">(</span><span class="n">initial_value</span><span class="o">=</span><span class="mf">10</span><span class="p">)</span>
+</pre></div>
+</div>
+<p># Thread one
+&gt;&gt;&gt; max_clients += 1 # OK (safe)</p>
+<p># Thread two
+&gt;&gt;&gt; max_clients -= 3 # OK (safe)</p>
+<p># Main thread
+&gt;&gt;&gt; if client &gt;= int(max_clients): # Max clients now at 8
+...    wait()</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">max_client</span> <span class="o">=</span> <span class="n">max_clients</span> <span class="o">+</span> <span class="mf">10</span> <span class="c"># NOT OK (unsafe)</span>
+</pre></div>
+</div>
+</blockquote>
+<dl class="method">
+<dt id="celery.datastructures.SharedCounter.decrement">
+<tt class="descname">decrement</tt><big>(</big><em>n=1</em><big>)</big><a class="headerlink" href="#celery.datastructures.SharedCounter.decrement" title="Permalink to this definition">¶</a></dt>
+<dd>Decrement value.</dd></dl>
+
+<dl class="method">
+<dt id="celery.datastructures.SharedCounter.increment">
+<tt class="descname">increment</tt><big>(</big><em>n=1</em><big>)</big><a class="headerlink" href="#celery.datastructures.SharedCounter.increment" title="Permalink to this definition">¶</a></dt>
+<dd>Increment value.</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="celery.conf.html"
+                                  title="previous chapter">Configuration - celery.conf</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="celery.log.html"
+                                  title="next chapter">Logging - celery.log</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../sources/reference/celery.datastructures.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.log.html" title="Logging - celery.log"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.conf.html" title="Configuration - celery.conf"
+             >previous</a> |</li>
+        <li><a href="../index.html">Celery v0.7.0 (unstable) documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module API Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.2.
+    </div>
+  </body>
+</html>

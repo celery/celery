@@ -1,0 +1,265 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Django Model Managers - celery.managers &mdash; Celery v0.7.0 (unstable) documentation</title>
+    <link rel="stylesheet" href="../static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.7.0 (unstable)',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v0.7.0 (unstable) documentation" href="../index.html" />
+    <link rel="up" title="Module API Reference" href="index.html" />
+    <link rel="next" title="Django Models - celery.models" href="celery.models.html" />
+    <link rel="prev" title="Django Views - celery.views" href="celery.views.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="celery.models.html" title="Django Models - celery.models"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.views.html" title="Django Views - celery.views"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Celery v0.7.0 (unstable) documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module API Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-celery.managers">
+<h1>Django Model Managers - celery.managers<a class="headerlink" href="#module-celery.managers" title="Permalink to this headline">¶</a></h1>
+<p>celery.managers</p>
+<dl class="class">
+<dt id="celery.managers.MySQLTableLock">
+<em class="property">
+class </em><tt class="descclassname">celery.managers.</tt><tt class="descname">MySQLTableLock</tt><big>(</big><em>table</em>, <em>type='read'</em><big>)</big><a class="headerlink" href="#celery.managers.MySQLTableLock" title="Permalink to this definition">¶</a></dt>
+<dd><p>Table lock support for MySQL.</p>
+<dl class="method">
+<dt id="celery.managers.MySQLTableLock.lock_table">
+<tt class="descname">lock_table</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.managers.MySQLTableLock.lock_table" title="Permalink to this definition">¶</a></dt>
+<dd>Lock MySQL table.</dd></dl>
+
+<dl class="method">
+<dt id="celery.managers.MySQLTableLock.unlock_table">
+<tt class="descname">unlock_table</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.managers.MySQLTableLock.unlock_table" title="Permalink to this definition">¶</a></dt>
+<dd>Unlock MySQL table.</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.managers.PeriodicTaskManager">
+<em class="property">
+class </em><tt class="descclassname">celery.managers.</tt><tt class="descname">PeriodicTaskManager</tt><a class="headerlink" href="#celery.managers.PeriodicTaskManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Manager for <tt class="xref docutils literal"><span class="pre">celery.models.PeriodicTask</span></tt> models.</p>
+<dl class="method">
+<dt id="celery.managers.PeriodicTaskManager.get_waiting_tasks">
+<tt class="descname">get_waiting_tasks</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.managers.PeriodicTaskManager.get_waiting_tasks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get all waiting periodic tasks.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body">list of <tt class="xref docutils literal"><span class="pre">celery.models.PeriodicTaskMeta</span></tt> objects.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.managers.PeriodicTaskManager.init_entries">
+<tt class="descname">init_entries</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.managers.PeriodicTaskManager.init_entries" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add entries for all registered periodic tasks.</p>
+<p>Should be run at worker start.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.managers.PeriodicTaskManager.is_time">
+<tt class="descname">is_time</tt><big>(</big><em>last_run_at</em>, <em>run_every</em><big>)</big><a class="headerlink" href="#celery.managers.PeriodicTaskManager.is_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if if it is time to run the periodic task.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><em>last_run_at</em> &#8211; Last time the periodic task was run.</li>
+<li><em>run_every</em> &#8211; How often to run the periodic task.</li>
+</ul>
+</td>
+</tr>
+<tr class="field"><th class="field-name">Rtype bool:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.managers.TableLock">
+<em class="property">
+class </em><tt class="descclassname">celery.managers.</tt><tt class="descname">TableLock</tt><big>(</big><em>table</em>, <em>type='read'</em><big>)</big><a class="headerlink" href="#celery.managers.TableLock" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class for database table locks. Also works as a NOOP lock.</p>
+<dl class="classmethod">
+<dt id="celery.managers.TableLock.acquire">
+<em class="property">
+classmethod </em><tt class="descname">acquire</tt><big>(</big><em>table</em>, <em>type=None</em><big>)</big><a class="headerlink" href="#celery.managers.TableLock.acquire" title="Permalink to this definition">¶</a></dt>
+<dd>Acquire table lock.</dd></dl>
+
+<dl class="method">
+<dt id="celery.managers.TableLock.lock_table">
+<tt class="descname">lock_table</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.managers.TableLock.lock_table" title="Permalink to this definition">¶</a></dt>
+<dd>Lock the table.</dd></dl>
+
+<dl class="method">
+<dt id="celery.managers.TableLock.release">
+<tt class="descname">release</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.managers.TableLock.release" title="Permalink to this definition">¶</a></dt>
+<dd>Release the lock.</dd></dl>
+
+<dl class="method">
+<dt id="celery.managers.TableLock.unlock_table">
+<tt class="descname">unlock_table</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.managers.TableLock.unlock_table" title="Permalink to this definition">¶</a></dt>
+<dd>Release previously locked tables.</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.managers.TaskManager">
+<em class="property">
+class </em><tt class="descclassname">celery.managers.</tt><tt class="descname">TaskManager</tt><a class="headerlink" href="#celery.managers.TaskManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Manager for <tt class="xref docutils literal"><span class="pre">celery.models.Task</span></tt> models.</p>
+<dl class="method">
+<dt id="celery.managers.TaskManager.delete_expired">
+<tt class="descname">delete_expired</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.managers.TaskManager.delete_expired" title="Permalink to this definition">¶</a></dt>
+<dd>Delete all expired task results.</dd></dl>
+
+<dl class="method">
+<dt id="celery.managers.TaskManager.get_all_expired">
+<tt class="descname">get_all_expired</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.managers.TaskManager.get_all_expired" title="Permalink to this definition">¶</a></dt>
+<dd>Get all expired task results.</dd></dl>
+
+<dl class="method">
+<dt id="celery.managers.TaskManager.get_task">
+<tt class="descname">get_task</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.managers.TaskManager.get_task" title="Permalink to this definition">¶</a></dt>
+<dd>Get task meta for task by <tt class="docutils literal"><span class="pre">task_id</span></tt>.</dd></dl>
+
+<dl class="method">
+<dt id="celery.managers.TaskManager.is_done">
+<tt class="descname">is_done</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.managers.TaskManager.is_done" title="Permalink to this definition">¶</a></dt>
+<dd>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task was executed successfully.</dd></dl>
+
+<dl class="method">
+<dt id="celery.managers.TaskManager.store_result">
+<tt class="descname">store_result</tt><big>(</big><em>task_id</em>, <em>result</em>, <em>status</em>, <em>traceback=None</em><big>)</big><a class="headerlink" href="#celery.managers.TaskManager.store_result" title="Permalink to this definition">¶</a></dt>
+<dd><p>Store the result and status of a task.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><em>task_id</em> &#8211; task id</li>
+<li><em>result</em> &#8211; The return value of the task, or an exception
+instance raised by the task.</li>
+<li><em>status</em> &#8211; Task status. See
+<tt class="xref docutils literal"><span class="pre">celery.result.AsyncResult.get_status()</span></tt> for a list of
+possible status values.</li>
+<li><em>traceback</em> &#8211; The traceback at the point of exception (if the
+task failed).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.managers.table_lock">
+<tt class="descclassname">celery.managers.</tt><tt class="descname">table_lock</tt><a class="headerlink" href="#celery.managers.table_lock" title="Permalink to this definition">¶</a></dt>
+<dd>alias of <a title="celery.managers.TableLock" class="reference internal" href="#celery.managers.TableLock"><tt class="xref docutils literal"><span class="pre">TableLock</span></tt></a></dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="celery.views.html"
+                                  title="previous chapter">Django Views - celery.views</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="celery.models.html"
+                                  title="next chapter">Django Models - celery.models</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../sources/reference/celery.managers.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.models.html" title="Django Models - celery.models"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.views.html" title="Django Views - celery.views"
+             >previous</a> |</li>
+        <li><a href="../index.html">Celery v0.7.0 (unstable) documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module API Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.2.
+    </div>
+  </body>
+</html>
