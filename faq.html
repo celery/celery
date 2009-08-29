@@ -71,11 +71,11 @@ Transaction Model and Locking</a> in the MySQL user manual.</p>
 </div>
 <div class="section" id="why-is-task-delay-apply-celeryd-just-hanging">
 <h2>Why is Task.delay/apply*/celeryd just hanging?<a class="headerlink" href="#why-is-task-delay-apply-celeryd-just-hanging" title="Permalink to this headline">¶</a></h2>
-<p><strong>Answer:</strong> Some AMQP clients can stop hanging if it isn&#8217;t able to
-authenticate the current user, the password doesn&#8217;t match or the user does
-not have access to the virtual host specified. Be sure to check your broker
-logs (for RabbitMQ that is <tt class="docutils literal"><span class="pre">/var/log/rabbitmq/rabbit.log</span></tt> on most systems),
-it usually contains a message describing the reason.</p>
+<p><strong>Answer:</strong> There is a bug in some AMQP clients that will make it hang if
+it&#8217;s not able to authenticate the current user, the password doesn&#8217;t match or
+the user does not have access to the virtual host specified. Be sure to check
+your broker logs (for RabbitMQ that is <tt class="docutils literal"><span class="pre">/var/log/rabbitmq/rabbit.log</span></tt> on
+most systems), it usually contains a message describing the reason.</p>
 </div>
 <div class="section" id="why-won-t-celeryd-run-on-freebsd">
 <h2>Why won&#8217;t celeryd run on FreeBSD?<a class="headerlink" href="#why-won-t-celeryd-run-on-freebsd" title="Permalink to this headline">¶</a></h2>
