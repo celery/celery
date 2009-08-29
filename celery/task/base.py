@@ -299,7 +299,7 @@ class Task(object):
         Example
 
             >>> class TwitterPostStatusTask(Task):
-            ... 
+            ...
             ...     def run(self, username, password, message, **kwargs):
             ...         twitter = Twitter(username, password)
             ...         try:
@@ -335,7 +335,6 @@ class Task(object):
             message = "Retry in %d seconds." % options["countdown"]
             raise RetryTaskError(message, exc)
 
-
     def on_retry(self, exc):
         """Retry handler.
 
@@ -362,7 +361,7 @@ class Task(object):
         This is run by the worker when the task executed successfully.
 
         :param retval: The return value of the task.
-     
+
         """
         pass
 

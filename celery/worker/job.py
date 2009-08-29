@@ -183,7 +183,7 @@ class TaskWrapper(object):
         return pool.apply_async(wrapper,
                 callbacks=[self.on_success], errbacks=[self.on_failure],
                 on_ack=self.on_ack)
-    
+
     def on_success(self, ret_value):
         """The handler used if the task was successfully processed (
         without raising an exception)."""

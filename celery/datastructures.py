@@ -113,6 +113,7 @@ class SharedCounter(object):
         >>> max_client = max_clients + 10 # NOT OK (unsafe)
 
     """
+
     def __init__(self, initial_value):
         self._value = initial_value
         self._modify_queue = Queue()
@@ -124,11 +125,11 @@ class SharedCounter(object):
     def decrement(self, n=1):
         """Decrement value."""
         self -= n
-        
+
     def _update_value(self):
         self._value += sum(consume_queue(self._modify_queue))
         return self._value
-    
+
     def __iadd__(self, y):
         """``self += y``"""
         self._modify_queue.put(y * +1)

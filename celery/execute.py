@@ -176,7 +176,7 @@ class ExecuteWrapper(object):
     """Wraps the task in a jail, which catches all exceptions, and
     saves the status and result of the task execution to the task
     meta backend.
-    
+
     If the call was successful, it saves the result to the task result
     backend, and sets the task status to ``"DONE"``.
 
@@ -187,7 +187,6 @@ class ExecuteWrapper(object):
     If the call results in an exception, it saves the exception as the task
     result, and sets the task status to ``"FAILURE"``.
 
-   
     :param fun: Callable object to execute.
     :param task_id: The unique id of the task.
     :param task_name: Name of the task.
@@ -197,7 +196,6 @@ class ExecuteWrapper(object):
     :returns: the function return value on success, or
         the exception instance on failure.
 
-    
     """
 
     def __init__(self, fun, task_id, task_name, args=None, kwargs=None):
@@ -223,7 +221,7 @@ class ExecuteWrapper(object):
 
         # Backend process cleanup
         default_backend.process_cleanup()
-      
+
         # Send pre-run signal.
         signals.task_prerun.send(sender=fun, task_id=task_id, task=fun,
                                  args=args, kwargs=kwargs)

@@ -16,6 +16,7 @@ import simplejson
 import logging
 
 scratch = {"ACK": False}
+some_kwargs_scratchpad = {}
 
 
 def jail(task_id, task_name, fun, args, kwargs):
@@ -35,8 +36,6 @@ def mytask_no_kwargs(i):
     return i ** i
 tasks.register(mytask_no_kwargs, name="mytask_no_kwargs")
 
-
-some_kwargs_scratchpad = {}
 
 def mytask_some_kwargs(i, logfile):
     some_kwargs_scratchpad["logfile"] = logfile
@@ -60,7 +59,6 @@ class TestJail(unittest.TestCase):
     def test_execute_jail_success(self):
         ret = jail(gen_unique_id(), gen_unique_id(), mytask, [2], {})
         self.assertEquals(ret, 4)
-
 
     def test_execute_jail_failure(self):
         ret = jail(gen_unique_id(), gen_unique_id(), mytask_raising, [4], {})
@@ -191,7 +189,7 @@ class TestTaskWrapper(unittest.TestCase):
         meta = TaskMeta.objects.get(task_id=tid)
         self.assertEquals(meta.result, 256)
         self.assertEquals(meta.status, "DONE")
-    
+
     def test_execute_success_no_kwargs(self):
         tid = gen_unique_id()
         tw = TaskWrapper("cu.mytask_no_kwargs", tid, mytask_no_kwargs,
@@ -200,7 +198,7 @@ class TestTaskWrapper(unittest.TestCase):
         meta = TaskMeta.objects.get(task_id=tid)
         self.assertEquals(meta.result, 256)
         self.assertEquals(meta.status, "DONE")
-    
+
     def test_execute_success_some_kwargs(self):
         tid = gen_unique_id()
         tw = TaskWrapper("cu.mytask_some_kwargs", tid, mytask_some_kwargs,

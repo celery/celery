@@ -11,10 +11,10 @@ class Loader(BaseLoader):
 
     def on_task_init(self, task_id, task):
         """This method is called before a task is executed.
-        
+
         Does everything necessary for Django to work in a long-living,
         multiprocessing environment.
-        
+
         """
         # See: http://groups.google.com/group/django-users/browse_thread/
         #       thread/78200863d0c07c6d/38402e76cf3233e8?hl=en&lnk=gst&

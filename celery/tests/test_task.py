@@ -44,7 +44,7 @@ class RetryTask(task.Task):
     iterations = 0
 
     def run(self, arg1, arg2, kwarg=1, **kwargs):
-        self.__class__.iterations += 1 
+        self.__class__.iterations += 1
 
         retries = kwargs["task_retries"]
         if retries >= 3:
@@ -85,7 +85,7 @@ class TestTaskRetries(unittest.TestCase):
         result = RetryTask.apply([0xFF, 0xFFFF])
         self.assertEquals(result.get(), 0xFF)
         self.assertEquals(RetryTask.iterations, 4)
-    
+
     def test_retry_with_kwargs(self):
         RetryTaskCustomExc.max_retries = 3
         RetryTaskCustomExc.iterations = 0
@@ -97,7 +97,7 @@ class TestTaskRetries(unittest.TestCase):
         RetryTaskCustomExc.max_retries = 2
         RetryTaskCustomExc.iterations = 0
         result = RetryTaskCustomExc.apply([0xFF, 0xFFFF], {"kwarg": 0xF})
-        self.assertRaises(MyCustomException, 
+        self.assertRaises(MyCustomException,
                           result.get)
         self.assertEquals(RetryTaskCustomExc.iterations, 3)
 
@@ -105,17 +105,17 @@ class TestTaskRetries(unittest.TestCase):
         RetryTask.max_retries = 2
         RetryTask.iterations = 0
         result = RetryTask.apply([0xFF, 0xFFFF])
-        self.assertRaises(RetryTask.MaxRetriesExceededError, 
+        self.assertRaises(RetryTask.MaxRetriesExceededError,
                           result.get)
         self.assertEquals(RetryTask.iterations, 3)
 
         RetryTask.max_retries = 1
         RetryTask.iterations = 0
         result = RetryTask.apply([0xFF, 0xFFFF])
-        self.assertRaises(RetryTask.MaxRetriesExceededError, 
+        self.assertRaises(RetryTask.MaxRetriesExceededError,
                           result.get)
         self.assertEquals(RetryTask.iterations, 2)
-        
+
 
 class TestCeleryTasks(unittest.TestCase):
 

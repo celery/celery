@@ -102,7 +102,7 @@ class Backend(BaseBackend):
         connection = self.connection
         consumer = self._consumer_for_task_id(task_id, connection)
         consumer.register_callback(callback)
-        
+
         try:
             consumer.iterconsume().next()
         finally:
@@ -114,7 +114,7 @@ class Backend(BaseBackend):
 
     def get_result(self, task_id):
         """Get the result for a task."""
-        result = self._get_task_meta_for(task_id) 
+        result = self._get_task_meta_for(task_id)
         if result["status"] == "FAILURE":
             return self.exception_to_python(result["result"])
         else:

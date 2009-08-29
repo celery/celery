@@ -52,7 +52,7 @@ def emergency_error(logfile, message):
 
 
 def redirect_stdouts_to_logger(logger, loglevel=None):
-    """Redirect :class:`sys.stdout` and :class:`sys.stderr` to a 
+    """Redirect :class:`sys.stdout` and :class:`sys.stderr` to a
     logging instance.
 
     :param logger: The :class:`logging.Logger` instance to redirect to.
@@ -87,9 +87,9 @@ class LoggingProxy(object):
 
     def writelines(self, sequence):
         """``writelines(sequence_of_strings) -> None``.
-        
+
         Write the strings to the file.
-    
+
         The sequence can be any iterable object producing strings.
         This is equivalent to calling :meth:`write` for each string.
 

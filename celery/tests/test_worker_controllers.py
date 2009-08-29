@@ -82,6 +82,7 @@ class TestPeriodicWorkController(unittest.TestCase):
         m.process_hold_queue()
 
         scratchpad = {}
+
         def on_accept():
             scratchpad["accepted"] = True
 

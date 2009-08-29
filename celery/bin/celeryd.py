@@ -255,12 +255,10 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
         context.open()
         logger = setup_logger(loglevel, logfile)
         redirect_stdouts_to_logger(logger, loglevel)
-        
 
     # Run the worker init handler.
     # (Usually imports task modules and such.)
     current_loader.on_worker_init()
-
 
     def run_worker():
         worker = WorkController(concurrency=concurrency,
