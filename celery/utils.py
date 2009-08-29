@@ -5,8 +5,11 @@ Utility functions
 """
 import time
 from itertools import repeat
+from inspect import getargspec
+from functools import partial as curry
 from uuid import UUID, uuid4, _uuid_generate_random
 import ctypes
+import operator
 
 noop = lambda *args, **kwargs: None
 
@@ -112,3 +115,28 @@ def retry_over_time(fun, catch, args=[], kwargs={}, errback=noop,
             time.sleep(interval)
         else:
             return retval
+
+
+def fun_takes_kwargs(fun, kwlist=[]):
+    """With a function, and a list of keyword arguments, returns arguments
+    in the list which the function takes.
+
+    :param fun: The function to inspect arguments of.
+    :param kwlist: The list of keyword arguments.
+
+    Examples
+
+        >>> def foo(self, x, y, logfile=None, loglevel=None):
+        ...     return x * y
+        >>> fun_takes_kwargs(foo, ["logfile", "loglevel", "task_id"])
+        ["logfile", "loglevel"]
+
+        >>> def foo(self, x, y, **kwargs):
+        >>> fun_takes_kwargs(foo, ["logfile", "loglevel", "task_id"])
+        ["logfile", "loglevel", "task_id"]
+
+    """
+    args, _varargs, keywords, _defaults = getargspec(fun)
+    if keywords != None:
+        return kwlist
+    return filter(curry(operator.contains, args), kwlist)

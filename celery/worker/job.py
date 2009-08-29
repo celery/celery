@@ -6,7 +6,7 @@ Jobs Executable by the Worker Server.
 from celery.registry import tasks
 from celery.exceptions import NotRegistered
 from celery.execute import ExecuteWrapper
-from celery.utils import noop
+from celery.utils import noop, fun_takes_kwargs
 from django.core.mail import mail_admins
 import multiprocessing
 import socket
@@ -130,16 +130,22 @@ class TaskWrapper(object):
     def extend_with_default_kwargs(self, loglevel, logfile):
         """Extend the tasks keyword arguments with standard task arguments.
 
-        These are ``logfile``, ``loglevel``, ``task_id`` and ``task_name``.
+        Currently these are ``logfile``, ``loglevel``, ``task_id``,
+        ``task_name`` and ``task_retries``.
+
+        See :meth:`celery.task.base.Task.run` for more information.
 
         """
         kwargs = dict(self.kwargs)
-        task_func_kwargs = {"logfile": logfile,
+        default_kwargs = {"logfile": logfile,
                             "loglevel": loglevel,
                             "task_id": self.task_id,
                             "task_name": self.task_name,
                             "task_retries": self.retries}
-        kwargs.update(task_func_kwargs)
+        supported_keys = fun_takes_kwargs(self.task_func, default_kwargs)
+        extend_with = dict((key, val) for key, val in default_kwargs.items()
+                                if key in supported_keys)
+        kwargs.update(extend_with)
         return kwargs
 
     def _executeable(self, loglevel=None, logfile=None):

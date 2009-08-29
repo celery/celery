@@ -31,6 +31,19 @@ def mytask(i, **kwargs):
 tasks.register(mytask, name="cu.mytask")
 
 
+def mytask_no_kwargs(i):
+    return i ** i
+tasks.register(mytask_no_kwargs, name="mytask_no_kwargs")
+
+
+some_kwargs_scratchpad = {}
+
+def mytask_some_kwargs(i, logfile):
+    some_kwargs_scratchpad["logfile"] = logfile
+    return i ** i
+tasks.register(mytask_some_kwargs, name="mytask_some_kwargs")
+
+
 def mytask_raising(i, **kwargs):
     raise KeyError(i)
 tasks.register(mytask_raising, name="cu.mytask-raising")
@@ -47,6 +60,7 @@ class TestJail(unittest.TestCase):
     def test_execute_jail_success(self):
         ret = jail(gen_unique_id(), gen_unique_id(), mytask, [2], {})
         self.assertEquals(ret, 4)
+
 
     def test_execute_jail_failure(self):
         ret = jail(gen_unique_id(), gen_unique_id(), mytask_raising, [4], {})
@@ -175,6 +189,25 @@ class TestTaskWrapper(unittest.TestCase):
         tw = TaskWrapper("cu.mytask", tid, mytask, [4], {"f": "x"})
         self.assertEquals(tw.execute(), 256)
         meta = TaskMeta.objects.get(task_id=tid)
+        self.assertEquals(meta.result, 256)
+        self.assertEquals(meta.status, "DONE")
+    
+    def test_execute_success_no_kwargs(self):
+        tid = gen_unique_id()
+        tw = TaskWrapper("cu.mytask_no_kwargs", tid, mytask_no_kwargs,
+                         [4], {})
+        self.assertEquals(tw.execute(), 256)
+        meta = TaskMeta.objects.get(task_id=tid)
+        self.assertEquals(meta.result, 256)
+        self.assertEquals(meta.status, "DONE")
+    
+    def test_execute_success_some_kwargs(self):
+        tid = gen_unique_id()
+        tw = TaskWrapper("cu.mytask_some_kwargs", tid, mytask_some_kwargs,
+                         [4], {})
+        self.assertEquals(tw.execute(logfile="foobaz.log"), 256)
+        meta = TaskMeta.objects.get(task_id=tid)
+        self.assertEquals(some_kwargs_scratchpad.get("logfile"), "foobaz.log")
         self.assertEquals(meta.result, 256)
         self.assertEquals(meta.status, "DONE")
 

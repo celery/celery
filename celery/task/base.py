@@ -16,9 +16,9 @@ class Task(object):
 
     All subclasses of :class:`Task` must define the :meth:`run` method,
     which is the actual method the ``celery`` daemon executes.
-    The :meth:`run` method must always take the positional keyword arguments
-    (\*\*kwargs), this is because of the standard arguments always passed to
-    a task (see :meth:`run` for more info)
+
+    The :meth:`run` method can take use of the default keyword arguments,
+    as listed in the :meth:`run` documentation.
 
     The :meth:`run` method supports both positional, and keyword arguments.
 
@@ -142,7 +142,8 @@ class Task(object):
     def run(self, *args, **kwargs):
         """The body of the task executed by the worker.
 
-        The following standard keyword arguments is passed by the worker:
+        The following standard keyword arguments are reserved and is passed
+        by the worker if the function/method supports them:
 
             * task_id
 
@@ -151,6 +152,11 @@ class Task(object):
             * task_name
 
                 Name of the currently executing task (same as :attr:`name`)
+
+            * task_retries
+
+                How many times the current task has been retried
+                (an integer starting at ``0``).
 
             * logfile
 
@@ -163,24 +169,29 @@ class Task(object):
                 ``logging.ERROR``, ``logging.CRITICAL``, ``logging.WARNING``,
                 ``logging.FATAL``.
 
-        Additional standard keyword arguments may be added in the future,
-        so the :meth:`run` method must always take an arbitrary list of
-        keyword arguments (\*\*kwargs).
+        Additional standard keyword arguments may be added in the future.
+        To take these default arguments, the task can either list the ones
+        it wants explicitly or just take an arbitrary list of keyword
+        arguments (\*\*kwargs).
 
-        Example:
+        Example using an explicit list of default arguments to take:
 
         .. code-block:: python
 
-            def run(self, x, y): # WRONG!
+            def run(self, x, y, logfile=None, loglevel=None):
+                self.get_logger(loglevel=loglevel, logfile=logfile)
                 return x * y
 
-        Will fail with an exception because the worker can't send the default
-        arguments. The correct way to define the run method would be:
+
+        Example taking all default keyword arguments, and any extra arguments
+        passed on by the caller:
 
         .. code-block:: python
 
             def run(self, x, y, **kwargs): # CORRECT!
-                return x * y
+                logger = self.get_logger(**kwargs)
+                adjust = kwargs.get("adjust", 0)
+                return x * y - adjust
 
         """
         raise NotImplementedError("Tasks must define a run method.")
@@ -191,7 +202,9 @@ class Task(object):
         See :func:`celery.log.setup_logger`.
 
         """
-        return setup_logger(**kwargs)
+        logfile = kwargs.get("logfile")
+        loglevel = kwargs.get("loglevel")
+        return setup_logger(loglevel=loglevel, logfile=logfile)
 
     def get_publisher(self, connect_timeout=AMQP_CONNECTION_TIMEOUT):
         """Get a celery task message publisher.
