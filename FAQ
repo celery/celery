@@ -28,11 +28,11 @@ celeryd is not doing anything, just hanging
 Why is Task.delay/apply\*/celeryd just hanging?
 -----------------------------------------------
 
-**Answer:** Some AMQP clients can stop hanging if it isn't able to
-authenticate the current user, the password doesn't match or the user does
-not have access to the virtual host specified. Be sure to check your broker
-logs (for RabbitMQ that is ``/var/log/rabbitmq/rabbit.log`` on most systems),
-it usually contains a message describing the reason.
+**Answer:** There is a bug in some AMQP clients that will make it hang if
+it's not able to authenticate the current user, the password doesn't match or
+the user does not have access to the virtual host specified. Be sure to check
+your broker logs (for RabbitMQ that is ``/var/log/rabbitmq/rabbit.log`` on
+most systems), it usually contains a message describing the reason.
 
 Why won't celeryd run on FreeBSD?
 ---------------------------------
