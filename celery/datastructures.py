@@ -73,6 +73,12 @@ class ExceptionInfo(object):
     def __str__(self):
         return str(self.exception)
 
+    def __repr__(self):
+        return "<%s.%s: %s" % (
+                self.__class__.__module__,
+                self.__class__.__name__,
+                str(self.exception))
+
 
 def consume_queue(queue):
     while True:
