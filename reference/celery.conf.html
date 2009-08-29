@@ -1,0 +1,308 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Configuration - celery.conf &mdash; Celery v0.7.0 (unstable) documentation</title>
+    <link rel="stylesheet" href="../static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.7.0 (unstable)',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v0.7.0 (unstable) documentation" href="../index.html" />
+    <link rel="up" title="Module API Reference" href="index.html" />
+    <link rel="next" title="Datastructures - celery.datastructures" href="celery.datastructures.html" />
+    <link rel="prev" title="Backend: Tokyo Tyrant - celery.backends.tyrant" href="celery.backends.tyrant.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="celery.datastructures.html" title="Datastructures - celery.datastructures"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.backends.tyrant.html" title="Backend: Tokyo Tyrant - celery.backends.tyrant"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Celery v0.7.0 (unstable) documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module API Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-celery.conf">
+<h1>Configuration - celery.conf<a class="headerlink" href="#module-celery.conf" title="Permalink to this headline">¶</a></h1>
+<p>celery.conf</p>
+<dl class="data">
+<dt id="celery.conf.ALWAYS_EAGER">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">ALWAYS_EAGER</tt><a class="headerlink" href="#celery.conf.ALWAYS_EAGER" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="data">
+<dt id="celery.conf.AMQP_CONNECTION_RETRY">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONNECTION_RETRY</tt><a class="headerlink" href="#celery.conf.AMQP_CONNECTION_RETRY" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="data">
+<dt id="celery.conf.AMQP_CONNECTION_MAX_RETRIES">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONNECTION_MAX_RETRIES</tt><a class="headerlink" href="#celery.conf.AMQP_CONNECTION_MAX_RETRIES" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Maximum number of retries before we give up re-establishing a connection
+to the AMQP broker.</p>
+<p>If this is set to <tt class="docutils literal"><span class="pre">0</span></tt> or <tt class="xref docutils literal"><span class="pre">None</span></tt>, we will retry forever.</p>
+<p>Default is <tt class="docutils literal"><span class="pre">100</span></tt> retries.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="celery.conf.AMQP_CONNECTION_TIMEOUT">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONNECTION_TIMEOUT</tt><a class="headerlink" href="#celery.conf.AMQP_CONNECTION_TIMEOUT" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="data">
+<dt id="celery.conf.SEND_CELERY_TASK_ERROR_EMAILS">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">SEND_CELERY_TASK_ERROR_EMAILS</tt><a class="headerlink" href="#celery.conf.SEND_CELERY_TASK_ERROR_EMAILS" title="Permalink to this definition">¶</a></dt>
+<dd>If set to <tt class="xref docutils literal"><span class="pre">True</span></tt>, errors in tasks will be sent to admins by e-mail.
+If unset, it will send the e-mails if <tt class="docutils literal"><span class="pre">settings.DEBUG</span></tt> is False.</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt id="celery.conf.AMQP_CONSUMER_QUEUE">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONSUMER_QUEUE</tt><a class="headerlink" href="#celery.conf.AMQP_CONSUMER_QUEUE" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="data">
+<dt id="celery.conf.AMQP_CONSUMER_QUEUES">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONSUMER_QUEUES</tt><a class="headerlink" href="#celery.conf.AMQP_CONSUMER_QUEUES" title="Permalink to this definition">¶</a></dt>
+<dd>Dictionary defining multiple AMQP queues.</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONSUMER_QUEUES</tt></dt>
+<dd><dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONNECTION_TIMEOUT</tt></dt>
+<dd>The timeout in seconds before we give up establishing a connection
+to the AMQP server.</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt id="celery.conf.AMQP_CONSUMER_ROUTING_KEY">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONSUMER_ROUTING_KEY</tt><a class="headerlink" href="#celery.conf.AMQP_CONSUMER_ROUTING_KEY" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONSUMER_QUEUE</tt></dt>
+<dd>The name of the AMQP queue.</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt id="celery.conf.AMQP_EXCHANGE">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_EXCHANGE</tt><a class="headerlink" href="#celery.conf.AMQP_EXCHANGE" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="data">
+<dt id="celery.conf.AMQP_EXCHANGE_TYPE">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_EXCHANGE_TYPE</tt><a class="headerlink" href="#celery.conf.AMQP_EXCHANGE_TYPE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>The type of exchange. If the exchange type is <tt class="docutils literal"><span class="pre">direct</span></tt>, all messages
+receives all tasks. However, if the exchange type is <tt class="docutils literal"><span class="pre">topic</span></tt>, you can
+route e.g. some tasks to one server, and others to the rest.
+See <a class="reference external" href="http://bit.ly/wpamqpexchanges">Exchange types and the effect of bindings</a>.</p>
+</dd></dl>
+
+<dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_EXCHANGE_TYPE</tt></dt>
+<dd><dl class="data">
+<dt id="celery.conf.AMQP_PUBLISHER_ROUTING_KEY">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_PUBLISHER_ROUTING_KEY</tt><a class="headerlink" href="#celery.conf.AMQP_PUBLISHER_ROUTING_KEY" title="Permalink to this definition">¶</a></dt>
+<dd>The default AMQP routing key used when publishing tasks.</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_PUBLISHER_ROUTING_KEY</tt></dt>
+<dd><dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONSUMER_ROUTING_KEY</tt></dt>
+<dd>The AMQP routing key used when consuming tasks.</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt id="celery.conf.DAEMON_CONCURRENCY">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">DAEMON_CONCURRENCY</tt><a class="headerlink" href="#celery.conf.DAEMON_CONCURRENCY" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_EXCHANGE</tt></dt>
+<dd>Name of the AMQP exchange.</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt id="celery.conf.DAEMON_LOG_FILE">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">DAEMON_LOG_FILE</tt><a class="headerlink" href="#celery.conf.DAEMON_LOG_FILE" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="data">
+<dt id="celery.conf.DAEMON_LOG_LEVEL">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">DAEMON_LOG_LEVEL</tt><a class="headerlink" href="#celery.conf.DAEMON_LOG_LEVEL" title="Permalink to this definition">¶</a></dt>
+<dd>Celery daemon log level, can be any of <tt class="docutils literal"><span class="pre">DEBUG</span></tt>, <tt class="docutils literal"><span class="pre">INFO</span></tt>, <tt class="docutils literal"><span class="pre">WARNING</span></tt>,
+<tt class="docutils literal"><span class="pre">ERROR</span></tt>, <tt class="docutils literal"><span class="pre">CRITICAL</span></tt>, or <tt class="docutils literal"><span class="pre">FATAL</span></tt>. See the <tt class="xref docutils literal"><span class="pre">logging</span></tt> module
+for more information.</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">DAEMON_LOG_LEVEL</tt></dt>
+<dd><dl class="data">
+<dt id="celery.conf.DAEMON_PID_FILE">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">DAEMON_PID_FILE</tt><a class="headerlink" href="#celery.conf.DAEMON_PID_FILE" title="Permalink to this definition">¶</a></dt>
+<dd>Full path to the daemon pidfile.</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">DAEMON_PID_FILE</tt></dt>
+<dd><dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">DAEMON_CONCURRENCY</tt></dt>
+<dd>The number of concurrent worker processes, executing tasks simultaneously.</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt id="celery.conf.DEFAULT_AMQP_CONNECTION_MAX_RETRIES">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">DEFAULT_AMQP_CONNECTION_MAX_RETRIES</tt><a class="headerlink" href="#celery.conf.DEFAULT_AMQP_CONNECTION_MAX_RETRIES" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="data">
+<dt id="celery.conf.LOG_LEVELS">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">LOG_LEVELS</tt><a class="headerlink" href="#celery.conf.LOG_LEVELS" title="Permalink to this definition">¶</a></dt>
+<dd>Mapping of log level names to <tt class="xref docutils literal"><span class="pre">logging</span></tt> module constants.</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt id="celery.conf.LOG_FORMAT">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">LOG_FORMAT</tt><a class="headerlink" href="#celery.conf.LOG_FORMAT" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">DAEMON_LOG_FILE</tt></dt>
+<dd>The path to the deamon log file (if not set, <tt class="docutils literal"><span class="pre">stderr</span></tt> is used).</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">LOG_LEVELS</tt></dt>
+<dd><dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">LOG_FORMAT</tt></dt>
+<dd>The format to use for log messages.
+Default is <tt class="docutils literal"><span class="pre">[%(asctime)s:</span> <span class="pre">%(levelname)s/%(processName)s]</span> <span class="pre">%(message)s</span></tt></dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">SEND_CELERY_TASK_ERROR_EMAILS</tt></dt>
+<dd><dl class="data">
+<dt id="celery.conf.STATISTICS_COLLECT_INTERVAL">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">STATISTICS_COLLECT_INTERVAL</tt><a class="headerlink" href="#celery.conf.STATISTICS_COLLECT_INTERVAL" title="Permalink to this definition">¶</a></dt>
+<dd>The interval in seconds of which the
+<tt class="xref docutils literal"><span class="pre">celery.task.CollectStatisticsTask`</span></tt> is run.</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">STATISTICS_COLLECT_INTERVAL</tt></dt>
+<dd><dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">ALWAYS_EAGER</tt></dt>
+<dd>If this is <tt class="xref docutils literal"><span class="pre">True</span></tt>, all tasks will be executed locally by blocking
+until it is finished. <tt class="docutils literal"><span class="pre">apply_async</span></tt> and <tt class="docutils literal"><span class="pre">delay_task</span></tt> will return
+a <a title="celery.result.EagerResult" class="reference external" href="celery.result.html#celery.result.EagerResult"><tt class="xref docutils literal"><span class="pre">celery.result.EagerResult</span></tt></a> which emulates the behaviour of
+an <a title="celery.result.AsyncResult" class="reference external" href="celery.result.html#celery.result.AsyncResult"><tt class="xref docutils literal"><span class="pre">celery.result.AsyncResult</span></tt></a>.</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="celery.backends.tyrant.html"
+                                  title="previous chapter">Backend: Tokyo Tyrant - celery.backends.tyrant</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="celery.datastructures.html"
+                                  title="next chapter">Datastructures - celery.datastructures</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../sources/reference/celery.conf.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.datastructures.html" title="Datastructures - celery.datastructures"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.backends.tyrant.html" title="Backend: Tokyo Tyrant - celery.backends.tyrant"
+             >previous</a> |</li>
+        <li><a href="../index.html">Celery v0.7.0 (unstable) documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module API Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.2.
+    </div>
+  </body>
+</html>
