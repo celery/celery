@@ -335,32 +335,41 @@ class Task(object):
             message = "Retry in %d seconds." % options["countdown"]
             raise RetryTaskError(message, exc)
 
-    def on_retry(self, exc):
+    def on_retry(self, exc, task_id, args, kwargs):
         """Retry handler.
 
         This is run by the worker when the task is to be retried.
 
         :param exc: The exception sent to :meth:`retry`.
+        :param task_id: Unique id of the retried task.
+        :param args: Original arguments for the retried task.
+        :param kwargs: Original keyword arguments for the retried task.
 
         """
         pass
 
-    def on_failure(self, exc):
+    def on_failure(self, exc, task_id, args, kwargs):
         """Error handler.
 
         This is run by the worker when the task fails.
 
         :param exc: The exception raised by the task.
+        :param task_id: Unique id of the failed task.
+        :param args: Original arguments for the task that failed.
+        :param kwargs: Original keyword arguments for the task that failed.
 
         """
         pass
 
-    def on_success(self, retval):
+    def on_success(self, retval, task_id, args, kwargs):
         """Success handler.
 
         This is run by the worker when the task executed successfully.
 
         :param retval: The return value of the task.
+        :param task_id: Unique id of the executed task.
+        :param args: Original arguments for the executed task.
+        :param kwargs: Original keyword arguments for the executed task.
 
         """
         pass

@@ -5,6 +5,7 @@
 .. toctree::
     :maxdepth: 2
 
+    tasks
     task-retries
 
 This page contains common recipes and techniques.

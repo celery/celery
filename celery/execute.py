@@ -264,7 +264,7 @@ class ExecuteWrapper(object):
 
         # Run success handler last to be sure the status is saved.
         success_handler = getattr(self.fun, "on_success", noop)
-        success_handler(retval)
+        success_handler(retval, self.task_id, self.args, self.kwargs)
 
         return retval
 
@@ -290,7 +290,7 @@ class ExecuteWrapper(object):
 
         # Run retry handler last to be sure the status is saved.
         retry_handler = getattr(self.fun, "on_retry", noop)
-        retry_handler(exc)
+        retry_handler(exc, self.task_id, self.args, self.kwargs)
 
         return retval
 
@@ -309,6 +309,6 @@ class ExecuteWrapper(object):
 
         # Run error handler last to be sure the status is stored.
         error_handler = getattr(self.fun, "on_failure", noop)
-        error_handler(stored_exc)
+        error_handler(stored_exc, self.task_id, self.args, self.kwargs)
 
         return retval
