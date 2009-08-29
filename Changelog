@@ -2,6 +2,108 @@
 Change history
 ==============
 
+0.8.0 [2009-xx-xx xx:xx x.M CET]
+--------------------------------
+
+**BACKWARD INCOMPATIBLE CHANGES**
+
+* Add traceback to result value on failure.
+	**NOTE** If you use the database backend you have to re-create the
+	database table ``celery_taskmeta``. Contact the mailinglist or IRC channel
+	listed in README for help doing this.
+
+* Celery now depends on ``carrot`` version 0.5.2.
+
+**IMPORTANT CHANGES**
+
+* Celery can now be used in pure Python (outside of a Django project).
+	This means celery is now no longer Django-specific. For more information
+	see the FAQ entry `Can I use celery without Django?`_.
+
+.. _`Can I use celery without Django?`:
+	http://ask.github.com/celery/faq.html#can-i-use-celery-without-django
+
+* Celery now supports task retries. See `Cookbook: Retrying Tasks`_ for more
+	information.
+
+.. _`Cookbook: Retrying Tasks`:
+	http://ask.github.com/celery/cookbook/task-retries.html
+
+* We now have an AMQP result store backend, which uses messages to publish
+	task return value and status. And it's incredibly fast!
+	See http://github.com/ask/celery/issues/closed#issue/6 for more info!
+
+* AMQP QoS (prefetch count) implemented:
+    This to not receive more messages than we can handle.
+
+* Now redirects stdout/stderr to the celeryd logfile when detached 
+
+* Now uses ``inspect.getargspec`` to only pass on the default arguments the
+	task supports.
+
+* Add Task.on_success, .on_retry, .on_failure handlers
+	See :meth:`celery.task.base.Task.on_success`,
+	    :meth:`celery.task.base.Task.on_retry`,
+	    :meth:`celery.task.base.Task.on_failure`,
+
+* ``celery.utils.gen_unique_id``: Workaround for
+	http://bugs.python.org/issue4607
+
+* You can now customize what happens at worker start, at process init, etc
+	by creating your own loaders. (see ``celery.loaders.*``)
+
+* Support for multiple AMQP exchanges and queues, this feature
+	misses documentation and tests, so anyone interested in this feature
+	is encouraged to improve on this situation.
+
+* celeryd now survives a restart of the AMQP server!
+	Automatically re-establish AMQP broker connection if it's lost.
+	New settings:
+
+    * AMQP_CONNECTION_RETRY
+        Set to ``True`` to enable connection retries.
+
+    * AMQP_CONNECTION_MAX_RETRIES.
+        Maximum number of restarts before we give up. Default: ``100``.
+
+* celeryd now survives a restart of the AMQP server!
+	Automatically re-establish AMQP broker connection i
+    AMQP_CONNECTION_RETRY + AMQP_CONNECTION_MAX_RETRIES. This requires the master
+    branch of carrot.
+
+**NEWS**
+
+* New signals introduced: ``task_prerun`` and ``task_postrun``, see
+	:mod:`celery.signals` for more information.
+
+* ``TaskSetResult.join`` caused ``TypeError`` when ``timeout=None``.
+	Thanks Jerzy Kozera.  Closes #31
+
+* ``views.apply`` should return ``HttpResponse`` instance.
+	Thanks to Jerzy Kozera. Closes #32
+
+* ``PeriodicTask``: Save conversion of ``run_every`` from ``int``
+	to ``timedelta`` to the class attribute instead of on the instance.
+
+* Exceptions has been moved to ``celery.exceptions``, but are still
+	available in the previous module.
+
+* jail() refactored into celery.execute.ExecuteWrapper
+
+* ``views.apply`` now correctly sets mimetype to "application/json"
+
+* ``views.task_status`` now returns exception if status is RETRY
+
+* ``views.task_status`` now returns traceback if status is "FAILURE"
+	or "RETRY"
+
+* Documented default task arguments.
+
+* Add a sensible __repr__ to ExceptionInfo for easier debugging
+
+* Fix documentation typo ``.. import map`` -> ``.. import dmap``.
+	Thanks mikedizon
+
 0.6.0 [2009-08-07 06:54 A.M CET]
 --------------------------------
 
