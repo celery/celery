@@ -262,6 +262,34 @@ and return a value:
     ...         return 42
     >>> tasks.register(MyTask)
 
+As you can see the worker is sending some keyword arguments to this task,
+this is the default keyword arguments. A task can choose not to take these,
+or only list the ones it want (the worker will do the right thing).
+The current default keyword arguments are:
+
+    * logfile
+
+        The currently used log file, can be passed on to ``self.get_logger``
+        to gain access to the workers log file via a ``logger.Logging``
+        instance.
+
+    * loglevel
+
+        The current loglevel used.
+
+    * task_id
+
+        The unique id of the executing task.
+
+    * task_name
+
+        Name of the executing task.
+
+    * task_retries
+
+        How many times the current task has been retried.
+        (an integer starting a ``0``).
+
 Now if we want to execute this task, we can use the ``delay`` method of the
 task class (this is a handy shortcut to the ``apply_async`` method which gives
 you greater control of the task execution).
