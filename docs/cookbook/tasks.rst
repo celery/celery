@@ -3,12 +3,13 @@
 ================
 
 
-Ensuring a task is only executed one at a time.
------------------------------------------------
+Ensuring a task is only executed one at a time
+----------------------------------------------
 
 You can accomplish this by using a lock.
 
-In this example we'll be using the cache framework to set a lock.
+In this example we'll be using the cache framework to set a lock that is
+accessible for all workers.
 
 It's part of an imaginary RSS Feed application called ``djangofeeds``.
 The task takes a feed URL as a single argument, and imports that feed into
