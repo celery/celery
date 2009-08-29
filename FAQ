@@ -25,12 +25,19 @@ celeryd is not doing anything, just hanging
 **Answer:** See `MySQL is throwing deadlock errors, what can I do?`_.
             or `Why is Task.delay/apply\* just hanging?`.
 
-Why is Task.delay/apply\* just hanging?`
-----------------------------------------
+Why is Task.delay/apply\*/celeryd just hanging?
+-----------------------------------------------
 
-**Answer:** :mod:`amqplib` hangs if it isn't able to authenticate to the
-AMQP server, so make sure you are able to access the configured vhost using
-the user and password.
+**Answer:** RabbitMQ hangs if it isn't able to authenticate the current user,
+the password doesn't match or the user does not have access to the vhost
+specified.  Be sure to check your RabbitMQ logs
+(``/var/log/rabbitmq/rabbit.log`` on most systems), it usually contains a
+message describing the reason.
+
+This will be fixed in the RabbitMQ 1.7 release.
+
+For more information see the relevant thread on the rabbitmq-discuss mailing
+list: http://bit.ly/iTTbD
 
 Why won't celeryd run on FreeBSD?
 ---------------------------------
