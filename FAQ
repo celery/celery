@@ -319,3 +319,44 @@ and send a task from a python shell (note that it must be able to import
     >>> result = PingTask.apply_async()
     >>> result.get()
     'pong'
+
+The celery test-suite is failing
+--------------------------------
+
+**Answer**: You're running tests from your own Django applicaiton, and celerys
+tests are failing and celerys tests are failing in that context?
+If so, read on for a trick, if not please report the test failure to our issue
+tracker at GitHub.
+    
+    http://github.com/ask/celery/issues/
+
+That Django is running tests for all applications in ``INSTALLED_APPS``
+is a pet peeve of mine. You should use a test runner that either
+
+    1) Explicitly lists the apps you want to run tests for, or
+
+    2) make a test runner that skips tests for apps you don't want to run.
+
+For example this test runner that celery is using:
+
+    http://bit.ly/NVKep
+
+To use this add the following to your settings.py:
+
+.. code-block:: python
+
+    TEST_RUNNER = "celery.tests.runners.run_tests"
+    TEST_APPS = (
+        "app1",
+        "app2",
+        "app3",
+        "app4",
+    )
+
+If you just want to skip celery you could use:
+
+.. code-block:: python
+
+    INSTALLED_APPS = (.....)
+    TEST_RUNNER = "celery.tests.runners.run_tests"
+    TEST_APPS = filter(lambda k: k != "celery", INSTALLED_APPS)
