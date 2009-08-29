@@ -1,24 +1,23 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
-<html xmlns="http://www.w3.org/1999/xhtml">
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>Logging - celery.log &mdash; Celery v0.7.0 (unstable) documentation</title>
-    <link rel="stylesheet" href="../static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../static/default.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../',
-        VERSION:     '0.7.0 (unstable)',
-        COLLAPSE_MODINDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+          URL_ROOT:    '../',
+          VERSION:     '0.7.0 (unstable)',
+          COLLAPSE_MODINDEX: false,
+          FILE_SUFFIX: '.html'
       };
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
     <link rel="top" title="Celery v0.7.0 (unstable) documentation" href="../index.html" />
     <link rel="up" title="Module API Reference" href="index.html" />
     <link rel="next" title="Multiprocessing Worker - celery.worker" href="celery.utils.html" />
@@ -44,19 +43,18 @@
           <li><a href="index.html" accesskey="U">Module API Reference</a> &raquo;</li> 
       </ul>
     </div>  
-
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
           <div class="body">
             
+  
   <div class="section" id="module-celery.log">
 <h1>Logging - celery.log<a class="headerlink" href="#module-celery.log" title="Permalink to this headline">¶</a></h1>
 <p>celery.log</p>
 <dl class="class">
 <dt id="celery.log.LoggingProxy">
-<em class="property">
-class </em><tt class="descclassname">celery.log.</tt><tt class="descname">LoggingProxy</tt><big>(</big><em>logger</em>, <em>loglevel=20</em><big>)</big><a class="headerlink" href="#celery.log.LoggingProxy" title="Permalink to this definition">¶</a></dt>
+<!--[celery.log.LoggingProxy]-->class <tt class="descclassname">celery.log.</tt><tt class="descname">LoggingProxy</tt><big>(</big><em>logger</em>, <em>loglevel=20</em><big>)</big><a class="headerlink" href="#celery.log.LoggingProxy" title="Permalink to this definition">¶</a></dt>
 <dd><p>Forward file object to <tt class="xref docutils literal"><span class="pre">logging.Logger</span></tt> instance.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -72,29 +70,29 @@ class </em><tt class="descclassname">celery.log.</tt><tt class="descname">Loggin
 </table>
 <dl class="method">
 <dt id="celery.log.LoggingProxy.close">
-<tt class="descname">close</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.log.LoggingProxy.close" title="Permalink to this definition">¶</a></dt>
+<!--[celery.log.LoggingProxy.close]--><tt class="descname">close</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.log.LoggingProxy.close" title="Permalink to this definition">¶</a></dt>
 <dd>When the object is closed, no write requests are forwarded to
 the logging object anymore.</dd></dl>
 
 <dl class="method">
 <dt id="celery.log.LoggingProxy.flush">
-<tt class="descname">flush</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.log.LoggingProxy.flush" title="Permalink to this definition">¶</a></dt>
+<!--[celery.log.LoggingProxy.flush]--><tt class="descname">flush</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.log.LoggingProxy.flush" title="Permalink to this definition">¶</a></dt>
 <dd>This object is not buffered so any <a title="celery.log.LoggingProxy.flush" class="reference internal" href="#celery.log.LoggingProxy.flush"><tt class="xref docutils literal"><span class="pre">flush()</span></tt></a> requests
 are ignored.</dd></dl>
 
 <dl class="method">
 <dt id="celery.log.LoggingProxy.isatty">
-<tt class="descname">isatty</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.log.LoggingProxy.isatty" title="Permalink to this definition">¶</a></dt>
+<!--[celery.log.LoggingProxy.isatty]--><tt class="descname">isatty</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.log.LoggingProxy.isatty" title="Permalink to this definition">¶</a></dt>
 <dd>Always returns <tt class="xref docutils literal"><span class="pre">False</span></tt>. Just here for file support.</dd></dl>
 
 <dl class="method">
 <dt id="celery.log.LoggingProxy.write">
-<tt class="descname">write</tt><big>(</big><em>data</em><big>)</big><a class="headerlink" href="#celery.log.LoggingProxy.write" title="Permalink to this definition">¶</a></dt>
+<!--[celery.log.LoggingProxy.write]--><tt class="descname">write</tt><big>(</big><em>data</em><big>)</big><a class="headerlink" href="#celery.log.LoggingProxy.write" title="Permalink to this definition">¶</a></dt>
 <dd>Write message to logging object.</dd></dl>
 
 <dl class="method">
 <dt id="celery.log.LoggingProxy.writelines">
-<tt class="descname">writelines</tt><big>(</big><em>sequence</em><big>)</big><a class="headerlink" href="#celery.log.LoggingProxy.writelines" title="Permalink to this definition">¶</a></dt>
+<!--[celery.log.LoggingProxy.writelines]--><tt class="descname">writelines</tt><big>(</big><em>sequence</em><big>)</big><a class="headerlink" href="#celery.log.LoggingProxy.writelines" title="Permalink to this definition">¶</a></dt>
 <dd><p><tt class="docutils literal"><span class="pre">writelines(sequence_of_strings)</span> <span class="pre">-&gt;</span> <span class="pre">None</span></tt>.</p>
 <p>Write the strings to the file.</p>
 <p>The sequence can be any iterable object producing strings.
@@ -105,14 +103,14 @@ This is equivalent to calling <a title="celery.log.LoggingProxy.write" class="re
 
 <dl class="function">
 <dt id="celery.log.emergency_error">
-<tt class="descclassname">celery.log.</tt><tt class="descname">emergency_error</tt><big>(</big><em>logfile</em>, <em>message</em><big>)</big><a class="headerlink" href="#celery.log.emergency_error" title="Permalink to this definition">¶</a></dt>
+<!--[celery.log.emergency_error]--><tt class="descclassname">celery.log.</tt><tt class="descname">emergency_error</tt><big>(</big><em>logfile</em>, <em>message</em><big>)</big><a class="headerlink" href="#celery.log.emergency_error" title="Permalink to this definition">¶</a></dt>
 <dd>Emergency error logging, for when there&#8217;s no standard file
 descriptors open because the process has been daemonized or for
 some other reason.</dd></dl>
 
 <dl class="function">
 <dt id="celery.log.redirect_stdouts_to_logger">
-<tt class="descclassname">celery.log.</tt><tt class="descname">redirect_stdouts_to_logger</tt><big>(</big><em>logger</em>, <em>loglevel=None</em><big>)</big><a class="headerlink" href="#celery.log.redirect_stdouts_to_logger" title="Permalink to this definition">¶</a></dt>
+<!--[celery.log.redirect_stdouts_to_logger]--><tt class="descclassname">celery.log.</tt><tt class="descname">redirect_stdouts_to_logger</tt><big>(</big><em>logger</em>, <em>loglevel=None</em><big>)</big><a class="headerlink" href="#celery.log.redirect_stdouts_to_logger" title="Permalink to this definition">¶</a></dt>
 <dd><p>Redirect <tt class="xref docutils literal"><span class="pre">sys.stdout</span></tt> and <tt class="xref docutils literal"><span class="pre">sys.stderr</span></tt> to a
 logging instance.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -131,7 +129,7 @@ logging instance.</p>
 
 <dl class="function">
 <dt id="celery.log.setup_logger">
-<tt class="descclassname">celery.log.</tt><tt class="descname">setup_logger</tt><big>(</big><em>loglevel=20</em>, <em>logfile=None</em>, <em>format='</em><span class="optional">[</span>, <em>%(asctime)s: %(levelname)s/%(processName)s</em><span class="optional">]</span>, <em>%(message)s'</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.log.setup_logger" title="Permalink to this definition">¶</a></dt>
+<!--[celery.log.setup_logger]--><tt class="descclassname">celery.log.</tt><tt class="descname">setup_logger</tt><big>(</big><em>loglevel=20</em>, <em>logfile=None</em>, <em>format='</em><span class="optional">[</span>, <em>%(asctime)s: %(levelname)s/%(processName)s</em><span class="optional">]</span>, <em>%(message)s'</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.log.setup_logger" title="Permalink to this definition">¶</a></dt>
 <dd><p>Setup the <tt class="docutils literal"><span class="pre">multiprocessing</span></tt> logger. If <tt class="docutils literal"><span class="pre">logfile</span></tt> is not specified,
 <tt class="docutils literal"><span class="pre">stderr</span></tt> is used.</p>
 <p>Returns logger object.</p>
@@ -146,29 +144,19 @@ logging instance.</p>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
             <h4>Previous topic</h4>
-            <p class="topless"><a href="celery.datastructures.html"
-                                  title="previous chapter">Datastructures - celery.datastructures</a></p>
+            <p class="topless"><a href="celery.datastructures.html" title="previous chapter">Datastructures - celery.datastructures</a></p>
             <h4>Next topic</h4>
-            <p class="topless"><a href="celery.utils.html"
-                                  title="next chapter">Multiprocessing Worker - celery.worker</a></p>
+            <p class="topless"><a href="celery.utils.html" title="next chapter">Multiprocessing Worker - celery.worker</a></p>
             <h3>This Page</h3>
             <ul class="this-page-menu">
-              <li><a href="../sources/reference/celery.log.txt"
-                     rel="nofollow">Show Source</a></li>
+              <li><a href="../sources/reference/celery.log.txt">Show Source</a></li>
             </ul>
-          <div id="searchbox" style="display: none">
-            <h3>Quick search</h3>
-              <form class="search" action="../search.html" method="get">
-                <input type="text" name="q" size="18" />
-                <input type="submit" value="Go" />
-                <input type="hidden" name="check_keywords" value="yes" />
-                <input type="hidden" name="area" value="default" />
-              </form>
-              <p class="searchtip" style="font-size: 90%">
-              Enter search terms or a module, class or function name.
-              </p>
-          </div>
-          <script type="text/javascript">$('#searchbox').show(0);</script>
+          <h3>Quick search</h3>
+            <form class="search" action="../search.html" method="get">
+              <input type="text" name="q" size="18" /> <input type="submit" value="Go" />
+              <input type="hidden" name="check_keywords" value="yes" />
+              <input type="hidden" name="area" value="default" />
+            </form>
         </div>
       </div>
       <div class="clearer"></div>
@@ -178,23 +166,23 @@ logging instance.</p>
       <ul>
         <li class="right" style="margin-right: 10px">
           <a href="../genindex.html" title="General Index"
-             >index</a></li>
+             accesskey="I">index</a></li>
         <li class="right" >
           <a href="../modindex.html" title="Global Module Index"
-             >modules</a> |</li>
+             accesskey="M">modules</a> |</li>
         <li class="right" >
           <a href="celery.utils.html" title="Multiprocessing Worker - celery.worker"
-             >next</a> |</li>
+             accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="celery.datastructures.html" title="Datastructures - celery.datastructures"
-             >previous</a> |</li>
+             accesskey="P">previous</a> |</li>
         <li><a href="../index.html">Celery v0.7.0 (unstable) documentation</a> &raquo;</li>
-          <li><a href="index.html" >Module API Reference</a> &raquo;</li> 
+          <li><a href="index.html" accesskey="U">Module API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.2.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.5.
     </div>
   </body>
 </html>

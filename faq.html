@@ -1,24 +1,23 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
-<html xmlns="http://www.w3.org/1999/xhtml">
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>Frequently Asked Questions &mdash; Celery v0.7.0 (unstable) documentation</title>
-    <link rel="stylesheet" href="static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="static/default.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '0.7.0 (unstable)',
-        COLLAPSE_MODINDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+          URL_ROOT:    '',
+          VERSION:     '0.7.0 (unstable)',
+          COLLAPSE_MODINDEX: false,
+          FILE_SUFFIX: '.html'
       };
     </script>
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="top" title="Celery v0.7.0 (unstable) documentation" href="index.html" />
     <link rel="next" title="Module API Reference" href="reference/index.html" />
     <link rel="prev" title="Tutorial: Creating a click counter using carrot and celery" href="tutorials/clickcounter.html" /> 
@@ -42,12 +41,12 @@
         <li><a href="index.html">Celery v0.7.0 (unstable) documentation</a> &raquo;</li> 
       </ul>
     </div>  
-
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
           <div class="body">
             
+  
   <div class="section" id="frequently-asked-questions">
 <h1>Frequently Asked Questions<a class="headerlink" href="#frequently-asked-questions" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="mysql-is-throwing-deadlock-errors-what-can-i-do">
@@ -72,14 +71,11 @@ Transaction Model and Locking</a> in the MySQL user manual.</p>
 </div>
 <div class="section" id="why-is-task-delay-apply-celeryd-just-hanging">
 <h2>Why is Task.delay/apply*/celeryd just hanging?<a class="headerlink" href="#why-is-task-delay-apply-celeryd-just-hanging" title="Permalink to this headline">¶</a></h2>
-<p><strong>Answer:</strong> RabbitMQ hangs if it isn&#8217;t able to authenticate the current user,
-the password doesn&#8217;t match or the user does not have access to the vhost
-specified.  Be sure to check your RabbitMQ logs
-(<tt class="docutils literal"><span class="pre">/var/log/rabbitmq/rabbit.log</span></tt> on most systems), it usually contains a
-message describing the reason.</p>
-<p>This will be fixed in the RabbitMQ 1.7 release.</p>
-<p>For more information see the relevant thread on the rabbitmq-discuss mailing
-list: <a class="reference external" href="http://bit.ly/iTTbD">http://bit.ly/iTTbD</a></p>
+<p><strong>Answer:</strong> Some AMQP clients can stop hanging if it isn&#8217;t able to
+authenticate the current user, the password doesn&#8217;t match or the user does
+not have access to the virtual host specified. Be sure to check your broker
+logs (for RabbitMQ that is <tt class="docutils literal"><span class="pre">/var/log/rabbitmq/rabbit.log</span></tt> on most systems),
+it usually contains a message describing the reason.</p>
 </div>
 <div class="section" id="why-won-t-celeryd-run-on-freebsd">
 <h2>Why won&#8217;t celeryd run on FreeBSD?<a class="headerlink" href="#why-won-t-celeryd-run-on-freebsd" title="Permalink to this headline">¶</a></h2>
@@ -399,29 +395,19 @@ TEST_APPS = filter(lambda k: k != "celery", INSTALLED_APPS)</pre>
 </ul>
 
             <h4>Previous topic</h4>
-            <p class="topless"><a href="tutorials/clickcounter.html"
-                                  title="previous chapter">Tutorial: Creating a click counter using carrot and celery</a></p>
+            <p class="topless"><a href="tutorials/clickcounter.html" title="previous chapter">Tutorial: Creating a click counter using carrot and celery</a></p>
             <h4>Next topic</h4>
-            <p class="topless"><a href="reference/index.html"
-                                  title="next chapter">Module API Reference</a></p>
+            <p class="topless"><a href="reference/index.html" title="next chapter">Module API Reference</a></p>
             <h3>This Page</h3>
             <ul class="this-page-menu">
-              <li><a href="sources/faq.txt"
-                     rel="nofollow">Show Source</a></li>
+              <li><a href="sources/faq.txt">Show Source</a></li>
             </ul>
-          <div id="searchbox" style="display: none">
-            <h3>Quick search</h3>
-              <form class="search" action="search.html" method="get">
-                <input type="text" name="q" size="18" />
-                <input type="submit" value="Go" />
-                <input type="hidden" name="check_keywords" value="yes" />
-                <input type="hidden" name="area" value="default" />
-              </form>
-              <p class="searchtip" style="font-size: 90%">
-              Enter search terms or a module, class or function name.
-              </p>
-          </div>
-          <script type="text/javascript">$('#searchbox').show(0);</script>
+          <h3>Quick search</h3>
+            <form class="search" action="search.html" method="get">
+              <input type="text" name="q" size="18" /> <input type="submit" value="Go" />
+              <input type="hidden" name="check_keywords" value="yes" />
+              <input type="hidden" name="area" value="default" />
+            </form>
         </div>
       </div>
       <div class="clearer"></div>
@@ -431,22 +417,22 @@ TEST_APPS = filter(lambda k: k != "celery", INSTALLED_APPS)</pre>
       <ul>
         <li class="right" style="margin-right: 10px">
           <a href="genindex.html" title="General Index"
-             >index</a></li>
+             accesskey="I">index</a></li>
         <li class="right" >
           <a href="modindex.html" title="Global Module Index"
-             >modules</a> |</li>
+             accesskey="M">modules</a> |</li>
         <li class="right" >
           <a href="reference/index.html" title="Module API Reference"
-             >next</a> |</li>
+             accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="tutorials/clickcounter.html" title="Tutorial: Creating a click counter using carrot and celery"
-             >previous</a> |</li>
+             accesskey="P">previous</a> |</li>
         <li><a href="index.html">Celery v0.7.0 (unstable) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.2.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.5.
     </div>
   </body>
 </html>

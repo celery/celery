@@ -221,7 +221,7 @@ var Search = {
       var params = $.getQueryParameters();
       if (params.q) {
           var query = params.q[0];
-          $('input[name="q"]')[0].value = query;
+          $('input[@name="q"]')[0].value = query;
           this.performSearch(query);
       }
   },
@@ -239,7 +239,7 @@ var Search = {
   },
 
   hasIndex : function() {
-      return this._index !== null;
+      return self._index !== null;
   },
 
   deferQuery : function(query) {
@@ -283,7 +283,7 @@ var Search = {
     if (this.hasIndex())
       this.query(query);
     else
-      this.deferQuery(query);
+      this.setQuery(query);
   },
 
   query : function(query) {
@@ -341,9 +341,9 @@ var Search = {
       }
       for (var prefix in descrefs) {
         for (var name in descrefs[prefix]) {
-          var fullname = (prefix ? prefix + '.' : '') + name;
-          if (fullname.toLowerCase().indexOf(object) > -1) {
+          if (name.toLowerCase().indexOf(object) > -1) {
             match = descrefs[prefix][name];
+            fullname = (prefix ? prefix + '.' : '') + name;
             descr = desctypes[match[1]] + _(', in ') + titles[match[0]];
             objectResults.push([filenames[match[0]], fullname, '#'+fullname, descr]);
           }
@@ -431,19 +431,13 @@ var Search = {
           listItem.slideDown(5, function() {
             displayNextItem();
           });
-        } else if (DOCUMENTATION_OPTIONS.HAS_SOURCE) {
+        } else {
           $.get('_sources/' + item[0] + '.txt', function(data) {
             listItem.append($.makeSearchSummary(data, searchterms, hlterms));
             Search.output.append(listItem);
             listItem.slideDown(5, function() {
               displayNextItem();
             });
-          });
-        } else {
-          // no source available, just display title
-          Search.output.append(listItem);
-          listItem.slideDown(5, function() {
-            displayNextItem();
           });
         }
       }
