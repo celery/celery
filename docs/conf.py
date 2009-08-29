@@ -10,7 +10,9 @@ sys.path.append("../celery")
 sys.path.append("../testproj")
 import settings
 from django.core.management import setup_environ
+from django.conf import settings as dsettings
 setup_environ(settings)
+dsettings.configure()
 import celery
 sys.path.append(os.path.join(os.path.dirname(__file__), "_ext"))
 
