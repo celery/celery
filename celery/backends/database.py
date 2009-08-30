@@ -37,7 +37,7 @@ class Backend(BaseBackend):
         elif status == "FAILURE":
             result = self.prepare_exception(result)
         TaskMeta.objects.store_result(task_id, result, status,
-                                      traceback=None)
+                                      traceback=traceback)
         return result
 
     def is_done(self, task_id):
