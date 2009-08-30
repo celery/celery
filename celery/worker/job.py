@@ -142,7 +142,8 @@ class TaskWrapper(object):
                             "task_id": self.task_id,
                             "task_name": self.task_name,
                             "task_retries": self.retries}
-        supported_keys = fun_takes_kwargs(self.task_func, default_kwargs)
+        fun = getattr(self.task_func, "run", self.task_func)
+        supported_keys = fun_takes_kwargs(fun, default_kwargs)
         extend_with = dict((key, val) for key, val in default_kwargs.items()
                                 if key in supported_keys)
         kwargs.update(extend_with)
