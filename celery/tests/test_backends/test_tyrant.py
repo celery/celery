@@ -2,6 +2,7 @@ import sys
 import unittest
 import errno
 import socket
+from celery.backends import tyrant
 from celery.backends.tyrant import Backend as TyrantBackend
 from django.conf import settings
 from celery.utils import gen_unique_id
@@ -18,14 +19,22 @@ class SomeClass(object):
 
 
 def get_tyrant_or_None():
+    def emit_no_tyrant_msg():
+        global _no_tyrant_msg_emitted
+        if not _no_tyrant_msg_emitted:
+            sys.stderr.write("\n" + _no_tyrant_msg + "\n")
+            _no_tyrant_msg_emitted = True
+
+    if tyrant.pytyrant is None:
+        emit_no_tyrant_msg()
+        return None
     try:
         tb = TyrantBackend()
         try:
             tb.open()
         except socket.error, exc:
             if exc.errno == errno.ECONNREFUSED:
-                if not _no_tyrant_msg_emitted:
-                    sys.stderr.write("\n" + _no_tyrant_msg + "\n")
+                emit_no_tyrant_msg()
                 return None
             else:
                 raise

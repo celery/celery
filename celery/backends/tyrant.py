@@ -6,7 +6,7 @@ from celery.loaders import settings
 try:
     import pytyrant
 except ImportError:
-    pytrant = None
+    pytyrant = None
 
 
 class Backend(KeyValueStoreBackend):
