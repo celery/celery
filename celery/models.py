@@ -3,10 +3,13 @@
 Django Models.
 
 """
+import django
 from django.db import models
 from celery.registry import tasks
 from celery.managers import TaskManager, PeriodicTaskManager
 from celery.fields import PickledObjectField
+from celery.backends import (CELERY_BACKEND,
+                             CELERY_PERIODIC_STATUS_BACKEND)
 from django.utils.translation import ugettext_lazy as _
 from datetime import datetime
 
@@ -69,3 +72,12 @@ class PeriodicTaskMeta(models.Model):
     def task(self):
         """The entry registered in the task registry for this task."""
         return tasks[self.name]
+
+
+
+# keep models away from syncdb/reset if database backend is not being used.
+if (django.VERSION[0], django.VERSION[1]) >= (1,1):
+    if CELERY_BACKEND != 'database':
+        TaskMeta._meta.managed = False
+    if CELERY_PERIODIC_STATUS_BACKEND != 'database':
+        PeriodicTaskMeta._meta.managed = False
