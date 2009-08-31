@@ -20,8 +20,10 @@ SERVER_DRIFT = timedelta(seconds=random.vonmisesvariate(1, 4))
 
 
 class Bunch:
+
     def __init__(self, **kw):
         self.__dict__.update(kw)
+
 
 class Backend(BaseBackend):
 
@@ -38,8 +40,9 @@ class Backend(BaseBackend):
     def __init__(self, *args, **kwargs):
         """Initialize MongoDB backend instance.
 
-        Raises :class: `django.core.exceptions.ImproperlyConfigured` if
-        module pymongo is not available.
+        :raises django.core.exceptions.ImproperlyConfigured: if
+            module :mod:`pymongo` is not available.
+
         """
 
         if not pymongo:
@@ -56,8 +59,10 @@ class Backend(BaseBackend):
             self.mongodb_host = conf.get('host', self.mongodb_host)
             self.mongodb_port = int(conf.get('port', self.mongodb_port))
             self.mongodb_user = conf.get('user', self.mongodb_user)
-            self.mongodb_password = conf.get('password', self.mongodb_password)
-            self.mongodb_database = conf.get('database', self.mongodb_database)
+            self.mongodb_password = conf.get(
+                    'password', self.mongodb_password)
+            self.mongodb_database = conf.get(
+                    'database', self.mongodb_database)
             self.mongodb_taskmeta_collection = conf.get(
                 'taskmeta_collection', self.mongodb_taskmeta_collection)
             self.mongodb_collection_periodictaskmeta = conf.get(
@@ -73,8 +78,8 @@ class Backend(BaseBackend):
         """Connect to the MongoDB server."""
         if self._connection is None:
             from pymongo.connection import Connection
-            self._connection = Connection(self.mongodb_host, self.mongodb_port)
-
+            self._connection = Connection(self.mongodb_host,
+                                          self.mongodb_port)
         return self._connection
 
     def _get_database(self):
@@ -95,7 +100,7 @@ class Backend(BaseBackend):
 
     def process_cleanup(self):
         if self._connection is not None:
-            # MongoDB connectiom will be closed automatically when object
+            # MongoDB connection will be closed automatically when object
             # goes out of scope
             self._connection = None
 
@@ -176,7 +181,6 @@ class Backend(BaseBackend):
 
         return waiting
 
-
     def store_result(self, task_id, result, status, traceback=None):
         """Store return value and status of an executed task."""
         from pymongo.binary import Binary
@@ -247,6 +251,6 @@ class Backend(BaseBackend):
         taskmeta_collection = db[self.mongodb_taskmeta_collection]
         taskmeta_collection.remove({
                 "date_done": {
-                    "$lt": datetime.now() - TASK_RESULT_EXPIRES
+                    "$lt": datetime.now() - TASK_RESULT_EXPIRES,
                  }
         })
