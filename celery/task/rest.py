@@ -6,10 +6,7 @@ from urllib import urlencode
 from urlparse import urlparse
 from anyjson import serialize, deserialize
 import httplib
-
-
-class UnsupportedURISchemeError(Exception):
-    """The given scheme is not supported."""
+import urllib2
 
 
 class InvalidResponseError(Exception):
@@ -24,36 +21,82 @@ class UnknownStatusError(InvalidResponseError):
     """The remote server gave an unknown status."""
 
 
+class URL(object):
+    """Object wrapping a Uniform Resource Locator.
+
+    Supports editing the query parameter list.
+    You can convert the object back to a string, the query will be 
+    properly urlencoded.
+
+    Examples
+
+        >>> url = URL("http://www.google.com:6580/foo/bar?x=3&y=4#foo")
+        >>> url.query
+        {'x': '3', 'y': '4'}
+        >>> str(url)
+        'http://www.google.com:6580/foo/bar?y=4&x=3#foo'
+        >>> url.query["x"] = 10
+        >>> url.query.update({"George": "Constanza"})
+        >>> str(url)
+        'http://www.google.com:6580/foo/bar?y=4&x=10&George=Constanza#foo'
+
+    """
+
+    def __init__(self, url):
+        self.url = urlparse(url)
+        self._query = dict(parse_qsl(self.url.query))
+    
+    def _utf8dict(self, tuple_):
+        def value_encode(val):
+            if isinstance(val, unicode):
+                return val.encode("utf-8")
+            return val
+        return dict((key.encode("utf-8"), value_encode(value))
+                        for key, value in tuple_)
+
+    def __str__(self):
+        u = self.url
+        query = urlencode(self._utf8dict(self.query.items()))
+        components = ["%s://" % u.scheme,
+                      "%s" % u.netloc,
+                      "%s" % u.path if u.path else "/",
+                      ";%s" % u.params if u.params else None,
+                      "?%s" % query if query else None,
+                      "#%s" % u.fragment if u.fragment else None]
+        return "".join(filter(None, components))
+
+    def __repr__(self):
+        return "<%s %s>" % (self.__class__.__name__, str(self))
+
+    def _get_query(self):
+        return self._query
+
+    def _set_query(self, query):
+        self._query = query
+
+    query = property(_get_query, _set_query)
+
+
 class RESTProxy(object):
-    user_agent = "celery v%s" % celery_version
-    connection_cls_for_scheme = {
-        "http": httplib.HTTPConnection,
-        "https": httplib.HTTPSConnection,
-    }
+    user_agent = "celery/%s" % celery_version
     timeout = 5
 
-    def __init__(self, uri, task_kwargs, logger):
-        self.uri = uri
+    def __init__(self, url, task_kwargs, logger):
+        self.url = url
         self.task_kwargs = task_kwargs
         self.logger = logger
 
-    def _utf8dict(self, tuple_):
-        return dict((key.encode("utf-8"), value.encode("utf-8"))
-                        for key, value in tuple_)
+    def _create_request(self):
+        url = URL(self.url)
+        url.query.update(self.task_kwargs)
+        req = urllib2.Request(str(url))
+        req.headers.update(self.http_headers)
+        return req
 
     def _make_request(self):
-        uri = urlparse(self.uri)
-        conn_cls = self.connection_cls_for_scheme.get(uri.scheme)
-        raise UnsupportedURISchemeError("Supported schemes are: %s" % (
-            ", ".join(self.connection_cls_for_scheme.keys())))
-        conn = conn_cls(uri.netloc, uri.port)
-        query_params = self._utf8dict(parse_qsl(uri.query))
-        kwarg_params = self._utf8dict(self.task_kwargs)
-        query_params.update(kwargs_params)
-        query = urlencode(query_params)
-        path = "?".join([uri.path, query])
-        conn.request("GET", path, headers=self.http_headers)
-        response = conn.getresponse()
+        request = self._create_request()
+        opener = urllib2.build_opener()
+        response = opener.open(request)
         return response.read()
 
     def execute(self):
@@ -86,22 +129,28 @@ class RESTProxyTask(BaseTask):
     name = "celery.task.rest.RESTProxyTask"
     user_agent = "celery %s" % celery_version
 
-    def run(self, uri, kwargs, **default):
-        logger = self.get_logger(**default)
-        proxy = RESTProxy(uri, kwargs, logger)
+    def run(self, url, **kwargs):
+        logger = self.get_logger(**kwargs)
+        proxy = RESTProxy(url, kwargs, logger)
         return proxy.execute()
+tasks.register(RESTProxyTask)
 
+
+def task_response(fun, *args, **kwargs):
+    import sys
+    try:
+        sys.stderr.write("executing %s\n" % fun)
+        retval = fun(*args, **kwargs)
+        sys.stderr.write("got: %s\n" % retval)
+    except Exception, exc:
+        response = {"status": "failure", "reason": str(exc)}
+    else:
+        response = {"status": "success", "retval": retval}
+
+    return serialize(response)
+    
 
 class Task(BaseTask):
 
     def __call__(self, *args, **kwargs):
-        try:
-            retval = self.run(*args, **kwargs)
-        except (SystemExit, KeyboardInterrupt):
-            raise
-        except Exception, exc:
-            response = {"status": "failure", "reason": str(exc)}
-        else:
-            response = {"status": "success": "retval": retval}
-
-        return serialize(response)
+        return task_response(self.run, *args, **kwargs)
