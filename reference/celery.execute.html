@@ -127,7 +127,7 @@ the exception instance on failure.</p>
 
 <dl class="function">
 <dt id="celery.execute.apply_async">
-<tt class="descclassname">celery.execute.</tt><tt class="descname">apply_async</tt><big>(</big><em>task</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>countdown=None</em>, <em>eta=None</em>, <em>routing_key=None</em>, <em>exchange=None</em>, <em>task_id=None</em>, <em>immediate=None</em>, <em>mandatory=None</em>, <em>priority=None</em>, <em>connection=None</em>, <em>connect_timeout=4</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.execute.apply_async" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.execute.</tt><tt class="descname">apply_async</tt><big>(</big><em>task</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>countdown=None</em>, <em>eta=None</em>, <em>routing_key=None</em>, <em>exchange=None</em>, <em>task_id=None</em>, <em>immediate=None</em>, <em>mandatory=None</em>, <em>priority=None</em>, <em>connection=None</em>, <em>connect_timeout=4</em>, <em>serializer=None</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.execute.apply_async" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run a task asynchronously by the celery daemon(s).</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -160,6 +160,11 @@ The <tt class="docutils literal"><span class="pre">connect_timeout</span></tt> a
 <li><em>connect_timeout</em> &#8211; The timeout in seconds, before we give up
 on establishing a connection to the AMQP server.</li>
 <li><em>priority</em> &#8211; The task priority, a number between <tt class="docutils literal"><span class="pre">0</span></tt> and <tt class="docutils literal"><span class="pre">9</span></tt>.</li>
+<li><em>serializer</em> &#8211; A string identifying the default serialization
+method to use. Defaults to the <tt class="docutils literal"><span class="pre">CELERY_TASK_SERIALIZER</span></tt> setting.
+Can be <tt class="docutils literal"><span class="pre">pickle</span></tt> <tt class="docutils literal"><span class="pre">json</span></tt>, <tt class="docutils literal"><span class="pre">yaml</span></tt>, or any custom serialization
+methods that have been registered with
+<tt class="xref docutils literal"><span class="pre">carrot.serialization.registry</span></tt>.</li>
 </ul>
 </td>
 </tr>

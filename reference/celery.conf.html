@@ -59,11 +59,26 @@
 <dd></dd></dl>
 
 <dl class="data">
+<dt id="celery.conf.AMQP_CONNECTION_MAX_RETRIES">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONNECTION_MAX_RETRIES</tt><a class="headerlink" href="#celery.conf.AMQP_CONNECTION_MAX_RETRIES" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="data">
+<dt id="celery.conf.TASK_SERIALIZER">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">TASK_SERIALIZER</tt><a class="headerlink" href="#celery.conf.TASK_SERIALIZER" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>A string identifying the default serialization
+method to use. Can be <tt class="docutils literal"><span class="pre">pickle</span></tt> (default),
+<tt class="docutils literal"><span class="pre">json</span></tt>, <tt class="docutils literal"><span class="pre">yaml</span></tt>, or any custom serialization methods that have
+been registered with <tt class="xref docutils literal"><span class="pre">carrot.serialization.registry</span></tt>.</p>
+<p>Default is <tt class="docutils literal"><span class="pre">pickle</span></tt>.</p>
+</dd></dl>
+
+<dl class="data">
 <dt id="celery.conf.AMQP_CONNECTION_RETRY">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONNECTION_RETRY</tt><a class="headerlink" href="#celery.conf.AMQP_CONNECTION_RETRY" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="data">
-<dt id="celery.conf.AMQP_CONNECTION_MAX_RETRIES">
-<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONNECTION_MAX_RETRIES</tt><a class="headerlink" href="#celery.conf.AMQP_CONNECTION_MAX_RETRIES" title="Permalink to this definition">¶</a></dt>
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONNECTION_MAX_RETRIES</tt></dt>
 <dd></dd></dl>
 
 <p>Maximum number of retries before we give up re-establishing a connection
@@ -191,8 +206,8 @@ for more information.</dd></dl>
 </dd></dl>
 
 <dl class="data">
-<dt id="celery.conf.DEFAULT_AMQP_CONNECTION_MAX_RETRIES">
-<tt class="descclassname">celery.conf.</tt><tt class="descname">DEFAULT_AMQP_CONNECTION_MAX_RETRIES</tt><a class="headerlink" href="#celery.conf.DEFAULT_AMQP_CONNECTION_MAX_RETRIES" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.conf.DEFAULT_TASK_SERIALIZER">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">DEFAULT_TASK_SERIALIZER</tt><a class="headerlink" href="#celery.conf.DEFAULT_TASK_SERIALIZER" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="data">
 <dt id="celery.conf.LOG_LEVELS">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">LOG_LEVELS</tt><a class="headerlink" href="#celery.conf.LOG_LEVELS" title="Permalink to this definition">¶</a></dt>

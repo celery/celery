@@ -115,7 +115,7 @@
 <dt><a href="reference/celery.pool.html#celery.pool.DynamicPool.add_worker">add_worker() (celery.pool.DynamicPool method)</a></dt>
 <dt><a href="reference/celery.exceptions.html#celery.exceptions.AlreadyRegistered">AlreadyRegistered</a></dt>
 <dt><a href="reference/celery.conf.html#celery.conf.ALWAYS_EAGER">ALWAYS_EAGER (in module celery.conf)</a>, <a href="reference/celery.conf.html#celery.conf.ALWAYS_EAGER">[1]</a></dt>
-<dt><a href="reference/celery.conf.html#celery.conf.AMQP_CONNECTION_MAX_RETRIES">AMQP_CONNECTION_MAX_RETRIES (in module celery.conf)</a></dt>
+<dt><a href="reference/celery.conf.html#celery.conf.AMQP_CONNECTION_MAX_RETRIES">AMQP_CONNECTION_MAX_RETRIES (in module celery.conf)</a>, <a href="reference/celery.conf.html#celery.conf.AMQP_CONNECTION_MAX_RETRIES">[1]</a></dt>
 <dt><a href="reference/celery.conf.html#celery.conf.AMQP_CONNECTION_RETRY">AMQP_CONNECTION_RETRY (in module celery.conf)</a></dt>
 <dt><a href="reference/celery.conf.html#celery.conf.AMQP_CONNECTION_TIMEOUT">AMQP_CONNECTION_TIMEOUT (in module celery.conf)</a>, <a href="reference/celery.conf.html#celery.conf.AMQP_CONNECTION_TIMEOUT">[1]</a></dt>
 <dt><a href="reference/celery.conf.html#celery.conf.AMQP_CONSUMER_QUEUE">AMQP_CONSUMER_QUEUE (in module celery.conf)</a>, <a href="reference/celery.conf.html#celery.conf.AMQP_CONSUMER_QUEUE">[1]</a></dt>
@@ -263,8 +263,8 @@
 <dt><a href="reference/celery.models.html#TaskMeta.date_done">date_done (TaskMeta attribute)</a></dt>
 <dt><a href="reference/celery.messaging.html#celery.messaging.TaskConsumer.decoder">decoder() (celery.messaging.TaskConsumer method)</a></dt>
 <dt><a href="reference/celery.datastructures.html#celery.datastructures.SharedCounter.decrement">decrement() (celery.datastructures.SharedCounter method)</a></dt>
-<dt><a href="reference/celery.conf.html#celery.conf.DEFAULT_AMQP_CONNECTION_MAX_RETRIES">DEFAULT_AMQP_CONNECTION_MAX_RETRIES (in module celery.conf)</a></dt>
 <dt><a href="reference/celery.task.base.html#celery.task.base.Task.default_retry_delay">default_retry_delay (celery.task.base.Task attribute)</a></dt>
+<dt><a href="reference/celery.conf.html#celery.conf.DEFAULT_TASK_SERIALIZER">DEFAULT_TASK_SERIALIZER (in module celery.conf)</a></dt>
 <dt><a href="reference/celery.backends.html#celery.backends.DefaultBackend">DefaultBackend (class in celery.backends)</a></dt>
 <dt><a href="reference/celery.task.base.html#celery.task.base.Task.delay">delay() (celery.task.base.Task class method)</a></dt>
   <dd><dl>
@@ -609,6 +609,7 @@
 
 <dt><a href="reference/celery.worker.html#celery.worker.WorkController.safe_process_task">safe_process_task() (celery.worker.WorkController method)</a></dt>
 <dt><a href="reference/celery.conf.html#celery.conf.SEND_CELERY_TASK_ERROR_EMAILS">SEND_CELERY_TASK_ERROR_EMAILS (in module celery.conf)</a>, <a href="reference/celery.conf.html#celery.conf.SEND_CELERY_TASK_ERROR_EMAILS">[1]</a></dt>
+<dt><a href="reference/celery.task.base.html#celery.task.base.Task.serializer">serializer (celery.task.base.Task attribute)</a></dt>
 <dt><a href="reference/celery.log.html#celery.log.setup_logger">setup_logger() (in module celery.log)</a></dt>
 <dt><a href="reference/celery.datastructures.html#celery.datastructures.SharedCounter">SharedCounter (class in celery.datastructures)</a></dt>
 <dt><a href="reference/celery.monitoring.html#celery.monitoring.Statistics.start">start() (celery.monitoring.Statistics class method)</a></dt>
@@ -668,6 +669,7 @@
   <dd><dl>
     <dt><a href="reference/celery.worker.job.html#celery.worker.job.TaskWrapper.task_name">(celery.worker.job.TaskWrapper attribute)</a></dt>
   </dl></dd>
+<dt><a href="reference/celery.conf.html#celery.conf.TASK_SERIALIZER">TASK_SERIALIZER (in module celery.conf)</a></dt>
 <dt><a href="reference/celery.views.html#celery.views.task_status">task_status() (in module celery.views)</a></dt>
 <dt><a href="reference/celery.models.html#TASK_STATUS_DONE">TASK_STATUS_DONE (built-in variable)</a></dt>
 <dt><a href="reference/celery.models.html#TASK_STATUS_FAILURE">TASK_STATUS_FAILURE (built-in variable)</a></dt>

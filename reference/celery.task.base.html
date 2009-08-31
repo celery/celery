@@ -214,6 +214,15 @@ store the return value/status as usual.</dd></dl>
 <dd>Disable all error e-mails for this task (only applicable if
 <tt class="docutils literal"><span class="pre">settings.SEND_CELERY_ERROR_EMAILS</span></tt> is on.)</dd></dl>
 
+<dl class="attribute">
+<dt id="celery.task.base.Task.serializer">
+<tt class="descname">serializer</tt><a class="headerlink" href="#celery.task.base.Task.serializer" title="Permalink to this definition">¶</a></dt>
+<dd>A string identifying the default serialization
+method to use. Defaults to the <tt class="docutils literal"><span class="pre">CELERY_TASK_SERIALIZER</span></tt> setting.
+Can be <tt class="docutils literal"><span class="pre">pickle</span></tt> <tt class="docutils literal"><span class="pre">json</span></tt>, <tt class="docutils literal"><span class="pre">yaml</span></tt>, or any custom serialization
+methods that have been registered with
+<tt class="xref docutils literal"><span class="pre">carrot.serialization.registry</span></tt>.</dd></dl>
+
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
