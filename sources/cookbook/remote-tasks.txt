@@ -40,8 +40,7 @@ With this information we can define a simple task in Django:
         return HttpResponse(serialize(response), mimetype="application/json")
 
 I'm sure you'll be able to port this scheme to any language and framework,
-and maybe if you're lucky someone has already made a library for it.
-
+new examples and libraries are very welcome.
 
 To execute the task you use :class:`celery.task.rest.RESTProxyTask`:
 
