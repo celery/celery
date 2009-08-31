@@ -1,0 +1,177 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Creating Tasks &mdash; Celery v0.7.0 (unstable) documentation</title>
+    <link rel="stylesheet" href="../static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.7.0 (unstable)',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v0.7.0 (unstable) documentation" href="../index.html" />
+    <link rel="up" title="Cookbook" href="index.html" />
+    <link rel="next" title="Retrying Tasks" href="task-retries.html" />
+    <link rel="prev" title="Cookbook" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="task-retries.html" title="Retrying Tasks"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Cookbook"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Celery v0.7.0 (unstable) documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Cookbook</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="creating-tasks">
+<h1>Creating Tasks<a class="headerlink" href="#creating-tasks" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="ensuring-a-task-is-only-executed-one-at-a-time">
+<h2>Ensuring a task is only executed one at a time<a class="headerlink" href="#ensuring-a-task-is-only-executed-one-at-a-time" title="Permalink to this headline">¶</a></h2>
+<p>You can accomplish this by using a lock.</p>
+<p>In this example we&#8217;ll be using the cache framework to set a lock that is
+accessible for all workers.</p>
+<p>It&#8217;s part of an imaginary RSS Feed application called <tt class="docutils literal"><span class="pre">djangofeeds</span></tt>.
+The task takes a feed URL as a single argument, and imports that feed into
+a Django model called <tt class="docutils literal"><span class="pre">Feed</span></tt>. We ensure that it&#8217;s not possible for two or
+more workers to import the same feed at the same time by setting a cache key
+consisting of the md5sum of the feed URL.</p>
+<p>The cache key expires after some time in case something unexpected happens
+(you never know, right?)</p>
+<div class="highlight-python"><pre>from celery.task import Task
+from celery.registry import tasks
+from django.core.cache import cache
+from django.utils.hashcompat import md5_constructor as md5
+from djangofeeds.models import Feed
+
+LOCK_EXPIRE = 60 * 5 # Lock expires in 5 minutes
+
+class FeedImporter(Task):
+    name = "feed.import"
+
+    def run(self, feed_url, **kwargs):
+        logger = self.get_logger(**kwargs)
+
+        # The cache key consists of the task name and the MD5 digest
+        # of the feed URL.
+        feed_url_digest = md5(feed_url).hexdigest()
+        lock_id = "%s-lock-%s" % (self.name, feed_url_hexdigest)
+
+        is_locked = lambda: str(cache.get(lock_id)) == "true"
+        acquire_lock = lambda: cache.set(lock_id, "true", LOCK_EXPIRE)
+        # memcache delete is very slow, so we'd rather set a false value
+        # with a very low expiry time.
+        release_lock = lambda: cache.set(lock_id, "nil", 1)
+
+        logger.debug("Importing feed: %s" % feed_url)
+        if is_locked():
+            logger.debug(
+                "Feed %s is already being imported by another worker" % (
+                    feed_url))
+            return
+
+        acquire_lock()
+        try:
+            feed = Feed.objects.import(feed_url)
+        finally:
+            release_lock()
+
+        return feed.url
+tasks.register(FeedImporter)</pre>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="../index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="">Creating Tasks</a><ul>
+<li><a class="reference external" href="#ensuring-a-task-is-only-executed-one-at-a-time">Ensuring a task is only executed one at a time</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="index.html"
+                                  title="previous chapter">Cookbook</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="task-retries.html"
+                                  title="next chapter">Retrying Tasks</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../sources/cookbook/tasks.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="task-retries.html" title="Retrying Tasks"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Cookbook"
+             >previous</a> |</li>
+        <li><a href="../index.html">Celery v0.7.0 (unstable) documentation</a> &raquo;</li>
+          <li><a href="index.html" >Cookbook</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.2.
+    </div>
+  </body>
+</html>

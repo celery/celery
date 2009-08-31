@@ -1,0 +1,168 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Remote Tasks &mdash; Celery v0.7.0 (unstable) documentation</title>
+    <link rel="stylesheet" href="../static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.7.0 (unstable)',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v0.7.0 (unstable) documentation" href="../index.html" />
+    <link rel="up" title="Cookbook" href="index.html" />
+    <link rel="next" title="Tutorials" href="../tutorials/index.html" />
+    <link rel="prev" title="Retrying Tasks" href="task-retries.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="../tutorials/index.html" title="Tutorials"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="task-retries.html" title="Retrying Tasks"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Celery v0.7.0 (unstable) documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Cookbook</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="remote-tasks">
+<h1>Remote Tasks<a class="headerlink" href="#remote-tasks" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="executing-tasks-on-a-remote-web-server">
+<h2>Executing tasks on a remote web server<a class="headerlink" href="#executing-tasks-on-a-remote-web-server" title="Permalink to this headline">¶</a></h2>
+<p>If you need to call into another language, framework or similar, you can
+do so by using HTTP tasks.</p>
+<p>The HTTP tasks (or REST task) uses a simple REST+JSON scheme to take arguments
+and return results, the scheme to call a task is:</p>
+<div class="highlight-python"><pre>GET http://example.com/mytask/?arg1=a,arg2=b,arg3=c</pre>
+</div>
+<p>The web page should then return a response in the following format
+if the execution was successful:</p>
+<div class="highlight-python"><pre>{"status": "success", "retval": ....}</pre>
+</div>
+<p>or in the following format if there was an error:</p>
+<div class="highlight-python"><pre>{"status": "failure": "reason": "Invalid moon alignment."}</pre>
+</div>
+<p>With this information we can define a simple task in Django:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">django.http</span> <span class="kn">import</span> <span class="n">HttpResponse</span>
+<span class="kn">from</span> <span class="nn">anyjson</span> <span class="kn">import</span> <span class="n">serialize</span>
+
+
+<span class="k">def</span> <span class="nf">multiply</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="p">[</span><span class="s">&quot;x&quot;</span><span class="p">])</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">GET</span><span class="p">[</span><span class="s">&quot;y&quot;</span><span class="p">])</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">x</span> <span class="o">*</span> <span class="n">y</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;status&quot;</span><span class="p">:</span> <span class="s">&quot;success&quot;</span><span class="p">,</span> <span class="s">&quot;retval&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">}</span>
+    <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="n">serialize</span><span class="p">(</span><span class="n">response</span><span class="p">),</span> <span class="n">mimetype</span><span class="o">=</span><span class="s">&quot;application/json&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>I&#8217;m sure you&#8217;ll be able to port this scheme to any language and framework,
+and maybe if you&#8217;re lucky someone has already made a library for it.</p>
+<p>To execute the task you use <tt class="xref docutils literal"><span class="pre">celery.task.rest.RESTProxyTask</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">RESTProxyTask</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">res</span> <span class="o">=</span> <span class="n">RESTProxyTask</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="s">&quot;http://example.com/multiply&quot;</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mf">10</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">10</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">res</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+<span class="go">100</span>
+</pre></div>
+</div>
+<p>In your <tt class="docutils literal"><span class="pre">celeryd.log</span></tt> file you should see the task being processed:</p>
+<div class="highlight-python"><pre>[INFO/MainProcess] Task celery.task.rest.RESTProxyTask
+    [f2cc8efc-2a14-40cd-85ad-f1c77c94beeb] processed: 100</pre>
+</div>
+<p>Since applying tasks can also simply be done via the web and the
+<tt class="docutils literal"><span class="pre">celery.views.apply</span></tt> view, executing tasks from other languages should be a
+no-brainer.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="../index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="">Remote Tasks</a><ul>
+<li><a class="reference external" href="#executing-tasks-on-a-remote-web-server">Executing tasks on a remote web server</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="task-retries.html"
+                                  title="previous chapter">Retrying Tasks</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="../tutorials/index.html"
+                                  title="next chapter">Tutorials</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../sources/cookbook/remote-tasks.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../tutorials/index.html" title="Tutorials"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="task-retries.html" title="Retrying Tasks"
+             >previous</a> |</li>
+        <li><a href="../index.html">Celery v0.7.0 (unstable) documentation</a> &raquo;</li>
+          <li><a href="index.html" >Cookbook</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.2.
+    </div>
+  </body>
+</html>
