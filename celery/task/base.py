@@ -1,14 +1,14 @@
 from carrot.connection import DjangoBrokerConnection
-from celery.conf import AMQP_CONNECTION_TIMEOUT
+from celery import conf
 from celery.messaging import TaskPublisher, TaskConsumer
 from celery.log import setup_logger
 from celery.result import TaskSetResult, EagerResult
 from celery.execute import apply_async, delay_task, apply
 from celery.utils import gen_unique_id, get_full_cls_name
-from datetime import timedelta
 from celery.registry import tasks
 from celery.serialization import pickle
 from celery.exceptions import MaxRetriesExceededError, RetryTaskError
+from datetime import timedelta
 
 
 class Task(object):
@@ -83,6 +83,14 @@ class Task(object):
         Disable all error e-mails for this task (only applicable if
         ``settings.SEND_CELERY_ERROR_EMAILS`` is on.)
 
+    .. attribute:: serializer
+
+        A string identifying the default serialization
+        method to use. Defaults to the ``CELERY_TASK_SERIALIZER`` setting.
+        Can be ``pickle`` ``json``, ``yaml``, or any custom serialization
+        methods that have been registered with
+        :mod:`carrot.serialization.registry`.
+
     :raises NotImplementedError: if the :attr:`name` attribute is not set.
 
     The resulting class is callable, which if called will apply the
@@ -129,6 +137,7 @@ class Task(object):
     disable_error_emails = False
     max_retries = 3
     default_retry_delay = 3 * 60
+    serializer = conf.TASK_SERIALIZER
 
     MaxRetriesExceededError = MaxRetriesExceededError
 
@@ -206,7 +215,7 @@ class Task(object):
         loglevel = kwargs.get("loglevel")
         return setup_logger(loglevel=loglevel, logfile=logfile)
 
-    def get_publisher(self, connect_timeout=AMQP_CONNECTION_TIMEOUT):
+    def get_publisher(self, connect_timeout=conf.AMQP_CONNECTION_TIMEOUT):
         """Get a celery task message publisher.
 
         :rtype: :class:`celery.messaging.TaskPublisher`.
@@ -225,7 +234,7 @@ class Task(object):
                              exchange=self.exchange,
                              routing_key=self.routing_key)
 
-    def get_consumer(self, connect_timeout=AMQP_CONNECTION_TIMEOUT):
+    def get_consumer(self, connect_timeout=conf.AMQP_CONNECTION_TIMEOUT):
         """Get a celery task message consumer.
 
         :rtype: :class:`celery.messaging.TaskConsumer`.
@@ -485,7 +494,7 @@ class TaskSet(object):
         self.arguments = args
         self.total = len(args)
 
-    def run(self, connect_timeout=AMQP_CONNECTION_TIMEOUT):
+    def run(self, connect_timeout=conf.AMQP_CONNECTION_TIMEOUT):
         """Run all tasks in the taskset.
 
         :returns: A :class:`celery.result.TaskSetResult` instance.

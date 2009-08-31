@@ -20,6 +20,7 @@ DEFAULT_ALWAYS_EAGER = False
 DEFAULT_TASK_RESULT_EXPIRES = timedelta(days=5)
 DEFAULT_AMQP_CONNECTION_RETRY = True
 DEFAULT_AMQP_CONNECTION_MAX_RETRIES = 100
+DEFAULT_TASK_SERIALIZER = "pickle"
 
 """
 .. data:: LOG_LEVELS
@@ -241,3 +242,17 @@ Default is ``100`` retries.
 AMQP_CONNECTION_MAX_RETRIES = getattr(settings,
                                       "AMQP_CONNECTION_MAX_RETRIES",
                                       DEFAULT_AMQP_CONNECTION_MAX_RETRIES)
+
+"""
+.. data:: TASK_SERIALIZER
+
+A string identifying the default serialization
+method to use. Can be ``pickle`` (default),
+``json``, ``yaml``, or any custom serialization methods that have
+been registered with :mod:`carrot.serialization.registry`.
+
+Default is ``pickle``.
+
+"""
+TASK_SERIALIZER = getattr(settings, "CELERY_TASK_SERIALIZER",
+                          DEFAULT_TASK_SERIALIZER)

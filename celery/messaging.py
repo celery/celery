@@ -11,7 +11,8 @@ from celery.serialization import pickle
 
 
 MSG_OPTIONS = ("mandatory", "priority",
-               "immediate", "routing_key")
+               "immediate", "routing_key",
+               "serializer")
 
 get_msg_options = mitemgetter(*MSG_OPTIONS)
 
@@ -23,7 +24,7 @@ class TaskPublisher(Publisher):
     exchange = conf.AMQP_EXCHANGE
     exchange_type = conf.AMQP_EXCHANGE_TYPE
     routing_key = conf.AMQP_PUBLISHER_ROUTING_KEY
-    serializer = "pickle"
+    serializer = conf.TASK_SERIALIZER
     encoder = pickle.dumps
 
     def delay_task(self, task_name, task_args, task_kwargs, **kwargs):

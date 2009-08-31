@@ -21,7 +21,7 @@ import inspect
 def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
         routing_key=None, exchange=None, task_id=None,
         immediate=None, mandatory=None, priority=None, connection=None,
-        connect_timeout=AMQP_CONNECTION_TIMEOUT, **opts):
+        connect_timeout=AMQP_CONNECTION_TIMEOUT, serializer=None, **opts):
     """Run a task asynchronously by the celery daemon(s).
 
     :param task: The task to run (a callable object, or a :class:`Task`
@@ -62,6 +62,12 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
 
     :keyword priority: The task priority, a number between ``0`` and ``9``.
 
+    :keyword serializer: A string identifying the default serialization
+        method to use. Defaults to the ``CELERY_TASK_SERIALIZER`` setting.
+        Can be ``pickle`` ``json``, ``yaml``, or any custom serialization
+        methods that have been registered with
+        :mod:`carrot.serialization.registry`.
+
     """
     args = args or []
     kwargs = kwargs or {}
@@ -70,6 +76,7 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
     immediate = immediate or getattr(task, "immediate", None)
     mandatory = mandatory or getattr(task, "mandatory", None)
     priority = priority or getattr(task, "priority", None)
+    serializer = serializer or getattr(task, "serializer", None)
     taskset_id = opts.get("taskset_id")
     publisher = opts.get("publisher")
     retries = opts.get("retries")
@@ -96,7 +103,8 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
                          task_id=task_id, retries=retries,
                          routing_key=routing_key, exchange=exchange,
                          mandatory=mandatory, immediate=immediate,
-                         priority=priority, eta=eta)
+                         serializer=serializer, priority=priority,
+                         eta=eta)
 
     if need_to_close_connection:
         publisher.close()
