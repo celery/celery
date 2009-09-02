@@ -1,14 +1,7 @@
 """celery.backends"""
 from functools import partial
-from celery.loaders import settings
+from celery import conf
 import sys
-
-DEFAULT_BACKEND = "database"
-DEFAULT_PERIODIC_STATUS_BACKEND = "database"
-CELERY_BACKEND = getattr(settings, "CELERY_BACKEND", DEFAULT_BACKEND)
-CELERY_PERIODIC_STATUS_BACKEND = getattr(settings,
-                                    "CELERY_PERIODIC_STATUS_BACKEND",
-                                    DEFAULT_PERIODIC_STATUS_BACKEND)
 
 
 def get_backend_cls(backend):
@@ -31,7 +24,7 @@ def get_backend_cls(backend):
     Get the backend class specified in :setting:`CELERY_BACKEND`.
 
 """
-get_default_backend_cls = partial(get_backend_cls, CELERY_BACKEND)
+get_default_backend_cls = partial(get_backend_cls, conf.CELERY_BACKEND)
 
 
 """
@@ -42,7 +35,7 @@ get_default_backend_cls = partial(get_backend_cls, CELERY_BACKEND)
 
 """
 get_default_periodicstatus_backend_cls = partial(get_backend_cls,
-                                            CELERY_PERIODIC_STATUS_BACKEND)
+                                        conf.CELERY_PERIODIC_STATUS_BACKEND)
 
 
 """

@@ -8,8 +8,7 @@ from django.db import models
 from celery.registry import tasks
 from celery.managers import TaskManager, PeriodicTaskManager
 from celery.fields import PickledObjectField
-from celery.backends import (CELERY_BACKEND,
-                             CELERY_PERIODIC_STATUS_BACKEND)
+from celery import conf
 from django.utils.translation import ugettext_lazy as _
 from datetime import datetime
 
@@ -76,8 +75,8 @@ class PeriodicTaskMeta(models.Model):
 
 
 # keep models away from syncdb/reset if database backend is not being used.
-if (django.VERSION[0], django.VERSION[1]) >= (1,1):
-    if CELERY_BACKEND != 'database':
+if (django.VERSION[0], django.VERSION[1]) >= (1, 1):
+    if conf.CELERY_BACKEND != 'database':
         TaskMeta._meta.managed = False
-    if CELERY_PERIODIC_STATUS_BACKEND != 'database':
+    if conf.CELERY_PERIODIC_STATUS_BACKEND != 'database':
         PeriodicTaskMeta._meta.managed = False

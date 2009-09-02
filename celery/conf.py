@@ -21,6 +21,9 @@ DEFAULT_TASK_RESULT_EXPIRES = timedelta(days=5)
 DEFAULT_AMQP_CONNECTION_RETRY = True
 DEFAULT_AMQP_CONNECTION_MAX_RETRIES = 100
 DEFAULT_TASK_SERIALIZER = "pickle"
+DEFAULT_BACKEND = "database"
+DEFAULT_PERIODIC_STATUS_BACKEND = "database"
+
 
 """
 .. data:: LOG_LEVELS
@@ -256,3 +259,9 @@ Default is ``pickle``.
 """
 TASK_SERIALIZER = getattr(settings, "CELERY_TASK_SERIALIZER",
                           DEFAULT_TASK_SERIALIZER)
+
+
+CELERY_BACKEND = getattr(settings, "CELERY_BACKEND", DEFAULT_BACKEND)
+CELERY_PERIODIC_STATUS_BACKEND = getattr(settings,
+                                    "CELERY_PERIODIC_STATUS_BACKEND",
+                                    DEFAULT_PERIODIC_STATUS_BACKEND)
