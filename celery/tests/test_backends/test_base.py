@@ -3,6 +3,7 @@ import types
 from celery.backends.base import BaseBackend, KeyValueStoreBackend
 from celery.serialization import find_nearest_pickleable_exception as fnpe
 from celery.serialization import UnpickleableExceptionWrapper
+from celery.serialization import get_pickleable_exception as gpe
 from django.db.models.base import subclass_exception
 
 
@@ -41,6 +42,10 @@ class TestPickleException(unittest.TestCase):
 
     def test_BaseException(self):
         self.assertTrue(fnpe(Exception()) is None)
+
+    def test_get_pickleable_exception(self):
+        exc = Exception("foo")
+        self.assertEquals(gpe(exc), exc)
 
     def test_unpickleable(self):
         self.assertTrue(isinstance(fnpe(Unpickleable()), KeyError))

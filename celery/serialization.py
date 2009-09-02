@@ -103,7 +103,7 @@ def get_pickleable_exception(exc):
                         exc.__class__.__name__,
                         getattr(exc, "args", []))
         return excwrapper
-
+    return exc
 
 def get_pickled_exception(exc):
     """Get original exception from exception pickled using
