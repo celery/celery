@@ -1,15 +1,22 @@
-===================================================
- celery - Distributed Task Queue for Django/Python
-===================================================
+=================================
+ celery - Distributed Task Queue
+=================================
 
 :Version: 0.7.0
 
 Introduction
 ============
 
-**NOTE:** See the FAQ for information about using celery outside of Django.
+Celery is a distributed task queue. It was first created for Django, but
+is now usable from Python. It can also operate with other languages
+via HTTP+JSON. This introduction is written for someone who wants to use
+Celery from within a Django project. For information about using it from
+pure Python see `Can I use Celery without Django?`_, for calling out to other
+languages see `Executing tasks on a remote web server`_.
 
-``celery`` is a distributed task queue framework for Django/Python.
+.. _`Can I use Celery without Django`: http://bit.ly/WPa6n
+
+.. _`Executing tasks on a remote web server`: http://bit.ly/CgXSc
 
 It is used for executing tasks *asynchronously*, routed to one or more
 worker servers, running concurrently using multiprocessing.
@@ -57,8 +64,8 @@ Features
 
     * When a task has been executed, the return value can be stored using
       either a MySQL/Oracle/PostgreSQL/SQLite database, Memcached,
-      or Tokyo Tyrant back-end. For high-performance you can also use
-      AMQP to publish results.
+      `MongoDB`_ or `Tokyo Tyrant`_ back-end. For high-performance you can
+      also use AMQP messages to publish results.
 
     * If the task raises an exception, the exception instance is stored,
       instead of the return value.
@@ -94,6 +101,9 @@ Features
 
     * Can be configured to send e-mails to the administrators when a task
       fails.
+
+.. _`MongoDB`: http://www.mongodb.org/
+.. _`Tokyo Tyrant`: http://tokyocabinet.sourceforge.net/
 
 API Reference Documentation
 ===========================

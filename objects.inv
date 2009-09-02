@@ -126,7 +126,6 @@ celery.task.base.ExecuteRemoteTask class reference/celery.task.base.html
 celery.worker.controllers.BackgroundThread class reference/celery.worker.controllers.html
 celery.worker.WorkController.logger attribute reference/celery.worker.html
 celery.monitoring.StatsCollector.report method reference/celery.monitoring.html
-celery.worker.AMQPListener class reference/celery.worker.html
 celery.loaders.default.Loader class reference/celery.loaders.default.html
 celery.task.base.Task.max_retries attribute reference/celery.task.base.html
 celery.monitoring.StatsCollector.total_tasks_processed attribute reference/celery.monitoring.html
@@ -195,7 +194,7 @@ celery.worker.AMQPListener.start method reference/celery.worker.html
 celery.worker.AMQPListener.close_connection method reference/celery.worker.html
 celery.worker.AMQPListener.receive_message method reference/celery.worker.html
 celery.task.base.Task.type attribute reference/celery.task.base.html
-celery.backends.get_default_periodicstatus_backend_cls function reference/celery.backends.html
+celery.exceptions.RetryTaskError exception reference/celery.exceptions.html
 celery.worker.WorkController.bucket_queue attribute reference/celery.worker.html
 celery.task.base.Task class reference/celery.task.base.html
 TaskMeta.status attribute reference/celery.models.html
@@ -209,6 +208,7 @@ celery.conf.AMQP_PUBLISHER_ROUTING_KEY data reference/celery.conf.html
 celery.backends.cache.Backend class reference/celery.backends.cache.html
 celery.worker.controllers.PeriodicWorkController class reference/celery.worker.controllers.html
 celery.execute.ExecuteWrapper.handle_failure method reference/celery.execute.html
+celery.conf.DEFAULT_PERIODIC_STATUS_BACKEND data reference/celery.conf.html
 celery.supervisor.OFASupervisor.Process.daemon attribute reference/celery.supervisor.html
 celery.conf.DAEMON_CONCURRENCY data reference/celery.conf.html
 celery.registry.TaskRegistry.get_all method reference/celery.registry.html
@@ -238,7 +238,7 @@ celery.result.TaskSetResult.ready method reference/celery.result.html
 celery.backends.get_default_backend_cls data reference/celery.backends.html
 celery.worker.job.TaskWrapper.args attribute reference/celery.worker.job.html
 celery.conf.AMQP_CONSUMER_QUEUES data reference/celery.conf.html
-celery.exceptions.RetryTaskError exception reference/celery.exceptions.html
+celery.backends.get_default_periodicstatus_backend_cls function reference/celery.backends.html
 celery.backends.database.Backend.store_result method reference/celery.backends.database.html
 celery.monitoring.TaskTimerStats class reference/celery.monitoring.html
 PeriodicTaskMeta.task attribute reference/celery.models.html
@@ -361,7 +361,7 @@ celery.conf.AMQP_EXCHANGE data reference/celery.conf.html
 celery.loaders.djangoapp.Loader class reference/celery.loaders.djangoapp.html
 celery.worker.AMQPListener.stop method reference/celery.worker.html
 celery.worker.AMQPListener.logger attribute reference/celery.worker.html
-celery.conf.DEFAULT_TASK_SERIALIZER data reference/celery.conf.html
+celery.worker.AMQPListener class reference/celery.worker.html
 celery.log.LoggingProxy.isatty method reference/celery.log.html
 celery.views.task_status function reference/celery.views.html
 celery.task.builtins.DeleteExpiredTaskMetaTask.run method reference/celery.task.builtins.html

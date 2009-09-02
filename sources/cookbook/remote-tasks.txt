@@ -39,8 +39,8 @@ With this information we can define a simple task in Django:
         response = {"status": "success", "retval": result}
         return HttpResponse(serialize(response), mimetype="application/json")
 
-I'm sure you'll be able to port this scheme to any language and framework,
-new examples and libraries are very welcome.
+I'm sure you'll be able to port this scheme to any language/framework.
+New examples and libraries are very welcome!
 
 To execute the task you use :class:`celery.task.rest.RESTProxyTask`:
 

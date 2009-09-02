@@ -80,8 +80,8 @@ if the execution was successful:</p>
     <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="n">serialize</span><span class="p">(</span><span class="n">response</span><span class="p">),</span> <span class="n">mimetype</span><span class="o">=</span><span class="s">&quot;application/json&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>I&#8217;m sure you&#8217;ll be able to port this scheme to any language and framework,
-new examples and libraries are very welcome.</p>
+<p>I&#8217;m sure you&#8217;ll be able to port this scheme to any language/framework.
+New examples and libraries are very welcome!</p>
 <p>To execute the task you use <tt class="xref docutils literal"><span class="pre">celery.task.rest.RESTProxyTask</span></tt>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">RESTProxyTask</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">res</span> <span class="o">=</span> <span class="n">RESTProxyTask</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="s">&quot;http://example.com/multiply&quot;</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mf">10</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">10</span><span class="p">)</span>
