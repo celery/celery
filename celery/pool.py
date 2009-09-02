@@ -65,11 +65,12 @@ def process_is_dead(process):
     :returns: ``True`` if the process is not running, ``False`` otherwise.
 
     """
-
+    
     # Try to see if the process is actually running,
     # and reap zombie proceses while we're at it.
-
-    if reap_process(process.pid):
+    # Only do this if os.kill exists. It doesn't on windows.
+    
+    if callable(getattr(os, "kill", None)) and reap_process(process.pid):
         return True
 
     # Then try to ping the process using its pipe.
