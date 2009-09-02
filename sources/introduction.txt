@@ -7,14 +7,17 @@
 Introduction
 ============
 
-Celery is a distributed task queue. It was first created for Django, but
-is now usable from Python. It can also operate with other languages
-via HTTP+JSON. This introduction is written for someone who wants to use
+Celery is a distributed task queue.
+
+It was first created for Django, but is now usable from Python.
+It can also operate with other languages via HTTP+JSON.
+
+This introduction is written for someone who wants to use
 Celery from within a Django project. For information about using it from
 pure Python see `Can I use Celery without Django?`_, for calling out to other
 languages see `Executing tasks on a remote web server`_.
 
-.. _`Can I use Celery without Django`: http://bit.ly/WPa6n
+.. _`Can I use Celery without Django?`: http://bit.ly/WPa6n
 
 .. _`Executing tasks on a remote web server`: http://bit.ly/CgXSc
 
