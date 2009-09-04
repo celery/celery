@@ -11,6 +11,34 @@ In a regular Python environment using the default loader you must create
 the ``celeryconfig.py`` module and make sure it is available on the
 Python path.
 
+
+Example configuration file
+==========================
+
+This is an example configuration file to get you started,
+it should contain all you need to run a basic celery set-up.
+
+.. code-block:: python
+
+    CELERY_BACKEND = "database"
+    DATABASE_ENGINE = "sqlite3"
+    DATABASE_NAME = "mydatabase.db"
+
+    AMQP_HOST = "localhost"
+    AMQP_PORT = 5672
+    AMQP_VHOST = "/"
+    AMQP_USER = "guest"
+    AMQP_PASSWORD = "guest"
+
+    ## If you're doing mostly I/O you can have higher concurrency,
+    ## if mostly spending time in the CPU, try to keep it close to the
+    ## number of CPUs on your machine.
+    # CELERYD_CONCURRENCY = 8
+
+    CELERYD_LOG_FILE = "celeryd.log"
+    CELERYD_PID_FILE = "celeryd.pid"
+    CELERYD_DAEMON_LOG_LEVEL = "INFO"
+
 Concurrency settings
 ====================
 
