@@ -50,7 +50,7 @@ def gen_unique_id():
         buffer = ctypes.create_string_buffer(16)
         _uuid_generate_random(buffer)
         return str(UUID(bytes=buffer.raw))
-    return str(uuid.uuid4())
+    return str(uuid4())
 
 
 def mitemgetter(*keys):
