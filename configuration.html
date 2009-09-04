@@ -50,11 +50,12 @@
             
   <div class="section" id="configuration-and-defaults">
 <h1>Configuration and defaults<a class="headerlink" href="#configuration-and-defaults" title="Permalink to this headline">¶</a></h1>
-<p>This document describes the configuration options available.
-If you&#8217;re using celery in a Django project these settings should be defined
-in your projects <tt class="docutils literal"><span class="pre">settings.py</span></tt> file. In a regular Python environment using
-the default loader you must create the <tt class="docutils literal"><span class="pre">celeryconfig.py</span></tt> module and make
-sure it is available on the Python path.</p>
+<p>This document describes the configuration options available.</p>
+<p>If you&#8217;re using celery in a Django project these settings should be defined
+in your projects <tt class="docutils literal"><span class="pre">settings.py</span></tt> file.</p>
+<p>In a regular Python environment using the default loader you must create
+the <tt class="docutils literal"><span class="pre">celeryconfig.py</span></tt> module and make sure it is available on the
+Python path.</p>
 <div class="section" id="concurrency-settings">
 <h2>Concurrency settings<a class="headerlink" href="#concurrency-settings" title="Permalink to this headline">¶</a></h2>
 <ul>
@@ -150,11 +151,11 @@ means executing:</p>
 </pre></div>
 </div>
 </div>
+</div>
 <div class="section" id="cache-backend-settings">
-<h3>Cache backend settings<a class="headerlink" href="#cache-backend-settings" title="Permalink to this headline">¶</a></h3>
+<h2>Cache backend settings<a class="headerlink" href="#cache-backend-settings" title="Permalink to this headline">¶</a></h2>
 <p>Please see the documentation for the Django cache framework settings:
 <a class="reference external" href="http://docs.djangoproject.com/en/dev/topics/cache/#memcached">http://docs.djangoproject.com/en/dev/topics/cache/#memcached</a></p>
-</div>
 <div class="section" id="id1">
 <h3>Example configuration<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
 <p>Using a single memcached server:</p>
@@ -242,51 +243,6 @@ means executing:</p>
 </dl>
 </li>
 </ul>
-</dd>
-</dl>
-</li>
-</ul>
-</div>
-<div class="section" id="logging">
-<h2>Logging<a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h2>
-<ul>
-<li><dl class="first docutils">
-<dt>CELERYD_LOG_FILE</dt>
-<dd><p class="first">The default filename the worker daemon logs messages to, can be
-overridden using the <cite>&#8211;logfile`</cite> option to <tt class="docutils literal"><span class="pre">celeryd</span></tt>.</p>
-<p class="last">The default is to log using <tt class="docutils literal"><span class="pre">stderr</span></tt> if running in the foreground,
-when running in the background, detached as a daemon, the default
-logfile is <tt class="docutils literal"><span class="pre">celeryd.log</span></tt>.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt>CELERYD_DAEMON_LOG_LEVEL</dt>
-<dd><p class="first">Worker log level, can be any of <tt class="docutils literal"><span class="pre">DEBUG</span></tt>, <tt class="docutils literal"><span class="pre">INFO</span></tt>, <tt class="docutils literal"><span class="pre">WARNING</span></tt>,
-<tt class="docutils literal"><span class="pre">ERROR</span></tt>, <tt class="docutils literal"><span class="pre">CRITICAL</span></tt>, or <tt class="docutils literal"><span class="pre">FATAL</span></tt>.</p>
-<p class="last">See the <tt class="xref docutils literal"><span class="pre">logging</span></tt> module for more information.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt>CELERYD_DAEMON_LOG_FORMAT</dt>
-<dd><p class="first">The format to use for log messages. Can be overridden using
-the <tt class="docutils literal"><span class="pre">--loglevel</span></tt> option to <tt class="docutils literal"><span class="pre">celeryd</span></tt>.</p>
-<p>Default is <tt class="docutils literal"><span class="pre">[%(asctime)s:</span> <span class="pre">%(levelname)s/%(processName)s]</span> <span class="pre">%(message)s</span></tt></p>
-<p class="last">See the Python <tt class="xref docutils literal"><span class="pre">logging</span></tt> module for more information about log
-formats.</p>
-</dd>
-</dl>
-</li>
-</ul>
-</div>
-<div class="section" id="process-settings">
-<h2>Process settings<a class="headerlink" href="#process-settings" title="Permalink to this headline">¶</a></h2>
-<ul>
-<li><dl class="first docutils">
-<dt>CELERYD_PID_FILE</dt>
-<dd><p class="first last">Full path to the daemon pid file. Default is <tt class="docutils literal"><span class="pre">celeryd.pid</span></tt>.
-Can be overridden using the <tt class="docutils literal"><span class="pre">--pidfile</span></tt> option to <tt class="docutils literal"><span class="pre">celeryd</span></tt>.</p>
 </dd>
 </dl>
 </li>
@@ -403,6 +359,51 @@ been registered with <tt class="xref docutils literal"><span class="pre">carrot.
 </li>
 </ul>
 </div>
+<div class="section" id="logging-settings">
+<h2>Logging settings<a class="headerlink" href="#logging-settings" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><dl class="first docutils">
+<dt>CELERYD_LOG_FILE</dt>
+<dd><p class="first">The default filename the worker daemon logs messages to, can be
+overridden using the <cite>&#8211;logfile`</cite> option to <tt class="docutils literal"><span class="pre">celeryd</span></tt>.</p>
+<p class="last">The default is to log using <tt class="docutils literal"><span class="pre">stderr</span></tt> if running in the foreground,
+when running in the background, detached as a daemon, the default
+logfile is <tt class="docutils literal"><span class="pre">celeryd.log</span></tt>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>CELERYD_DAEMON_LOG_LEVEL</dt>
+<dd><p class="first">Worker log level, can be any of <tt class="docutils literal"><span class="pre">DEBUG</span></tt>, <tt class="docutils literal"><span class="pre">INFO</span></tt>, <tt class="docutils literal"><span class="pre">WARNING</span></tt>,
+<tt class="docutils literal"><span class="pre">ERROR</span></tt>, <tt class="docutils literal"><span class="pre">CRITICAL</span></tt>, or <tt class="docutils literal"><span class="pre">FATAL</span></tt>.</p>
+<p class="last">See the <tt class="xref docutils literal"><span class="pre">logging</span></tt> module for more information.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>CELERYD_DAEMON_LOG_FORMAT</dt>
+<dd><p class="first">The format to use for log messages. Can be overridden using
+the <tt class="docutils literal"><span class="pre">--loglevel</span></tt> option to <tt class="docutils literal"><span class="pre">celeryd</span></tt>.</p>
+<p>Default is <tt class="docutils literal"><span class="pre">[%(asctime)s:</span> <span class="pre">%(levelname)s/%(processName)s]</span> <span class="pre">%(message)s</span></tt></p>
+<p class="last">See the Python <tt class="xref docutils literal"><span class="pre">logging</span></tt> module for more information about log
+formats.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div>
+<div class="section" id="process-settings">
+<h2>Process settings<a class="headerlink" href="#process-settings" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><dl class="first docutils">
+<dt>CELERYD_PID_FILE</dt>
+<dd><p class="first last">Full path to the daemon pid file. Default is <tt class="docutils literal"><span class="pre">celeryd.pid</span></tt>.
+Can be overridden using the <tt class="docutils literal"><span class="pre">--pidfile</span></tt> option to <tt class="docutils literal"><span class="pre">celeryd</span></tt>.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div>
 </div>
 
 
@@ -418,7 +419,9 @@ been registered with <tt class="xref docutils literal"><span class="pre">carrot.
 <li><a class="reference external" href="#task-result-backend-settings">Task result backend settings</a></li>
 <li><a class="reference external" href="#database-backend-settings">Database backend settings</a><ul>
 <li><a class="reference external" href="#example-configuration">Example configuration</a></li>
-<li><a class="reference external" href="#cache-backend-settings">Cache backend settings</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#cache-backend-settings">Cache backend settings</a><ul>
 <li><a class="reference external" href="#id1">Example configuration</a></li>
 </ul>
 </li>
@@ -427,10 +430,10 @@ been registered with <tt class="xref docutils literal"><span class="pre">carrot.
 </ul>
 </li>
 <li><a class="reference external" href="#mongodb-backend-settings">MongoDB backend settings</a></li>
-<li><a class="reference external" href="#logging">Logging</a></li>
-<li><a class="reference external" href="#process-settings">Process settings</a></li>
 <li><a class="reference external" href="#broker-settings">Broker settings</a></li>
 <li><a class="reference external" href="#task-execution-settings">Task execution settings</a></li>
+<li><a class="reference external" href="#logging-settings">Logging settings</a></li>
+<li><a class="reference external" href="#process-settings">Process settings</a></li>
 </ul>
 </li>
 </ul>
