@@ -1,0 +1,489 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Configuration and defaults &mdash; Celery v0.7.0 (unstable) documentation</title>
+    <link rel="stylesheet" href="static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.7.0 (unstable)',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="static/jquery.js"></script>
+    <script type="text/javascript" src="static/doctools.js"></script>
+    <link rel="top" title="Celery v0.7.0 (unstable) documentation" href="index.html" />
+    <link rel="next" title="Cookbook" href="cookbook/index.html" />
+    <link rel="prev" title="celery - Distributed Task Queue" href="introduction.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="cookbook/index.html" title="Cookbook"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="introduction.html" title="celery - Distributed Task Queue"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Celery v0.7.0 (unstable) documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="configuration-and-defaults">
+<h1>Configuration and defaults<a class="headerlink" href="#configuration-and-defaults" title="Permalink to this headline">¶</a></h1>
+<p>This document describes the configuration options available.
+If you&#8217;re using celery in a Django project these settings should be defined
+in your projects <tt class="docutils literal"><span class="pre">settings.py</span></tt> file. In a regular Python environment using
+the default loader you must create the <tt class="docutils literal"><span class="pre">celeryconfig.py</span></tt> module and make
+sure it is available on the Python path.</p>
+<div class="section" id="concurrency-settings">
+<h2>Concurrency settings<a class="headerlink" href="#concurrency-settings" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><dl class="first docutils">
+<dt>CELERYD_CONCURRENCY</dt>
+<dd><p class="first">The number of concurrent worker processes, executing tasks simultaneously.</p>
+<p class="last">Defaults to the number of CPUs in the system.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div>
+<div class="section" id="task-result-backend-settings">
+<h2>Task result backend settings<a class="headerlink" href="#task-result-backend-settings" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><dl class="first docutils">
+<dt>CELERY_BACKEND</dt>
+<dd><p class="first">The backend used to store task results (tombstones).
+Can be one of the following:</p>
+<ul class="last">
+<li><dl class="first docutils">
+<dt>database (default)</dt>
+<dd><p class="first last">Use a relational database supported by the Django ORM.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>cache</dt>
+<dd><p class="first last">Use memcached to store the results.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>mongodb</dt>
+<dd><p class="first last">Use MongoDB to store the results.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>tyrant</dt>
+<dd><p class="first last">Use Tokyo Tyrant to store the results.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>CELERY_PERIODIC_STATUS_BACKEND</dt>
+<dd><p class="first">The backend used to store the status of periodic tasks.
+Can be one of the following:</p>
+<ul class="last">
+<li><dl class="first docutils">
+<dt>database (default)</dt>
+<dd><p class="first last">Use a relational database supported by the Django ORM.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>mongodb</dt>
+<dd><p class="first last">Use MongoDB.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</div>
+<div class="section" id="database-backend-settings">
+<h2>Database backend settings<a class="headerlink" href="#database-backend-settings" title="Permalink to this headline">¶</a></h2>
+<p>This applies to both the result store backend and the periodic status
+backend.</p>
+<p>Please see the Django ORM database settings documentation:
+<a class="reference external" href="http://docs.djangoproject.com/en/dev/ref/settings/#database-engine">http://docs.djangoproject.com/en/dev/ref/settings/#database-engine</a></p>
+<p>If you use this backend make sure to initialize the database tables
+after configuration. When using celery with a Django project this
+means executing:</p>
+<div class="highlight-python"><pre>$ python manage.py syncdb</pre>
+</div>
+<p>When using celery in a regular Python environment you have to execute:</p>
+<div class="highlight-python"><pre>$ celeryinit</pre>
+</div>
+<div class="section" id="example-configuration">
+<h3>Example configuration<a class="headerlink" href="#example-configuration" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">DATABASE_ENGINE</span><span class="o">=</span><span class="s">&quot;mysql&quot;</span>
+<span class="n">DATABASE_USER</span><span class="o">=</span><span class="s">&quot;myusername&quot;</span>
+<span class="n">DATABASE_PASSWORD</span><span class="o">=</span><span class="s">&quot;mypassword&quot;</span>
+<span class="n">DATABASE_NAME</span><span class="o">=</span><span class="s">&quot;mydatabase&quot;</span>
+<span class="n">DATABASE_HOST</span><span class="o">=</span><span class="s">&quot;localhost&quot;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="cache-backend-settings">
+<h3>Cache backend settings<a class="headerlink" href="#cache-backend-settings" title="Permalink to this headline">¶</a></h3>
+<p>Please see the documentation for the Django cache framework settings:
+<a class="reference external" href="http://docs.djangoproject.com/en/dev/topics/cache/#memcached">http://docs.djangoproject.com/en/dev/topics/cache/#memcached</a></p>
+</div>
+<div class="section" id="id1">
+<h3>Example configuration<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<p>Using a single memcached server:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">CACHE_BACKEND</span> <span class="o">=</span> <span class="s">&#39;memcached://127.0.0.1:11211/&#39;</span>
+</pre></div>
+</div>
+<p>Using multiple memcached servers:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">CACHE_BACKEND</span> <span class="o">=</span> <span class="s">&#39;memcached://172.19.26.240:11211;172.19.26.242:11211/&#39;</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="tokyo-tyrant-backend-settings">
+<h2>Tokyo Tyrant backend settings<a class="headerlink" href="#tokyo-tyrant-backend-settings" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt><strong>NOTE</strong> The Tokyo Tyrant backend requires the <tt class="xref docutils literal"><span class="pre">pytyrant</span></tt> library:</dt>
+<dd><a class="reference external" href="http://pypi.python.org/pypi/pytyrant/">http://pypi.python.org/pypi/pytyrant/</a></dd>
+</dl>
+<p>This backend requires the following configuration variables to be set:</p>
+<ul>
+<li><dl class="first docutils">
+<dt>TT_HOST</dt>
+<dd><p class="first last">Hostname of the Tokyo Tyrant server.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>TT_PORT</dt>
+<dd><p class="first last">The port the Tokyo Tyrant server is listening to.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<div class="section" id="id2">
+<h3>Example configuration<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">TT_HOST</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>
+<span class="n">TT_PORT</span> <span class="o">=</span> <span class="mf">1978</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="mongodb-backend-settings">
+<h2>MongoDB backend settings<a class="headerlink" href="#mongodb-backend-settings" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><dl class="first docutils">
+<dt>CELERY_MONGODB_BACKEND_SETTINGS</dt>
+<dd><p class="first">This is a dict supporting the following keys</p>
+<ul class="last">
+<li><dl class="first docutils">
+<dt>host</dt>
+<dd><p class="first last">Hostname of the MongoDB server.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>port</dt>
+<dd><p class="first last">The port the MongoDB server is listening to.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>user</dt>
+<dd><p class="first last">Username to authenticate to the MongoDB server as.</p>
+</dd>
+</dl>
+</li>
+<li><p class="first">password</p>
+</li>
+<li><dl class="first docutils">
+<dt>database</dt>
+<dd><p class="first last">The database name to connect to.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>taskmeta_collection</dt>
+<dd><p class="first last">FIXME</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>periodictaskmeta_collection</dt>
+<dd><p class="first last">FIXME</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</div>
+<div class="section" id="logging">
+<h2>Logging<a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><dl class="first docutils">
+<dt>CELERYD_LOG_FILE</dt>
+<dd><p class="first">The default filename the worker daemon logs messages to, can be
+overridden using the <cite>&#8211;logfile`</cite> option to <tt class="docutils literal"><span class="pre">celeryd</span></tt>.</p>
+<p class="last">The default is to log using <tt class="docutils literal"><span class="pre">stderr</span></tt> if running in the foreground,
+when running in the background, detached as a daemon, the default
+logfile is <tt class="docutils literal"><span class="pre">celeryd.log</span></tt>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>CELERYD_DAEMON_LOG_LEVEL</dt>
+<dd><p class="first">Worker log level, can be any of <tt class="docutils literal"><span class="pre">DEBUG</span></tt>, <tt class="docutils literal"><span class="pre">INFO</span></tt>, <tt class="docutils literal"><span class="pre">WARNING</span></tt>,
+<tt class="docutils literal"><span class="pre">ERROR</span></tt>, <tt class="docutils literal"><span class="pre">CRITICAL</span></tt>, or <tt class="docutils literal"><span class="pre">FATAL</span></tt>.</p>
+<p class="last">See the <tt class="xref docutils literal"><span class="pre">logging</span></tt> module for more information.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>CELERYD_DAEMON_LOG_FORMAT</dt>
+<dd><p class="first">The format to use for log messages. Can be overridden using
+the <tt class="docutils literal"><span class="pre">--loglevel</span></tt> option to <tt class="docutils literal"><span class="pre">celeryd</span></tt>.</p>
+<p>Default is <tt class="docutils literal"><span class="pre">[%(asctime)s:</span> <span class="pre">%(levelname)s/%(processName)s]</span> <span class="pre">%(message)s</span></tt></p>
+<p class="last">See the Python <tt class="xref docutils literal"><span class="pre">logging</span></tt> module for more information about log
+formats.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div>
+<div class="section" id="process-settings">
+<h2>Process settings<a class="headerlink" href="#process-settings" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><dl class="first docutils">
+<dt>CELERYD_PID_FILE</dt>
+<dd><p class="first last">Full path to the daemon pid file. Default is <tt class="docutils literal"><span class="pre">celeryd.pid</span></tt>.
+Can be overridden using the <tt class="docutils literal"><span class="pre">--pidfile</span></tt> option to <tt class="docutils literal"><span class="pre">celeryd</span></tt>.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div>
+<div class="section" id="broker-settings">
+<h2>Broker settings<a class="headerlink" href="#broker-settings" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><p class="first">CELERY_AMQP_EXCHANGE</p>
+<blockquote>
+<p>Name of the AMQP exchange.</p>
+</blockquote>
+</li>
+<li><dl class="first docutils">
+<dt>CELERY_AMQP_EXCHANGE_TYPE</dt>
+<dd><p class="first last">The type of exchange. If the exchange type is <tt class="docutils literal"><span class="pre">direct</span></tt>, all messages
+receives all tasks. However, if the exchange type is <tt class="docutils literal"><span class="pre">topic</span></tt>, you can
+route e.g. some tasks to one server, and others to the rest.
+See <a class="reference external" href="http://bit.ly/wpamqpexchanges">Exchange types and the effect of bindings</a>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>CELERY_AMQP_PUBLISHER_ROUTING_KEY</dt>
+<dd><p class="first last">The default AMQP routing key used when publishing tasks.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>CELERY_AMQP_CONSUMER_ROUTING_KEY</dt>
+<dd><p class="first last">The AMQP routing key used when consuming tasks.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>CELERY_AMQP_CONSUMER_QUEUE</dt>
+<dd><p class="first last">The name of the AMQP queue.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>CELERY_AMQP_CONSUMER_QUEUES</dt>
+<dd><p class="first last">Dictionary defining multiple AMQP queues.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>CELERY_AMQP_CONNECTION_TIMEOUT</dt>
+<dd><p class="first last">The timeout in seconds before we give up establishing a connection
+to the AMQP server. Default is 4 seconds.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>CELERY_AMQP_CONNECTION_RETRY</dt>
+<dd><p class="first">Automatically try to re-establish the connection to the AMQP broker if
+it&#8217;s lost.</p>
+<p>The time between retries is increased for each retry, and is
+not exhausted before <tt class="docutils literal"><span class="pre">CELERY_AMQP_CONNECTION_MAX_RETRIES</span></tt> is exceeded.</p>
+<p class="last">This behaviour is on by default.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>CELERY_AMQP_CONNECTION_MAX_RETRIES</dt>
+<dd><p class="first">Maximum number of retries before we give up re-establishing a connection
+to the AMQP broker.</p>
+<p>If this is set to <tt class="docutils literal"><span class="pre">0</span></tt> or <tt class="xref docutils literal"><span class="pre">None</span></tt>, we will retry forever.</p>
+<p class="last">Default is 100 retries.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div>
+<div class="section" id="task-execution-settings">
+<h2>Task execution settings<a class="headerlink" href="#task-execution-settings" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><dl class="first docutils">
+<dt>SEND_CELERY_TASK_ERROR_EMAILS</dt>
+<dd><p class="first last">If set to <tt class="xref docutils literal"><span class="pre">True</span></tt>, errors in tasks will be sent to admins by e-mail.
+If unset, it will send the e-mails if <tt class="docutils literal"><span class="pre">settings.DEBUG</span></tt> is False.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>CELERY_ALWAYS_EAGER</dt>
+<dd><p class="first">If this is <tt class="xref docutils literal"><span class="pre">True</span></tt>, all tasks will be executed locally by blocking
+until it is finished. <tt class="docutils literal"><span class="pre">apply_async</span></tt> and <tt class="docutils literal"><span class="pre">delay_task</span></tt> will return
+a <a title="celery.result.EagerResult" class="reference external" href="reference/celery.result.html#celery.result.EagerResult"><tt class="xref docutils literal"><span class="pre">celery.result.EagerResult</span></tt></a> which emulates the behaviour of
+an <a title="celery.result.AsyncResult" class="reference external" href="reference/celery.result.html#celery.result.AsyncResult"><tt class="xref docutils literal"><span class="pre">celery.result.AsyncResult</span></tt></a>.</p>
+<p class="last">Tasks will never be sent to the queue, but executed locally
+instead.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>CELERY_TASK_RESULT_EXPIRES</dt>
+<dd><p class="first">Time (in seconds, or a <tt class="xref docutils literal"><span class="pre">datetime.timedelta</span></tt> object) for when after
+stored task tombstones are deleted.</p>
+<p class="last"><strong>NOTE</strong>: For the moment this only works for the database and MongoDB
+backends.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>CELERY_TASK_SERIALIZER</dt>
+<dd><p class="first">A string identifying the default serialization
+method to use. Can be <tt class="docutils literal"><span class="pre">pickle</span></tt> (default),
+<tt class="docutils literal"><span class="pre">json</span></tt>, <tt class="docutils literal"><span class="pre">yaml</span></tt>, or any custom serialization methods that have
+been registered with <tt class="xref docutils literal"><span class="pre">carrot.serialization.registry</span></tt>.</p>
+<p class="last">Default is <tt class="docutils literal"><span class="pre">pickle</span></tt>.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="">Configuration and defaults</a><ul>
+<li><a class="reference external" href="#concurrency-settings">Concurrency settings</a></li>
+<li><a class="reference external" href="#task-result-backend-settings">Task result backend settings</a></li>
+<li><a class="reference external" href="#database-backend-settings">Database backend settings</a><ul>
+<li><a class="reference external" href="#example-configuration">Example configuration</a></li>
+<li><a class="reference external" href="#cache-backend-settings">Cache backend settings</a></li>
+<li><a class="reference external" href="#id1">Example configuration</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#tokyo-tyrant-backend-settings">Tokyo Tyrant backend settings</a><ul>
+<li><a class="reference external" href="#id2">Example configuration</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#mongodb-backend-settings">MongoDB backend settings</a></li>
+<li><a class="reference external" href="#logging">Logging</a></li>
+<li><a class="reference external" href="#process-settings">Process settings</a></li>
+<li><a class="reference external" href="#broker-settings">Broker settings</a></li>
+<li><a class="reference external" href="#task-execution-settings">Task execution settings</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="introduction.html"
+                                  title="previous chapter">celery - Distributed Task Queue</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="cookbook/index.html"
+                                  title="next chapter">Cookbook</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="sources/configuration.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="cookbook/index.html" title="Cookbook"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="introduction.html" title="celery - Distributed Task Queue"
+             >previous</a> |</li>
+        <li><a href="index.html">Celery v0.7.0 (unstable) documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.3.
+    </div>
+  </body>
+</html>
