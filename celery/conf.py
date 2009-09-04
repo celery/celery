@@ -15,7 +15,6 @@ DEFAULT_DAEMON_LOG_LEVEL = "INFO"
 DEFAULT_DAEMON_LOG_FILE = "celeryd.log"
 DEFAULT_AMQP_CONNECTION_TIMEOUT = 4
 DEFAULT_STATISTICS = False
-DEFAULT_STATISTICS_COLLECT_INTERVAL = 60 * 5
 DEFAULT_ALWAYS_EAGER = False
 DEFAULT_TASK_RESULT_EXPIRES = timedelta(days=5)
 DEFAULT_AMQP_CONNECTION_RETRY = True
@@ -173,23 +172,9 @@ SEND_CELERY_TASK_ERROR_EMAILS = getattr(settings,
                                         not settings.DEBUG)
 
 """
-.. data:: STATISTICS_COLLECT_INTERVAL
-
-    The interval in seconds of which the
-    :class:`celery.task.CollectStatisticsTask`` is run.
-
-"""
-STATISTICS_COLLECT_INTERVAL = getattr(settings,
-                                "CELERY_STATISTICS_COLLECT_INTERVAL",
-                                DEFAULT_STATISTICS_COLLECT_INTERVAL)
-
-"""
 .. data:: ALWAYS_EAGER
 
-    If this is ``True``, all tasks will be executed locally by blocking
-    until it is finished. ``apply_async`` and ``delay_task`` will return
-    a :class:`celery.result.EagerResult` which emulates the behaviour of
-    an :class:`celery.result.AsyncResult`.
+    Always execute tasks locally, don't send to the queue.
 
 """
 ALWAYS_EAGER = getattr(settings, "CELERY_ALWAYS_EAGER",
@@ -198,9 +183,8 @@ ALWAYS_EAGER = getattr(settings, "CELERY_ALWAYS_EAGER",
 """
 .. data: TASK_RESULT_EXPIRES
 
-    Time (in seconds, or a :class:`datetime.timedelta` object) for when after
-    stored task results are deleted. For the moment this only works for the
-    database backend.
+    Task tombstone expire time in seconds.
+
 """
 TASK_RESULT_EXPIRES = getattr(settings, "CELERY_TASK_RESULT_EXPIRES",
                               DEFAULT_TASK_RESULT_EXPIRES)
@@ -213,13 +197,10 @@ if isinstance(TASK_RESULT_EXPIRES, int):
 .. data:: AMQP_CONNECTION_RETRY
 
 Automatically try to re-establish the connection to the AMQP broker if
-it's lost. The time between retries is increased for each retry, and is
-not exhausted before :data:`AMQP_CONNECTION_MAX_RETRIES` is exceeded.
-
-On by default.
+it's lost.
 
 """
-AMQP_CONNECTION_RETRY = getattr(settings, "AMQP_CONNECTION_RETRY",
+AMQP_CONNECTION_RETRY = getattr(settings, "CELERY_AMQP_CONNECTION_RETRY",
                                 DEFAULT_AMQP_CONNECTION_RETRY)
 
 """
@@ -234,7 +215,7 @@ Default is ``100`` retries.
 
 """
 AMQP_CONNECTION_MAX_RETRIES = getattr(settings,
-                                      "AMQP_CONNECTION_MAX_RETRIES",
+                                      "CELERY_AMQP_CONNECTION_MAX_RETRIES",
                                       DEFAULT_AMQP_CONNECTION_MAX_RETRIES)
 
 """
@@ -252,7 +233,23 @@ TASK_SERIALIZER = getattr(settings, "CELERY_TASK_SERIALIZER",
                           DEFAULT_TASK_SERIALIZER)
 
 
+"""
+
+.. data:: CELERY_BACKEND
+
+The backend used to store task results (tombstones).
+
+"""
 CELERY_BACKEND = getattr(settings, "CELERY_BACKEND", DEFAULT_BACKEND)
+
+
+"""
+
+.. data:: CELERY_PERIODIC_STATUS_BACKEND
+
+The backend used to store the status of periodic tasks.
+
+"""
 CELERY_PERIODIC_STATUS_BACKEND = getattr(settings,
                                     "CELERY_PERIODIC_STATUS_BACKEND",
                                     DEFAULT_PERIODIC_STATUS_BACKEND)
