@@ -12,6 +12,7 @@ Contents:
     :maxdepth: 2
 
     introduction
+    configuration
     cookbook/index
     tutorials/index
     faq
