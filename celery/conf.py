@@ -45,7 +45,6 @@ LOG_LEVELS = {
 .. data:: LOG_FORMAT
 
     The format to use for log messages.
-    Default is ``[%(asctime)s: %(levelname)s/%(processName)s] %(message)s``
 
 """
 LOG_FORMAT = getattr(settings, "CELERYD_DAEMON_LOG_FORMAT",
@@ -54,7 +53,7 @@ LOG_FORMAT = getattr(settings, "CELERYD_DAEMON_LOG_FORMAT",
 """
 .. data:: DAEMON_LOG_FILE
 
-    The path to the deamon log file (if not set, ``stderr`` is used).
+    Filename of the daemon log file.
 
 """
 DAEMON_LOG_FILE = getattr(settings, "CELERYD_LOG_FILE",
@@ -63,9 +62,6 @@ DAEMON_LOG_FILE = getattr(settings, "CELERYD_LOG_FILE",
 """
 .. data:: DAEMON_LOG_LEVEL
 
-    Celery daemon log level, can be any of ``DEBUG``, ``INFO``, ``WARNING``,
-    ``ERROR``, ``CRITICAL``, or ``FATAL``. See the :mod:`logging` module
-    for more information.
 
 """
 DAEMON_LOG_LEVEL = LOG_LEVELS[getattr(settings, "CELERYD_DAEMON_LOG_LEVEL",
@@ -83,7 +79,7 @@ DAEMON_PID_FILE = getattr(settings, "CELERYD_PID_FILE",
 """
 .. data:: DAEMON_CONCURRENCY
 
-    The number of concurrent worker processes, executing tasks simultaneously.
+    The number of concurrent worker processes.
 
 """
 DAEMON_CONCURRENCY = getattr(settings, "CELERYD_CONCURRENCY",
@@ -102,12 +98,7 @@ AMQP_EXCHANGE = getattr(settings, "CELERY_AMQP_EXCHANGE",
 """
 .. data:: AMQP_EXCHANGE_TYPE
 
-The type of exchange. If the exchange type is ``direct``, all messages
-receives all tasks. However, if the exchange type is ``topic``, you can
-route e.g. some tasks to one server, and others to the rest.
-See `Exchange types and the effect of bindings`_.
-
-.. _`Exchange types and the effect of bindings`: http://bit.ly/wpamqpexchanges
+The exchange type.
 
 """
 AMQP_EXCHANGE_TYPE = getattr(settings, "CELERY_AMQP_EXCHANGE_TYPE",
