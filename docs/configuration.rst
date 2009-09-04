@@ -3,10 +3,13 @@
 ============================
 
 This document describes the configuration options available.
+
 If you're using celery in a Django project these settings should be defined
-in your projects ``settings.py`` file. In a regular Python environment using
-the default loader you must create the ``celeryconfig.py`` module and make
-sure it is available on the Python path.
+in your projects ``settings.py`` file.
+
+In a regular Python environment using the default loader you must create
+the ``celeryconfig.py`` module and make sure it is available on the
+Python path.
 
 Concurrency settings
 ====================
@@ -78,7 +81,7 @@ Example configuration
     DATABASE_HOST="localhost"
 
 Cache backend settings
-----------------------
+======================
 
 Please see the documentation for the Django cache framework settings:
 http://docs.djangoproject.com/en/dev/topics/cache/#memcached
@@ -149,39 +152,6 @@ MongoDB backend settings
 
     * periodictaskmeta_collection
         FIXME
-
-Logging
-=======
-
-* CELERYD_LOG_FILE
-    The default filename the worker daemon logs messages to, can be
-    overridden using the `--logfile`` option to ``celeryd``.
-    
-    The default is to log using ``stderr`` if running in the foreground,
-    when running in the background, detached as a daemon, the default
-    logfile is ``celeryd.log``.
-
-* CELERYD_DAEMON_LOG_LEVEL
-    Worker log level, can be any of ``DEBUG``, ``INFO``, ``WARNING``,
-    ``ERROR``, ``CRITICAL``, or ``FATAL``.
-    
-    See the :mod:`logging` module for more information.
-
-* CELERYD_DAEMON_LOG_FORMAT
-    The format to use for log messages. Can be overridden using
-    the ``--loglevel`` option to ``celeryd``.
-
-    Default is ``[%(asctime)s: %(levelname)s/%(processName)s] %(message)s``
-
-    See the Python :mod:`logging` module for more information about log
-    formats.
-
-Process settings
-================
-
-* CELERYD_PID_FILE
-    Full path to the daemon pid file. Default is ``celeryd.pid``.
-    Can be overridden using the ``--pidfile`` option to ``celeryd``.
 
 Broker settings
 ===============
@@ -262,4 +232,37 @@ Task execution settings
     been registered with :mod:`carrot.serialization.registry`.
     
     Default is ``pickle``.
+
+Logging settings
+================
+
+* CELERYD_LOG_FILE
+    The default filename the worker daemon logs messages to, can be
+    overridden using the `--logfile`` option to ``celeryd``.
+    
+    The default is to log using ``stderr`` if running in the foreground,
+    when running in the background, detached as a daemon, the default
+    logfile is ``celeryd.log``.
+
+* CELERYD_DAEMON_LOG_LEVEL
+    Worker log level, can be any of ``DEBUG``, ``INFO``, ``WARNING``,
+    ``ERROR``, ``CRITICAL``, or ``FATAL``.
+    
+    See the :mod:`logging` module for more information.
+
+* CELERYD_DAEMON_LOG_FORMAT
+    The format to use for log messages. Can be overridden using
+    the ``--loglevel`` option to ``celeryd``.
+
+    Default is ``[%(asctime)s: %(levelname)s/%(processName)s] %(message)s``
+
+    See the Python :mod:`logging` module for more information about log
+    formats.
+
+Process settings
+================
+
+* CELERYD_PID_FILE
+    Full path to the daemon pid file. Default is ``celeryd.pid``.
+    Can be overridden using the ``--pidfile`` option to ``celeryd``.
 
