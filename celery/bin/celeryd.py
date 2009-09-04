@@ -80,7 +80,12 @@ from celery import conf
 from celery import discovery
 from celery.task import discard_all
 from celery.worker import WorkController
-from signal import signal, SIGHUP
+from signal import signal
+# SIGHUP is only available on POSIX systems
+try:
+    from signal import SIGHUP
+except ImportError:
+    SIGHUP = None
 import multiprocessing
 import traceback
 import optparse
@@ -266,8 +271,10 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
                                 logfile=logfile,
                                 is_detached=detach)
 
-        # Install signal handler that restarts celeryd on SIGHUP
-        install_restart_signal_handler(worker)
+        # Install signal handler that restarts celeryd on SIGHUP,
+        # if SIGHUP is imported, which means we are on a POSIX system
+        if SIGHUP != None:
+            install_restart_signal_handler(worker)
 
         try:
             worker.start()

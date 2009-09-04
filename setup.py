@@ -42,8 +42,16 @@ class RunTests(Command):
 
 install_requires = ["django-unittest-depth",
                     "anyjson",
-                    "carrot>=0.5.2",
-                    "python-daemon"]
+                    "carrot>=0.5.2"]
+
+# python-daemon doesn't run on windows, so check current platform
+if sys.platform == "win32":
+    print
+    print "I see you are using windows. You will not be able to run celery in daemon mode with the --detach parameter."
+    print
+else:
+    install_requires.append("python-daemon")
+
 py_version_info = sys.version_info
 py_major_version = py_version_info[0]
 py_minor_version = py_version_info[1]
