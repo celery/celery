@@ -55,8 +55,7 @@
 <p>Worker Controller Threads</p>
 <dl class="class">
 <dt id="celery.worker.controllers.BackgroundThread">
-<em class="property">
-class </em><tt class="descclassname">celery.worker.controllers.</tt><tt class="descname">BackgroundThread</tt><a class="headerlink" href="#celery.worker.controllers.BackgroundThread" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.worker.controllers.</tt><tt class="descname">BackgroundThread</tt><a class="headerlink" href="#celery.worker.controllers.BackgroundThread" title="Permalink to this definition">¶</a></dt>
 <dd><p>Thread running an infinite loop which for every iteration
 calls its <a title="celery.worker.controllers.BackgroundThread.on_iteration" class="reference internal" href="#celery.worker.controllers.BackgroundThread.on_iteration"><tt class="xref docutils literal"><span class="pre">on_iteration()</span></tt></a> method.</p>
 <p>This also implements graceful shutdown of the thread by providing
@@ -94,8 +93,7 @@ loop.</dd></dl>
 
 <dl class="class">
 <dt id="celery.worker.controllers.Mediator">
-<em class="property">
-class </em><tt class="descclassname">celery.worker.controllers.</tt><tt class="descname">Mediator</tt><big>(</big><em>bucket_queue</em>, <em>callback</em><big>)</big><a class="headerlink" href="#celery.worker.controllers.Mediator" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.worker.controllers.</tt><tt class="descname">Mediator</tt><big>(</big><em>bucket_queue</em>, <em>callback</em><big>)</big><a class="headerlink" href="#celery.worker.controllers.Mediator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Thread continuously sending tasks in the queue to the pool.</p>
 <dl class="attribute">
 <dt id="celery.worker.controllers.Mediator.bucket_queue">
@@ -112,8 +110,7 @@ class </em><tt class="descclassname">celery.worker.controllers.</tt><tt class="d
 
 <dl class="class">
 <dt id="celery.worker.controllers.PeriodicWorkController">
-<em class="property">
-class </em><tt class="descclassname">celery.worker.controllers.</tt><tt class="descname">PeriodicWorkController</tt><big>(</big><em>bucket_queue</em>, <em>hold_queue</em><big>)</big><a class="headerlink" href="#celery.worker.controllers.PeriodicWorkController" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.worker.controllers.</tt><tt class="descname">PeriodicWorkController</tt><big>(</big><em>bucket_queue</em>, <em>hold_queue</em><big>)</big><a class="headerlink" href="#celery.worker.controllers.PeriodicWorkController" title="Permalink to this definition">¶</a></dt>
 <dd><p>A thread that continuously checks if there are
 <tt class="xref docutils literal"><span class="pre">celery.task.PeriodicTask</span></tt> tasks waiting for execution,
 and executes them. It also finds tasks in the hold queue that is
@@ -190,7 +187,7 @@ them to the <tt class="xref docutils literal"><span class="pre">bucket_queue</sp
     </div>
     <div class="footer">
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.2.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.3.
     </div>
   </body>
 </html>

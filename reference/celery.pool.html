@@ -55,8 +55,7 @@
 <p>Process Pools.</p>
 <dl class="class">
 <dt id="celery.pool.DynamicPool">
-<em class="property">
-class </em><tt class="descclassname">celery.pool.</tt><tt class="descname">DynamicPool</tt><big>(</big><em>processes=None</em>, <em>initializer=None</em>, <em>initargs=()</em><big>)</big><a class="headerlink" href="#celery.pool.DynamicPool" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.pool.</tt><tt class="descname">DynamicPool</tt><big>(</big><em>processes=None</em>, <em>initializer=None</em>, <em>initargs=()</em><big>)</big><a class="headerlink" href="#celery.pool.DynamicPool" title="Permalink to this definition">¶</a></dt>
 <dd><p>Version of <tt class="xref docutils literal"><span class="pre">multiprocessing.Pool</span></tt> that can dynamically grow
 in size.</p>
 <dl class="method">
@@ -97,8 +96,7 @@ processes are alive and running.</td>
 
 <dl class="class">
 <dt id="celery.pool.TaskPool">
-<em class="property">
-class </em><tt class="descclassname">celery.pool.</tt><tt class="descname">TaskPool</tt><big>(</big><em>limit</em>, <em>logger=None</em><big>)</big><a class="headerlink" href="#celery.pool.TaskPool" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.pool.</tt><tt class="descname">TaskPool</tt><big>(</big><em>limit</em>, <em>logger=None</em><big>)</big><a class="headerlink" href="#celery.pool.TaskPool" title="Permalink to this definition">¶</a></dt>
 <dd><p>Process Pool for processing tasks in parallel.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -124,7 +122,7 @@ class </em><tt class="descclassname">celery.pool.</tt><tt class="descname">TaskP
 
 <dl class="method">
 <dt id="celery.pool.TaskPool.apply_async">
-<tt class="descname">apply_async</tt><big>(</big><em>target</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>callbacks=None</em>, <em>errbacks=None</em>, <em>on_ack=&lt;function &lt;lambda&gt; at 0x1022bbc08&gt;</em><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.apply_async" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">apply_async</tt><big>(</big><em>target</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>callbacks=None</em>, <em>errbacks=None</em>, <em>on_ack=&lt;function &lt;lambda&gt; at 0x1019ef9b0&gt;</em><big>)</big><a class="headerlink" href="#celery.pool.TaskPool.apply_async" title="Permalink to this definition">¶</a></dt>
 <dd><p>Equivalent of the :func:<tt class="docutils literal"><span class="pre">apply</span></tt> built-in function.</p>
 <p>All <tt class="docutils literal"><span class="pre">callbacks</span></tt> and <tt class="docutils literal"><span class="pre">errbacks</span></tt> should complete immediately since
 otherwise the thread which handles the result will get blocked.</p>
@@ -257,7 +255,7 @@ a ping through the process pipe.</p>
     </div>
     <div class="footer">
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.2.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.3.
     </div>
   </body>
 </html>

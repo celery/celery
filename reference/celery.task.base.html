@@ -54,8 +54,7 @@
 <h1>Defining Tasks - celery.task.base<a class="headerlink" href="#module-celery.task.base" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="celery.task.base.AsynchronousMapTask">
-<em class="property">
-class </em><tt class="descclassname">celery.task.base.</tt><tt class="descname">AsynchronousMapTask</tt><a class="headerlink" href="#celery.task.base.AsynchronousMapTask" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.task.base.</tt><tt class="descname">AsynchronousMapTask</tt><a class="headerlink" href="#celery.task.base.AsynchronousMapTask" title="Permalink to this definition">¶</a></dt>
 <dd><p>Task used internally by <tt class="xref docutils literal"><span class="pre">dmap_async()</span></tt> and
 <a title="celery.task.base.TaskSet.map_async" class="reference internal" href="#celery.task.base.TaskSet.map_async"><tt class="xref docutils literal"><span class="pre">TaskSet.map_async()</span></tt></a>.</p>
 <dl class="method">
@@ -67,8 +66,7 @@ class </em><tt class="descclassname">celery.task.base.</tt><tt class="descname">
 
 <dl class="class">
 <dt id="celery.task.base.ExecuteRemoteTask">
-<em class="property">
-class </em><tt class="descclassname">celery.task.base.</tt><tt class="descname">ExecuteRemoteTask</tt><a class="headerlink" href="#celery.task.base.ExecuteRemoteTask" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.task.base.</tt><tt class="descname">ExecuteRemoteTask</tt><a class="headerlink" href="#celery.task.base.ExecuteRemoteTask" title="Permalink to this definition">¶</a></dt>
 <dd><p>Execute an arbitrary function or object.</p>
 <p><em>Note</em> You probably want <tt class="xref docutils literal"><span class="pre">execute_remote()</span></tt> instead, which this
 is an internal component of.</p>
@@ -96,8 +94,7 @@ defined in the REPL (that is the python shell, or <tt class="docutils literal"><
 
 <dl class="class">
 <dt id="celery.task.base.PeriodicTask">
-<em class="property">
-class </em><tt class="descclassname">celery.task.base.</tt><tt class="descname">PeriodicTask</tt><a class="headerlink" href="#celery.task.base.PeriodicTask" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.task.base.</tt><tt class="descname">PeriodicTask</tt><a class="headerlink" href="#celery.task.base.PeriodicTask" title="Permalink to this definition">¶</a></dt>
 <dd><p>A periodic task is a task that behaves like a <em>cron</em> job.</p>
 <dl class="attribute">
 <dt id="celery.task.base.PeriodicTask.run_every">
@@ -134,8 +131,7 @@ not defined.</td>
 
 <dl class="class">
 <dt id="celery.task.base.Task">
-<em class="property">
-class </em><tt class="descclassname">celery.task.base.</tt><tt class="descname">Task</tt><a class="headerlink" href="#celery.task.base.Task" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.task.base.</tt><tt class="descname">Task</tt><a class="headerlink" href="#celery.task.base.Task" title="Permalink to this definition">¶</a></dt>
 <dd><p>A task that can be delayed for execution by the <tt class="docutils literal"><span class="pre">celery</span></tt> daemon.</p>
 <p>All subclasses of <a title="celery.task.base.Task" class="reference internal" href="#celery.task.base.Task"><tt class="xref docutils literal"><span class="pre">Task</span></tt></a> must define the <a title="celery.task.base.Task.run" class="reference internal" href="#celery.task.base.Task.run"><tt class="xref docutils literal"><span class="pre">run()</span></tt></a> method,
 which is the actual method the <tt class="docutils literal"><span class="pre">celery</span></tt> daemon executes.</p>
@@ -263,14 +259,12 @@ the task.</p>
 </div>
 <dl class="exception">
 <dt id="celery.task.base.Task.MaxRetriesExceededError">
-<em class="property">
-exception </em><tt class="descname">MaxRetriesExceededError</tt><a class="headerlink" href="#celery.task.base.Task.MaxRetriesExceededError" title="Permalink to this definition">¶</a></dt>
+<em class="property">exception </em><tt class="descname">MaxRetriesExceededError</tt><a class="headerlink" href="#celery.task.base.Task.MaxRetriesExceededError" title="Permalink to this definition">¶</a></dt>
 <dd>The tasks max restart limit has been exceeded.</dd></dl>
 
 <dl class="classmethod">
 <dt id="celery.task.base.Task.apply">
-<em class="property">
-classmethod </em><tt class="descclassname">Task.</tt><tt class="descname">apply</tt><big>(</big><em>args=None</em>, <em>kwargs=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.task.base.Task.apply" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><tt class="descclassname">Task.</tt><tt class="descname">apply</tt><big>(</big><em>args=None</em>, <em>kwargs=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.task.base.Task.apply" title="Permalink to this definition">¶</a></dt>
 <dd><p>Execute this task at once, by blocking until the task
 has finished executing.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -293,8 +287,7 @@ has finished executing.</p>
 
 <dl class="classmethod">
 <dt id="celery.task.base.Task.apply_async">
-<em class="property">
-classmethod </em><tt class="descclassname">Task.</tt><tt class="descname">apply_async</tt><big>(</big><em>args=None</em>, <em>kwargs=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.task.base.Task.apply_async" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><tt class="descclassname">Task.</tt><tt class="descname">apply_async</tt><big>(</big><em>args=None</em>, <em>kwargs=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.task.base.Task.apply_async" title="Permalink to this definition">¶</a></dt>
 <dd><p>Delay this task for execution by the <tt class="docutils literal"><span class="pre">celery</span></tt> daemon(s).</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -323,8 +316,7 @@ classmethod </em><tt class="descclassname">Task.</tt><tt class="descname">apply_
 
 <dl class="classmethod">
 <dt id="celery.task.base.Task.delay">
-<em class="property">
-classmethod </em><tt class="descclassname">Task.</tt><tt class="descname">delay</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.base.Task.delay" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><tt class="descclassname">Task.</tt><tt class="descname">delay</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.base.Task.delay" title="Permalink to this definition">¶</a></dt>
 <dd><p>Delay this task for execution by the <tt class="docutils literal"><span class="pre">celery</span></tt> daemon(s).</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -569,8 +561,7 @@ passed on by the caller:</p>
 
 <dl class="class">
 <dt id="celery.task.base.TaskSet">
-<em class="property">
-class </em><tt class="descclassname">celery.task.base.</tt><tt class="descname">TaskSet</tt><big>(</big><em>task</em>, <em>args</em><big>)</big><a class="headerlink" href="#celery.task.base.TaskSet" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.task.base.</tt><tt class="descname">TaskSet</tt><big>(</big><em>task</em>, <em>args</em><big>)</big><a class="headerlink" href="#celery.task.base.TaskSet" title="Permalink to this definition">¶</a></dt>
 <dd><p>A task containing several subtasks, making it possible
 to track how many, or when all of the tasks has been completed.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -649,14 +640,12 @@ will be reraised by <a title="celery.task.base.TaskSet.join" class="reference in
 
 <dl class="classmethod">
 <dt id="celery.task.base.TaskSet.map">
-<em class="property">
-classmethod </em><tt class="descname">map</tt><big>(</big><em>func</em>, <em>args</em>, <em>timeout=None</em><big>)</big><a class="headerlink" href="#celery.task.base.TaskSet.map" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><tt class="descname">map</tt><big>(</big><em>func</em>, <em>args</em>, <em>timeout=None</em><big>)</big><a class="headerlink" href="#celery.task.base.TaskSet.map" title="Permalink to this definition">¶</a></dt>
 <dd>Distribute processing of the arguments and collect the results.</dd></dl>
 
 <dl class="classmethod">
 <dt id="celery.task.base.TaskSet.map_async">
-<em class="property">
-classmethod </em><tt class="descname">map_async</tt><big>(</big><em>func</em>, <em>args</em>, <em>timeout=None</em><big>)</big><a class="headerlink" href="#celery.task.base.TaskSet.map_async" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><tt class="descname">map_async</tt><big>(</big><em>func</em>, <em>args</em>, <em>timeout=None</em><big>)</big><a class="headerlink" href="#celery.task.base.TaskSet.map_async" title="Permalink to this definition">¶</a></dt>
 <dd><p>Distribute processing of the arguments and collect the results
 asynchronously.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -671,8 +660,7 @@ asynchronously.</p>
 
 <dl class="classmethod">
 <dt id="celery.task.base.TaskSet.remote_execute">
-<em class="property">
-classmethod </em><tt class="descname">remote_execute</tt><big>(</big><em>func</em>, <em>args</em><big>)</big><a class="headerlink" href="#celery.task.base.TaskSet.remote_execute" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><tt class="descname">remote_execute</tt><big>(</big><em>func</em>, <em>args</em><big>)</big><a class="headerlink" href="#celery.task.base.TaskSet.remote_execute" title="Permalink to this definition">¶</a></dt>
 <dd>Apply <tt class="docutils literal"><span class="pre">args</span></tt> to function by distributing the args to the
 celery server(s).</dd></dl>
 
@@ -773,7 +761,7 @@ celery server(s).</dd></dl>
     </div>
     <div class="footer">
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.2.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.3.
     </div>
   </body>
 </html>

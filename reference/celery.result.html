@@ -55,8 +55,7 @@
 <p>Asynchronous result types.</p>
 <dl class="class">
 <dt id="celery.result.AsyncResult">
-<em class="property">
-class </em><tt class="descclassname">celery.result.</tt><tt class="descname">AsyncResult</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.result.AsyncResult" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.result.</tt><tt class="descname">AsyncResult</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.result.AsyncResult" title="Permalink to this definition">¶</a></dt>
 <dd><p>Pending task result using the default backend.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -80,8 +79,7 @@ class </em><tt class="descclassname">celery.result.</tt><tt class="descname">Asy
 
 <dl class="class">
 <dt id="celery.result.BaseAsyncResult">
-<em class="property">
-class </em><tt class="descclassname">celery.result.</tt><tt class="descname">BaseAsyncResult</tt><big>(</big><em>task_id</em>, <em>backend</em><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.result.</tt><tt class="descname">BaseAsyncResult</tt><big>(</big><em>task_id</em>, <em>backend</em><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult" title="Permalink to this definition">¶</a></dt>
 <dd><p>Base class for pending result, supports custom
 task meta <a title="celery.result.BaseAsyncResult.backend" class="reference internal" href="#celery.result.BaseAsyncResult.backend"><tt class="xref docutils literal"><span class="pre">backend</span></tt></a></p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -108,8 +106,7 @@ task meta <a title="celery.result.BaseAsyncResult.backend" class="reference inte
 
 <dl class="exception">
 <dt id="celery.result.BaseAsyncResult.TimeoutError">
-<em class="property">
-exception </em><tt class="descname">TimeoutError</tt><a class="headerlink" href="#celery.result.BaseAsyncResult.TimeoutError" title="Permalink to this definition">¶</a></dt>
+<em class="property">exception </em><tt class="descname">TimeoutError</tt><a class="headerlink" href="#celery.result.BaseAsyncResult.TimeoutError" title="Permalink to this definition">¶</a></dt>
 <dd>The operation timed out.</dd></dl>
 
 <dl class="method">
@@ -213,13 +210,11 @@ exception will be re-raised.</p>
 
 <dl class="class">
 <dt id="celery.result.EagerResult">
-<em class="property">
-class </em><tt class="descclassname">celery.result.</tt><tt class="descname">EagerResult</tt><big>(</big><em>task_id</em>, <em>ret_value</em>, <em>status</em>, <em>traceback=None</em><big>)</big><a class="headerlink" href="#celery.result.EagerResult" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.result.</tt><tt class="descname">EagerResult</tt><big>(</big><em>task_id</em>, <em>ret_value</em>, <em>status</em>, <em>traceback=None</em><big>)</big><a class="headerlink" href="#celery.result.EagerResult" title="Permalink to this definition">¶</a></dt>
 <dd><p>Result that we know has already been executed.</p>
 <dl class="exception">
 <dt id="celery.result.EagerResult.TimeoutError">
-<em class="property">
-exception </em><tt class="descname">TimeoutError</tt><a class="headerlink" href="#celery.result.EagerResult.TimeoutError" title="Permalink to this definition">¶</a></dt>
+<em class="property">exception </em><tt class="descname">TimeoutError</tt><a class="headerlink" href="#celery.result.EagerResult.TimeoutError" title="Permalink to this definition">¶</a></dt>
 <dd>The operation timed out.</dd></dl>
 
 <dl class="method">
@@ -256,8 +251,7 @@ exception </em><tt class="descname">TimeoutError</tt><a class="headerlink" href=
 
 <dl class="class">
 <dt id="celery.result.TaskSetResult">
-<em class="property">
-class </em><tt class="descclassname">celery.result.</tt><tt class="descname">TaskSetResult</tt><big>(</big><em>taskset_id</em>, <em>subtasks</em><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.result.</tt><tt class="descname">TaskSetResult</tt><big>(</big><em>taskset_id</em>, <em>subtasks</em><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult" title="Permalink to this definition">¶</a></dt>
 <dd><p>Working with <tt class="xref docutils literal"><span class="pre">celery.task.TaskSet</span></tt> results.</p>
 <p>An instance of this class is returned by
 <tt class="xref docutils literal"><span class="pre">celery.task.TaskSet.run()</span></tt>. It lets you inspect the status and
@@ -483,7 +477,7 @@ waiting for execution.</td>
     </div>
     <div class="footer">
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.2.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.3.
     </div>
   </body>
 </html>

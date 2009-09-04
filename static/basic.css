@@ -378,7 +378,7 @@ img.math {
     vertical-align: middle;
 }
 
-div.math p {
+div.body div.math p {
     text-align: center;
 }
 

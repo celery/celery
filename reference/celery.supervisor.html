@@ -54,14 +54,12 @@
 <h1>Process Supervisor - celery.supervisor<a class="headerlink" href="#module-celery.supervisor" title="Permalink to this headline">¶</a></h1>
 <dl class="exception">
 <dt id="celery.supervisor.MaxRestartsExceededError">
-<em class="property">
-exception </em><tt class="descclassname">celery.supervisor.</tt><tt class="descname">MaxRestartsExceededError</tt><a class="headerlink" href="#celery.supervisor.MaxRestartsExceededError" title="Permalink to this definition">¶</a></dt>
+<em class="property">exception </em><tt class="descclassname">celery.supervisor.</tt><tt class="descname">MaxRestartsExceededError</tt><a class="headerlink" href="#celery.supervisor.MaxRestartsExceededError" title="Permalink to this definition">¶</a></dt>
 <dd>Restarts exceeded the maximum restart frequency.</dd></dl>
 
 <dl class="class">
 <dt id="celery.supervisor.OFASupervisor">
-<em class="property">
-class </em><tt class="descclassname">celery.supervisor.</tt><tt class="descname">OFASupervisor</tt><big>(</big><em>target</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>max_restart_freq=3</em>, <em>join_timeout=2</em>, <em>max_restart_freq_time=10</em>, <em>check_interval=2</em><big>)</big><a class="headerlink" href="#celery.supervisor.OFASupervisor" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.supervisor.</tt><tt class="descname">OFASupervisor</tt><big>(</big><em>target</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>max_restart_freq=3</em>, <em>join_timeout=2</em>, <em>max_restart_freq_time=10</em>, <em>check_interval=2</em><big>)</big><a class="headerlink" href="#celery.supervisor.OFASupervisor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Process supervisor using the <a class="reference external" href="http://erlang.org/doc/design_principles/sup_princ.html#5.3.2">one_for_all</a> strategy.</p>
 <p>However, instead of registering a list of processes, you have one
 process which runs a pool. Makes for an easy implementation.</p>
@@ -119,8 +117,7 @@ supervisor is terminated.</p>
 
 <dl class="class">
 <dt id="celery.supervisor.OFASupervisor.Process">
-<em class="property">
-class </em><tt class="descname">Process</tt><big>(</big><em>group=None</em>, <em>target=None</em>, <em>name=None</em>, <em>args=()</em>, <em>kwargs={}</em><big>)</big><a class="headerlink" href="#celery.supervisor.OFASupervisor.Process" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descname">Process</tt><big>(</big><em>group=None</em>, <em>target=None</em>, <em>name=None</em>, <em>args=()</em>, <em>kwargs={}</em><big>)</big><a class="headerlink" href="#celery.supervisor.OFASupervisor.Process" title="Permalink to this definition">¶</a></dt>
 <dd><p>Process objects represent activity that is run in a separate process</p>
 <p>The class is analagous to <cite>threading.Thread</cite></p>
 <dl class="attribute">
@@ -235,7 +232,7 @@ supervising it.</dd></dl>
     </div>
     <div class="footer">
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.2.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.3.
     </div>
   </body>
 </html>
