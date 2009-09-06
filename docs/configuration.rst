@@ -45,7 +45,7 @@ Concurrency settings
 * CELERYD_CONCURRENCY
     The number of concurrent worker processes, executing tasks simultaneously.
 
-    Defaults to the number of CPUs in the system. 
+    Defaults to the number of CPUs in the system.
 
 
 Task result backend settings
@@ -158,34 +158,55 @@ Example configuration
 MongoDB backend settings
 ========================
 
+**NOTE** The MongoDB backend requires the :mod:`pymongo` library:
+    http://github.com/mongodb/mongo-python-driver/tree/master
+
 * CELERY_MONGODB_BACKEND_SETTINGS
-    This is a dict supporting the following keys
+
+    This is a dict supporting the following keys:
 
     * host
-        Hostname of the MongoDB server.
+        Hostname of the MongoDB server. Defaults to "localhost".
 
     * port
-        The port the MongoDB server is listening to.
+        The port the MongoDB server is listening to. Defaults to 27017.
 
     * user
-        Username to authenticate to the MongoDB server as.
+        Username to authenticate to the MongoDB server as (optional).
 
     * password
+        Password to authenticate to the MongoDB server (optional).
 
     * database
-        The database name to connect to.
+        The database name to connect to. Defaults to "celery".
 
     * taskmeta_collection
-        FIXME
+        The collection name to store task metadata.
+        Defaults to "celery_taskmeta".
 
     * periodictaskmeta_collection
-        FIXME
+        The collection name to store periodic task metadata.
+        Defaults to "celery_periodictaskmeta".
+
+
+Example configuration
+---------------------
+
+.. code-block:: python
+
+    CELERY_MONGODB_BACKEND_SETTINGS = {
+        "host": "192.168.1.100",
+        "port": 30000,
+        "database": "mydb",
+        "taskmeta_collection": "my_taskmeta_collection",
+    }
+
 
 Broker settings
 ===============
 
 * CELERY_AMQP_EXCHANGE
-    
+
     Name of the AMQP exchange.
 
 * CELERY_AMQP_EXCHANGE_TYPE
@@ -216,7 +237,7 @@ Broker settings
 * CELERY_AMQP_CONNECTION_RETRY
     Automatically try to re-establish the connection to the AMQP broker if
     it's lost.
-    
+
     The time between retries is increased for each retry, and is
     not exhausted before ``CELERY_AMQP_CONNECTION_MAX_RETRIES`` is exceeded.
 
@@ -249,16 +270,16 @@ Task execution settings
 * CELERY_TASK_RESULT_EXPIRES
     Time (in seconds, or a :class:`datetime.timedelta` object) for when after
     stored task tombstones are deleted.
-    
+
     **NOTE**: For the moment this only works for the database and MongoDB
     backends.
-  
+
 * CELERY_TASK_SERIALIZER
     A string identifying the default serialization
     method to use. Can be ``pickle`` (default),
     ``json``, ``yaml``, or any custom serialization methods that have
     been registered with :mod:`carrot.serialization.registry`.
-    
+
     Default is ``pickle``.
 
 Logging settings
@@ -267,7 +288,7 @@ Logging settings
 * CELERYD_LOG_FILE
     The default filename the worker daemon logs messages to, can be
     overridden using the `--logfile`` option to ``celeryd``.
-    
+
     The default is to log using ``stderr`` if running in the foreground,
     when running in the background, detached as a daemon, the default
     logfile is ``celeryd.log``.
@@ -275,7 +296,7 @@ Logging settings
 * CELERYD_DAEMON_LOG_LEVEL
     Worker log level, can be any of ``DEBUG``, ``INFO``, ``WARNING``,
     ``ERROR``, ``CRITICAL``, or ``FATAL``.
-    
+
     See the :mod:`logging` module for more information.
 
 * CELERYD_DAEMON_LOG_FORMAT
