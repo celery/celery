@@ -161,6 +161,17 @@ to the AMQP server.</dd></dl>
 </dd></dl>
 
 <dl class="data">
+<dt id="celery.conf.CELERY_BACKEND">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">CELERY_BACKEND</tt><a class="headerlink" href="#celery.conf.CELERY_BACKEND" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="data">
+<dt id="celery.conf.CELERY_PERIODIC_STATUS_BACKEND">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">CELERY_PERIODIC_STATUS_BACKEND</tt><a class="headerlink" href="#celery.conf.CELERY_PERIODIC_STATUS_BACKEND" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>The backend used to store the status of periodic tasks.</p>
+</dd></dl>
+
+<dl class="data">
 <dt id="celery.conf.DAEMON_CONCURRENCY">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">DAEMON_CONCURRENCY</tt><a class="headerlink" href="#celery.conf.DAEMON_CONCURRENCY" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="data">
@@ -234,24 +245,21 @@ to the AMQP server.</dd></dl>
 <dt>
 <tt class="descclassname">celery.conf.</tt><tt class="descname">SEND_CELERY_TASK_ERROR_EMAILS</tt></dt>
 <dd><dl class="data">
-<dt id="celery.conf.STATISTICS_COLLECT_INTERVAL">
-<tt class="descclassname">celery.conf.</tt><tt class="descname">STATISTICS_COLLECT_INTERVAL</tt><a class="headerlink" href="#celery.conf.STATISTICS_COLLECT_INTERVAL" title="Permalink to this definition">¶</a></dt>
-<dd>The interval in seconds of which the
-<tt class="xref docutils literal"><span class="pre">celery.task.CollectStatisticsTask`</span></tt> is run.</dd></dl>
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">ALWAYS_EAGER</tt></dt>
+<dd>Always execute tasks locally, don&#8217;t send to the queue.</dd></dl>
 
 </dd></dl>
 
 <dl class="data">
 <dt>
-<tt class="descclassname">celery.conf.</tt><tt class="descname">STATISTICS_COLLECT_INTERVAL</tt></dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">TASK_SERIALIZER</tt></dt>
 <dd><dl class="data">
 <dt>
-<tt class="descclassname">celery.conf.</tt><tt class="descname">ALWAYS_EAGER</tt></dt>
-<dd>If this is <tt class="xref docutils literal"><span class="pre">True</span></tt>, all tasks will be executed locally by blocking
-until it is finished. <tt class="docutils literal"><span class="pre">apply_async</span></tt> and <tt class="docutils literal"><span class="pre">delay_task</span></tt> will return
-a <a title="celery.result.EagerResult" class="reference external" href="celery.result.html#celery.result.EagerResult"><tt class="xref docutils literal"><span class="pre">celery.result.EagerResult</span></tt></a> which emulates the behaviour of
-an <a title="celery.result.AsyncResult" class="reference external" href="celery.result.html#celery.result.AsyncResult"><tt class="xref docutils literal"><span class="pre">celery.result.AsyncResult</span></tt></a>.</dd></dl>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">CELERY_BACKEND</tt></dt>
+<dd></dd></dl>
 
+<p>The backend used to store task results (tombstones).</p>
 </dd></dl>
 
 </div>

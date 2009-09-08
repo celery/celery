@@ -56,6 +56,31 @@ in your projects <tt class="docutils literal"><span class="pre">settings.py</spa
 <p>In a regular Python environment using the default loader you must create
 the <tt class="docutils literal"><span class="pre">celeryconfig.py</span></tt> module and make sure it is available on the
 Python path.</p>
+<div class="section" id="example-configuration-file">
+<h2>Example configuration file<a class="headerlink" href="#example-configuration-file" title="Permalink to this headline">¶</a></h2>
+<p>This is an example configuration file to get you started,
+it should contain all you need to run a basic celery set-up.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_BACKEND</span> <span class="o">=</span> <span class="s">&quot;database&quot;</span>
+<span class="n">DATABASE_ENGINE</span> <span class="o">=</span> <span class="s">&quot;sqlite3&quot;</span>
+<span class="n">DATABASE_NAME</span> <span class="o">=</span> <span class="s">&quot;mydatabase.db&quot;</span>
+
+<span class="n">AMQP_HOST</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>
+<span class="n">AMQP_PORT</span> <span class="o">=</span> <span class="mf">5672</span>
+<span class="n">AMQP_VHOST</span> <span class="o">=</span> <span class="s">&quot;/&quot;</span>
+<span class="n">AMQP_USER</span> <span class="o">=</span> <span class="s">&quot;guest&quot;</span>
+<span class="n">AMQP_PASSWORD</span> <span class="o">=</span> <span class="s">&quot;guest&quot;</span>
+
+<span class="c">## If you&#39;re doing mostly I/O you can have higher concurrency,</span>
+<span class="c">## if mostly spending time in the CPU, try to keep it close to the</span>
+<span class="c">## number of CPUs on your machine.</span>
+<span class="c"># CELERYD_CONCURRENCY = 8</span>
+
+<span class="n">CELERYD_LOG_FILE</span> <span class="o">=</span> <span class="s">&quot;celeryd.log&quot;</span>
+<span class="n">CELERYD_PID_FILE</span> <span class="o">=</span> <span class="s">&quot;celeryd.pid&quot;</span>
+<span class="n">CELERYD_DAEMON_LOG_LEVEL</span> <span class="o">=</span> <span class="s">&quot;INFO&quot;</span>
+</pre></div>
+</div>
+</div>
 <div class="section" id="concurrency-settings">
 <h2>Concurrency settings<a class="headerlink" href="#concurrency-settings" title="Permalink to this headline">¶</a></h2>
 <ul>
@@ -199,54 +224,74 @@ means executing:</p>
 </div>
 <div class="section" id="mongodb-backend-settings">
 <h2>MongoDB backend settings<a class="headerlink" href="#mongodb-backend-settings" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt><strong>NOTE</strong> The MongoDB backend requires the <tt class="xref docutils literal"><span class="pre">pymongo</span></tt> library:</dt>
+<dd><a class="reference external" href="http://github.com/mongodb/mongo-python-driver/tree/master">http://github.com/mongodb/mongo-python-driver/tree/master</a></dd>
+</dl>
+<ul>
+<li><p class="first">CELERY_MONGODB_BACKEND_SETTINGS</p>
+<blockquote>
+<p>This is a dict supporting the following keys:</p>
 <ul>
 <li><dl class="first docutils">
-<dt>CELERY_MONGODB_BACKEND_SETTINGS</dt>
-<dd><p class="first">This is a dict supporting the following keys</p>
-<ul class="last">
-<li><dl class="first docutils">
 <dt>host</dt>
-<dd><p class="first last">Hostname of the MongoDB server.</p>
+<dd><p class="first last">Hostname of the MongoDB server. Defaults to &#8220;localhost&#8221;.</p>
 </dd>
 </dl>
 </li>
 <li><dl class="first docutils">
 <dt>port</dt>
-<dd><p class="first last">The port the MongoDB server is listening to.</p>
+<dd><p class="first last">The port the MongoDB server is listening to. Defaults to 27017.</p>
 </dd>
 </dl>
 </li>
 <li><dl class="first docutils">
 <dt>user</dt>
-<dd><p class="first last">Username to authenticate to the MongoDB server as.</p>
+<dd><p class="first last">Username to authenticate to the MongoDB server as (optional).</p>
 </dd>
 </dl>
 </li>
-<li><p class="first">password</p>
+<li><dl class="first docutils">
+<dt>password</dt>
+<dd><p class="first last">Password to authenticate to the MongoDB server (optional).</p>
+</dd>
+</dl>
 </li>
 <li><dl class="first docutils">
 <dt>database</dt>
-<dd><p class="first last">The database name to connect to.</p>
+<dd><p class="first last">The database name to connect to. Defaults to &#8220;celery&#8221;.</p>
 </dd>
 </dl>
 </li>
 <li><dl class="first docutils">
 <dt>taskmeta_collection</dt>
-<dd><p class="first last">FIXME</p>
+<dd><p class="first last">The collection name to store task metadata.
+Defaults to &#8220;celery_taskmeta&#8221;.</p>
 </dd>
 </dl>
 </li>
 <li><dl class="first docutils">
 <dt>periodictaskmeta_collection</dt>
-<dd><p class="first last">FIXME</p>
+<dd><p class="first last">The collection name to store periodic task metadata.
+Defaults to &#8220;celery_periodictaskmeta&#8221;.</p>
 </dd>
 </dl>
 </li>
 </ul>
-</dd>
-</dl>
+</blockquote>
 </li>
 </ul>
+<div class="section" id="id3">
+<h3>Example configuration<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_MONGODB_BACKEND_SETTINGS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&quot;host&quot;</span><span class="p">:</span> <span class="s">&quot;192.168.1.100&quot;</span><span class="p">,</span>
+    <span class="s">&quot;port&quot;</span><span class="p">:</span> <span class="mf">30000</span><span class="p">,</span>
+    <span class="s">&quot;database&quot;</span><span class="p">:</span> <span class="s">&quot;mydb&quot;</span><span class="p">,</span>
+    <span class="s">&quot;taskmeta_collection&quot;</span><span class="p">:</span> <span class="s">&quot;my_taskmeta_collection&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
 </div>
 <div class="section" id="broker-settings">
 <h2>Broker settings<a class="headerlink" href="#broker-settings" title="Permalink to this headline">¶</a></h2>
@@ -415,6 +460,7 @@ Can be overridden using the <tt class="docutils literal"><span class="pre">--pid
             <h3><a href="index.html">Table Of Contents</a></h3>
             <ul>
 <li><a class="reference external" href="">Configuration and defaults</a><ul>
+<li><a class="reference external" href="#example-configuration-file">Example configuration file</a></li>
 <li><a class="reference external" href="#concurrency-settings">Concurrency settings</a></li>
 <li><a class="reference external" href="#task-result-backend-settings">Task result backend settings</a></li>
 <li><a class="reference external" href="#database-backend-settings">Database backend settings</a><ul>
@@ -429,7 +475,10 @@ Can be overridden using the <tt class="docutils literal"><span class="pre">--pid
 <li><a class="reference external" href="#id2">Example configuration</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#mongodb-backend-settings">MongoDB backend settings</a></li>
+<li><a class="reference external" href="#mongodb-backend-settings">MongoDB backend settings</a><ul>
+<li><a class="reference external" href="#id3">Example configuration</a></li>
+</ul>
+</li>
 <li><a class="reference external" href="#broker-settings">Broker settings</a></li>
 <li><a class="reference external" href="#task-execution-settings">Task execution settings</a></li>
 <li><a class="reference external" href="#logging-settings">Logging settings</a></li>

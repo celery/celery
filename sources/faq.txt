@@ -2,6 +2,9 @@
  Frequently Asked Questions
 ============================
 
+Troubleshooting
+===============
+
 MySQL is throwing deadlock errors, what can I do?
 -------------------------------------------------
 
@@ -46,6 +49,38 @@ I'm having ``IntegrityError: Duplicate Key`` errors. Why?
 
 **Answer:** See `MySQL is throwing deadlock errors, what can I do?`_.
 Thanks to howsthedotcom.
+
+Why isn't my tasks processed?
+-----------------------------
+**Answer:** With RabbitMQ you can see how many consumers are currently
+receiving tasks by running the following command::
+
+    $ rabbitmqctl list_queues -p <myvhost> name messages consumers
+    Listing queues ...
+    celery     2891    2
+
+This shows that there's 2891 messages waiting to be processed in the task
+queue, and there are two consumers processing them.
+
+One reason that the queue is never emptied could be that you have a stale
+celery process taking the messages hostage. This could happen if celeryd
+wasn't properly shut down.
+
+When a message is recieved by a worker the broker waits for it to be
+acknowledged before marking the message as processed. The broker will not
+re-send that message to another consumer until the consumer is shutdown
+properly.
+
+If you hit this problem you have to kill all workers manually and restart
+them::
+
+    ps auxww | grep celeryd | awk '{print $2}' | xargs kill
+
+You might have to wait a while until all workers has finished the work they're
+doing, if it's still hanging after a long time you can kill them by force
+with::
+
+    ps auxww | grep celeryd | awk '{print $2}' | xargs kill -9
 
 Why won't my Task run?
 ----------------------
@@ -95,6 +130,9 @@ the tasks will be re-sent by the broker to the next available worker (or the
 same worker when it has been restarted), so to properly purge the queue of
 waiting tasks you have to stop all the workers, and then discard the tasks
 using ``discard_all``.
+
+Brokers
+=======
 
 Can I use celery with ActiveMQ/STOMP?
 -------------------------------------
@@ -172,6 +210,9 @@ using the STOMP backend:
     * immediate
 
     * mandatory
+
+Features
+========
 
 Can I send some tasks to only some servers?
 --------------------------------------------

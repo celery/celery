@@ -50,8 +50,10 @@
             
   <div class="section" id="frequently-asked-questions">
 <h1>Frequently Asked Questions<a class="headerlink" href="#frequently-asked-questions" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="mysql-is-throwing-deadlock-errors-what-can-i-do">
-<h2>MySQL is throwing deadlock errors, what can I do?<a class="headerlink" href="#mysql-is-throwing-deadlock-errors-what-can-i-do" title="Permalink to this headline">¶</a></h2>
+<h3>MySQL is throwing deadlock errors, what can I do?<a class="headerlink" href="#mysql-is-throwing-deadlock-errors-what-can-i-do" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> MySQL has default isolation level set to <tt class="docutils literal"><span class="pre">REPEATABLE-READ</span></tt>,
 if you don&#8217;t really need that, set it to <tt class="docutils literal"><span class="pre">READ-COMMITTED</span></tt>.
 You can do that by adding the following to your <tt class="docutils literal"><span class="pre">my.cnf</span></tt>:</p>
@@ -64,14 +66,14 @@ Transaction Model and Locking</a> in the MySQL user manual.</p>
 <p>(Thanks to Honza Kral and Anton Tsigularov for this solution)</p>
 </div>
 <div class="section" id="celeryd-is-not-doing-anything-just-hanging">
-<h2>celeryd is not doing anything, just hanging<a class="headerlink" href="#celeryd-is-not-doing-anything-just-hanging" title="Permalink to this headline">¶</a></h2>
+<h3>celeryd is not doing anything, just hanging<a class="headerlink" href="#celeryd-is-not-doing-anything-just-hanging" title="Permalink to this headline">¶</a></h3>
 <dl class="docutils">
 <dt><strong>Answer:</strong> See <a class="reference internal" href="#mysql-is-throwing-deadlock-errors-what-can-i-do">MySQL is throwing deadlock errors, what can I do?</a>.</dt>
 <dd>or <cite>Why is Task.delay/apply* just hanging?</cite>.</dd>
 </dl>
 </div>
 <div class="section" id="why-is-task-delay-apply-celeryd-just-hanging">
-<h2>Why is Task.delay/apply*/celeryd just hanging?<a class="headerlink" href="#why-is-task-delay-apply-celeryd-just-hanging" title="Permalink to this headline">¶</a></h2>
+<h3>Why is Task.delay/apply*/celeryd just hanging?<a class="headerlink" href="#why-is-task-delay-apply-celeryd-just-hanging" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> There is a bug in some AMQP clients that will make it hang if
 it&#8217;s not able to authenticate the current user, the password doesn&#8217;t match or
 the user does not have access to the virtual host specified. Be sure to check
@@ -79,18 +81,45 @@ your broker logs (for RabbitMQ that is <tt class="docutils literal"><span class=
 most systems), it usually contains a message describing the reason.</p>
 </div>
 <div class="section" id="why-won-t-celeryd-run-on-freebsd">
-<h2>Why won&#8217;t celeryd run on FreeBSD?<a class="headerlink" href="#why-won-t-celeryd-run-on-freebsd" title="Permalink to this headline">¶</a></h2>
+<h3>Why won&#8217;t celeryd run on FreeBSD?<a class="headerlink" href="#why-won-t-celeryd-run-on-freebsd" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> multiprocessing.Pool requires a working POSIX semaphore
 implementation which isn&#8217;t enabled in FreeBSD by default. You have to enable
 POSIX semaphores in the kernel and manually recompile multiprocessing.</p>
 </div>
 <div class="section" id="i-m-having-integrityerror-duplicate-key-errors-why">
-<h2>I&#8217;m having <tt class="docutils literal"><span class="pre">IntegrityError:</span> <span class="pre">Duplicate</span> <span class="pre">Key</span></tt> errors. Why?<a class="headerlink" href="#i-m-having-integrityerror-duplicate-key-errors-why" title="Permalink to this headline">¶</a></h2>
+<h3>I&#8217;m having <tt class="docutils literal"><span class="pre">IntegrityError:</span> <span class="pre">Duplicate</span> <span class="pre">Key</span></tt> errors. Why?<a class="headerlink" href="#i-m-having-integrityerror-duplicate-key-errors-why" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> See <a class="reference internal" href="#mysql-is-throwing-deadlock-errors-what-can-i-do">MySQL is throwing deadlock errors, what can I do?</a>.
 Thanks to howsthedotcom.</p>
 </div>
+<div class="section" id="why-isn-t-my-tasks-processed">
+<h3>Why isn&#8217;t my tasks processed?<a class="headerlink" href="#why-isn-t-my-tasks-processed" title="Permalink to this headline">¶</a></h3>
+<p><strong>Answer:</strong> With RabbitMQ you can see how many consumers are currently
+receiving tasks by running the following command:</p>
+<div class="highlight-python"><pre>$ rabbitmqctl list_queues -p &lt;myvhost&gt; name messages consumers
+Listing queues ...
+celery     2891    2</pre>
+</div>
+<p>This shows that there&#8217;s 2891 messages waiting to be processed in the task
+queue, and there are two consumers processing them.</p>
+<p>One reason that the queue is never emptied could be that you have a stale
+celery process taking the messages hostage. This could happen if celeryd
+wasn&#8217;t properly shut down.</p>
+<p>When a message is recieved by a worker the broker waits for it to be
+acknowledged before marking the message as processed. The broker will not
+re-send that message to another consumer until the consumer is shutdown
+properly.</p>
+<p>If you hit this problem you have to kill all workers manually and restart
+them:</p>
+<div class="highlight-python"><pre>ps auxww | grep celeryd | awk '{print $2}' | xargs kill</pre>
+</div>
+<p>You might have to wait a while until all workers has finished the work they&#8217;re
+doing, if it&#8217;s still hanging after a long time you can kill them by force
+with:</p>
+<div class="highlight-python"><pre>ps auxww | grep celeryd | awk '{print $2}' | xargs kill -9</pre>
+</div>
+</div>
 <div class="section" id="why-won-t-my-task-run">
-<h2>Why won&#8217;t my Task run?<a class="headerlink" href="#why-won-t-my-task-run" title="Permalink to this headline">¶</a></h2>
+<h3>Why won&#8217;t my Task run?<a class="headerlink" href="#why-won-t-my-task-run" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> Did you register the task in the applications <tt class="docutils literal"><span class="pre">tasks.py</span></tt> module?
 (or in some other module Django loads by default, like <tt class="docutils literal"><span class="pre">models.py</span></tt>?).
 Also there might be syntax errors preventing the tasks module being imported.</p>
@@ -104,11 +133,11 @@ task manually:</p>
 if it&#8217;s able to find the task, or if some other error is happening.</p>
 </div>
 <div class="section" id="why-won-t-my-periodic-task-run">
-<h2>Why won&#8217;t my Periodic Task run?<a class="headerlink" href="#why-won-t-my-periodic-task-run" title="Permalink to this headline">¶</a></h2>
+<h3>Why won&#8217;t my Periodic Task run?<a class="headerlink" href="#why-won-t-my-periodic-task-run" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> See <a class="reference internal" href="#why-won-t-my-task-run">Why won&#8217;t my Task run?</a>.</p>
 </div>
 <div class="section" id="how-do-i-discard-all-waiting-tasks">
-<h2>How do I discard all waiting tasks?<a class="headerlink" href="#how-do-i-discard-all-waiting-tasks" title="Permalink to this headline">¶</a></h2>
+<h3>How do I discard all waiting tasks?<a class="headerlink" href="#how-do-i-discard-all-waiting-tasks" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> Use <tt class="docutils literal"><span class="pre">celery.task.discard_all()</span></tt>, like this:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">discard_all</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">discard_all</span><span class="p">()</span>
@@ -120,7 +149,7 @@ if it&#8217;s able to find the task, or if some other error is happening.</p>
 accomplish the same thing.</p>
 </div>
 <div class="section" id="i-ve-discarded-messages-but-there-are-still-messages-left-in-the-queue">
-<h2>I&#8217;ve discarded messages, but there are still messages left in the queue?<a class="headerlink" href="#i-ve-discarded-messages-but-there-are-still-messages-left-in-the-queue" title="Permalink to this headline">¶</a></h2>
+<h3>I&#8217;ve discarded messages, but there are still messages left in the queue?<a class="headerlink" href="#i-ve-discarded-messages-but-there-are-still-messages-left-in-the-queue" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> Tasks are acknowledged (removed from the queue) as soon
 as they are actually executed. After the worker has received a task, it will
 take some time until it is actually executed, especially if there are a lot
@@ -132,8 +161,11 @@ same worker when it has been restarted), so to properly purge the queue of
 waiting tasks you have to stop all the workers, and then discard the tasks
 using <tt class="docutils literal"><span class="pre">discard_all</span></tt>.</p>
 </div>
+</div>
+<div class="section" id="brokers">
+<h2>Brokers<a class="headerlink" href="#brokers" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="can-i-use-celery-with-activemq-stomp">
-<h2>Can I use celery with ActiveMQ/STOMP?<a class="headerlink" href="#can-i-use-celery-with-activemq-stomp" title="Permalink to this headline">¶</a></h2>
+<h3>Can I use celery with ActiveMQ/STOMP?<a class="headerlink" href="#can-i-use-celery-with-activemq-stomp" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer</strong>: Yes. But this is somewhat experimental for now.
 It is certainly working ok for me in a test configuration, but it has not
 been tested in production like RabbitMQ. If you have any problems with
@@ -186,7 +218,7 @@ the one with the most capabilities won).</p>
 specific options.</p>
 </div>
 <div class="section" id="which-features-are-not-supported-when-using-stomp">
-<h2>Which features are not supported when using STOMP?<a class="headerlink" href="#which-features-are-not-supported-when-using-stomp" title="Permalink to this headline">¶</a></h2>
+<h3>Which features are not supported when using STOMP?<a class="headerlink" href="#which-features-are-not-supported-when-using-stomp" title="Permalink to this headline">¶</a></h3>
 <p>This is a (possible incomplete) list of features not available when
 using the STOMP backend:</p>
 <ul class="simple">
@@ -196,8 +228,11 @@ using the STOMP backend:</p>
 <li>mandatory</li>
 </ul>
 </div>
+</div>
+<div class="section" id="features">
+<h2>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="can-i-send-some-tasks-to-only-some-servers">
-<h2>Can I send some tasks to only some servers?<a class="headerlink" href="#can-i-send-some-tasks-to-only-some-servers" title="Permalink to this headline">¶</a></h2>
+<h3>Can I send some tasks to only some servers?<a class="headerlink" href="#can-i-send-some-tasks-to-only-some-servers" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> As of now there is only one use-case that works like this,
 and that is tasks of type <tt class="docutils literal"><span class="pre">A</span></tt> can be sent to servers <tt class="docutils literal"><span class="pre">x</span></tt> and <tt class="docutils literal"><span class="pre">y</span></tt>,
 while tasks of type <tt class="docutils literal"><span class="pre">B</span></tt> can be sent to server <tt class="docutils literal"><span class="pre">z</span></tt>. One server can&#8217;t
@@ -263,7 +298,7 @@ configuration:</p>
 </div>
 </div>
 <div class="section" id="can-i-use-celery-without-django">
-<h2>Can I use celery without Django?<a class="headerlink" href="#can-i-use-celery-without-django" title="Permalink to this headline">¶</a></h2>
+<h3>Can I use celery without Django?<a class="headerlink" href="#can-i-use-celery-without-django" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> Yes.</p>
 <p>Celery uses something called loaders to read/setup configuration, import
 modules that registers tasks and to decide what happens when a task is
@@ -334,7 +369,7 @@ run <tt class="docutils literal"><span class="pre">celeryinit</span></tt> to cre
 </div>
 </div>
 <div class="section" id="the-celery-test-suite-is-failing">
-<h2>The celery test-suite is failing<a class="headerlink" href="#the-celery-test-suite-is-failing" title="Permalink to this headline">¶</a></h2>
+<h3>The celery test-suite is failing<a class="headerlink" href="#the-celery-test-suite-is-failing" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer</strong>: You&#8217;re running tests from your own Django applicaiton, and celerys
 tests are failing and celerys tests are failing in that context?
 If so, read on for a trick, if not please report the test failure to our issue
@@ -367,6 +402,7 @@ TEST_APPS = filter(lambda k: k != "celery", INSTALLED_APPS)</pre>
 </div>
 </div>
 </div>
+</div>
 
 
           </div>
@@ -377,20 +413,30 @@ TEST_APPS = filter(lambda k: k != "celery", INSTALLED_APPS)</pre>
             <h3><a href="index.html">Table Of Contents</a></h3>
             <ul>
 <li><a class="reference external" href="">Frequently Asked Questions</a><ul>
+<li><a class="reference external" href="#troubleshooting">Troubleshooting</a><ul>
 <li><a class="reference external" href="#mysql-is-throwing-deadlock-errors-what-can-i-do">MySQL is throwing deadlock errors, what can I do?</a></li>
 <li><a class="reference external" href="#celeryd-is-not-doing-anything-just-hanging">celeryd is not doing anything, just hanging</a></li>
 <li><a class="reference external" href="#why-is-task-delay-apply-celeryd-just-hanging">Why is Task.delay/apply*/celeryd just hanging?</a></li>
 <li><a class="reference external" href="#why-won-t-celeryd-run-on-freebsd">Why won&#8217;t celeryd run on FreeBSD?</a></li>
 <li><a class="reference external" href="#i-m-having-integrityerror-duplicate-key-errors-why">I&#8217;m having <tt class="docutils literal"><span class="pre">IntegrityError:</span> <span class="pre">Duplicate</span> <span class="pre">Key</span></tt> errors. Why?</a></li>
+<li><a class="reference external" href="#why-isn-t-my-tasks-processed">Why isn&#8217;t my tasks processed?</a></li>
 <li><a class="reference external" href="#why-won-t-my-task-run">Why won&#8217;t my Task run?</a></li>
 <li><a class="reference external" href="#why-won-t-my-periodic-task-run">Why won&#8217;t my Periodic Task run?</a></li>
 <li><a class="reference external" href="#how-do-i-discard-all-waiting-tasks">How do I discard all waiting tasks?</a></li>
 <li><a class="reference external" href="#i-ve-discarded-messages-but-there-are-still-messages-left-in-the-queue">I&#8217;ve discarded messages, but there are still messages left in the queue?</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#brokers">Brokers</a><ul>
 <li><a class="reference external" href="#can-i-use-celery-with-activemq-stomp">Can I use celery with ActiveMQ/STOMP?</a></li>
 <li><a class="reference external" href="#which-features-are-not-supported-when-using-stomp">Which features are not supported when using STOMP?</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#features">Features</a><ul>
 <li><a class="reference external" href="#can-i-send-some-tasks-to-only-some-servers">Can I send some tasks to only some servers?</a></li>
 <li><a class="reference external" href="#can-i-use-celery-without-django">Can I use celery without Django?</a></li>
 <li><a class="reference external" href="#the-celery-test-suite-is-failing">The celery test-suite is failing</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>

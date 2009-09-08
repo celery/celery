@@ -186,7 +186,6 @@ celery.worker.AMQPListener.consume_messages method reference/celery.worker.html
 celery.worker.job.TaskWrapper.message attribute reference/celery.worker.job.html
 celery.managers.TableLock.lock_table method reference/celery.managers.html
 celery.worker.controllers.BackgroundThread.run method reference/celery.worker.controllers.html
-celery.conf.STATISTICS_COLLECT_INTERVAL data reference/celery.conf.html
 celery.result.BaseAsyncResult.task_id attribute reference/celery.result.html
 celery.fields.PickledObjectField class reference/celery.fields.html
 celery.pool.TaskPool.logger attribute reference/celery.pool.html
@@ -235,6 +234,7 @@ celery.conf.AMQP_CONSUMER_QUEUE data reference/celery.conf.html
 celery.monitoring.StatsCollector.task_time_running method reference/celery.monitoring.html
 PeriodicTaskMeta.total_run_count attribute reference/celery.models.html
 celery.result.TaskSetResult.ready method reference/celery.result.html
+celery.conf.CELERY_PERIODIC_STATUS_BACKEND data reference/celery.conf.html
 celery.backends.get_default_backend_cls data reference/celery.backends.html
 celery.worker.job.TaskWrapper.args attribute reference/celery.worker.job.html
 celery.conf.AMQP_CONSUMER_QUEUES data reference/celery.conf.html
@@ -377,6 +377,7 @@ celery.utils.retry_over_time function reference/celery.utils.html
 celery.managers.PeriodicTaskManager.init_entries method reference/celery.managers.html
 celery.worker.WorkController.loglevel attribute reference/celery.worker.html
 celery.registry.TaskRegistry.get_all_regular method reference/celery.registry.html
+celery.conf.CELERY_BACKEND data reference/celery.conf.html
 celery.result.BaseAsyncResult.wait method reference/celery.result.html
 celery.result.TaskSetResult.join method reference/celery.result.html
 celery.task.builtins.DeleteExpiredTaskMetaTask class reference/celery.task.builtins.html
