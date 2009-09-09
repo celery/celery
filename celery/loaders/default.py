@@ -40,6 +40,9 @@ class Loader(BaseLoader):
             settings.configure()
         for config_key, config_value in usercfg.items():
             setattr(settings, config_key, config_value)
+        installed_apps = set(DEFAULT_SETTINGS["INSTALLED_APPS"] + \
+                             settings.INSTALLED_APPS)
+        settings.INSTALLED_APPS = tuple(installed_apps)
         return settings
 
     def on_worker_init(self):
