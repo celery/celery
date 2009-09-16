@@ -60,8 +60,8 @@ def redirect_stdouts_to_logger(logger, loglevel=None):
 
     """
     proxy = LoggingProxy(logger, loglevel)
-    sys.stdout = sys.__stdout__ = proxy
-    sys.stderr = sys.__stderr__ = proxy
+    sys.stdout = proxy
+    sys.stderr = proxy
     return proxy
 
 

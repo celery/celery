@@ -32,13 +32,25 @@ usage () {
 [ -z "$query" -o -z "$hosts" ] && usage
 
 
-get_processed_date_for_task () {
+get_received_date_for_task () {
     host="$1"
     ssh "$USER@$host" "
         grep '$query' $CELERYD_LOGFILE | \
             grep 'Got task from broker:' | \
             perl -nle'
                 /^\[(.+?): INFO.+?Got task from broker:(.+?)\s*/;
+                print \"[\$1] $host \$2\"' | \
+            sed 's/\s*$//'
+    "
+}
+
+get_processed_date_for_task () {
+    host="$1"
+    ssh "$USER@$host" "
+        grep '$query' $CELERYD_LOGFILE | \
+            grep 'processed:' | \
+            perl -nle'
+                /^\[(.+?): INFO.+?Task\s+(.+?)\s*/;
                 print \"[\$1] $host \$2\"' | \
             sed 's/\s*$//'
     "
