@@ -3,6 +3,7 @@
 import codecs
 import sys
 import os
+import platform
 
 try:
     from setuptools import setup, find_packages, Command
@@ -45,10 +46,11 @@ install_requires = ["django-unittest-depth",
                     "carrot>=0.5.2"]
 
 # python-daemon doesn't run on windows, so check current platform
-if sys.platform == "win32":
-    print
-    print "I see you are using windows. You will not be able to run celery in daemon mode with the --detach parameter."
-    print
+if platform.system() == "Windows":
+    print("""
+    ***WARNING***
+    I see you are using windows. You will not be able to run celery
+    in daemon mode with the --detach parameter.""")
 else:
     install_requires.append("python-daemon")
 
