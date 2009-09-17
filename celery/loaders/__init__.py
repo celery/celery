@@ -1,3 +1,4 @@
+import os
 from celery.loaders.djangoapp import Loader as DjangoLoader
 from celery.loaders.default import Loader as DefaultLoader
 from django.conf import settings
@@ -13,12 +14,18 @@ Loader = DefaultLoader
 if settings.configured:
     Loader = DjangoLoader
 else:
-    # We might still be running celery with django, because worker processes
-    # spawned with celery running through manage.py, will not have had their
-    # django environment set up
+    if callable(getattr(os, "fork", None)): # Platform doesn't support fork()
+        # XXX On systems without fork, multiprocessing seems to be launching
+        # the processes in some other way which does not copy the memory
+        # of the parent process. This means that any configured env might
+        # be lost. This is a hack to make it work on Windows.
+        # A better way might be to use os.environ to set the currently
+        # used configuration method so to propogate it to the "child"
+        # processes. But this has to be experimented with.
+        # [asksol/heyman]
     try:
-        # If we can import 'settings', assume we're running celery with django
-        import settings as project_settings
+        settings_mod = os.environ.get("DJANGO_SETTINGS_MODULE", "settings")
+        project_settings = __import__(settings_mod, {}, {}, [''])
         setup_environ(project_settings)
         Loader = DjangoLoader
     except ImportError:
