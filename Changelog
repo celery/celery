@@ -14,6 +14,11 @@ Change history
 	Contact the mailinglist or IRC channel listed in README for help
 	doing this.
 
+* Database tables are now only created if the database backend is used,
+	so if you change back to the database backend at some point,
+	be sure to initialize tables (django: ``syncdb``, python: ``celeryinit``).
+	(Note: This is only the case when using Django 1.1 or higher)
+
 * Celery now depends on ``carrot`` version 0.5.2.
 
 **IMPORTANT CHANGES**
@@ -42,7 +47,7 @@ Change history
 	See http://github.com/ask/celery/issues/closed#issue/6 for more info!
 
 * AMQP QoS (prefetch count) implemented:
-    This to not receive more messages than we can handle.
+	This to not receive more messages than we can handle.
 
 * Now redirects stdout/stderr to the celeryd logfile when detached 
 
@@ -55,7 +60,7 @@ Change history
 	    	:meth:`celery.task.base.Task.on_failure`,
 
 * ``celery.utils.gen_unique_id``: Workaround for
-  http://bugs.python.org/issue4607
+	http://bugs.python.org/issue4607
 
 * You can now customize what happens at worker start, at process init, etc
 	by creating your own loaders. (see :mod:`celery.loaders.default`,
@@ -79,6 +84,21 @@ Change history
         Maximum number of restarts before we give up. Default: ``100``.
 
 **NEWS**
+
+*  Fix an incompatibility between python-daemon and multiprocessing,
+	which resulted in the ``[Errno 10] No child processes`` problem when
+	detaching.
+
+* Now depends on python-daemon 1.4.8
+
+* Fixed a possible DjangoUnicodeDecodeError being raised when saving pickled
+	data to Django's memcached cache backend.
+
+* Better Windows compatability.
+
+
+* New version of the pickled field (taken from
+	http://www.djangosnippets.org/snippets/513/)
 
 * New signals introduced: ``task_prerun`` and ``task_postrun``, see
 	:mod:`celery.signals` for more information.
