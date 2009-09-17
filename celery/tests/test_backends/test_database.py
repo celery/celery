@@ -41,7 +41,7 @@ class TestDatabaseBackend(unittest.TestCase):
 
         self.assertFalse(b.is_done(tid))
         self.assertEquals(b.get_status(tid), "PENDING")
-        self.assertEquals(b.get_result(tid), '')
+        self.assertTrue(b.get_result(tid) is None)
 
         b.mark_as_done(tid, 42)
         self.assertTrue(b.is_done(tid))

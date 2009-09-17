@@ -38,18 +38,15 @@ def mask_modules(*modnames):
     __builtin__.__import__ = realimport
 
 
-class OverrideStdout(object):
+@contextmanager
+def override_stdouts():
     """Override ``sys.stdout`` and ``sys.stderr`` with ``StringIO``."""
+    prev_out, prev_err = sys.stdout, sys.stderr
+    mystdout, mystderr = StringIO(), StringIO()
+    sys.stdout = sys.__stdout__ = mystdout
+    sys.stderr = sys.__stderr__ = mystderr
 
-    def __enter__(self):
-        mystdout = StringIO()
-        mystderr = StringIO()
-        sys.stdout = mystdout
-        sys.stderr = mystderr
-        return mystdout, mystderr
+    yield mystdout, mystderr
 
-    def __exit__(self, e_type, e_value, e_trace):
-        if e_type:
-            raise e_type(e_value)
-        sys.stdout = sys.__stdout__
-        sys.stderr = sys.__stderr__
+    sys.stdout = sys.__stdout__ = prev_out
+    sys.stderr = sys.__stderr__ = prev_err

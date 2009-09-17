@@ -7,7 +7,10 @@ Custom Django Model Fields.
 from copy import deepcopy
 from base64 import b64encode, b64decode
 from zlib import compress, decompress
-from celery.seralization import pickle
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 from django.db import models
 from django.utils.encoding import force_unicode

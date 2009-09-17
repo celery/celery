@@ -4,7 +4,7 @@ import time
 from celery.monitoring import TaskTimerStats, Statistics, StatsCollector
 from carrot.connection import DjangoBrokerConnection
 from celery.messaging import StatsConsumer
-from celery.tests.utils import OverrideStdout
+from celery.tests.utils import override_stdouts
 
 
 class PartialStatistics(Statistics):
@@ -86,7 +86,7 @@ class TestStatsCollector(unittest.TestCase):
         self.assertEquals(self.s.total_tasks_processed, 3)
 
         # Report
-        with OverrideStdout() as outs:
+        with override_stdouts() as outs:
             stdout, stderr = outs
             self.s.report()
             self.assertTrue(

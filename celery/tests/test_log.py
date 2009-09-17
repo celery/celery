@@ -6,7 +6,7 @@ import unittest
 import multiprocessing
 from StringIO import StringIO
 from celery.log import setup_logger, emergency_error
-from celery.tests.utils import OverrideStdout
+from celery.tests.utils import override_stdouts
 from tempfile import mktemp
 
 
@@ -56,7 +56,7 @@ class TestLog(unittest.TestCase):
         from multiprocessing import get_logger
         l = get_logger()
         l.handlers = []
-        with OverrideStdout() as outs:
+        with override_stdouts() as outs:
             stdout, stderr = outs
             l = setup_logger(logfile=stderr, loglevel=logging.INFO)
             l.info("The quick brown fox...")
@@ -71,7 +71,7 @@ class TestLog(unittest.TestCase):
         self.assertTrue(isinstance(l.handlers[0], logging.FileHandler))
 
     def test_emergency_error_stderr(self):
-        with OverrideStdout() as outs:
+        with override_stdouts() as outs:
             stdout, stderr = outs
             emergency_error(None, "The lazy dog crawls under the fast fox")
             self.assertTrue("The lazy dog crawls under the fast fox" in \
