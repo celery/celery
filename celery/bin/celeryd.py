@@ -80,7 +80,7 @@ from celery import conf
 from celery import discovery
 from celery.task import discard_all
 from celery.worker import WorkController
-from signal import signal, SIGHUP, SIGCLD, SIG_DFL
+import signal
 import multiprocessing
 import traceback
 import optparse
@@ -183,14 +183,16 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
         statistics=None, **kwargs):
     """Starts the celery worker server."""
 
-    # set SIGCLD back to the default SIG_DFL (before python-daemon overrode it)
-    # lets the parent wait() for the terminated child process and stops
-    # 'OSError: [Errno 10] No child processes' problem.
-    signal(SIGCLD, SIG_DFL)
+    # set SIGCLD back to the default SIG_DFL (before python-daemon overrode
+    # it) lets the parent wait() for the terminated child process and stops
+    # the 'OSError: [Errno 10] No child processes' problem.
+
+    if hasattr(signal, "SIGCLD"): # Make sure the platform supports signals.
+        signal.signal(signal.SIGCLD, signal.SIG_DFL)
     
     print("Celery %s is starting." % __version__)
 
-    if statistics:
+    if statistics is not None:
         settings.CELERY_STATISTICS = statistics
 
     if not concurrency:
@@ -271,7 +273,8 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
                                 logfile=logfile,
                                 is_detached=detach)
 
-        # Install signal handler that restarts celeryd on SIGHUP
+        # Install signal handler that restarts celeryd on SIGHUP,
+        # (only on POSIX systems)
         install_restart_signal_handler(worker)
 
         try:
@@ -295,6 +298,8 @@ def install_restart_signal_handler(worker):
     """Installs a signal handler that restarts the current program
     when it receives the ``SIGHUP`` signal.
     """
+    if not hasattr(signal, "SIGHUP"):
+        return  # platform is not POSIX
 
     def restart_self(signum, frame):
         """Signal handler restarting the current python program."""
@@ -309,7 +314,7 @@ def install_restart_signal_handler(worker):
             worker.stop()
         os.execv(sys.executable, [sys.executable] + sys.argv)
 
-    signal(SIGHUP, restart_self)
+    signal.signal(signal.SIGHUP, restart_self)
 
 
 def parse_options(arguments):
