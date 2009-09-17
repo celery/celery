@@ -7,10 +7,7 @@ Custom Django Model Fields.
 from copy import deepcopy
 from base64 import b64encode, b64decode
 from zlib import compress, decompress
-try:
-    from cPickle import loads, dumps
-except ImportError:
-    from pickle import loads, dumps
+from celery.seralization import pickle
 
 from django.db import models
 from django.utils.encoding import force_unicode
@@ -41,16 +38,16 @@ def dbsafe_encode(value, compress_object=False):
     for the lookups to work properly. See tests.py for more information.
     """
     if not compress_object:
-        value = b64encode(dumps(deepcopy(value)))
+        value = b64encode(pickle.dumps(deepcopy(value)))
     else:
-        value = b64encode(compress(dumps(deepcopy(value))))
+        value = b64encode(compress(pickle.dumps(deepcopy(value))))
     return PickledObject(value)
 
 def dbsafe_decode(value, compress_object=False):
     if not compress_object:
-        value = loads(b64decode(value))
+        value = pickle.loads(b64decode(value))
     else:
-        value = loads(decompress(b64decode(value)))
+        value = pickle.loads(decompress(b64decode(value)))
     return value
 
 class PickledObjectField(models.Field):
