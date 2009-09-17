@@ -19,6 +19,7 @@ class SomeClass(object):
 
 
 def get_tyrant_or_None():
+
     def emit_no_tyrant_msg():
         global _no_tyrant_msg_emitted
         if not _no_tyrant_msg_emitted:

@@ -12,7 +12,6 @@ import multiprocessing
 import socket
 import sys
 
-
 # pep8.py borks on a inline signature separator and
 # says "trailing whitespace" ;)
 EMAIL_SIGNATURE_SEP = "-- "

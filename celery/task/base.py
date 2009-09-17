@@ -368,7 +368,7 @@ class Task(object):
         :param task_id: Unique id of the failed task.
         :param args: Original arguments for the task that failed.
         :param kwargs: Original keyword arguments for the task that failed.
-        
+
         The return value of this handler is ignored.
 
         """

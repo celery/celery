@@ -81,7 +81,6 @@ class TestStatsCollector(unittest.TestCase):
         for timer in (timer1, timer2, timer3):
             timer.stop()
 
-
         # Collect
         self.s.collect()
         self.assertEquals(self.s.total_tasks_processed, 3)

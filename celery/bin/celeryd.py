@@ -189,7 +189,7 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
 
     if hasattr(signal, "SIGCLD"): # Make sure the platform supports signals.
         signal.signal(signal.SIGCLD, signal.SIG_DFL)
-    
+
     print("Celery %s is starting." % __version__)
 
     if statistics is not None:

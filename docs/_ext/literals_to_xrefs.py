@@ -108,11 +108,6 @@ def fixliterals(fname):
     storage["lastvalues"] = lastvalues
     storage.close()
 
-#
-# The following is taken from django.utils.termcolors and is copied here to
-# avoid the dependancy.
-#
-
 
 def colorize(text='', opts=(), **kwargs):
     """

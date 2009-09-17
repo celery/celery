@@ -65,9 +65,6 @@ def process_is_dead(process):
     :returns: ``True`` if the process is not running, ``False`` otherwise.
 
     """
-    
-    # Try to see if the process is actually running,
-    # and reap zombie proceses while we're at it.
 
     # Only do this if os.kill exists for this platform (e.g. Windows doesn't
     # support it).

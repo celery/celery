@@ -14,11 +14,8 @@ class ArgOverrideException(Exception):
 
 
 class TestPickle(unittest.TestCase):
-    # See: http://www.reddit.com/r/django/comments/8gdwi/
-    #      celery_distributed_task_queue_for_django/c097hr1
 
     def test_pickle_regular_exception(self):
-
         e = None
         try:
             raise RegularException("RegularException raised")

@@ -25,7 +25,7 @@ class URL(object):
     """Object wrapping a Uniform Resource Locator.
 
     Supports editing the query parameter list.
-    You can convert the object back to a string, the query will be 
+    You can convert the object back to a string, the query will be
     properly urlencoded.
 
     Examples
@@ -45,12 +45,14 @@ class URL(object):
     def __init__(self, url):
         self.url = urlparse(url)
         self._query = dict(parse_qsl(self.url.query))
-    
+
     def _utf8dict(self, tuple_):
+
         def value_encode(val):
             if isinstance(val, unicode):
                 return val.encode("utf-8")
             return val
+
         return dict((key.encode("utf-8"), value_encode(value))
                         for key, value in tuple_)
 
@@ -107,7 +109,7 @@ class RESTProxy(object):
             payload = deserialize(response)
         except ValueError, exc:
             raise InvalidResponseError(str(exc))
-   
+
         # {"status": "success", "retval": 300}
         # {"status": "failure": "reason": "Invalid moon alignment."}
         status = payload["status"]
@@ -148,7 +150,7 @@ def task_response(fun, *args, **kwargs):
         response = {"status": "success", "retval": retval}
 
     return serialize(response)
-    
+
 
 class Task(BaseTask):
 

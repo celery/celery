@@ -105,6 +105,7 @@ def get_pickleable_exception(exc):
         return excwrapper
     return exc
 
+
 def get_pickled_exception(exc):
     """Get original exception from exception pickled using
     :meth:`get_pickleable_exception`."""

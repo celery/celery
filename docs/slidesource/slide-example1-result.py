@@ -8,4 +8,3 @@ res = MyTask.apply_async(args=[8, 4],
                          countdown=5)
 res.get() # Is executed after 5 seconds.
 #32
-

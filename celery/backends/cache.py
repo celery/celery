@@ -4,27 +4,28 @@ from django.core.cache.backends.base import InvalidCacheBackendError
 from django.utils.encoding import smart_str
 from celery.backends.base import KeyValueStoreBackend
 
+
 class DjangoMemcacheWrapper(object):
-    """
-    Wrapper class to django's memcache backend class, that overrides the get method in
-    order to remove the forcing of unicode strings since it may cause binary or pickled data
-    to break.
-    """
+    """Wrapper class to django's memcache backend class, that overrides the
+    :meth:`get` method in order to remove the forcing of unicode strings
+    since it may cause binary or pickled data to break."""
+
     def __init__(self, cache):
         self.cache = cache
-    
+
     def get(self, key, default=None):
         val = self.cache._cache.get(smart_str(key))
         if val is None:
             return default
         else:
             return val
-    
+
     def set(self, key, value, timeout=0):
         self.cache.set(key, value, timeout)
 
-# Check if django is using memcache as the cache backend. If so, wrap the cache object in
-# our DjangoMemcacheWrapper that fixes a bug with retrieving pickled data
+# Check if django is using memcache as the cache backend. If so, wrap the
+# cache object in a DjangoMemcacheWrapper that fixes a bug with retrieving
+# pickled data
 try:
     from django.core.cache.backends.memcached import CacheClass
     if isinstance(cache, CacheClass):
