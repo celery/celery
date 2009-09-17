@@ -37,7 +37,7 @@ def emergency_error(logfile, message):
     some other reason."""
     logfh_needs_to_close = False
     if not logfile:
-        logfile = sys.stderr
+        logfile = sys.__stderr__
     if hasattr(logfile, "write"):
         logfh = logfile
     else:
@@ -79,6 +79,31 @@ class LoggingProxy(object):
     def __init__(self, logger, loglevel=logging.INFO):
         self.logger = logger
         self.loglevel = loglevel
+        self._safewrap_handlers()
+
+    def _safewrap_handlers(self):
+        """Make the logger handlers dump internal errors to
+        ``sys.__stderr__`` instead of ``sys.stderr`` to circumvent
+        infinite loops."""
+
+        def wrap_handler(handler):
+
+            class WithSafeHandleError(handler.__class__):
+
+                def handleError(self, record):
+                    exc_info = sys.exc_info()
+                    try:
+                        traceback.print_exception(exc_info[0], exc_info[1],
+                                                  exc_info[2], None,
+                                                  sys.__stderr__)
+                    except IOError:
+                        pass    # see python issue 5971
+                    finally:
+                        del(exc_info)
+
+            handler.handleError = WithSafeHandleError().handleError
+
+        return map(wrap_handler, self.logger.handlers)            
 
     def write(self, data):
         """Write message to logging object."""
