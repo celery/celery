@@ -3,6 +3,7 @@ import os
 import sys
 import time
 import logging
+import traceback
 from celery.conf import LOG_FORMAT, DAEMON_LOG_LEVEL
 
 
@@ -75,10 +76,11 @@ class LoggingProxy(object):
     mode = "w"
     name = None
     closed = False
+    loglevel = logging.INFO
 
-    def __init__(self, logger, loglevel=logging.INFO):
+    def __init__(self, logger, loglevel=None):
         self.logger = logger
-        self.loglevel = loglevel
+        self.loglevel = loglevel or self.logger.level or self.loglevel
         self._safewrap_handlers()
 
     def _safewrap_handlers(self):
@@ -88,7 +90,7 @@ class LoggingProxy(object):
 
         def wrap_handler(handler):
 
-            class WithSafeHandleError(handler.__class__):
+            class WithSafeHandleError(logging.Handler):
 
                 def handleError(self, record):
                     exc_info = sys.exc_info()
