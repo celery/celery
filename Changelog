@@ -19,7 +19,7 @@ Change history
 	be sure to initialize tables (django: ``syncdb``, python: ``celeryinit``).
 	(Note: This is only the case when using Django 1.1 or higher)
 
-* Celery now depends on ``carrot`` version 0.5.2.
+* Celery now depends on ``carrot`` version 0.6.0.
 
 **IMPORTANT CHANGES**
 
