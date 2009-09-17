@@ -182,9 +182,10 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
         supervised=False, working_directory=None, chroot=None,
         statistics=None, **kwargs):
     """Starts the celery worker server."""
+
     # set SIGCLD back to the default SIG_DFL (before python-daemon overrode it)
     # lets the parent wait() for the terminated child process and stops
-	# 'OSError: [Errno 10] No child processes' problem.
+    # 'OSError: [Errno 10] No child processes' problem.
     signal(SIGCLD, SIG_DFL)
     
     print("Celery %s is starting." % __version__)

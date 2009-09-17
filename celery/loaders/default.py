@@ -30,7 +30,6 @@ class Loader(BaseLoader):
         configname = os.environ.get("CELERY_CONFIG_MODULE",
                                     DEFAULT_CONFIG_MODULE)
         celeryconfig = __import__(configname, {}, {}, [''])
-        import celeryconfig
         usercfg = dict((key, getattr(celeryconfig, key))
                             for key in dir(celeryconfig)
                                 if wanted_module_item(key))
