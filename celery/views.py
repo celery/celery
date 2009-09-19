@@ -25,7 +25,7 @@ def apply(request, task_name, *args):
     task = tasks[task_name]
     result = apply_async(task, args=args, kwargs=kwargs)
     response_data = {"ok": "true", "task_id": result.task_id}
-    return HTTPResponse(JSON_dump(response_data), mimetype="application/json")
+    return HttpResponse(JSON_dump(response_data), mimetype="application/json")
 
 
 def is_task_done(request, task_id):
