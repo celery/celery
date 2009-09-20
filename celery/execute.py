@@ -73,9 +73,12 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
     kwargs = kwargs or {}
     routing_key = routing_key or getattr(task, "routing_key", None)
     exchange = exchange or getattr(task, "exchange", None)
-    immediate = immediate or getattr(task, "immediate", None)
-    mandatory = mandatory or getattr(task, "mandatory", None)
-    priority = priority or getattr(task, "priority", None)
+    if immediate is None:
+        immediate = immediate or getattr(task, "immediate", None)
+    if mandatory is None:
+        mandatory = getattr(task, "mandatory", None)
+    if priority is None:
+        priority = getattr(task, "priority", None)
     serializer = serializer or getattr(task, "serializer", None)
     taskset_id = opts.get("taskset_id")
     publisher = opts.get("publisher")

@@ -19,7 +19,9 @@ Change history
 	be sure to initialize tables (django: ``syncdb``, python: ``celeryinit``).
 	(Note: This is only the case when using Django 1.1 or higher)
 
-* Celery now depends on ``carrot`` version 0.6.0.
+* Now depends on ``carrot`` version 0.6.0.
+
+* Now depends on python-daemon 1.4.8
 
 **IMPORTANT CHANGES**
 
@@ -88,8 +90,6 @@ Change history
 *  Fix an incompatibility between python-daemon and multiprocessing,
 	which resulted in the ``[Errno 10] No child processes`` problem when
 	detaching.
-
-* Now depends on python-daemon 1.4.8
 
 * Fixed a possible DjangoUnicodeDecodeError being raised when saving pickled
 	data to Django's memcached cache backend.
