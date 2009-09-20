@@ -15,6 +15,7 @@
     celery.registry
     celery.signals
     celery.exceptions
+    celery.task.rest
     celery.task.builtins
     celery.task.strategy
     celery.loaders
