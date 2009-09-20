@@ -2,7 +2,7 @@
  celery - Distributed Task Queue
 =================================
 
-:Version: 0.7.0
+:Version: 0.7.99
 
 Introduction
 ============
