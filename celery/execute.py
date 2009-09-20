@@ -74,7 +74,7 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
     routing_key = routing_key or getattr(task, "routing_key", None)
     exchange = exchange or getattr(task, "exchange", None)
     if immediate is None:
-        immediate = immediate or getattr(task, "immediate", None)
+        immediate = getattr(task, "immediate", None)
     if mandatory is None:
         mandatory = getattr(task, "mandatory", None)
     if priority is None:
