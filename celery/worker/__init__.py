@@ -2,8 +2,6 @@
 
 The Multiprocessing Worker Server
 
-Documentation for this module is in ``docs/reference/celery.worker.rst``.
-
 """
 from carrot.connection import DjangoBrokerConnection, AMQPConnectionException
 from celery.worker.controllers import Mediator, PeriodicWorkController

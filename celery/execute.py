@@ -219,7 +219,14 @@ class ExecuteWrapper(object):
         self.kwargs = kwargs or {}
 
     def __call__(self, *args, **kwargs):
-        return self.execute()
+        return self.execute_safe()
+
+    def execute_safe(self, *args, **kwargs):
+        try:
+            return self.execute(*args, **kwargs)
+        except Exception, exc:
+            exc = default_backend.prepare_exception(exc)
+            raise exc
 
     def execute(self):
         # Convenience variables
