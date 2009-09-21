@@ -7,6 +7,13 @@ import traceback
 from celery.conf import LOG_FORMAT, DAEMON_LOG_LEVEL
 
 
+def get_default_logger(loglevel=None):
+    import multiprocessing
+    logger = multiprocessing.get_logger()
+    loglevel is not None and logger.setLevel(loglevel)
+    return logger
+
+
 def setup_logger(loglevel=DAEMON_LOG_LEVEL, logfile=None, format=LOG_FORMAT,
         **kwargs):
     """Setup the ``multiprocessing`` logger. If ``logfile`` is not specified,
@@ -14,10 +21,9 @@ def setup_logger(loglevel=DAEMON_LOG_LEVEL, logfile=None, format=LOG_FORMAT,
 
     Returns logger object.
     """
-    import multiprocessing
-    logger = multiprocessing.get_logger()
-    logger.setLevel(loglevel)
+    logger = get_default_logger(loglevel=loglevel)
     if logger.handlers:
+        # Logger already configured
         return logger
     if logfile:
         if hasattr(logfile, "write"):
@@ -28,6 +34,7 @@ def setup_logger(loglevel=DAEMON_LOG_LEVEL, logfile=None, format=LOG_FORMAT,
         log_file_handler.setFormatter(formatter)
         logger.addHandler(log_file_handler)
     else:
+        import multiprocessing
         multiprocessing.log_to_stderr()
     return logger
 

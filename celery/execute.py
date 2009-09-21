@@ -6,7 +6,6 @@ from celery.registry import tasks
 from celery.utils import gen_unique_id, noop, fun_takes_kwargs
 from functools import partial as curry
 from datetime import datetime, timedelta
-from multiprocessing import get_logger
 from celery.exceptions import RetryTaskError
 from celery.datastructures import ExceptionInfo
 from celery.backends import default_backend

@@ -7,6 +7,7 @@ from celery.registry import tasks
 from celery.exceptions import NotRegistered
 from celery.execute import ExecuteWrapper
 from celery.utils import noop, fun_takes_kwargs
+from celery.log import get_default_logger
 from django.core.mail import mail_admins
 import multiprocessing
 import socket
@@ -105,7 +106,7 @@ class TaskWrapper(object):
                 "fail_email_body"):
             setattr(self, opt, opts.get(opt, getattr(self, opt, None)))
         if not self.logger:
-            self.logger = multiprocessing.get_logger()
+            self.logger = get_default_logger()
 
     def __repr__(self):
         return '<%s: {name:"%s", id:"%s", args:"%s", kwargs:"%s"}>' % (
