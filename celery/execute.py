@@ -14,8 +14,9 @@ from celery.loaders import current_loader
 from celery.monitoring import TaskTimerStats
 from celery import signals
 import sys
-import traceback
 import inspect
+import warnings
+import traceback
 
 
 def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
@@ -228,8 +229,11 @@ class ExecuteWrapper(object):
         try:
             return self.execute(*args, **kwargs)
         except Exception, exc:
+            type_, value_, tb = sys.exc_info()
             exc = default_backend.prepare_exception(exc)
-            raise exc
+            warnings.warn("Exception happend outside of task body: %s: %s" % (
+                str(exc.__class__), str(exc)))
+            return ExceptionInfo((type_, exc, tb))
 
     def execute(self):
         # Convenience variables
