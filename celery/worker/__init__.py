@@ -63,7 +63,7 @@ class AMQPListener(object):
             self.reset_connection()
             try:
                 self.consume_messages()
-            except (socket.error, AMQPConnectionException):
+            except (socket.error, AMQPConnectionException, IOError):
                 self.logger.error("AMQPListener: Connection to broker lost. "
                                 + "Trying to re-establish connection...")
 
@@ -156,7 +156,7 @@ class AMQPListener(object):
         if not AMQP_CONNECTION_RETRY:
             return _establish_connection()
 
-        conn = retry_over_time(_establish_connection, socket.error,
+        conn = retry_over_time(_establish_connection, (socket.error, IOError),
                                errback=_connection_error_handler,
                                max_retries=AMQP_CONNECTION_MAX_RETRIES)
         self.logger.debug("AMQPListener: Connection Established.")
