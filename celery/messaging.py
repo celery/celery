@@ -5,6 +5,7 @@ Sending and Receiving Messages
 """
 from carrot.messaging import Publisher, Consumer, ConsumerSet
 from celery import conf
+from celery import signals
 from celery.utils import gen_unique_id
 from celery.utils import mitemgetter
 from celery.serialization import pickle
@@ -58,6 +59,8 @@ class TaskPublisher(Publisher):
             message_data["taskset"] = part_of_set
 
         self.send(message_data, **extract_msg_options(kwargs))
+        signals.task_sent.send(sender=task_name, **message_data)
+
         return task_id
 
 
