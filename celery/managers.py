@@ -109,7 +109,7 @@ class TaskManager(models.Manager):
                 task.result = result
                 task.traceback = traceback
                 task.save()
-        except Exceptions, exc:
+        except Exception, exc:
             # depending on the database backend we can get various exceptions.
             # for excample, psycopg2 raises an exception if some operation
             # breaks transaction, and saving task result won't be possible
