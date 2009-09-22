@@ -75,6 +75,7 @@ setup(
     author_email=celery.__contact__,
     url=celery.__homepage__,
     platforms=["any"],
+    license="BSD",
     packages=find_packages(exclude=['ez_setup']),
     scripts=["bin/celeryd", "bin/celeryinit"],
     zip_safe=False,
