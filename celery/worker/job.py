@@ -11,7 +11,6 @@ from celery.log import get_default_logger
 from django.core.mail import mail_admins
 import socket
 
-
 # pep8.py borks on a inline signature separator and
 # says "trailing whitespace" ;)
 EMAIL_SIGNATURE_SEP = "-- "
