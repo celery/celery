@@ -198,7 +198,9 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
     if not concurrency:
         concurrency = multiprocessing.cpu_count()
 
-    if settings.DATABASE_ENGINE == "sqlite3" and concurrency > 1:
+    if conf.CELERY_BACKEND == "database" \
+            and settings.DATABASE_ENGINE == "sqlite3" and \
+            concurrency > 1:
         import warnings
         warnings.warn("The sqlite3 database engine doesn't support "
                 "concurrency. We'll be using a single process only.",
