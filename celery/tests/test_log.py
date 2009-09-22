@@ -35,6 +35,8 @@ class TestLog(unittest.TestCase):
 
     def test_setup_logger(self):
         logger = setup_logger(loglevel=logging.ERROR, logfile=None)
+        logger.handlers = [] # Reset previously set logger.
+        logger = setup_logger(loglevel=logging.ERROR, logfile=None)
         self.assertTrue(logger.handlers[0].stream is sys.stderr,
                 "setup_logger logs to stderr without logfile argument.")
         #self.assertTrue(logger._process_aware,
