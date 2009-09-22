@@ -84,6 +84,7 @@ class Mediator(BackgroundThread):
         self.callback = callback
 
     def on_iteration(self):
+        """Get tasks from bucket queue and apply the task callback."""
         logger = get_default_logger()
         try:
             logger.debug("Mediator: Trying to get message from bucket_queue")
@@ -91,7 +92,6 @@ class Mediator(BackgroundThread):
             task = self.bucket_queue.get(timeout=1)
         except QueueEmpty:
             logger.debug("Mediator: Bucket queue is empty.")
-            pass
         else:
             logger.debug("Mediator: Running callback for task: %s[%s]" % (
                 task.task_name, task.task_id))
@@ -119,6 +119,7 @@ class PeriodicWorkController(BackgroundThread):
         default_periodic_status_backend.init_periodic_tasks()
 
     def on_iteration(self):
+        """Run periodic tasks and process the hold queue."""
         logger = get_default_logger()
         logger.debug("PeriodicWorkController: Running periodic tasks...")
         try:

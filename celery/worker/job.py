@@ -9,9 +9,7 @@ from celery.execute import ExecuteWrapper
 from celery.utils import noop, fun_takes_kwargs
 from celery.log import get_default_logger
 from django.core.mail import mail_admins
-import multiprocessing
 import socket
-import sys
 
 
 # pep8.py borks on a inline signature separator and
@@ -170,6 +168,7 @@ class TaskWrapper(object):
                               self.args, task_func_kwargs)
 
     def _set_executed_bit(self):
+        """Set task as executed to make sure it's not executed again."""
         if self.executed:
             raise AlreadyExecutedError(
                    "Task %s[%s] has already been executed" % (
