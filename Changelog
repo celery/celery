@@ -94,7 +94,7 @@ Change history
 * Fixed a possible DjangoUnicodeDecodeError being raised when saving pickled
 	data to Django's memcached cache backend.
 
-* Better Windows compatability.
+* Better Windows compatibility.
 
 * New version of the pickled field (taken from
 	http://www.djangosnippets.org/snippets/513/)
