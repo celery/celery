@@ -2,7 +2,7 @@
 Change history
 ==============
 
-0.8.0 [2009-xx-xx xx:xx x.M CET]
+0.8.0 [2009-09-22 xx:xx x.M CET]
 --------------------------------
 
 **BACKWARD INCOMPATIBLE CHANGES**
@@ -19,7 +19,9 @@ Change history
 	be sure to initialize tables (django: ``syncdb``, python: ``celeryinit``).
 	(Note: This is only the case when using Django 1.1 or higher)
 
-* Celery now depends on ``carrot`` version 0.6.0.
+* Now depends on ``carrot`` version 0.6.0.
+
+* Now depends on python-daemon 1.4.8
 
 **IMPORTANT CHANGES**
 
@@ -89,19 +91,16 @@ Change history
 	which resulted in the ``[Errno 10] No child processes`` problem when
 	detaching.
 
-* Now depends on python-daemon 1.4.8
-
 * Fixed a possible DjangoUnicodeDecodeError being raised when saving pickled
 	data to Django's memcached cache backend.
 
 * Better Windows compatability.
 
-
 * New version of the pickled field (taken from
 	http://www.djangosnippets.org/snippets/513/)
 
-* New signals introduced: ``task_prerun`` and ``task_postrun``, see
-	:mod:`celery.signals` for more information.
+* New signals introduced: ``task_sent``, ``task_prerun`` and
+	``task_postrun``, see :mod:`celery.signals` for more information.
 
 * ``TaskSetResult.join`` caused ``TypeError`` when ``timeout=None``.
 	Thanks Jerzy Kozera.  Closes #31
@@ -114,6 +113,9 @@ Change history
 
 * Exceptions has been moved to ``celery.exceptions``, but are still
 	available in the previous module.
+
+* Try to rollback transaction and retry saving result if an error happens
+	while setting task status with the database backend.
 
 * jail() refactored into :class:`celery.execute.ExecuteWrapper`.
 

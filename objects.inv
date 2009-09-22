@@ -1,6 +1,6 @@
 # Sphinx inventory version 1
 # Project: Celery
-# Version: 0.7
+# Version: 0.8
 celery.backends.base mod reference/celery.backends.base.html
 celery.exceptions mod reference/celery.exceptions.html
 celery.execute mod reference/celery.execute.html
@@ -221,6 +221,7 @@ celery.task.base.Task.name attribute reference/celery.task.base.html
 celery.execute.apply_async function reference/celery.execute.html
 celery.worker.AMQPListener.bucket_queue attribute reference/celery.worker.html
 TaskMeta.result attribute reference/celery.models.html
+celery.worker.job.AlreadyExecutedError exception reference/celery.worker.job.html
 celery.backends.database.Backend.get_traceback method reference/celery.backends.database.html
 celery.conf.SEND_CELERY_TASK_ERROR_EMAILS data reference/celery.conf.html
 celery.task.dmap function reference/celery.task.html
@@ -353,6 +354,7 @@ celery.bin.celeryd.acquire_pidlock function reference/celery.bin.celeryd.html
 celery.task.base.TaskSet.remote_execute classmethod reference/celery.task.base.html
 celery.result.BaseAsyncResult class reference/celery.result.html
 celery.pool.DynamicPool.add_worker method reference/celery.pool.html
+celery.worker.controllers.PeriodicWorkController.on_iteration method reference/celery.worker.controllers.html
 celery.worker.controllers.BackgroundThread.on_iteration method reference/celery.worker.controllers.html
 celery.pool.TaskPool.limit attribute reference/celery.pool.html
 celery.result.TaskSetResult.subtasks attribute reference/celery.result.html
@@ -367,6 +369,7 @@ celery.conf.AMQP_EXCHANGE data reference/celery.conf.html
 celery.loaders.djangoapp.Loader class reference/celery.loaders.djangoapp.html
 celery.worker.AMQPListener.stop method reference/celery.worker.html
 celery.worker.AMQPListener.logger attribute reference/celery.worker.html
+celery.worker.controllers.Mediator.on_iteration method reference/celery.worker.controllers.html
 celery.worker.AMQPListener class reference/celery.worker.html
 celery.log.LoggingProxy.isatty method reference/celery.log.html
 celery.views.task_status function reference/celery.views.html
