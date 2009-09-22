@@ -82,7 +82,7 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
     serializer = serializer or getattr(task, "serializer", None)
     taskset_id = opts.get("taskset_id")
     publisher = opts.get("publisher")
-    retries = opts.get("retries")
+    retries = opts.get("retries", 0)
     if countdown:
         eta = datetime.now() + timedelta(seconds=countdown)
 
