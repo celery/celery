@@ -3,6 +3,7 @@ from celery import discovery
 from celery.utils import get_full_cls_name
 from celery.exceptions import NotRegistered, AlreadyRegistered
 from UserDict import UserDict
+import inspect
 
 
 class TaskRegistry(UserDict):
@@ -31,19 +32,15 @@ class TaskRegistry(UserDict):
         :raises AlreadyRegistered: if the task is already registered.
 
         """
-        is_class = hasattr(task, "run")
-        if is_class:
-            task = task() # instantiate Task class
+
+        task = task() if inspect.isclass(task) else task
+
         if not name:
             name = getattr(task, "name")
 
         if name in self.data:
             raise self.AlreadyRegistered(
                     "Task with name %s is already registered." % name)
-
-        if not is_class:
-            task.name = name
-            task.type = "regular"
 
         self.data[name] = task
 
