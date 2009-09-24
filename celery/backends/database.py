@@ -34,7 +34,7 @@ class Backend(BaseBackend):
         """Store return value and status of an executed task."""
         if status == "DONE":
             result = self.prepare_result(result)
-        elif status == "FAILURE":
+        elif status in ["FAILURE", "RETRY"]:
             result = self.prepare_exception(result)
         TaskMeta.objects.store_result(task_id, result, status,
                                       traceback=traceback)
