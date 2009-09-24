@@ -19,7 +19,7 @@ class TaskRegistry(UserDict):
         """Autodiscovers tasks using :func:`celery.discovery.autodiscover`."""
         discovery.autodiscover()
 
-    def register(self, task, name=None):
+    def register(self, task):
         """Register a task in the task registry.
 
         Task can either be a regular function, or a class inheriting
@@ -34,9 +34,7 @@ class TaskRegistry(UserDict):
         """
 
         task = task() if inspect.isclass(task) else task
-
-        if not name:
-            name = getattr(task, "name")
+        name = task.name
 
         if name in self.data:
             raise self.AlreadyRegistered(
