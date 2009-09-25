@@ -2,8 +2,6 @@ import unittest
 from celery import registry
 from celery.task import Task, PeriodicTask
 
-FUNC_TASK_NAME = "celery.unittest.func_task"
-
 
 class TestTask(Task):
     name = "celery.unittest.test_task"
@@ -19,9 +17,6 @@ class TestPeriodicTask(PeriodicTask):
     def run(self, **kwargs):
         return True
 
-
-def func_task(**kwargs):
-    return True
 
 
 class TestTaskRegistry(unittest.TestCase):
@@ -44,37 +39,29 @@ class TestTaskRegistry(unittest.TestCase):
                 "TaskRegistry has composited dict")
 
         self.assertRegisterUnregisterCls(r, TestTask)
-        self.assertRegisterUnregisterFunc(r, func_task, FUNC_TASK_NAME)
         self.assertRegisterUnregisterCls(r, TestPeriodicTask)
 
         tasks = r.get_all()
         self.assertTrue(isinstance(tasks.get(TestTask.name), TestTask))
         self.assertTrue(isinstance(tasks.get(TestPeriodicTask.name),
                                    TestPeriodicTask))
-        self.assertEquals(tasks.get(FUNC_TASK_NAME), func_task)
 
         regular = r.get_all_regular()
         self.assertTrue(TestTask.name in regular)
         self.assertFalse(TestPeriodicTask.name in regular)
-        self.assertTrue(FUNC_TASK_NAME in regular)
 
         periodic = r.get_all_periodic()
         self.assertFalse(TestTask.name in periodic)
         self.assertTrue(TestPeriodicTask.name in periodic)
-        self.assertFalse(FUNC_TASK_NAME in periodic)
 
         self.assertTrue(isinstance(r.get_task(TestTask.name), TestTask))
         self.assertTrue(isinstance(r.get_task(TestPeriodicTask.name),
                                    TestPeriodicTask))
-        self.assertEquals(r.get_task(FUNC_TASK_NAME), func_task)
 
         r.unregister(TestTask)
         self.assertFalse(TestTask.name in r)
         r.unregister(TestPeriodicTask)
         self.assertFalse(TestPeriodicTask.name in r)
-        r.unregister(FUNC_TASK_NAME)
-        self.assertFalse(FUNC_TASK_NAME in r)
 
-        self.assertTrue(func_task())
         self.assertTrue(TestTask().run())
         self.assertTrue(TestPeriodicTask().run())

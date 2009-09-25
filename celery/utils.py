@@ -124,6 +124,9 @@ def fun_takes_kwargs(fun, kwlist=[]):
     """With a function, and a list of keyword arguments, returns arguments
     in the list which the function takes.
 
+    If the object has an ``argspec`` attribute that is used instead
+    of using the :meth:`inspect.getargspec`` introspection.
+
     :param fun: The function to inspect arguments of.
     :param kwlist: The list of keyword arguments.
 
@@ -139,7 +142,8 @@ def fun_takes_kwargs(fun, kwlist=[]):
         ["logfile", "loglevel", "task_id"]
 
     """
-    args, _varargs, keywords, _defaults = getargspec(fun)
+    argspec = getattr(fun, "argspec", getargspec(fun))
+    args, _varargs, keywords, _defaults = argspec
     if keywords != None:
         return kwlist
     return filter(curry(operator.contains, args), kwlist)
