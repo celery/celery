@@ -1,5 +1,4 @@
 from celery.task.base import Task
-from celery.registry import tasks
 from inspect import getargspec
 
 
@@ -32,7 +31,7 @@ def task(**options):
     """
 
     def _create_task_cls(fun):
-        name = options.pop("name", None)
+        base = options.pop("base", Task)
 
         cls_name = fun.__name__
 
@@ -45,7 +44,7 @@ def task(**options):
         cls_dict["run"] = run
         cls_dict["__module__"] = fun.__module__
 
-        task = type(cls_name, (Task, ), cls_dict)()
+        task = type(cls_name, (base, ), cls_dict)()
 
         return task
 
