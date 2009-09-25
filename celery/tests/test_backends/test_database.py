@@ -19,7 +19,6 @@ class MyPeriodicTask(PeriodicTask):
 
     def run(self, **kwargs):
         return 42
-registry.tasks.register(MyPeriodicTask)
 
 
 class TestDatabaseBackend(unittest.TestCase):

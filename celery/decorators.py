@@ -6,10 +6,6 @@ from inspect import getargspec
 def task(**options):
     """Make a task out of any callable.
 
-        :keyword autoregister: Automatically register the task in the
-            task registry.
-
-
         Examples:
 
             >>> @task()
@@ -37,7 +33,6 @@ def task(**options):
 
     def _create_task_cls(fun):
         name = options.pop("name", None)
-        autoregister = options.pop("autoregister", True)
 
         cls_name = fun.__name__
 
@@ -51,7 +46,6 @@ def task(**options):
         cls_dict["__module__"] = fun.__module__
 
         task = type(cls_name, (Task, ), cls_dict)()
-        autoregister and tasks.register(task)
 
         return task
 

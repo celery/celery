@@ -122,9 +122,10 @@ class TestTaskRetries(unittest.TestCase):
 class TestCeleryTasks(unittest.TestCase):
 
     def createTaskCls(self, cls_name, task_name=None):
-        attrs = {}
+        attrs = {"__module__": self.__module__}
         if task_name:
             attrs["name"] = task_name
+
         cls = type(cls_name, (task.Task, ), attrs)
         cls.run = return_True
         return cls
@@ -169,7 +170,6 @@ class TestCeleryTasks(unittest.TestCase):
         task_kwargs = task_data.get("kwargs", {})
         if test_eta:
             self.assertTrue(isinstance(task_data.get("eta"), datetime))
-            print("TASK_KWARGS: %s" % task_kwargs)
         for arg_name, arg_value in kwargs.items():
             self.assertEquals(task_kwargs.get(arg_name), arg_value)
 
@@ -193,7 +193,6 @@ class TestCeleryTasks(unittest.TestCase):
         T2 = self.createTaskCls("T2")
         self.assertEquals(T2().name, "celery.tests.test_task.T2")
 
-        registry.tasks.register(T1)
         t1 = T1()
         consumer = t1.get_consumer()
         self.assertRaises(NotImplementedError, consumer.receive, "foo", "foo")
@@ -313,13 +312,3 @@ class TestTaskApply(unittest.TestCase):
         self.assertFalse(f.is_done())
         self.assertTrue(f.traceback)
         self.assertRaises(KeyError, f.get)
-
-
-class TestPeriodicTask(unittest.TestCase):
-
-    def test_interface(self):
-
-        class MyPeriodicTask(task.PeriodicTask):
-            run_every = None
-
-        self.assertRaises(NotImplementedError, MyPeriodicTask)

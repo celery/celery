@@ -135,7 +135,6 @@ class RESTProxyTask(BaseTask):
         logger = self.get_logger(**kwargs)
         proxy = RESTProxy(url, kwargs, logger)
         return proxy.execute()
-tasks.register(RESTProxyTask)
 
 
 def task_response(fun, *args, **kwargs):

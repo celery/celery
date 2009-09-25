@@ -20,7 +20,6 @@ class DeleteExpiredTaskMetaTask(PeriodicTask):
         logger = self.get_logger(**kwargs)
         logger.info("Deleting expired task meta objects...")
         default_backend.cleanup()
-tasks.register(DeleteExpiredTaskMetaTask)
 
 
 class PingTask(Task):
@@ -30,4 +29,3 @@ class PingTask(Task):
     def run(self, **kwargs):
         """:returns: the string ``"pong"``."""
         return "pong"
-tasks.register(PingTask)

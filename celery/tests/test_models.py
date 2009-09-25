@@ -52,7 +52,6 @@ class TestModels(unittest.TestCase):
         self.assertFalse(m1 in TaskMeta.objects.all())
 
     def test_periodic_taskmeta(self):
-        tasks.register(TestPeriodicTask)
         p = self.createPeriodicTaskMeta(TestPeriodicTask.name)
         # check that repr works.
         self.assertTrue(unicode(p).startswith("<PeriodicTask:"))
