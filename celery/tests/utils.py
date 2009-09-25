@@ -1,9 +1,22 @@
 from __future__ import with_statement
 from contextlib import contextmanager
 from StringIO import StringIO
+from functools import wraps
 import os
 import sys
 import __builtin__
+
+
+def todo(reason):
+
+    def _wrap_test(fun):
+
+        @wraps(fun)
+        def _skipped_test(*args, **kwargs):
+            sys.stderr.write("(TODO: %s) " % reason)
+
+        return _skipped_test
+    return _wrap_test
 
 
 @contextmanager
