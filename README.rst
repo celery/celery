@@ -267,13 +267,11 @@ This is a task that basically does nothing but take some arguments,
 and return a value:
 
     >>> from celery.task import Task
-    >>> from celery.registry import tasks
     >>> class MyTask(Task):
     ...     def run(self, some_arg, **kwargs):
     ...         logger = self.get_logger(**kwargs)
     ...         logger.info("Did something: %s" % some_arg)
     ...         return 42
-    >>> tasks.register(MyTask)
 
 As you can see the worker is sending some keyword arguments to this task,
 this is the default keyword arguments. A task can choose not to take these,
@@ -358,7 +356,6 @@ Periodic tasks are tasks that are run every ``n`` seconds.
 Here's an example of a periodic task:
 
     >>> from celery.task import PeriodicTask
-    >>> from celery.registry import tasks
     >>> from datetime import timedelta
     >>> class MyPeriodicTask(PeriodicTask):
     ...     run_every = timedelta(seconds=30)
@@ -367,7 +364,6 @@ Here's an example of a periodic task:
     ...         logger = self.get_logger(**kwargs)
     ...         logger.info("Running periodic task!")
     ...
-    >>> tasks.register(MyPeriodicTask)
 
 **Note:** Periodic tasks does not support arguments, as this doesn't
 really make sense.
