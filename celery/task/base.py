@@ -18,7 +18,7 @@ class TaskType(type):
     Automatically registers the task in the task registry, except
     if the ``abstract`` attribute is set.
 
-    If no ``name`` attribute is provieded, the name is automatically
+    If no ``name`` attribute is provided, the name is automatically
     set to the name of the module it was defined in, and the class name.
 
     """
@@ -27,7 +27,7 @@ class TaskType(type):
         super_new = super(TaskType, cls).__new__
         task_module = attrs["__module__"]
 
-        # Abstract class, remove the abstract attribute so the
+        # Abstract class, remove the abstract attribute so
         # any class inheriting from this won't be abstract by default.
         if attrs.pop("abstract", None):
             return super_new(cls, name, bases, attrs)
