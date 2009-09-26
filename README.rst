@@ -21,17 +21,8 @@ languages see `Executing tasks on a remote web server`_.
 
 .. _`Executing tasks on a remote web server`: http://bit.ly/CgXSc
 
-It is used for executing tasks *asynchronously*, routed to one or more
+It is used for executing functions *asynchronously*, routed to one or more
 worker servers, running concurrently using multiprocessing.
-
-It is designed to solve certain problems related to running websites
-demanding high-availability and performance.
-
-It is perfect for filling caches, posting updates to twitter, mass
-downloading data like syndication feeds or web scraping. Use-cases are
-plentiful. Implementing these features asynchronously using ``celery`` is
-easy and fun, and the performance improvements can make it more than
-worthwhile.
 
 Overview
 ========
@@ -266,12 +257,21 @@ advanced features of celery later.
 This is a task that basically does nothing but take some arguments,
 and return a value:
 
-    >>> from celery.task import Task
-    >>> class MyTask(Task):
-    ...     def run(self, some_arg, **kwargs):
-    ...         logger = self.get_logger(**kwargs)
-    ...         logger.info("Did something: %s" % some_arg)
-    ...         return 42
+    >>> from celery.decorators import task
+    >>> @task()
+    ... def add(x, y):
+    ...     return x * y
+
+
+You can also use the workers logger to add some diagnostic output to
+the worker log:
+
+    >>> from celery.decorators import task
+    >>> @task()
+    ... def add(x, y, **kwargs):
+    ...     logger = add.get_logger(**kwargs)
+    ...     logger.info("Adding %s + %s" % (x, y))
+    ...     return x + y
 
 As you can see the worker is sending some keyword arguments to this task,
 this is the default keyword arguments. A task can choose not to take these,
@@ -305,16 +305,16 @@ Now if we want to execute this task, we can use the ``delay`` method of the
 task class (this is a handy shortcut to the ``apply_async`` method which gives
 you greater control of the task execution).
 
-    >>> from myapp.tasks import MyTask
-    >>> MyTask.delay(some_arg="foo")
+    >>> from myapp.tasks import add
+    >>> add.delay(4, 4)
 
 At this point, the task has been sent to the message broker. The message
 broker will hold on to the task until a celery worker server has successfully
 picked it up.
 
-*Note* If everything is just hanging when you execute ``delay``, please check
-that RabbitMQ is running, and that the user/password has access to the virtual
-host you configured earlier.
+*Note* If everything is just hanging when you execute ``delay``, please make
+sure the RabbitMQ user/password has access to the virtual host configured
+earlier.
 
 Right now we have to check the celery worker logfiles to know what happened with
 the task. This is because we didn't keep the ``AsyncResult`` object returned
@@ -325,15 +325,15 @@ finish and get its return value (or exception if the task failed).
 
 So, let's execute the task again, but this time we'll keep track of the task:
 
-    >>> result = MyTask.delay("do_something", some_arg="foo bar baz")
+    >>> result = add.delay(4, 4)
     >>> result.ready() # returns True if the task has finished processing.
     False
     >>> result.result # task is not ready, so no return value yet.
     None
     >>> result.get()   # Waits until the task is done and return the retval.
-    42
+    8
     >>> result.result
-    42
+    8
     >>> result.successful() # returns True if the task didn't end in failure.
     True
 
@@ -364,10 +364,6 @@ Here's an example of a periodic task:
     ...         logger = self.get_logger(**kwargs)
     ...         logger.info("Running periodic task!")
     ...
-
-**Note:** Periodic tasks does not support arguments, as this doesn't
-really make sense.
-
 
 A look inside the worker
 ========================
