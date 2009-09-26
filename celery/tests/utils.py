@@ -7,16 +7,40 @@ import sys
 import __builtin__
 
 
-def todo(reason):
+def _skip_test(reason, sign):
 
     def _wrap_test(fun):
 
         @wraps(fun)
         def _skipped_test(*args, **kwargs):
-            sys.stderr.write("(TODO: %s) " % reason)
+            sys.stderr.write("(%s: %s) " % (sign, reason))
 
         return _skipped_test
     return _wrap_test
+
+
+def todo(reason):
+    """TODO test decorator."""
+    return _skip_test(reason, "TODO")
+
+
+def skip(reason):
+    """Skip test decorator."""
+    return _skip_test(reason, "SKIP")
+
+
+def skip_if(predicate, reason):
+    """Skip test if predicate is ``True``."""
+
+    def _inner(fun):
+        return skip(reason)(fun) if predicate else fun
+
+    return _inner
+
+
+def skip_unless(predicate, reason):
+    """Skip test if predicate is ``False``."""
+    return skip_if(not predicate, reason)
 
 
 @contextmanager
