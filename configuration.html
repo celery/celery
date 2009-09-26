@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Configuration and defaults &mdash; Celery v0.8.0 (stable) documentation</title>
+    <title>Configuration and defaults &mdash; Celery v0.9.0 (unstable) documentation</title>
     <link rel="stylesheet" href="static/nature.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.8.0 (stable)',
+        VERSION:     '0.9.0 (unstable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,7 +19,7 @@
     </script>
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v0.8.0 (stable) documentation" href="index.html" />
+    <link rel="top" title="Celery v0.9.0 (unstable) documentation" href="index.html" />
     <link rel="next" title="Cookbook" href="cookbook/index.html" />
     <link rel="prev" title="celery - Distributed Task Queue" href="introduction.html" /> 
   </head>
@@ -39,7 +39,7 @@
         <li class="right" >
           <a href="introduction.html" title="celery - Distributed Task Queue"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Celery v0.8.0 (stable) documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v0.9.0 (unstable) documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -375,9 +375,10 @@ If unset, it will send the e-mails if <tt class="docutils literal"><span class="
 <li><dl class="first docutils">
 <dt>CELERY_ALWAYS_EAGER</dt>
 <dd><p class="first">If this is <tt class="xref docutils literal"><span class="pre">True</span></tt>, all tasks will be executed locally by blocking
-until it is finished. <tt class="docutils literal"><span class="pre">apply_async</span></tt> and <tt class="docutils literal"><span class="pre">delay_task</span></tt> will return
+until it is finished. <tt class="docutils literal"><span class="pre">apply_async</span></tt> and <tt class="docutils literal"><span class="pre">Task.delay</span></tt> will return
 a <a title="celery.result.EagerResult" class="reference external" href="reference/celery.result.html#celery.result.EagerResult"><tt class="xref docutils literal"><span class="pre">celery.result.EagerResult</span></tt></a> which emulates the behaviour of
-an <a title="celery.result.AsyncResult" class="reference external" href="reference/celery.result.html#celery.result.AsyncResult"><tt class="xref docutils literal"><span class="pre">celery.result.AsyncResult</span></tt></a>.</p>
+<a title="celery.result.AsyncResult" class="reference external" href="reference/celery.result.html#celery.result.AsyncResult"><tt class="xref docutils literal"><span class="pre">celery.result.AsyncResult</span></tt></a>, except the result has already
+been evaluated.</p>
 <p class="last">Tasks will never be sent to the queue, but executed locally
 instead.</p>
 </dd>
@@ -388,7 +389,8 @@ instead.</p>
 <dd><p class="first">Time (in seconds, or a <tt class="xref docutils literal"><span class="pre">datetime.timedelta</span></tt> object) for when after
 stored task tombstones are deleted.</p>
 <p class="last"><strong>NOTE</strong>: For the moment this only works for the database and MongoDB
-backends.</p>
+backends., except the result has already
+been evaluated.</p>
 </dd>
 </dl>
 </li>
@@ -530,7 +532,7 @@ Can be overridden using the <tt class="docutils literal"><span class="pre">--pid
         <li class="right" >
           <a href="introduction.html" title="celery - Distributed Task Queue"
              >previous</a> |</li>
-        <li><a href="index.html">Celery v0.8.0 (stable) documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v0.9.0 (unstable) documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

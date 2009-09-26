@@ -260,9 +260,10 @@ Task execution settings
 
 * CELERY_ALWAYS_EAGER
     If this is ``True``, all tasks will be executed locally by blocking
-    until it is finished. ``apply_async`` and ``delay_task`` will return
+    until it is finished. ``apply_async`` and ``Task.delay`` will return
     a :class:`celery.result.EagerResult` which emulates the behaviour of
-    an :class:`celery.result.AsyncResult`.
+    :class:`celery.result.AsyncResult`, except the result has already
+    been evaluated.
 
     Tasks will never be sent to the queue, but executed locally
     instead.
@@ -272,7 +273,8 @@ Task execution settings
     stored task tombstones are deleted.
 
     **NOTE**: For the moment this only works for the database and MongoDB
-    backends.
+    backends., except the result has already
+    been evaluated.
 
 * CELERY_TASK_SERIALIZER
     A string identifying the default serialization
