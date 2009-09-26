@@ -25,13 +25,11 @@ class TestTaskRegistry(unittest.TestCase):
         self.assertRaises(r.NotRegistered, r.unregister, task)
         r.register(task)
         self.assertTrue(task.name in r)
-        self.assertRaises(r.AlreadyRegistered, r.register, task)
 
     def assertRegisterUnregisterFunc(self, r, task, task_name):
         self.assertRaises(r.NotRegistered, r.unregister, task_name)
         r.register(task, task_name)
         self.assertTrue(task_name in r)
-        self.assertRaises(r.AlreadyRegistered, r.register, task, task_name)
 
     def test_task_registry(self):
         r = registry.TaskRegistry()
