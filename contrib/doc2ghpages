@@ -1,6 +1,5 @@
 #!/bin/bash
 
-git checkout master
 (cd docs;
     rm -rf .build;
     make html;
