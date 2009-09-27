@@ -1,4 +1,4 @@
-from functools import partial as curry
+from celery.utils.functional import curry
 import operator
 try:
     import cPickle as pickle
