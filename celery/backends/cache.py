@@ -1,8 +1,13 @@
 """celery.backends.cache"""
-from django.core.cache import cache
+from django.core.cache import cache, get_cache
 from django.core.cache.backends.base import InvalidCacheBackendError
 from django.utils.encoding import smart_str
 from celery.backends.base import KeyValueStoreBackend
+from celery import conf
+
+# CELERY_CACHE_BACKEND overrides the django-global(tm) backend settings.
+if conf.CELERY_CACHE_BACKEND:
+    cache = get_cache(conf.CELERY_CACHE_BACKEND)
 
 
 class DjangoMemcacheWrapper(object):

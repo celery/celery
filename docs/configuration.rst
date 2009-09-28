@@ -78,6 +78,7 @@ Task result backend settings
     * mongodb
         Use MongoDB.
 
+
 Database backend settings
 =========================
 
@@ -113,6 +114,10 @@ Cache backend settings
 
 Please see the documentation for the Django cache framework settings:
 http://docs.djangoproject.com/en/dev/topics/cache/#memcached
+
+To use a custom cache backend for Celery, while using another for Django,
+you should use the ``CELERY_CACHE_BACKEND`` setting instead of the regular
+django ``CACHE_BACKEND`` setting.
 
 Example configuration
 ---------------------
