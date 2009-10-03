@@ -92,5 +92,6 @@ if (django.VERSION[0], django.VERSION[1]) >= (1, 1):
     # keep models away from syncdb/reset if database backend is not being used.
     if conf.CELERY_BACKEND != 'database':
         TaskMeta._meta.managed = False
+        TaskSetMeta._meta.managed = False
     if conf.CELERY_PERIODIC_STATUS_BACKEND != 'database':
         PeriodicTaskMeta._meta.managed = False
