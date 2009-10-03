@@ -8,6 +8,7 @@ from celery.utils import gen_unique_id, get_full_cls_name
 from celery.registry import tasks
 from celery.serialization import pickle
 from celery.exceptions import MaxRetriesExceededError, RetryTaskError
+from celery.backends import default_backend
 from datetime import timedelta
 
 
@@ -540,7 +541,9 @@ class TaskSet(object):
                         for args, kwargs in self.arguments]
         publisher.close()
         conn.close()
-        return TaskSetResult(taskset_id, subtasks)
+        result = TaskSetResult(taskset_id, subtasks)
+        default_backend.store_taskset(taskset_id, result)
+        return result
 
     def join(self, timeout=None):
         """Gather the results for all of the tasks in the taskset,

@@ -67,3 +67,17 @@ class TestDatabaseBackend(unittest.TestCase):
         self.assertFalse(b.is_done(tid3))
         self.assertEquals(b.get_status(tid3), "FAILURE")
         self.assertTrue(isinstance(b.get_result(tid3), KeyError))
+
+    def test_taskset_store(self):
+        b = Backend()
+        tid = gen_unique_id()
+
+        self.assertTrue(b.get_taskset(tid) is None)
+
+        result = {"foo": "baz", "bar": SomeClass(12345)}
+        b.store_taskset(tid, result)
+        rindb = b.get_taskset(tid)
+        self.assertTrue(rindb is not None)
+        self.assertEquals(rindb.get("foo"), "baz")
+        self.assertEquals(rindb.get("bar").data, 12345)
+        self.assertTrue(b._cache.get(tid))

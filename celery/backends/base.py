@@ -106,6 +106,19 @@ class BaseBackend(object):
         """
         pass
 
+    def store_taskset(self, taskset_id, result):
+        """Store the result and status of a task."""
+        raise NotImplementedError(
+                "store_taskset is not supported by this backend.")
+
+    def get_taskset(self, task_id):
+        """Get the result of a taskset."""
+        raise NotImplementedError(
+                "get_taskset is not supported by this backend.")
+
+
+
+
 
 class KeyValueStoreBackend(BaseBackend):
 
