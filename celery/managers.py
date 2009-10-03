@@ -60,6 +60,51 @@ TABLE_LOCK_FOR_ENGINE = {"mysql": MySQLTableLock}
 table_lock = TABLE_LOCK_FOR_ENGINE.get(settings.DATABASE_ENGINE, TableLock)
 
 
+class TaskSetManager(models.Manager):
+    """Manager for :class:`celery.models.TaskSet` models."""
+
+    def get_all_expired(self):
+        """Get all expired taskset results."""
+        return self.filter(date_done__lt=datetime.now() - TASK_RESULT_EXPIRES)
+
+    def delete_expired(self):
+        """Delete all expired taskset results."""
+        self.get_all_expired().delete()
+
+    def get_result(self, taskset_id):
+        """Get task meta for task by ``taskset_id``."""
+        try:
+            return self.get(taskset_id=taskset_id)
+        except self.model.DoesNotExist:
+            return None
+
+    def store_result(self, taskset_id, result, exception_retry=True):
+        """Store the result of a taskset.
+
+        :param taskset_id: task set id
+
+        :param result: The return value of the taskset
+
+        """
+        try:
+            taskset, created = self.get_or_create(taskset_id=taskset_id, defaults={
+                                                "result": result})
+            if not created:
+                taskset.result = result
+                taskset.save()
+        except Exception, exc:
+            # depending on the database backend we can get various exceptions.
+            # for excample, psycopg2 raises an exception if some operation
+            # breaks transaction, and saving task result won't be possible
+            # until we rollback transaction
+            if exception_retry:
+                transaction.rollback_unless_managed()
+                self.store_result(taskset_id, result, False)
+            else:
+                raise
+
+
+
 class TaskManager(models.Manager):
     """Manager for :class:`celery.models.Task` models."""
 

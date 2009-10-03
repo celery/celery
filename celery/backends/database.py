@@ -1,5 +1,5 @@
 """celery.backends.database"""
-from celery.models import TaskMeta, PeriodicTaskMeta
+from celery.models import TaskMeta, TaskSetMeta, PeriodicTaskMeta
 from celery.backends.base import BaseBackend
 
 
@@ -72,3 +72,5 @@ class Backend(BaseBackend):
     def cleanup(self):
         """Delete expired metadata."""
         TaskMeta.objects.delete_expired()
+        TaskSetMeta.objects.delete_expired()
+
