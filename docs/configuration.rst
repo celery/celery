@@ -67,6 +67,11 @@ Task result backend settings
     * tyrant
         Use Tokyo Tyrant to store the results.
 
+    * amqp
+        Send results back as AMQP messages
+        (**WARNING** While very fast, you must make sure you only
+        try to receive the result once).
+
 
 * CELERY_PERIODIC_STATUS_BACKEND
     The backend used to store the status of periodic tasks.
