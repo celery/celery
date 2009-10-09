@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Tutorials &mdash; Celery v0.9.0 (unstable) documentation</title>
-    <link rel="stylesheet" href="../static/nature.css" type="text/css" />
+    <title>Tutorials &mdash; Celery v0.8.0 (stable) documentation</title>
+    <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.9.0 (unstable)',
+        VERSION:     '0.8.0 (stable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,29 +19,71 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.9.0 (unstable) documentation" href="../index.html" />
-    <link rel="next" title="Tutorial: Creating a click counter using carrot and celery" href="clickcounter.html" />
+    <link rel="top" title="Celery v0.8.0 (stable) documentation" href="../index.html" />
+    <link rel="next" title="External tutorials and resources" href="external.html" />
     <link rel="prev" title="Remote Tasks" href="../cookbook/remote-tasks.html" /> 
   </head>
   <body>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="../genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="../modindex.html" title="Global Module Index"
-             accesskey="M">modules</a> |</li>
-        <li class="right" >
-          <a href="clickcounter.html" title="Tutorial: Creating a click counter using carrot and celery"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="../cookbook/remote-tasks.html" title="Remote Tasks"
-             accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v0.9.0 (unstable) documentation</a> &raquo;</li> 
+<div id="docstitle">
+	<p>Celery v0.8.0 (stable) documentation</p>
+</div>
+<div id="header">
+	<div id="title"><h1>Tutorials</h1></div>
+	<ul id="headerButtons">
+		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
+		<li id="page_buttons">
+			<div class="headerButton"><a href="../genindex.html" title="General Index" accesskey="I">index</a></div>
+			<div class="headerButton"><a href="../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="external.html" title="External tutorials and resources" accesskey="N">next</a></div>
+			<div class="headerButton"><a href="../cookbook/remote-tasks.html" title="Remote Tasks" accesskey="P">previous</a></div>
+		</li>
+	</ul>
+</div>
+
+<div id="sphinxsidebar">
+  <div class="sphinxsidebarwrapper">
+	<ul><li class="toctree-l1"><a href="../index.html">Main Page</a></li></ul>
+	<ul class="current">
+<li class="toctree-l1"><a class="reference external" href="../introduction.html">celery - Distributed Task Queue</a></li>
+<li class="toctree-l1"><a class="reference external" href="../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference external" href="../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1 current"><a class="current reference external" href="">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference external" href="external.html">External tutorials and resources</a></li>
+<li class="toctree-l2"><a class="reference external" href="clickcounter.html">Tutorial: Creating a click counter using carrot and celery</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference external" href="../reference/index.html">Module API Reference</a></li>
+<li class="toctree-l1"><a class="reference external" href="../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference external" href="../links.html">Interesting Links</a></li>
+</ul>
+
+      <h3>This Page</h3>
+      <ul class="this-page-menu">
+        <li><a href="../sources/tutorials/index.txt"
+               rel="nofollow">Show Source</a></li>
       </ul>
-    </div>  
+    <div id="searchbox" style="display: none">
+      
+        <form class="search" action="../search.html" method="get">
+			<div class="search-wrapper">
+			<span class="search-left"></span>
+			<input class="prettysearch" type="text" name="q" size="18" />
+			<span class="search-right">&nbsp;</span>
+			</div>
+          <input type="submit" value="Search" class="searchbutton" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </form>
+        <p class="searchtip" style="font-size: 90%">
+        Enter search terms or a module, class or function name.
+        </p>
+    </div>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+  </div>
+</div>
+
+
 
     <div class="document">
       <div class="documentwrapper">
@@ -54,13 +96,17 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Release:</th><td class="field-body">0.9</td>
+<tr class="field"><th class="field-name">Release:</th><td class="field-body">0.8</td>
 </tr>
-<tr class="field"><th class="field-name">Date:</th><td class="field-body">September 26, 2009</td>
+<tr class="field"><th class="field-name">Date:</th><td class="field-body">October 09, 2009</td>
 </tr>
 </tbody>
 </table>
 <ul>
+<li class="toctree-l1"><a class="reference external" href="external.html">External tutorials and resources</a><ul>
+<li class="toctree-l2"><a class="reference external" href="external.html#introduction-to-celery">Introduction to Celery</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference external" href="clickcounter.html">Tutorial: Creating a click counter using carrot and celery</a><ul>
 <li class="toctree-l2"><a class="reference external" href="clickcounter.html#introduction">Introduction</a></li>
 <li class="toctree-l2"><a class="reference external" href="clickcounter.html#the-model">The model</a></li>
@@ -74,60 +120,20 @@
 </div>
 
 
-          </div>
+          </div> 
         </div>
       </div>
-      <div class="sphinxsidebar">
-        <div class="sphinxsidebarwrapper">
-            <h4>Previous topic</h4>
-            <p class="topless"><a href="../cookbook/remote-tasks.html"
-                                  title="previous chapter">Remote Tasks</a></p>
-            <h4>Next topic</h4>
-            <p class="topless"><a href="clickcounter.html"
-                                  title="next chapter">Tutorial: Creating a click counter using carrot and celery</a></p>
-            <h3>This Page</h3>
-            <ul class="this-page-menu">
-              <li><a href="../sources/tutorials/index.txt"
-                     rel="nofollow">Show Source</a></li>
-            </ul>
-          <div id="searchbox" style="display: none">
-            <h3>Quick search</h3>
-              <form class="search" action="../search.html" method="get">
-                <input type="text" name="q" size="18" />
-                <input type="submit" value="Go" />
-                <input type="hidden" name="check_keywords" value="yes" />
-                <input type="hidden" name="area" value="default" />
-              </form>
-              <p class="searchtip" style="font-size: 90%">
-              Enter search terms or a module, class or function name.
-              </p>
-          </div>
-          <script type="text/javascript">$('#searchbox').show(0);</script>
-        </div>
-      </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="../genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="../modindex.html" title="Global Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="clickcounter.html" title="Tutorial: Creating a click counter using carrot and celery"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="../cookbook/remote-tasks.html" title="Remote Tasks"
-             >previous</a> |</li>
-        <li><a href="../index.html">Celery v0.9.0 (unstable) documentation</a> &raquo;</li> 
-      </ul>
-    </div>
     <div class="footer">
+    <p>
       &copy; Copyright 2009, Ask Solem.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.3.
+	</p>
     </div>
+      <div class="clearer"></div>
+    </div>
+	<div id="breadcrumbs">
+		<a href="../index.html">Celery v0.8.0 (stable) documentation</a>
+		</ul>
+	</div>
   </body>
 </html>

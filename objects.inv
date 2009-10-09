@@ -1,6 +1,6 @@
 # Sphinx inventory version 1
 # Project: Celery
-# Version: 0.9
+# Version: 0.8
 celery.backends.base mod reference/celery.backends.base.html
 celery.exceptions mod reference/celery.exceptions.html
 celery.execute mod reference/celery.execute.html
@@ -59,7 +59,6 @@ celery.task.strategy.even_time_distribution function reference/celery.task.strat
 celery.execute.ExecuteWrapper.handle_success method reference/celery.execute.html
 celery.task.base.ExecuteRemoteTask.run method reference/celery.task.base.html
 celery.task.base.Task.retry method reference/celery.task.base.html
-celery.task.base.TaskType class reference/celery.task.base.html
 celery.supervisor.OFASupervisor.start method reference/celery.supervisor.html
 celery.task.base.Task.get_logger method reference/celery.task.base.html
 celery.result.BaseAsyncResult.successful method reference/celery.result.html
@@ -147,6 +146,7 @@ celery.result.TaskSetResult.successful method reference/celery.result.html
 celery.result.TaskSetResult class reference/celery.result.html
 celery.result.EagerResult.is_done method reference/celery.result.html
 celery.monitoring.TimerStats.time_start attribute reference/celery.monitoring.html
+celery.worker.job.TaskWrapper.task_func attribute reference/celery.worker.job.html
 celery.pool.TaskPool class reference/celery.pool.html
 celery.discovery.autodiscover function reference/celery.discovery.html
 celery.backends.amqp.Backend.is_done method reference/celery.backends.amqp.html
@@ -232,6 +232,7 @@ celery.worker.job.TaskWrapper.execute_using_pool method reference/celery.worker.
 celery.messaging.TaskPublisher.encoder method reference/celery.messaging.html
 celery.task.base.TaskSet.join method reference/celery.task.base.html
 celery.datastructures.PositionQueue.full method reference/celery.datastructures.html
+celery.registry.TaskRegistry.AlreadyRegistered exception reference/celery.registry.html
 celery.monitoring.Statistics.on_start method reference/celery.monitoring.html
 celery.conf.AMQP_CONSUMER_QUEUE data reference/celery.conf.html
 celery.monitoring.StatsCollector.task_time_running method reference/celery.monitoring.html
@@ -273,7 +274,6 @@ celery.conf.AMQP_CONNECTION_MAX_RETRIES data reference/celery.conf.html
 celery.monitoring.Statistics.stop method reference/celery.monitoring.html
 celery.task.rest.UnknownStatusError exception reference/celery.task.rest.html
 celery.registry.TaskRegistry.unregister method reference/celery.registry.html
-celery.task.base.Task.abstract attribute reference/celery.task.base.html
 celery.pool.TaskPool.stop method reference/celery.pool.html
 celery.result.TaskSetResult.failed method reference/celery.result.html
 celery.worker.job.TaskWrapper.execute method reference/celery.worker.job.html
@@ -325,6 +325,7 @@ celery.task.base.Task.routing_key attribute reference/celery.task.base.html
 celery.task.base.PeriodicTask.run_every attribute reference/celery.task.base.html
 celery.managers.TaskManager.is_done method reference/celery.managers.html
 celery.task.base.Task.get_consumer method reference/celery.task.base.html
+celery.conf.CELERY_CACHE_BACKEND data reference/celery.conf.html
 celery.execute.ExecuteWrapper class reference/celery.execute.html
 celery.discovery.find_related_module function reference/celery.discovery.html
 celery.registry.TaskRegistry.filter_types method reference/celery.registry.html

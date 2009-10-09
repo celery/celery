@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Defining Tasks - celery.task.base &mdash; Celery v0.9.0 (unstable) documentation</title>
-    <link rel="stylesheet" href="../static/nature.css" type="text/css" />
+    <title>Defining Tasks - celery.task.base &mdash; Celery v0.8.0 (stable) documentation</title>
+    <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.9.0 (unstable)',
+        VERSION:     '0.8.0 (stable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,31 +19,109 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.9.0 (unstable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.8.0 (stable) documentation" href="../index.html" />
     <link rel="up" title="Module API Reference" href="index.html" />
     <link rel="next" title="Executing Tasks - celery.execute" href="celery.execute.html" />
     <link rel="prev" title="Module API Reference" href="index.html" /> 
   </head>
   <body>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="../genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="../modindex.html" title="Global Module Index"
-             accesskey="M">modules</a> |</li>
-        <li class="right" >
-          <a href="celery.execute.html" title="Executing Tasks - celery.execute"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="index.html" title="Module API Reference"
-             accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v0.9.0 (unstable) documentation</a> &raquo;</li>
-          <li><a href="index.html" accesskey="U">Module API Reference</a> &raquo;</li> 
+<div id="docstitle">
+	<p>Celery v0.8.0 (stable) documentation</p>
+</div>
+<div id="header">
+	<div id="title"><h1>Defining Tasks - celery.task.base</h1></div>
+	<ul id="headerButtons">
+		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
+		<li id="page_buttons">
+			<div class="headerButton"><a href="../genindex.html" title="General Index" accesskey="I">index</a></div>
+			<div class="headerButton"><a href="../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="celery.execute.html" title="Executing Tasks - celery.execute" accesskey="N">next</a></div>
+			<div class="headerButton"><a href="index.html" title="Module API Reference" accesskey="P">previous</a></div>
+		</li>
+	</ul>
+</div>
+
+<div id="sphinxsidebar">
+  <div class="sphinxsidebarwrapper">
+	<ul><li class="toctree-l1"><a href="../index.html">Main Page</a></li></ul>
+	<ul class="current">
+<li class="toctree-l1"><a class="reference external" href="../introduction.html">celery - Distributed Task Queue</a></li>
+<li class="toctree-l1"><a class="reference external" href="../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference external" href="../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference external" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1 current"><a class="reference external" href="index.html">Module API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference external" href="">Defining Tasks - celery.task.base</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.execute.html">Executing Tasks - celery.execute</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.result.html">Task Result - celery.result</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.task.html">Task Information and Utilities - celery.task</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.registry.html">Task Registry - celery.registry</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.signals.html">Signals - celery.signals</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.exceptions.html">Exceptions - celery.exceptions</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.task.rest.html">Remote HTTP Tasks - celery.task.rest</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.task.builtins.html">Built-in Task Classes - celery.task.builtins</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.task.strategy.html">Common Task Strategies - celery.task.strategy</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.loaders.html">Loaders - celery.loaders</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.loaders.base.html">Loader Base Classes - celery.loaders.base</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.loaders.djangoapp.html">Django Loader - celery.loaders.djangoapp</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.discovery.html">Task Discovery - celery.discovery</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.monitoring.html">Statistics and Monitoring - celery.monitoring</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.messaging.html">Messaging - celery.messaging</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.worker.html">Multiprocessing Worker - celery.worker</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.worker.job.html">Executable Jobs - celery.worker.job</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.worker.controllers.html">Worker Controller Threads - celery.worker.controllers</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.pool.html">Task Pool - celery.pool</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.supervisor.html">Process Supervisor - celery.supervisor</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.backends.html">Backends - celery.backends</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.backends.base.html">Backend: Base - celery.backends.base</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.backends.database.html">Backend: Database - celery.backends.database</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.backends.cache.html">Backend: Cache - celery.backends.cache</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.backends.amqp.html">Backend: AMQP - celery.backends.amqp</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.backends.mongodb.html">Backend: MongoDB - celery.backends.mongodb</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.backends.tyrant.html">Backend: Tokyo Tyrant - celery.backends.tyrant</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.conf.html">Configuration - celery.conf</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.datastructures.html">Datastructures - celery.datastructures</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.log.html">Logging - celery.log</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.utils.html">Multiprocessing Worker - celery.worker</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.views.html">Django Views - celery.views</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.managers.html">Django Model Managers - celery.managers</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.models.html">Django Models - celery.models</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.fields.html">Django Fields - celery.fields</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.bin.celeryinit.html">Celery Initialize - celery.bin.celeryinit</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference external" href="../links.html">Interesting Links</a></li>
+</ul>
+
+      <h3>This Page</h3>
+      <ul class="this-page-menu">
+        <li><a href="../sources/reference/celery.task.base.txt"
+               rel="nofollow">Show Source</a></li>
       </ul>
-    </div>  
+    <div id="searchbox" style="display: none">
+      
+        <form class="search" action="../search.html" method="get">
+			<div class="search-wrapper">
+			<span class="search-left"></span>
+			<input class="prettysearch" type="text" name="q" size="18" />
+			<span class="search-right">&nbsp;</span>
+			</div>
+          <input type="submit" value="Search" class="searchbutton" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </form>
+        <p class="searchtip" style="font-size: 90%">
+        Enter search terms or a module, class or function name.
+        </p>
+    </div>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+  </div>
+</div>
+
+
 
     <div class="document">
       <div class="documentwrapper">
@@ -113,6 +191,7 @@ not defined.</td>
 </tr>
 </tbody>
 </table>
+<p>You have to register the periodic task in the task registry.</p>
 <p>Example</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">tasks</span><span class="p">,</span> <span class="n">PeriodicTask</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">timedelta</span>
@@ -123,6 +202,7 @@ not defined.</td>
 <span class="gp">... </span>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="gp">... </span>        <span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 <span class="gp">... </span>        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Running MyPeriodicTask&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tasks</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">MyPeriodicTask</span><span class="p">)</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -141,13 +221,7 @@ as listed in the <a title="celery.task.base.Task.run" class="reference internal"
 <tt class="descname">name</tt><a class="headerlink" href="#celery.task.base.Task.name" title="Permalink to this definition">¶</a></dt>
 <dd><em>REQUIRED</em> All subclasses of <a title="celery.task.base.Task" class="reference internal" href="#celery.task.base.Task"><tt class="xref docutils literal"><span class="pre">Task</span></tt></a> has to define the
 <a title="celery.task.base.Task.name" class="reference internal" href="#celery.task.base.Task.name"><tt class="xref docutils literal"><span class="pre">name</span></tt></a> attribute. This is the name of the task, registered
-in the task registry, and passed on to the workers.</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.task.base.Task.abstract">
-<tt class="descname">abstract</tt><a class="headerlink" href="#celery.task.base.Task.abstract" title="Permalink to this definition">¶</a></dt>
-<dd>Abstract classes are not registered in the task registry, so they&#8217;re
-only used for making new tasks by subclassing.</dd></dl>
+in the task registry, and passed to <tt class="xref docutils literal"><span class="pre">delay_task()</span></tt>.</dd></dl>
 
 <dl class="attribute">
 <dt id="celery.task.base.Task.type">
@@ -244,6 +318,7 @@ methods that have been registered with
 <span class="gp">... </span>        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Running MyTask with arg some_arg=</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
 <span class="gp">... </span>                    <span class="n">some_arg</span><span class="p">))</span>
 <span class="gp">... </span>        <span class="k">return</span> <span class="mf">42</span>
+<span class="gp">... </span><span class="n">tasks</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">MyTask</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>You can delay the task using the classmethod <a title="celery.task.base.Task.delay" class="reference internal" href="#celery.task.base.Task.delay"><tt class="xref docutils literal"><span class="pre">delay()</span></tt></a>...</p>
@@ -252,6 +327,12 @@ methods that have been registered with
 <span class="go">&#39;DONE&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">result</span>
 <span class="go">42</span>
+</pre></div>
+</div>
+<p>...or using the <tt class="xref docutils literal"><span class="pre">delay_task()</span></tt> function, by passing the name of
+the task.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">delay_task</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">delay_task</span><span class="p">(</span><span class="n">MyTask</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">some_arg</span><span class="o">=</span><span class="s">&quot;foo&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 <dl class="exception">
@@ -314,8 +395,7 @@ has finished executing.</p>
 <dl class="classmethod">
 <dt id="celery.task.base.Task.delay">
 <em class="property">classmethod </em><tt class="descclassname">Task.</tt><tt class="descname">delay</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.base.Task.delay" title="Permalink to this definition">¶</a></dt>
-<dd><p>Shortcut to <a title="celery.task.base.Task.apply_async" class="reference internal" href="#celery.task.base.Task.apply_async"><tt class="xref docutils literal"><span class="pre">apply_async()</span></tt></a> but with star arguments,
-and doesn&#8217;t support the extra options.</p>
+<dd><p>Delay this task for execution by the <tt class="docutils literal"><span class="pre">celery</span></tt> daemon(s).</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -331,6 +411,7 @@ and doesn&#8217;t support the extra options.</p>
 </tr>
 </tbody>
 </table>
+<p>See <a title="celery.execute.delay_task" class="reference external" href="celery.execute.html#celery.execute.delay_task"><tt class="xref docutils literal"><span class="pre">celery.execute.delay_task()</span></tt></a>.</p>
 </dd></dl>
 
 <dl class="method">
@@ -701,74 +782,24 @@ celery server(s).</dd></dl>
 
 </dd></dl>
 
-<dl class="class">
-<dt id="celery.task.base.TaskType">
-<em class="property">class </em><tt class="descclassname">celery.task.base.</tt><tt class="descname">TaskType</tt><a class="headerlink" href="#celery.task.base.TaskType" title="Permalink to this definition">¶</a></dt>
-<dd><p>Metaclass for tasks.</p>
-<p>Automatically registers the task in the task registry, except
-if the <tt class="docutils literal"><span class="pre">abstract</span></tt> attribute is set.</p>
-<p>If no <tt class="docutils literal"><span class="pre">name</span></tt> attribute is provided, the name is automatically
-set to the name of the module it was defined in, and the class name.</p>
-</dd></dl>
-
 </div>
 
 
-          </div>
+          </div> 
         </div>
       </div>
-      <div class="sphinxsidebar">
-        <div class="sphinxsidebarwrapper">
-            <h4>Previous topic</h4>
-            <p class="topless"><a href="index.html"
-                                  title="previous chapter">Module API Reference</a></p>
-            <h4>Next topic</h4>
-            <p class="topless"><a href="celery.execute.html"
-                                  title="next chapter">Executing Tasks - celery.execute</a></p>
-            <h3>This Page</h3>
-            <ul class="this-page-menu">
-              <li><a href="../sources/reference/celery.task.base.txt"
-                     rel="nofollow">Show Source</a></li>
-            </ul>
-          <div id="searchbox" style="display: none">
-            <h3>Quick search</h3>
-              <form class="search" action="../search.html" method="get">
-                <input type="text" name="q" size="18" />
-                <input type="submit" value="Go" />
-                <input type="hidden" name="check_keywords" value="yes" />
-                <input type="hidden" name="area" value="default" />
-              </form>
-              <p class="searchtip" style="font-size: 90%">
-              Enter search terms or a module, class or function name.
-              </p>
-          </div>
-          <script type="text/javascript">$('#searchbox').show(0);</script>
-        </div>
-      </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="../genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="../modindex.html" title="Global Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="celery.execute.html" title="Executing Tasks - celery.execute"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="index.html" title="Module API Reference"
-             >previous</a> |</li>
-        <li><a href="../index.html">Celery v0.9.0 (unstable) documentation</a> &raquo;</li>
-          <li><a href="index.html" >Module API Reference</a> &raquo;</li> 
-      </ul>
-    </div>
     <div class="footer">
+    <p>
       &copy; Copyright 2009, Ask Solem.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.3.
+	</p>
     </div>
+      <div class="clearer"></div>
+    </div>
+	<div id="breadcrumbs">
+		<a href="index.html" accesskey="U">Module API Reference</a><img src="triangle_closed.png" alt="Right arrow">
+		<a href="../index.html">Celery v0.8.0 (stable) documentation</a>
+		</ul>
+	</div>
   </body>
 </html>

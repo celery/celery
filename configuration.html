@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Configuration and defaults &mdash; Celery v0.9.0 (unstable) documentation</title>
-    <link rel="stylesheet" href="static/nature.css" type="text/css" />
+    <title>Configuration and defaults &mdash; Celery v0.8.0 (stable) documentation</title>
+    <link rel="stylesheet" href="static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.9.0 (unstable)',
+        VERSION:     '0.8.0 (stable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,29 +19,80 @@
     </script>
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v0.9.0 (unstable) documentation" href="index.html" />
+    <link rel="top" title="Celery v0.8.0 (stable) documentation" href="index.html" />
     <link rel="next" title="Cookbook" href="cookbook/index.html" />
     <link rel="prev" title="celery - Distributed Task Queue" href="introduction.html" /> 
   </head>
   <body>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="modindex.html" title="Global Module Index"
-             accesskey="M">modules</a> |</li>
-        <li class="right" >
-          <a href="cookbook/index.html" title="Cookbook"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="introduction.html" title="celery - Distributed Task Queue"
-             accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Celery v0.9.0 (unstable) documentation</a> &raquo;</li> 
+<div id="docstitle">
+	<p>Celery v0.8.0 (stable) documentation</p>
+</div>
+<div id="header">
+	<div id="title"><h1>Configuration and defaults</h1></div>
+	<ul id="headerButtons">
+		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
+		<li id="page_buttons">
+			<div class="headerButton"><a href="genindex.html" title="General Index" accesskey="I">index</a></div>
+			<div class="headerButton"><a href="modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="cookbook/index.html" title="Cookbook" accesskey="N">next</a></div>
+			<div class="headerButton"><a href="introduction.html" title="celery - Distributed Task Queue" accesskey="P">previous</a></div>
+		</li>
+	</ul>
+</div>
+
+<div id="sphinxsidebar">
+  <div class="sphinxsidebarwrapper">
+	<ul><li class="toctree-l1"><a href="index.html">Main Page</a></li></ul>
+	<ul class="current">
+<li class="toctree-l1"><a class="reference external" href="introduction.html">celery - Distributed Task Queue</a></li>
+<li class="toctree-l1 current"><a class="current reference external" href="">Configuration and defaults</a><ul>
+<li class="toctree-l2"><a class="reference external" href="#example-configuration-file">Example configuration file</a></li>
+<li class="toctree-l2"><a class="reference external" href="#concurrency-settings">Concurrency settings</a></li>
+<li class="toctree-l2"><a class="reference external" href="#task-result-backend-settings">Task result backend settings</a></li>
+<li class="toctree-l2"><a class="reference external" href="#database-backend-settings">Database backend settings</a></li>
+<li class="toctree-l2"><a class="reference external" href="#cache-backend-settings">Cache backend settings</a></li>
+<li class="toctree-l2"><a class="reference external" href="#tokyo-tyrant-backend-settings">Tokyo Tyrant backend settings</a></li>
+<li class="toctree-l2"><a class="reference external" href="#mongodb-backend-settings">MongoDB backend settings</a></li>
+<li class="toctree-l2"><a class="reference external" href="#broker-settings">Broker settings</a></li>
+<li class="toctree-l2"><a class="reference external" href="#task-execution-settings">Task execution settings</a></li>
+<li class="toctree-l2"><a class="reference external" href="#logging-settings">Logging settings</a></li>
+<li class="toctree-l2"><a class="reference external" href="#process-settings">Process settings</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference external" href="tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference external" href="faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference external" href="reference/index.html">Module API Reference</a></li>
+<li class="toctree-l1"><a class="reference external" href="changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference external" href="links.html">Interesting Links</a></li>
+</ul>
+
+      <h3>This Page</h3>
+      <ul class="this-page-menu">
+        <li><a href="sources/configuration.txt"
+               rel="nofollow">Show Source</a></li>
       </ul>
-    </div>  
+    <div id="searchbox" style="display: none">
+      
+        <form class="search" action="search.html" method="get">
+			<div class="search-wrapper">
+			<span class="search-left"></span>
+			<input class="prettysearch" type="text" name="q" size="18" />
+			<span class="search-right">&nbsp;</span>
+			</div>
+          <input type="submit" value="Search" class="searchbutton" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </form>
+        <p class="searchtip" style="font-size: 90%">
+        Enter search terms or a module, class or function name.
+        </p>
+    </div>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+  </div>
+</div>
+
+
 
     <div class="document">
       <div class="documentwrapper">
@@ -125,6 +176,14 @@ Can be one of the following:</p>
 </dd>
 </dl>
 </li>
+<li><dl class="first docutils">
+<dt>amqp</dt>
+<dd><p class="first last">Send results back as AMQP messages
+(<strong>WARNING</strong> While very fast, you must make sure you only
+try to receive the result once).</p>
+</dd>
+</dl>
+</li>
 </ul>
 </dd>
 </dl>
@@ -181,6 +240,9 @@ means executing:</p>
 <h2>Cache backend settings<a class="headerlink" href="#cache-backend-settings" title="Permalink to this headline">¶</a></h2>
 <p>Please see the documentation for the Django cache framework settings:
 <a class="reference external" href="http://docs.djangoproject.com/en/dev/topics/cache/#memcached">http://docs.djangoproject.com/en/dev/topics/cache/#memcached</a></p>
+<p>To use a custom cache backend for Celery, while using another for Django,
+you should use the <tt class="docutils literal"><span class="pre">CELERY_CACHE_BACKEND</span></tt> setting instead of the regular
+django <tt class="docutils literal"><span class="pre">CACHE_BACKEND</span></tt> setting.</p>
 <div class="section" id="id1">
 <h3>Example configuration<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
 <p>Using a single memcached server:</p>
@@ -375,10 +437,9 @@ If unset, it will send the e-mails if <tt class="docutils literal"><span class="
 <li><dl class="first docutils">
 <dt>CELERY_ALWAYS_EAGER</dt>
 <dd><p class="first">If this is <tt class="xref docutils literal"><span class="pre">True</span></tt>, all tasks will be executed locally by blocking
-until it is finished. <tt class="docutils literal"><span class="pre">apply_async</span></tt> and <tt class="docutils literal"><span class="pre">Task.delay</span></tt> will return
+until it is finished. <tt class="docutils literal"><span class="pre">apply_async</span></tt> and <tt class="docutils literal"><span class="pre">delay_task</span></tt> will return
 a <a title="celery.result.EagerResult" class="reference external" href="reference/celery.result.html#celery.result.EagerResult"><tt class="xref docutils literal"><span class="pre">celery.result.EagerResult</span></tt></a> which emulates the behaviour of
-<a title="celery.result.AsyncResult" class="reference external" href="reference/celery.result.html#celery.result.AsyncResult"><tt class="xref docutils literal"><span class="pre">celery.result.AsyncResult</span></tt></a>, except the result has already
-been evaluated.</p>
+an <a title="celery.result.AsyncResult" class="reference external" href="reference/celery.result.html#celery.result.AsyncResult"><tt class="xref docutils literal"><span class="pre">celery.result.AsyncResult</span></tt></a>.</p>
 <p class="last">Tasks will never be sent to the queue, but executed locally
 instead.</p>
 </dd>
@@ -389,8 +450,7 @@ instead.</p>
 <dd><p class="first">Time (in seconds, or a <tt class="xref docutils literal"><span class="pre">datetime.timedelta</span></tt> object) for when after
 stored task tombstones are deleted.</p>
 <p class="last"><strong>NOTE</strong>: For the moment this only works for the database and MongoDB
-backends., except the result has already
-been evaluated.</p>
+backends.</p>
 </dd>
 </dl>
 </li>
@@ -454,90 +514,20 @@ Can be overridden using the <tt class="docutils literal"><span class="pre">--pid
 </div>
 
 
-          </div>
+          </div> 
         </div>
       </div>
-      <div class="sphinxsidebar">
-        <div class="sphinxsidebarwrapper">
-            <h3><a href="index.html">Table Of Contents</a></h3>
-            <ul>
-<li><a class="reference external" href="">Configuration and defaults</a><ul>
-<li><a class="reference external" href="#example-configuration-file">Example configuration file</a></li>
-<li><a class="reference external" href="#concurrency-settings">Concurrency settings</a></li>
-<li><a class="reference external" href="#task-result-backend-settings">Task result backend settings</a></li>
-<li><a class="reference external" href="#database-backend-settings">Database backend settings</a><ul>
-<li><a class="reference external" href="#example-configuration">Example configuration</a></li>
-</ul>
-</li>
-<li><a class="reference external" href="#cache-backend-settings">Cache backend settings</a><ul>
-<li><a class="reference external" href="#id1">Example configuration</a></li>
-</ul>
-</li>
-<li><a class="reference external" href="#tokyo-tyrant-backend-settings">Tokyo Tyrant backend settings</a><ul>
-<li><a class="reference external" href="#id2">Example configuration</a></li>
-</ul>
-</li>
-<li><a class="reference external" href="#mongodb-backend-settings">MongoDB backend settings</a><ul>
-<li><a class="reference external" href="#id3">Example configuration</a></li>
-</ul>
-</li>
-<li><a class="reference external" href="#broker-settings">Broker settings</a></li>
-<li><a class="reference external" href="#task-execution-settings">Task execution settings</a></li>
-<li><a class="reference external" href="#logging-settings">Logging settings</a></li>
-<li><a class="reference external" href="#process-settings">Process settings</a></li>
-</ul>
-</li>
-</ul>
-
-            <h4>Previous topic</h4>
-            <p class="topless"><a href="introduction.html"
-                                  title="previous chapter">celery - Distributed Task Queue</a></p>
-            <h4>Next topic</h4>
-            <p class="topless"><a href="cookbook/index.html"
-                                  title="next chapter">Cookbook</a></p>
-            <h3>This Page</h3>
-            <ul class="this-page-menu">
-              <li><a href="sources/configuration.txt"
-                     rel="nofollow">Show Source</a></li>
-            </ul>
-          <div id="searchbox" style="display: none">
-            <h3>Quick search</h3>
-              <form class="search" action="search.html" method="get">
-                <input type="text" name="q" size="18" />
-                <input type="submit" value="Go" />
-                <input type="hidden" name="check_keywords" value="yes" />
-                <input type="hidden" name="area" value="default" />
-              </form>
-              <p class="searchtip" style="font-size: 90%">
-              Enter search terms or a module, class or function name.
-              </p>
-          </div>
-          <script type="text/javascript">$('#searchbox').show(0);</script>
-        </div>
-      </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="modindex.html" title="Global Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="cookbook/index.html" title="Cookbook"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="introduction.html" title="celery - Distributed Task Queue"
-             >previous</a> |</li>
-        <li><a href="index.html">Celery v0.9.0 (unstable) documentation</a> &raquo;</li> 
-      </ul>
-    </div>
     <div class="footer">
+    <p>
       &copy; Copyright 2009, Ask Solem.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.3.
+	</p>
     </div>
+      <div class="clearer"></div>
+    </div>
+	<div id="breadcrumbs">
+		<a href="index.html">Celery v0.8.0 (stable) documentation</a>
+		</ul>
+	</div>
   </body>
 </html>

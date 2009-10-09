@@ -67,6 +67,11 @@ Task result backend settings
     * tyrant
         Use Tokyo Tyrant to store the results.
 
+    * amqp
+        Send results back as AMQP messages
+        (**WARNING** While very fast, you must make sure you only
+        try to receive the result once).
+
 
 * CELERY_PERIODIC_STATUS_BACKEND
     The backend used to store the status of periodic tasks.
@@ -77,6 +82,7 @@ Task result backend settings
 
     * mongodb
         Use MongoDB.
+
 
 Database backend settings
 =========================
@@ -113,6 +119,10 @@ Cache backend settings
 
 Please see the documentation for the Django cache framework settings:
 http://docs.djangoproject.com/en/dev/topics/cache/#memcached
+
+To use a custom cache backend for Celery, while using another for Django,
+you should use the ``CELERY_CACHE_BACKEND`` setting instead of the regular
+django ``CACHE_BACKEND`` setting.
 
 Example configuration
 ---------------------
@@ -260,10 +270,9 @@ Task execution settings
 
 * CELERY_ALWAYS_EAGER
     If this is ``True``, all tasks will be executed locally by blocking
-    until it is finished. ``apply_async`` and ``Task.delay`` will return
+    until it is finished. ``apply_async`` and ``delay_task`` will return
     a :class:`celery.result.EagerResult` which emulates the behaviour of
-    :class:`celery.result.AsyncResult`, except the result has already
-    been evaluated.
+    an :class:`celery.result.AsyncResult`.
 
     Tasks will never be sent to the queue, but executed locally
     instead.
@@ -273,8 +282,7 @@ Task execution settings
     stored task tombstones are deleted.
 
     **NOTE**: For the moment this only works for the database and MongoDB
-    backends., except the result has already
-    been evaluated.
+    backends.
 
 * CELERY_TASK_SERIALIZER
     A string identifying the default serialization

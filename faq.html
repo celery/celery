@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Frequently Asked Questions &mdash; Celery v0.9.0 (unstable) documentation</title>
-    <link rel="stylesheet" href="static/nature.css" type="text/css" />
+    <title>Frequently Asked Questions &mdash; Celery v0.8.0 (stable) documentation</title>
+    <link rel="stylesheet" href="static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.9.0 (unstable)',
+        VERSION:     '0.8.0 (stable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,29 +19,72 @@
     </script>
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v0.9.0 (unstable) documentation" href="index.html" />
+    <link rel="top" title="Celery v0.8.0 (stable) documentation" href="index.html" />
     <link rel="next" title="Module API Reference" href="reference/index.html" />
     <link rel="prev" title="Tutorial: Creating a click counter using carrot and celery" href="tutorials/clickcounter.html" /> 
   </head>
   <body>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="modindex.html" title="Global Module Index"
-             accesskey="M">modules</a> |</li>
-        <li class="right" >
-          <a href="reference/index.html" title="Module API Reference"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="tutorials/clickcounter.html" title="Tutorial: Creating a click counter using carrot and celery"
-             accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Celery v0.9.0 (unstable) documentation</a> &raquo;</li> 
+<div id="docstitle">
+	<p>Celery v0.8.0 (stable) documentation</p>
+</div>
+<div id="header">
+	<div id="title"><h1>Frequently Asked Questions</h1></div>
+	<ul id="headerButtons">
+		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
+		<li id="page_buttons">
+			<div class="headerButton"><a href="genindex.html" title="General Index" accesskey="I">index</a></div>
+			<div class="headerButton"><a href="modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="reference/index.html" title="Module API Reference" accesskey="N">next</a></div>
+			<div class="headerButton"><a href="tutorials/clickcounter.html" title="Tutorial: Creating a click counter using carrot and celery" accesskey="P">previous</a></div>
+		</li>
+	</ul>
+</div>
+
+<div id="sphinxsidebar">
+  <div class="sphinxsidebarwrapper">
+	<ul><li class="toctree-l1"><a href="index.html">Main Page</a></li></ul>
+	<ul class="current">
+<li class="toctree-l1"><a class="reference external" href="introduction.html">celery - Distributed Task Queue</a></li>
+<li class="toctree-l1"><a class="reference external" href="configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference external" href="cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference external" href="tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1 current"><a class="current reference external" href="">Frequently Asked Questions</a><ul>
+<li class="toctree-l2"><a class="reference external" href="#troubleshooting">Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference external" href="#brokers">Brokers</a></li>
+<li class="toctree-l2"><a class="reference external" href="#features">Features</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="reference/index.html">Module API Reference</a></li>
+<li class="toctree-l1"><a class="reference external" href="changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference external" href="links.html">Interesting Links</a></li>
+</ul>
+
+      <h3>This Page</h3>
+      <ul class="this-page-menu">
+        <li><a href="sources/faq.txt"
+               rel="nofollow">Show Source</a></li>
       </ul>
-    </div>  
+    <div id="searchbox" style="display: none">
+      
+        <form class="search" action="search.html" method="get">
+			<div class="search-wrapper">
+			<span class="search-left"></span>
+			<input class="prettysearch" type="text" name="q" size="18" />
+			<span class="search-right">&nbsp;</span>
+			</div>
+          <input type="submit" value="Search" class="searchbutton" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </form>
+        <p class="searchtip" style="font-size: 90%">
+        Enter search terms or a module, class or function name.
+        </p>
+    </div>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+  </div>
+</div>
+
+
 
     <div class="document">
       <div class="documentwrapper">
@@ -405,91 +448,20 @@ TEST_APPS = filter(lambda k: k != "celery", INSTALLED_APPS)</pre>
 </div>
 
 
-          </div>
+          </div> 
         </div>
       </div>
-      <div class="sphinxsidebar">
-        <div class="sphinxsidebarwrapper">
-            <h3><a href="index.html">Table Of Contents</a></h3>
-            <ul>
-<li><a class="reference external" href="">Frequently Asked Questions</a><ul>
-<li><a class="reference external" href="#troubleshooting">Troubleshooting</a><ul>
-<li><a class="reference external" href="#mysql-is-throwing-deadlock-errors-what-can-i-do">MySQL is throwing deadlock errors, what can I do?</a></li>
-<li><a class="reference external" href="#celeryd-is-not-doing-anything-just-hanging">celeryd is not doing anything, just hanging</a></li>
-<li><a class="reference external" href="#why-is-task-delay-apply-celeryd-just-hanging">Why is Task.delay/apply*/celeryd just hanging?</a></li>
-<li><a class="reference external" href="#why-won-t-celeryd-run-on-freebsd">Why won&#8217;t celeryd run on FreeBSD?</a></li>
-<li><a class="reference external" href="#i-m-having-integrityerror-duplicate-key-errors-why">I&#8217;m having <tt class="docutils literal"><span class="pre">IntegrityError:</span> <span class="pre">Duplicate</span> <span class="pre">Key</span></tt> errors. Why?</a></li>
-<li><a class="reference external" href="#why-isn-t-my-tasks-processed">Why isn&#8217;t my tasks processed?</a></li>
-<li><a class="reference external" href="#why-won-t-my-task-run">Why won&#8217;t my Task run?</a></li>
-<li><a class="reference external" href="#why-won-t-my-periodic-task-run">Why won&#8217;t my Periodic Task run?</a></li>
-<li><a class="reference external" href="#how-do-i-discard-all-waiting-tasks">How do I discard all waiting tasks?</a></li>
-<li><a class="reference external" href="#i-ve-discarded-messages-but-there-are-still-messages-left-in-the-queue">I&#8217;ve discarded messages, but there are still messages left in the queue?</a></li>
-</ul>
-</li>
-<li><a class="reference external" href="#brokers">Brokers</a><ul>
-<li><a class="reference external" href="#can-i-use-celery-with-activemq-stomp">Can I use celery with ActiveMQ/STOMP?</a></li>
-<li><a class="reference external" href="#which-features-are-not-supported-when-using-stomp">Which features are not supported when using STOMP?</a></li>
-</ul>
-</li>
-<li><a class="reference external" href="#features">Features</a><ul>
-<li><a class="reference external" href="#can-i-send-some-tasks-to-only-some-servers">Can I send some tasks to only some servers?</a></li>
-<li><a class="reference external" href="#can-i-use-celery-without-django">Can I use celery without Django?</a></li>
-<li><a class="reference external" href="#the-celery-test-suite-is-failing">The celery test-suite is failing</a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-
-            <h4>Previous topic</h4>
-            <p class="topless"><a href="tutorials/clickcounter.html"
-                                  title="previous chapter">Tutorial: Creating a click counter using carrot and celery</a></p>
-            <h4>Next topic</h4>
-            <p class="topless"><a href="reference/index.html"
-                                  title="next chapter">Module API Reference</a></p>
-            <h3>This Page</h3>
-            <ul class="this-page-menu">
-              <li><a href="sources/faq.txt"
-                     rel="nofollow">Show Source</a></li>
-            </ul>
-          <div id="searchbox" style="display: none">
-            <h3>Quick search</h3>
-              <form class="search" action="search.html" method="get">
-                <input type="text" name="q" size="18" />
-                <input type="submit" value="Go" />
-                <input type="hidden" name="check_keywords" value="yes" />
-                <input type="hidden" name="area" value="default" />
-              </form>
-              <p class="searchtip" style="font-size: 90%">
-              Enter search terms or a module, class or function name.
-              </p>
-          </div>
-          <script type="text/javascript">$('#searchbox').show(0);</script>
-        </div>
-      </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="modindex.html" title="Global Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="reference/index.html" title="Module API Reference"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="tutorials/clickcounter.html" title="Tutorial: Creating a click counter using carrot and celery"
-             >previous</a> |</li>
-        <li><a href="index.html">Celery v0.9.0 (unstable) documentation</a> &raquo;</li> 
-      </ul>
-    </div>
     <div class="footer">
+    <p>
       &copy; Copyright 2009, Ask Solem.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.3.
+	</p>
     </div>
+      <div class="clearer"></div>
+    </div>
+	<div id="breadcrumbs">
+		<a href="index.html">Celery v0.8.0 (stable) documentation</a>
+		</ul>
+	</div>
   </body>
 </html>

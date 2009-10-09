@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Index &mdash; Celery v0.9.0 (unstable) documentation</title>
-    <link rel="stylesheet" href="static/nature.css" type="text/css" />
+    <title>Index &mdash; Celery v0.8.0 (stable) documentation</title>
+    <link rel="stylesheet" href="static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.9.0 (unstable)',
+        VERSION:     '0.8.0 (stable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,21 +19,61 @@
     </script>
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v0.9.0 (unstable) documentation" href="index.html" /> 
+    <link rel="top" title="Celery v0.8.0 (stable) documentation" href="index.html" /> 
   </head>
   <body>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="modindex.html" title="Global Module Index"
-             accesskey="M">modules</a> |</li>
-        <li><a href="index.html">Celery v0.9.0 (unstable) documentation</a> &raquo;</li> 
-      </ul>
-    </div>  
+<div id="docstitle">
+	<p>Celery v0.8.0 (stable) documentation</p>
+</div>
+<div id="header">
+	<div id="title"><h1>Index</h1></div>
+	<ul id="headerButtons">
+		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
+		<li id="page_buttons">
+			<div class="headerButton"><a href="" title="General Index" accesskey="I">index</a></div>
+			<div class="headerButton"><a href="modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+		</li>
+	</ul>
+</div>
+
+<div id="sphinxsidebar">
+  <div class="sphinxsidebarwrapper">
+	<ul><li class="toctree-l1"><a href="index.html">Main Page</a></li></ul>
+	<ul>
+<li class="toctree-l1"><a class="reference external" href="introduction.html">celery - Distributed Task Queue</a></li>
+<li class="toctree-l1"><a class="reference external" href="configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference external" href="cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference external" href="tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference external" href="faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference external" href="reference/index.html">Module API Reference</a></li>
+<li class="toctree-l1"><a class="reference external" href="changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference external" href="links.html">Interesting Links</a></li>
+</ul>
+
+
+   
+
+    <div id="searchbox" style="display: none">
+      
+        <form class="search" action="search.html" method="get">
+			<div class="search-wrapper">
+			<span class="search-left"></span>
+			<input class="prettysearch" type="text" name="q" size="18" />
+			<span class="search-right">&nbsp;</span>
+			</div>
+          <input type="submit" value="Search" class="searchbutton" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </form>
+        <p class="searchtip" style="font-size: 90%">
+        Enter search terms or a module, class or function name.
+        </p>
+    </div>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+  </div>
+</div>
+
+
 
     <div class="document">
       <div class="documentwrapper">
@@ -110,7 +150,6 @@
 <table width="100%" class="indextable"><tr><td width="33%" valign="top">
 <dl>
 
-<dt><a href="reference/celery.task.base.html#celery.task.base.Task.abstract">abstract (celery.task.base.Task attribute)</a></dt>
 <dt><a href="reference/celery.managers.html#celery.managers.TableLock.acquire">acquire() (celery.managers.TableLock class method)</a></dt>
 <dt><a href="reference/celery.bin.celeryd.html#celery.bin.celeryd.acquire_pidlock">acquire_pidlock() (in module celery.bin.celeryd)</a></dt>
 <dt><a href="reference/celery.pool.html#celery.pool.DynamicPool.add_worker">add_worker() (celery.pool.DynamicPool method)</a></dt>
@@ -125,8 +164,8 @@
 <dt><a href="reference/celery.conf.html#celery.conf.AMQP_CONSUMER_ROUTING_KEY">AMQP_CONSUMER_ROUTING_KEY (in module celery.conf)</a>, <a href="reference/celery.conf.html#celery.conf.AMQP_CONSUMER_ROUTING_KEY">[1]</a></dt>
 <dt><a href="reference/celery.conf.html#celery.conf.AMQP_EXCHANGE">AMQP_EXCHANGE (in module celery.conf)</a>, <a href="reference/celery.conf.html#celery.conf.AMQP_EXCHANGE">[1]</a></dt>
 <dt><a href="reference/celery.conf.html#celery.conf.AMQP_EXCHANGE_TYPE">AMQP_EXCHANGE_TYPE (in module celery.conf)</a>, <a href="reference/celery.conf.html#celery.conf.AMQP_EXCHANGE_TYPE">[1]</a></dt>
-<dt><a href="reference/celery.worker.html#celery.worker.WorkController.amqp_listener">amqp_listener (celery.worker.WorkController attribute)</a></dt></dl></td><td width="33%" valign="top"><dl>
-<dt><a href="reference/celery.conf.html#celery.conf.AMQP_PUBLISHER_ROUTING_KEY">AMQP_PUBLISHER_ROUTING_KEY (in module celery.conf)</a>, <a href="reference/celery.conf.html#celery.conf.AMQP_PUBLISHER_ROUTING_KEY">[1]</a></dt>
+<dt><a href="reference/celery.worker.html#celery.worker.WorkController.amqp_listener">amqp_listener (celery.worker.WorkController attribute)</a></dt>
+<dt><a href="reference/celery.conf.html#celery.conf.AMQP_PUBLISHER_ROUTING_KEY">AMQP_PUBLISHER_ROUTING_KEY (in module celery.conf)</a>, <a href="reference/celery.conf.html#celery.conf.AMQP_PUBLISHER_ROUTING_KEY">[1]</a></dt></dl></td><td width="33%" valign="top"><dl>
 <dt><a href="reference/celery.worker.html#celery.worker.AMQPListener">AMQPListener (class in celery.worker)</a></dt>
 <dt><a href="reference/celery.task.base.html#celery.task.base.Task.apply">apply() (celery.task.base.Task class method)</a></dt>
   <dd><dl>
@@ -215,14 +254,15 @@
 <dt><a href="reference/celery.task.base.html#module-celery.task.base">celery.task.base (module)</a></dt>
 <dt><a href="reference/celery.task.builtins.html#module-celery.task.builtins">celery.task.builtins (module)</a></dt>
 <dt><a href="reference/celery.task.rest.html#module-celery.task.rest">celery.task.rest (module)</a></dt>
-<dt><a href="reference/celery.task.strategy.html#module-celery.task.strategy">celery.task.strategy (module)</a></dt></dl></td><td width="33%" valign="top"><dl>
-<dt><a href="reference/celery.utils.html#module-celery.utils">celery.utils (module)</a></dt>
+<dt><a href="reference/celery.task.strategy.html#module-celery.task.strategy">celery.task.strategy (module)</a></dt>
+<dt><a href="reference/celery.utils.html#module-celery.utils">celery.utils (module)</a></dt></dl></td><td width="33%" valign="top"><dl>
 <dt><a href="reference/celery.views.html#module-celery.views">celery.views (module)</a></dt>
 <dt><a href="reference/celery.worker.html#module-celery.worker">celery.worker (module)</a></dt>
 <dt><a href="reference/celery.worker.controllers.html#module-celery.worker.controllers">celery.worker.controllers (module)</a></dt>
 <dt><a href="reference/celery.worker.job.html#module-celery.worker.job">celery.worker.job (module)</a></dt>
 <dt><a href="reference/celery.conf.html#celery.conf.CELERY_BACKEND">CELERY_BACKEND (in module celery.conf)</a>, <a href="reference/celery.conf.html#celery.conf.CELERY_BACKEND">[1]</a></dt>
-<dt><a href="reference/celery.conf.html#celery.conf.CELERY_PERIODIC_STATUS_BACKEND">CELERY_PERIODIC_STATUS_BACKEND (in module celery.conf)</a></dt>
+<dt><a href="reference/celery.conf.html#celery.conf.CELERY_CACHE_BACKEND">CELERY_CACHE_BACKEND (in module celery.conf)</a></dt>
+<dt><a href="reference/celery.conf.html#celery.conf.CELERY_PERIODIC_STATUS_BACKEND">CELERY_PERIODIC_STATUS_BACKEND (in module celery.conf)</a>, <a href="reference/celery.conf.html#celery.conf.CELERY_PERIODIC_STATUS_BACKEND">[1]</a></dt>
 <dt>celeryd command line option</dt>
   <dd><dl>
     <dt><a href="reference/celery.bin.celeryd.html#cmdoption-celeryd--chroot">--chroot</a></dt>
@@ -670,6 +710,7 @@
 <dt><a href="reference/celery.task.base.html#celery.task.base.Task">Task (class in celery.task.base)</a></dt>
 <dt><a href="reference/celery.models.html#PeriodicTaskMeta.task">task (PeriodicTaskMeta attribute)</a></dt>
 <dt><a href="reference/celery.task.base.html#celery.task.base.Task.MaxRetriesExceededError">Task.MaxRetriesExceededError</a></dt>
+<dt><a href="reference/celery.worker.job.html#celery.worker.job.TaskWrapper.task_func">task_func (celery.worker.job.TaskWrapper attribute)</a></dt>
 <dt><a href="reference/celery.result.html#celery.result.AsyncResult.task_id">task_id (celery.result.AsyncResult attribute)</a></dt>
   <dd><dl>
     <dt><a href="reference/celery.models.html#TaskMeta.task_id">(TaskMeta attribute)</a></dt>
@@ -695,12 +736,12 @@
 <dt><a href="reference/celery.pool.html#celery.pool.TaskPool">TaskPool (class in celery.pool)</a></dt>
 <dt><a href="reference/celery.messaging.html#celery.messaging.TaskPublisher">TaskPublisher (class in celery.messaging)</a></dt>
 <dt><a href="reference/celery.registry.html#celery.registry.TaskRegistry">TaskRegistry (class in celery.registry)</a></dt></dl></td><td width="33%" valign="top"><dl>
+<dt><a href="reference/celery.registry.html#celery.registry.TaskRegistry.AlreadyRegistered">TaskRegistry.AlreadyRegistered</a></dt>
 <dt><a href="reference/celery.registry.html#celery.registry.TaskRegistry.NotRegistered">TaskRegistry.NotRegistered</a></dt>
 <dt><a href="reference/celery.task.base.html#celery.task.base.TaskSet">TaskSet (class in celery.task.base)</a></dt>
 <dt><a href="reference/celery.result.html#celery.result.TaskSetResult.taskset_id">taskset_id (celery.result.TaskSetResult attribute)</a></dt>
 <dt><a href="reference/celery.result.html#celery.result.TaskSetResult">TaskSetResult (class in celery.result)</a></dt>
 <dt><a href="reference/celery.monitoring.html#celery.monitoring.TaskTimerStats">TaskTimerStats (class in celery.monitoring)</a></dt>
-<dt><a href="reference/celery.task.base.html#celery.task.base.TaskType">TaskType (class in celery.task.base)</a></dt>
 <dt><a href="reference/celery.worker.job.html#celery.worker.job.TaskWrapper">TaskWrapper (class in celery.worker.job)</a></dt>
 <dt><a href="reference/celery.supervisor.html#celery.supervisor.OFASupervisor.Process.terminate">terminate() (celery.supervisor.OFASupervisor.Process method)</a></dt>
 <dt><a href="reference/celery.monitoring.html#celery.monitoring.TimerStats.time_start">time_start (celery.monitoring.TimerStats attribute)</a></dt>
@@ -759,46 +800,20 @@
 
 
 
-          </div>
+          </div> 
         </div>
       </div>
-      <div class="sphinxsidebar">
-        <div class="sphinxsidebarwrapper">
-
-   
-
-          <div id="searchbox" style="display: none">
-            <h3>Quick search</h3>
-              <form class="search" action="search.html" method="get">
-                <input type="text" name="q" size="18" />
-                <input type="submit" value="Go" />
-                <input type="hidden" name="check_keywords" value="yes" />
-                <input type="hidden" name="area" value="default" />
-              </form>
-              <p class="searchtip" style="font-size: 90%">
-              Enter search terms or a module, class or function name.
-              </p>
-          </div>
-          <script type="text/javascript">$('#searchbox').show(0);</script>
-        </div>
-      </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="modindex.html" title="Global Module Index"
-             >modules</a> |</li>
-        <li><a href="index.html">Celery v0.9.0 (unstable) documentation</a> &raquo;</li> 
-      </ul>
-    </div>
     <div class="footer">
+    <p>
       &copy; Copyright 2009, Ask Solem.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.3.
+	</p>
     </div>
+      <div class="clearer"></div>
+    </div>
+	<div id="breadcrumbs">
+		<a href="index.html">Celery v0.8.0 (stable) documentation</a>
+		</ul>
+	</div>
   </body>
 </html>
