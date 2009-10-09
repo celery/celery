@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Executable Jobs - celery.worker.job &mdash; Celery v0.8.0 (stable) documentation</title>
+    <title>Executable Jobs - celery.worker.job &mdash; Celery v0.9.0 (unstable) documentation</title>
     <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.8.0 (stable)',
+        VERSION:     '0.9.0 (unstable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,14 +19,14 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.8.0 (stable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.9.0 (unstable) documentation" href="../index.html" />
     <link rel="up" title="Module API Reference" href="index.html" />
     <link rel="next" title="Worker Controller Threads - celery.worker.controllers" href="celery.worker.controllers.html" />
     <link rel="prev" title="Multiprocessing Worker - celery.worker" href="celery.worker.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v0.8.0 (stable) documentation</p>
+	<p>Celery v0.9.0 (unstable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Executable Jobs - celery.worker.job</h1></div>
@@ -139,7 +139,7 @@ world-wide state.</dd></dl>
 
 <dl class="class">
 <dt id="celery.worker.job.TaskWrapper">
-<em class="property">class </em><tt class="descclassname">celery.worker.job.</tt><tt class="descname">TaskWrapper</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>task_func</em>, <em>args</em>, <em>kwargs</em>, <em>on_ack=&lt;function &lt;lambda&gt; at 0x102329320&gt;</em>, <em>retries=0</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskWrapper" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.worker.job.</tt><tt class="descname">TaskWrapper</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>args</em>, <em>kwargs</em>, <em>on_ack=&lt;function &lt;lambda&gt; at 0x10233a2a8&gt;</em>, <em>retries=0</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskWrapper" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class wrapping a task to be passed around and finally
 executed inside of the worker.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -149,7 +149,6 @@ executed inside of the worker.</p>
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><em>task_name</em> &#8211; see <a title="celery.worker.job.TaskWrapper.task_name" class="reference internal" href="#celery.worker.job.TaskWrapper.task_name"><tt class="xref docutils literal"><span class="pre">task_name</span></tt></a>.</li>
 <li><em>task_id</em> &#8211; see <a title="celery.worker.job.TaskWrapper.task_id" class="reference internal" href="#celery.worker.job.TaskWrapper.task_id"><tt class="xref docutils literal"><span class="pre">task_id</span></tt></a>.</li>
-<li><em>task_func</em> &#8211; see <a title="celery.worker.job.TaskWrapper.task_func" class="reference internal" href="#celery.worker.job.TaskWrapper.task_func"><tt class="xref docutils literal"><span class="pre">task_func</span></tt></a></li>
 <li><em>args</em> &#8211; see <a title="celery.worker.job.TaskWrapper.args" class="reference internal" href="#celery.worker.job.TaskWrapper.args"><tt class="xref docutils literal"><span class="pre">args</span></tt></a></li>
 <li><em>kwargs</em> &#8211; see <a title="celery.worker.job.TaskWrapper.kwargs" class="reference internal" href="#celery.worker.job.TaskWrapper.kwargs"><tt class="xref docutils literal"><span class="pre">kwargs</span></tt></a>.</li>
 </ul>
@@ -166,11 +165,6 @@ executed inside of the worker.</p>
 <dt id="celery.worker.job.TaskWrapper.task_id">
 <tt class="descname">task_id</tt><a class="headerlink" href="#celery.worker.job.TaskWrapper.task_id" title="Permalink to this definition">¶</a></dt>
 <dd>UUID of the task.</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.worker.job.TaskWrapper.task_func">
-<tt class="descname">task_func</tt><a class="headerlink" href="#celery.worker.job.TaskWrapper.task_func" title="Permalink to this definition">¶</a></dt>
-<dd>The tasks callable object.</dd></dl>
 
 <dl class="attribute">
 <dt id="celery.worker.job.TaskWrapper.args">
@@ -284,7 +278,7 @@ without raising an exception).</dd></dl>
     </div>
 	<div id="breadcrumbs">
 		<a href="index.html" accesskey="U">Module API Reference</a><img src="triangle_closed.png" alt="Right arrow">
-		<a href="../index.html">Celery v0.8.0 (stable) documentation</a>
+		<a href="../index.html">Celery v0.9.0 (unstable) documentation</a>
 		</ul>
 	</div>
   </body>

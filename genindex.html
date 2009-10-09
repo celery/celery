@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Index &mdash; Celery v0.8.0 (stable) documentation</title>
+    <title>Index &mdash; Celery v0.9.0 (unstable) documentation</title>
     <link rel="stylesheet" href="static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.8.0 (stable)',
+        VERSION:     '0.9.0 (unstable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,11 +19,11 @@
     </script>
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v0.8.0 (stable) documentation" href="index.html" /> 
+    <link rel="top" title="Celery v0.9.0 (unstable) documentation" href="index.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v0.8.0 (stable) documentation</p>
+	<p>Celery v0.9.0 (unstable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Index</h1></div>
@@ -150,6 +150,7 @@
 <table width="100%" class="indextable"><tr><td width="33%" valign="top">
 <dl>
 
+<dt><a href="reference/celery.task.base.html#celery.task.base.Task.abstract">abstract (celery.task.base.Task attribute)</a></dt>
 <dt><a href="reference/celery.managers.html#celery.managers.TableLock.acquire">acquire() (celery.managers.TableLock class method)</a></dt>
 <dt><a href="reference/celery.bin.celeryd.html#celery.bin.celeryd.acquire_pidlock">acquire_pidlock() (in module celery.bin.celeryd)</a></dt>
 <dt><a href="reference/celery.pool.html#celery.pool.DynamicPool.add_worker">add_worker() (celery.pool.DynamicPool method)</a></dt>
@@ -164,8 +165,8 @@
 <dt><a href="reference/celery.conf.html#celery.conf.AMQP_CONSUMER_ROUTING_KEY">AMQP_CONSUMER_ROUTING_KEY (in module celery.conf)</a>, <a href="reference/celery.conf.html#celery.conf.AMQP_CONSUMER_ROUTING_KEY">[1]</a></dt>
 <dt><a href="reference/celery.conf.html#celery.conf.AMQP_EXCHANGE">AMQP_EXCHANGE (in module celery.conf)</a>, <a href="reference/celery.conf.html#celery.conf.AMQP_EXCHANGE">[1]</a></dt>
 <dt><a href="reference/celery.conf.html#celery.conf.AMQP_EXCHANGE_TYPE">AMQP_EXCHANGE_TYPE (in module celery.conf)</a>, <a href="reference/celery.conf.html#celery.conf.AMQP_EXCHANGE_TYPE">[1]</a></dt>
-<dt><a href="reference/celery.worker.html#celery.worker.WorkController.amqp_listener">amqp_listener (celery.worker.WorkController attribute)</a></dt>
-<dt><a href="reference/celery.conf.html#celery.conf.AMQP_PUBLISHER_ROUTING_KEY">AMQP_PUBLISHER_ROUTING_KEY (in module celery.conf)</a>, <a href="reference/celery.conf.html#celery.conf.AMQP_PUBLISHER_ROUTING_KEY">[1]</a></dt></dl></td><td width="33%" valign="top"><dl>
+<dt><a href="reference/celery.worker.html#celery.worker.WorkController.amqp_listener">amqp_listener (celery.worker.WorkController attribute)</a></dt></dl></td><td width="33%" valign="top"><dl>
+<dt><a href="reference/celery.conf.html#celery.conf.AMQP_PUBLISHER_ROUTING_KEY">AMQP_PUBLISHER_ROUTING_KEY (in module celery.conf)</a>, <a href="reference/celery.conf.html#celery.conf.AMQP_PUBLISHER_ROUTING_KEY">[1]</a></dt>
 <dt><a href="reference/celery.worker.html#celery.worker.AMQPListener">AMQPListener (class in celery.worker)</a></dt>
 <dt><a href="reference/celery.task.base.html#celery.task.base.Task.apply">apply() (celery.task.base.Task class method)</a></dt>
   <dd><dl>
@@ -710,7 +711,6 @@
 <dt><a href="reference/celery.task.base.html#celery.task.base.Task">Task (class in celery.task.base)</a></dt>
 <dt><a href="reference/celery.models.html#PeriodicTaskMeta.task">task (PeriodicTaskMeta attribute)</a></dt>
 <dt><a href="reference/celery.task.base.html#celery.task.base.Task.MaxRetriesExceededError">Task.MaxRetriesExceededError</a></dt>
-<dt><a href="reference/celery.worker.job.html#celery.worker.job.TaskWrapper.task_func">task_func (celery.worker.job.TaskWrapper attribute)</a></dt>
 <dt><a href="reference/celery.result.html#celery.result.AsyncResult.task_id">task_id (celery.result.AsyncResult attribute)</a></dt>
   <dd><dl>
     <dt><a href="reference/celery.models.html#TaskMeta.task_id">(TaskMeta attribute)</a></dt>
@@ -736,12 +736,12 @@
 <dt><a href="reference/celery.pool.html#celery.pool.TaskPool">TaskPool (class in celery.pool)</a></dt>
 <dt><a href="reference/celery.messaging.html#celery.messaging.TaskPublisher">TaskPublisher (class in celery.messaging)</a></dt>
 <dt><a href="reference/celery.registry.html#celery.registry.TaskRegistry">TaskRegistry (class in celery.registry)</a></dt></dl></td><td width="33%" valign="top"><dl>
-<dt><a href="reference/celery.registry.html#celery.registry.TaskRegistry.AlreadyRegistered">TaskRegistry.AlreadyRegistered</a></dt>
 <dt><a href="reference/celery.registry.html#celery.registry.TaskRegistry.NotRegistered">TaskRegistry.NotRegistered</a></dt>
 <dt><a href="reference/celery.task.base.html#celery.task.base.TaskSet">TaskSet (class in celery.task.base)</a></dt>
 <dt><a href="reference/celery.result.html#celery.result.TaskSetResult.taskset_id">taskset_id (celery.result.TaskSetResult attribute)</a></dt>
 <dt><a href="reference/celery.result.html#celery.result.TaskSetResult">TaskSetResult (class in celery.result)</a></dt>
 <dt><a href="reference/celery.monitoring.html#celery.monitoring.TaskTimerStats">TaskTimerStats (class in celery.monitoring)</a></dt>
+<dt><a href="reference/celery.task.base.html#celery.task.base.TaskType">TaskType (class in celery.task.base)</a></dt>
 <dt><a href="reference/celery.worker.job.html#celery.worker.job.TaskWrapper">TaskWrapper (class in celery.worker.job)</a></dt>
 <dt><a href="reference/celery.supervisor.html#celery.supervisor.OFASupervisor.Process.terminate">terminate() (celery.supervisor.OFASupervisor.Process method)</a></dt>
 <dt><a href="reference/celery.monitoring.html#celery.monitoring.TimerStats.time_start">time_start (celery.monitoring.TimerStats attribute)</a></dt>
@@ -812,7 +812,7 @@
       <div class="clearer"></div>
     </div>
 	<div id="breadcrumbs">
-		<a href="index.html">Celery v0.8.0 (stable) documentation</a>
+		<a href="index.html">Celery v0.9.0 (unstable) documentation</a>
 		</ul>
 	</div>
   </body>
