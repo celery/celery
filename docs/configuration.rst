@@ -67,6 +67,11 @@ Task result backend settings
     * tyrant
         Use Tokyo Tyrant to store the results.
 
+    * amqp
+        Send results back as AMQP messages
+        (**WARNING** While very fast, you must make sure you only
+        try to receive the result once).
+
 
 * CELERY_PERIODIC_STATUS_BACKEND
     The backend used to store the status of periodic tasks.
@@ -77,6 +82,7 @@ Task result backend settings
 
     * mongodb
         Use MongoDB.
+
 
 Database backend settings
 =========================
@@ -113,6 +119,10 @@ Cache backend settings
 
 Please see the documentation for the Django cache framework settings:
 http://docs.djangoproject.com/en/dev/topics/cache/#memcached
+
+To use a custom cache backend for Celery, while using another for Django,
+you should use the ``CELERY_CACHE_BACKEND`` setting instead of the regular
+django ``CACHE_BACKEND`` setting.
 
 Example configuration
 ---------------------

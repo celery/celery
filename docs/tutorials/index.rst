@@ -8,4 +8,5 @@
 .. toctree::
     :maxdepth: 2
 
+    external
     clickcounter

@@ -11,7 +11,7 @@ import multiprocessing
 from multiprocessing.pool import Pool, worker
 from celery.datastructures import ExceptionInfo
 from celery.utils import noop
-from functools import partial as curry
+from celery.utils.functional import curry
 from operator import isNumberType
 
 

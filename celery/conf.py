@@ -253,3 +253,14 @@ The backend used to store the status of periodic tasks.
 CELERY_PERIODIC_STATUS_BACKEND = getattr(settings,
                                     "CELERY_PERIODIC_STATUS_BACKEND",
                                     DEFAULT_PERIODIC_STATUS_BACKEND)
+
+
+"""
+
+.. data:: CELERY_CACHE_BACKEND
+
+Use a custom cache backend for celery. If not set the django-global
+cache backend in ``CACHE_BACKEND`` will be used.
+
+"""
+CELERY_CACHE_BACKEND = getattr(settings, "CELERY_CACHE_BACKEND", None)

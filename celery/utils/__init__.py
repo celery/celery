@@ -6,8 +6,8 @@ Utility functions
 import time
 from itertools import repeat
 from inspect import getargspec
-from functools import partial as curry
 from uuid import UUID, uuid4, _uuid_generate_random
+from celery.utils.functional import curry
 import operator
 try:
     import ctypes
