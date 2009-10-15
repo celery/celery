@@ -69,7 +69,7 @@ class TaskBucket(object):
         """
         for bucket in self.buckets.values():
             try:
-                item = bucket.get_nowait()
+                return bucket.get_nowait()
             except (BucketRateExceeded, QueueEmpty):
                 pass
             time.sleep(0.01)
