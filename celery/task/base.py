@@ -70,6 +70,13 @@ class Task(object):
         Defeault time in seconds before a retry of the task should be
         executed. Default is a 1 minute delay.
 
+    .. rate_limit:: Set the rate limit for this task type,
+        if this is ``None`` no rate limit is in effect.
+        The rate limits can be specified in seconds, minutes or hours
+        by appending ``"/s"``, ``"/m"`` or "``/h"``". If this is an integer
+        it is interpreted as seconds. Example: ``"100/m" (hundred tasks a
+        minute).
+
     .. attribute:: ignore_result
 
         Don't store the status and return value. This means you can't
@@ -138,6 +145,7 @@ class Task(object):
     max_retries = 3
     default_retry_delay = 3 * 60
     serializer = conf.TASK_SERIALIZER
+    rate_limit = None
 
     MaxRetriesExceededError = MaxRetriesExceededError
 

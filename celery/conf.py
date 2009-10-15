@@ -22,6 +22,7 @@ DEFAULT_AMQP_CONNECTION_MAX_RETRIES = 100
 DEFAULT_TASK_SERIALIZER = "pickle"
 DEFAULT_BACKEND = "database"
 DEFAULT_PERIODIC_STATUS_BACKEND = "database"
+DEFAULT_DISABLE_RATE_LIMITS = False
 
 
 """
@@ -254,7 +255,6 @@ CELERY_PERIODIC_STATUS_BACKEND = getattr(settings,
                                     "CELERY_PERIODIC_STATUS_BACKEND",
                                     DEFAULT_PERIODIC_STATUS_BACKEND)
 
-
 """
 
 .. data:: CELERY_CACHE_BACKEND
@@ -264,3 +264,25 @@ cache backend in ``CACHE_BACKEND`` will be used.
 
 """
 CELERY_CACHE_BACKEND = getattr(settings, "CELERY_CACHE_BACKEND", None)
+
+
+"""
+
+.. data:: DEFAULT_RATE_LIMIT
+
+The default rate limit applied to all tasks which doesn't have a custom
+rate limit defined. (Default: None)
+
+"""
+DEFAULT_RATE_LIMIT = getattr(settings, "CELERY_DEFAULT_RATE_LIMIT", None)
+
+"""
+
+.. data:: DISABLE_RATE_LIMITS
+
+If ``True`` all rate limits will be disabled and all tasks will be executed
+as soon as possible.
+
+"""
+DISABLE_RATE_LIMITS = getattr(settings, "CELERY_DISABLE_RATE_LIMITS",
+                              DEFAULT_DISABLE_RATE_LIMITS)

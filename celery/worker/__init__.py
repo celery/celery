@@ -8,12 +8,13 @@ from celery.worker.controllers import Mediator, PeriodicWorkController
 from celery.worker.job import TaskWrapper
 from celery.exceptions import NotRegistered
 from celery.messaging import get_consumer_set
-from celery.conf import DAEMON_CONCURRENCY, DAEMON_LOG_FILE
-from celery.conf import AMQP_CONNECTION_RETRY, AMQP_CONNECTION_MAX_RETRIES
 from celery.log import setup_logger
 from celery.pool import TaskPool
 from celery.utils import retry_over_time
 from celery.datastructures import SharedCounter
+from celery import registry
+from celery import conf
+from celery.buckets import TaskBucket
 from Queue import Queue
 import traceback
 import logging
@@ -153,12 +154,12 @@ class AMQPListener(object):
             connected = conn.connection # Connection is established lazily.
             return conn
 
-        if not AMQP_CONNECTION_RETRY:
+        if not conf.AMQP_CONNECTION_RETRY:
             return _establish_connection()
 
         conn = retry_over_time(_establish_connection, (socket.error, IOError),
                                errback=_connection_error_handler,
-                               max_retries=AMQP_CONNECTION_MAX_RETRIES)
+                               max_retries=conf.AMQP_CONNECTION_MAX_RETRIES)
         self.logger.debug("AMQPListener: Connection Established.")
         return conn
 
@@ -222,8 +223,8 @@ class WorkController(object):
 
     """
     loglevel = logging.ERROR
-    concurrency = DAEMON_CONCURRENCY
-    logfile = DAEMON_LOG_FILE
+    concurrency = conf.DAEMON_CONCURRENCY
+    logfile = conf.DAEMON_LOG_FILE
     _state = None
 
     def __init__(self, concurrency=None, logfile=None, loglevel=None,
@@ -237,7 +238,10 @@ class WorkController(object):
         self.logger = setup_logger(loglevel, logfile)
 
         # Queues
-        self.bucket_queue = Queue()
+        if conf.DISABLE_RATE_LIMITS:
+            self.bucket_queue = Queue()
+        else:
+            self.bucket_queue = TaskBucket(task_registry=registry.tasks)
         self.hold_queue = Queue()
 
         self.logger.debug("Instantiating thread components...")
