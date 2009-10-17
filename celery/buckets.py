@@ -102,7 +102,7 @@ class TaskBucket(object):
                 raise
             return min(remainding_times), None
 
-    def get(self, timeout=None):
+    def get(self, block=True, timeout=None):
         """Retrive the task from the first available bucket.
 
         Available as in, there is an item in the queue and you can
@@ -115,12 +115,14 @@ class TaskBucket(object):
         while True:
             remainding_time, item = self._get()
             if remainding_time:
-                if did_timeout():
+                if not block or did_timeout():
                     raise QueueEmpty
                 time.sleep(remainding_time)
             else:
                 return item
-    get_nowait = get
+
+    def get_nowait(self):
+        return self.get(block=False)
 
     def __old_get(self, block=True, timeout=None):
         time_spent = 0
