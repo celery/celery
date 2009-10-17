@@ -5,21 +5,29 @@ RATE_MODIFIER_MAP = {"s": lambda n: n,
                      "m": lambda n: n / 60.0,
                      "h": lambda n: n / 60.0 / 60.0}
 
+BASE_IDENTIFIERS = {"0x": 16,
+                    "0o": 8,
+                    "0b": 2}
 
-class BucketRateExceeded(Exception):
+
+class RateLimitExceeded(Exception):
     """The token buckets rate limit has been exceeded."""
 
 
 def parse_ratelimit_string(rate_limit):
     """Parse rate limit configurations such as ``"100/m"`` or ``"2/h"``
         and convert them into seconds."""
+
     if rate_limit:
-        try:
-            return int(rate_limit)
-        except ValueError:
-            ops, _, modifier = rate_limit.partition("/")
-            return RATE_MODIFIER_MAP[modifier](int(ops))
-    return None
+        if isinstance(rate_limit, basestring):
+            base = BASE_IDENTIFIERS.get(rate_limit[:2], 10)
+            try:
+                return int(rate_limit, base)
+            except ValueError:
+                ops, _, modifier = rate_limit.partition("/")
+                return RATE_MODIFIER_MAP[modifier](int(ops, base)) or 0
+        return rate_limit or 0
+    return 0
 
 
 class TaskBucket(object):
@@ -50,16 +58,32 @@ class TaskBucket(object):
 
 
     """
-    min_wait = 0.05
+    min_wait = 0.0
 
     def __init__(self, task_registry):
         self.task_registry = task_registry
         self.buckets = {}
         self.init_with_registry()
 
-    def put(self, task):
+    def put(self, job):
         """Put a task into the appropiate bucket."""
-        self.buckets[task_name].put_nowait(task)
+        self.buckets[job.task_name].put_nowait(job)
+    put_nowait = put
+
+    def _get(self):
+        remainding_times = []
+        for bucket in self.buckets.values():
+            remainding = bucket.expected_time()
+            if not remainding:
+                try:
+                    return 0, bucket.get_nowait()
+                except QueueEmpty:
+                    pass
+            else:
+                remainding_times.append(remainding)
+        if not remainding_times:
+            raise QueueEmpty
+        return min(remainding_times), None
 
     def get(self, timeout=None):
         """Retrive the task from the first available bucket.
@@ -68,18 +92,33 @@ class TaskBucket(object):
         consume tokens from it.
 
         """
+        time_start = time.time()
+        did_timeout = lambda: timeout and time.time() - time_start > timeout
+
+        while True:
+            remainding_time, item = self._get()
+            if remainding_time:
+                if did_timeout():
+                    raise QueueEmpty
+                time.sleep(remainding_time)
+            else:
+                return item
+    get_nowait = get
+
+    def __old_get(self, block=True, timeout=None):
         time_spent = 0
         for bucket in self.buckets.values():
             remaining_times = []
             try:
                 return bucket.get_nowait()
-            except BucketRateExceeded:
+            except RateLimitExceeded:
                 remaining_times.append(bucket.expected_time())
             except QueueEmpty:
                 pass
 
-            if timeout and time_spent >= timeout:
-                raise QueueEmpty()
+            if not remaining_times:
+                if not block or (timeout and time_spent >= timeout):
+                    raise QueueEmpty
             else:
                 shortest_wait = min(remaining_times or [self.min_wait])
                 time_spent += shortest_wait
@@ -109,14 +148,22 @@ class TaskBucket(object):
         rate_limit = parse_ratelimit_string(rate_limit)
         if rate_limit:
             task_queue = TokenBucketQueue(rate_limit, queue=task_queue)
+        else:
+            task_queue.expected_time = lambda: 0
 
         self.buckets[task_name] = task_queue
         return task_queue
 
+    def qsize(self):
+        """Get the total size of all the queues."""
+        return sum(bucket.qsize() for bucket in self.buckets.values())
+
 
 class TokenBucketQueue(object):
-    """An implementation of the token bucket algorithm.
+    """Queue with rate limited get operations.
 
+    This uses the token bucket algorithm to rate limit the queue on get
+    operations.
     See http://en.wikipedia.org/wiki/Token_Bucket
     Most of this code was stolen from an entry in the ASPN Python Cookbook:
     http://code.activestate.com/recipes/511490/
@@ -137,6 +184,8 @@ class TokenBucketQueue(object):
         Timestamp of the last time a token was taken out of the bucket.
 
     """
+    RateLimitExceeded = RateLimitExceeded
+
     def __init__(self, fill_rate, queue=None, capacity=1):
         self.capacity = float(capacity)
         self._tokens = self.capacity
@@ -146,26 +195,68 @@ class TokenBucketQueue(object):
         self.fill_rate = float(fill_rate)
         self.timestamp = time.time()
 
-    def put(self, item, nb=False):
-        put = self.queue.put_nowait if nb else self.queue.put
+    def put(self, item, block=True):
+        """Put an item into the queue.
+
+        Also see :meth:`Queue.Queue.put`.
+
+        """
+        put = self.queue.put if block else self.queue.put_nowait
         put(item)
 
-    def get(self, nb=False):
-        get = self.queue.get_nowait if nb else self.queue.get
+    def get(self, block=True):
+        """Remove and return an item from the queue.
+
+        :raises RateLimitExceeded: If a token could not be consumed from the
+            token bucket (consuming from the queue too fast).
+        :raises Queue.Empty: If an item is not immediately available.
+
+        Also see :meth:`Queue.Queue.get`.
+
+        """
+        get = self.queue.get if block else self.queue.get_nowait
 
         if not self.can_consume(1):
-            raise BucketRateExceeded()
+            raise RateLimitExceeded
 
         return get()
 
     def get_nowait(self):
-        return self.get(nb=True)
+        """Remove and return an item from the queue without blocking.
+
+        :raises RateLimitExceeded: If a token could not be consumed from the
+            token bucket (consuming from the queue too fast).
+        :raises Queue.Empty: If an item is not immediately available.
+
+        Also see :meth:`Queue.Queue.get_nowait`."""
+        return self.get(block=False)
 
     def put_nowait(self, item):
-        return self.put(item, nb=True)
+        """Put an item into the queue without blocking.
+
+        :raises Queue.Full: If a free slot is not immediately available.
+
+        Also see :meth:`Queue.Queue.put_nowait`
+
+        """
+        return self.put(item, block=False)
 
     def qsize(self):
+        """Returns the size of the queue.
+
+        See :meth:`Queue.Queue.qsize`.
+
+        """
         return self.queue.qsize()
+
+    def wait(self, block=False):
+        """Wait until a token can be retrieved from the bucket and return
+        the next item."""
+        while True:
+            remaining = self.expected_time()
+            if not remaining:
+                return self.get(block=block)
+            time.sleep(remaining)
 
     def can_consume(self, tokens=1):
         """Consume tokens from the bucket. Returns True if there were
