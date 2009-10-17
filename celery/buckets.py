@@ -75,7 +75,7 @@ class TaskBucket(object):
     def _get(self):
         # If the first queue is always returning items, we would never
         # get to fetching items from the other queues.
-        # So we always iterate over all the queus and put any ready
+        # So we always iterate over all the queues and put any ready
         # items on a queue called "immediate". This queue is always checked
         # for cached items first.
         if self.immediate:
