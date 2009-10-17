@@ -73,10 +73,11 @@ class TaskBucket(object):
     put_nowait = put
 
     def _get(self):
-        # If the first queue is always returning
-        # results it would never come to pick up items from the other
-        # queues. So we always iterate over all the queus and put any ready
-        # items on a deque called "immediate".
+        # If the first queue is always returning items, we would never
+        # get to fetching items from the other queues.
+        # So we always iterate over all the queus and put any ready
+        # items on a queue called "immediate". This queue is always checked
+        # for cached items first.
         if self.immediate:
             try:
                 return 0, self.immediate.get_nowait()
