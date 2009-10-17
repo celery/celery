@@ -1,5 +1,6 @@
 import time
 from Queue import Queue, Empty as QueueEmpty
+from collections import deque
 
 RATE_MODIFIER_MAP = {"s": lambda n: n,
                      "m": lambda n: n / 60.0,
@@ -64,6 +65,7 @@ class TaskBucket(object):
         self.task_registry = task_registry
         self.buckets = {}
         self.init_with_registry()
+        self.immediate = deque()
 
     def put(self, job):
         """Put a task into the appropiate bucket."""
@@ -71,16 +73,27 @@ class TaskBucket(object):
     put_nowait = put
 
     def _get(self):
+        # If the first queue is always returning
+        # results it would never come to pick up items from the other
+        # queues. So we use a deque to include contents of other queues.
+        if self.immediate:
+            return 0, self.immediate.popleft()
+
+        has_item = False
         remainding_times = []
+
         for bucket in self.buckets.values():
             remainding = bucket.expected_time()
             if not remainding:
                 try:
-                    return 0, bucket.get_nowait()
+                    self.immediate.append(bucket.get_nowait())
+                    has_item = True
                 except QueueEmpty:
                     pass
             else:
                 remainding_times.append(remainding)
+        if has_item:
+            return 0, self.immediate.popleft()
         if not remainding_times:
             raise QueueEmpty
         return min(remainding_times), None
