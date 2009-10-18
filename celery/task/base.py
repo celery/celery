@@ -75,7 +75,8 @@ class Task(object):
         The rate limits can be specified in seconds, minutes or hours
         by appending ``"/s"``, ``"/m"`` or "``/h"``". If this is an integer
         it is interpreted as seconds. Example: ``"100/m" (hundred tasks a
-        minute).
+        minute). Default is the ``CELERY_DEFAULT_RATE_LIMIT`` setting (which
+        is off if not specified).
 
     .. attribute:: ignore_result
 
@@ -145,7 +146,7 @@ class Task(object):
     max_retries = 3
     default_retry_delay = 3 * 60
     serializer = conf.TASK_SERIALIZER
-    rate_limit = None
+    rate_limit = conf.DEFAULT_RATE_LIMIT
 
     MaxRetriesExceededError = MaxRetriesExceededError
 

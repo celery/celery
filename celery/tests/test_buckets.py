@@ -170,16 +170,35 @@ class TestTaskBuckets(unittest.TestCase):
             self.assertEqual(b.get(), job)
         self.assertTrue(time.time() - time_start > 1.5)
 
+    def test__very_busy_queue_doesnt_block_others(self):
+        b = buckets.TaskBucket(task_registry=self.registry)
+
+        cjob = lambda i, t: MockJob(gen_unique_id(), t.name, [i], {})
+        ajobs = [cjob(i, TaskA) for i in xrange(10)]
+        bjobs = [cjob(i, TaskB) for i in xrange(20)]
+        jobs = list(chain(*izip(bjobs, ajobs)))
+        map(b.put, jobs)
+
+        got_ajobs = 0
+        for job in (b.get() for i in xrange(20)):
+            if job.task_name == TaskA.name:
+                got_ajobs += 1
+
+        self.assertTrue(got_ajobs > 2)
+
+
     def test_thorough__multiple_types(self):
         self.registry.register(TaskD)
         try:
             b = buckets.TaskBucket(task_registry=self.registry)
 
             cjob = lambda i, t: MockJob(gen_unique_id(), t.name, [i], {})
+
             ajobs = [cjob(i, TaskA) for i in xrange(10)]
             bjobs = [cjob(i, TaskB) for i in xrange(10)]
             cjobs = [cjob(i, TaskC) for i in xrange(10)]
             djobs = [cjob(i, TaskD) for i in xrange(10)]
+
             # Spread the jobs around.
             jobs = list(chain(*izip(ajobs, bjobs, cjobs, djobs)))
 

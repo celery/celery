@@ -1,5 +1,6 @@
 import time
-from Queue import Queue, Empty as QueueEmpty
+from Queue import Queue
+from Queue import Empty as QueueEmpty
 
 
 RATE_MODIFIER_MAP = {"s": lambda n: n,
@@ -17,7 +18,11 @@ class RateLimitExceeded(Exception):
 
 def parse_ratelimit_string(rate_limit):
     """Parse rate limit configurations such as ``"100/m"`` or ``"2/h"``
-        and convert them into seconds."""
+        and convert them into seconds.
+
+    Returns ``0`` for no rate limit.
+
+    """
 
     if rate_limit:
         if isinstance(rate_limit, basestring):
@@ -32,9 +37,7 @@ def parse_ratelimit_string(rate_limit):
 
 
 class TaskBucket(object):
-    """A bucket with buckets of tasks. (eh. seriously.)
-
-    This is a collection of token buckets, each task type having
+    """This is a collection of token buckets, each task type having
     its own token bucket. If the task type doesn't have a rate limit,
     it will have a plain Queue object instead of a token bucket queue.
 
@@ -50,7 +53,7 @@ class TaskBucket(object):
          "feed.refresh": Queue(),
          "video.compress": TokenBucketQueue(fill_rate=2)}
 
-    The get operation will iterate over these until one of them
+    The get operation will iterate over these until one of the buckets
     is able to return an item. The underlying datastructure is a ``dict``,
     so the order is ignored here.
 
@@ -92,6 +95,8 @@ class TaskBucket(object):
                     self.immediate.put_nowait(bucket.get_nowait())
                 except QueueEmpty:
                     pass
+                except RateLimitExceeded:
+                    remaining_times.append(bucket.expected_time())
             else:
                 remaining_times.append(remaining)
 
@@ -182,6 +187,9 @@ class TaskBucket(object):
         """Get the total size of all the queues."""
         return sum(bucket.qsize() for bucket in self.buckets.values())
 
+    def empty(self):
+        return all(bucket.empty() for bucket in self.buckets.values())
+
 
 class TokenBucketQueue(object):
     """Queue with rate limited get operations.
@@ -228,6 +236,16 @@ class TokenBucketQueue(object):
         put = self.queue.put if block else self.queue.put_nowait
         put(item)
 
+    def put_nowait(self, item):
+        """Put an item into the queue without blocking.
+
+        :raises Queue.Full: If a free slot is not immediately available.
+
+        Also see :meth:`Queue.Queue.put_nowait`
+
+        """
+        return self.put(item, block=False)
+
     def get(self, block=True):
         """Remove and return an item from the queue.
 
@@ -252,18 +270,10 @@ class TokenBucketQueue(object):
             token bucket (consuming from the queue too fast).
         :raises Queue.Empty: If an item is not immediately available.
 
-        Also see :meth:`Queue.Queue.get_nowait`."""
-        return self.get(block=False)
-
-    def put_nowait(self, item):
-        """Put an item into the queue without blocking.
-
-        :raises Queue.Full: If a free slot is not immediately available.
-
-        Also see :meth:`Queue.Queue.put_nowait`
+        Also see :meth:`Queue.Queue.get_nowait`.
 
         """
-        return self.put(item, block=False)
+        return self.get(block=False)
 
     def qsize(self):
         """Returns the size of the queue.
@@ -272,6 +282,9 @@ class TokenBucketQueue(object):
 
         """
         return self.queue.qsize()
+
+    def empty(self):
+        return self.queue.empty()
 
     def wait(self, block=False):
         """Wait until a token can be retrieved from the bucket and return
