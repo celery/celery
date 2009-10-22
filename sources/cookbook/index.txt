@@ -8,6 +8,7 @@
     tasks
     task-retries
     remote-tasks
+    unit-testing
 
 This page contains common recipes and techniques.
 Whenever a setting is mentioned, you should use ``celeryconf.py`` if using

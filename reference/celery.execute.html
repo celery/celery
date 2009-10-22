@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Executing Tasks - celery.execute &mdash; Celery v0.9.0 (unstable) documentation</title>
+    <title>Executing Tasks - celery.execute &mdash; Celery v0.8.0 (stable) documentation</title>
     <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.9.0 (unstable)',
+        VERSION:     '0.8.0 (stable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,14 +19,14 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.9.0 (unstable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.8.0 (stable) documentation" href="../index.html" />
     <link rel="up" title="Module API Reference" href="index.html" />
     <link rel="next" title="Task Result - celery.result" href="celery.result.html" />
     <link rel="prev" title="Defining Tasks - celery.task.base" href="celery.task.base.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v0.9.0 (unstable) documentation</p>
+	<p>Celery v0.8.0 (stable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Executing Tasks - celery.execute</h1></div>
@@ -132,7 +132,7 @@
 <h1>Executing Tasks - celery.execute<a class="headerlink" href="#module-celery.execute" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="celery.execute.ExecuteWrapper">
-<em class="property">class </em><tt class="descclassname">celery.execute.</tt><tt class="descname">ExecuteWrapper</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>args=None</em>, <em>kwargs=None</em><big>)</big><a class="headerlink" href="#celery.execute.ExecuteWrapper" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.execute.</tt><tt class="descname">ExecuteWrapper</tt><big>(</big><em>fun</em>, <em>task_id</em>, <em>task_name</em>, <em>args=None</em>, <em>kwargs=None</em><big>)</big><a class="headerlink" href="#celery.execute.ExecuteWrapper" title="Permalink to this definition">¶</a></dt>
 <dd><p>Wraps the task in a jail, which catches all exceptions, and
 saves the status and result of the task execution to the task
 meta backend.</p>
@@ -148,8 +148,9 @@ result, and sets the task status to <tt class="docutils literal"><span class="pr
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><em>task_name</em> &#8211; The name of the task to execute.</li>
+<li><em>fun</em> &#8211; Callable object to execute.</li>
 <li><em>task_id</em> &#8211; The unique id of the task.</li>
+<li><em>task_name</em> &#8211; Name of the task.</li>
 <li><em>args</em> &#8211; List of positional args to pass on to the function.</li>
 <li><em>kwargs</em> &#8211; Keyword arguments mapping to pass on to the function.</li>
 </ul>
@@ -299,7 +300,7 @@ has been registered in the task registry.</p>
     </div>
 	<div id="breadcrumbs">
 		<a href="index.html" accesskey="U">Module API Reference</a><img src="triangle_closed.png" alt="Right arrow">
-		<a href="../index.html">Celery v0.9.0 (unstable) documentation</a>
+		<a href="../index.html">Celery v0.8.0 (stable) documentation</a>
 		</ul>
 	</div>
   </body>
