@@ -168,6 +168,10 @@ def acquire_pidlock(pidfile):
             sys.stderr.write("Stale pidfile exists. Removing it.\n")
             os.unlink(pidfile)
             return PIDLockFile(pidfile)
+    except TypeError, exc:
+        sys.stderr.write("Broken pidfile found. Removing it.\n")
+        os.unlink(pidfile)
+        return PIDLockFile(pidfile)
     else:
         raise SystemExit(
                 "ERROR: Pidfile (%s) already exists.\n"
