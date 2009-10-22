@@ -186,7 +186,7 @@ Use the following specific settings in your ``settings.py``:
     CARROT_BACKEND = "stomp"
 
     # STOMP hostname and port settings.
-    AMQP_HOST = "localhost"
+    AMQP_SERVER = "localhost"
     AMQP_PORT = 61613
 
     # The queue name to use (both queue and exchange must be set to the

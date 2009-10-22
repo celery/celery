@@ -24,7 +24,7 @@ it should contain all you need to run a basic celery set-up.
     DATABASE_ENGINE = "sqlite3"
     DATABASE_NAME = "mydatabase.db"
 
-    AMQP_HOST = "localhost"
+    AMQP_SERVER = "localhost"
     AMQP_PORT = 5672
     AMQP_VHOST = "/"
     AMQP_USER = "guest"
