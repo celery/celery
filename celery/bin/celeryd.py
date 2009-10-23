@@ -254,10 +254,12 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
             open(logfile, "a").close()
 
         pidlock = acquire_pidlock(pidfile)
-        if not umask:
+        if umask is None:
             umask = 0
-        uid = uid and int(uid) or os.geteuid()
-        gid = gid and int(gid) or os.getegid()
+        if uid is None:
+            uid = os.geteuid()
+        if gid is None:
+            gid = os.getegid()
         working_directory = working_directory or os.getcwd()
         context = DaemonContext(chroot_directory=chroot,
                                 working_directory=working_directory,
