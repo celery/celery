@@ -471,13 +471,13 @@ class TaskSet(object):
 
         >>> from djangofeeds.tasks import RefreshFeedTask
         >>> taskset = TaskSet(RefreshFeedTask, args=[
-        ...                 [], {"feed_url": "http://cnn.com/rss"},
-        ...                 [], {"feed_url": "http://bbc.com/rss"},
-        ...                 [], {"feed_url": "http://xkcd.com/rss"}])
+        ...                 ([], {"feed_url": "http://cnn.com/rss"}),
+        ...                 ([], {"feed_url": "http://bbc.com/rss"}),
+        ...                 ([], {"feed_url": "http://xkcd.com/rss"})
+        ... ])
 
         >>> taskset_result = taskset.run()
         >>> list_of_return_values = taskset.join()
-
 
     """
 
@@ -501,10 +501,10 @@ class TaskSet(object):
 
         Example
 
-            >>> ts = TaskSet(RefreshFeedTask, [
-            ...         ["http://foo.com/rss", {}],
-            ...         ["http://bar.com/rss", {}],
-            ... )
+            >>> ts = TaskSet(RefreshFeedTask, args=[
+            ...         (["http://foo.com/rss"], {}),
+            ...         (["http://bar.com/rss"], {}),
+            ... ])
             >>> result = ts.run()
             >>> result.taskset_id
             "d2c9b261-8eff-4bfb-8459-1e1b72063514"
