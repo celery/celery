@@ -675,9 +675,10 @@ e.g. <tt class="docutils literal"><span class="pre">[[args1,</span> <span class=
 <blockquote>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">djangofeeds.tasks</span> <span class="kn">import</span> <span class="n">RefreshFeedTask</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">taskset</span> <span class="o">=</span> <span class="n">TaskSet</span><span class="p">(</span><span class="n">RefreshFeedTask</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">[</span>
-<span class="gp">... </span>                <span class="p">[],</span> <span class="p">{</span><span class="s">&quot;feed_url&quot;</span><span class="p">:</span> <span class="s">&quot;http://cnn.com/rss&quot;</span><span class="p">},</span>
-<span class="gp">... </span>                <span class="p">[],</span> <span class="p">{</span><span class="s">&quot;feed_url&quot;</span><span class="p">:</span> <span class="s">&quot;http://bbc.com/rss&quot;</span><span class="p">},</span>
-<span class="gp">... </span>                <span class="p">[],</span> <span class="p">{</span><span class="s">&quot;feed_url&quot;</span><span class="p">:</span> <span class="s">&quot;http://xkcd.com/rss&quot;</span><span class="p">}])</span>
+<span class="gp">... </span>                <span class="p">([],</span> <span class="p">{</span><span class="s">&quot;feed_url&quot;</span><span class="p">:</span> <span class="s">&quot;http://cnn.com/rss&quot;</span><span class="p">}),</span>
+<span class="gp">... </span>                <span class="p">([],</span> <span class="p">{</span><span class="s">&quot;feed_url&quot;</span><span class="p">:</span> <span class="s">&quot;http://bbc.com/rss&quot;</span><span class="p">}),</span>
+<span class="gp">... </span>                <span class="p">([],</span> <span class="p">{</span><span class="s">&quot;feed_url&quot;</span><span class="p">:</span> <span class="s">&quot;http://xkcd.com/rss&quot;</span><span class="p">})</span>
+<span class="gp">... </span><span class="p">])</span>
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">taskset_result</span> <span class="o">=</span> <span class="n">taskset</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
@@ -755,10 +756,10 @@ celery server(s).</dd></dl>
 </tbody>
 </table>
 <p>Example</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">ts</span> <span class="o">=</span> <span class="n">TaskSet</span><span class="p">(</span><span class="n">RefreshFeedTask</span><span class="p">,</span> <span class="p">[</span>
-<span class="gp">... </span>        <span class="p">[</span><span class="s">&quot;http://foo.com/rss&quot;</span><span class="p">,</span> <span class="p">{}],</span>
-<span class="gp">... </span>        <span class="p">[</span><span class="s">&quot;http://bar.com/rss&quot;</span><span class="p">,</span> <span class="p">{}],</span>
-<span class="gp">... </span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">ts</span> <span class="o">=</span> <span class="n">TaskSet</span><span class="p">(</span><span class="n">RefreshFeedTask</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">[</span>
+<span class="gp">... </span>        <span class="p">([</span><span class="s">&quot;http://foo.com/rss&quot;</span><span class="p">],</span> <span class="p">{}),</span>
+<span class="gp">... </span>        <span class="p">([</span><span class="s">&quot;http://bar.com/rss&quot;</span><span class="p">],</span> <span class="p">{}),</span>
+<span class="gp">... </span><span class="p">])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">ts</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">taskset_id</span>
 <span class="go">&quot;d2c9b261-8eff-4bfb-8459-1e1b72063514&quot;</span>
