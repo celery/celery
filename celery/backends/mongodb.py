@@ -174,7 +174,7 @@ class Backend(BaseBackend):
                     collection.update(
                         {"name": task_meta['name'],
                          "last_run_at": task_meta['last_run_at']},
-                        {"$set": {"last_run_at": datetime.utcnow()}})
+                        {"$set": {"last_run_at": datetime.now()}})
 
                     if db.last_status()['updatedExisting']:
                         waiting.append(task_meta)
@@ -193,7 +193,7 @@ class Backend(BaseBackend):
         meta = {"_id": task_id,
                 "status": status,
                 "result": Binary(pickle.dumps(result)),
-                "date_done": datetime.utcnow(),
+                "date_done": datetime.now(),
                 "traceback": Binary(pickle.dumps(traceback))}
 
         db = self._get_database()
