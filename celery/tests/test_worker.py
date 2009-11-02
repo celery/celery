@@ -158,7 +158,8 @@ class TestWorkController(unittest.TestCase):
 
     def test_attrs(self):
         worker = self.worker
-        self.assertTrue(isinstance(worker.bucket_queue, Queue))
+        self.assertTrue(hasattr(worker.bucket_queue, "get"))
+        self.assertTrue(hasattr(worker.bucket_queue, "put"))
         self.assertTrue(isinstance(worker.hold_queue, Queue))
         self.assertTrue(worker.periodic_work_controller)
         self.assertTrue(worker.pool)
