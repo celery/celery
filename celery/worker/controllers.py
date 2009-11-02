@@ -3,11 +3,9 @@
 Worker Controller Threads
 
 """
-from celery.backends import default_periodic_status_backend
 from Queue import Empty as QueueEmpty
 from datetime import datetime
 from celery.log import get_default_logger
-import traceback
 import threading
 import time
 
@@ -99,9 +97,7 @@ class Mediator(BackgroundThread):
 
 
 class PeriodicWorkController(BackgroundThread):
-    """A thread that continuously checks if there are
-    :class:`celery.task.PeriodicTask` tasks waiting for execution,
-    and executes them. It also finds tasks in the hold queue that is
+    """Finds tasks in the hold queue that is
     ready for execution and moves them to the bucket queue.
 
     (Tasks in the hold queue are tasks waiting for retry, or with an
@@ -114,32 +110,13 @@ class PeriodicWorkController(BackgroundThread):
         self.hold_queue = hold_queue
         self.bucket_queue = bucket_queue
 
-    def on_start(self):
-        """Do backend-specific periodic task initialization."""
-        default_periodic_status_backend.init_periodic_tasks()
-
     def on_iteration(self):
-        """Run periodic tasks and process the hold queue."""
+        """Process the hold queue."""
         logger = get_default_logger()
-        logger.debug("PeriodicWorkController: Running periodic tasks...")
-        try:
-            self.run_periodic_tasks()
-        except Exception, exc:
-            logger.error(
-                "PeriodicWorkController got exception: %s\n%s" % (
-                    exc, traceback.format_exc()))
         logger.debug("PeriodicWorkController: Processing hold queue...")
         self.process_hold_queue()
         logger.debug("PeriodicWorkController: Going to sleep...")
         time.sleep(1)
-
-    def run_periodic_tasks(self):
-        logger = get_default_logger()
-        applied = default_periodic_status_backend.run_periodic_tasks()
-        for task, task_id in applied:
-            logger.debug(
-                "PeriodicWorkController: Periodic task %s applied (%s)" % (
-                    task.name, task_id))
 
     def process_hold_queue(self):
         """Finds paused tasks that are ready for execution and move

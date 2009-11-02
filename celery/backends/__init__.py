@@ -28,17 +28,6 @@ get_default_backend_cls = partial(get_backend_cls, conf.CELERY_BACKEND)
 
 
 """
-.. function:: get_default_periodicstatus_backend_cls()
-
-    Get the backend class specified in
-    :setting:`CELERY_PERIODIC_STATUS_BACKEND`.
-
-"""
-get_default_periodicstatus_backend_cls = partial(get_backend_cls,
-                                        conf.CELERY_PERIODIC_STATUS_BACKEND)
-
-
-"""
 .. class:: DefaultBackend
 
     The default backend class used for storing task results and status,
@@ -49,26 +38,9 @@ DefaultBackend = get_default_backend_cls()
 
 
 """
-.. class:: DefaultPeriodicStatusBackend
-
-    The default backend for storing periodic task metadata, specified
-    in :setting:`CELERY_PERIODIC_STATUS_BACKEND`.
-
-"""
-DefaultPeriodicStatusBackend = get_default_periodicstatus_backend_cls()
-
-"""
 .. data:: default_backend
 
     An instance of :class:`DefaultBackend`.
 
 """
 default_backend = DefaultBackend()
-
-"""
-.. data:: default_periodic_status_backend
-
-    An instance of :class:`DefaultPeriodicStatusBackend`.
-
-"""
-default_periodic_status_backend = DefaultPeriodicStatusBackend()

@@ -1,63 +1,9 @@
 """celery.managers"""
 from django.db import models
-from django.db import connection, transaction
-from celery.registry import tasks
+from django.db import transaction
 from celery.conf import TASK_RESULT_EXPIRES
-from datetime import datetime, timedelta
+from datetime import datetime
 from django.conf import settings
-import random
-
-# server_drift can be negative, but timedelta supports addition on
-# negative seconds.
-SERVER_DRIFT = timedelta(seconds=random.vonmisesvariate(1, 4))
-
-
-class TableLock(object):
-    """Base class for database table locks. Also works as a NOOP lock."""
-
-    def __init__(self, table, type="read"):
-        self.table = table
-        self.type = type
-        self.cursor = None
-
-    def lock_table(self):
-        """Lock the table."""
-        pass
-
-    def unlock_table(self):
-        """Release previously locked tables."""
-        pass
-
-    @classmethod
-    def acquire(cls, table, type=None):
-        """Acquire table lock."""
-        lock = cls(table, type)
-        lock.lock_table()
-        return lock
-
-    def release(self):
-        """Release the lock."""
-        self.unlock_table()
-        if self.cursor:
-            self.cursor.close()
-            self.cursor = None
-
-
-class MySQLTableLock(TableLock):
-    """Table lock support for MySQL."""
-
-    def lock_table(self):
-        """Lock MySQL table."""
-        self.cursor = connection.cursor()
-        self.cursor.execute("LOCK TABLES %s %s" % (
-            self.table, self.type.upper()))
-
-    def unlock_table(self):
-        """Unlock MySQL table."""
-        self.cursor.execute("UNLOCK TABLES")
-
-TABLE_LOCK_FOR_ENGINE = {"mysql": MySQLTableLock}
-table_lock = TABLE_LOCK_FOR_ENGINE.get(settings.DATABASE_ENGINE, TableLock)
 
 
 class TaskManager(models.Manager):
@@ -119,59 +65,3 @@ class TaskManager(models.Manager):
                 self.store_result(task_id, result, status, traceback, False)
             else:
                 raise
-
-
-class PeriodicTaskManager(models.Manager):
-    """Manager for :class:`celery.models.PeriodicTask` models."""
-
-    def init_entries(self):
-        """Add entries for all registered periodic tasks.
-
-        Should be run at worker start.
-        """
-        periodic_tasks = tasks.get_all_periodic()
-        for task_name in periodic_tasks.keys():
-            task_meta, created = self.get_or_create(name=task_name)
-
-    def is_time(self, last_run_at, run_every):
-        """Check if if it is time to run the periodic task.
-
-        :param last_run_at: Last time the periodic task was run.
-        :param run_every: How often to run the periodic task.
-
-        :rtype bool:
-
-        """
-        run_every_drifted = run_every + SERVER_DRIFT
-        run_at = last_run_at + run_every_drifted
-        if datetime.now() > run_at:
-            return True
-        return False
-
-    def get_waiting_tasks(self):
-        """Get all waiting periodic tasks.
-
-        :returns: list of :class:`celery.models.PeriodicTaskMeta` objects.
-        """
-        periodic_tasks = tasks.get_all_periodic()
-        db_table = self.model._meta.db_table
-
-        # Find all periodic tasks to be run.
-        waiting = []
-        for task_meta in self.all():
-            if task_meta.name in periodic_tasks:
-                task = periodic_tasks[task_meta.name]
-                run_every = task.run_every
-                if self.is_time(task_meta.last_run_at, run_every):
-                    # Get the object again to be sure noone else
-                    # has already taken care of it.
-                    lock = table_lock.acquire(db_table, "write")
-                    try:
-                        secure = self.get(pk=task_meta.pk)
-                        if self.is_time(secure.last_run_at, run_every):
-                            secure.last_run_at = datetime.now()
-                            secure.save()
-                            waiting.append(secure)
-                    finally:
-                        lock.release()
-        return waiting

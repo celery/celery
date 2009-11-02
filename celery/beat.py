@@ -66,7 +66,10 @@ class Scheduler(UserDict):
                 self.tick() 
                 time.sleep(1)
         finally:
-            self.schedule.close()
+            self.stop()
+
+    def stop(self):
+        self.schedule.close()
 
     def tick(self):
         """Run a tick, that is one iteration of the scheduler.

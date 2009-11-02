@@ -1,3 +1,4 @@
+from celery.registry import tasks
 """celery.conf"""
 from celery.loaders import settings
 from datetime import timedelta
@@ -21,7 +22,6 @@ DEFAULT_AMQP_CONNECTION_RETRY = True
 DEFAULT_AMQP_CONNECTION_MAX_RETRIES = 100
 DEFAULT_TASK_SERIALIZER = "pickle"
 DEFAULT_BACKEND = "database"
-DEFAULT_PERIODIC_STATUS_BACKEND = "database"
 
 
 """
@@ -244,16 +244,6 @@ CELERY_BACKEND = getattr(settings, "CELERY_BACKEND", DEFAULT_BACKEND)
 
 
 """
-
-.. data:: CELERY_PERIODIC_STATUS_BACKEND
-
-The backend used to store the status of periodic tasks.
-
-"""
-CELERY_PERIODIC_STATUS_BACKEND = getattr(settings,
-                                    "CELERY_PERIODIC_STATUS_BACKEND",
-                                    DEFAULT_PERIODIC_STATUS_BACKEND)
-
 
 """
 
