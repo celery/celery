@@ -203,9 +203,8 @@ class ExecuteWrapper(object):
     If the call results in an exception, it saves the exception as the task
     result, and sets the task status to ``"FAILURE"``.
 
-    :param fun: Callable object to execute.
+    :param task_name: The name of the task to execute.
     :param task_id: The unique id of the task.
-    :param task_name: Name of the task.
     :param args: List of positional args to pass on to the function.
     :param kwargs: Keyword arguments mapping to pass on to the function.
 
@@ -214,8 +213,7 @@ class ExecuteWrapper(object):
 
     """
 
-    def __init__(self, fun, task_id, task_name, args=None, kwargs=None):
-        self.fun = fun
+    def __init__(self, task_name, task_id, args=None, kwargs=None):
         self.task_id = task_id
         self.task_name = task_name
         self.args = args or []
@@ -236,11 +234,12 @@ class ExecuteWrapper(object):
 
     def execute(self):
         # Convenience variables
-        fun = self.fun
         task_id = self.task_id
         task_name = self.task_name
         args = self.args
         kwargs = self.kwargs
+        fun = tasks[task_name]
+        self.fun = fun # Set fun for handlers.
 
         # Run task loader init handler.
         current_loader.on_task_init(task_id, fun)

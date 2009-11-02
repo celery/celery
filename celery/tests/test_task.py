@@ -10,12 +10,14 @@ from celery import messaging
 from celery.result import EagerResult
 from celery.backends import default_backend
 from datetime import datetime, timedelta
+from celery.decorators import task as task_dec
 
-
-def return_True(self, **kwargs):
+def return_True(*args, **kwargs):
     # Task run functions can't be closures/lambdas, as they're pickled.
     return True
-registry.tasks.register(return_True, "cu.return-true")
+
+
+return_True_task = task_dec()(return_True)
 
 
 def raise_exception(self, **kwargs):
@@ -120,9 +122,10 @@ class TestTaskRetries(unittest.TestCase):
 class TestCeleryTasks(unittest.TestCase):
 
     def createTaskCls(self, cls_name, task_name=None):
-        attrs = {}
+        attrs = {"__module__": self.__module__}
         if task_name:
             attrs["name"] = task_name
+
         cls = type(cls_name, (task.Task, ), attrs)
         cls.run = return_True
         return cls
@@ -190,7 +193,6 @@ class TestCeleryTasks(unittest.TestCase):
         T2 = self.createTaskCls("T2")
         self.assertEquals(T2().name, "celery.tests.test_task.T2")
 
-        registry.tasks.register(T1)
         t1 = T1()
         consumer = t1.get_consumer()
         self.assertRaises(NotImplementedError, consumer.receive, "foo", "foo")
@@ -202,7 +204,7 @@ class TestCeleryTasks(unittest.TestCase):
         self.assertNextTaskDataEquals(consumer, presult, t1.name)
 
         # With arguments.
-        presult2 = task.delay_task(t1.name, name="George Constanza")
+        presult2 = task.apply_async(t1, name="George Constanza")
         self.assertNextTaskDataEquals(consumer, presult2, t1.name,
                 name="George Constanza")
 
@@ -218,12 +220,9 @@ class TestCeleryTasks(unittest.TestCase):
         self.assertNextTaskDataEquals(consumer, presult2, t1.name,
                 name="George Constanza", test_eta=True)
 
-        self.assertRaises(registry.tasks.NotRegistered, task.delay_task,
-                "some.task.that.should.never.exist.X.X.X.X.X")
-
         # Discarding all tasks.
         task.discard_all()
-        tid3 = task.delay_task(t1.name)
+        tid3 = task.apply_async(t1)
         self.assertEquals(task.discard_all(), 1)
         self.assertTrue(consumer.fetch() is None)
 
@@ -250,7 +249,7 @@ class TestTaskSet(unittest.TestCase):
     def test_function_taskset(self):
         from celery import conf
         conf.ALWAYS_EAGER = True
-        ts = task.TaskSet("cu.return-true", [
+        ts = task.TaskSet(return_True_task.name, [
             [[1], {}], [[2], {}], [[3], {}], [[4], {}], [[5], {}]])
         res = ts.run()
         self.assertEquals(res.join(), [True, True, True, True, True])
@@ -313,13 +312,3 @@ class TestTaskApply(unittest.TestCase):
         self.assertFalse(f.is_done())
         self.assertTrue(f.traceback)
         self.assertRaises(KeyError, f.get)
-
-
-class TestPeriodicTask(unittest.TestCase):
-
-    def test_interface(self):
-
-        class MyPeriodicTask(task.PeriodicTask):
-            run_every = None
-
-        self.assertRaises(NotImplementedError, MyPeriodicTask)

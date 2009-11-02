@@ -23,7 +23,6 @@ The cache key expires after some time in case something unexpected happens
 .. code-block:: python
 
     from celery.task import Task
-    from celery.registry import tasks
     from django.core.cache import cache
     from django.utils.hashcompat import md5_constructor as md5
     from djangofeeds.models import Feed
@@ -61,4 +60,3 @@ The cache key expires after some time in case something unexpected happens
                 release_lock()
 
             return feed.url
-    tasks.register(FeedImporter)

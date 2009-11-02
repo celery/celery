@@ -10,11 +10,12 @@ from celery import registry
 from celery.serialization import pickle
 from celery.utils import gen_unique_id
 from datetime import datetime, timedelta
+from celery.decorators import task as task_dec
 
 
+@task_dec()
 def foo_task(x, y, z, **kwargs):
     return x * y * z
-registry.tasks.register(foo_task, name="c.u.foo")
 
 
 class MockLogger(object):
@@ -108,13 +109,14 @@ class TestAMQPListener(unittest.TestCase):
     def test_receieve_message(self):
         l = AMQPListener(self.bucket_queue, self.hold_queue, self.logger)
         backend = MockBackend()
-        m = create_message(backend, task="c.u.foo", args=[2, 4, 8], kwargs={})
+        m = create_message(backend, task=foo_task.name,
+                           args=[2, 4, 8], kwargs={})
 
         l.receive_message(m.decode(), m)
 
         in_bucket = self.bucket_queue.get_nowait()
         self.assertTrue(isinstance(in_bucket, TaskWrapper))
-        self.assertEquals(in_bucket.task_name, "c.u.foo")
+        self.assertEquals(in_bucket.task_name, foo_task.name)
         self.assertEquals(in_bucket.execute(), 2 * 4 * 8)
         self.assertRaises(Empty, self.hold_queue.get_nowait)
 
@@ -130,7 +132,8 @@ class TestAMQPListener(unittest.TestCase):
     def test_receieve_message_eta(self):
         l = AMQPListener(self.bucket_queue, self.hold_queue, self.logger)
         backend = MockBackend()
-        m = create_message(backend, task="c.u.foo", args=[2, 4, 8], kwargs={},
+        m = create_message(backend, task=foo_task.name,
+                           args=[2, 4, 8], kwargs={},
                            eta=datetime.now() + timedelta(days=1))
 
         l.receive_message(m.decode(), m)
@@ -141,7 +144,7 @@ class TestAMQPListener(unittest.TestCase):
         self.assertTrue(isinstance(task, TaskWrapper))
         self.assertTrue(isinstance(eta, datetime))
         self.assertTrue(callable(on_accept))
-        self.assertEquals(task.task_name, "c.u.foo")
+        self.assertEquals(task.task_name, foo_task.name)
         self.assertEquals(task.execute(), 2 * 4 * 8)
         self.assertRaises(Empty, self.bucket_queue.get_nowait)
 
@@ -167,7 +170,7 @@ class TestWorkController(unittest.TestCase):
         worker = self.worker
         worker.pool = MockPool()
         backend = MockBackend()
-        m = create_message(backend, task="c.u.foo", args=[4, 8, 10],
+        m = create_message(backend, task=foo_task.name, args=[4, 8, 10],
                            kwargs={})
         task = TaskWrapper.from_message(m, m.decode())
         worker.safe_process_task(task)
@@ -177,7 +180,7 @@ class TestWorkController(unittest.TestCase):
         worker = self.worker
         worker.pool = MockPool(raise_base=True)
         backend = MockBackend()
-        m = create_message(backend, task="c.u.foo", args=[4, 8, 10],
+        m = create_message(backend, task=foo_task.name, args=[4, 8, 10],
                            kwargs={})
         task = TaskWrapper.from_message(m, m.decode())
         worker.safe_process_task(task)
@@ -187,7 +190,7 @@ class TestWorkController(unittest.TestCase):
         worker = self.worker
         worker.pool = MockPool(raise_regular=True)
         backend = MockBackend()
-        m = create_message(backend, task="c.u.foo", args=[4, 8, 10],
+        m = create_message(backend, task=foo_task.name, args=[4, 8, 10],
                            kwargs={})
         task = TaskWrapper.from_message(m, m.decode())
         worker.safe_process_task(task)

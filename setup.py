@@ -12,7 +12,7 @@ except ImportError:
     use_setuptools()
     from setuptools import setup, find_packages, Command
 
-import celery
+from celery import distmeta
 
 
 class RunTests(Command):
@@ -69,11 +69,11 @@ else:
 
 setup(
     name='celery',
-    version=celery.__version__,
-    description=celery.__doc__,
-    author=celery.__author__,
-    author_email=celery.__contact__,
-    url=celery.__homepage__,
+    version=distmeta.__version__,
+    description=distmeta.__doc__,
+    author=distmeta.__author__,
+    author_email=distmeta.__contact__,
+    url=distmeta.__homepage__,
     platforms=["any"],
     license="BSD",
     packages=find_packages(exclude=['ez_setup']),

@@ -43,8 +43,6 @@ class TaskWrapper(object):
 
     :param task_id: see :attr:`task_id`.
 
-    :param task_func: see :attr:`task_func`
-
     :param args: see :attr:`args`
 
     :param kwargs: see :attr:`kwargs`.
@@ -56,10 +54,6 @@ class TaskWrapper(object):
     .. attribute:: task_id
 
         UUID of the task.
-
-    .. attribute:: task_func
-
-        The tasks callable object.
 
     .. attribute:: args
 
@@ -88,11 +82,10 @@ class TaskWrapper(object):
     """
     fail_email_body = TASK_FAIL_EMAIL_BODY
 
-    def __init__(self, task_name, task_id, task_func, args, kwargs,
+    def __init__(self, task_name, task_id, args, kwargs,
             on_ack=noop, retries=0, **opts):
         self.task_name = task_name
         self.task_id = task_id
-        self.task_func = task_func
         self.retries = retries
         self.args = args
         self.kwargs = kwargs
@@ -104,6 +97,9 @@ class TaskWrapper(object):
             setattr(self, opt, opts.get(opt, getattr(self, opt, None)))
         if not self.logger:
             self.logger = get_default_logger()
+        if self.task_name not in tasks:
+            raise NotRegistered(self.task_name)
+        self.task = tasks[self.task_name]
 
     def __repr__(self):
         return '<%s: {name:"%s", id:"%s", args:"%s", kwargs:"%s"}>' % (
@@ -132,10 +128,7 @@ class TaskWrapper(object):
         kwargs = dict((key.encode("utf-8"), value)
                         for key, value in kwargs.items())
 
-        if task_name not in tasks:
-            raise NotRegistered(task_name)
-        task_func = tasks[task_name]
-        return cls(task_name, task_id, task_func, args, kwargs,
+        return cls(task_name, task_id, args, kwargs,
                     retries=retries, on_ack=message.ack, logger=logger)
 
     def extend_with_default_kwargs(self, loglevel, logfile):
@@ -153,7 +146,7 @@ class TaskWrapper(object):
                             "task_id": self.task_id,
                             "task_name": self.task_name,
                             "task_retries": self.retries}
-        fun = getattr(self.task_func, "run", self.task_func)
+        fun = self.task.run
         supported_keys = fun_takes_kwargs(fun, default_kwargs)
         extend_with = dict((key, val) for key, val in default_kwargs.items()
                                 if key in supported_keys)
@@ -163,7 +156,7 @@ class TaskWrapper(object):
     def _executeable(self, loglevel=None, logfile=None):
         """Get the :class:`celery.execute.ExecuteWrapper` for this task."""
         task_func_kwargs = self.extend_with_default_kwargs(loglevel, logfile)
-        return ExecuteWrapper(self.task_func, self.task_id, self.task_name,
+        return ExecuteWrapper(self.task_name, self.task_id,
                               self.args, task_func_kwargs)
 
     def _set_executed_bit(self):
