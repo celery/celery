@@ -43,16 +43,14 @@
 """
 import os
 import sys
-from celery.loaders import current_loader
-from celery.loaders import settings
-from celery import __version__
-from celery.log import emergency_error
-from celery import conf
-from celery import platform
-from celery.beat import ClockService
 import traceback
 import optparse
-
+from celery import __version__
+from celery import conf
+from celery import platform
+from celery.log import emergency_error
+from celery.beat import ClockService
+from celery.loaders import current_loader, settings
 
 STARTUP_INFO_FMT = """
 Configuration ->

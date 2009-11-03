@@ -245,8 +245,6 @@ CELERY_BACKEND = getattr(settings, "CELERY_BACKEND", DEFAULT_BACKEND)
 
 """
 
-"""
-
 .. data:: CELERY_CACHE_BACKEND
 
 Use a custom cache backend for celery. If not set the django-global
