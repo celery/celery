@@ -63,19 +63,17 @@
 """
 import os
 import sys
-from celery.loaders import current_loader
-from celery.loaders import settings
-from celery import __version__
-from celery.supervisor import OFASupervisor
-from celery.log import emergency_error
-from celery import conf
-from celery import discovery
-from celery.task import discard_all
-from celery.worker import WorkController
-from celery import platform
 import multiprocessing
 import traceback
 import optparse
+from celery import __version__
+from celery import conf
+from celery import platform
+from celery.log import emergency_error
+from celery.task import discard_all
+from celery.worker import WorkController
+from celery.loaders import current_loader, settings
+from celery.supervisor import OFASupervisor
 
 USE_STATISTICS = getattr(settings, "CELERY_STATISTICS", False)
 # Make sure the setting exists.
@@ -144,11 +142,6 @@ def run_worker(concurrency=conf.DAEMON_CONCURRENCY, detach=False,
     """Starts the celery worker server."""
 
     print("Celery %s is starting." % __version__)
-
-    # set SIGCLD back to the default SIG_DFL (before python-daemon overrode
-    # it) lets the parent wait() for the terminated child process and stops
-    # the 'OSError: [Errno 10] No child processes' problem.
-    platform.reset_signal("SIGCLD")
 
     if statistics is not None:
         settings.CELERY_STATISTICS = statistics

@@ -1,12 +1,56 @@
 from UserDict import UserDict
 from datetime import datetime
 from celery import registry
+from celery.log import setup_logger
 import shelve
 import atexit
 import time
+import threading
 
 schedule = shelve.open(filename="celerybeat-schedule")
 atexit.register(schedule.close)
+
+
+class ClockService(object):
+    scheduler_cls = Scheduler
+    schedule = schedule
+    registry = registry.tasks
+
+    def __init__(self, loglevel, logfile, is_detached=False):
+        self.logger = setup_logger(loglevel, logfile)
+        self._shutdown = threading.Event()
+        self._stopped = threading.Event()
+
+    def start(self):
+        scheduler = self.scheduler_cls(schedule=self.schedule,
+                                       registry=self.registry)
+
+        try:
+            while True:
+                if self._shutdown.isSet():
+                    break
+                scheduler.tick()
+                time.sleep(scheduler.interval)
+        finally:
+            scheduler.stop()
+            self._stopped.set()
+
+    def stop(self, wait=False):
+        self._shutdown.set()
+        wait and self._stopped.wait() # block until shutdown done.
+
+
+class ClockServiceThread(threading.Thread):
+
+    def __init__(self, *args, **kwargs):
+        self.clockservice = ClockService(*args, **kwargs)
+        self.setDaemon(True)
+
+    def run(self):
+        return self.clockservice.start()
+
+    def stop(self):
+       return self.clockservice.stop(wait=True)
 
 
 class ScheduleEntry(object):
@@ -48,25 +92,14 @@ class Scheduler(UserDict):
         persistent schedule ``celery.beat.schedule``.
 
     """
+    interval = 1
 
-    registry = registry.tasks
-    data = schedule
-
-    def __init__(self, registry=None, schedule=None):
-        self.registry = registry or self.registry
-        self.data = schedule or self.data
+    def __init__(self, registry=None, schedule=None, interval=None):
+        self.registry = registry or {}
+        self.data = schedule or {}
+        if interval is not None:
+            self.interval = interval
         self.schedule_registry()
-
-    def run(self):
-        """Run the scheduler.
-
-        This runs :meth:`tick` every second in a never-exit loop."""
-        try:
-            while True:
-                self.tick() 
-                time.sleep(1)
-        finally:
-            self.stop()
 
     def stop(self):
         self.schedule.close()

@@ -53,6 +53,11 @@ def create_daemon_context(logfile=None, pidfile=None, **options):
 
     from daemon import DaemonContext
 
+    # set SIGCLD back to the default SIG_DFL (before python-daemon overrode
+    # it) lets the parent wait() for the terminated child process and stops
+    # the 'OSError: [Errno 10] No child processes' problem.
+    platform.reset_signal("SIGCLD")
+
     # Since without stderr any errors will be silently suppressed,
     # we need to know that we have access to the logfile
     if logfile:

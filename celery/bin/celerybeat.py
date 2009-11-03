@@ -48,10 +48,8 @@ from celery.loaders import settings
 from celery import __version__
 from celery.log import emergency_error
 from celery import conf
-from celery import discovery
-from celery.task import discard_all
-from celery.worker import WorkController
 from celery import platform
+from celery.beat import ClockService
 import traceback
 import optparse
 
@@ -94,7 +92,7 @@ OPTION_LIST = (
     )
 
 
-def run_clock(detach=False, loglevel=conf.DAEMON_LOG_LEVEL,
+def run_clockserver(detach=False, loglevel=conf.DAEMON_LOG_LEVEL,
         logfile=conf.DAEMON_LOG_FILE, pidfile=conf.DAEMON_PID_FILE,
         umask=0, uid=None, gid=None, working_directory=None, chroot=None,
         **kwargs):
@@ -102,35 +100,11 @@ def run_clock(detach=False, loglevel=conf.DAEMON_LOG_LEVEL,
 
     print("Celery Beat %s is starting." % __version__)
 
-    # set SIGCLD back to the default SIG_DFL (before python-daemon overrode
-    # it) lets the parent wait() for the terminated child process and stops
-    # the 'OSError: [Errno 10] No child processes' problem.
-    platform.reset_signal("SIGCLD")
-
-    if statistics is not None:
-        settings.CELERY_STATISTICS = statistics
-
-
-    if conf.CELERY_BACKEND == "database" \
-            and settings.DATABASE_ENGINE == "sqlite3" and \
-            concurrency > 1:
-        import warnings
-        warnings.warn("The sqlite3 database engine doesn't support "
-                "concurrency. We'll be using a single process only.",
-                UserWarning)
-        concurrency = 1
-
     # Setup logging
     if not isinstance(loglevel, int):
         loglevel = conf.LOG_LEVELS[loglevel.upper()]
     if not detach:
         logfile = None # log to stderr when not running in the background.
-
-    if discard:
-        discarded_count = discard_all()
-        what = discarded_count > 1 and "messages" or "message"
-        print("discard: Erased %d %s from the queue.\n" % (
-                discarded_count, what))
 
     # Dump configuration to screen so we have some basic information
     # when users sends e-mails.
@@ -143,13 +117,11 @@ def run_clock(detach=False, loglevel=conf.DAEMON_LOG_LEVEL,
             "consumer_queue": conf.AMQP_CONSUMER_QUEUE,
             "consumer_rkey": conf.AMQP_CONSUMER_ROUTING_KEY,
             "publisher_rkey": conf.AMQP_PUBLISHER_ROUTING_KEY,
-            "concurrency": concurrency,
             "loglevel": loglevel,
             "pidfile": pidfile,
-            "statistics": settings.CELERY_STATISTICS and "ON" or "OFF",
     })
 
-    print("Celery has started.")
+    print("Celery Beat has started.")
     if detach:
         from celery.log import setup_logger, redirect_stdouts_to_logger
         context = platform.create_daemon_context(logfile, pidfile,
@@ -166,50 +138,24 @@ def run_clock(detach=False, loglevel=conf.DAEMON_LOG_LEVEL,
     # (Usually imports task modules and such.)
     current_loader.on_worker_init()
 
-    def run_worker():
-        worker = WorkController(concurrency=concurrency,
-                                loglevel=loglevel,
-                                logfile=logfile,
-                                is_detached=detach)
-
-        # Install signal handler that restarts celeryd on SIGHUP,
-        # (only on POSIX systems)
-        install_worker_restart_handler(worker)
+    def _run_clock():
+        clockservice = ClockService(loglevel=loglevel,
+                                    logfile=logfile,
+                                    is_detached=detach)
 
         try:
-            worker.start()
+            clockservice.start()
         except Exception, e:
-            emergency_error(logfile, "celeryd raised exception %s: %s\n%s" % (
+            emergency_error(logfile,
+                    "celerybeat raised exception %s: %s\n%s" % (
                             e.__class__, e, traceback.format_exc()))
 
     try:
-        if supervised:
-            OFASupervisor(target=run_worker).start()
-        else:
-            run_worker()
+        _run_clock()
     except:
         if detach:
             context.close()
         raise
-
-
-def install_worker_restart_handler(worker):
-
-    def restart_worker_sig_handler(signum, frame):
-        """Signal handler restarting the current python program."""
-        worker.logger.info("Restarting celeryd (%s)" % (
-            " ".join(sys.argv)))
-        if worker.is_detached:
-            pid = os.fork()
-            if pid:
-                worker.stop()
-                sys.exit(0)
-        else:
-            worker.stop()
-        os.execv(sys.executable, [sys.executable] + sys.argv)
-
-    platform.install_signal_handler("SIGHUP", restart_worker_sig_handler)
-
 
 
 def parse_options(arguments):
@@ -221,4 +167,4 @@ def parse_options(arguments):
 
 if __name__ == "__main__":
     options = parse_options(sys.argv[1:])
-    run_worker(**vars(options))
+    run_clockserver(**vars(options))
