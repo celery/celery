@@ -77,7 +77,7 @@ setup(
     platforms=["any"],
     license="BSD",
     packages=find_packages(exclude=['ez_setup']),
-    scripts=["bin/celeryd", "bin/celeryinit"],
+    scripts=["bin/celeryd", "bin/celeryinit", "bin/celerybeat"],
     zip_safe=False,
     install_requires=install_requires,
     extra_requires={
