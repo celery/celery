@@ -60,13 +60,15 @@ Configuration ->
 """.strip()
 
 OPTION_LIST = (
-    optparse.make_option('-f', '--logfile', default=conf.DAEMON_LOG_FILE,
+    optparse.make_option('-f', '--logfile', default=conf.CELERYBEAT_LOG_FILE,
             action="store", dest="logfile",
             help="Path to log file."),
-    optparse.make_option('-l', '--loglevel', default=conf.DAEMON_LOG_LEVEL,
+    optparse.make_option('-l', '--loglevel',
+            default=conf.CELERYBEAT_LOG_LEVEL,
             action="store", dest="loglevel",
             help="Choose between DEBUG/INFO/WARNING/ERROR/CRITICAL/FATAL."),
-    optparse.make_option('-p', '--pidfile', default=conf.DAEMON_PID_FILE,
+    optparse.make_option('-p', '--pidfile',
+            default=conf.CELERYBEAT_PID_FILE,
             action="store", dest="pidfile",
             help="Path to pidfile."),
     optparse.make_option('-d', '--detach', '--daemon', default=False,
@@ -90,8 +92,8 @@ OPTION_LIST = (
     )
 
 
-def run_clockserver(detach=False, loglevel=conf.DAEMON_LOG_LEVEL,
-        logfile=conf.DAEMON_LOG_FILE, pidfile=conf.DAEMON_PID_FILE,
+def run_clockservice(detach=False, loglevel=conf.CELERYBEAT_LOG_LEVEL,
+        logfile=conf.CELERYBEAT_LOG_FILE, pidfile=conf.CELERYBEAT_PID_FILE,
         umask=0, uid=None, gid=None, working_directory=None, chroot=None,
         **kwargs):
     """Starts the celerybeat clock server."""
@@ -165,4 +167,4 @@ def parse_options(arguments):
 
 if __name__ == "__main__":
     options = parse_options(sys.argv[1:])
-    run_clockserver(**vars(options))
+    run_clockservice(**vars(options))

@@ -22,6 +22,10 @@ DEFAULT_AMQP_CONNECTION_RETRY = True
 DEFAULT_AMQP_CONNECTION_MAX_RETRIES = 100
 DEFAULT_TASK_SERIALIZER = "pickle"
 DEFAULT_BACKEND = "database"
+DEFAULT_CELERYBEAT_PID_FILE = "celerybeat.pid"
+DEFAULT_CELERYBEAT_LOG_LEVEL = "INFO"
+DEFAULT_CELERYBEAT_LOG_FILE = "celerybeat.log"
+DEFAULT_CELERYBEAT_SCHEDULE_FILENAME = "celerybeat-schedule"
 
 
 """
@@ -252,3 +256,53 @@ cache backend in ``CACHE_BACKEND`` will be used.
 
 """
 CELERY_CACHE_BACKEND = getattr(settings, "CELERY_CACHE_BACKEND", None)
+
+DEFAULT_CELERYBEAT_PID_FILE = "celerybeat.pid"
+DEFAULT_CELERYBEAT_LOG_LEVEL = "INFO"
+DEFAULT_CELERYBEAT_LOG_FILE = "celerybeat.log"
+DEFAULT_CELERYBEAT_SCHEDULE_FILENAME = "celerybeat-schedule"
+
+"""
+
+.. data:: CELERYBEAT_PID_FILE
+
+Name of celerybeats pid file.
+Default is: ``celerybeat.pid``.
+
+"""
+CELERYBEAT_PID_FILE = getattr(settings, "CELERYBEAT_PID_FILE",
+                              DEFAULT_CELERYBEAT_PID_FILE)
+
+"""
+
+.. data:: CELERYBEAT_LOG_LEVEL
+
+Default log level for celerybeat.
+Default is: ``INFO``.
+
+"""
+CELERYBEAT_LOG_LEVEL = getattr(settings, "CELERYBEAT_LOG_LEVEL",
+                               DEFAULT_CELERYBEAT_LOG_LEVEL)
+
+"""
+
+.. data:: CELERYBEAT_LOG_FILE
+
+Default log file for celerybeat.
+Default is: ``celerybeat.log``.
+
+"""
+CELERYBEAT_LOG_FILE = getattr(settings, "CELERYBEAT_LOG_FILE",
+                              DEFAULT_CELERYBEAT_LOG_FILE)
+
+"""
+
+.. data:: CELERYBEAT_SCHEDULE_FILENAME
+
+Name of the persistent schedule database file.
+Default is: ``celerybeat-schedule``.
+
+"""
+CELERYBEAT_SCHEDULE_FILENAME = getattr(settings,
+                                       "CELERYBEAT_SCHEDULE_FILENAME",
+                                       DEFAULT_CELERYBEAT_SCHEDULE_FILENAME)
