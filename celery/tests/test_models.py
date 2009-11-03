@@ -1,6 +1,6 @@
 import unittest
 from datetime import datetime, timedelta
-from celery.models import TaskMeta, PeriodicTaskMeta
+from celery.models import TaskMeta
 from celery.task import PeriodicTask
 from celery.registry import tasks
 from celery.utils import gen_unique_id
