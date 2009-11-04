@@ -2,9 +2,11 @@ from django.dispatch import Signal
 
 """
 
-.. DATA: task_sent
+.. data:: task_sent
 
 Triggered when a task has been sent to the broker.
+Please note that this is executed in the client, the process sending
+the task, not in the worker.
 
 Provides arguments:
 
@@ -33,7 +35,7 @@ task_sent = Signal(providing_args=[
                         "taskset"])
 
 """
-.. DATA: task_prerun
+.. data:: task_prerun
 
 Triggered before a task is executed.
 
@@ -57,7 +59,7 @@ task_prerun = Signal(providing_args=[
 
 """
 
-.. DATA: task_postrun
+.. data:: task_postrun
 
 Triggered after a task has been executed.
 
