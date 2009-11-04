@@ -1,0 +1,375 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Configuration - celery.conf &mdash; Celery v0.8.0 (stable) documentation</title>
+    <link rel="stylesheet" href="../_static/adctheme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.8.0 (stable)',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Celery v0.8.0 (stable) documentation" href="../index.html" />
+    <link rel="up" title="Module API Reference" href="index.html" />
+    <link rel="next" title="Datastructures - celery.datastructures" href="celery.datastructures.html" />
+    <link rel="prev" title="Backend: Tokyo Tyrant - celery.backends.tyrant" href="celery.backends.tyrant.html" /> 
+  </head>
+  <body>
+<div id="docstitle">
+	<p>Celery v0.8.0 (stable) documentation</p>
+</div>
+<div id="header">
+	<div id="title"><h1>Configuration - celery.conf</h1></div>
+	<ul id="headerButtons">
+		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
+		<li id="page_buttons">
+			<div class="headerButton"><a href="../genindex.html" title="General Index" accesskey="I">index</a></div>
+			<div class="headerButton"><a href="../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="celery.datastructures.html" title="Datastructures - celery.datastructures" accesskey="N">next</a></div>
+			<div class="headerButton"><a href="celery.backends.tyrant.html" title="Backend: Tokyo Tyrant - celery.backends.tyrant" accesskey="P">previous</a></div>
+		</li>
+	</ul>
+</div>
+
+<div id="sphinxsidebar">
+  <div class="sphinxsidebarwrapper">
+	<ul><li class="toctree-l1"><a href="../index.html">Main Page</a></li></ul>
+	<ul class="current">
+<li class="toctree-l1"><a class="reference external" href="../introduction.html">celery - Distributed Task Queue</a></li>
+<li class="toctree-l1"><a class="reference external" href="../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference external" href="../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference external" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1 current"><a class="reference external" href="index.html">Module API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference external" href="celery.task.base.html">Defining Tasks - celery.task.base</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.execute.html">Executing Tasks - celery.execute</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.result.html">Task Result - celery.result</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.task.html">Task Information and Utilities - celery.task</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.registry.html">Task Registry - celery.registry</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.signals.html">Signals - celery.signals</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.exceptions.html">Exceptions - celery.exceptions</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.task.rest.html">Remote HTTP Tasks - celery.task.rest</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.task.builtins.html">Built-in Task Classes - celery.task.builtins</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.task.strategy.html">Common Task Strategies - celery.task.strategy</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.loaders.html">Loaders - celery.loaders</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.loaders.base.html">Loader Base Classes - celery.loaders.base</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.loaders.djangoapp.html">Django Loader - celery.loaders.djangoapp</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.discovery.html">Task Discovery - celery.discovery</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.monitoring.html">Statistics and Monitoring - celery.monitoring</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.messaging.html">Messaging - celery.messaging</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.worker.html">Multiprocessing Worker - celery.worker</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.worker.job.html">Executable Jobs - celery.worker.job</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.worker.controllers.html">Worker Controller Threads - celery.worker.controllers</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.pool.html">Task Pool - celery.pool</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.supervisor.html">Process Supervisor - celery.supervisor</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.backends.html">Backends - celery.backends</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.backends.base.html">Backend: Base - celery.backends.base</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.backends.database.html">Backend: Database - celery.backends.database</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.backends.cache.html">Backend: Cache - celery.backends.cache</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.backends.amqp.html">Backend: AMQP - celery.backends.amqp</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.backends.mongodb.html">Backend: MongoDB - celery.backends.mongodb</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.backends.tyrant.html">Backend: Tokyo Tyrant - celery.backends.tyrant</a></li>
+<li class="toctree-l2 current"><a class="current reference external" href="">Configuration - celery.conf</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.datastructures.html">Datastructures - celery.datastructures</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.log.html">Logging - celery.log</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.utils.html">Multiprocessing Worker - celery.worker</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.views.html">Django Views - celery.views</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.managers.html">Django Model Managers - celery.managers</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.models.html">Django Models - celery.models</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.fields.html">Django Fields - celery.fields</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.bin.celeryinit.html">Celery Initialize - celery.bin.celeryinit</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference external" href="../links.html">Interesting Links</a></li>
+</ul>
+
+      <h3>This Page</h3>
+      <ul class="this-page-menu">
+        <li><a href="../_sources/reference/celery.conf.txt"
+               rel="nofollow">Show Source</a></li>
+      </ul>
+    <div id="searchbox" style="display: none">
+      
+        <form class="search" action="../search.html" method="get">
+			<div class="search-wrapper">
+			<span class="search-left"></span>
+			<input class="prettysearch" type="text" name="q" size="18" />
+			<span class="search-right">&nbsp;</span>
+			</div>
+          <input type="submit" value="Search" class="searchbutton" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </form>
+        <p class="searchtip" style="font-size: 90%">
+        Enter search terms or a module, class or function name.
+        </p>
+    </div>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+  </div>
+</div>
+
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-celery.conf">
+<h1>Configuration - celery.conf<a class="headerlink" href="#module-celery.conf" title="Permalink to this headline">¶</a></h1>
+<p>celery.conf</p>
+<dl class="data">
+<dt id="celery.conf.ALWAYS_EAGER">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">ALWAYS_EAGER</tt><a class="headerlink" href="#celery.conf.ALWAYS_EAGER" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="data">
+<dt id="celery.conf.AMQP_CONNECTION_MAX_RETRIES">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONNECTION_MAX_RETRIES</tt><a class="headerlink" href="#celery.conf.AMQP_CONNECTION_MAX_RETRIES" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="data">
+<dt id="celery.conf.TASK_SERIALIZER">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">TASK_SERIALIZER</tt><a class="headerlink" href="#celery.conf.TASK_SERIALIZER" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>A string identifying the default serialization
+method to use. Can be <tt class="docutils literal"><span class="pre">pickle</span></tt> (default),
+<tt class="docutils literal"><span class="pre">json</span></tt>, <tt class="docutils literal"><span class="pre">yaml</span></tt>, or any custom serialization methods that have
+been registered with <tt class="xref docutils literal"><span class="pre">carrot.serialization.registry</span></tt>.</p>
+<p>Default is <tt class="docutils literal"><span class="pre">pickle</span></tt>.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="celery.conf.AMQP_CONNECTION_RETRY">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONNECTION_RETRY</tt><a class="headerlink" href="#celery.conf.AMQP_CONNECTION_RETRY" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONNECTION_MAX_RETRIES</tt></dt>
+<dd></dd></dl>
+
+<p>Maximum number of retries before we give up re-establishing a connection
+to the AMQP broker.</p>
+<p>If this is set to <tt class="docutils literal"><span class="pre">0</span></tt> or <tt class="xref docutils literal"><span class="pre">None</span></tt>, we will retry forever.</p>
+<p>Default is <tt class="docutils literal"><span class="pre">100</span></tt> retries.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="celery.conf.AMQP_CONNECTION_TIMEOUT">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONNECTION_TIMEOUT</tt><a class="headerlink" href="#celery.conf.AMQP_CONNECTION_TIMEOUT" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="data">
+<dt id="celery.conf.SEND_CELERY_TASK_ERROR_EMAILS">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">SEND_CELERY_TASK_ERROR_EMAILS</tt><a class="headerlink" href="#celery.conf.SEND_CELERY_TASK_ERROR_EMAILS" title="Permalink to this definition">¶</a></dt>
+<dd>If set to <tt class="xref docutils literal"><span class="pre">True</span></tt>, errors in tasks will be sent to admins by e-mail.
+If unset, it will send the e-mails if <tt class="docutils literal"><span class="pre">settings.DEBUG</span></tt> is False.</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt id="celery.conf.AMQP_CONSUMER_QUEUE">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONSUMER_QUEUE</tt><a class="headerlink" href="#celery.conf.AMQP_CONSUMER_QUEUE" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="data">
+<dt id="celery.conf.AMQP_CONSUMER_QUEUES">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONSUMER_QUEUES</tt><a class="headerlink" href="#celery.conf.AMQP_CONSUMER_QUEUES" title="Permalink to this definition">¶</a></dt>
+<dd>Dictionary defining multiple AMQP queues.</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONSUMER_QUEUES</tt></dt>
+<dd><dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONNECTION_TIMEOUT</tt></dt>
+<dd>The timeout in seconds before we give up establishing a connection
+to the AMQP server.</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt id="celery.conf.AMQP_CONSUMER_ROUTING_KEY">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONSUMER_ROUTING_KEY</tt><a class="headerlink" href="#celery.conf.AMQP_CONSUMER_ROUTING_KEY" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONSUMER_QUEUE</tt></dt>
+<dd>The name of the AMQP queue.</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt id="celery.conf.AMQP_EXCHANGE">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_EXCHANGE</tt><a class="headerlink" href="#celery.conf.AMQP_EXCHANGE" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="data">
+<dt id="celery.conf.AMQP_EXCHANGE_TYPE">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_EXCHANGE_TYPE</tt><a class="headerlink" href="#celery.conf.AMQP_EXCHANGE_TYPE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>The exchange type.</p>
+</dd></dl>
+
+<dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_EXCHANGE_TYPE</tt></dt>
+<dd><dl class="data">
+<dt id="celery.conf.AMQP_PUBLISHER_ROUTING_KEY">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_PUBLISHER_ROUTING_KEY</tt><a class="headerlink" href="#celery.conf.AMQP_PUBLISHER_ROUTING_KEY" title="Permalink to this definition">¶</a></dt>
+<dd>The default AMQP routing key used when publishing tasks.</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_PUBLISHER_ROUTING_KEY</tt></dt>
+<dd><dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_CONSUMER_ROUTING_KEY</tt></dt>
+<dd>The AMQP routing key used when consuming tasks.</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt id="celery.conf.CELERY_BACKEND">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">CELERY_BACKEND</tt><a class="headerlink" href="#celery.conf.CELERY_BACKEND" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="data">
+<dt id="celery.conf.CELERY_PERIODIC_STATUS_BACKEND">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">CELERY_PERIODIC_STATUS_BACKEND</tt><a class="headerlink" href="#celery.conf.CELERY_PERIODIC_STATUS_BACKEND" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>The backend used to store the status of periodic tasks.</p>
+</dd></dl>
+
+<dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">CELERY_PERIODIC_STATUS_BACKEND</tt></dt>
+<dd><dl class="data">
+<dt id="celery.conf.CELERY_CACHE_BACKEND">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">CELERY_CACHE_BACKEND</tt><a class="headerlink" href="#celery.conf.CELERY_CACHE_BACKEND" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Use a custom cache backend for celery. If not set the django-global
+cache backend in <tt class="docutils literal"><span class="pre">CACHE_BACKEND</span></tt> will be used.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="celery.conf.DAEMON_CONCURRENCY">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">DAEMON_CONCURRENCY</tt><a class="headerlink" href="#celery.conf.DAEMON_CONCURRENCY" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">AMQP_EXCHANGE</tt></dt>
+<dd>Name of the AMQP exchange.</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt id="celery.conf.DAEMON_LOG_FILE">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">DAEMON_LOG_FILE</tt><a class="headerlink" href="#celery.conf.DAEMON_LOG_FILE" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="data">
+<dt id="celery.conf.DAEMON_LOG_LEVEL">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">DAEMON_LOG_LEVEL</tt><a class="headerlink" href="#celery.conf.DAEMON_LOG_LEVEL" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">DAEMON_LOG_LEVEL</tt></dt>
+<dd><dl class="data">
+<dt id="celery.conf.DAEMON_PID_FILE">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">DAEMON_PID_FILE</tt><a class="headerlink" href="#celery.conf.DAEMON_PID_FILE" title="Permalink to this definition">¶</a></dt>
+<dd>Full path to the daemon pidfile.</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">DAEMON_PID_FILE</tt></dt>
+<dd><dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">DAEMON_CONCURRENCY</tt></dt>
+<dd>The number of concurrent worker processes.</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt id="celery.conf.DEFAULT_PERIODIC_STATUS_BACKEND">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">DEFAULT_PERIODIC_STATUS_BACKEND</tt><a class="headerlink" href="#celery.conf.DEFAULT_PERIODIC_STATUS_BACKEND" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="data">
+<dt id="celery.conf.LOG_LEVELS">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">LOG_LEVELS</tt><a class="headerlink" href="#celery.conf.LOG_LEVELS" title="Permalink to this definition">¶</a></dt>
+<dd>Mapping of log level names to <tt class="xref docutils literal"><span class="pre">logging</span></tt> module constants.</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt id="celery.conf.LOG_FORMAT">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">LOG_FORMAT</tt><a class="headerlink" href="#celery.conf.LOG_FORMAT" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">DAEMON_LOG_FILE</tt></dt>
+<dd>Filename of the daemon log file.</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">LOG_LEVELS</tt></dt>
+<dd><dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">LOG_FORMAT</tt></dt>
+<dd>The format to use for log messages.</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">SEND_CELERY_TASK_ERROR_EMAILS</tt></dt>
+<dd><dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">ALWAYS_EAGER</tt></dt>
+<dd>Always execute tasks locally, don&#8217;t send to the queue.</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">TASK_SERIALIZER</tt></dt>
+<dd><dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">CELERY_BACKEND</tt></dt>
+<dd></dd></dl>
+
+<p>The backend used to store task results (tombstones).</p>
+</dd></dl>
+
+</div>
+
+
+          </div> 
+        </div>
+      </div>
+    <div class="footer">
+    <p>
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.3.
+	</p>
+    </div>
+      <div class="clearer"></div>
+    </div>
+	<div id="breadcrumbs">
+		<a href="index.html" accesskey="U">Module API Reference</a><img src="triangle_closed.png" alt="Right arrow">
+		<a href="../index.html">Celery v0.8.0 (stable) documentation</a>
+		</ul>
+	</div>
+  </body>
+</html>

@@ -1,0 +1,158 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Retrying Tasks &mdash; Celery v0.8.0 (stable) documentation</title>
+    <link rel="stylesheet" href="../_static/adctheme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.8.0 (stable)',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Celery v0.8.0 (stable) documentation" href="../index.html" />
+    <link rel="up" title="Cookbook" href="index.html" />
+    <link rel="next" title="Remote Tasks" href="remote-tasks.html" />
+    <link rel="prev" title="Creating Tasks" href="tasks.html" /> 
+  </head>
+  <body>
+<div id="docstitle">
+	<p>Celery v0.8.0 (stable) documentation</p>
+</div>
+<div id="header">
+	<div id="title"><h1>Retrying Tasks</h1></div>
+	<ul id="headerButtons">
+		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
+		<li id="page_buttons">
+			<div class="headerButton"><a href="../genindex.html" title="General Index" accesskey="I">index</a></div>
+			<div class="headerButton"><a href="../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="remote-tasks.html" title="Remote Tasks" accesskey="N">next</a></div>
+			<div class="headerButton"><a href="tasks.html" title="Creating Tasks" accesskey="P">previous</a></div>
+		</li>
+	</ul>
+</div>
+
+<div id="sphinxsidebar">
+  <div class="sphinxsidebarwrapper">
+	<ul><li class="toctree-l1"><a href="../index.html">Main Page</a></li></ul>
+	<ul class="current">
+<li class="toctree-l1"><a class="reference external" href="../introduction.html">celery - Distributed Task Queue</a></li>
+<li class="toctree-l1"><a class="reference external" href="../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1 current"><a class="reference external" href="index.html">Cookbook</a><ul class="current">
+<li class="toctree-l2"><a class="reference external" href="tasks.html">Creating Tasks</a></li>
+<li class="toctree-l2 current"><a class="current reference external" href="">Retrying Tasks</a></li>
+<li class="toctree-l2"><a class="reference external" href="remote-tasks.html">Remote Tasks</a></li>
+<li class="toctree-l2"><a class="reference external" href="unit-testing.html">Unit Testing</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference external" href="../reference/index.html">Module API Reference</a></li>
+<li class="toctree-l1"><a class="reference external" href="../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference external" href="../links.html">Interesting Links</a></li>
+</ul>
+
+      <h3>This Page</h3>
+      <ul class="this-page-menu">
+        <li><a href="../_sources/cookbook/task-retries.txt"
+               rel="nofollow">Show Source</a></li>
+      </ul>
+    <div id="searchbox" style="display: none">
+      
+        <form class="search" action="../search.html" method="get">
+			<div class="search-wrapper">
+			<span class="search-left"></span>
+			<input class="prettysearch" type="text" name="q" size="18" />
+			<span class="search-right">&nbsp;</span>
+			</div>
+          <input type="submit" value="Search" class="searchbutton" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </form>
+        <p class="searchtip" style="font-size: 90%">
+        Enter search terms or a module, class or function name.
+        </p>
+    </div>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+  </div>
+</div>
+
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="retrying-tasks">
+<h1>Retrying Tasks<a class="headerlink" href="#retrying-tasks" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="retrying-a-task-if-something-fails">
+<h2>Retrying a task if something fails<a class="headerlink" href="#retrying-a-task-if-something-fails" title="Permalink to this headline">¶</a></h2>
+<p>Simply use <a title="celery.task.base.Task.retry" class="reference external" href="../reference/celery.task.base.html#celery.task.base.Task.retry"><tt class="xref docutils literal"><span class="pre">celery.task.base.Task.retry()</span></tt></a> to re-sent the task, it will
+do the right thing, and respect the <a title="celery.task.base.Task.max_retries" class="reference external" href="../reference/celery.task.base.html#celery.task.base.Task.max_retries"><tt class="xref docutils literal"><span class="pre">celery.task.base.Task.max_retries</span></tt></a>
+attribute.</p>
+<div class="highlight-python"><pre>class SendTwitterStatusTask(Task):
+
+    def run(self, oauth, tweet, \*\*kwargs):
+        try:
+            twitter = Twitter(oauth)
+            twitter.update_status(tweet)
+        except (Twitter.FailWhaleError, Twitter.LoginError), exc:
+            self.retry(args=[oauth, tweet], kwargs=\*\*kwargs, exc=exc)</pre>
+</div>
+<p>Here we used the <tt class="docutils literal"><span class="pre">exc</span></tt> argument to pass the current exception to
+<a title="celery.task.base.Task.retry" class="reference external" href="../reference/celery.task.base.html#celery.task.base.Task.retry"><tt class="xref docutils literal"><span class="pre">celery.task.base.Task.retry()</span></tt></a>. At each step of the retry this exception
+is available as the tombstone (result) of the task, when
+<a title="celery.task.base.Task.max_retries" class="reference external" href="../reference/celery.task.base.html#celery.task.base.Task.max_retries"><tt class="xref docutils literal"><span class="pre">celery.task.base.Task.max_retries</span></tt></a> has been exceeded this is the exception
+raised. However, if an <tt class="docutils literal"><span class="pre">exc</span></tt> argument is not provided the
+<tt class="xref docutils literal"><span class="pre">celery.task.base.RetryTaskError</span></tt> exception is raised instead.</p>
+</div>
+<div class="section" id="setting-a-custom-delay-for-retries">
+<h2>Setting a custom delay for retries.<a class="headerlink" href="#setting-a-custom-delay-for-retries" title="Permalink to this headline">¶</a></h2>
+<p>The default countdown is in the tasks
+<a title="celery.task.base.Task.default_retry_delay" class="reference external" href="../reference/celery.task.base.html#celery.task.base.Task.default_retry_delay"><tt class="xref docutils literal"><span class="pre">celery.task.base.Task.default_retry_delay</span></tt></a> attribute, which by
+default is set to 3 minutes.</p>
+<p>You can also provide the <tt class="docutils literal"><span class="pre">countdown</span></tt> argument to
+<a title="celery.task.base.Task.retry" class="reference external" href="../reference/celery.task.base.html#celery.task.base.Task.retry"><tt class="xref docutils literal"><span class="pre">celery.task.base.Task.retry()</span></tt></a> to override this default.</p>
+<div class="highlight-python"><pre>class MyTask(Task):
+    default_retry_delay = 30 * 60 # retry in 30 minutes
+
+    def run(self, x, y, \*\*kwargs):
+        try:
+            ...
+        except Exception, exc:
+            self.retry([x, y], \*\*kwargs, exc=exc,
+                       countdown=60 # override the default and
+                                    # retry in 1 minute</pre>
+</div>
+</div>
+</div>
+
+
+          </div> 
+        </div>
+      </div>
+    <div class="footer">
+    <p>
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.3.
+	</p>
+    </div>
+      <div class="clearer"></div>
+    </div>
+	<div id="breadcrumbs">
+		<a href="index.html" accesskey="U">Cookbook</a><img src="triangle_closed.png" alt="Right arrow">
+		<a href="../index.html">Celery v0.8.0 (stable) documentation</a>
+		</ul>
+	</div>
+  </body>
+</html>

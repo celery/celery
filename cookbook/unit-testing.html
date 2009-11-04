@@ -1,0 +1,164 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Unit Testing &mdash; Celery v0.8.0 (stable) documentation</title>
+    <link rel="stylesheet" href="../_static/adctheme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.8.0 (stable)',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Celery v0.8.0 (stable) documentation" href="../index.html" />
+    <link rel="up" title="Cookbook" href="index.html" />
+    <link rel="next" title="Tutorials" href="../tutorials/index.html" />
+    <link rel="prev" title="Remote Tasks" href="remote-tasks.html" /> 
+  </head>
+  <body>
+<div id="docstitle">
+	<p>Celery v0.8.0 (stable) documentation</p>
+</div>
+<div id="header">
+	<div id="title"><h1>Unit Testing</h1></div>
+	<ul id="headerButtons">
+		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
+		<li id="page_buttons">
+			<div class="headerButton"><a href="../genindex.html" title="General Index" accesskey="I">index</a></div>
+			<div class="headerButton"><a href="../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="../tutorials/index.html" title="Tutorials" accesskey="N">next</a></div>
+			<div class="headerButton"><a href="remote-tasks.html" title="Remote Tasks" accesskey="P">previous</a></div>
+		</li>
+	</ul>
+</div>
+
+<div id="sphinxsidebar">
+  <div class="sphinxsidebarwrapper">
+	<ul><li class="toctree-l1"><a href="../index.html">Main Page</a></li></ul>
+	<ul class="current">
+<li class="toctree-l1"><a class="reference external" href="../introduction.html">celery - Distributed Task Queue</a></li>
+<li class="toctree-l1"><a class="reference external" href="../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1 current"><a class="reference external" href="index.html">Cookbook</a><ul class="current">
+<li class="toctree-l2"><a class="reference external" href="tasks.html">Creating Tasks</a></li>
+<li class="toctree-l2"><a class="reference external" href="task-retries.html">Retrying Tasks</a></li>
+<li class="toctree-l2"><a class="reference external" href="remote-tasks.html">Remote Tasks</a></li>
+<li class="toctree-l2 current"><a class="current reference external" href="">Unit Testing</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference external" href="../reference/index.html">Module API Reference</a></li>
+<li class="toctree-l1"><a class="reference external" href="../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference external" href="../links.html">Interesting Links</a></li>
+</ul>
+
+      <h3>This Page</h3>
+      <ul class="this-page-menu">
+        <li><a href="../_sources/cookbook/unit-testing.txt"
+               rel="nofollow">Show Source</a></li>
+      </ul>
+    <div id="searchbox" style="display: none">
+      
+        <form class="search" action="../search.html" method="get">
+			<div class="search-wrapper">
+			<span class="search-left"></span>
+			<input class="prettysearch" type="text" name="q" size="18" />
+			<span class="search-right">&nbsp;</span>
+			</div>
+          <input type="submit" value="Search" class="searchbutton" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </form>
+        <p class="searchtip" style="font-size: 90%">
+        Enter search terms or a module, class or function name.
+        </p>
+    </div>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+  </div>
+</div>
+
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="unit-testing">
+<h1>Unit Testing<a class="headerlink" href="#unit-testing" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="testing-with-django">
+<h2>Testing with Django<a class="headerlink" href="#testing-with-django" title="Permalink to this headline">¶</a></h2>
+<p>The problem that you&#8217;ll first run in to when trying to write a test that runs a
+task is that Django&#8217;s testrunner doesn&#8217;t use the same database that your celery
+daemon is using. If you&#8217;re using the database backend, this means that your
+tombstones won&#8217;t show up in your test database and you won&#8217;t be able to check
+on your tasks to get the return value or check the status.</p>
+<p>There are two ways to get around this. You can either take advantage of
+<tt class="docutils literal"><span class="pre">CELERY_ALWAYS_EAGER</span> <span class="pre">=</span> <span class="pre">True</span></tt> to skip the daemon, or you can avoid testing
+anything that needs to check the status or result of a task.</p>
+</div>
+<div class="section" id="using-a-custom-testrunner-to-test-with-celery">
+<h2>Using a custom testrunner to test with celery<a class="headerlink" href="#using-a-custom-testrunner-to-test-with-celery" title="Permalink to this headline">¶</a></h2>
+<p>If you&#8217;re going the <tt class="docutils literal"><span class="pre">CELERY_ALWAYS_EAGER</span></tt> route, which is probably better than
+just never testing some parts of your app, a custom Django testrunner does the
+trick. Celery provides a simple testrunner, but it&#8217;s easy enough to roll your
+own if you have other things that need to be done.
+<a class="reference external" href="http://docs.djangoproject.com/en/dev/topics/testing/#defining-a-test-runner">http://docs.djangoproject.com/en/dev/topics/testing/#defining-a-test-runner</a></p>
+<p>For this example, we&#8217;ll use the <tt class="docutils literal"><span class="pre">celery.contrib.test_runner</span></tt> to test the
+<tt class="docutils literal"><span class="pre">FeedImporter</span></tt> from the <tt class="docutils literal"><span class="pre">Writing</span> <span class="pre">Tasks</span></tt> example.</p>
+<p>To enable the testrunner, set the following settings:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">TEST_RUNNER</span> <span class="o">=</span> <span class="s">&#39;celery.contrib.test_runner.run_tests&#39;</span>
+</pre></div>
+</div>
+<p>Then we can write our actually test in a <tt class="docutils literal"><span class="pre">tests.py</span></tt> somewhere:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">django.test</span> <span class="kn">import</span> <span class="n">TestCase</span>
+<span class="kn">from</span> <span class="nn">feeds.tasks</span> <span class="kn">import</span> <span class="n">FeedImporter</span>
+
+<span class="k">class</span> <span class="nc">FeedImporterTestCase</span><span class="p">(</span><span class="n">TestCase</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">testNoError</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Test that the ``FeedImporter`` task runs with no errors.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">feed_url</span> <span class="o">=</span> <span class="s">&#39;http://github.com/feeds/ask/commits/celery/master&#39;</span>
+
+        <span class="n">feed_importer</span> <span class="o">=</span> <span class="n">FeedImporter</span><span class="p">()</span>
+        <span class="n">task_result</span> <span class="o">=</span> <span class="n">feed_importer</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">feed_url</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">task_result</span><span class="o">.</span><span class="n">status</span><span class="p">,</span> <span class="s">&#39;DONE&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">task_result</span><span class="o">.</span><span class="n">result</span><span class="p">,</span> <span class="n">feed_url</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This test assumes that you put your example FeedImporter task in <tt class="docutils literal"><span class="pre">feeds.tasks</span></tt>
+so of course adjust the import for wherever you actually put the class.</p>
+</div>
+</div>
+
+
+          </div> 
+        </div>
+      </div>
+    <div class="footer">
+    <p>
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.3.
+	</p>
+    </div>
+      <div class="clearer"></div>
+    </div>
+	<div id="breadcrumbs">
+		<a href="index.html" accesskey="U">Cookbook</a><img src="triangle_closed.png" alt="Right arrow">
+		<a href="../index.html">Celery v0.8.0 (stable) documentation</a>
+		</ul>
+	</div>
+  </body>
+</html>

@@ -1,0 +1,234 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Celery Worker Daemon - celery.bin.celeryd &mdash; Celery v0.8.0 (stable) documentation</title>
+    <link rel="stylesheet" href="../_static/adctheme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.8.0 (stable)',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Celery v0.8.0 (stable) documentation" href="../index.html" />
+    <link rel="up" title="Module API Reference" href="index.html" />
+    <link rel="next" title="Celery Initialize - celery.bin.celeryinit" href="celery.bin.celeryinit.html" />
+    <link rel="prev" title="Django Fields - celery.fields" href="celery.fields.html" /> 
+  </head>
+  <body>
+<div id="docstitle">
+	<p>Celery v0.8.0 (stable) documentation</p>
+</div>
+<div id="header">
+	<div id="title"><h1>Celery Worker Daemon - celery.bin.celeryd</h1></div>
+	<ul id="headerButtons">
+		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
+		<li id="page_buttons">
+			<div class="headerButton"><a href="../genindex.html" title="General Index" accesskey="I">index</a></div>
+			<div class="headerButton"><a href="../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="celery.bin.celeryinit.html" title="Celery Initialize - celery.bin.celeryinit" accesskey="N">next</a></div>
+			<div class="headerButton"><a href="celery.fields.html" title="Django Fields - celery.fields" accesskey="P">previous</a></div>
+		</li>
+	</ul>
+</div>
+
+<div id="sphinxsidebar">
+  <div class="sphinxsidebarwrapper">
+	<ul><li class="toctree-l1"><a href="../index.html">Main Page</a></li></ul>
+	<ul class="current">
+<li class="toctree-l1"><a class="reference external" href="../introduction.html">celery - Distributed Task Queue</a></li>
+<li class="toctree-l1"><a class="reference external" href="../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference external" href="../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference external" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1 current"><a class="reference external" href="index.html">Module API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference external" href="celery.task.base.html">Defining Tasks - celery.task.base</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.execute.html">Executing Tasks - celery.execute</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.result.html">Task Result - celery.result</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.task.html">Task Information and Utilities - celery.task</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.registry.html">Task Registry - celery.registry</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.signals.html">Signals - celery.signals</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.exceptions.html">Exceptions - celery.exceptions</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.task.rest.html">Remote HTTP Tasks - celery.task.rest</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.task.builtins.html">Built-in Task Classes - celery.task.builtins</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.task.strategy.html">Common Task Strategies - celery.task.strategy</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.loaders.html">Loaders - celery.loaders</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.loaders.base.html">Loader Base Classes - celery.loaders.base</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.loaders.djangoapp.html">Django Loader - celery.loaders.djangoapp</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.discovery.html">Task Discovery - celery.discovery</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.monitoring.html">Statistics and Monitoring - celery.monitoring</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.messaging.html">Messaging - celery.messaging</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.worker.html">Multiprocessing Worker - celery.worker</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.worker.job.html">Executable Jobs - celery.worker.job</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.worker.controllers.html">Worker Controller Threads - celery.worker.controllers</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.pool.html">Task Pool - celery.pool</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.supervisor.html">Process Supervisor - celery.supervisor</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.backends.html">Backends - celery.backends</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.backends.base.html">Backend: Base - celery.backends.base</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.backends.database.html">Backend: Database - celery.backends.database</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.backends.cache.html">Backend: Cache - celery.backends.cache</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.backends.amqp.html">Backend: AMQP - celery.backends.amqp</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.backends.mongodb.html">Backend: MongoDB - celery.backends.mongodb</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.backends.tyrant.html">Backend: Tokyo Tyrant - celery.backends.tyrant</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.conf.html">Configuration - celery.conf</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.datastructures.html">Datastructures - celery.datastructures</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.log.html">Logging - celery.log</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.utils.html">Multiprocessing Worker - celery.worker</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.views.html">Django Views - celery.views</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.managers.html">Django Model Managers - celery.managers</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.models.html">Django Models - celery.models</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.fields.html">Django Fields - celery.fields</a></li>
+<li class="toctree-l2 current"><a class="current reference external" href="">Celery Worker Daemon - celery.bin.celeryd</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.bin.celeryinit.html">Celery Initialize - celery.bin.celeryinit</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference external" href="../links.html">Interesting Links</a></li>
+</ul>
+
+      <h3>This Page</h3>
+      <ul class="this-page-menu">
+        <li><a href="../_sources/reference/celery.bin.celeryd.txt"
+               rel="nofollow">Show Source</a></li>
+      </ul>
+    <div id="searchbox" style="display: none">
+      
+        <form class="search" action="../search.html" method="get">
+			<div class="search-wrapper">
+			<span class="search-left"></span>
+			<input class="prettysearch" type="text" name="q" size="18" />
+			<span class="search-right">&nbsp;</span>
+			</div>
+          <input type="submit" value="Search" class="searchbutton" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </form>
+        <p class="searchtip" style="font-size: 90%">
+        Enter search terms or a module, class or function name.
+        </p>
+    </div>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+  </div>
+</div>
+
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-celery.bin.celeryd">
+<h1>Celery Worker Daemon - celery.bin.celeryd<a class="headerlink" href="#module-celery.bin.celeryd" title="Permalink to this headline">¶</a></h1>
+<p>celeryd</p>
+<dl class="cmdoption">
+<dt id="cmdoption-celeryd-c">
+<tt class="descname">-c</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">--concurrency</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd-c" title="Permalink to this definition">¶</a></dt>
+<dd>Number of child processes processing the queue. The default
+is the number of CPUs available on your system.</dd></dl>
+
+<dl class="cmdoption">
+<dt id="cmdoption-celeryd-f">
+<tt class="descname">-f</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">--logfile</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd-f" title="Permalink to this definition">¶</a></dt>
+<dd>Path to log file. If no logfile is specified, <tt class="docutils literal"><span class="pre">stderr</span></tt> is used.</dd></dl>
+
+<dl class="cmdoption">
+<dt id="cmdoption-celeryd-l">
+<tt class="descname">-l</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">--loglevel</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd-l" title="Permalink to this definition">¶</a></dt>
+<dd>Logging level, choose between <tt class="docutils literal"><span class="pre">DEBUG</span></tt>, <tt class="docutils literal"><span class="pre">INFO</span></tt>, <tt class="docutils literal"><span class="pre">WARNING</span></tt>,
+<tt class="docutils literal"><span class="pre">ERROR</span></tt>, <tt class="docutils literal"><span class="pre">CRITICAL</span></tt>, or <tt class="docutils literal"><span class="pre">FATAL</span></tt>.</dd></dl>
+
+<dl class="cmdoption">
+<dt id="cmdoption-celeryd-p">
+<tt class="descname">-p</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">--pidfile</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd-p" title="Permalink to this definition">¶</a></dt>
+<dd>Path to pidfile.</dd></dl>
+
+<dl class="cmdoption">
+<dt id="cmdoption-celeryd-s">
+<tt class="descname">-s</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">--statistics</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd-s" title="Permalink to this definition">¶</a></dt>
+<dd>Turn on reporting of statistics (remember to flush the statistics message
+queue from time to time).</dd></dl>
+
+<dl class="cmdoption">
+<dt id="cmdoption-celeryd-d">
+<tt class="descname">-d</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">--detach</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">--daemon</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd-d" title="Permalink to this definition">¶</a></dt>
+<dd>Run in the background as a daemon.</dd></dl>
+
+<dl class="cmdoption">
+<dt id="cmdoption-celeryd-S">
+<tt class="descname">-S</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">--supervised</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd-S" title="Permalink to this definition">¶</a></dt>
+<dd>Restart the worker server if it dies.</dd></dl>
+
+<dl class="cmdoption">
+<dt id="cmdoption-celeryd--discard">
+<tt class="descname">--discard</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd--discard" title="Permalink to this definition">¶</a></dt>
+<dd>Discard all waiting tasks before the daemon is started.
+<strong>WARNING</strong>: This is unrecoverable, and the tasks will be
+deleted from the messaging server.</dd></dl>
+
+<dl class="cmdoption">
+<dt id="cmdoption-celeryd-u">
+<tt class="descname">-u</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">--uid</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd-u" title="Permalink to this definition">¶</a></dt>
+<dd>User-id to run <tt class="docutils literal"><span class="pre">celeryd</span></tt> as when in daemon mode.</dd></dl>
+
+<dl class="cmdoption">
+<dt id="cmdoption-celeryd-g">
+<tt class="descname">-g</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">--gid</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd-g" title="Permalink to this definition">¶</a></dt>
+<dd>Group-id to run <tt class="docutils literal"><span class="pre">celeryd</span></tt> as when in daemon mode.</dd></dl>
+
+<dl class="cmdoption">
+<dt id="cmdoption-celeryd--umask">
+<tt class="descname">--umask</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd--umask" title="Permalink to this definition">¶</a></dt>
+<dd>umask of the process when in daemon mode.</dd></dl>
+
+<dl class="cmdoption">
+<dt id="cmdoption-celeryd--workdir">
+<tt class="descname">--workdir</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd--workdir" title="Permalink to this definition">¶</a></dt>
+<dd>Directory to change to when in daemon mode.</dd></dl>
+
+<dl class="cmdoption">
+<dt id="cmdoption-celeryd--chroot">
+<tt class="descname">--chroot</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd--chroot" title="Permalink to this definition">¶</a></dt>
+<dd>Change root directory to this path when in daemon mode.</dd></dl>
+
+<dl class="function">
+<dt id="celery.bin.celeryd.parse_options">
+<tt class="descclassname">celery.bin.celeryd.</tt><tt class="descname">parse_options</tt><big>(</big><em>arguments</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.parse_options" title="Permalink to this definition">¶</a></dt>
+<dd>Parse the available options to <tt class="docutils literal"><span class="pre">celeryd</span></tt>.</dd></dl>
+
+<dl class="function">
+<dt id="celery.bin.celeryd.run_worker">
+<tt class="descclassname">celery.bin.celeryd.</tt><tt class="descname">run_worker</tt><big>(</big><em>concurrency=0</em>, <em>detach=False</em>, <em>loglevel=20</em>, <em>logfile='celeryd.log'</em>, <em>discard=False</em>, <em>pidfile='celeryd.pid'</em>, <em>umask=0</em>, <em>uid=None</em>, <em>gid=None</em>, <em>supervised=False</em>, <em>working_directory=None</em>, <em>chroot=None</em>, <em>statistics=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.run_worker" title="Permalink to this definition">¶</a></dt>
+<dd>Starts the celery worker server.</dd></dl>
+
+</div>
+
+
+          </div> 
+        </div>
+      </div>
+    <div class="footer">
+    <p>
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.3.
+	</p>
+    </div>
+      <div class="clearer"></div>
+    </div>
+	<div id="breadcrumbs">
+		<a href="index.html" accesskey="U">Module API Reference</a><img src="triangle_closed.png" alt="Right arrow">
+		<a href="../index.html">Celery v0.8.0 (stable) documentation</a>
+		</ul>
+	</div>
+  </body>
+</html>

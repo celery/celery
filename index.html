@@ -1,0 +1,241 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Celery - Distributed Task Queue &mdash; Celery v0.8.0 (stable) documentation</title>
+    <link rel="stylesheet" href="_static/adctheme.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.8.0 (stable)',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Celery v0.8.0 (stable) documentation" href="" />
+    <link rel="next" title="celery - Distributed Task Queue" href="introduction.html" /> 
+  </head>
+  <body>
+<div id="docstitle">
+	<p>Celery v0.8.0 (stable) documentation</p>
+</div>
+<div id="header">
+	<div id="title"><h1>Celery - Distributed Task Queue</h1></div>
+	<ul id="headerButtons">
+		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
+		<li id="page_buttons">
+			<div class="headerButton"><a href="genindex.html" title="General Index" accesskey="I">index</a></div>
+			<div class="headerButton"><a href="modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="introduction.html" title="celery - Distributed Task Queue" accesskey="N">next</a></div>
+		</li>
+	</ul>
+</div>
+
+<div id="sphinxsidebar">
+  <div class="sphinxsidebarwrapper">
+	<ul><li class="toctree-l1"><a href="">Main Page</a></li></ul>
+	<ul>
+<li class="toctree-l1"><a class="reference external" href="introduction.html">celery - Distributed Task Queue</a></li>
+<li class="toctree-l1"><a class="reference external" href="configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference external" href="cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference external" href="tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference external" href="faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference external" href="reference/index.html">Module API Reference</a></li>
+<li class="toctree-l1"><a class="reference external" href="changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference external" href="links.html">Interesting Links</a></li>
+</ul>
+
+      <h3>This Page</h3>
+      <ul class="this-page-menu">
+        <li><a href="_sources/index.txt"
+               rel="nofollow">Show Source</a></li>
+      </ul>
+    <div id="searchbox" style="display: none">
+      
+        <form class="search" action="search.html" method="get">
+			<div class="search-wrapper">
+			<span class="search-left"></span>
+			<input class="prettysearch" type="text" name="q" size="18" />
+			<span class="search-right">&nbsp;</span>
+			</div>
+          <input type="submit" value="Search" class="searchbutton" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </form>
+        <p class="searchtip" style="font-size: 90%">
+        Enter search terms or a module, class or function name.
+        </p>
+    </div>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+  </div>
+</div>
+
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="celery-distributed-task-queue">
+<h1>Celery - Distributed Task Queue<a class="headerlink" href="#celery-distributed-task-queue" title="Permalink to this headline">¶</a></h1>
+<p>Contents:</p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="introduction.html">celery - Distributed Task Queue</a><ul>
+<li class="toctree-l2"><a class="reference external" href="introduction.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference external" href="introduction.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference external" href="introduction.html#features">Features</a></li>
+<li class="toctree-l2"><a class="reference external" href="introduction.html#api-reference-documentation">API Reference Documentation</a></li>
+<li class="toctree-l2"><a class="reference external" href="introduction.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference external" href="introduction.html#usage">Usage</a></li>
+<li class="toctree-l2"><a class="reference external" href="introduction.html#a-look-inside-the-worker">A look inside the worker</a></li>
+<li class="toctree-l2"><a class="reference external" href="introduction.html#getting-help">Getting Help</a></li>
+<li class="toctree-l2"><a class="reference external" href="introduction.html#bug-tracker">Bug tracker</a></li>
+<li class="toctree-l2"><a class="reference external" href="introduction.html#contributing">Contributing</a></li>
+<li class="toctree-l2"><a class="reference external" href="introduction.html#license">License</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="configuration.html">Configuration and defaults</a><ul>
+<li class="toctree-l2"><a class="reference external" href="configuration.html#example-configuration-file">Example configuration file</a></li>
+<li class="toctree-l2"><a class="reference external" href="configuration.html#concurrency-settings">Concurrency settings</a></li>
+<li class="toctree-l2"><a class="reference external" href="configuration.html#task-result-backend-settings">Task result backend settings</a></li>
+<li class="toctree-l2"><a class="reference external" href="configuration.html#database-backend-settings">Database backend settings</a></li>
+<li class="toctree-l2"><a class="reference external" href="configuration.html#cache-backend-settings">Cache backend settings</a></li>
+<li class="toctree-l2"><a class="reference external" href="configuration.html#tokyo-tyrant-backend-settings">Tokyo Tyrant backend settings</a></li>
+<li class="toctree-l2"><a class="reference external" href="configuration.html#mongodb-backend-settings">MongoDB backend settings</a></li>
+<li class="toctree-l2"><a class="reference external" href="configuration.html#broker-settings">Broker settings</a></li>
+<li class="toctree-l2"><a class="reference external" href="configuration.html#task-execution-settings">Task execution settings</a></li>
+<li class="toctree-l2"><a class="reference external" href="configuration.html#logging-settings">Logging settings</a></li>
+<li class="toctree-l2"><a class="reference external" href="configuration.html#process-settings">Process settings</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="cookbook/index.html">Cookbook</a><ul>
+<li class="toctree-l2"><a class="reference external" href="cookbook/tasks.html">Creating Tasks</a></li>
+<li class="toctree-l2"><a class="reference external" href="cookbook/task-retries.html">Retrying Tasks</a></li>
+<li class="toctree-l2"><a class="reference external" href="cookbook/remote-tasks.html">Remote Tasks</a></li>
+<li class="toctree-l2"><a class="reference external" href="cookbook/unit-testing.html">Unit Testing</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="tutorials/index.html">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference external" href="tutorials/external.html">External tutorials and resources</a></li>
+<li class="toctree-l2"><a class="reference external" href="tutorials/clickcounter.html">Tutorial: Creating a click counter using carrot and celery</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="faq.html">Frequently Asked Questions</a><ul>
+<li class="toctree-l2"><a class="reference external" href="faq.html#troubleshooting">Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference external" href="faq.html#brokers">Brokers</a></li>
+<li class="toctree-l2"><a class="reference external" href="faq.html#features">Features</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="reference/index.html">Module API Reference</a><ul>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.task.base.html">Defining Tasks - celery.task.base</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.execute.html">Executing Tasks - celery.execute</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.result.html">Task Result - celery.result</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.task.html">Task Information and Utilities - celery.task</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.registry.html">Task Registry - celery.registry</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.signals.html">Signals - celery.signals</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.exceptions.html">Exceptions - celery.exceptions</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.task.rest.html">Remote HTTP Tasks - celery.task.rest</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.task.builtins.html">Built-in Task Classes - celery.task.builtins</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.task.strategy.html">Common Task Strategies - celery.task.strategy</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.loaders.html">Loaders - celery.loaders</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.loaders.base.html">Loader Base Classes - celery.loaders.base</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.loaders.djangoapp.html">Django Loader - celery.loaders.djangoapp</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.discovery.html">Task Discovery - celery.discovery</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.monitoring.html">Statistics and Monitoring - celery.monitoring</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.messaging.html">Messaging - celery.messaging</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.worker.html">Multiprocessing Worker - celery.worker</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.worker.job.html">Executable Jobs - celery.worker.job</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.worker.controllers.html">Worker Controller Threads - celery.worker.controllers</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.pool.html">Task Pool - celery.pool</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.supervisor.html">Process Supervisor - celery.supervisor</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.backends.html">Backends - celery.backends</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.backends.base.html">Backend: Base - celery.backends.base</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.backends.database.html">Backend: Database - celery.backends.database</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.backends.cache.html">Backend: Cache - celery.backends.cache</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.backends.amqp.html">Backend: AMQP - celery.backends.amqp</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.backends.mongodb.html">Backend: MongoDB - celery.backends.mongodb</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.backends.tyrant.html">Backend: Tokyo Tyrant - celery.backends.tyrant</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.conf.html">Configuration - celery.conf</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.datastructures.html">Datastructures - celery.datastructures</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.log.html">Logging - celery.log</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.utils.html">Multiprocessing Worker - celery.worker</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.views.html">Django Views - celery.views</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.managers.html">Django Model Managers - celery.managers</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.models.html">Django Models - celery.models</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.fields.html">Django Fields - celery.fields</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
+<li class="toctree-l2"><a class="reference external" href="reference/celery.bin.celeryinit.html">Celery Initialize - celery.bin.celeryinit</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="changelog.html">Change history</a><ul>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#p-m-cet">0.8.0 [2009-09-22 03:06 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#a-m-cet">0.6.0 [2009-08-07 06:54 A.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#id1">0.4.1 [2009-07-02 01:42 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#id2">0.4.0 [2009-07-01 07:29 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#id3">0.3.20 [2009-06-25 08:42 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#id4">0.3.7 [2008-06-16 11:41 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#id5">0.3.3 [2009-06-08 01:07 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#id6">0.3.2 [2009-06-08 01:07 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#id7">0.3.1 [2009-06-08 01:07 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#id8">0.3.0 [2009-06-08 12:41 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#id9">0.2.0 [2009-05-20 05:14 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#pre3-2009-05-20-05-14-p-m-cet">0.2.0-pre3 [2009-05-20 05:14 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#pre2-2009-05-20-01-56-p-m-cet">0.2.0-pre2 [2009-05-20 01:56 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#pre1-2009-05-20-12-33-p-m-cet">0.2.0-pre1 [2009-05-20 12:33 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#id10">0.1.15 [2009-05-19 04:13 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#id11">0.1.14 [2009-05-19 01:08 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#id12">0.1.13 [2009-05-19 12:36 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#id13">0.1.12 [2009-05-18 04:38 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#id14">0.1.11 [2009-05-12 02:08 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#id15">0.1.10 [2009-05-11 12:46 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#id16">0.1.8 [2009-05-07 12:27 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#id17">0.1.7 [2009-04-30 1:50 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#id18">0.1.6 [2009-04-28 2:13 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="changelog.html#id19">0.1.0 [2009-04-24 11:28 A.M CET]</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="links.html">Interesting Links</a><ul>
+<li class="toctree-l2"><a class="reference external" href="links.html#celery">celery</a></li>
+<li class="toctree-l2"><a class="reference external" href="links.html#amqp">AMQP</a></li>
+<li class="toctree-l2"><a class="reference external" href="links.html#rabbitmq">RabbitMQ</a></li>
+<li class="toctree-l2"><a class="reference external" href="links.html#non-relational-databases">Non-relational databases</a></li>
+</ul>
+</li>
+</ul>
+<div class="section" id="indices-and-tables">
+<h2>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference external" href="genindex.html"><em>Index</em></a></li>
+<li><a class="reference external" href="modindex.html"><em>Module Index</em></a></li>
+<li><a class="reference external" href="search.html"><em>Search Page</em></a></li>
+</ul>
+</div>
+</div>
+
+
+          </div> 
+        </div>
+      </div>
+    <div class="footer">
+    <p>
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.3.
+	</p>
+    </div>
+      <div class="clearer"></div>
+    </div>
+	<div id="breadcrumbs">
+		<a href="">Celery v0.8.0 (stable) documentation</a>
+		</ul>
+	</div>
+  </body>
+</html>
