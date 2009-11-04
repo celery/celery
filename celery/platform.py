@@ -58,7 +58,7 @@ def create_daemon_context(logfile=None, pidfile=None, **options):
     if logfile:
         open(logfile, "a").close()
 
-    options["pidlock"] = pidfile and acquire_pidlock(pidfile)
+    options["pidfile"] = pidfile and acquire_pidlock(pidfile)
 
     defaults = {"uid": lambda: os.geteuid(),
                 "gid": lambda: os.getegid(),
@@ -67,15 +67,10 @@ def create_daemon_context(logfile=None, pidfile=None, **options):
                 "working_directory": lambda: os.getcwd()}
 
     for opt_name, opt_default_gen in defaults.items():
-        if opt_name not in options:
+        if opt_name not in options or options[opt_name] is None:
             options[opt_name] = opt_default_gen()
 
-    return DaemonContext(chroot_directory=chroot,
-                            working_directory=working_directory,
-                            umask=umask,
-                            pidfile=pidlock,
-                            uid=uid,
-                            gid=gid)
+    return DaemonContext(**options)
 
 
 def reset_signal(signal_name):
