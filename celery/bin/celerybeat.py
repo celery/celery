@@ -139,9 +139,8 @@ def run_clockservice(detach=False, loglevel=conf.CELERYBEAT_LOG_LEVEL,
     current_loader.on_worker_init()
 
     def _run_clock():
-        clockservice = ClockService(loglevel=loglevel,
-                                    logfile=logfile,
-                                    is_detached=detach)
+        logger = setup_logger(loglevel, logfile)
+        clockservice = ClockService(logger=logger, is_detached=detach)
 
         try:
             clockservice.start()

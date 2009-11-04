@@ -5,6 +5,7 @@ The Multiprocessing Worker Server
 """
 from carrot.connection import DjangoBrokerConnection, AMQPConnectionException
 from celery.worker.controllers import Mediator, PeriodicWorkController
+from celery.beat import ClockServiceThread
 from celery.worker.job import TaskWrapper
 from celery.exceptions import NotRegistered
 from celery.messaging import get_consumer_set
@@ -227,7 +228,7 @@ class WorkController(object):
     _state = None
 
     def __init__(self, concurrency=None, logfile=None, loglevel=None,
-            is_detached=False):
+            is_detached=False, embed_clockservice=False):
 
         # Options
         self.loglevel = loglevel or self.loglevel
@@ -235,6 +236,7 @@ class WorkController(object):
         self.logfile = logfile or self.logfile
         self.is_detached = is_detached
         self.logger = setup_logger(loglevel, logfile)
+        self.embed_clockservice = embed_clockservice
 
         # Queues
         self.bucket_queue = Queue()
@@ -252,13 +254,19 @@ class WorkController(object):
                                           initial_prefetch_count=concurrency)
         self.mediator = Mediator(self.bucket_queue, self.safe_process_task)
 
+        self.clockservice = None
+        if self.embed_clockservice:
+            self.clockservice = ClockServiceThread(logger=self.logger,
+                                                is_detached=self.is_detached)
+
         # The order is important here;
         #   the first in the list is the first to start,
         # and they must be stopped in reverse order.
-        self.components = [self.pool,
-                           self.mediator,
-                           self.periodic_work_controller,
-                           self.amqp_listener]
+        self.components = filter(None, (self.pool,
+                                        self.mediator,
+                                        self.periodic_work_controller,
+                                        self.clockservice,
+                                        self.amqp_listener))
 
     def start(self):
         """Starts the workers main loop."""

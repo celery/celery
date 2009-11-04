@@ -7,6 +7,7 @@ from datetime import datetime
 from celery import conf
 from celery import registry
 from celery.log import setup_logger
+from celery.exceptions import NotRegistered
 
 
 
@@ -24,27 +25,18 @@ class ScheduleEntry(object):
 
     """
 
-    def __init__(self, task, last_run_at=None, total_run_count=None):
-        self.task = task
+    def __init__(self, name, last_run_at=None,
+            total_run_count=None):
+        self.name = name
         self.last_run_at = last_run_at or datetime.now()
         self.total_run_count = total_run_count or 0
 
-    def execute(self):
-        # Increment timestamps and counts before executing,
-        # in case of exception.
-        self.last_run_at = datetime.now()
-        self.total_run_count += 1
+    def next(self):
+        return self.__class__(self.name, datetime.now(),
+                              self.total_run_count + 1)
 
-        try:
-            result = self.task.apply_async()
-        except Exception, exc:
-            raise SchedulingError(
-                    "Couldn't apply scheduled task %s: %s" % (
-                        self.task.name, exc))
-        return result
-
-    def is_due(self):
-        return datetime.now() > (self.last_run_at + self.task.run_every)
+    def is_due(self, run_every):
+        return datetime.now() > (self.last_run_at + run_every)
 
 
 class Scheduler(UserDict):
@@ -75,6 +67,7 @@ class Scheduler(UserDict):
                 attr_value = attr_default_gen()
             setattr(self, attr_name, attr_value)
 
+        self.cleanup()
         self.schedule_registry()
 
     def tick(self):
@@ -82,14 +75,39 @@ class Scheduler(UserDict):
         Executes all due tasks."""
         for entry in self.get_due_tasks():
             self.logger.debug("Scheduler: Sending due task %s" % (
-                    entry.task.name))
-            result = entry.execute()
+                    entry.name))
+            result = self.apply_async(entry)
             self.logger.debug("Scheduler: %s sent. id->%s" % (
-                    entry.task_name, result.task_id))
+                    entry.name, result.task_id))
 
     def get_due_tasks(self):
         """Get all the schedule entries that are due to execution."""
-        return filter(lambda entry: entry.is_due(), self.schedule.values())
+        return filter(self.is_due, self.schedule.values())
+
+    def get_task(self, name):
+        try:
+            return self.registry[name]
+        except KeyError:
+            raise NotRegistered(name)
+
+    def is_due(self, entry):
+        return entry.is_due(self.get_task(entry.name).run_every)
+
+    def apply_async(self, entry):
+
+        # Update timestamps and run counts before we actually execute,
+        # so we have that done if an exception is raised (doesn't schedule
+        # forever.)
+        entry = self.schedule[entry.name] = entry.next()
+        task = self.get_task(entry.name)
+
+        try:
+            result = task.apply_async()
+        except Exception, exc:
+            raise SchedulingError(
+                    "Couldn't apply scheduled task %s: %s" % (
+                        task.name, exc))
+        return result
 
     def schedule_registry(self):
         """Add the current contents of the registry to the schedule."""
@@ -99,7 +117,12 @@ class Scheduler(UserDict):
                 self.logger.debug(
                         "Scheduler: Adding periodic task %s to schedule" % (
                             task.name))
-            self.schedule.setdefault(name, ScheduleEntry(task))
+            self.schedule.setdefault(name, ScheduleEntry(task.name))
+
+    def cleanup(self):
+        for task_name, entry in self.schedule.items():
+            if task_name not in self.registry:
+                self.schedule.pop(task_name, None)
 
     @property
     def schedule(self):

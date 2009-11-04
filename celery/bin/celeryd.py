@@ -21,6 +21,11 @@
 
     Path to pidfile.
 
+.. cmdoption:: -B, --beat
+
+    Also run the ``celerybeat`` periodic task scheduler. Please note that
+    there must only be one instance of this service.
+
 .. cmdoption:: -s, --statistics
 
     Turn on reporting of statistics (remember to flush the statistics message
@@ -86,6 +91,7 @@ Configuration ->
     * Consumer -> Queue:%(consumer_queue)s Routing:%(consumer_rkey)s
     * Concurrency -> %(concurrency)s
     * Statistics -> %(statistics)s
+    * Celerybeat -> %(celerybeat)s
 """.strip()
 
 OPTION_LIST = (
@@ -110,6 +116,10 @@ OPTION_LIST = (
     optparse.make_option('-p', '--pidfile', default=conf.DAEMON_PID_FILE,
             action="store", dest="pidfile",
             help="Path to pidfile."),
+    optparse.make_option('-B', '--beat', default=False,
+            action="store_true", dest="run_clockservice",
+            help="Also run the celerybeat periodic task scheduler. \
+                  Please note that only one instance must be running."),
     optparse.make_option('-d', '--detach', '--daemon', default=False,
             action="store_true", dest="detach",
             help="Run in the background as a daemon."),
@@ -138,7 +148,7 @@ def run_worker(concurrency=conf.DAEMON_CONCURRENCY, detach=False,
         loglevel=conf.DAEMON_LOG_LEVEL, logfile=conf.DAEMON_LOG_FILE,
         discard=False, pidfile=conf.DAEMON_PID_FILE, umask=0,
         uid=None, gid=None, supervised=False, working_directory=None,
-        chroot=None, statistics=None, **kwargs):
+        chroot=None, statistics=None, run_clockservice=False, **kwargs):
     """Starts the celery worker server."""
 
     print("Celery %s is starting." % __version__)
@@ -185,6 +195,7 @@ def run_worker(concurrency=conf.DAEMON_CONCURRENCY, detach=False,
             "loglevel": loglevel,
             "pidfile": pidfile,
             "statistics": settings.CELERY_STATISTICS and "ON" or "OFF",
+            "celerybeat": run_clockservice and "ON" or "OFF",
     })
 
     print("Celery has started.")
@@ -208,6 +219,7 @@ def run_worker(concurrency=conf.DAEMON_CONCURRENCY, detach=False,
         worker = WorkController(concurrency=concurrency,
                                 loglevel=loglevel,
                                 logfile=logfile,
+                                embed_clockservice=run_clockservice,
                                 is_detached=detach)
 
         # Install signal handler that restarts celeryd on SIGHUP,
