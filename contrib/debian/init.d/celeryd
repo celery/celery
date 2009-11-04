@@ -33,7 +33,7 @@ fi
 
 cd $DJANGO_PROJECT_DIR
 
-CELERYD_OPTS="-f $CELERYD_LOG_FILE -l $CELERYD_LOG_LEVEL -p \
+CELERYD_OPTS="$CELERYD_OPTS -f $CELERYD_LOG_FILE -l $CELERYD_LOG_LEVEL -p \
                     $CELERYD_PID_FILE -d"
 
 if [ -n "$2" ]; then
