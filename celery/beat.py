@@ -134,8 +134,8 @@ class ClockService(object):
     schedule_filename = conf.CELERYBEAT_SCHEDULE_FILENAME
     registry = registry.tasks
 
-    def __init__(self, loglevel, logfile, is_detached=False):
-        self.logger = setup_logger(loglevel, logfile)
+    def __init__(self, logger=None, is_detached=False):
+        self.logger = logger
         self._shutdown = threading.Event()
         self._stopped = threading.Event()
 
@@ -179,6 +179,7 @@ class ClockServiceThread(threading.Thread):
 
     def __init__(self, *args, **kwargs):
         self.clockservice = ClockService(*args, **kwargs)
+        threading.Thread.__init__(self)
         self.setDaemon(True)
 
     def run(self):
