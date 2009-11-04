@@ -6,13 +6,8 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>Remote HTTP Tasks - celery.task.rest &mdash; Celery v0.8.0 (stable) documentation</title>
-<<<<<<< HEAD
     <link rel="stylesheet" href="../_static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-=======
-    <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
-    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
->>>>>>> d4935ae8f6a24a91ea230434a8bf524af336e50a
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
@@ -22,13 +17,8 @@
         HAS_SOURCE:  true
       };
     </script>
-<<<<<<< HEAD
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-=======
-    <script type="text/javascript" src="../static/jquery.js"></script>
-    <script type="text/javascript" src="../static/doctools.js"></script>
->>>>>>> d4935ae8f6a24a91ea230434a8bf524af336e50a
     <link rel="top" title="Celery v0.8.0 (stable) documentation" href="../index.html" />
     <link rel="up" title="Module API Reference" href="index.html" />
     <link rel="next" title="Built-in Task Classes - celery.task.builtins" href="celery.task.builtins.html" />
@@ -108,11 +98,7 @@
 
       <h3>This Page</h3>
       <ul class="this-page-menu">
-<<<<<<< HEAD
         <li><a href="../_sources/reference/celery.task.rest.txt"
-=======
-        <li><a href="../sources/reference/celery.task.rest.txt"
->>>>>>> d4935ae8f6a24a91ea230434a8bf524af336e50a
                rel="nofollow">Show Source</a></li>
       </ul>
     <div id="searchbox" style="display: none">
@@ -167,11 +153,7 @@ properly urlencoded.</p>
 <span class="go">{&#39;x&#39;: &#39;3&#39;, &#39;y&#39;: &#39;4&#39;}</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">str</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
 <span class="go">&#39;http://www.google.com:6580/foo/bar?y=4&amp;x=3#foo&#39;</span>
-<<<<<<< HEAD
 <span class="gp">&gt;&gt;&gt; </span><span class="n">url</span><span class="o">.</span><span class="n">query</span><span class="p">[</span><span class="s">&quot;x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">10</span>
-=======
-<span class="gp">&gt;&gt;&gt; </span><span class="n">url</span><span class="o">.</span><span class="n">query</span><span class="p">[</span><span class="s">&quot;x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">10</span>
->>>>>>> d4935ae8f6a24a91ea230434a8bf524af336e50a
 <span class="gp">&gt;&gt;&gt; </span><span class="n">url</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s">&quot;George&quot;</span><span class="p">:</span> <span class="s">&quot;Constanza&quot;</span><span class="p">})</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">str</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
 <span class="go">&#39;http://www.google.com:6580/foo/bar?y=4&amp;x=10&amp;George=Constanza#foo&#39;</span>

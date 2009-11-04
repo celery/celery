@@ -183,10 +183,6 @@ celery.backends.database.Backend.cleanup method reference/celery.backends.databa
 celery.worker.controllers.BackgroundThread.on_start method reference/celery.worker.controllers.html
 celery.backends.database.Backend class reference/celery.backends.database.html
 celery.task.builtins.PingTask class reference/celery.task.builtins.html
-<<<<<<< HEAD
-=======
-celery.bin.celeryd.install_restart_signal_handler function reference/celery.bin.celeryd.html
->>>>>>> d4935ae8f6a24a91ea230434a8bf524af336e50a
 celery.conf.DAEMON_LOG_FILE data reference/celery.conf.html
 celery.worker.AMQPListener.consume_messages method reference/celery.worker.html
 celery.worker.job.TaskWrapper.message attribute reference/celery.worker.job.html
@@ -354,10 +350,6 @@ celery.backends.base.BaseBackend.wait_for method reference/celery.backends.base.
 PeriodicTaskMeta.last_run_at attribute reference/celery.models.html
 celery.exceptions.NotRegistered exception reference/celery.exceptions.html
 celery.result.TaskSetResult.itersubtasks method reference/celery.result.html
-<<<<<<< HEAD
-=======
-celery.bin.celeryd.acquire_pidlock function reference/celery.bin.celeryd.html
->>>>>>> d4935ae8f6a24a91ea230434a8bf524af336e50a
 celery.task.base.TaskSet.remote_execute classmethod reference/celery.task.base.html
 celery.result.BaseAsyncResult class reference/celery.result.html
 celery.pool.DynamicPool.add_worker method reference/celery.pool.html

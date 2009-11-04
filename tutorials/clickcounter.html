@@ -6,13 +6,8 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>Tutorial: Creating a click counter using carrot and celery &mdash; Celery v0.8.0 (stable) documentation</title>
-<<<<<<< HEAD
     <link rel="stylesheet" href="../_static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-=======
-    <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
-    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
->>>>>>> d4935ae8f6a24a91ea230434a8bf524af336e50a
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
@@ -22,13 +17,8 @@
         HAS_SOURCE:  true
       };
     </script>
-<<<<<<< HEAD
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-=======
-    <script type="text/javascript" src="../static/jquery.js"></script>
-    <script type="text/javascript" src="../static/doctools.js"></script>
->>>>>>> d4935ae8f6a24a91ea230434a8bf524af336e50a
     <link rel="top" title="Celery v0.8.0 (stable) documentation" href="../index.html" />
     <link rel="up" title="Tutorials" href="index.html" />
     <link rel="next" title="Frequently Asked Questions" href="../faq.html" />
@@ -71,11 +61,7 @@
 
       <h3>This Page</h3>
       <ul class="this-page-menu">
-<<<<<<< HEAD
         <li><a href="../_sources/tutorials/clickcounter.txt"
-=======
-        <li><a href="../sources/tutorials/clickcounter.txt"
->>>>>>> d4935ae8f6a24a91ea230434a8bf524af336e50a
                rel="nofollow">Show Source</a></li>
       </ul>
     <div id="searchbox" style="display: none">
@@ -134,11 +120,7 @@ its count by.</p>
 
 <span class="k">class</span> <span class="nc">ClickManager</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Manager</span><span class="p">):</span>
 
-<<<<<<< HEAD
     <span class="k">def</span> <span class="nf">increment_clicks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">for_url</span><span class="p">,</span> <span class="n">increment_by</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
-=======
-    <span class="k">def</span> <span class="nf">increment_clicks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">for_url</span><span class="p">,</span> <span class="n">increment_by</span><span class="o">=</span><span class="mf">1</span><span class="p">):</span>
->>>>>>> d4935ae8f6a24a91ea230434a8bf524af336e50a
         <span class="sd">&quot;&quot;&quot;Increment the click count for an URL.</span>
 
 <span class="sd">            &gt;&gt;&gt; Click.objects.increment_clicks(&quot;http://google.com&quot;, 10)</span>
@@ -156,11 +138,7 @@ its count by.</p>
 <span class="k">class</span> <span class="nc">Click</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
     <span class="n">url</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">URLField</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s">u&quot;URL&quot;</span><span class="p">),</span> <span class="n">verify_exists</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
     <span class="n">click_count</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">PositiveIntegerField</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s">u&quot;click_count&quot;</span><span class="p">),</span>
-<<<<<<< HEAD
                                               <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-=======
-                                              <span class="n">default</span><span class="o">=</span><span class="mf">0</span><span class="p">)</span>
->>>>>>> d4935ae8f6a24a91ea230434a8bf524af336e50a
 
     <span class="n">objects</span> <span class="o">=</span> <span class="n">ClickManager</span><span class="p">()</span>
 
@@ -238,11 +216,7 @@ without doing it.</p>
     <span class="n">messages_for_url</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">message</span> <span class="ow">in</span> <span class="n">consumer</span><span class="o">.</span><span class="n">iterqueue</span><span class="p">():</span>
         <span class="n">url</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">body</span>
-<<<<<<< HEAD
         <span class="n">clicks_for_url</span><span class="p">[</span><span class="n">url</span><span class="p">]</span> <span class="o">=</span> <span class="n">clicks_for_url</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
-=======
-        <span class="n">clicks_for_url</span><span class="p">[</span><span class="n">url</span><span class="p">]</span> <span class="o">=</span> <span class="n">clicks_for_url</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="mf">0</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1</span>
->>>>>>> d4935ae8f6a24a91ea230434a8bf524af336e50a
         <span class="c"># We also need to keep the message objects so we can ack the</span>
         <span class="c"># messages as processed when we are finished with them.</span>
         <span class="k">if</span> <span class="n">url</span> <span class="ow">in</span> <span class="n">messages_for_url</span><span class="p">:</span>
