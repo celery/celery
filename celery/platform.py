@@ -85,7 +85,7 @@ def reset_signal(signal_name):
 
 def install_signal_handler(signal_name, handler):
     """Install a SIGHUP handler."""
-    if not hasattr(signal, signal):
+    if not hasattr(signal, signal_name):
         return # Platform doesn't support signal.
 
     signum = getattr(signal, signal_name)
