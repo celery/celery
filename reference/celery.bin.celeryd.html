@@ -6,8 +6,13 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>Celery Worker Daemon - celery.bin.celeryd &mdash; Celery v0.8.0 (stable) documentation</title>
+<<<<<<< HEAD
     <link rel="stylesheet" href="../_static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+=======
+    <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+>>>>>>> d4935ae8f6a24a91ea230434a8bf524af336e50a
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
@@ -17,8 +22,13 @@
         HAS_SOURCE:  true
       };
     </script>
+<<<<<<< HEAD
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
+=======
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+>>>>>>> d4935ae8f6a24a91ea230434a8bf524af336e50a
     <link rel="top" title="Celery v0.8.0 (stable) documentation" href="../index.html" />
     <link rel="up" title="Module API Reference" href="index.html" />
     <link rel="next" title="Celery Initialize - celery.bin.celeryinit" href="celery.bin.celeryinit.html" />
@@ -98,7 +108,11 @@
 
       <h3>This Page</h3>
       <ul class="this-page-menu">
+<<<<<<< HEAD
         <li><a href="../_sources/reference/celery.bin.celeryd.txt"
+=======
+        <li><a href="../sources/reference/celery.bin.celeryd.txt"
+>>>>>>> d4935ae8f6a24a91ea230434a8bf524af336e50a
                rel="nofollow">Show Source</a></li>
       </ul>
     <div id="searchbox" style="display: none">
@@ -202,6 +216,27 @@ deleted from the messaging server.</dd></dl>
 <dd>Change root directory to this path when in daemon mode.</dd></dl>
 
 <dl class="function">
+<<<<<<< HEAD
+=======
+<dt id="celery.bin.celeryd.acquire_pidlock">
+<tt class="descclassname">celery.bin.celeryd.</tt><tt class="descname">acquire_pidlock</tt><big>(</big><em>pidfile</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.acquire_pidlock" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the <tt class="xref docutils literal"><span class="pre">daemon.pidlockfile.PIDLockFile</span></tt> handler for
+<tt class="docutils literal"><span class="pre">pidfile</span></tt>.</p>
+<p>If the <tt class="docutils literal"><span class="pre">pidfile</span></tt> already exists, but the process is not running the
+<tt class="docutils literal"><span class="pre">pidfile</span></tt> will be removed, a <tt class="docutils literal"><span class="pre">&quot;stale</span> <span class="pre">pidfile&quot;</span></tt> message is emitted
+and execution continues as normally. However, if the process is still
+running the program will exit complaning that the program is already
+running in the background somewhere.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.bin.celeryd.install_restart_signal_handler">
+<tt class="descclassname">celery.bin.celeryd.</tt><tt class="descname">install_restart_signal_handler</tt><big>(</big><em>worker</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.install_restart_signal_handler" title="Permalink to this definition">¶</a></dt>
+<dd>Installs a signal handler that restarts the current program
+when it receives the <tt class="docutils literal"><span class="pre">SIGHUP</span></tt> signal.</dd></dl>
+
+<dl class="function">
+>>>>>>> d4935ae8f6a24a91ea230434a8bf524af336e50a
 <dt id="celery.bin.celeryd.parse_options">
 <tt class="descclassname">celery.bin.celeryd.</tt><tt class="descname">parse_options</tt><big>(</big><em>arguments</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.parse_options" title="Permalink to this definition">¶</a></dt>
 <dd>Parse the available options to <tt class="docutils literal"><span class="pre">celeryd</span></tt>.</dd></dl>

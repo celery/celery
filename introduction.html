@@ -6,8 +6,13 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>celery - Distributed Task Queue &mdash; Celery v0.8.0 (stable) documentation</title>
+<<<<<<< HEAD
     <link rel="stylesheet" href="_static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+=======
+    <link rel="stylesheet" href="static/adctheme.css" type="text/css" />
+    <link rel="stylesheet" href="static/pygments.css" type="text/css" />
+>>>>>>> d4935ae8f6a24a91ea230434a8bf524af336e50a
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
@@ -17,8 +22,13 @@
         HAS_SOURCE:  true
       };
     </script>
+<<<<<<< HEAD
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
+=======
+    <script type="text/javascript" src="static/jquery.js"></script>
+    <script type="text/javascript" src="static/doctools.js"></script>
+>>>>>>> d4935ae8f6a24a91ea230434a8bf524af336e50a
     <link rel="top" title="Celery v0.8.0 (stable) documentation" href="index.html" />
     <link rel="next" title="Configuration and defaults" href="configuration.html" />
     <link rel="prev" title="Celery - Distributed Task Queue" href="index.html" /> 
@@ -69,7 +79,11 @@
 
       <h3>This Page</h3>
       <ul class="this-page-menu">
+<<<<<<< HEAD
         <li><a href="_sources/introduction.txt"
+=======
+        <li><a href="sources/introduction.txt"
+>>>>>>> d4935ae8f6a24a91ea230434a8bf524af336e50a
                rel="nofollow">Show Source</a></li>
       </ul>
     <div id="searchbox" style="display: none">
@@ -272,7 +286,11 @@ to allow access:</p>
 <dt>Configure celery to use the AMQP user and virtual host we created</dt>
 <dd><p class="first">before, by adding the following to your <tt class="docutils literal"><span class="pre">settings.py</span></tt>:</p>
 <div class="last highlight-python"><div class="highlight"><pre><span class="n">AMQP_SERVER</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>
+<<<<<<< HEAD
 <span class="n">AMQP_PORT</span> <span class="o">=</span> <span class="mi">5672</span>
+=======
+<span class="n">AMQP_PORT</span> <span class="o">=</span> <span class="mf">5672</span>
+>>>>>>> d4935ae8f6a24a91ea230434a8bf524af336e50a
 <span class="n">AMQP_USER</span> <span class="o">=</span> <span class="s">&quot;myuser&quot;</span>
 <span class="n">AMQP_PASSWORD</span> <span class="o">=</span> <span class="s">&quot;mypassword&quot;</span>
 <span class="n">AMQP_VHOST</span> <span class="o">=</span> <span class="s">&quot;myvhost&quot;</span>
@@ -329,7 +347,11 @@ and return a value:</p>
 <span class="gp">... </span>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">some_arg</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="gp">... </span>        <span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 <span class="gp">... </span>        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Did something: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">some_arg</span><span class="p">)</span>
+<<<<<<< HEAD
 <span class="gp">... </span>        <span class="k">return</span> <span class="mi">42</span>
+=======
+<span class="gp">... </span>        <span class="k">return</span> <span class="mf">42</span>
+>>>>>>> d4935ae8f6a24a91ea230434a8bf524af336e50a
 <span class="gp">&gt;&gt;&gt; </span><span class="n">tasks</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">MyTask</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -417,7 +439,11 @@ Here&#8217;s an example of a periodic task:</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.registry</span> <span class="kn">import</span> <span class="n">tasks</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">timedelta</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">MyPeriodicTask</span><span class="p">(</span><span class="n">PeriodicTask</span><span class="p">):</span>
+<<<<<<< HEAD
 <span class="gp">... </span>    <span class="n">run_every</span> <span class="o">=</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+=======
+<span class="gp">... </span>    <span class="n">run_every</span> <span class="o">=</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="mf">30</span><span class="p">)</span>
+>>>>>>> d4935ae8f6a24a91ea230434a8bf524af336e50a
 <span class="gp">...</span>
 <span class="gp">... </span>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="gp">... </span>        <span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>

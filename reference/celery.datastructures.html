@@ -6,8 +6,13 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>Datastructures - celery.datastructures &mdash; Celery v0.8.0 (stable) documentation</title>
+<<<<<<< HEAD
     <link rel="stylesheet" href="../_static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+=======
+    <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+>>>>>>> d4935ae8f6a24a91ea230434a8bf524af336e50a
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
@@ -17,8 +22,13 @@
         HAS_SOURCE:  true
       };
     </script>
+<<<<<<< HEAD
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
+=======
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+>>>>>>> d4935ae8f6a24a91ea230434a8bf524af336e50a
     <link rel="top" title="Celery v0.8.0 (stable) documentation" href="../index.html" />
     <link rel="up" title="Module API Reference" href="index.html" />
     <link rel="next" title="Logging - celery.log" href="celery.log.html" />
@@ -98,7 +108,11 @@
 
       <h3>This Page</h3>
       <ul class="this-page-menu">
+<<<<<<< HEAD
         <li><a href="../_sources/reference/celery.datastructures.txt"
+=======
+        <li><a href="../sources/reference/celery.datastructures.txt"
+>>>>>>> d4935ae8f6a24a91ea230434a8bf524af336e50a
                rel="nofollow">Show Source</a></li>
       </ul>
     <div id="searchbox" style="display: none">
@@ -201,7 +215,11 @@ that you should not update the value by using a previous value, the only
 reliable operations are increment and decrement.</p>
 <p>Example</p>
 <blockquote>
+<<<<<<< HEAD
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">max_clients</span> <span class="o">=</span> <span class="n">SharedCounter</span><span class="p">(</span><span class="n">initial_value</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+=======
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">max_clients</span> <span class="o">=</span> <span class="n">SharedCounter</span><span class="p">(</span><span class="n">initial_value</span><span class="o">=</span><span class="mf">10</span><span class="p">)</span>
+>>>>>>> d4935ae8f6a24a91ea230434a8bf524af336e50a
 </pre></div>
 </div>
 <p># Thread one
@@ -211,7 +229,11 @@ reliable operations are increment and decrement.</p>
 <p># Main thread
 &gt;&gt;&gt; if client &gt;= int(max_clients): # Max clients now at 8
 ...    wait()</p>
+<<<<<<< HEAD
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">max_client</span> <span class="o">=</span> <span class="n">max_clients</span> <span class="o">+</span> <span class="mi">10</span> <span class="c"># NOT OK (unsafe)</span>
+=======
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">max_client</span> <span class="o">=</span> <span class="n">max_clients</span> <span class="o">+</span> <span class="mf">10</span> <span class="c"># NOT OK (unsafe)</span>
+>>>>>>> d4935ae8f6a24a91ea230434a8bf524af336e50a
 </pre></div>
 </div>
 </blockquote>
