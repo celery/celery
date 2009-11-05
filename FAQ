@@ -44,6 +44,10 @@ Why won't celeryd run on FreeBSD?
 implementation which isn't enabled in FreeBSD by default. You have to enable
 POSIX semaphores in the kernel and manually recompile multiprocessing.
 
+Luckily, Viktor Petersson has written a tutorial to get you started with
+Celery on FreeBSD here:
+http://www.playingwithwire.com/2009/10/how-to-get-celeryd-to-work-on-freebsd/
+
 I'm having ``IntegrityError: Duplicate Key`` errors. Why?
 ----------------------------------------------------------
 
