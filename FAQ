@@ -2,6 +2,68 @@
  Frequently Asked Questions
 ============================
 
+Misconceptions
+==============
+
+Is celery dependent on pickle?
+------------------------------
+
+**Answer:** No.
+
+Celery can support any serialization scheme and has support for JSON/YAML and
+Pickle by default. You can even send one task using pickle, and another one
+with JSON seamlessly, this is because every task is associated with a
+content-type. The default serialization scheme is pickle because it's the most
+used, and it has support for sending complex objects as task arguments.
+
+You can set a global default serializer, the default serializer for a
+particular Task, and even what serializer to use when sending a single task
+instance.
+
+Is celery for Django only?
+--------------------------
+
+**Answer:** No.
+
+While django itself is a dependency, you can still use all of celerys features
+outside of a django project.
+
+Do I have to use AMQP/RabbitMQ?
+-------------------------------
+
+**Answer**: No.
+
+You can also use Redis or an SQL database, for instructions see:
+    http://ask.github.com/celery/tutorials/otherqueues.html
+
+Redis or a database won't meet up to the standards
+of an AMQP broker. If you have strict reliability requirements you are
+encouraged to use RabbitMQ or another AMQP broker. Redis/database also uses
+pulling, so they are likely to consume more resources. However, if you for
+some reason is not able to use AMQP, feel free to use these alternatives.
+They will probably work fine for most use cases, and note that the above
+points are not specific to celery; If using Redis/database as a queue worked
+fine for you before, it probably will now. And you can always upgrade later.
+
+Is celery multilingual?
+-----------------------
+
+**Answer:** Yes.
+
+celeryd is an implementation of celery in python. If the language has an AMQP
+client, there shouldn't be much work to create a worker in your language.
+A celery worker is just a program connecting to the broker to consume
+messages. There's no other communication involved.
+
+Also, there's another way to be language indepedent, and that is to use REST
+tasks, instead of your tasks being functions, they're URLs. With this
+information you can even create simple web servers that enable preloading of
+code. For more information about REST tasks see: `Cookbook: Remote Tasks`_.
+
+.. _`Cookbook: Remote Tasks`:
+    http://ask.github.com/celery/cookbook/remote-tasks.html
+
+
 Troubleshooting
 ===============
 
