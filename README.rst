@@ -67,8 +67,8 @@ Features
 
     * When a task has been executed, the return value can be stored using
       either a MySQL/Oracle/PostgreSQL/SQLite database, Memcached,
-      `MongoDB`_ or `Tokyo Tyrant`_ back-end. For high-performance you can
-      also use AMQP messages to publish results.
+      `MongoDB`_, `Redis`_ or `Tokyo Tyrant`_ back-end. For high-performance
+      you can also use AMQP messages to publish results.
 
     * If the task raises an exception, the exception instance is stored,
       instead of the return value.
@@ -106,6 +106,7 @@ Features
       fails.
 
 .. _`MongoDB`: http://www.mongodb.org/
+.. _`Redis`: http://code.google.com/p/redis/
 .. _`Tokyo Tyrant`: http://tokyocabinet.sourceforge.net/
 
 API Reference Documentation
