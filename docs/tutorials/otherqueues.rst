@@ -36,6 +36,10 @@ Configuration
 Configuration is easy, set the carrot backend, and configure the location of
 your Redis database::
 
+Configuration
+-------------
+
+::
     CARROT_BACKEND = "ghettoq.toproot.Redis"
 
     AMQP_HOST = "localhost"  # Maps to redis host.
