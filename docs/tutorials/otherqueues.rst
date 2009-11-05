@@ -13,7 +13,7 @@ Installation
 ============
 
 You need to install the latest development versions of `carrot`_ and
-`ghettoq`_.
+`ghettoq`_::
 
     $ git clone git://github.com/ask/carrot.git
     $ cd carrot
