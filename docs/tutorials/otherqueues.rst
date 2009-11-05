@@ -26,6 +26,10 @@ You need to install the latest development versions of `carrot`_ and
 Redis
 =====
 
+For the Redis support you have to install the Python redis client::
+
+    $ pip install redis
+
 Configuration
 -------------
 
