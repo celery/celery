@@ -33,7 +33,10 @@ Do I have to use AMQP/RabbitMQ?
 
 **Answer**: No.
 
-You can also use Redis or an SQL database, for instructions see:
+You can also use Redis or an SQL database, for instructions see `Using other
+queues`_.
+
+.. _`Using other queues`:
     http://ask.github.com/celery/tutorials/otherqueues.html
 
 Redis or a database won't meet up to the standards
