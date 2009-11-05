@@ -45,7 +45,7 @@ They will probably work fine for most use cases, and note that the above
 points are not specific to celery; If using Redis/database as a queue worked
 fine for you before, it probably will now. And you can always upgrade later.
 
-Is celery multilingual?
+Is celery multi-lingual?
 -----------------------
 
 **Answer:** Yes.
