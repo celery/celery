@@ -114,14 +114,15 @@ $ python setup.py install</p>
 <h2>Redis<a class="headerlink" href="#redis" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="configuration">
 <h3>Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h3>
-<dl class="docutils">
-<dt>::</dt>
-<dd><p class="first">CARROT_BACKEND = &#8220;ghettoq.toproot.Redis&#8221;</p>
-<p class="last">AMQP_HOST = &#8220;localhost&#8221;  # Maps to redis host.
-AMQP_PORT = 6379         # Maps to redis port.
-AMQP_VHOST = &#8220;celery&#8221;    # Maps to database name.</p>
-</dd>
-</dl>
+<p>Configuration is easy, set the carrot backend, and configure the location of
+your Redis database:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">CARROT_BACKEND</span> <span class="o">=</span> <span class="s">&quot;ghettoq.toproot.Redis&quot;</span>
+
+<span class="n">AMQP_HOST</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>  <span class="c"># Maps to redis host.</span>
+<span class="n">AMQP_PORT</span> <span class="o">=</span> <span class="mi">6379</span>         <span class="c"># Maps to redis port.</span>
+<span class="n">AMQP_VHOST</span> <span class="o">=</span> <span class="s">&quot;celery&quot;</span>    <span class="c"># Maps to database name.</span>
+</pre></div>
+</div>
 </div>
 </div>
 <div class="section" id="database">
