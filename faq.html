@@ -49,6 +49,7 @@
 <li class="toctree-l1"><a class="reference external" href="cookbook/index.html">Cookbook</a></li>
 <li class="toctree-l1"><a class="reference external" href="tutorials/index.html">Tutorials</a></li>
 <li class="toctree-l1 current"><a class="current reference external" href="">Frequently Asked Questions</a><ul>
+<li class="toctree-l2"><a class="reference external" href="#misconceptions">Misconceptions</a></li>
 <li class="toctree-l2"><a class="reference external" href="#troubleshooting">Troubleshooting</a></li>
 <li class="toctree-l2"><a class="reference external" href="#brokers">Brokers</a></li>
 <li class="toctree-l2"><a class="reference external" href="#features">Features</a></li>
@@ -93,6 +94,55 @@
             
   <div class="section" id="frequently-asked-questions">
 <h1>Frequently Asked Questions<a class="headerlink" href="#frequently-asked-questions" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="misconceptions">
+<h2>Misconceptions<a class="headerlink" href="#misconceptions" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="is-celery-dependent-on-pickle">
+<h3>Is celery dependent on pickle?<a class="headerlink" href="#is-celery-dependent-on-pickle" title="Permalink to this headline">¶</a></h3>
+<p><strong>Answer:</strong> No.</p>
+<p>Celery can support any serialization scheme and has support for JSON/YAML and
+Pickle by default. You can even send one task using pickle, and another one
+with JSON seamlessly, this is because every task is associated with a
+content-type. The default serialization scheme is pickle because it&#8217;s the most
+used, and it has support for sending complex objects as task arguments.</p>
+<p>You can set a global default serializer, the default serializer for a
+particular Task, and even what serializer to use when sending a single task
+instance.</p>
+</div>
+<div class="section" id="is-celery-for-django-only">
+<h3>Is celery for Django only?<a class="headerlink" href="#is-celery-for-django-only" title="Permalink to this headline">¶</a></h3>
+<p><strong>Answer:</strong> No.</p>
+<p>While django itself is a dependency, you can still use all of celerys features
+outside of a django project.</p>
+</div>
+<div class="section" id="do-i-have-to-use-amqp-rabbitmq">
+<h3>Do I have to use AMQP/RabbitMQ?<a class="headerlink" href="#do-i-have-to-use-amqp-rabbitmq" title="Permalink to this headline">¶</a></h3>
+<p><strong>Answer</strong>: No.</p>
+<dl class="docutils">
+<dt>You can also use Redis or an SQL database, for instructions see:</dt>
+<dd><a class="reference external" href="http://ask.github.com/celery/tutorials/otherqueues.html">http://ask.github.com/celery/tutorials/otherqueues.html</a></dd>
+</dl>
+<p>Redis or a database won&#8217;t meet up to the standards
+of an AMQP broker. If you have strict reliability requirements you are
+encouraged to use RabbitMQ or another AMQP broker. Redis/database also uses
+pulling, so they are likely to consume more resources. However, if you for
+some reason is not able to use AMQP, feel free to use these alternatives.
+They will probably work fine for most use cases, and note that the above
+points are not specific to celery; If using Redis/database as a queue worked
+fine for you before, it probably will now. And you can always upgrade later.</p>
+</div>
+<div class="section" id="is-celery-multi-lingual">
+<h3>Is celery multi-lingual?<a class="headerlink" href="#is-celery-multi-lingual" title="Permalink to this headline">¶</a></h3>
+<p><strong>Answer:</strong> Yes.</p>
+<p>celeryd is an implementation of celery in python. If the language has an AMQP
+client, there shouldn&#8217;t be much work to create a worker in your language.
+A celery worker is just a program connecting to the broker to consume
+messages. There&#8217;s no other communication involved.</p>
+<p>Also, there&#8217;s another way to be language indepedent, and that is to use REST
+tasks, instead of your tasks being functions, they&#8217;re URLs. With this
+information you can even create simple web servers that enable preloading of
+code. For more information about REST tasks see: <a class="reference external" href="http://ask.github.com/celery/cookbook/remote-tasks.html">Cookbook: Remote Tasks</a>.</p>
+</div>
+</div>
 <div class="section" id="troubleshooting">
 <h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="mysql-is-throwing-deadlock-errors-what-can-i-do">
@@ -128,6 +178,9 @@ most systems), it usually contains a message describing the reason.</p>
 <p><strong>Answer:</strong> multiprocessing.Pool requires a working POSIX semaphore
 implementation which isn&#8217;t enabled in FreeBSD by default. You have to enable
 POSIX semaphores in the kernel and manually recompile multiprocessing.</p>
+<p>Luckily, Viktor Petersson has written a tutorial to get you started with
+Celery on FreeBSD here:
+<a class="reference external" href="http://www.playingwithwire.com/2009/10/how-to-get-celeryd-to-work-on-freebsd/">http://www.playingwithwire.com/2009/10/how-to-get-celeryd-to-work-on-freebsd/</a></p>
 </div>
 <div class="section" id="i-m-having-integrityerror-duplicate-key-errors-why">
 <h3>I&#8217;m having <tt class="docutils literal"><span class="pre">IntegrityError:</span> <span class="pre">Duplicate</span> <span class="pre">Key</span></tt> errors. Why?<a class="headerlink" href="#i-m-having-integrityerror-duplicate-key-errors-why" title="Permalink to this headline">¶</a></h3>
