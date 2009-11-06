@@ -339,13 +339,14 @@ So, let's execute the task again, but this time we'll keep track of the task:
     True
 
 
-If the task raises an exception, the ``result.success()`` will be ``False``,
-and ``result.result`` will contain the exception instance raised.
+If the task raises an exception, the return value of ``result.successful()``
+will be ``False``, and ``result.result`` will contain the exception instance
+raised by the task.
 
-Auto-discovery of tasks
------------------------
+Worker auto-discovery of tasks
+------------------------------
 
-``celery`` has an auto-discovery feature like the Django Admin, that
+``celeryd`` has an auto-discovery feature like the Django Admin, that
 automatically loads any ``tasks.py`` module in the applications listed
 in ``settings.INSTALLED_APPS``. This autodiscovery is used by the celery
 worker to find registered tasks for your Django project.
