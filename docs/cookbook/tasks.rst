@@ -55,7 +55,7 @@ The cache key expires after some time in case something unexpected happens
 
             acquire_lock()
             try:
-                feed = Feed.objects.import(feed_url)
+                feed = Feed.objects.import_feed(feed_url)
             finally:
                 release_lock()
 
