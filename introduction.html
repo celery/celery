@@ -158,8 +158,8 @@ for cronjobs.</p>
 </li>
 <li><p class="first">When a task has been executed, the return value can be stored using
 either a MySQL/Oracle/PostgreSQL/SQLite database, Memcached,
-<a class="reference external" href="http://www.mongodb.org/">MongoDB</a> or <a class="reference external" href="http://tokyocabinet.sourceforge.net/">Tokyo Tyrant</a> back-end. For high-performance you can
-also use AMQP messages to publish results.</p>
+<a class="reference external" href="http://www.mongodb.org/">MongoDB</a>, <a class="reference external" href="http://code.google.com/p/redis/">Redis</a> or <a class="reference external" href="http://tokyocabinet.sourceforge.net/">Tokyo Tyrant</a> back-end. For high-performance
+you can also use AMQP messages to publish results.</p>
 </li>
 <li><p class="first">If the task raises an exception, the exception instance is stored,
 instead of the return value.</p>
@@ -386,7 +386,7 @@ by <tt class="docutils literal"><span class="pre">delay</span></tt>.</p>
 <p>The <tt class="docutils literal"><span class="pre">AsyncResult</span></tt> lets us find the state of the task, wait for the task to
 finish and get its return value (or exception if the task failed).</p>
 <p>So, let&#8217;s execute the task again, but this time we&#8217;ll keep track of the task:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">MyTask</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="s">&quot;do_something&quot;</span><span class="p">,</span> <span class="n">some_arg</span><span class="o">=</span><span class="s">&quot;foo bar baz&quot;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">MyTask</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="s">&quot;hello&quot;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">ready</span><span class="p">()</span> <span class="c"># returns True if the task has finished processing.</span>
 <span class="go">False</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">result</span> <span class="c"># task is not ready, so no return value yet.</span>
@@ -399,12 +399,13 @@ finish and get its return value (or exception if the task failed).</p>
 <span class="go">True</span>
 </pre></div>
 </div>
-<p>If the task raises an exception, the <tt class="docutils literal"><span class="pre">result.success()</span></tt> will be <tt class="xref docutils literal"><span class="pre">False</span></tt>,
-and <tt class="docutils literal"><span class="pre">result.result</span></tt> will contain the exception instance raised.</p>
+<p>If the task raises an exception, the return value of <tt class="docutils literal"><span class="pre">result.successful()</span></tt>
+will be <tt class="xref docutils literal"><span class="pre">False</span></tt>, and <tt class="docutils literal"><span class="pre">result.result</span></tt> will contain the exception instance
+raised by the task.</p>
 </div>
-<div class="section" id="auto-discovery-of-tasks">
-<h3>Auto-discovery of tasks<a class="headerlink" href="#auto-discovery-of-tasks" title="Permalink to this headline">¶</a></h3>
-<p><tt class="docutils literal"><span class="pre">celery</span></tt> has an auto-discovery feature like the Django Admin, that
+<div class="section" id="worker-auto-discovery-of-tasks">
+<h3>Worker auto-discovery of tasks<a class="headerlink" href="#worker-auto-discovery-of-tasks" title="Permalink to this headline">¶</a></h3>
+<p><tt class="docutils literal"><span class="pre">celeryd</span></tt> has an auto-discovery feature like the Django Admin, that
 automatically loads any <tt class="docutils literal"><span class="pre">tasks.py</span></tt> module in the applications listed
 in <tt class="docutils literal"><span class="pre">settings.INSTALLED_APPS</span></tt>. This autodiscovery is used by the celery
 worker to find registered tasks for your Django project.</p>

@@ -59,18 +59,27 @@ Task result backend settings
         Use a relational database supported by the Django ORM.
 
     * cache
-        Use memcached to store the results.
+        Use `memcached`_ to store the results.
 
     * mongodb
-        Use MongoDB to store the results.
+        Use `MongoDB`_ to store the results.
+
+    * pyredis
+        Use `Redis`_ to store the results.
 
     * tyrant
-        Use Tokyo Tyrant to store the results.
+        Use `Tokyo Tyrant`_ to store the results.
 
     * amqp
         Send results back as AMQP messages
         (**WARNING** While very fast, you must make sure you only
         try to receive the result once).
+
+
+.. _`memcached`: http://memcached.org
+.. _`MongoDB`: http://mongodb.org
+.. _`Redis`: http://code.google.com/p/redis/
+.. _`Tokyo Tyrant`: http://1978th.net/tokyotyrant/
 
 
 * CELERY_PERIODIC_STATUS_BACKEND
@@ -108,11 +117,12 @@ Example configuration
 
 .. code-block:: python
 
-    DATABASE_ENGINE="mysql"
-    DATABASE_USER="myusername"
-    DATABASE_PASSWORD="mypassword"
-    DATABASE_NAME="mydatabase"
-    DATABASE_HOST="localhost"
+    CELERY_BACKEND = "database"
+    DATABASE_ENGINE = "mysql"
+    DATABASE_USER = "myusername"
+    DATABASE_PASSWORD = "mypassword"
+    DATABASE_NAME = "mydatabase"
+    DATABASE_HOST = "localhost"
 
 Cache backend settings
 ======================
@@ -133,11 +143,11 @@ Using a single memcached server:
 
     CACHE_BACKEND = 'memcached://127.0.0.1:11211/'
 
-
 Using multiple memcached servers:
 
 .. code-block:: python
 
+    CELERY_BACKEND = "cache"
     CACHE_BACKEND = 'memcached://172.19.26.240:11211;172.19.26.242:11211/'
 
 
@@ -147,7 +157,7 @@ Tokyo Tyrant backend settings
 **NOTE** The Tokyo Tyrant backend requires the :mod:`pytyrant` library:
     http://pypi.python.org/pypi/pytyrant/
 
-This backend requires the following configuration variables to be set:
+This backend requires the following configuration directives to be set:
 
 * TT_HOST
     Hostname of the Tokyo Tyrant server.
@@ -161,9 +171,57 @@ Example configuration
 
 .. code-block:: python
 
+    CELERY_BACKEND = "tyrant"
     TT_HOST = "localhost"
     TT_PORT = 1978
 
+Redis backend settings
+======================
+
+**NOTE** The Redis backend requires the :mod:`redis` library:
+    http://pypi.python.org/pypi/redis/0.5.5
+
+To install the redis package use ``pip`` or ``easy_install``::
+
+    $ pip install redis
+
+This backend requires the following configuration directives to be set:
+
+* REDIS_HOST
+
+    Hostname of the Redis database server. e.g. ``"localhost"``.
+
+* REDIS_PORT
+
+    Port to the Redis database server. e.g. ``6379``.
+
+Also, the following optional configuration directives are available:
+
+* REDIS_DB
+
+    Name of the database to use. Default is ``celery_results``.
+
+* REDIS_TIMEOUT
+
+    Timeout in seconds before we give up establishing a connection
+    to the Redis server.
+
+* REDIS_CONNECT_RETRY
+
+    Retry connecting if an connection could not be established. Default is
+    false.
+
+
+Example configuration
+---------------------
+
+.. code-block:: python
+
+    CELERY_BACKEND = "pyredis"
+    REDIS_HOST = "localhost"
+    REDIS_PORT = 6739
+    REDIS_DATABASE = "celery_results"
+    REDIS_CONNECT_RETRY=True
 
 MongoDB backend settings
 ========================
@@ -204,6 +262,7 @@ Example configuration
 
 .. code-block:: python
 
+    CELERY_BACKEND = "mongodb"
     CELERY_MONGODB_BACKEND_SETTINGS = {
         "host": "192.168.1.100",
         "port": 30000,

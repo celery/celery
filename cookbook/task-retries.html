@@ -99,15 +99,16 @@
 <h2>Retrying a task if something fails<a class="headerlink" href="#retrying-a-task-if-something-fails" title="Permalink to this headline">¶</a></h2>
 <p>Simply use <a title="celery.task.base.Task.retry" class="reference external" href="../reference/celery.task.base.html#celery.task.base.Task.retry"><tt class="xref docutils literal"><span class="pre">celery.task.base.Task.retry()</span></tt></a> to re-sent the task, it will
 do the right thing, and respect the <a title="celery.task.base.Task.max_retries" class="reference external" href="../reference/celery.task.base.html#celery.task.base.Task.max_retries"><tt class="xref docutils literal"><span class="pre">celery.task.base.Task.max_retries</span></tt></a>
-attribute.</p>
-<div class="highlight-python"><pre>class SendTwitterStatusTask(Task):
+attribute:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">SendTwitterStatusTask</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
 
-    def run(self, oauth, tweet, \*\*kwargs):
-        try:
-            twitter = Twitter(oauth)
-            twitter.update_status(tweet)
-        except (Twitter.FailWhaleError, Twitter.LoginError), exc:
-            self.retry(args=[oauth, tweet], kwargs=\*\*kwargs, exc=exc)</pre>
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">oauth</span><span class="p">,</span> <span class="n">tweet</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">twitter</span> <span class="o">=</span> <span class="n">Twitter</span><span class="p">(</span><span class="n">oauth</span><span class="p">)</span>
+            <span class="n">twitter</span><span class="o">.</span><span class="n">update_status</span><span class="p">(</span><span class="n">tweet</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="n">Twitter</span><span class="o">.</span><span class="n">FailWhaleError</span><span class="p">,</span> <span class="n">Twitter</span><span class="o">.</span><span class="n">LoginError</span><span class="p">),</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">retry</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="n">oauth</span><span class="p">,</span> <span class="n">tweet</span><span class="p">],</span> <span class="n">exc</span><span class="o">=</span><span class="n">exc</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</pre></div>
 </div>
 <p>Here we used the <tt class="docutils literal"><span class="pre">exc</span></tt> argument to pass the current exception to
 <a title="celery.task.base.Task.retry" class="reference external" href="../reference/celery.task.base.html#celery.task.base.Task.retry"><tt class="xref docutils literal"><span class="pre">celery.task.base.Task.retry()</span></tt></a>. At each step of the retry this exception
@@ -123,16 +124,18 @@ raised. However, if an <tt class="docutils literal"><span class="pre">exc</span>
 default is set to 3 minutes.</p>
 <p>You can also provide the <tt class="docutils literal"><span class="pre">countdown</span></tt> argument to
 <a title="celery.task.base.Task.retry" class="reference external" href="../reference/celery.task.base.html#celery.task.base.Task.retry"><tt class="xref docutils literal"><span class="pre">celery.task.base.Task.retry()</span></tt></a> to override this default.</p>
-<div class="highlight-python"><pre>class MyTask(Task):
-    default_retry_delay = 30 * 60 # retry in 30 minutes
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MyTask</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
+    <span class="n">default_retry_delay</span> <span class="o">=</span> <span class="mi">30</span> <span class="o">*</span> <span class="mi">60</span> <span class="c"># retry in 30 minutes</span>
 
-    def run(self, x, y, \*\*kwargs):
-        try:
-            ...
-        except Exception, exc:
-            self.retry([x, y], \*\*kwargs, exc=exc,
-                       countdown=60 # override the default and
-                                    # retry in 1 minute</pre>
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="o">...</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">retry</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">],</span> <span class="n">exc</span><span class="o">=</span><span class="n">exc</span><span class="p">,</span>
+                       <span class="n">countdown</span><span class="o">=</span><span class="mi">60</span> <span class="c"># override the default and</span>
+                                    <span class="c"># retry in 1 minute</span>
+                       <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</pre></div>
 </div>
 </div>
 </div>

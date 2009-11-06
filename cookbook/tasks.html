@@ -107,46 +107,48 @@ more workers to import the same feed at the same time by setting a cache key
 consisting of the md5sum of the feed URL.</p>
 <p>The cache key expires after some time in case something unexpected happens
 (you never know, right?)</p>
-<div class="highlight-python"><pre>from celery.task import Task
-from celery.registry import tasks
-from django.core.cache import cache
-from django.utils.hashcompat import md5_constructor as md5
-from djangofeeds.models import Feed
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">Task</span>
+<span class="kn">from</span> <span class="nn">celery.registry</span> <span class="kn">import</span> <span class="n">tasks</span>
+<span class="kn">from</span> <span class="nn">django.core.cache</span> <span class="kn">import</span> <span class="n">cache</span>
+<span class="kn">from</span> <span class="nn">django.utils.hashcompat</span> <span class="kn">import</span> <span class="n">md5_constructor</span> <span class="k">as</span> <span class="n">md5</span>
+<span class="kn">from</span> <span class="nn">djangofeeds.models</span> <span class="kn">import</span> <span class="n">Feed</span>
 
-LOCK_EXPIRE = 60 * 5 # Lock expires in 5 minutes
+<span class="n">LOCK_EXPIRE</span> <span class="o">=</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">5</span> <span class="c"># Lock expires in 5 minutes</span>
 
-class FeedImporter(Task):
-    name = "feed.import"
+<span class="k">class</span> <span class="nc">FeedImporter</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s">&quot;feed.import&quot;</span>
 
-    def run(self, feed_url, **kwargs):
-        logger = self.get_logger(**kwargs)
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feed_url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-        # The cache key consists of the task name and the MD5 digest
-        # of the feed URL.
-        feed_url_digest = md5(feed_url).hexdigest()
-        lock_id = "%s-lock-%s" % (self.name, feed_url_hexdigest)
+        <span class="c"># The cache key consists of the task name and the MD5 digest</span>
+        <span class="c"># of the feed URL.</span>
+        <span class="n">feed_url_digest</span> <span class="o">=</span> <span class="n">md5</span><span class="p">(</span><span class="n">feed_url</span><span class="p">)</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+        <span class="n">lock_id</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">-lock-</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">feed_url_hexdigest</span><span class="p">)</span>
 
-        is_locked = lambda: str(cache.get(lock_id)) == "true"
-        acquire_lock = lambda: cache.set(lock_id, "true", LOCK_EXPIRE)
-        # memcache delete is very slow, so we'd rather set a false value
-        # with a very low expiry time.
-        release_lock = lambda: cache.set(lock_id, "nil", 1)
+        <span class="n">is_locked</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">lock_id</span><span class="p">))</span> <span class="o">==</span> <span class="s">&quot;true&quot;</span>
+        <span class="n">acquire_lock</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">cache</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">lock_id</span><span class="p">,</span> <span class="s">&quot;true&quot;</span><span class="p">,</span> <span class="n">LOCK_EXPIRE</span><span class="p">)</span>
+        <span class="c"># memcache delete is very slow, so we&#39;d rather set a false value</span>
+        <span class="c"># with a very low expiry time.</span>
+        <span class="n">release_lock</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">cache</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">lock_id</span><span class="p">,</span> <span class="s">&quot;nil&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 
-        logger.debug("Importing feed: %s" % feed_url)
-        if is_locked():
-            logger.debug(
-                "Feed %s is already being imported by another worker" % (
-                    feed_url))
-            return
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Importing feed: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">feed_url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">is_locked</span><span class="p">():</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s">&quot;Feed </span><span class="si">%s</span><span class="s"> is already being imported by another worker&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                    <span class="n">feed_url</span><span class="p">))</span>
+            <span class="k">return</span>
 
-        acquire_lock()
-        try:
-            feed = Feed.objects.import(feed_url)
-        finally:
-            release_lock()
+        <span class="n">acquire_lock</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">feed</span> <span class="o">=</span> <span class="n">Feed</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">import_feed</span><span class="p">(</span><span class="n">feed_url</span><span class="p">)</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="n">release_lock</span><span class="p">()</span>
 
-        return feed.url
-tasks.register(FeedImporter)</pre>
+        <span class="k">return</span> <span class="n">feed</span><span class="o">.</span><span class="n">url</span>
+
+<span class="n">tasks</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">FeedImporter</span><span class="p">)</span>
+</pre></div>
 </div>
 </div>
 </div>

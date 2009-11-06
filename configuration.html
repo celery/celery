@@ -52,6 +52,7 @@
 <li class="toctree-l2"><a class="reference external" href="#database-backend-settings">Database backend settings</a></li>
 <li class="toctree-l2"><a class="reference external" href="#cache-backend-settings">Cache backend settings</a></li>
 <li class="toctree-l2"><a class="reference external" href="#tokyo-tyrant-backend-settings">Tokyo Tyrant backend settings</a></li>
+<li class="toctree-l2"><a class="reference external" href="#redis-backend-settings">Redis backend settings</a></li>
 <li class="toctree-l2"><a class="reference external" href="#mongodb-backend-settings">MongoDB backend settings</a></li>
 <li class="toctree-l2"><a class="reference external" href="#broker-settings">Broker settings</a></li>
 <li class="toctree-l2"><a class="reference external" href="#task-execution-settings">Task execution settings</a></li>
@@ -160,19 +161,25 @@ Can be one of the following:</p>
 </li>
 <li><dl class="first docutils">
 <dt>cache</dt>
-<dd><p class="first last">Use memcached to store the results.</p>
+<dd><p class="first last">Use <a class="reference external" href="http://memcached.org">memcached</a> to store the results.</p>
 </dd>
 </dl>
 </li>
 <li><dl class="first docutils">
 <dt>mongodb</dt>
-<dd><p class="first last">Use MongoDB to store the results.</p>
+<dd><p class="first last">Use <a class="reference external" href="http://mongodb.org">MongoDB</a> to store the results.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>pyredis</dt>
+<dd><p class="first last">Use <a class="reference external" href="http://code.google.com/p/redis/">Redis</a> to store the results.</p>
 </dd>
 </dl>
 </li>
 <li><dl class="first docutils">
 <dt>tyrant</dt>
-<dd><p class="first last">Use Tokyo Tyrant to store the results.</p>
+<dd><p class="first last">Use <a class="reference external" href="http://1978th.net/tokyotyrant/">Tokyo Tyrant</a> to store the results.</p>
 </dd>
 </dl>
 </li>
@@ -188,6 +195,8 @@ try to receive the result once).</p>
 </dd>
 </dl>
 </li>
+</ul>
+<ul>
 <li><dl class="first docutils">
 <dt>CELERY_PERIODIC_STATUS_BACKEND</dt>
 <dd><p class="first">The backend used to store the status of periodic tasks.
@@ -227,11 +236,12 @@ means executing:</p>
 </div>
 <div class="section" id="example-configuration">
 <h3>Example configuration<a class="headerlink" href="#example-configuration" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">DATABASE_ENGINE</span><span class="o">=</span><span class="s">&quot;mysql&quot;</span>
-<span class="n">DATABASE_USER</span><span class="o">=</span><span class="s">&quot;myusername&quot;</span>
-<span class="n">DATABASE_PASSWORD</span><span class="o">=</span><span class="s">&quot;mypassword&quot;</span>
-<span class="n">DATABASE_NAME</span><span class="o">=</span><span class="s">&quot;mydatabase&quot;</span>
-<span class="n">DATABASE_HOST</span><span class="o">=</span><span class="s">&quot;localhost&quot;</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_BACKEND</span> <span class="o">=</span> <span class="s">&quot;database&quot;</span>
+<span class="n">DATABASE_ENGINE</span> <span class="o">=</span> <span class="s">&quot;mysql&quot;</span>
+<span class="n">DATABASE_USER</span> <span class="o">=</span> <span class="s">&quot;myusername&quot;</span>
+<span class="n">DATABASE_PASSWORD</span> <span class="o">=</span> <span class="s">&quot;mypassword&quot;</span>
+<span class="n">DATABASE_NAME</span> <span class="o">=</span> <span class="s">&quot;mydatabase&quot;</span>
+<span class="n">DATABASE_HOST</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>
 </pre></div>
 </div>
 </div>
@@ -250,7 +260,8 @@ django <tt class="docutils literal"><span class="pre">CACHE_BACKEND</span></tt> 
 </pre></div>
 </div>
 <p>Using multiple memcached servers:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">CACHE_BACKEND</span> <span class="o">=</span> <span class="s">&#39;memcached://172.19.26.240:11211;172.19.26.242:11211/&#39;</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_BACKEND</span> <span class="o">=</span> <span class="s">&quot;cache&quot;</span>
+<span class="n">CACHE_BACKEND</span> <span class="o">=</span> <span class="s">&#39;memcached://172.19.26.240:11211;172.19.26.242:11211/&#39;</span>
 </pre></div>
 </div>
 </div>
@@ -261,7 +272,7 @@ django <tt class="docutils literal"><span class="pre">CACHE_BACKEND</span></tt> 
 <dt><strong>NOTE</strong> The Tokyo Tyrant backend requires the <tt class="xref docutils literal"><span class="pre">pytyrant</span></tt> library:</dt>
 <dd><a class="reference external" href="http://pypi.python.org/pypi/pytyrant/">http://pypi.python.org/pypi/pytyrant/</a></dd>
 </dl>
-<p>This backend requires the following configuration variables to be set:</p>
+<p>This backend requires the following configuration directives to be set:</p>
 <ul>
 <li><dl class="first docutils">
 <dt>TT_HOST</dt>
@@ -278,8 +289,62 @@ django <tt class="docutils literal"><span class="pre">CACHE_BACKEND</span></tt> 
 </ul>
 <div class="section" id="id2">
 <h3>Example configuration<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">TT_HOST</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_BACKEND</span> <span class="o">=</span> <span class="s">&quot;tyrant&quot;</span>
+<span class="n">TT_HOST</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>
 <span class="n">TT_PORT</span> <span class="o">=</span> <span class="mi">1978</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="redis-backend-settings">
+<h2>Redis backend settings<a class="headerlink" href="#redis-backend-settings" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt><strong>NOTE</strong> The Redis backend requires the <tt class="xref docutils literal"><span class="pre">redis</span></tt> library:</dt>
+<dd><a class="reference external" href="http://pypi.python.org/pypi/redis/0.5.5">http://pypi.python.org/pypi/redis/0.5.5</a></dd>
+</dl>
+<p>To install the redis package use <tt class="docutils literal"><span class="pre">pip</span></tt> or <tt class="docutils literal"><span class="pre">easy_install</span></tt>:</p>
+<div class="highlight-python"><pre>$ pip install redis</pre>
+</div>
+<p>This backend requires the following configuration directives to be set:</p>
+<ul>
+<li><p class="first">REDIS_HOST</p>
+<blockquote>
+<p>Hostname of the Redis database server. e.g. <tt class="docutils literal"><span class="pre">&quot;localhost&quot;</span></tt>.</p>
+</blockquote>
+</li>
+<li><p class="first">REDIS_PORT</p>
+<blockquote>
+<p>Port to the Redis database server. e.g. <tt class="docutils literal"><span class="pre">6379</span></tt>.</p>
+</blockquote>
+</li>
+</ul>
+<p>Also, the following optional configuration directives are available:</p>
+<ul>
+<li><p class="first">REDIS_DB</p>
+<blockquote>
+<p>Name of the database to use. Default is <tt class="docutils literal"><span class="pre">celery_results</span></tt>.</p>
+</blockquote>
+</li>
+<li><p class="first">REDIS_TIMEOUT</p>
+<blockquote>
+<p>Timeout in seconds before we give up establishing a connection
+to the Redis server.</p>
+</blockquote>
+</li>
+<li><p class="first">REDIS_CONNECT_RETRY</p>
+<blockquote>
+<p>Retry connecting if an connection could not be established. Default is
+false.</p>
+</blockquote>
+</li>
+</ul>
+<div class="section" id="id3">
+<h3>Example configuration<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_BACKEND</span> <span class="o">=</span> <span class="s">&quot;pyredis&quot;</span>
+<span class="n">REDIS_HOST</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>
+<span class="n">REDIS_PORT</span> <span class="o">=</span> <span class="mi">6739</span>
+<span class="n">REDIS_DATABASE</span> <span class="o">=</span> <span class="s">&quot;celery_results&quot;</span>
+<span class="n">REDIS_CONNECT_RETRY</span><span class="o">=</span><span class="bp">True</span>
 </pre></div>
 </div>
 </div>
@@ -343,9 +408,10 @@ Defaults to &#8220;celery_periodictaskmeta&#8221;.</p>
 </blockquote>
 </li>
 </ul>
-<div class="section" id="id3">
-<h3>Example configuration<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_MONGODB_BACKEND_SETTINGS</span> <span class="o">=</span> <span class="p">{</span>
+<div class="section" id="id4">
+<h3>Example configuration<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_BACKEND</span> <span class="o">=</span> <span class="s">&quot;mongodb&quot;</span>
+<span class="n">CELERY_MONGODB_BACKEND_SETTINGS</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s">&quot;host&quot;</span><span class="p">:</span> <span class="s">&quot;192.168.1.100&quot;</span><span class="p">,</span>
     <span class="s">&quot;port&quot;</span><span class="p">:</span> <span class="mi">30000</span><span class="p">,</span>
     <span class="s">&quot;database&quot;</span><span class="p">:</span> <span class="s">&quot;mydb&quot;</span><span class="p">,</span>
