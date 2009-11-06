@@ -1,6 +1,6 @@
 from celery.messaging import EventPublisher, EventConsumer
-from datetime import datetime
 from UserDict import UserDict
+import time
 
 """
 Events
@@ -18,17 +18,17 @@ WORKER-HEARTBEAT hostname timestamp
 """
 
 def Event(type, **fields):
-    return dict(fields, type=event, timestamp=datetime.now())
+    return dict(fields, type=type, timestamp=time.time())
 
 
-class Dispatcher(object):
+class EventDispatcher(object):
     """
 
     dispatcher.send("worker-heartbeat", hostname="h8.opera.com")
 
     """
     def __init__(self, connection):
-        self.connection = None
+        self.connection = connection
         self.publisher = EventPublisher(self.connection)
 
     def send(self, type, **fields):

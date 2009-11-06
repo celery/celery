@@ -14,6 +14,7 @@ from celery.log import setup_logger
 from celery.pool import TaskPool
 from celery.utils import retry_over_time
 from celery.datastructures import SharedCounter
+from celery.events import EventDispatcher
 from Queue import Queue
 import traceback
 import logging
@@ -50,6 +51,7 @@ class AMQPListener(object):
         self.hold_queue = hold_queue
         self.logger = logger
         self.prefetch_count = SharedCounter(initial_prefetch_count)
+        self.event_dispatcher = None
 
     def start(self):
         """Start the consumer.
@@ -100,6 +102,10 @@ class AMQPListener(object):
             return
 
         eta = message_data.get("eta")
+
+        print(message_data)
+        self.event_dispatcher.send("task-received", **message_data)
+
         if eta:
             self.prefetch_count.increment()
             self.logger.info("Got task from broker: %s[%s] eta:[%s]" % (
@@ -120,6 +126,7 @@ class AMQPListener(object):
                     "AMQPListener: Closing connection to the broker...")
             self.amqp_connection.close()
             self.amqp_connection = None
+        self.event_dispatcher = None
 
     def reset_connection(self):
         """Reset the AMQP connection, and reinitialize the
@@ -134,6 +141,7 @@ class AMQPListener(object):
         self.amqp_connection = self._open_connection()
         self.task_consumer = get_consumer_set(connection=self.amqp_connection)
         self.task_consumer.register_callback(self.receive_message)
+        self.event_dispatcher = EventDispatcher(self.amqp_connection)
 
     def _open_connection(self):
         """Retries connecting to the AMQP broker over time.
