@@ -1,4 +1,5 @@
 ============================
+
  Configuration and defaults
 ============================
 
@@ -73,22 +74,8 @@ Task result backend settings
         try to receive the result once).
 
 
-* CELERY_PERIODIC_STATUS_BACKEND
-    The backend used to store the status of periodic tasks.
-    Can be one of the following:
-
-    * database (default)
-        Use a relational database supported by the Django ORM.
-
-    * mongodb
-        Use MongoDB.
-
-
 Database backend settings
 =========================
-
-This applies to both the result store backend and the periodic status
-backend.
 
 Please see the Django ORM database settings documentation:
 http://docs.djangoproject.com/en/dev/ref/settings/#database-engine
@@ -193,10 +180,6 @@ MongoDB backend settings
     * taskmeta_collection
         The collection name to store task metadata.
         Defaults to "celery_taskmeta".
-
-    * periodictaskmeta_collection
-        The collection name to store periodic task metadata.
-        Defaults to "celery_periodictaskmeta".
 
 
 Example configuration

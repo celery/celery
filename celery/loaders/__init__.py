@@ -14,7 +14,8 @@ Loader = DefaultLoader
 if settings.configured:
     Loader = DjangoLoader
 else:
-    if callable(getattr(os, "fork", None)): # Platform doesn't support fork()
+    if not callable(getattr(os, "fork", None)):
+        # Platform doesn't support fork()
         # XXX On systems without fork, multiprocessing seems to be launching
         # the processes in some other way which does not copy the memory
         # of the parent process. This means that any configured env might
