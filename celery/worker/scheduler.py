@@ -4,8 +4,8 @@ import time
 
 class Scheduler(object):
 
-    def __init__(self, bucket_queue):
-        self.bucket_queue = bucket_queue
+    def __init__(self, ready_queue):
+        self.ready_queue = ready_queue
         self._queue = []
 
     def enter(self, item, eta=None, priority=0, callback=None):
@@ -19,7 +19,7 @@ class Scheduler(object):
         q = self._queue
         nowfun = time.time
         pop = heapq.heappop
-        bucket = self.bucket_queue
+        ready_queue = self.ready_queue
 
         while True:
             if q:
@@ -34,7 +34,7 @@ class Scheduler(object):
                         eta, priority, item))
 
                     if event is verify:
-                        bucket.put(item)
+                        ready_queue.put(item)
                         callback and callback()
                         yield 0
                     else:

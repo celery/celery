@@ -84,13 +84,13 @@ def create_message(backend, **data):
 class TestCarrotListener(unittest.TestCase):
 
     def setUp(self):
-        self.bucket_queue = Queue()
-        self.eta_scheduler = Scheduler(self.bucket_queue)
+        self.ready_queue = Queue()
+        self.eta_scheduler = Scheduler(self.ready_queue)
         self.logger = get_logger()
         self.logger.setLevel(0)
 
     def test_connection(self):
-        l = CarrotListener(self.bucket_queue, self.eta_scheduler, self.logger)
+        l = CarrotListener(self.ready_queue, self.eta_scheduler, self.logger)
 
         c = l.reset_connection()
         self.assertTrue(isinstance(l.amqp_connection, BrokerConnection))
@@ -107,29 +107,29 @@ class TestCarrotListener(unittest.TestCase):
         self.assertTrue(l.task_consumer is None)
 
     def test_receieve_message(self):
-        l = CarrotListener(self.bucket_queue, self.eta_scheduler, self.logger)
+        l = CarrotListener(self.ready_queue, self.eta_scheduler, self.logger)
         backend = MockBackend()
         m = create_message(backend, task="c.u.foo", args=[2, 4, 8], kwargs={})
 
         l.receive_message(m.decode(), m)
 
-        in_bucket = self.bucket_queue.get_nowait()
+        in_bucket = self.ready_queue.get_nowait()
         self.assertTrue(isinstance(in_bucket, TaskWrapper))
         self.assertEquals(in_bucket.task_name, "c.u.foo")
         self.assertEquals(in_bucket.execute(), 2 * 4 * 8)
         self.assertTrue(self.eta_scheduler.empty())
 
     def test_receieve_message_not_registered(self):
-        l = CarrotListener(self.bucket_queue, self.eta_scheduler, self.logger)
+        l = CarrotListener(self.ready_queue, self.eta_scheduler, self.logger)
         backend = MockBackend()
         m = create_message(backend, task="x.X.31x", args=[2, 4, 8], kwargs={})
 
         self.assertFalse(l.receive_message(m.decode(), m))
-        self.assertRaises(Empty, self.bucket_queue.get_nowait)
+        self.assertRaises(Empty, self.ready_queue.get_nowait)
         self.assertTrue(self.eta_scheduler.empty())
 
     def test_receieve_message_eta(self):
-        l = CarrotListener(self.bucket_queue, self.eta_scheduler, self.logger)
+        l = CarrotListener(self.ready_queue, self.eta_scheduler, self.logger)
         backend = MockBackend()
         m = create_message(backend, task="c.u.foo", args=[2, 4, 8], kwargs={},
                            eta=datetime.now() + timedelta(days=1))
@@ -143,7 +143,7 @@ class TestCarrotListener(unittest.TestCase):
         self.assertTrue(callable(on_accept))
         self.assertEquals(task.task_name, "c.u.foo")
         self.assertEquals(task.execute(), 2 * 4 * 8)
-        self.assertRaises(Empty, self.bucket_queue.get_nowait)
+        self.assertRaises(Empty, self.ready_queue.get_nowait)
 
 
 class TestWorkController(unittest.TestCase):
@@ -155,7 +155,7 @@ class TestWorkController(unittest.TestCase):
 
     def test_attrs(self):
         worker = self.worker
-        self.assertTrue(isinstance(worker.bucket_queue, Queue))
+        self.assertTrue(isinstance(worker.ready_queue, Queue))
         self.assertTrue(isinstance(worker.eta_scheduler, Scheduler))
         self.assertTrue(worker.schedule_controller)
         self.assertTrue(worker.pool)

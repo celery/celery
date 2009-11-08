@@ -26,10 +26,10 @@ class CarrotListener(object):
     """Listen for messages received from the AMQP broker and
     move them the the bucket queue for task processing.
 
-    :param bucket_queue: See :attr:`bucket_queue`.
+    :param ready_queue: See :attr:`ready_queue`.
     :param eta_scheduler: See :attr:`eta_scheduler`.
 
-    .. attribute:: bucket_queue
+    .. attribute:: ready_queue
 
         The queue that holds tasks ready for processing immediately.
 
@@ -44,11 +44,11 @@ class CarrotListener(object):
 
     """
 
-    def __init__(self, bucket_queue, eta_scheduler, logger,
+    def __init__(self, ready_queue, eta_scheduler, logger,
             initial_prefetch_count=2):
         self.amqp_connection = None
         self.task_consumer = None
-        self.bucket_queue = bucket_queue
+        self.ready_queue = ready_queue
         self.eta_scheduler = eta_scheduler
         self.logger = logger
         self.prefetch_count = SharedCounter(initial_prefetch_count)
@@ -112,7 +112,7 @@ class CarrotListener(object):
         else:
             self.logger.info("Got task from broker: %s[%s]" % (
                     task.task_name, task.task_id))
-            self.bucket_queue.put(task)
+            self.ready_queue.put(task)
 
     def close_connection(self):
         """Close the AMQP connection."""
@@ -201,7 +201,7 @@ class WorkController(object):
 
         The :class:`multiprocessing.Pool` instance used.
 
-    .. attribute:: bucket_queue
+    .. attribute:: ready_queue
 
         The :class:`Queue.Queue` that holds tasks ready for immediate
         processing.
@@ -242,20 +242,20 @@ class WorkController(object):
         self.embed_clockservice = embed_clockservice
 
         # Queues
-        self.bucket_queue = Queue()
+        self.ready_queue = Queue()
         self.hold_queue = Queue()
-        self.eta_scheduler = Scheduler(self.bucket_queue)
+        self.eta_scheduler = Scheduler(self.ready_queue)
 
         self.logger.debug("Instantiating thread components...")
 
         # Threads+Pool
         self.schedule_controller = ScheduleController(self.eta_scheduler)
         self.pool = TaskPool(self.concurrency, logger=self.logger)
-        self.broker_listener = CarrotListener(self.bucket_queue,
+        self.broker_listener = CarrotListener(self.ready_queue,
                                         self.eta_scheduler,
                                         logger=self.logger,
                                         initial_prefetch_count=concurrency)
-        self.mediator = Mediator(self.bucket_queue, self.safe_process_task)
+        self.mediator = Mediator(self.ready_queue, self.safe_process_task)
 
         self.clockservice = None
         if self.embed_clockservice:

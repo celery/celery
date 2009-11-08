@@ -65,29 +65,29 @@ class BackgroundThread(threading.Thread):
 class Mediator(BackgroundThread):
     """Thread continuously sending tasks in the queue to the pool.
 
-    .. attribute:: bucket_queue
+    .. attribute:: ready_queue
 
         The task queue, a :class:`Queue.Queue` instance.
 
     .. attribute:: callback
 
         The callback used to process tasks retrieved from the
-        :attr:`bucket_queue`.
+        :attr:`ready_queue`.
 
     """
 
-    def __init__(self, bucket_queue, callback):
+    def __init__(self, ready_queue, callback):
         super(Mediator, self).__init__()
-        self.bucket_queue = bucket_queue
+        self.ready_queue = ready_queue
         self.callback = callback
 
     def on_iteration(self):
         """Get tasks from bucket queue and apply the task callback."""
         logger = get_default_logger()
         try:
-            logger.debug("Mediator: Trying to get message from bucket_queue")
+            logger.debug("Mediator: Trying to get message from ready_queue")
             # This blocks until there's a message in the queue.
-            task = self.bucket_queue.get(timeout=1)
+            task = self.ready_queue.get(timeout=1)
         except QueueEmpty:
             logger.debug("Mediator: Bucket queue is empty.")
         else:

@@ -48,8 +48,8 @@ class TestBackgroundThread(unittest.TestCase):
 class TestMediator(unittest.TestCase):
 
     def test_mediator_start__stop(self):
-        bucket_queue = Queue()
-        m = Mediator(bucket_queue, lambda t: t)
+        ready_queue = Queue()
+        m = Mediator(ready_queue, lambda t: t)
         m.start()
         self.assertFalse(m._shutdown.isSet())
         self.assertFalse(m._stopped.isSet())
@@ -59,14 +59,14 @@ class TestMediator(unittest.TestCase):
         self.assertTrue(m._stopped.isSet())
 
     def test_mediator_on_iteration(self):
-        bucket_queue = Queue()
+        ready_queue = Queue()
         got = {}
 
         def mycallback(value):
             got["value"] = value.value
 
-        m = Mediator(bucket_queue, mycallback)
-        bucket_queue.put(MockTask("George Constanza"))
+        m = Mediator(ready_queue, mycallback)
+        ready_queue.put(MockTask("George Constanza"))
 
         m.on_iteration()
 
