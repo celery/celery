@@ -3,7 +3,7 @@ from Queue import Queue, Empty
 from carrot.connection import BrokerConnection
 from celery.messaging import TaskConsumer
 from celery.worker.job import TaskWrapper
-from celery.worker import AMQPListener, WorkController
+from celery.worker import CarrotListener, WorkController
 from multiprocessing import get_logger
 from carrot.backends.base import BaseMessage
 from celery import registry
@@ -81,7 +81,7 @@ def create_message(backend, **data):
                        content_encoding="binary")
 
 
-class TestAMQPListener(unittest.TestCase):
+class TestCarrotListener(unittest.TestCase):
 
     def setUp(self):
         self.bucket_queue = Queue()
@@ -90,7 +90,7 @@ class TestAMQPListener(unittest.TestCase):
         self.logger.setLevel(0)
 
     def test_connection(self):
-        l = AMQPListener(self.bucket_queue, self.eta_scheduler, self.logger)
+        l = CarrotListener(self.bucket_queue, self.eta_scheduler, self.logger)
 
         c = l.reset_connection()
         self.assertTrue(isinstance(l.amqp_connection, BrokerConnection))
@@ -107,7 +107,7 @@ class TestAMQPListener(unittest.TestCase):
         self.assertTrue(l.task_consumer is None)
 
     def test_receieve_message(self):
-        l = AMQPListener(self.bucket_queue, self.eta_scheduler, self.logger)
+        l = CarrotListener(self.bucket_queue, self.eta_scheduler, self.logger)
         backend = MockBackend()
         m = create_message(backend, task="c.u.foo", args=[2, 4, 8], kwargs={})
 
@@ -120,7 +120,7 @@ class TestAMQPListener(unittest.TestCase):
         self.assertTrue(self.eta_scheduler.empty())
 
     def test_receieve_message_not_registered(self):
-        l = AMQPListener(self.bucket_queue, self.eta_scheduler, self.logger)
+        l = CarrotListener(self.bucket_queue, self.eta_scheduler, self.logger)
         backend = MockBackend()
         m = create_message(backend, task="x.X.31x", args=[2, 4, 8], kwargs={})
 
@@ -129,7 +129,7 @@ class TestAMQPListener(unittest.TestCase):
         self.assertTrue(self.eta_scheduler.empty())
 
     def test_receieve_message_eta(self):
-        l = AMQPListener(self.bucket_queue, self.eta_scheduler, self.logger)
+        l = CarrotListener(self.bucket_queue, self.eta_scheduler, self.logger)
         backend = MockBackend()
         m = create_message(backend, task="c.u.foo", args=[2, 4, 8], kwargs={},
                            eta=datetime.now() + timedelta(days=1))
@@ -159,7 +159,7 @@ class TestWorkController(unittest.TestCase):
         self.assertTrue(isinstance(worker.eta_scheduler, Scheduler))
         self.assertTrue(worker.schedule_controller)
         self.assertTrue(worker.pool)
-        self.assertTrue(worker.amqp_listener)
+        self.assertTrue(worker.broker_listener)
         self.assertTrue(worker.mediator)
         self.assertTrue(worker.components)
 
