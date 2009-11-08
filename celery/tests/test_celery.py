@@ -1,5 +1,5 @@
 import unittest
-import celery
+import celery.distmeta as celery
 
 
 class TestInitFile(unittest.TestCase):

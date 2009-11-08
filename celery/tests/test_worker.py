@@ -158,7 +158,6 @@ class TestWorkController(unittest.TestCase):
 
     def test_attrs(self):
         worker = self.worker
-        self.assertTrue(isinstance(worker.ready_queue, Queue))
         self.assertTrue(isinstance(worker.eta_scheduler, Scheduler))
         self.assertTrue(worker.schedule_controller)
         self.assertTrue(worker.pool)
