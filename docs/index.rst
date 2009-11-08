@@ -17,6 +17,7 @@ Contents:
     tutorials/index
     faq
     reference/index
+    internals/index
     changelog
     links
 
