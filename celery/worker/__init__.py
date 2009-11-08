@@ -4,9 +4,10 @@ The Multiprocessing Worker Server
 
 """
 from carrot.connection import DjangoBrokerConnection, AMQPConnectionException
-from celery.worker.controllers import Mediator, PeriodicWorkController
+from celery.worker.controllers import Mediator, ScheduleController
 from celery.beat import ClockServiceThread
 from celery.worker.job import TaskWrapper
+from celery.worker.scheduler import Scheduler
 from celery.exceptions import NotRegistered
 from celery.messaging import get_consumer_set
 from celery.log import setup_logger
@@ -22,20 +23,20 @@ import logging
 import socket
 
 
-class AMQPListener(object):
+class CarrotListener(object):
     """Listen for messages received from the AMQP broker and
     move them the the bucket queue for task processing.
 
-    :param bucket_queue: See :attr:`bucket_queue`.
-    :param hold_queue: See :attr:`hold_queue`.
+    :param ready_queue: See :attr:`ready_queue`.
+    :param eta_scheduler: See :attr:`eta_scheduler`.
 
-    .. attribute:: bucket_queue
+    .. attribute:: ready_queue
 
         The queue that holds tasks ready for processing immediately.
 
-    .. attribute:: hold_queue
+    .. attribute:: eta_scheduler
 
-        The queue that holds paused tasks. Reasons for being paused include
+        Scheduler for paused tasks. Reasons for being paused include
         a countdown/eta or that it's waiting for retry.
 
     .. attribute:: logger
@@ -44,12 +45,12 @@ class AMQPListener(object):
 
     """
 
-    def __init__(self, bucket_queue, hold_queue, logger,
+    def __init__(self, ready_queue, eta_scheduler, logger,
             initial_prefetch_count=2):
         self.amqp_connection = None
         self.task_consumer = None
-        self.bucket_queue = bucket_queue
-        self.hold_queue = hold_queue
+        self.ready_queue = ready_queue
+        self.eta_scheduler = eta_scheduler
         self.logger = logger
         self.prefetch_count = SharedCounter(initial_prefetch_count)
 
@@ -66,17 +67,17 @@ class AMQPListener(object):
             try:
                 self.consume_messages()
             except (socket.error, AMQPConnectionException, IOError):
-                self.logger.error("AMQPListener: Connection to broker lost. "
-                                + "Trying to re-establish connection...")
+                self.logger.error("CarrotListener: Connection to broker lost."
+                                + " Trying to re-establish connection...")
 
     def consume_messages(self):
         """Consume messages forever (or until an exception is raised)."""
         task_consumer = self.task_consumer
 
-        self.logger.debug("AMQPListener: Starting message consumer...")
+        self.logger.debug("CarrotListener: Starting message consumer...")
         it = task_consumer.iterconsume(limit=None)
 
-        self.logger.debug("AMQPListener: Ready to accept tasks!")
+        self.logger.debug("CarrotListener: Ready to accept tasks!")
 
         while True:
             self.task_consumer.qos(prefetch_count=int(self.prefetch_count))
@@ -106,11 +107,13 @@ class AMQPListener(object):
             self.prefetch_count.increment()
             self.logger.info("Got task from broker: %s[%s] eta:[%s]" % (
                     task.task_name, task.task_id, eta))
-            self.hold_queue.put((task, eta, self.prefetch_count.decrement))
+            self.eta_scheduler.enter(task,
+                                     eta=eta,
+                                     callback=self.prefetch_count.decrement)
         else:
             self.logger.info("Got task from broker: %s[%s]" % (
                     task.task_name, task.task_id))
-            self.bucket_queue.put(task)
+            self.ready_queue.put(task)
 
     def close_connection(self):
         """Close the AMQP connection."""
@@ -119,7 +122,7 @@ class AMQPListener(object):
             self.task_consumer = None
         if self.amqp_connection:
             self.logger.debug(
-                    "AMQPListener: Closing connection to the broker...")
+                    "CarrotListener: Closing connection to the broker...")
             self.amqp_connection.close()
             self.amqp_connection = None
 
@@ -131,7 +134,7 @@ class AMQPListener(object):
 
         """
         self.logger.debug(
-                "AMQPListener: Re-establishing connection to the broker...")
+                "CarrotListener: Re-establishing connection to the broker...")
         self.close_connection()
         self.amqp_connection = self._open_connection()
         self.task_consumer = get_consumer_set(connection=self.amqp_connection)
@@ -161,7 +164,7 @@ class AMQPListener(object):
         conn = retry_over_time(_establish_connection, (socket.error, IOError),
                                errback=_connection_error_handler,
                                max_retries=conf.AMQP_CONNECTION_MAX_RETRIES)
-        self.logger.debug("AMQPListener: Connection Established.")
+        self.logger.debug("CarrotListener: Connection Established.")
         return conn
 
 
@@ -199,7 +202,7 @@ class WorkController(object):
 
         The :class:`multiprocessing.Pool` instance used.
 
-    .. attribute:: bucket_queue
+    .. attribute:: ready_queue
 
         The :class:`Queue.Queue` that holds tasks ready for immediate
         processing.
@@ -210,17 +213,17 @@ class WorkController(object):
         back the task include waiting for ``eta`` to pass or the task is being
         retried.
 
-    .. attribute:: periodic_work_controller
+    .. attribute:: schedule_controller
 
-        Instance of :class:`celery.worker.controllers.PeriodicWorkController`.
+        Instance of :class:`celery.worker.controllers.ScheduleController`.
 
     .. attribute:: mediator
 
         Instance of :class:`celery.worker.controllers.Mediator`.
 
-    .. attribute:: amqp_listener
+    .. attribute:: broker_listener
 
-        Instance of :class:`AMQPListener`.
+        Instance of :class:`CarrotListener`.
 
     """
     loglevel = logging.ERROR
@@ -241,22 +244,21 @@ class WorkController(object):
 
         # Queues
         if conf.DISABLE_RATE_LIMITS:
-            self.bucket_queue = Queue()
+            self.ready_queue = Queue()
         else:
-            self.bucket_queue = TaskBucket(task_registry=registry.tasks)
-        self.hold_queue = Queue()
+            self.ready_queue = TaskBucket(task_registry=registry.tasks)
+        self.eta_scheduler = Scheduler(self.ready_queue)
 
         self.logger.debug("Instantiating thread components...")
 
         # Threads+Pool
-        self.periodic_work_controller = PeriodicWorkController(
-                                                    self.bucket_queue,
-                                                    self.hold_queue)
+        self.schedule_controller = ScheduleController(self.eta_scheduler)
         self.pool = TaskPool(self.concurrency, logger=self.logger)
-        self.amqp_listener = AMQPListener(self.bucket_queue, self.hold_queue,
-                                          logger=self.logger,
-                                          initial_prefetch_count=concurrency)
-        self.mediator = Mediator(self.bucket_queue, self.safe_process_task)
+        self.broker_listener = CarrotListener(self.ready_queue,
+                                        self.eta_scheduler,
+                                        logger=self.logger,
+                                        initial_prefetch_count=concurrency)
+        self.mediator = Mediator(self.ready_queue, self.safe_process_task)
 
         self.clockservice = None
         if self.embed_clockservice:
@@ -268,9 +270,9 @@ class WorkController(object):
         # and they must be stopped in reverse order.
         self.components = filter(None, (self.pool,
                                         self.mediator,
-                                        self.periodic_work_controller,
+                                        self.schedule_controller,
                                         self.clockservice,
-                                        self.amqp_listener))
+                                        self.broker_listener))
 
     def start(self):
         """Starts the workers main loop."""
