@@ -7,6 +7,7 @@ from carrot.connection import DjangoBrokerConnection, AMQPConnectionException
 from celery.worker.controllers import Mediator, ScheduleController
 from celery.beat import ClockServiceThread
 from celery.worker.job import TaskWrapper
+from celery.worker.scheduler import Scheduler
 from celery.exceptions import NotRegistered
 from celery.messaging import get_consumer_set
 from celery.conf import DAEMON_CONCURRENCY, DAEMON_LOG_FILE
@@ -15,7 +16,6 @@ from celery.log import setup_logger
 from celery.pool import TaskPool
 from celery.utils import retry_over_time
 from celery.datastructures import SharedCounter
-from celery.scheduler import Scheduler
 from Queue import Queue
 import traceback
 import logging

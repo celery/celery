@@ -9,7 +9,7 @@ from carrot.backends.base import BaseMessage
 from celery import registry
 from celery.serialization import pickle
 from celery.utils import gen_unique_id
-from celery.scheduler import Scheduler
+from celery.worker.scheduler import Scheduler
 from datetime import datetime, timedelta
 
 

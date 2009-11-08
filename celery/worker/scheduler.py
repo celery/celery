@@ -48,30 +48,3 @@ class Scheduler(object):
     def queue(self):
         events = list(self._queue)
         return map(heapq.heappop, [events]*len(events))
-
-
-if __name__ == "__main__":
-    from Queue import Queue, Empty
-    from datetime import datetime, timedelta
-
-    bucket = Queue()
-    schedule = Scheduler(bucket)
-
-    # Enter some eta tasks in the scheduler
-    for i in reversed(range(10)):
-        task = "Task %d" % i
-        schedule.enter(task, eta=datetime.now() + timedelta(seconds=i + 5))
-
-    # Run the scheduler
-    for delay in schedule:
-        print("delay->%d" % delay)
-        if schedule.empty():
-            break
-        time.sleep(delay)
-
-    # Dump out the contents of the bucket queue.
-    while True:
-        try:
-            print(bucket.get_nowait())
-        except Empty:
-            break
