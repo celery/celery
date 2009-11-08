@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
 import unittest
-from celery.execute import ExecuteWrapper
-from celery.worker.job import TaskWrapper
+from celery.worker.job import WorkerTaskTrace, TaskWrapper
 from celery.datastructures import ExceptionInfo
 from celery.models import TaskMeta
 from celery.registry import tasks, NotRegistered
@@ -21,7 +20,7 @@ some_kwargs_scratchpad = {}
 
 
 def jail(task_id, task_name, args, kwargs):
-    return ExecuteWrapper(task_name, task_id, args, kwargs)()
+    return WorkerTaskTrace(task_name, task_id, args, kwargs)()
 
 
 def on_ack():

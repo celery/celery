@@ -5,11 +5,17 @@ Jobs Executable by the Worker Server.
 """
 from celery.registry import tasks
 from celery.exceptions import NotRegistered
-from celery.execute import ExecuteWrapper
+from celery.execute import TaskTrace
 from celery.utils import noop, fun_takes_kwargs
 from celery.log import get_default_logger
+from celery.monitoring import TaskTimerStats
 from django.core.mail import mail_admins
+from celery.loaders import current_loader
+from celery.backends import default_backend
+from celery.datastructures import ExceptionInfo
+import sys
 import socket
+import warnings
 
 # pep8.py borks on a inline signature separator and
 # says "trailing whitespace" ;)
@@ -33,6 +39,94 @@ celeryd at %%(hostname)s.
 class AlreadyExecutedError(Exception):
     """Tasks can only be executed once, as they might change
     world-wide state."""
+
+
+class WorkerTaskTrace(TaskTrace):
+    """Wraps the task in a jail, catches all exceptions, and
+    saves the status and result of the task execution to the task
+    meta backend.
+
+    If the call was successful, it saves the result to the task result
+    backend, and sets the task status to ``"DONE"``.
+
+    If the call raises :exc:`celery.exceptions.RetryTaskError`, it extracts
+    the original exception, uses that as the result and sets the task status
+    to ``"RETRY"``.
+
+    If the call results in an exception, it saves the exception as the task
+    result, and sets the task status to ``"FAILURE"``.
+
+    :param task_name: The name of the task to execute.
+    :param task_id: The unique id of the task.
+    :param args: List of positional args to pass on to the function.
+    :param kwargs: Keyword arguments mapping to pass on to the function.
+
+    :returns: the function return value on success, or
+        the exception instance on failure.
+
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.backend = kwargs.pop("backend", default_backend)
+        self.loader = kwargs.pop("loader", current_loader)
+        super(WorkerTaskTrace, self).__init__(*args, **kwargs)
+
+    def __call__(self, *args, **kwargs):
+        return self.execute_safe()
+
+    def execute_safe(self, *args, **kwargs):
+        try:
+            return self.execute(*args, **kwargs)
+        except Exception, exc:
+            type_, value_, tb = sys.exc_info()
+            exc = self.backend.prepare_exception(exc)
+            warnings.warn("Exception happend outside of task body: %s: %s" % (
+                str(exc.__class__), str(exc)))
+            return ExceptionInfo((type_, exc, tb))
+
+    def execute(self):
+        # Set self.task for handlers. Can't do it in __init__, because it
+        # has to happen in the pool workers process.
+        task = self.task = tasks[self.task_name]
+
+        # Run task loader init handler.
+        self.loader.on_task_init(self.task_id, task)
+
+        # Backend process cleanup
+        self.backend.process_cleanup()
+
+        timer_stat = TaskTimerStats.start(self.task_id, self.task_name,
+                                          self.args, self.kwargs)
+        try:
+            return self._trace()
+        finally:
+            timer_stat.stop()
+
+    def handle_success(self, retval):
+        """Handle successful execution.
+
+        Saves the result to the current result store (skipped if the task's
+            ``ignore_result`` attribute is set to ``True``).
+
+        """
+        if not self.task.ignore_result:
+            self.backend.mark_as_done(self.task_id, retval)
+        return super(WorkerTaskTrace, self).handle_success(retval)
+
+    def handle_retry(self, exc, type_, tb, strtb):
+        """Handle retry exception."""
+        message, orig_exc = exc.args
+        self.backend.mark_as_retry(self.task_id, orig_exc, strtb)
+        return super(WorkerTaskTrace, self).handle_retry(exc, type_,
+                                                         tb, strtb)
+
+    def handle_failure(self, exc, type_, tb, strtb):
+        """Handle exception."""
+        # mark_as_failure returns an exception that is guaranteed to
+        # be pickleable.
+        stored_exc = self.backend.mark_as_failure(self.task_id, exc, strtb)
+        return super(WorkerTaskTrace, self).handle_failure(
+                stored_exc, type_, tb, strtb)
 
 
 class TaskWrapper(object):
@@ -153,11 +247,11 @@ class TaskWrapper(object):
         kwargs.update(extend_with)
         return kwargs
 
-    def _executeable(self, loglevel=None, logfile=None):
-        """Get the :class:`celery.execute.ExecuteWrapper` for this task."""
+    def _tracer(self, loglevel=None, logfile=None):
+        """Get the :class:`WorkerTaskTrace` tracer for this task."""
         task_func_kwargs = self.extend_with_default_kwargs(loglevel, logfile)
-        return ExecuteWrapper(self.task_name, self.task_id,
-                              self.args, task_func_kwargs)
+        return WorkerTaskTrace(self.task_name, self.task_id,
+                               self.args, task_func_kwargs)
 
     def _set_executed_bit(self):
         """Set task as executed to make sure it's not executed again."""
@@ -168,7 +262,7 @@ class TaskWrapper(object):
         self.executed = True
 
     def execute(self, loglevel=None, logfile=None):
-        """Execute the task in a :class:`celery.execute.ExecuteWrapper`.
+        """Execute the task in a :class:`WorkerTaskTrace`.
 
         :keyword loglevel: The loglevel used by the task.
 
@@ -181,7 +275,7 @@ class TaskWrapper(object):
         # acknowledge task as being processed.
         self.on_ack()
 
-        return self._executeable(loglevel, logfile)()
+        return self._tracer(loglevel, logfile).execute()
 
     def execute_using_pool(self, pool, loglevel=None, logfile=None):
         """Like :meth:`execute`, but using the :mod:`multiprocessing` pool.
@@ -198,7 +292,7 @@ class TaskWrapper(object):
         # Make sure task has not already been executed.
         self._set_executed_bit()
 
-        wrapper = self._executeable(loglevel, logfile)
+        wrapper = self._tracer(loglevel, logfile)
         return pool.apply_async(wrapper,
                 callbacks=[self.on_success], errbacks=[self.on_failure],
                 on_ack=self.on_ack)
