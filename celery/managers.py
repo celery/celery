@@ -14,9 +14,9 @@ class TaskManager(models.Manager):
         task, created = self.get_or_create(task_id=task_id)
         return task
 
-    def is_done(self, task_id):
+    def is_successful(self, task_id):
         """Returns ``True`` if the task was executed successfully."""
-        return self.get_task(task_id).status == "DONE"
+        return self.get_task(task_id).status == "SUCCESS"
 
     def get_all_expired(self):
         """Get all expired task results."""

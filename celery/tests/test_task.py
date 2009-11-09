@@ -226,11 +226,11 @@ class TestCeleryTasks(unittest.TestCase):
         self.assertEquals(task.discard_all(), 1)
         self.assertTrue(consumer.fetch() is None)
 
-        self.assertFalse(task.is_done(presult.task_id))
-        self.assertFalse(presult.is_done())
+        self.assertFalse(task.is_successful(presult.task_id))
+        self.assertFalse(presult.successful())
         default_backend.mark_as_done(presult.task_id, result=None)
-        self.assertTrue(task.is_done(presult.task_id))
-        self.assertTrue(presult.is_done())
+        self.assertTrue(task.is_successful(presult.task_id))
+        self.assertTrue(presult.successful())
 
 
         publisher = t1.get_publisher()
@@ -303,12 +303,12 @@ class TestTaskApply(unittest.TestCase):
         e = IncrementCounterTask.apply(kwargs={"increment_by": 4})
         self.assertEquals(e.get(), 6)
 
-        self.assertTrue(e.is_done())
-        self.assertTrue(e.is_ready())
+        self.assertTrue(e.successful())
+        self.assertTrue(e.ready())
         self.assertTrue(repr(e).startswith("<EagerResult:"))
 
         f = RaisingTask.apply()
-        self.assertTrue(f.is_ready())
-        self.assertFalse(f.is_done())
+        self.assertTrue(f.ready())
+        self.assertFalse(f.successful())
         self.assertTrue(f.traceback)
         self.assertRaises(KeyError, f.get)

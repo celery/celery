@@ -21,11 +21,11 @@ class TestModels(unittest.TestCase):
 
         self.assertEquals(TaskMeta.objects.get_task(m1.task_id).task_id,
                 m1.task_id)
-        self.assertFalse(TaskMeta.objects.is_done(m1.task_id))
-        TaskMeta.objects.store_result(m1.task_id, True, status="DONE")
-        TaskMeta.objects.store_result(m2.task_id, True, status="DONE")
-        self.assertTrue(TaskMeta.objects.is_done(m1.task_id))
-        self.assertTrue(TaskMeta.objects.is_done(m2.task_id))
+        self.assertFalse(TaskMeta.objects.is_successful(m1.task_id))
+        TaskMeta.objects.store_result(m1.task_id, True, status="SUCCESS")
+        TaskMeta.objects.store_result(m2.task_id, True, status="SUCCESS")
+        self.assertTrue(TaskMeta.objects.is_successful(m1.task_id))
+        self.assertTrue(TaskMeta.objects.is_successful(m2.task_id))
 
         # Have to avoid save() because it applies the auto_now=True.
         TaskMeta.objects.filter(task_id=m1.task_id).update(

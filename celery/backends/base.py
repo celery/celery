@@ -20,7 +20,7 @@ class BaseBackend(object):
 
     def mark_as_done(self, task_id, result):
         """Mark task as successfully executed."""
-        return self.store_result(task_id, result, status="DONE")
+        return self.store_result(task_id, result, status="SUCCESS")
 
     def mark_as_failure(self, task_id, exc, traceback=None):
         """Mark task as executed with failure. Stores the execption."""
@@ -62,9 +62,9 @@ class BaseBackend(object):
         raise NotImplementedError(
                 "get_traceback is not supported by this backend.")
 
-    def is_done(self, task_id):
+    def is_successful(self, task_id):
         """Returns ``True`` if the task was successfully executed."""
-        return self.get_status(task_id) == "DONE"
+        return self.get_status(task_id) == "SUCCESS"
 
     def cleanup(self):
         """Backend cleanup. Is run by
@@ -88,7 +88,7 @@ class BaseBackend(object):
 
         while True:
             status = self.get_status(task_id)
-            if status == "DONE":
+            if status == "SUCCESS":
                 return self.get_result(task_id)
             elif status == "FAILURE":
                 raise self.get_result(task_id)
@@ -127,7 +127,7 @@ class KeyValueStoreBackend(BaseBackend):
 
     def store_result(self, task_id, result, status, traceback=None):
         """Store task result and status."""
-        if status == "DONE":
+        if status == "SUCCESS":
             result = self.prepare_result(result)
         elif status == "FAILURE":
             result = self.prepare_exception(result)
@@ -152,9 +152,9 @@ class KeyValueStoreBackend(BaseBackend):
         meta = self._get_task_meta_for(task_id)
         return meta["traceback"]
 
-    def is_done(self, task_id):
+    def is_successful(self, task_id):
         """Returns ``True`` if the task executed successfully."""
-        return self.get_status(task_id) == "DONE"
+        return self.get_status(task_id) == "SUCCESS"
 
     def _get_task_meta_for(self, task_id):
         """Get task metadata for a task by id."""
@@ -164,6 +164,6 @@ class KeyValueStoreBackend(BaseBackend):
         if not meta:
             return {"status": "PENDING", "result": None}
         meta = pickle.loads(str(meta))
-        if meta.get("status") == "DONE":
+        if meta.get("status") == "SUCCESS":
             self._cache[task_id] = meta
         return meta

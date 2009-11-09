@@ -35,13 +35,13 @@ def discard_all(connect_timeout=AMQP_CONNECTION_TIMEOUT):
     return discarded_count
 
 
-def is_done(task_id):
+def is_successful(task_id):
     """Returns ``True`` if task with ``task_id`` has been executed.
 
     :rtype: bool
 
     """
-    return default_backend.is_done(task_id)
+    return default_backend.is_successful(task_id)
 
 
 def dmap(func, args, timeout=None):
@@ -72,7 +72,7 @@ def dmap_async(func, args, timeout=None):
         >>> presult
         <AsyncResult: 373550e8-b9a0-4666-bc61-ace01fa4f91d>
         >>> presult.status
-        'DONE'
+        'SUCCESS'
         >>> presult.result
         [4, 8, 16]
 

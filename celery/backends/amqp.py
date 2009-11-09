@@ -56,7 +56,7 @@ class Backend(BaseBackend):
 
     def store_result(self, task_id, result, status, traceback=None):
         """Send task return value and status."""
-        if status == "DONE":
+        if status == "SUCCESS":
             result = self.prepare_result(result)
         elif status == "FAILURE":
             result = self.prepare_exception(result)
@@ -74,9 +74,9 @@ class Backend(BaseBackend):
 
         return result
 
-    def is_done(self, task_id):
+    def is_successful(self, task_id):
         """Returns ``True`` if task with ``task_id`` has been executed."""
-        return self.get_status(task_id) == "DONE"
+        return self.get_status(task_id) == "SUCCESS"
 
     def get_status(self, task_id):
         """Get the status of a task."""

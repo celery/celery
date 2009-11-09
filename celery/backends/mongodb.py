@@ -97,7 +97,7 @@ class Backend(BaseBackend):
         """Store return value and status of an executed task."""
         from pymongo.binary import Binary
 
-        if status == 'DONE':
+        if status == 'SUCCESS':
             result = self.prepare_result(result)
         elif status == 'FAILURE':
             result = self.prepare_exception(result)
@@ -113,9 +113,9 @@ class Backend(BaseBackend):
 
         taskmeta_collection.save(meta, safe=True)
 
-    def is_done(self, task_id):
+    def is_successful(self, task_id):
         """Returns ``True`` if the task executed successfully."""
-        return self.get_status(task_id) == "DONE"
+        return self.get_status(task_id) == "SUCCESS"
 
     def get_status(self, task_id):
         """Get status of a task."""
@@ -152,7 +152,7 @@ class Backend(BaseBackend):
             "date_done": obj["date_done"],
             "traceback": pickle.loads(str(obj["traceback"])),
         }
-        if meta["status"] == "DONE":
+        if meta["status"] == "SUCCESS":
             self._cache[task_id] = meta
 
         return meta

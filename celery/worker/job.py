@@ -47,7 +47,7 @@ class WorkerTaskTrace(TaskTrace):
     meta backend.
 
     If the call was successful, it saves the result to the task result
-    backend, and sets the task status to ``"DONE"``.
+    backend, and sets the task status to ``"SUCCESS"``.
 
     If the call raises :exc:`celery.exceptions.RetryTaskError`, it extracts
     the original exception, uses that as the result and sets the task status

@@ -194,7 +194,7 @@ class TraceInfo(object):
         """Trace the execution of a function, calling the appropiate callback
         if the function raises retry, an failure or returned successfully."""
         try:
-            return cls("DONE", retval=fun(*args, **kwargs))
+            return cls("SUCCESS", retval=fun(*args, **kwargs))
         except (SystemExit, KeyboardInterrupt):
             raise
         except RetryTaskError, exc:
@@ -215,7 +215,7 @@ class TaskTrace(object):
         self.strtb = None
         self._trace_handlers = {"FAILURE": self.handle_failure,
                                 "RETRY": self.handle_retry,
-                                "DONE": self.handle_success}
+                                "SUCCESS": self.handle_success}
 
     def __call__(self):
         return self.execute()

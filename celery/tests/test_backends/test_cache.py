@@ -20,13 +20,13 @@ class TestCacheBackend(unittest.TestCase):
 
         tid = gen_unique_id()
 
-        self.assertFalse(cb.is_done(tid))
+        self.assertFalse(cb.is_successful(tid))
         self.assertEquals(cb.get_status(tid), "PENDING")
         self.assertEquals(cb.get_result(tid), None)
 
         cb.mark_as_done(tid, 42)
-        self.assertTrue(cb.is_done(tid))
-        self.assertEquals(cb.get_status(tid), "DONE")
+        self.assertTrue(cb.is_successful(tid))
+        self.assertEquals(cb.get_status(tid), "SUCCESS")
         self.assertEquals(cb.get_result(tid), 42)
         self.assertTrue(cb._cache.get(tid))
         self.assertTrue(cb.get_result(tid), 42)
@@ -51,7 +51,7 @@ class TestCacheBackend(unittest.TestCase):
         except KeyError, exception:
             pass
         cb.mark_as_failure(tid3, exception)
-        self.assertFalse(cb.is_done(tid3))
+        self.assertFalse(cb.is_successful(tid3))
         self.assertEquals(cb.get_status(tid3), "FAILURE")
         self.assertTrue(isinstance(cb.get_result(tid3), KeyError))
 

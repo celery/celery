@@ -64,13 +64,13 @@ class TestTyrantBackend(unittest.TestCase):
 
         tid = gen_unique_id()
 
-        self.assertFalse(tb.is_done(tid))
+        self.assertFalse(tb.is_successful(tid))
         self.assertEquals(tb.get_status(tid), "PENDING")
         self.assertEquals(tb.get_result(tid), None)
 
         tb.mark_as_done(tid, 42)
-        self.assertTrue(tb.is_done(tid))
-        self.assertEquals(tb.get_status(tid), "DONE")
+        self.assertTrue(tb.is_successful(tid))
+        self.assertEquals(tb.get_status(tid), "SUCCESS")
         self.assertEquals(tb.get_result(tid), 42)
         self.assertTrue(tb._cache.get(tid))
         self.assertTrue(tb.get_result(tid), 42)
@@ -99,7 +99,7 @@ class TestTyrantBackend(unittest.TestCase):
         except KeyError, exception:
             pass
         tb.mark_as_failure(tid3, exception)
-        self.assertFalse(tb.is_done(tid3))
+        self.assertFalse(tb.is_successful(tid3))
         self.assertEquals(tb.get_status(tid3), "FAILURE")
         self.assertTrue(isinstance(tb.get_result(tid3), KeyError))
 

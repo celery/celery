@@ -183,7 +183,7 @@ class TestTaskWrapper(unittest.TestCase):
         self.assertEquals(tw.execute(), 256)
         meta = TaskMeta.objects.get(task_id=tid)
         self.assertEquals(meta.result, 256)
-        self.assertEquals(meta.status, "DONE")
+        self.assertEquals(meta.status, "SUCCESS")
 
     def test_execute_success_no_kwargs(self):
         tid = gen_unique_id()
@@ -191,7 +191,7 @@ class TestTaskWrapper(unittest.TestCase):
         self.assertEquals(tw.execute(), 256)
         meta = TaskMeta.objects.get(task_id=tid)
         self.assertEquals(meta.result, 256)
-        self.assertEquals(meta.status, "DONE")
+        self.assertEquals(meta.status, "SUCCESS")
 
     def test_execute_success_some_kwargs(self):
         tid = gen_unique_id()
@@ -200,7 +200,7 @@ class TestTaskWrapper(unittest.TestCase):
         meta = TaskMeta.objects.get(task_id=tid)
         self.assertEquals(some_kwargs_scratchpad.get("logfile"), "foobaz.log")
         self.assertEquals(meta.result, 256)
-        self.assertEquals(meta.status, "DONE")
+        self.assertEquals(meta.status, "SUCCESS")
 
     def test_execute_ack(self):
         tid = gen_unique_id()
@@ -210,7 +210,7 @@ class TestTaskWrapper(unittest.TestCase):
         meta = TaskMeta.objects.get(task_id=tid)
         self.assertTrue(scratch["ACK"])
         self.assertEquals(meta.result, 256)
-        self.assertEquals(meta.status, "DONE")
+        self.assertEquals(meta.status, "SUCCESS")
 
     def test_execute_fail(self):
         tid = gen_unique_id()

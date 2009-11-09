@@ -165,7 +165,7 @@ class Task(object):
 
         >>> result = MyTask.delay(some_arg="foo")
         >>> result.status # after some time
-        'DONE'
+        'SUCCESS'
         >>> result.result
         42
 

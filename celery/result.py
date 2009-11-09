@@ -35,14 +35,6 @@ class BaseAsyncResult(object):
         self.task_id = task_id
         self.backend = backend
 
-    def is_done(self):
-        """Returns ``True`` if the task executed successfully.
-
-        :rtype: bool
-
-        """
-        return self.backend.is_done(self.task_id)
-
     def get(self):
         """Alias to :meth:`wait`."""
         return self.wait()
@@ -74,8 +66,12 @@ class BaseAsyncResult(object):
         return status not in ["PENDING", "RETRY"]
 
     def successful(self):
-        """Alias to :meth:`is_done`."""
-        return self.is_done()
+        """Returns ``True`` if the task executed successfully.
+
+        :rtype: bool
+
+        """
+        return self.backend.is_successful(self.task_id)
 
     def __str__(self):
         """``str(self)`` -> ``self.task_id``"""
@@ -91,7 +87,7 @@ class BaseAsyncResult(object):
         If the task raised an exception, this will be the exception instance.
 
         """
-        if self.status == "DONE" or self.status == "FAILURE":
+        if self.status == "SUCCESS" or self.status == "FAILURE":
             return self.backend.get_result(self.task_id)
         return None
 
@@ -120,7 +116,7 @@ class BaseAsyncResult(object):
                 than its limit. The :attr:`result` attribute contains the
                 exception raised.
 
-            *DONE*
+            *SUCCESS*
 
                 The task executed successfully. The :attr:`result` attribute
                 contains the resulting value.
@@ -247,7 +243,7 @@ class TaskSetResult(object):
                             for subtask in self.subtasks)
         while results:
             for task_id, pending_result in results.items():
-                if pending_result.status == "DONE":
+                if pending_result.status == "SUCCESS":
                     del(results[task_id])
                     yield pending_result.result
                 elif pending_result.status == "FAILURE":
@@ -280,7 +276,7 @@ class TaskSetResult(object):
 
         while True:
             for position, pending_result in enumerate(self.subtasks):
-                if pending_result.status == "DONE":
+                if pending_result.status == "SUCCESS":
                     results[position] = pending_result.result
                 elif pending_result.status == "FAILURE":
                     raise pending_result.result
@@ -309,17 +305,17 @@ class EagerResult(BaseAsyncResult):
         self._status = status
         self._traceback = traceback
 
-    def is_done(self):
+    def successful(self):
         """Returns ``True`` if the task executed without failure."""
-        return self.status == "DONE"
+        return self.status == "SUCCESS"
 
-    def is_ready(self):
+    def ready(self):
         """Returns ``True`` if the task has been executed."""
         return True
 
     def wait(self, timeout=None):
         """Wait until the task has been executed and return its result."""
-        if self.status == "DONE":
+        if self.status == "SUCCESS":
             return self.result
         elif self.status == "FAILURE":
             raise self.result.exception
