@@ -322,7 +322,7 @@ class EagerResult(BaseAsyncResult):
         if self.status == "DONE":
             return self.result
         elif self.status == "FAILURE":
-            raise self.result
+            raise self.result.exception
 
     @property
     def result(self):

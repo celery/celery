@@ -71,9 +71,6 @@ class WorkerTaskTrace(TaskTrace):
         self.loader = kwargs.pop("loader", current_loader)
         super(WorkerTaskTrace, self).__init__(*args, **kwargs)
 
-    def __call__(self, *args, **kwargs):
-        return self.execute_safe()
-
     def execute_safe(self, *args, **kwargs):
         try:
             return self.execute(*args, **kwargs)
@@ -85,12 +82,8 @@ class WorkerTaskTrace(TaskTrace):
             return ExceptionInfo((type_, exc, tb))
 
     def execute(self):
-        # Set self.task for handlers. Can't do it in __init__, because it
-        # has to happen in the pool workers process.
-        task = self.task = tasks[self.task_name]
-
         # Run task loader init handler.
-        self.loader.on_task_init(self.task_id, task)
+        self.loader.on_task_init(self.task_id, self.task)
 
         # Backend process cleanup
         self.backend.process_cleanup()
@@ -102,7 +95,7 @@ class WorkerTaskTrace(TaskTrace):
         finally:
             timer_stat.stop()
 
-    def handle_success(self, retval):
+    def handle_success(self, retval, *args):
         """Handle successful execution.
 
         Saves the result to the current result store (skipped if the task's
@@ -111,7 +104,7 @@ class WorkerTaskTrace(TaskTrace):
         """
         if not self.task.ignore_result:
             self.backend.mark_as_done(self.task_id, retval)
-        return super(WorkerTaskTrace, self).handle_success(retval)
+        return super(WorkerTaskTrace, self).handle_success(retval, *args)
 
     def handle_retry(self, exc, type_, tb, strtb):
         """Handle retry exception."""
@@ -127,6 +120,10 @@ class WorkerTaskTrace(TaskTrace):
         stored_exc = self.backend.mark_as_failure(self.task_id, exc, strtb)
         return super(WorkerTaskTrace, self).handle_failure(
                 stored_exc, type_, tb, strtb)
+
+
+def execute_and_trace(*args, **kwargs):
+    return WorkerTaskTrace(*args, **kwargs).execute_safe()
 
 
 class TaskWrapper(object):
@@ -247,11 +244,10 @@ class TaskWrapper(object):
         kwargs.update(extend_with)
         return kwargs
 
-    def _tracer(self, loglevel=None, logfile=None):
+    def _get_tracer_args(self, loglevel=None, logfile=None):
         """Get the :class:`WorkerTaskTrace` tracer for this task."""
         task_func_kwargs = self.extend_with_default_kwargs(loglevel, logfile)
-        return WorkerTaskTrace(self.task_name, self.task_id,
-                               self.args, task_func_kwargs)
+        return self.task_name, self.task_id, self.args, task_func_kwargs
 
     def _set_executed_bit(self):
         """Set task as executed to make sure it's not executed again."""
@@ -275,7 +271,8 @@ class TaskWrapper(object):
         # acknowledge task as being processed.
         self.on_ack()
 
-        return self._tracer(loglevel, logfile).execute()
+        tracer = WorkerTaskTrace(*self._get_tracer_args(loglevel, logfile))
+        return tracer.execute()
 
     def execute_using_pool(self, pool, loglevel=None, logfile=None):
         """Like :meth:`execute`, but using the :mod:`multiprocessing` pool.
@@ -292,8 +289,8 @@ class TaskWrapper(object):
         # Make sure task has not already been executed.
         self._set_executed_bit()
 
-        wrapper = self._tracer(loglevel, logfile)
-        return pool.apply_async(wrapper,
+        args = self._get_tracer_args(loglevel, logfile)
+        return pool.apply_async(execute_and_trace, args=args,
                 callbacks=[self.on_success], errbacks=[self.on_failure],
                 on_ack=self.on_ack)
 
