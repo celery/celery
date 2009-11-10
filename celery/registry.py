@@ -1,6 +1,5 @@
 """celery.registry"""
 from celery import discovery
-from celery.utils import get_full_cls_name
 from celery.exceptions import NotRegistered, AlreadyRegistered
 from UserDict import UserDict
 
