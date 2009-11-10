@@ -2,7 +2,7 @@
  celery - Distributed Task Queue
 =================================
 
-:Version: 0.9.0
+:Version: 0.8.0
 
 Introduction
 ============
@@ -21,8 +21,17 @@ languages see `Executing tasks on a remote web server`_.
 
 .. _`Executing tasks on a remote web server`: http://bit.ly/CgXSc
 
-It is used for executing functions *asynchronously*, routed to one or more
+It is used for executing tasks *asynchronously*, routed to one or more
 worker servers, running concurrently using multiprocessing.
+
+It is designed to solve certain problems related to running websites
+demanding high-availability and performance.
+
+It is perfect for filling caches, posting updates to twitter, mass
+downloading data like syndication feeds or web scraping. Use-cases are
+plentiful. Implementing these features asynchronously using ``celery`` is
+easy and fun, and the performance improvements can make it more than
+worthwhile.
 
 Overview
 ========
@@ -50,7 +59,7 @@ Features
       be *guaranteed that the task is only executed once.*
 
     * Tasks are executed *concurrently* using the Python 2.6
-      ``multiprocessing`` module (also available as a back-port
+      ```multiprocessing`` module (also available as a back-port
       to older python versions)
 
     * Supports *periodic tasks*, which makes it a (better) replacement
@@ -78,7 +87,8 @@ Features
       You can find out how many, or if all of the sub-tasks has been executed.
       Excellent for progress-bar like functionality.
 
-    * Has a ``map`` like function that uses tasks, called ``dmap``.
+    * Has a ``map`` like function that uses tasks,
+      called ``celery.task.dmap``.
 
     * However, you rarely want to wait for these results in a web-environment.
       You'd rather want to use Ajax to poll the task status, which is
@@ -258,21 +268,15 @@ advanced features of celery later.
 This is a task that basically does nothing but take some arguments,
 and return a value:
 
-    >>> from celery.decorators import task
-    >>> @task()
-    ... def add(x, y):
-    ...     return x * y
+    from celery.task import Task
+    from celery.registry import tasks
+    class MyTask(Task):
 
-
-You can also use the workers logger to add some diagnostic output to
-the worker log:
-
-    >>> from celery.decorators import task
-    >>> @task()
-    ... def add(x, y, **kwargs):
-    ...     logger = add.get_logger(**kwargs)
-    ...     logger.info("Adding %s + %s" % (x, y))
-    ...     return x + y
+        def run(self, some_arg, **kwargs):
+            logger = self.get_logger(**kwargs)
+            logger.info("Did something: %s" % some_arg)
+            return 42
+    tasks.register(MyTask)
 
 As you can see the worker is sending some keyword arguments to this task,
 this is the default keyword arguments. A task can choose not to take these,
@@ -302,20 +306,21 @@ The current default keyword arguments are:
         How many times the current task has been retried.
         (an integer starting a ``0``).
 
-Now if we want to execute this task, we can use the ``delay`` method of the
-task class (this is a handy shortcut to the ``apply_async`` method which gives
+Now if we want to execute this task, we can use the
+delay method (``celery.task.Base.Task.delay``) of the task class
+(this is a handy shortcut to the ``apply_async`` method which gives
 you greater control of the task execution).
 
-    >>> from myapp.tasks import add
-    >>> add.delay(4, 4)
+    >>> from myapp.tasks import MyTask
+    >>> MyTask.delay(some_arg="foo")
 
 At this point, the task has been sent to the message broker. The message
 broker will hold on to the task until a celery worker server has successfully
 picked it up.
 
-*Note* If everything is just hanging when you execute ``delay``, please make
-sure the RabbitMQ user/password has access to the virtual host configured
-earlier.
+*Note* If everything is just hanging when you execute ``delay``, please check
+that RabbitMQ is running, and that the user/password has access to the virtual
+host you configured earlier.
 
 Right now we have to check the celery worker logfiles to know what happened with
 the task. This is because we didn't keep the ``AsyncResult`` object returned
@@ -326,15 +331,15 @@ finish and get its return value (or exception if the task failed).
 
 So, let's execute the task again, but this time we'll keep track of the task:
 
-    >>> result = add.delay(4, 4)
+    >>> result = MyTask.delay("hello")
     >>> result.ready() # returns True if the task has finished processing.
     False
     >>> result.result # task is not ready, so no return value yet.
     None
     >>> result.get()   # Waits until the task is done and return the retval.
-    8
+    42
     >>> result.result
-    8
+    42
     >>> result.successful() # returns True if the task didn't end in failure.
     True
 
@@ -356,16 +361,19 @@ Periodic Tasks
 
 Periodic tasks are tasks that are run every ``n`` seconds. 
 Here's an example of a periodic task:
+::
 
-    >>> from celery.task import PeriodicTask
-    >>> from datetime import timedelta
-    >>> class MyPeriodicTask(PeriodicTask):
-    ...     run_every = timedelta(seconds=30)
-    ...
-    ...     def run(self, **kwargs):
-    ...         logger = self.get_logger(**kwargs)
-    ...         logger.info("Running periodic task!")
-    ...
+    from celery.task import PeriodicTask
+    from celery.registry import tasks
+    from datetime import timedelta
+
+    class MyPeriodicTask(PeriodicTask):
+        run_every = timedelta(seconds=30)
+
+        def run(self, **kwargs):
+            logger = self.get_logger(**kwargs)
+            logger.info("Running periodic task!")
+    >>> tasks.register(MyPeriodicTask)
 
 A look inside the worker
 ========================
