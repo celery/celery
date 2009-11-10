@@ -1,7 +1,6 @@
 """celery.registry"""
 from celery import discovery
-from celery.utils import get_full_cls_name
-from celery.exceptions import NotRegistered
+from celery.exceptions import NotRegistered, AlreadyRegistered
 from UserDict import UserDict
 import inspect
 
@@ -20,7 +19,7 @@ class TaskRegistry(UserDict):
 
     def register(self, task):
         """Register a task in the task registry.
-         
+
         The task will be automatically instantiated if it's a class
         not an instance.
         """

@@ -4,7 +4,6 @@ Process Pools.
 
 """
 import os
-import time
 import errno
 import multiprocessing
 
@@ -88,7 +87,7 @@ class DynamicPool(Pool):
 
         if processes is None:
             try:
-                processes = cpu_count()
+                processes = multiprocessing.cpu_count()
             except NotImplementedError:
                 processes = 1
 
