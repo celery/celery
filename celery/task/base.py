@@ -662,6 +662,7 @@ class PeriodicTask(Task):
     """
     abstract = True
     run_every = timedelta(days=1)
+    ignore_result = True
     type = "periodic"
 
     def __init__(self):
