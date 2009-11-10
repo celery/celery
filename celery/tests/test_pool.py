@@ -12,7 +12,6 @@ def do_something(i):
 
 
 def long_something():
-    import time
     time.sleep(1)
 
 

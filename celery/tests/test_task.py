@@ -1,11 +1,8 @@
 import unittest
-import uuid
-import logging
 from StringIO import StringIO
 
 from celery import task
 from celery import registry
-from celery.log import setup_logger
 from celery import messaging
 from celery.result import EagerResult
 from celery.backends import default_backend

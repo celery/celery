@@ -1,6 +1,5 @@
 """celery.backends.base"""
 import time
-import operator
 from celery.serialization import pickle
 from celery.serialization import get_pickled_exception
 from celery.serialization import get_pickleable_exception

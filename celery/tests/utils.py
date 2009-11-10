@@ -1,7 +1,6 @@
 from __future__ import with_statement
 from contextlib import contextmanager
 from StringIO import StringIO
-import os
 import sys
 import __builtin__
 

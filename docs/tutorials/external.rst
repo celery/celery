@@ -21,4 +21,9 @@ http://robertpogorzelski.com/blog/2009/09/10/rabbitmq-celery-and-django/
 
 .. _`Robert Pogorzelski`: http://robertpogorzelski.com/
 
+RabbitMQ with Python and Ruby
+=============================
+
+http://www.slideshare.net/hungryblank/rabbitmq-with-python-and-ruby-rupy-2009
+
 

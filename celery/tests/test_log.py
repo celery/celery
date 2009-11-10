@@ -3,7 +3,6 @@ import os
 import sys
 import logging
 import unittest
-import multiprocessing
 from StringIO import StringIO
 from celery.log import setup_logger, emergency_error
 from celery.tests.utils import override_stdouts

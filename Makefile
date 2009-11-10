@@ -13,6 +13,15 @@ ghdocs:
 autodoc:
 	contrib/doc4allmods celery
 
+flakes:
+	find . -name "*.py" | xargs pyflakes
+
+clean_readme:
+	rm -f README.rst
+
+readme: clean_readme
+	python contrib/sphinx-to-rst.py docs/introduction.rst > README.rst
+
 bump:
 	contrib/bump -c celery
 
