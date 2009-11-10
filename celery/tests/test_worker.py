@@ -1,7 +1,6 @@
 import unittest
 from Queue import Queue, Empty
 from carrot.connection import BrokerConnection
-from celery.messaging import TaskConsumer
 from celery.worker.job import TaskWrapper
 from celery.worker import CarrotListener, WorkController
 from multiprocessing import get_logger

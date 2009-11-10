@@ -1,10 +1,6 @@
-import sys
 import unittest
-import errno
-import socket
 from celery.backends.cache import Backend as CacheBackend
 from celery.utils import gen_unique_id
-from django.conf import settings
 
 
 class SomeClass(object):

@@ -30,7 +30,8 @@ class Backend(KeyValueStoreBackend):
     redis_timeout = None
     redis_connect_retry = None
 
-    def __init__(self, redis_host=None, redis_port=None, redis_db=None):
+    def __init__(self, redis_host=None, redis_port=None, redis_db=None,
+            redis_timeout=None, redis_connect_timeout=None):
         if not redis:
             raise ImproperlyConfigured(
                     "You need to install the redis library in order to use "

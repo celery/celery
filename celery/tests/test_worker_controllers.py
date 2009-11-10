@@ -1,6 +1,5 @@
 import unittest
 import time
-import multiprocessing
 from Queue import Queue, Empty
 from datetime import datetime, timedelta
 
@@ -19,7 +18,6 @@ class MockTask(object):
 class MyBackgroundThread(BackgroundThread):
 
     def on_iteration(self):
-        import time
         time.sleep(1)
 
 

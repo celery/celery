@@ -5,7 +5,6 @@ from cgi import parse_qsl
 from urllib import urlencode
 from urlparse import urlparse
 from anyjson import serialize, deserialize
-import httplib
 import urllib2
 
 
