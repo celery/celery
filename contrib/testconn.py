@@ -27,10 +27,10 @@ class MyMessager(Messaging):
 
 def _create_conn():
     from django.conf import settings
-    conn = amqp.Connection(host=settings.AMQP_SERVER,
-                           userid=settings.AMQP_USER,
-                           password=settings.AMQP_PASSWORD,
-                           virtual_host=settings.AMQP_VHOST,
+    conn = amqp.Connection(host=settings.BROKER_SERVER,
+                           userid=settings.BROKER_USER,
+                           password=settings.BROKER_PASSWORD,
+                           virtual_host=settings.BROKER_VHOST,
                            insist=False)
     return conn
 

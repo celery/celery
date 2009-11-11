@@ -63,6 +63,7 @@
 """
 import os
 import sys
+from carrot.connection import DjangoBrokerConnection
 from celery.loaders import current_loader
 from celery.loaders import settings
 from celery import __version__
@@ -84,7 +85,7 @@ settings.CELERY_STATISTICS = USE_STATISTICS
 
 STARTUP_INFO_FMT = """
 Configuration ->
-    * Broker -> amqp://%(vhost)s@%(host)s:%(port)s
+    * Broker -> %(carrot_backend)s://%(vhost)s@%(host)s:%(port)s
     * Exchange -> %(exchange)s (%(exchange_type)s)
     * Consumer -> Queue:%(consumer_queue)s Routing:%(consumer_rkey)s
     * Concurrency -> %(concurrency)s
@@ -179,10 +180,16 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
 
     # Dump configuration to screen so we have some basic information
     # when users sends e-mails.
+    broker_connection = DjangoBrokerConnection()
+    carrot_backend = broker_connection.backend_cls
+    if not isinstance(carrot_backend, str):
+        carrot_backend = carrot_backend.__name__
+
     print(STARTUP_INFO_FMT % {
-            "vhost": getattr(settings, "AMQP_VHOST", "(default)"),
-            "host": getattr(settings, "AMQP_SERVER", "(default)"),
-            "port": getattr(settings, "AMQP_PORT", "(default)"),
+            "carrot_backend": broker_connection.backend_cls or "amqp",
+            "vhost": broker_connection.virtual_host or "(default)",
+            "host": broker_connection.hostname or "(default)",
+            "port": broker_connection.port or "(port)",
             "exchange": conf.AMQP_EXCHANGE,
             "exchange_type": conf.AMQP_EXCHANGE_TYPE,
             "consumer_queue": conf.AMQP_CONSUMER_QUEUE,
@@ -193,6 +200,7 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
             "pidfile": pidfile,
             "statistics": settings.CELERY_STATISTICS and "ON" or "OFF",
     })
+    del(broker_connection)
 
     print("Celery has started.")
     if detach:
