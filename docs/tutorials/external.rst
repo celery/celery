@@ -11,7 +11,7 @@ http://www.slideshare.net/idangazit/an-introduction-to-celery
 .. _`Idan Gazit`: http://twitter.com/IdanGazit
 .. _`PyWeb-IL`: http://groups.google.com/group/pyweb-il
 
-.. raw::
+.. raw:: html
 
     <div style="width:425px;text-align:left" id="__ss_2089054">
     <a style="font:14px Helvetica,Arial,Sans-serif;display:block;
