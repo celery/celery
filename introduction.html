@@ -151,7 +151,7 @@ available.</p>
 be <em>guaranteed that the task is only executed once.</em></p>
 </li>
 <li><p class="first">Tasks are executed <em>concurrently</em> using the Python 2.6
-<tt class="docutils literal"><span class="pre">multiprocessing</span></tt> module (also available as a back-port
+<cite>:mod:`multiprocessing</cite> module (also available as a back-port
 to older python versions)</p>
 </li>
 <li><p class="first">Supports <em>periodic tasks</em>, which makes it a (better) replacement
@@ -179,7 +179,8 @@ task should be executed.</p>
 You can find out how many, or if all of the sub-tasks has been executed.
 Excellent for progress-bar like functionality.</p>
 </li>
-<li><p class="first">Has a <tt class="docutils literal"><span class="pre">map</span></tt> like function that uses tasks, called <tt class="docutils literal"><span class="pre">dmap</span></tt>.</p>
+<li><p class="first">Has a <tt class="docutils literal"><span class="pre">map</span></tt> like function that uses tasks,
+called <a title="celery.task.dmap" class="reference external" href="reference/celery.task.html#celery.task.dmap"><tt class="xref docutils literal"><span class="pre">celery.task.dmap()</span></tt></a>.</p>
 </li>
 <li><p class="first">However, you rarely want to wait for these results in a web-environment.
 You&#8217;d rather want to use Ajax to poll the task status, which is
@@ -324,14 +325,15 @@ a task class. This way you can cleanly upgrade the task to use the more
 advanced features of celery later.</p>
 <p>This is a task that basically does nothing but take some arguments,
 and return a value:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">Task</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.registry</span> <span class="kn">import</span> <span class="n">tasks</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">MyTask</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
-<span class="gp">... </span>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">some_arg</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="gp">... </span>        <span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-<span class="gp">... </span>        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Did something: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">some_arg</span><span class="p">)</span>
-<span class="gp">... </span>        <span class="k">return</span> <span class="mi">42</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">tasks</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">MyTask</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">Task</span>
+<span class="kn">from</span> <span class="nn">celery.registry</span> <span class="kn">import</span> <span class="n">tasks</span>
+<span class="k">class</span> <span class="nc">MyTask</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">some_arg</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Did something: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">some_arg</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">42</span>
+<span class="n">tasks</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">MyTask</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>As you can see the worker is sending some keyword arguments to this task,
@@ -368,8 +370,9 @@ instance.</p>
 </blockquote>
 </li>
 </ul>
-<p>Now if we want to execute this task, we can use the <tt class="docutils literal"><span class="pre">delay</span></tt> method of the
-task class (this is a handy shortcut to the <tt class="docutils literal"><span class="pre">apply_async</span></tt> method which gives
+<p>Now if we want to execute this task, we can use the
+delay method (<tt class="xref docutils literal"><span class="pre">celery.task.Base.Task.delay()</span></tt>) of the task class
+(this is a handy shortcut to the <tt class="docutils literal"><span class="pre">apply_async</span></tt> method which gives
 you greater control of the task execution).</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">myapp.tasks</span> <span class="kn">import</span> <span class="n">MyTask</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">MyTask</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">some_arg</span><span class="o">=</span><span class="s">&quot;foo&quot;</span><span class="p">)</span>
@@ -415,21 +418,18 @@ worker to find registered tasks for your Django project.</p>
 <h3>Periodic Tasks<a class="headerlink" href="#periodic-tasks" title="Permalink to this headline">¶</a></h3>
 <p>Periodic tasks are tasks that are run every <tt class="docutils literal"><span class="pre">n</span></tt> seconds.
 Here&#8217;s an example of a periodic task:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">PeriodicTask</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.registry</span> <span class="kn">import</span> <span class="n">tasks</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">timedelta</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">MyPeriodicTask</span><span class="p">(</span><span class="n">PeriodicTask</span><span class="p">):</span>
-<span class="gp">... </span>    <span class="n">run_every</span> <span class="o">=</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
-<span class="gp">...</span>
-<span class="gp">... </span>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="gp">... </span>        <span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-<span class="gp">... </span>        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Running periodic task!&quot;</span><span class="p">)</span>
-<span class="gp">...</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">tasks</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">MyPeriodicTask</span><span class="p">)</span>
-</pre></div>
+<div class="highlight-python"><pre>from celery.task import PeriodicTask
+from celery.registry import tasks
+from datetime import timedelta
+
+class MyPeriodicTask(PeriodicTask):
+    run_every = timedelta(seconds=30)
+
+    def run(self, **kwargs):
+        logger = self.get_logger(**kwargs)
+        logger.info("Running periodic task!")
+&gt;&gt;&gt; tasks.register(MyPeriodicTask)</pre>
 </div>
-<p><strong>Note:</strong> Periodic tasks does not support arguments, as this doesn&#8217;t
-really make sense.</p>
 </div>
 </div>
 <div class="section" id="a-look-inside-the-worker">
