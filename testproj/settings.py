@@ -21,11 +21,11 @@ TEST_APPS = (
     "celery",
 )
 
-AMQP_SERVER = "localhost"
-AMQP_PORT = 5672
-AMQP_VHOST = "/"
-AMQP_USER = "guest"
-AMQP_PASSWORD = "guest"
+BROKER_HOST = "localhost"
+BROKER_PORT = 5672
+BROKER_VHOST = "/"
+BROKER_USER = "guest"
+BROKER_PASSWORD = "guest"
 
 TT_HOST = "localhost"
 TT_PORT = 1978
