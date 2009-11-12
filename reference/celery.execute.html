@@ -47,6 +47,7 @@
 	<ul class="current">
 <li class="toctree-l1"><a class="reference external" href="../introduction.html">celery - Distributed Task Queue</a></li>
 <li class="toctree-l1"><a class="reference external" href="../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference external" href="../userguide/index.html">User Guide</a></li>
 <li class="toctree-l1"><a class="reference external" href="../cookbook/index.html">Cookbook</a></li>
 <li class="toctree-l1"><a class="reference external" href="../tutorials/index.html">Tutorials</a></li>
 <li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
@@ -248,6 +249,8 @@ methods that have been registered with
 </tr>
 </tbody>
 </table>
+<p><strong>Note</strong>: If the <tt class="docutils literal"><span class="pre">CELERY_ALWAYS_EAGER</span></tt> setting is set, it will be
+replaced by a local <a title="celery.execute.apply" class="reference internal" href="#celery.execute.apply"><tt class="xref docutils literal"><span class="pre">apply()</span></tt></a> call instead.</p>
 </dd></dl>
 
 <dl class="function">
