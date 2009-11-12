@@ -64,6 +64,9 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
         methods that have been registered with
         :mod:`carrot.serialization.registry`.
 
+    **Note**: If the ``CELERY_ALWAYS_EAGER`` setting is set, it will be
+    replaced by a local :func:`apply` call instead.
+
     """
     args = args or []
     kwargs = kwargs or {}
