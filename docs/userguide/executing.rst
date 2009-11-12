@@ -53,7 +53,7 @@ specified date and time has passed, but not necessarily at that exact time.
 While ``countdown`` is an integer, ``eta`` must be a ``datetime`` object,
 specifying an exact date and time in the future. This is good if you already
 have a ``datatime`` object and need to modify it with a ``timedelta``, or when
-specifing the time in seconds is not very readable.
+using time in seconds is not very readable.
 
 .. code-block:: python
 
@@ -97,7 +97,7 @@ when sending more than one task at a time, as ``apply_async`` establishes and
 closes a connection every time.
 
 If you need to send more than one task at the same time, it's a good idea to
-establish the connectin yourself and pass it to ``apply_async``:
+establish the connection yourself and pass it to ``apply_async``:
 
 .. code-block:: python
 
@@ -117,8 +117,7 @@ establish the connectin yourself and pass it to ``apply_async``:
     print([res.get() for res in results])
 
 
-In python 2.5 and above you can use the ``with`` statement with carrot
-connections:
+In Python 2.5 and above, you can use the ``with`` statement:
 
 .. code-block:: python
 
