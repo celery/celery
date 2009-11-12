@@ -2,7 +2,7 @@
  Executing Tasks
 =================
 
-Executing tasks is done with ``apply_async``, and it's shortcut ``delay`.
+Executing tasks is done with ``apply_async``, and it's shortcut ``delay``.
 
 ``delay`` is simple and convenient, as it looks like calling a regular
 function:

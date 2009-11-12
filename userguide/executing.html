@@ -94,7 +94,7 @@
             
   <div class="section" id="executing-tasks">
 <h1>Executing Tasks<a class="headerlink" href="#executing-tasks" title="Permalink to this headline">¶</a></h1>
-<p>Executing tasks is done with <tt class="docutils literal"><span class="pre">apply_async</span></tt>, and it&#8217;s shortcut <a href="#id1"><span class="problematic" id="id2">``</span></a>delay`.</p>
+<p>Executing tasks is done with <tt class="docutils literal"><span class="pre">apply_async</span></tt>, and it&#8217;s shortcut <tt class="docutils literal"><span class="pre">delay</span></tt>.</p>
 <p><tt class="docutils literal"><span class="pre">delay</span></tt> is simple and convenient, as it looks like calling a regular
 function:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">MyTask</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">,</span> <span class="n">kwarg1</span><span class="o">=</span><span class="s">&quot;x&quot;</span><span class="p">,</span> <span class="n">kwarg2</span><span class="o">=</span><span class="s">&quot;y&quot;</span><span class="p">)</span>
