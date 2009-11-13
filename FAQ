@@ -49,7 +49,7 @@ points are not specific to celery; If using Redis/database as a queue worked
 fine for you before, it probably will now. And you can always upgrade later.
 
 Is celery multi-lingual?
------------------------
+------------------------
 
 **Answer:** Yes.
 

@@ -267,6 +267,7 @@ advanced features of celery later.
 
 This is a task that basically does nothing but take some arguments,
 and return a value:
+::
 
     from celery.task import Task
     from celery.registry import tasks
@@ -423,3 +424,4 @@ This software is licensed under the ``New BSD License``. See the ``LICENSE``
 file in the top distribution directory for the full license text.
 
 .. # vim: syntax=rst expandtab tabstop=4 shiftwidth=4 shiftround
+

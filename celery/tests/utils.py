@@ -2,7 +2,6 @@ from __future__ import with_statement
 from contextlib import contextmanager
 from StringIO import StringIO
 from functools import wraps
-import os
 import sys
 import __builtin__
 
