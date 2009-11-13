@@ -81,8 +81,6 @@ Task result backend settings
 .. _`Redis`: http://code.google.com/p/redis/
 .. _`Tokyo Tyrant`: http://1978th.net/tokyotyrant/
 
-
-
 Database backend settings
 =========================
 
