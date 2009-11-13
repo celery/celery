@@ -97,10 +97,7 @@ class Backend(BaseBackend):
         """Store return value and status of an executed task."""
         from pymongo.binary import Binary
 
-        if status == 'SUCCESS':
-            result = self.prepare_result(result)
-        elif status == 'FAILURE':
-            result = self.prepare_exception(result)
+        result = self.encode_result(result, status)
 
         meta = {"_id": task_id,
                 "status": status,
