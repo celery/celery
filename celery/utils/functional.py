@@ -1,4 +1,4 @@
-"""Functional utilities for Python 2.4 compatability."""
+"""Functional utilities for Python 2.4 compatibility."""
 
 
 def _compat_curry(fun, *args, **kwargs):
