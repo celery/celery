@@ -56,11 +56,7 @@ class Backend(BaseBackend):
 
     def store_result(self, task_id, result, status, traceback=None):
         """Send task return value and status."""
-        if status == "DONE":
-            result = self.prepare_result(result)
-        elif status == "FAILURE":
-            result = self.prepare_exception(result)
-
+        result = self.encode_result(result, status)
 
         meta = {"task_id": task_id,
                 "result": result,
