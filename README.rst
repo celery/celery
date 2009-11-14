@@ -2,7 +2,7 @@
  celery - Distributed Task Queue
 =================================
 
-:Version: 0.8.0
+:Version: 0.9.0
 
 Introduction
 ============
@@ -24,15 +24,6 @@ languages see `Executing tasks on a remote web server`_.
 It is used for executing tasks *asynchronously*, routed to one or more
 worker servers, running concurrently using multiprocessing.
 
-It is designed to solve certain problems related to running websites
-demanding high-availability and performance.
-
-It is perfect for filling caches, posting updates to twitter, mass
-downloading data like syndication feeds or web scraping. Use-cases are
-plentiful. Implementing these features asynchronously using ``celery`` is
-easy and fun, and the performance improvements can make it more than
-worthwhile.
-
 Overview
 ========
 
@@ -40,7 +31,7 @@ This is a high level overview of the architecture.
 
 .. image:: http://cloud.github.com/downloads/ask/celery/Celery-Overview-v4.jpg
 
-The broker is an AMQP server pushing tasks to the worker servers.
+The broker pushes tasks to the worker servers.
 A worker server is a networked machine running ``celeryd``. This can be one or
 more machines, depending on the workload. See `A look inside the worker`_ to
 see how the worker server works.
@@ -54,6 +45,9 @@ Features
     * Uses AMQP messaging (RabbitMQ, ZeroMQ, Qpid) to route tasks to the
       worker servers. Experimental support for STOMP (ActiveMQ) is also 
       available.
+
+    * For simple setups it's also possible to use Redis or an SQL database
+      as the message queue.
 
     * You can run as many worker servers as you want, and still
       be *guaranteed that the task is only executed once.*
@@ -70,8 +64,15 @@ Features
       `MongoDB`_, `Redis`_ or `Tokyo Tyrant`_ back-end. For high-performance
       you can also use AMQP messages to publish results.
 
+    * Supports calling tasks over HTTP to support multiple programming
+      languages and systems.
+
+    * Supports several serialization schemes, like pickle, json, yaml and
+      supports registering custom encodings .
+
     * If the task raises an exception, the exception instance is stored,
-      instead of the return value.
+      instead of the return value, and it's possible to inspect the traceback
+      after the fact.
 
     * All tasks has a Universally Unique Identifier (UUID), which is the
       task id, used for querying task status and return values.
@@ -253,31 +254,32 @@ Defining and executing tasks
 **Please note** All of these tasks has to be stored in a real module, they can't
 be defined in the python shell or ipython/bpython. This is because the celery
 worker server needs access to the task function to be able to run it.
-So while it looks like we use the python shell to define the tasks in these
-examples, you can't do it this way. Put them in the ``tasks`` module of your
+Put them in the ``tasks`` module of your
 Django application. The worker server will automatically load any ``tasks.py``
 file for all of the applications listed in ``settings.INSTALLED_APPS``.
 Executing tasks using ``delay`` and ``apply_async`` can be done from the
 python shell, but keep in mind that since arguments are pickled, you can't
 use custom classes defined in the shell session.
 
-While you can use regular functions, the recommended way is to define
-a task class. This way you can cleanly upgrade the task to use the more
-advanced features of celery later.
-
-This is a task that basically does nothing but take some arguments,
-and return a value:
+This is a task that adds two numbers:
 ::
 
-    from celery.task import Task
-    from celery.registry import tasks
-    class MyTask(Task):
+    from celery.decorators import task
 
-        def run(self, some_arg, **kwargs):
-            logger = self.get_logger(**kwargs)
-            logger.info("Did something: %s" % some_arg)
-            return 42
-    tasks.register(MyTask)
+    @task()
+    def add(x, y):
+        return x + y
+
+You can also use the workers logger to add some diagnostic output to
+the worker log:
+::
+
+    from celery.decorators import task
+    @task()
+    def add(x, y, **kwargs):
+        logger = add.get_logger(**kwargs)
+        logger.info("Adding %s + %s" % (x, y))
+        return x + y
 
 As you can see the worker is sending some keyword arguments to this task,
 this is the default keyword arguments. A task can choose not to take these,
@@ -308,9 +310,10 @@ The current default keyword arguments are:
         (an integer starting a ``0``).
 
 Now if we want to execute this task, we can use the
-delay method (``celery.task.Base.Task.delay``) of the task class
-(this is a handy shortcut to the ``apply_async`` method which gives
-you greater control of the task execution).
+``delay`` method of the task class.
+This is a handy shortcut to the ``apply_async`` method which gives
+greater control of the task execution (see ``userguide/executing`` for more
+information).
 
     >>> from myapp.tasks import MyTask
     >>> MyTask.delay(some_arg="foo")
@@ -332,18 +335,17 @@ finish and get its return value (or exception if the task failed).
 
 So, let's execute the task again, but this time we'll keep track of the task:
 
-    >>> result = MyTask.delay("hello")
+    >>> result = add.delay(4, 4)
     >>> result.ready() # returns True if the task has finished processing.
     False
     >>> result.result # task is not ready, so no return value yet.
     None
-    >>> result.get()   # Waits until the task is done and return the retval.
-    42
-    >>> result.result
-    42
+    >>> result.get()   # Waits until the task is done and returns the retval.
+    8
+    >>> result.result # direct access to result, doesn't re-raise errors.
+    8
     >>> result.successful() # returns True if the task didn't end in failure.
     True
-
 
 If the task raises an exception, the return value of ``result.successful()``
 will be ``False``, and ``result.result`` will contain the exception instance
@@ -376,10 +378,10 @@ Here's an example of a periodic task:
             logger.info("Running periodic task!")
     >>> tasks.register(MyPeriodicTask)
 
-A look inside the worker
-========================
+A look inside the components
+============================
 
-.. image:: http://cloud.github.com/downloads/ask/celery/InsideTheWorker-v2.jpg
+.. image:: http://cloud.github.com/downloads/ask/celery/Celery1.0-inside-worker.jpg
 
 Getting Help
 ============
