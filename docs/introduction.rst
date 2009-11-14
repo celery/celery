@@ -33,8 +33,7 @@ This is a high level overview of the architecture.
 
 The broker pushes tasks to the worker servers.
 A worker server is a networked machine running ``celeryd``. This can be one or
-more machines, depending on the workload. See `A look inside the worker`_ to
-see how the worker server works.
+more machines, depending on the workload.
 
 The result of the task can be stored for later retrieval (called its
 "tombstone").
