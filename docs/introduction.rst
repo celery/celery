@@ -381,10 +381,10 @@ Here's an example of a periodic task:
             logger.info("Running periodic task!")
     >>> tasks.register(MyPeriodicTask)
 
-A look inside the worker
-========================
+A look inside the components
+============================
 
-.. image:: http://cloud.github.com/downloads/ask/celery/InsideTheWorker-v2.jpg
+.. image:: http://cloud.github.com/downloads/ask/celery/Celery1.0-inside-worker.jpg
 
 Getting Help
 ============
