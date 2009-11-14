@@ -54,7 +54,7 @@ class TaskType(type):
 
 
 class Task(object):
-    """A task that can be delayed for execution by the ``celery`` daemon.
+    """A celery task.
 
     All subclasses of :class:`Task` must define the :meth:`run` method,
     which is the actual method the ``celery`` daemon executes.
@@ -62,18 +62,11 @@ class Task(object):
     The :meth:`run` method can take use of the default keyword arguments,
     as listed in the :meth:`run` documentation.
 
-    The :meth:`run` method supports both positional, and keyword arguments.
-
     .. attribute:: name
-
-        *REQUIRED* All subclasses of :class:`Task` has to define the
-        :attr:`name` attribute. This is the name of the task, registered
-        in the task registry, and passed on to the workers.
+        Name of the task.
 
     .. attribute:: abstract
-
-        Abstract classes are not registered in the task registry, so they're
-        only used for making new tasks by subclassing.
+        If ``True`` the task is an abstract base class.
 
     .. attribute:: type
 
@@ -91,22 +84,17 @@ class Task(object):
 
     .. attribute:: mandatory
 
-        If set, the message has mandatory routing. By default the message
-        is silently dropped by the broker if it can't be routed to a queue.
-        However - If the message is mandatory, an exception will be raised
-        instead.
+        Mandatory message routing. An exception will be raised if the task
+        can't be routed to a queue.
 
     .. attribute:: immediate:
 
-        Request immediate delivery. If the message cannot be routed to a
-        task worker immediately, an exception will be raised. This is
-        instead of the default behaviour, where the broker will accept and
-        queue the message, but with no guarantee that the message will ever
-        be consumed.
+        Request immediate delivery. An exception will be raised if the task
+        can't be routed to a worker immediately.
 
     .. attribute:: priority:
-
-        The message priority. A number from ``0`` to ``9``.
+        The message priority. A number from ``0`` to ``9``, where ``0`` is the
+        highest. Note that RabbitMQ doesn't support priorities yet.
 
     .. attribute:: max_retries
 
@@ -114,24 +102,18 @@ class Task(object):
 
     .. attribute:: default_retry_delay
 
-        Defeault time in seconds before a retry of the task should be
+        Default time in seconds before a retry of the task should be
         executed. Default is a 1 minute delay.
 
-    .. rate_limit:: Set the rate limit for this task type,
-        if this is ``None`` no rate limit is in effect.
-        The rate limits can be specified in seconds, minutes or hours
-        by appending ``"/s"``, ``"/m"`` or "``/h"``". If this is an integer
-        it is interpreted as seconds. Example: ``"100/m" (hundred tasks a
-        minute). Default is the ``CELERY_DEFAULT_RATE_LIMIT`` setting (which
-        is off if not specified).
+    .. rate_limit::
+
+        Set the rate limit for this task type, Examples: ``None`` (no rate
+        limit), ``"100/s"`` (hundred tasks a second), ``"100/m"`` (hundred
+        tasks a minute), ``"100/h"`` (hundred tasks an hour)
 
     .. attribute:: ignore_result
 
-        Don't store the status and return value. This means you can't
-        use the :class:`celery.result.AsyncResult` to check if the task is
-        done, or get its return value. Only use if you need the performance
-        and is able live without these features. Any exceptions raised will
-        store the return value/status as usual.
+        Don't store the return value of this task.
 
     .. attribute:: disable_error_emails
 
@@ -139,39 +121,15 @@ class Task(object):
         ``settings.SEND_CELERY_ERROR_EMAILS`` is on.)
 
     .. attribute:: serializer
+        The name of a serializer that has been registered with 
+        :mod:`carrot.serialization.registry`. Example: ``"json"``.
 
-        A string identifying the default serialization
-        method to use. Defaults to the ``CELERY_TASK_SERIALIZER`` setting.
-        Can be ``pickle`` ``json``, ``yaml``, or any custom serialization
-        methods that have been registered with
-        :mod:`carrot.serialization.registry`.
+    .. attribute:: backend
 
-    :raises NotImplementedError: if the :attr:`name` attribute is not set.
+        The result store backend used for this task.
 
     The resulting class is callable, which if called will apply the
     :meth:`run` method.
-
-    Examples
-
-    This is a simple task just logging a message,
-
-        >>> from celery.task import tasks, Task
-        >>> class MyTask(Task):
-        ...
-        ...     def run(self, some_arg=None, **kwargs):
-        ...         logger = self.get_logger(**kwargs)
-        ...         logger.info("Running MyTask with arg some_arg=%s" %
-        ...                     some_arg))
-        ...         return 42
-
-    You can delay the task using the classmethod :meth:`delay`...
-
-        >>> result = MyTask.delay(some_arg="foo")
-        >>> result.status # after some time
-        'SUCCESS'
-        >>> result.result
-        42
-
 
     """
     __metaclass__ = TaskType
@@ -208,52 +166,15 @@ class Task(object):
         by the worker if the function/method supports them:
 
             * task_id
-
-                Unique id of the currently executing task.
-
             * task_name
-
-                Name of the currently executing task (same as :attr:`name`)
-
             * task_retries
-
-                How many times the current task has been retried
-                (an integer starting at ``0``).
-
             * logfile
-
-                Name of the worker log file.
-
             * loglevel
-
-                The current loglevel, an integer mapping to one of the
-                following values: ``logging.DEBUG``, ``logging.INFO``,
-                ``logging.ERROR``, ``logging.CRITICAL``, ``logging.WARNING``,
-                ``logging.FATAL``.
 
         Additional standard keyword arguments may be added in the future.
         To take these default arguments, the task can either list the ones
         it wants explicitly or just take an arbitrary list of keyword
         arguments (\*\*kwargs).
-
-        Example using an explicit list of default arguments to take:
-
-        .. code-block:: python
-
-            def run(self, x, y, logfile=None, loglevel=None):
-                self.get_logger(loglevel=loglevel, logfile=logfile)
-                return x * y
-
-
-        Example taking all default keyword arguments, and any extra arguments
-        passed on by the caller:
-
-        .. code-block:: python
-
-            def run(self, x, y, **kwargs): # CORRECT!
-                logger = self.get_logger(**kwargs)
-                adjust = kwargs.get("adjust", 0)
-                return x * y - adjust
 
         """
         raise NotImplementedError("Tasks must define a run method.")
