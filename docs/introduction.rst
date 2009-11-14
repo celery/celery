@@ -50,7 +50,7 @@ Features
       be *guaranteed that the task is only executed once.*
 
     * Tasks are executed *concurrently* using the Python 2.6
-      `:mod:`multiprocessing` module (also available as a back-port
+      :mod:`multiprocessing` module (also available as a back-port
       to older python versions)
 
     * Supports *periodic tasks*, which makes it a (better) replacement
