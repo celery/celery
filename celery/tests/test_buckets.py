@@ -1,13 +1,14 @@
-import sys
 import os
+import sys
 sys.path.insert(0, os.getcwd())
-import unittest
 import time
-from celery import buckets
-from celery.task.base import Task
-from celery.registry import TaskRegistry
-from celery.utils import gen_unique_id
+import unittest
 from itertools import chain, izip
+
+from celery import buckets
+from celery.utils import gen_unique_id
+from celery.registry import TaskRegistry
+from celery.task.base import Task
 
 
 class MockJob(object):
@@ -89,7 +90,7 @@ class TestRateLimitString(unittest.TestCase):
         self.assertEquals(buckets.parse_ratelimit_string("10/h"),
                           10 / 60.0 / 60.0)
         self.assertEquals(buckets.parse_ratelimit_string("0xffec/s"), 0xffec)
-        self.assertEquals(buckets.parse_ratelimit_string("0xcda/m"), 
+        self.assertEquals(buckets.parse_ratelimit_string("0xcda/m"),
                           0xcda / 60.0)
         self.assertEquals(buckets.parse_ratelimit_string("0xF/h"),
                           0xf / 60.0 / 60.0)
@@ -185,7 +186,6 @@ class TestTaskBuckets(unittest.TestCase):
                 got_ajobs += 1
 
         self.assertTrue(got_ajobs > 2)
-
 
     def test_thorough__multiple_types(self):
         self.registry.register(TaskD)

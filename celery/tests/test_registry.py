@@ -18,7 +18,6 @@ class TestPeriodicTask(PeriodicTask):
         return True
 
 
-
 class TestTaskRegistry(unittest.TestCase):
 
     def assertRegisterUnregisterCls(self, r, task):

@@ -113,4 +113,3 @@ class ScheduleController(BackgroundThread):
             "ScheduleController: Next wake-up estimated at %s seconds..." % (
                 delay))
         time.sleep(delay)
-

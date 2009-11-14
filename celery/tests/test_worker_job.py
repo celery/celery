@@ -37,7 +37,6 @@ def mytask_no_kwargs(i):
     return i ** i
 
 
-
 @task_dec()
 def mytask_some_kwargs(i, logfile):
     some_kwargs_scratchpad["logfile"] = logfile
