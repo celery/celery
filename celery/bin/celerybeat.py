@@ -45,9 +45,10 @@ import os
 import sys
 import traceback
 import optparse
-from celery import __version__
+
 from celery import conf
 from celery import platform
+from celery import __version__
 from celery.log import emergency_error
 from celery.beat import ClockService
 from celery.loaders import current_loader, settings

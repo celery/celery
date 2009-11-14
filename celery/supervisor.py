@@ -1,5 +1,5 @@
-import multiprocessing
 import time
+import multiprocessing
 from multiprocessing import TimeoutError
 
 JOIN_TIMEOUT = 2

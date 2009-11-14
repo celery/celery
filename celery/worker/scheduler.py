@@ -1,5 +1,5 @@
-import heapq
 import time
+import heapq
 
 
 class Scheduler(object):

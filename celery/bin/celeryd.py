@@ -71,16 +71,18 @@ import sys
 import multiprocessing
 import traceback
 import optparse
+
 from carrot.connection import DjangoBrokerConnection
-from celery.loaders import current_loader
-from celery.loaders import settings
-from celery import __version__
+
 from celery import conf
 from celery import platform
+from celery import __version__
 from celery.log import emergency_error
 from celery.task import discard_all
 from celery.worker import WorkController
 from celery.loaders import current_loader, settings
+from celery.loaders import current_loader
+from celery.loaders import settings
 from celery.supervisor import OFASupervisor
 
 USE_STATISTICS = getattr(settings, "CELERY_STATISTICS", False)

@@ -1,9 +1,9 @@
 """celery.managers"""
+from datetime import datetime
 from django.db import models
 from django.db import transaction
+
 from celery.conf import TASK_RESULT_EXPIRES
-from datetime import datetime
-from django.conf import settings
 
 
 class TaskManager(models.Manager):

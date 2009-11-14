@@ -1,8 +1,9 @@
 """celery.views"""
+from anyjson import serialize as JSON_dump
 from django.http import HttpResponse, Http404
+
 from celery.task import tasks, is_successful, apply_async
 from celery.result import AsyncResult
-from anyjson import serialize as JSON_dump
 
 
 def apply(request, task_name, *args):

@@ -1,16 +1,18 @@
+import sys
+from datetime import timedelta
+
 from carrot.connection import DjangoBrokerConnection
+
 from celery import conf
-from celery.messaging import TaskPublisher, TaskConsumer
 from celery.log import setup_logger
+from celery.utils import gen_unique_id, get_full_cls_name
 from celery.result import TaskSetResult, EagerResult
 from celery.execute import apply_async, apply
-from celery.utils import gen_unique_id, get_full_cls_name
 from celery.registry import tasks
 from celery.backends import default_backend
-from celery.serialization import pickle
+from celery.messaging import TaskPublisher, TaskConsumer
 from celery.exceptions import MaxRetriesExceededError, RetryTaskError
-from datetime import timedelta
-import sys
+from celery.serialization import pickle
 
 
 class TaskType(type):

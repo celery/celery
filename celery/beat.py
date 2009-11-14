@@ -4,11 +4,11 @@ import atexit
 import threading
 from UserDict import UserDict
 from datetime import datetime
+
 from celery import conf
 from celery import registry
 from celery.log import setup_logger
 from celery.exceptions import NotRegistered
-
 
 
 class SchedulingError(Exception):

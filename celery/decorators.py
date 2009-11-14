@@ -1,5 +1,6 @@
-from celery.task.base import Task
 from inspect import getargspec
+
+from celery.task.base import Task
 
 
 def task(**options):

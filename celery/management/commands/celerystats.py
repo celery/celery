@@ -4,6 +4,7 @@ Start the celery daemon from the Django management command.
 
 """
 from django.core.management.base import BaseCommand
+
 from celery.monitoring import StatsCollector
 
 

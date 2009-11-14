@@ -3,11 +3,13 @@
     Publishing Statistics and Monitoring Celery.
 
 """
-from carrot.connection import DjangoBrokerConnection
-from celery.messaging import StatsPublisher, StatsConsumer
-from celery.loaders import settings
-from django.core.cache import cache
 import time
+
+from django.core.cache import cache
+from carrot.connection import DjangoBrokerConnection
+
+from celery.loaders import settings
+from celery.messaging import StatsPublisher, StatsConsumer
 
 DEFAULT_CACHE_KEY_PREFIX = "celery-statistics"
 

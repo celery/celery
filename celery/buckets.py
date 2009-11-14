@@ -1,6 +1,5 @@
 import time
-from Queue import Queue
-from Queue import Empty as QueueEmpty
+from Queue import Queue, Empty as QueueEmpty
 
 RATE_MODIFIER_MAP = {"s": lambda n: n,
                      "m": lambda n: n / 60.0,

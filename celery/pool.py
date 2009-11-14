@@ -6,12 +6,12 @@ Process Pools.
 import os
 import errno
 import multiprocessing
-
 from multiprocessing.pool import Pool, worker
-from celery.datastructures import ExceptionInfo
+from operator import isNumberType
+
 from celery.utils import noop
 from celery.utils.functional import curry
-from operator import isNumberType
+from celery.datastructures import ExceptionInfo
 
 
 def pid_is_dead(pid):

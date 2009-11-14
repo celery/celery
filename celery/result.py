@@ -3,11 +3,12 @@
 Asynchronous result types.
 
 """
-from celery.backends import default_backend
-from celery.datastructures import PositionQueue
-from celery.exceptions import TimeoutError
-from itertools import imap
 import time
+from itertools import imap
+
+from celery.backends import default_backend
+from celery.exceptions import TimeoutError
+from celery.datastructures import PositionQueue
 
 
 class BaseAsyncResult(object):

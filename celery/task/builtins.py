@@ -1,7 +1,8 @@
-from celery.task.base import Task, PeriodicTask
-from celery.registry import tasks
-from celery.backends import default_backend
 from datetime import timedelta
+
+from celery.task.base import Task, PeriodicTask
+from celery.backends import default_backend
+from celery.registry import tasks
 
 
 class DeleteExpiredTaskMetaTask(PeriodicTask):

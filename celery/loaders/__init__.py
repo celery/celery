@@ -1,8 +1,10 @@
 import os
-from celery.loaders.djangoapp import Loader as DjangoLoader
-from celery.loaders.default import Loader as DefaultLoader
+
 from django.conf import settings
 from django.core.management import setup_environ
+
+from celery.loaders.default import Loader as DefaultLoader
+from celery.loaders.djangoapp import Loader as DjangoLoader
 
 """
 .. class:: Loader

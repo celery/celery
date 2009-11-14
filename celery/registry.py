@@ -1,8 +1,9 @@
 """celery.registry"""
+import inspect
+from UserDict import UserDict
+
 from celery import discovery
 from celery.exceptions import NotRegistered, AlreadyRegistered
-from UserDict import UserDict
-import inspect
 
 
 class TaskRegistry(UserDict):

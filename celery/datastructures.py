@@ -3,10 +3,9 @@
 Custom Datastructures
 
 """
-from UserList import UserList
-from Queue import Queue
-from Queue import Empty as QueueEmpty
 import traceback
+from UserList import UserList
+from Queue import Queue, Empty as QueueEmpty
 
 
 class PositionQueue(UserList):

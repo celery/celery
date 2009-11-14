@@ -1,17 +1,19 @@
-from carrot.connection import DjangoBrokerConnection
-from celery.conf import AMQP_CONNECTION_TIMEOUT
-from celery.result import AsyncResult, EagerResult
-from celery.messaging import TaskPublisher
-from celery.registry import tasks
-from celery.utils import gen_unique_id, noop, fun_takes_kwargs
-from celery.utils.functional import curry
-from datetime import datetime, timedelta
-from celery.exceptions import RetryTaskError
-from celery.datastructures import ExceptionInfo
-from celery import signals
 import sys
 import inspect
 import traceback
+from datetime import datetime, timedelta
+
+from carrot.connection import DjangoBrokerConnection
+
+from celery import signals
+from celery.conf import AMQP_CONNECTION_TIMEOUT
+from celery.utils import gen_unique_id, noop, fun_takes_kwargs
+from celery.utils.functional import curry
+from celery.result import AsyncResult, EagerResult
+from celery.registry import tasks
+from celery.messaging import TaskPublisher
+from celery.exceptions import RetryTaskError
+from celery.datastructures import ExceptionInfo
 
 
 def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,

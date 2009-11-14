@@ -3,18 +3,20 @@
 Jobs Executable by the Worker Server.
 
 """
-from celery.registry import tasks
-from celery.exceptions import NotRegistered
-from celery.execute import TaskTrace
-from celery.utils import noop, fun_takes_kwargs
-from celery.log import get_default_logger
-from celery.monitoring import TaskTimerStats
-from django.core.mail import mail_admins
-from celery.loaders import current_loader
-from celery.datastructures import ExceptionInfo
 import sys
 import socket
 import warnings
+
+from django.core.mail import mail_admins
+
+from celery.log import get_default_logger
+from celery.utils import noop, fun_takes_kwargs
+from celery.loaders import current_loader
+from celery.execute import TaskTrace
+from celery.registry import tasks
+from celery.exceptions import NotRegistered
+from celery.monitoring import TaskTimerStats
+from celery.datastructures import ExceptionInfo
 
 # pep8.py borks on a inline signature separator and
 # says "trailing whitespace" ;)

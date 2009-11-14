@@ -1,15 +1,16 @@
 """MongoDB backend for celery."""
 from datetime import datetime
-from django.core.exceptions import ImproperlyConfigured
-from celery.serialization import pickle
-from celery.backends.base import BaseBackend
-from celery.loaders import settings
-from celery.conf import TASK_RESULT_EXPIRES
 
+from django.core.exceptions import ImproperlyConfigured
 try:
     import pymongo
 except ImportError:
     pymongo = None
+
+from celery.serialization import pickle
+from celery.backends.base import BaseBackend
+from celery.loaders import settings
+from celery.conf import TASK_RESULT_EXPIRES
 
 
 class Bunch:

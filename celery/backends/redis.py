@@ -1,12 +1,12 @@
 """celery.backends.tyrant"""
 from django.core.exceptions import ImproperlyConfigured
 from celery.backends.base import KeyValueStoreBackend
-from celery.loaders import settings
-
 try:
     import redis
 except ImportError:
     redis = None
+
+from celery.loaders import settings
 
 
 class Backend(KeyValueStoreBackend):

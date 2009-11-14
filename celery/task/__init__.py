@@ -4,17 +4,17 @@ Working with tasks and task sets.
 
 """
 from carrot.connection import DjangoBrokerConnection
-from celery.messaging import TaskConsumer
+
 from celery.conf import AMQP_CONNECTION_TIMEOUT
+from celery.execute import apply_async
 from celery.registry import tasks
 from celery.backends import default_backend
+from celery.messaging import TaskConsumer
 from celery.task.base import Task, TaskSet, PeriodicTask
-from celery.task.base import ExecuteRemoteTask
-from celery.task.base import AsynchronousMapTask
-from celery.task.builtins import DeleteExpiredTaskMetaTask, PingTask
-from celery.execute import apply_async
-from celery.serialization import pickle
+from celery.task.base import ExecuteRemoteTask, AsynchronousMapTask
 from celery.task.rest import RESTProxyTask
+from celery.task.builtins import DeleteExpiredTaskMetaTask, PingTask
+from celery.serialization import pickle
 
 
 def discard_all(connect_timeout=AMQP_CONNECTION_TIMEOUT):

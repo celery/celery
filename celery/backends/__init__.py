@@ -1,7 +1,8 @@
 """celery.backends"""
-from functools import partial
-from celery import conf
 import sys
+from functools import partial
+
+from celery import conf
 
 
 def get_backend_cls(backend):

@@ -1,8 +1,8 @@
-from celery.registry import tasks
-"""celery.conf"""
-from celery.loaders import settings
-from datetime import timedelta
 import logging
+from datetime import timedelta
+
+from celery.registry import tasks
+from celery.loaders import settings
 
 DEFAULT_AMQP_EXCHANGE = "celery"
 DEFAULT_AMQP_PUBLISHER_ROUTING_KEY = "celery"

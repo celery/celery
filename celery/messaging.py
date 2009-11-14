@@ -4,6 +4,7 @@ Sending and Receiving Messages
 
 """
 from carrot.messaging import Publisher, Consumer, ConsumerSet
+
 from celery import conf
 from celery import signals
 from celery.utils import gen_unique_id

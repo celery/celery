@@ -3,11 +3,12 @@
 Worker Controller Threads
 
 """
+import time
+import threading
 from Queue import Empty as QueueEmpty
 from datetime import datetime
+
 from celery.log import get_default_logger
-import threading
-import time
 
 
 class BackgroundThread(threading.Thread):

@@ -4,15 +4,16 @@ Utility functions
 
 """
 import time
-from itertools import repeat
-from inspect import getargspec
-from uuid import UUID, uuid4, _uuid_generate_random
-from celery.utils.functional import curry
 import operator
 try:
     import ctypes
 except ImportError:
     ctypes = None
+from uuid import UUID, uuid4, _uuid_generate_random
+from inspect import getargspec
+from itertools import repeat
+
+from celery.utils.functional import curry
 
 noop = lambda *args, **kwargs: None
 

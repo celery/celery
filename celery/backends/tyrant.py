@@ -1,12 +1,12 @@
 """celery.backends.tyrant"""
 from django.core.exceptions import ImproperlyConfigured
-from celery.backends.base import KeyValueStoreBackend
-from celery.loaders import settings
-
 try:
     import pytyrant
 except ImportError:
     pytyrant = None
+
+from celery.backends.base import KeyValueStoreBackend
+from celery.loaders import settings
 
 
 class Backend(KeyValueStoreBackend):

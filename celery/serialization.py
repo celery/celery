@@ -1,9 +1,10 @@
-from celery.utils.functional import curry
 import operator
 try:
     import cPickle as pickle
 except ImportError:
     import pickle
+
+from celery.utils.functional import curry
 
 
 def find_nearest_pickleable_exception(exc):
