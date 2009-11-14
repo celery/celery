@@ -41,12 +41,10 @@ The result of the task can be stored for later retrieval (called its
 Features
 ========
 
-    * Uses AMQP messaging (RabbitMQ, ZeroMQ, Qpid) to route tasks to the
+    * Uses messaging (AMQP: RabbitMQ, ZeroMQ, Qpid) to route tasks to the
       worker servers. Experimental support for STOMP (ActiveMQ) is also 
-      available.
-
-    * For simple setups it's also possible to use Redis or an SQL database
-      as the message queue.
+      available. For simple setups it's also possible to use Redis or an
+      SQL database as the message queue.
 
     * You can run as many worker servers as you want, and still
       be *guaranteed that the task is only executed once.*
@@ -177,9 +175,6 @@ allow that user access to that virtual host::
 
     $ rabbitmqctl add_vhost myvhost
 
-From RabbitMQ version 1.6.0 and onward you have to use the new ACL features
-to allow access::
-
     $ rabbitmqctl set_permissions -p myvhost myuser "" ".*" ".*"
 
 See the RabbitMQ `Admin Guide`_ for more information about `access control`_.
@@ -187,11 +182,6 @@ See the RabbitMQ `Admin Guide`_ for more information about `access control`_.
 .. _`Admin Guide`: http://www.rabbitmq.com/admin-guide.html
 
 .. _`access control`: http://www.rabbitmq.com/admin-guide.html#access-control
-
-
-If you are still using version 1.5.0 or below, please use ``map_user_vhost``::
-
-    $ rabbitmqctl map_user_vhost myuser myvhost
 
 
 Configuring your Django project to use Celery
@@ -270,46 +260,6 @@ This is a task that adds two numbers:
     def add(x, y):
         return x + y
 
-You can also use the workers logger to add some diagnostic output to
-the worker log:
-
-.. code-block:: python
-
-    from celery.decorators import task
-    @task()
-    def add(x, y, **kwargs):
-        logger = add.get_logger(**kwargs)
-        logger.info("Adding %s + %s" % (x, y))
-        return x + y
-
-As you can see the worker is sending some keyword arguments to this task,
-this is the default keyword arguments. A task can choose not to take these,
-or only list the ones it want (the worker will do the right thing).
-The current default keyword arguments are:
-
-    * logfile
-
-        The currently used log file, can be passed on to ``self.get_logger``
-        to gain access to the workers log file via a ``logger.Logging``
-        instance.
-
-    * loglevel
-
-        The current loglevel used.
-
-    * task_id
-
-        The unique id of the executing task.
-
-    * task_name
-
-        Name of the executing task.
-
-    * task_retries
-
-        How many times the current task has been retried.
-        (an integer starting a ``0``).
-
 Now if we want to execute this task, we can use the
 ``delay`` method of the task class.
 This is a handy shortcut to the ``apply_async`` method which gives
@@ -327,9 +277,9 @@ picked it up.
 that RabbitMQ is running, and that the user/password has access to the virtual
 host you configured earlier.
 
-Right now we have to check the celery worker logfiles to know what happened with
-the task. This is because we didn't keep the ``AsyncResult`` object returned
-by ``delay``.
+Right now we have to check the celery worker logfiles to know what happened
+with the task. This is because we didn't keep the ``AsyncResult`` object
+returned by ``delay``.
 
 The ``AsyncResult`` lets us find the state of the task, wait for the task to
 finish and get its return value (or exception if the task failed).
@@ -379,6 +329,30 @@ Here's an example of a periodic task:
             logger = self.get_logger(**kwargs)
             logger.info("Running periodic task!")
     >>> tasks.register(MyPeriodicTask)
+
+
+If you want to use periodic tasks you need to start the ``celerybeat``
+service. You have to make sure only one instance of this server is running at
+any time, or else you will end up with multiple executions of the same task.
+
+To start the ``celerybeat`` service::
+
+    $ celerybeat --detach
+
+or if using Django::
+
+    $ python manage.py celerybeat
+
+
+You can also start ``celerybeat`` with ``celeryd`` by using the ``-B`` option,
+this is convenient if you only have one server::
+
+    $ celeryd --detach -B
+
+or if using Django::
+
+    $ python manage.py celeryd --detach -B
+
 
 A look inside the components
 ============================
