@@ -2,6 +2,8 @@
  Tasks
 =======
 
+.. module:: celery.task.base
+
 A task is a class that encapsulates a function and its execution options.
 With a function ``create_user``, that takes two arguments: ``username`` and
 ``password``, you can create a task like this:
@@ -102,6 +104,55 @@ or using the decorator syntax:
 
 There are several logging levels available, and the workers ``loglevel``
 setting decides whether they will be sent to the log file or not.
+
+Retrying a task if something fails
+==================================
+
+Simply use :meth:`Task.retry` to re-sent the task, it will
+do the right thing, and respect the :attr:`Task.max_retries`
+attribute:
+
+.. code-block:: python
+
+    @task()
+    def send_twitter_status(oauth, tweet, **kwargs):
+        try:
+            twitter = Twitter(oauth)
+            twitter.update_status(tweet)
+        except (Twitter.FailWhaleError, Twitter.LoginError), exc:
+            send_twitter_status.retry(args=[oauth, tweet], exc=exc, **kwargs)
+
+Here we used the ``exc`` argument to pass the current exception to
+:meth:`Task.retry`. At each step of the retry this exception
+is available as the tombstone (result) of the task, when
+:attr:`Task.max_retries` has been exceeded this is the exception
+raised. However, if an ``exc`` argument is not provided the
+:exc:`RetryTaskError` exception is raised instead.
+
+Using a custom retry delay
+--------------------------
+
+The default countdown is in the tasks
+:attr:`Task.default_retry_delay` attribute, which by
+default is set to 3 minutes.
+
+You can also provide the ``countdown`` argument to
+:meth:`Task.retry` to override this default.
+
+.. code-block:: python
+
+    class MyTask(Task):
+        default_retry_delay = 30 * 60 # retry in 30 minutes
+
+        def run(self, x, y, **kwargs):
+            try:
+                ...
+            except Exception, exc:
+                self.retry([x, y], exc=exc,
+                           countdown=60 # override the default and
+                                        # retry in 1 minute
+                           **kwargs)
+
 
 
 Task options
@@ -226,7 +277,7 @@ for the applications listed in ``INSTALLED_APPS``. If you want to do something
 special you can create your own loader to do what you want.
 
 The entity responsible for registering your task in the registry is a
-metaclass, ``celery.task.base.TaskType``, this is the default metaclass for
+metaclass, :class:`TaskType`, this is the default metaclass for
 ``Task``. If you want to register your task manually you can set the
 ``abstract`` attribute:
 

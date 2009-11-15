@@ -61,10 +61,10 @@ messages. There's no other communication involved.
 Also, there's another way to be language indepedent, and that is to use REST
 tasks, instead of your tasks being functions, they're URLs. With this
 information you can even create simple web servers that enable preloading of
-code. For more information about REST tasks see: `Cookbook: Remote Tasks`_.
+code. For more information about REST tasks see: `User Guide: Remote Tasks`_.
 
-.. _`Cookbook: Remote Tasks`:
-    http://ask.github.com/celery/cookbook/remote-tasks.html
+.. _`User Guide: Remote Tasks`:
+    http://ask.github.com/celery/userguide/remote-tasks.html
 
 
 Troubleshooting
