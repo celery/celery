@@ -2,7 +2,77 @@
 Change history
 ==============
 
-0.8.0 [2009-09-22 03:06 P.M CET]
+0.8.1 [2009-11-16 05:21 P.M CEST]
+---------------------------------
+
+**VERY IMPORTANT NOTE**
+
+This release (with carrot 0.8.0) enables AMQP QoS (quality of service), which
+means the workers will only receive as many messages as it can handle at a
+time. As with any release, you should test this version upgrade on your
+development servers before rolling it out to production!
+
+**IMPORTANT CHANGES**
+
+* All AMQP_* settings has been renamed to BROKER_*, and in addition
+  AMQP_SERVER has been renamed to BROKER_HOST, so before where you had::
+
+		AMQP_SERVER = "localhost"
+		AMQP_PORT = 5678
+		AMQP_USER = "myuser"
+		AMQP_PASSWORD = "mypassword"
+		AMQP_VHOST = "celery"
+
+	You need to change that to::
+
+		BROKER_HOST = "localhost"
+		BROKER_PORT = 5678
+		BROKER_USER = "myuser"
+		BROKER_PASSWORD = "mypassword"
+		BROKER_VHOST = "celery"
+
+* Custom carrot backends now need to include the backend class name, so before
+  where you had::
+
+		CARROT_BACKEND = "mycustom.backend.module"
+
+	you need to change it to::
+
+		CARROT_BACKEND = "mycustom.backend.module.Backend"
+
+	where ``Backend`` is the class name. This is probably ``"Backend"``, as
+	that was the previously implied name.
+
+* New version requirement for carrot: 0.8.0
+
+**CHANGES**
+
+* Ignore the result of PeriodicTask's by default.
+
+* Added a Redis result store backend
+
+* Allow /etc/default/celeryd to define additional options for the celeryd init
+  script.
+
+* MongoDB periodic tasks issue when using different time than UTC fixed.
+
+* Windows specific: Negate test for available os.fork (thanks miracle2k)
+
+* Now tried to handle broken PID files.
+
+* Added a Django test runner to contrib that sets CELERY_ALWAYS_EAGER = True for testing with the database backend
+
+* Added a CELERY_CACHE_BACKEND setting for using something other than the django-global cache backend.
+
+* Use custom implementation of functools.partial (curry) for Python 2.4 support
+  (Probably still problems with running on 2.4, but it will eventually be
+  supported)
+
+* Prepare exception to pickle when saving RETRY status for all backends.
+
+* SQLite no concurrency limit should only be effective if the db backend is used.
+
+0.8.0 [2009-09-22 03:06 P.M CEST]
 --------------------------------
 
 **BACKWARD INCOMPATIBLE CHANGES**

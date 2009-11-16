@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Change history &mdash; Celery v0.8.0 (stable) documentation</title>
+    <title>Change history &mdash; Celery v0.8.1 (stable) documentation</title>
     <link rel="stylesheet" href="static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.8.0 (stable)',
+        VERSION:     '0.8.1 (stable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,13 +19,13 @@
     </script>
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v0.8.0 (stable) documentation" href="index.html" />
+    <link rel="top" title="Celery v0.8.1 (stable) documentation" href="index.html" />
     <link rel="next" title="Interesting Links" href="links.html" />
     <link rel="prev" title="Internals: The worker" href="internals/worker.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v0.8.0 (stable) documentation</p>
+	<p>Celery v0.8.1 (stable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Change history</h1></div>
@@ -53,9 +53,10 @@
 <li class="toctree-l1"><a class="reference external" href="reference/index.html">Module API Reference</a></li>
 <li class="toctree-l1"><a class="reference external" href="internals/index.html">Internals</a></li>
 <li class="toctree-l1 current"><a class="current reference external" href="">Change history</a><ul>
-<li class="toctree-l2"><a class="reference external" href="#p-m-cet">0.8.0 [2009-09-22 03:06 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="#p-m-cest">0.8.1 [2009-11-16 05:21 P.M CEST]</a></li>
+<li class="toctree-l2"><a class="reference external" href="#id1">0.8.0 [2009-09-22 03:06 P.M CEST]</a></li>
 <li class="toctree-l2"><a class="reference external" href="#a-m-cet">0.6.0 [2009-08-07 06:54 A.M CET]</a></li>
-<li class="toctree-l2"><a class="reference external" href="#id1">0.4.1 [2009-07-02 01:42 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference external" href="#p-m-cet">0.4.1 [2009-07-02 01:42 P.M CET]</a></li>
 <li class="toctree-l2"><a class="reference external" href="#id2">0.4.0 [2009-07-01 07:29 P.M CET]</a></li>
 <li class="toctree-l2"><a class="reference external" href="#id3">0.3.20 [2009-06-25 08:42 P.M CET]</a></li>
 <li class="toctree-l2"><a class="reference external" href="#id4">0.3.7 [2008-06-16 11:41 P.M CET]</a></li>
@@ -116,8 +117,67 @@
             
   <div class="section" id="change-history">
 <h1>Change history<a class="headerlink" href="#change-history" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="p-m-cet">
-<h2>0.8.0 [2009-09-22 03:06 P.M CET]<a class="headerlink" href="#p-m-cet" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="p-m-cest">
+<h2>0.8.1 [2009-11-16 05:21 P.M CEST]<a class="headerlink" href="#p-m-cest" title="Permalink to this headline">¶</a></h2>
+<p><strong>VERY IMPORTANT NOTE</strong></p>
+<p>This release (with carrot 0.8.0) enables AMQP QoS (quality of service), which
+means the workers will only receive as many messages as it can handle at a
+time. As with any release, you should test this version upgrade on your
+development servers before rolling it out to production!</p>
+<p><strong>IMPORTANT CHANGES</strong></p>
+<ul>
+<li><p class="first">All AMQP_* settings has been renamed to BROKER_*, and in addition
+AMQP_SERVER has been renamed to BROKER_HOST, so before where you had:</p>
+<div class="highlight-python"><pre>        AMQP_SERVER = "localhost"
+        AMQP_PORT = 5678
+        AMQP_USER = "myuser"
+        AMQP_PASSWORD = "mypassword"
+        AMQP_VHOST = "celery"
+
+You need to change that to::
+
+        BROKER_HOST = "localhost"
+        BROKER_PORT = 5678
+        BROKER_USER = "myuser"
+        BROKER_PASSWORD = "mypassword"
+        BROKER_VHOST = "celery"</pre>
+</div>
+</li>
+<li><p class="first">Custom carrot backends now need to include the backend class name, so before
+where you had:</p>
+<div class="highlight-python"><pre>        CARROT_BACKEND = "mycustom.backend.module"
+
+you need to change it to::
+
+        CARROT_BACKEND = "mycustom.backend.module.Backend"
+
+where ``Backend`` is the class name. This is probably ``"Backend"``, as
+that was the previously implied name.</pre>
+</div>
+</li>
+<li><p class="first">New version requirement for carrot: 0.8.0</p>
+</li>
+</ul>
+<p><strong>CHANGES</strong></p>
+<ul class="simple">
+<li>Ignore the result of PeriodicTask&#8217;s by default.</li>
+<li>Added a Redis result store backend</li>
+<li>Allow /etc/default/celeryd to define additional options for the celeryd init
+script.</li>
+<li>MongoDB periodic tasks issue when using different time than UTC fixed.</li>
+<li>Windows specific: Negate test for available os.fork (thanks miracle2k)</li>
+<li>Now tried to handle broken PID files.</li>
+<li>Added a Django test runner to contrib that sets CELERY_ALWAYS_EAGER = True for testing with the database backend</li>
+<li>Added a CELERY_CACHE_BACKEND setting for using something other than the django-global cache backend.</li>
+<li>Use custom implementation of functools.partial (curry) for Python 2.4 support
+(Probably still problems with running on 2.4, but it will eventually be
+supported)</li>
+<li>Prepare exception to pickle when saving RETRY status for all backends.</li>
+<li>SQLite no concurrency limit should only be effective if the db backend is used.</li>
+</ul>
+</div>
+<div class="section" id="id1">
+<h2>0.8.0 [2009-09-22 03:06 P.M CEST]<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
 <p><strong>BACKWARD INCOMPATIBLE CHANGES</strong></p>
 <ul>
 <li><dl class="first docutils">
@@ -427,8 +487,8 @@ includes the ETA for the task (if any).</p>
 </li>
 </ul>
 </div>
-<div class="section" id="id1">
-<h2>0.4.1 [2009-07-02 01:42 P.M CET]<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="p-m-cet">
+<h2>0.4.1 [2009-07-02 01:42 P.M CET]<a class="headerlink" href="#p-m-cet" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Fixed a bug with parsing the message options (<tt class="docutils literal"><span class="pre">mandatory</span></tt>,
 <tt class="docutils literal"><span class="pre">routing_key</span></tt>, <tt class="docutils literal"><span class="pre">priority</span></tt>, <tt class="docutils literal"><span class="pre">immediate</span></tt>)</li>
@@ -903,7 +963,7 @@ the name change request is in <tt class="docutils literal"><span class="pre">doc
       <div class="clearer"></div>
     </div>
 	<div id="breadcrumbs">
-		<a href="index.html">Celery v0.8.0 (stable) documentation</a>
+		<a href="index.html">Celery v0.8.1 (stable) documentation</a>
 		</ul>
 	</div>
   </body>

@@ -59,6 +59,7 @@ celery.task.strategy.even_time_distribution function reference/celery.task.strat
 celery.execute.ExecuteWrapper.handle_success method reference/celery.execute.html
 celery.task.base.ExecuteRemoteTask.run method reference/celery.task.base.html
 celery.task.base.Task.retry method reference/celery.task.base.html
+celery.backends.base.BaseBackend.prepare_value method reference/celery.backends.base.html
 celery.supervisor.OFASupervisor.start method reference/celery.supervisor.html
 celery.task.base.Task.get_logger method reference/celery.task.base.html
 celery.result.BaseAsyncResult.successful method reference/celery.result.html
@@ -79,7 +80,6 @@ celery.log.redirect_stdouts_to_logger function reference/celery.log.html
 celery.registry.TaskRegistry.NotRegistered exception reference/celery.registry.html
 celery.datastructures.PositionQueue.length attribute reference/celery.datastructures.html
 celery.datastructures.PositionQueue class reference/celery.datastructures.html
-celery.backends.base.BaseBackend.prepare_result method reference/celery.backends.base.html
 celery.task.execute_remote function reference/celery.task.html
 celery.managers.TableLock.acquire classmethod reference/celery.managers.html
 celery.backends.base.BaseBackend.store_result method reference/celery.backends.base.html

@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Using Celery with Redis/Database as the messaging queue. &mdash; Celery v0.8.0 (stable) documentation</title>
+    <title>Using Celery with Redis/Database as the messaging queue. &mdash; Celery v0.8.1 (stable) documentation</title>
     <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.8.0 (stable)',
+        VERSION:     '0.8.1 (stable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,14 +19,14 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.8.0 (stable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.8.1 (stable) documentation" href="../index.html" />
     <link rel="up" title="Tutorials" href="index.html" />
     <link rel="next" title="Tutorial: Creating a click counter using carrot and celery" href="clickcounter.html" />
     <link rel="prev" title="External tutorials and resources" href="external.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v0.8.0 (stable) documentation</p>
+	<p>Celery v0.8.1 (stable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Using Celery with Redis/Database as the messaging queue.</h1></div>
@@ -123,9 +123,9 @@ $ python setup.py install</pre>
 your Redis database:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">CARROT_BACKEND</span> <span class="o">=</span> <span class="s">&quot;ghettoq.toproot.Redis&quot;</span>
 
-<span class="n">AMQP_HOST</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>  <span class="c"># Maps to redis host.</span>
-<span class="n">AMQP_PORT</span> <span class="o">=</span> <span class="mi">6379</span>         <span class="c"># Maps to redis port.</span>
-<span class="n">AMQP_VHOST</span> <span class="o">=</span> <span class="s">&quot;celery&quot;</span>    <span class="c"># Maps to database name.</span>
+<span class="n">BROKER_HOST</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>  <span class="c"># Maps to redis host.</span>
+<span class="n">BROKER_PORT</span> <span class="o">=</span> <span class="mi">6379</span>         <span class="c"># Maps to redis port.</span>
+<span class="n">BROKER_VHOST</span> <span class="o">=</span> <span class="s">&quot;celery&quot;</span>    <span class="c"># Maps to database name.</span>
 </pre></div>
 </div>
 </div>
@@ -186,7 +186,7 @@ the exchange to be the same as the queue:</p>
     </div>
 	<div id="breadcrumbs">
 		<a href="index.html" accesskey="U">Tutorials</a><img src="triangle_closed.png" alt="Right arrow">
-		<a href="../index.html">Celery v0.8.0 (stable) documentation</a>
+		<a href="../index.html">Celery v0.8.1 (stable) documentation</a>
 		</ul>
 	</div>
   </body>

@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Frequently Asked Questions &mdash; Celery v0.8.0 (stable) documentation</title>
+    <title>Frequently Asked Questions &mdash; Celery v0.8.1 (stable) documentation</title>
     <link rel="stylesheet" href="static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.8.0 (stable)',
+        VERSION:     '0.8.1 (stable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,13 +19,13 @@
     </script>
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v0.8.0 (stable) documentation" href="index.html" />
+    <link rel="top" title="Celery v0.8.1 (stable) documentation" href="index.html" />
     <link rel="next" title="Module API Reference" href="reference/index.html" />
     <link rel="prev" title="Tutorial: Creating a click counter using carrot and celery" href="tutorials/clickcounter.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v0.8.0 (stable) documentation</p>
+	<p>Celery v0.8.1 (stable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Frequently Asked Questions</h1></div>
@@ -301,8 +301,8 @@ the one with the most capabilities won).</p>
 <span class="n">CARROT_BACKEND</span> <span class="o">=</span> <span class="s">&quot;stomp&quot;</span>
 
 <span class="c"># STOMP hostname and port settings.</span>
-<span class="n">AMQP_SERVER</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>
-<span class="n">AMQP_PORT</span> <span class="o">=</span> <span class="mi">61613</span>
+<span class="n">BROKER_HOST</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>
+<span class="n">BROKER_PORT</span> <span class="o">=</span> <span class="mi">61613</span>
 
 <span class="c"># The queue name to use (both queue and exchange must be set to the</span>
 <span class="c"># same queue name when using STOMP)</span>
@@ -340,11 +340,11 @@ configuration:</p>
 <ul class="simple">
 <li>Servers <tt class="docutils literal"><span class="pre">x</span></tt> and <tt class="docutils literal"><span class="pre">y</span></tt>: settings.py:</li>
 </ul>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">AMQP_SERVER</span> <span class="o">=</span> <span class="s">&quot;rabbit&quot;</span>
-<span class="n">AMQP_PORT</span> <span class="o">=</span> <span class="mi">5678</span>
-<span class="n">AMQP_USER</span> <span class="o">=</span> <span class="s">&quot;myapp&quot;</span>
-<span class="n">AMQP_PASSWORD</span> <span class="o">=</span> <span class="s">&quot;secret&quot;</span>
-<span class="n">AMQP_VHOST</span> <span class="o">=</span> <span class="s">&quot;myapp&quot;</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">BROKER_HOST</span> <span class="o">=</span> <span class="s">&quot;rabbit&quot;</span>
+<span class="n">BROKER_PORT</span> <span class="o">=</span> <span class="mi">5678</span>
+<span class="n">BROKER_USER</span> <span class="o">=</span> <span class="s">&quot;myapp&quot;</span>
+<span class="n">BROKER_PASSWORD</span> <span class="o">=</span> <span class="s">&quot;secret&quot;</span>
+<span class="n">BROKER_VHOST</span> <span class="o">=</span> <span class="s">&quot;myapp&quot;</span>
 
 <span class="n">CELERY_AMQP_CONSUMER_QUEUE</span> <span class="o">=</span> <span class="s">&quot;regular_tasks&quot;</span>
 <span class="n">CELERY_AMQP_EXCHANGE</span> <span class="o">=</span> <span class="s">&quot;tasks&quot;</span>
@@ -356,11 +356,11 @@ configuration:</p>
 <ul class="simple">
 <li>Server <tt class="docutils literal"><span class="pre">z</span></tt>: settings.py:</li>
 </ul>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">AMQP_SERVER</span> <span class="o">=</span> <span class="s">&quot;rabbit&quot;</span>
-<span class="n">AMQP_PORT</span> <span class="o">=</span> <span class="mi">5678</span>
-<span class="n">AMQP_USER</span> <span class="o">=</span> <span class="s">&quot;myapp&quot;</span>
-<span class="n">AMQP_PASSWORD</span> <span class="o">=</span> <span class="s">&quot;secret&quot;</span>
-<span class="n">AMQP_VHOST</span> <span class="o">=</span> <span class="s">&quot;myapp&quot;</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">BROKER_HOST</span> <span class="o">=</span> <span class="s">&quot;rabbit&quot;</span>
+<span class="n">BROKER_PORT</span> <span class="o">=</span> <span class="mi">5678</span>
+<span class="n">BROKER_USER</span> <span class="o">=</span> <span class="s">&quot;myapp&quot;</span>
+<span class="n">BROKER_PASSWORD</span> <span class="o">=</span> <span class="s">&quot;secret&quot;</span>
+<span class="n">BROKER_VHOST</span> <span class="o">=</span> <span class="s">&quot;myapp&quot;</span>
 
 <span class="n">CELERY_AMQP_EXCHANGE</span> <span class="o">=</span> <span class="s">&quot;tasks&quot;</span>
 <span class="n">CELERY_AMQP_PUBLISHER_ROUTING_KEY</span> <span class="o">=</span> <span class="s">&quot;task.regular&quot;</span>
@@ -424,11 +424,11 @@ described in <a title="" class="reference external" href="reference/celery.conf.
 database backend you have to configure the database. Here is an example
 configuration using the database backend with MySQL:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># Broker configuration</span>
-<span class="n">AMQP_SERVER</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>
-<span class="n">AMQP_PORT</span> <span class="o">=</span> <span class="s">&quot;5672&quot;</span>
-<span class="n">AMQP_VHOST</span> <span class="o">=</span> <span class="s">&quot;celery&quot;</span>
-<span class="n">AMQP_USER</span> <span class="o">=</span> <span class="s">&quot;celery&quot;</span>
-<span class="n">AMQP_PASSWORD</span> <span class="o">=</span> <span class="s">&quot;celerysecret&quot;</span>
+<span class="n">BROKER_HOST</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>
+<span class="n">BROKER_PORT</span> <span class="o">=</span> <span class="s">&quot;5672&quot;</span>
+<span class="n">BROKER_VHOST</span> <span class="o">=</span> <span class="s">&quot;celery&quot;</span>
+<span class="n">BROKER_USER</span> <span class="o">=</span> <span class="s">&quot;celery&quot;</span>
+<span class="n">BROKER_PASSWORD</span> <span class="o">=</span> <span class="s">&quot;celerysecret&quot;</span>
 <span class="n">CARROT_BACKEND</span><span class="o">=</span><span class="s">&quot;amqp&quot;</span>
 
 <span class="c"># Using the database backend.</span>
@@ -513,7 +513,7 @@ TEST_APPS = filter(lambda k: k != "celery", INSTALLED_APPS)</pre>
       <div class="clearer"></div>
     </div>
 	<div id="breadcrumbs">
-		<a href="index.html">Celery v0.8.0 (stable) documentation</a>
+		<a href="index.html">Celery v0.8.1 (stable) documentation</a>
 		</ul>
 	</div>
   </body>

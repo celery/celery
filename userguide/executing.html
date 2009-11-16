@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Executing Tasks &mdash; Celery v0.8.0 (stable) documentation</title>
+    <title>Executing Tasks &mdash; Celery v0.8.1 (stable) documentation</title>
     <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.8.0 (stable)',
+        VERSION:     '0.8.1 (stable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,14 +19,14 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.8.0 (stable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.8.1 (stable) documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
     <link rel="next" title="Cookbook" href="../cookbook/index.html" />
     <link rel="prev" title="User Guide" href="index.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v0.8.0 (stable) documentation</p>
+	<p>Celery v0.8.1 (stable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Executing Tasks</h1></div>
@@ -132,7 +132,7 @@ specified date and time has passed, but not necessarily at that exact time.</p>
 <p>While <tt class="docutils literal"><span class="pre">countdown</span></tt> is an integer, <tt class="docutils literal"><span class="pre">eta</span></tt> must be a <tt class="docutils literal"><span class="pre">datetime</span></tt> object,
 specifying an exact date and time in the future. This is good if you already
 have a <tt class="docutils literal"><span class="pre">datatime</span></tt> object and need to modify it with a <tt class="docutils literal"><span class="pre">timedelta</span></tt>, or when
-specifing the time in seconds is not very readable.</p>
+using time in seconds is not very readable.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span>
 
 <span class="k">def</span> <span class="nf">quickban</span><span class="p">(</span><span class="n">username</span><span class="p">):</span>
@@ -168,7 +168,7 @@ this might change in the future. This is something you need to be aware of
 when sending more than one task at a time, as <tt class="docutils literal"><span class="pre">apply_async</span></tt> establishes and
 closes a connection every time.</p>
 <p>If you need to send more than one task at the same time, it&#8217;s a good idea to
-establish the connectin yourself and pass it to <tt class="docutils literal"><span class="pre">apply_async</span></tt>:</p>
+establish the connection yourself and pass it to <tt class="docutils literal"><span class="pre">apply_async</span></tt>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">carrot.connection</span> <span class="kn">import</span> <span class="n">DjangoBrokerConnection</span>
 
 <span class="n">numbers</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span> <span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">16</span><span class="p">)]</span>
@@ -185,8 +185,7 @@ establish the connectin yourself and pass it to <tt class="docutils literal"><sp
 <span class="k">print</span><span class="p">([</span><span class="n">res</span><span class="o">.</span><span class="n">get</span><span class="p">()</span> <span class="k">for</span> <span class="n">res</span> <span class="ow">in</span> <span class="n">results</span><span class="p">])</span>
 </pre></div>
 </div>
-<p>In python 2.5 and above you can use the <tt class="docutils literal"><span class="pre">with</span></tt> statement with carrot
-connections:</p>
+<p>In Python 2.5 and above, you can use the <tt class="docutils literal"><span class="pre">with</span></tt> statement:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">with_statement</span>
 <span class="kn">from</span> <span class="nn">carrot.connection</span> <span class="kn">import</span> <span class="n">DjangoBrokerConnection</span>
 
@@ -305,7 +304,7 @@ information.</p>
     </div>
 	<div id="breadcrumbs">
 		<a href="index.html" accesskey="U">User Guide</a><img src="triangle_closed.png" alt="Right arrow">
-		<a href="../index.html">Celery v0.8.0 (stable) documentation</a>
+		<a href="../index.html">Celery v0.8.1 (stable) documentation</a>
 		</ul>
 	</div>
   </body>

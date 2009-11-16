@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celery - Distributed Task Queue &mdash; Celery v0.8.0 (stable) documentation</title>
+    <title>celery - Distributed Task Queue &mdash; Celery v0.8.1 (stable) documentation</title>
     <link rel="stylesheet" href="static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.8.0 (stable)',
+        VERSION:     '0.8.1 (stable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,13 +19,13 @@
     </script>
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v0.8.0 (stable) documentation" href="index.html" />
+    <link rel="top" title="Celery v0.8.1 (stable) documentation" href="index.html" />
     <link rel="next" title="Configuration and defaults" href="configuration.html" />
     <link rel="prev" title="Celery - Distributed Task Queue" href="index.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v0.8.0 (stable) documentation</p>
+	<p>Celery v0.8.1 (stable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>celery - Distributed Task Queue</h1></div>
@@ -274,11 +274,11 @@ to allow access:</p>
 <li><dl class="first docutils">
 <dt>Configure celery to use the AMQP user and virtual host we created</dt>
 <dd><p class="first">before, by adding the following to your <tt class="docutils literal"><span class="pre">settings.py</span></tt>:</p>
-<div class="last highlight-python"><div class="highlight"><pre><span class="n">AMQP_SERVER</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>
-<span class="n">AMQP_PORT</span> <span class="o">=</span> <span class="mi">5672</span>
-<span class="n">AMQP_USER</span> <span class="o">=</span> <span class="s">&quot;myuser&quot;</span>
-<span class="n">AMQP_PASSWORD</span> <span class="o">=</span> <span class="s">&quot;mypassword&quot;</span>
-<span class="n">AMQP_VHOST</span> <span class="o">=</span> <span class="s">&quot;myvhost&quot;</span>
+<div class="last highlight-python"><div class="highlight"><pre><span class="n">BROKER_HOST</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>
+<span class="n">BROKER_PORT</span> <span class="o">=</span> <span class="mi">5672</span>
+<span class="n">BROKER_USER</span> <span class="o">=</span> <span class="s">&quot;myuser&quot;</span>
+<span class="n">BROKER_PASSWORD</span> <span class="o">=</span> <span class="s">&quot;mypassword&quot;</span>
+<span class="n">BROKER_VHOST</span> <span class="o">=</span> <span class="s">&quot;myvhost&quot;</span>
 </pre></div>
 </div>
 </dd>
@@ -482,7 +482,7 @@ file in the top distribution directory for the full license text.</p>
       <div class="clearer"></div>
     </div>
 	<div id="breadcrumbs">
-		<a href="index.html">Celery v0.8.0 (stable) documentation</a>
+		<a href="index.html">Celery v0.8.1 (stable) documentation</a>
 		</ul>
 	</div>
   </body>
