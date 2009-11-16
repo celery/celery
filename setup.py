@@ -12,7 +12,7 @@ except ImportError:
     use_setuptools()
     from setuptools import setup, find_packages, Command
 
-from celery import distmeta
+import celery as distmeta
 
 
 class RunTests(Command):
