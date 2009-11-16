@@ -5,7 +5,7 @@ import time
 import unittest
 from itertools import chain, izip
 
-from celery import buckets
+from celery.worker import buckets
 from celery.utils import gen_unique_id
 from celery.registry import TaskRegistry
 from celery.task.base import Task

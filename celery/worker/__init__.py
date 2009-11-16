@@ -19,7 +19,7 @@ from celery.utils import retry_over_time
 from celery.worker.job import TaskWrapper
 from celery.worker.scheduler import Scheduler
 from celery.worker.controllers import Mediator, ScheduleController
-from celery.buckets import TaskBucket
+from celery.worker.buckets import TaskBucket
 from celery.messaging import get_consumer_set
 from celery.exceptions import NotRegistered
 from celery.datastructures import SharedCounter
