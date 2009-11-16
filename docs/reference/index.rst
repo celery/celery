@@ -8,11 +8,12 @@
 .. toctree::
     :maxdepth: 2
 
+    celery.decorators
     celery.task.base
     celery.execute
     celery.result
     celery.task
-    celery.registry
+    celery.conf
     celery.signals
     celery.exceptions
     celery.task.rest
@@ -22,26 +23,33 @@
     celery.loaders.base
     celery.loaders.default
     celery.loaders.djangoapp
+    celery.registry
     celery.discovery
     celery.monitoring
     celery.messaging
+    celery.contrib.test_runner
     celery.worker
     celery.worker.job
     celery.worker.controllers
+    celery.worker.buckets
+    celery.worker.scheduler
     celery.pool
+    celery.beat
     celery.backends
     celery.backends.base
+    celery.backends.amqp
     celery.backends.database
     celery.backends.cache
-    celery.backends.amqp
     celery.backends.mongodb
+    celery.backends.redis
     celery.backends.tyrant
-    celery.conf
     celery.datastructures
     celery.log
     celery.utils
     celery.views
     celery.managers
     celery.models
+    celery.platform
     celery.bin.celeryd
+    celery.bin.celerybeat
     celery.bin.celeryinit
