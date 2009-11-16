@@ -43,7 +43,7 @@ class RunTests(Command):
 
 install_requires = ["django-unittest-depth",
                     "anyjson",
-                    "carrot>=0.6.0"]
+                    "carrot>=0.8.0"]
 
 # python-daemon doesn't run on windows, so check current platform
 if platform.system() == "Windows":
