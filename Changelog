@@ -73,7 +73,7 @@ development servers before rolling it out to production!
 * SQLite no concurrency limit should only be effective if the db backend is used.
 
 0.8.0 [2009-09-22 03:06 P.M CEST]
---------------------------------
+---------------------------------
 
 **BACKWARD INCOMPATIBLE CHANGES**
 
