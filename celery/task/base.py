@@ -121,7 +121,7 @@ class Task(object):
         ``settings.SEND_CELERY_ERROR_EMAILS`` is on.)
 
     .. attribute:: serializer
-        The name of a serializer that has been registered with 
+        The name of a serializer that has been registered with
         :mod:`carrot.serialization.registry`. Example: ``"json"``.
 
     .. attribute:: backend
