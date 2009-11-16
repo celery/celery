@@ -9,7 +9,7 @@
     :maxdepth: 2
 
     celery.task.base
-    celery.execute 
+    celery.execute
     celery.result
     celery.task
     celery.registry
@@ -29,7 +29,6 @@
     celery.worker.job
     celery.worker.controllers
     celery.pool
-    celery.supervisor
     celery.backends
     celery.backends.base
     celery.backends.database
@@ -44,6 +43,5 @@
     celery.views
     celery.managers
     celery.models
-    celery.fields
     celery.bin.celeryd
     celery.bin.celeryinit
