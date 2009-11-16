@@ -513,25 +513,6 @@ class TaskSet(object):
         conn.close()
         return TaskSetResult(taskset_id, subtasks)
 
-    def join(self, timeout=None):
-        """Gather the results for all of the tasks in the taskset,
-        and return a list with them ordered by the order of which they
-        were called.
-
-        :keyword timeout: The time in seconds, how long
-            it will wait for results, before the operation times out.
-
-        :raises TimeoutError: if ``timeout`` is not ``None``
-            and the operation takes longer than ``timeout`` seconds.
-
-        If any of the tasks raises an exception, the exception
-        will be reraised by :meth:`join`.
-
-        :returns: list of return values for all tasks in the taskset.
-
-        """
-        return self.run().join(timeout=timeout)
-
     @classmethod
     def remote_execute(cls, func, args):
         """Apply ``args`` to function by distributing the args to the
