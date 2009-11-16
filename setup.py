@@ -44,7 +44,8 @@ class RunTests(Command):
 install_requires = ["django-unittest-depth",
                     "anyjson",
                     "carrot>=0.7.0",
-                    "django-picklefield"]
+                    "django-picklefield",
+                    "billiard"]
 
 # python-daemon doesn't run on windows, so check current platform
 if platform.system() == "Windows":

@@ -13,9 +13,9 @@ from carrot.connection import DjangoBrokerConnection, AMQPConnectionException
 from celery import conf
 from celery import registry
 from celery.log import setup_logger
-from celery.pool import TaskPool
 from celery.beat import ClockServiceThread
 from celery.utils import retry_over_time
+from celery.worker.pool import TaskPool
 from celery.worker.job import TaskWrapper
 from celery.worker.scheduler import Scheduler
 from celery.worker.controllers import Mediator, ScheduleController

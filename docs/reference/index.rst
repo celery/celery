@@ -33,7 +33,7 @@
     celery.worker.controllers
     celery.worker.buckets
     celery.worker.scheduler
-    celery.pool
+    celery.worker.pool
     celery.beat
     celery.backends
     celery.backends.base

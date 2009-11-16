@@ -5,7 +5,7 @@ from celery.worker.job import WorkerTaskTrace, TaskWrapper
 from celery.datastructures import ExceptionInfo
 from celery.models import TaskMeta
 from celery.registry import tasks, NotRegistered
-from celery.pool import TaskPool
+from celery.worker.pool import TaskPool
 from celery.utils import gen_unique_id
 from carrot.backends.base import BaseMessage
 from StringIO import StringIO
