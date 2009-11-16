@@ -198,11 +198,11 @@ You only need three simple steps to use celery with your Django project.
     3. Configure celery to use the AMQP user and virtual host we created
         before, by adding the following to your ``settings.py``::
 
-            AMQP_SERVER = "localhost"
-            AMQP_PORT = 5672
-            AMQP_USER = "myuser"
-            AMQP_PASSWORD = "mypassword"
-            AMQP_VHOST = "myvhost"
+            BROKER_HOST = "localhost"
+            BROKER_PORT = 5672
+            BROKER_USER = "myuser"
+            BROKER_PASSWORD = "mypassword"
+            BROKER_VHOST = "myvhost"
 
 
 That's it.
