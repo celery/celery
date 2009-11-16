@@ -14,6 +14,9 @@ development servers before rolling it out to production!
 
 **IMPORTANT CHANGES**
 
+* If you're using Python < 2.6 and you use the multiprocessing backport, then
+  multiprocessing version 2.6.2.1 is required.
+
 * All AMQP_* settings has been renamed to BROKER_*, and in addition
   AMQP_SERVER has been renamed to BROKER_HOST, so before where you had::
 
@@ -46,6 +49,9 @@ that was the previously implied name.
 * New version requirement for carrot: 0.8.0
 
 **CHANGES**
+
+* Incorporated the multiprocessing backport patch that fixes the
+``processName`` error.
 
 * Ignore the result of PeriodicTask's by default.
 
