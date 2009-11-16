@@ -128,35 +128,39 @@ development servers before rolling it out to production!</p>
 <ul>
 <li><p class="first">All AMQP_* settings has been renamed to BROKER_*, and in addition
 AMQP_SERVER has been renamed to BROKER_HOST, so before where you had:</p>
-<div class="highlight-python"><pre>        AMQP_SERVER = "localhost"
-        AMQP_PORT = 5678
-        AMQP_USER = "myuser"
-        AMQP_PASSWORD = "mypassword"
-        AMQP_VHOST = "celery"
-
-You need to change that to::
-
-        BROKER_HOST = "localhost"
-        BROKER_PORT = 5678
-        BROKER_USER = "myuser"
-        BROKER_PASSWORD = "mypassword"
-        BROKER_VHOST = "celery"</pre>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">AMQP_SERVER</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>
+<span class="n">AMQP_PORT</span> <span class="o">=</span> <span class="mi">5678</span>
+<span class="n">AMQP_USER</span> <span class="o">=</span> <span class="s">&quot;myuser&quot;</span>
+<span class="n">AMQP_PASSWORD</span> <span class="o">=</span> <span class="s">&quot;mypassword&quot;</span>
+<span class="n">AMQP_VHOST</span> <span class="o">=</span> <span class="s">&quot;celery&quot;</span>
+</pre></div>
 </div>
 </li>
+</ul>
+<p>You need to change that to:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">BROKER_HOST</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>
+<span class="n">BROKER_PORT</span> <span class="o">=</span> <span class="mi">5678</span>
+<span class="n">BROKER_USER</span> <span class="o">=</span> <span class="s">&quot;myuser&quot;</span>
+<span class="n">BROKER_PASSWORD</span> <span class="o">=</span> <span class="s">&quot;mypassword&quot;</span>
+<span class="n">BROKER_VHOST</span> <span class="o">=</span> <span class="s">&quot;celery&quot;</span>
+</pre></div>
+</div>
+<ul>
 <li><p class="first">Custom carrot backends now need to include the backend class name, so before
 where you had:</p>
-<div class="highlight-python"><pre>        CARROT_BACKEND = "mycustom.backend.module"
-
-you need to change it to::
-
-        CARROT_BACKEND = "mycustom.backend.module.Backend"
-
-where ``Backend`` is the class name. This is probably ``"Backend"``, as
-that was the previously implied name.</pre>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">CARROT_BACKEND</span> <span class="o">=</span> <span class="s">&quot;mycustom.backend.module&quot;</span>
+</pre></div>
 </div>
 </li>
-<li><p class="first">New version requirement for carrot: 0.8.0</p>
-</li>
+</ul>
+<p>you need to change it to:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">CARROT_BACKEND</span> <span class="o">=</span> <span class="s">&quot;mycustom.backend.module.Backend&quot;</span>
+</pre></div>
+</div>
+<p>where <tt class="docutils literal"><span class="pre">Backend</span></tt> is the class name. This is probably <tt class="docutils literal"><span class="pre">&quot;Backend&quot;</span></tt>, as
+that was the previously implied name.</p>
+<ul class="simple">
+<li>New version requirement for carrot: 0.8.0</li>
 </ul>
 <p><strong>CHANGES</strong></p>
 <ul class="simple">

@@ -23,7 +23,7 @@ development servers before rolling it out to production!
 		AMQP_PASSWORD = "mypassword"
 		AMQP_VHOST = "celery"
 
-	You need to change that to::
+You need to change that to::
 
 		BROKER_HOST = "localhost"
 		BROKER_PORT = 5678
@@ -36,12 +36,12 @@ development servers before rolling it out to production!
 
 		CARROT_BACKEND = "mycustom.backend.module"
 
-	you need to change it to::
+you need to change it to::
 
 		CARROT_BACKEND = "mycustom.backend.module.Backend"
 
-	where ``Backend`` is the class name. This is probably ``"Backend"``, as
-	that was the previously implied name.
+where ``Backend`` is the class name. This is probably ``"Backend"``, as
+that was the previously implied name.
 
 * New version requirement for carrot: 0.8.0
 
@@ -73,7 +73,7 @@ development servers before rolling it out to production!
 * SQLite no concurrency limit should only be effective if the db backend is used.
 
 0.8.0 [2009-09-22 03:06 P.M CEST]
---------------------------------
+---------------------------------
 
 **BACKWARD INCOMPATIBLE CHANGES**
 
