@@ -43,7 +43,7 @@ class RunTests(Command):
 
 install_requires = ["django-unittest-depth",
                     "anyjson",
-                    "carrot>=0.7.0",
+                    "carrot>=0.8.0",
                     "django-picklefield",
                     "billiard"]
 
