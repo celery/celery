@@ -525,7 +525,7 @@ class TaskSet(object):
     def map(cls, func, args, timeout=None):
         """Distribute processing of the arguments and collect the results."""
         remote_task = cls.remote_execute(func, args)
-        return remote_task.join(timeout=timeout)
+        return remote_task.run().join(timeout=timeout)
 
     @classmethod
     def map_async(cls, func, args, timeout=None):
