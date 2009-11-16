@@ -24,11 +24,11 @@ it should contain all you need to run a basic celery set-up.
     DATABASE_ENGINE = "sqlite3"
     DATABASE_NAME = "mydatabase.db"
 
-    AMQP_SERVER = "localhost"
-    AMQP_PORT = 5672
-    AMQP_VHOST = "/"
-    AMQP_USER = "guest"
-    AMQP_PASSWORD = "guest"
+    BROKER_HOST = "localhost"
+    BROKER_PORT = 5672
+    BROKER_VHOST = "/"
+    BROKER_USER = "guest"
+    BROKER_PASSWORD = "guest"
 
     ## If you're doing mostly I/O you can have higher concurrency,
     ## if mostly spending time in the CPU, try to keep it close to the
