@@ -182,11 +182,11 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
     # when users sends e-mails.
     broker_connection = DjangoBrokerConnection()
     carrot_backend = broker_connection.backend_cls
-    if not isinstance(carrot_backend, str):
+    if carrot_backend and not isinstance(carrot_backend, str):
         carrot_backend = carrot_backend.__name__
 
     print(STARTUP_INFO_FMT % {
-            "carrot_backend": broker_connection.backend_cls or "amqp",
+            "carrot_backend": carrot_backend or "amqp",
             "vhost": broker_connection.virtual_host or "(default)",
             "host": broker_connection.hostname or "(default)",
             "port": broker_connection.port or "(port)",
