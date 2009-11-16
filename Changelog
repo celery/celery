@@ -15,7 +15,7 @@ development servers before rolling it out to production!
 **IMPORTANT CHANGES**
 
 * All AMQP_* settings has been renamed to BROKER_*, and in addition
-  AMQP_SERVER has been renamed to BROKER_HOST, so before where you had::
+AMQP_SERVER has been renamed to BROKER_HOST, so before where you had::
 
 		AMQP_SERVER = "localhost"
 		AMQP_PORT = 5678
@@ -23,7 +23,7 @@ development servers before rolling it out to production!
 		AMQP_PASSWORD = "mypassword"
 		AMQP_VHOST = "celery"
 
-	You need to change that to::
+You need to change that to::
 
 		BROKER_HOST = "localhost"
 		BROKER_PORT = 5678
@@ -32,16 +32,16 @@ development servers before rolling it out to production!
 		BROKER_VHOST = "celery"
 
 * Custom carrot backends now need to include the backend class name, so before
-  where you had::
+where you had::
 
 		CARROT_BACKEND = "mycustom.backend.module"
 
-	you need to change it to::
+you need to change it to::
 
 		CARROT_BACKEND = "mycustom.backend.module.Backend"
 
-	where ``Backend`` is the class name. This is probably ``"Backend"``, as
-	that was the previously implied name.
+where ``Backend`` is the class name. This is probably ``"Backend"``, as
+that was the previously implied name.
 
 * New version requirement for carrot: 0.8.0
 
