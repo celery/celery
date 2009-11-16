@@ -12,7 +12,6 @@ from operator import isNumberType
 from celery.datastructures import ExceptionInfo
 from celery.utils import noop
 from celery.utils.functional import curry
-from celery.patch import monkeypatch
 
 
 def pid_is_dead(pid):
@@ -198,7 +197,6 @@ class TaskPool(object):
         self.limit = limit
         self.logger = logger or multiprocessing.get_logger()
         self._pool = None
-        monkeypatch() # Patch "no processName" logging error.
 
     def start(self):
         """Run the task pool.
