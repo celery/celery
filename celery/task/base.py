@@ -477,7 +477,7 @@ class TaskSet(object):
         ... ])
 
         >>> taskset_result = taskset.run()
-        >>> list_of_return_values = taskset.join()
+        >>> list_of_return_values = taskset_result.join()
 
     """
 
