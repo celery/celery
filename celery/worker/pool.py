@@ -3,6 +3,8 @@
 Process Pools.
 
 """
+from multiprocessing.util import get_logger
+
 from billiard.pool import DynamicPool
 
 from celery.utils import noop
@@ -29,7 +31,7 @@ class TaskPool(object):
 
     def __init__(self, limit, logger=None):
         self.limit = limit
-        self.logger = logger or multiprocessing.get_logger()
+        self.logger = logger or get_logger()
         self._pool = None
 
     def start(self):
