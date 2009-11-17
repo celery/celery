@@ -208,7 +208,6 @@ Processing the clicks every 30 minutes is easy using celery periodic tasks.
 .. code-block:: python
 
     from celery.task import PeriodicTask
-    from celery.registry import tasks
     from clickmuncher.messaging import process_clicks
     from datetime import timedelta
 
@@ -218,12 +217,10 @@ Processing the clicks every 30 minutes is easy using celery periodic tasks.
     
         def run(self, \*\*kwargs):
             process_clicks()
-    tasks.register(ProcessClicksTask)
 
 We subclass from :class:`celery.task.base.PeriodicTask`, set the ``run_every``
 attribute and in the body of the task just call the ``process_clicks``
-function we wrote earlier. Finally, we register the task in the task registry
-so the celery workers is able to recognize and find it.
+function we wrote earlier. 
 
 
 Finishing

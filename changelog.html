@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Change history &mdash; Celery v0.8.1 (stable) documentation</title>
+    <title>Change history &mdash; Celery v0.9.0 (unstable) documentation</title>
     <link rel="stylesheet" href="static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.8.1 (stable)',
+        VERSION:     '0.9.0 (unstable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,13 +19,13 @@
     </script>
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v0.8.1 (stable) documentation" href="index.html" />
+    <link rel="top" title="Celery v0.9.0 (unstable) documentation" href="index.html" />
     <link rel="next" title="Interesting Links" href="links.html" />
-    <link rel="prev" title="Internals: The worker" href="internals/worker.html" /> 
+    <link rel="prev" title="Django Models - celery.models" href="internals/reference/celery.models.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v0.8.1 (stable) documentation</p>
+	<p>Celery v0.9.0 (unstable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Change history</h1></div>
@@ -35,7 +35,7 @@
 			<div class="headerButton"><a href="genindex.html" title="General Index" accesskey="I">index</a></div>
 			<div class="headerButton"><a href="modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
 			<div class="headerButton"><a href="links.html" title="Interesting Links" accesskey="N">next</a></div>
-			<div class="headerButton"><a href="internals/worker.html" title="Internals: The worker" accesskey="P">previous</a></div>
+			<div class="headerButton"><a href="internals/reference/celery.models.html" title="Django Models - celery.models" accesskey="P">previous</a></div>
 		</li>
 	</ul>
 </div>
@@ -50,9 +50,10 @@
 <li class="toctree-l1"><a class="reference external" href="cookbook/index.html">Cookbook</a></li>
 <li class="toctree-l1"><a class="reference external" href="tutorials/index.html">Tutorials</a></li>
 <li class="toctree-l1"><a class="reference external" href="faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1"><a class="reference external" href="reference/index.html">Module API Reference</a></li>
+<li class="toctree-l1"><a class="reference external" href="reference/index.html">API Reference</a></li>
 <li class="toctree-l1"><a class="reference external" href="internals/index.html">Internals</a></li>
 <li class="toctree-l1 current"><a class="current reference external" href="">Change history</a><ul>
+<li class="toctree-l2"><a class="reference external" href="#xxxx-xx-xx-xx-xx-x-x-xxx">1.0.0 [xxxx-xx-xx xx:xx x.x xxx]</a></li>
 <li class="toctree-l2"><a class="reference external" href="#p-m-cest">0.8.1 [2009-11-16 05:21 P.M CEST]</a></li>
 <li class="toctree-l2"><a class="reference external" href="#id1">0.8.0 [2009-09-22 03:06 P.M CEST]</a></li>
 <li class="toctree-l2"><a class="reference external" href="#a-m-cet">0.6.0 [2009-08-07 06:54 A.M CET]</a></li>
@@ -117,6 +118,91 @@
             
   <div class="section" id="change-history">
 <h1>Change history<a class="headerlink" href="#change-history" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="xxxx-xx-xx-xx-xx-x-x-xxx">
+<h2>1.0.0 [xxxx-xx-xx xx:xx x.x xxx]<a class="headerlink" href="#xxxx-xx-xx-xx-xx-x-x-xxx" title="Permalink to this headline">¶</a></h2>
+<p><strong>BACKWARD INCOMPATIBLE CHANGES</strong></p>
+<ul class="simple">
+<li>Default celeryd loglevel is now <tt class="docutils literal"><span class="pre">WARN</span></tt>, to enable to previous log level
+start celeryd with <tt class="docutils literal"><span class="pre">--loglevel=INFO</span></tt>.</li>
+<li>Tasks are automatically registered.</li>
+</ul>
+<p>This means you no longer have to register your tasks manually.
+You don&#8217;t have to change old code right away, because a task can&#8217;t be
+registered twice.</p>
+<p>If you don&#8217;t want your task to be automatically registered you can set
+the <tt class="docutils literal"><span class="pre">abstract</span></tt> attribute</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MyTask</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
+        <span class="n">abstract</span> <span class="o">=</span> <span class="bp">True</span>
+</pre></div>
+</div>
+<p>By using <tt class="docutils literal"><span class="pre">abstract</span></tt> only tasks subclassing this task will be automatically
+registered (this works like the Django ORM).</p>
+<p>Incidentally, this change also fixes the problems with automatic name
+assignment and relative imports. So you also don&#8217;t have to specify a task name
+anymore if you use relative imports.</p>
+<ul class="simple">
+<li>You can no longer use regular functions as tasks. This change was added
+because it makes the internals a lot more clean and simple. However, you can
+now turn functions into tasks by using the <tt class="docutils literal"><span class="pre">&#64;task</span></tt> decorator:</li>
+</ul>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.decorators</span> <span class="kn">import</span> <span class="n">task</span>
+
+<span class="nd">@task</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
+</pre></div>
+</div>
+<p>See the User Guide for more information.</p>
+<ul>
+<li><p class="first">The periodic task system has been rewritten to a centralized solution, this
+means <tt class="docutils literal"><span class="pre">celeryd</span></tt> no longer schedules periodic tasks by default, but a new
+daemon has been introduced: <tt class="docutils literal"><span class="pre">celerybeat</span></tt>.</p>
+<p>To launch the periodic task scheduler you have to run celerybeat:</p>
+<div class="highlight-python"><pre>$ celerybeat --detach</pre>
+</div>
+<p>Make sure this is running on one server only, if you run it twice it all
+periodic tasks will also be executed twice.</p>
+<p>If you only have one worker server you can embed it into celeryd like this:</p>
+<div class="highlight-python"><pre>$ celeryd --detatch --beat # Embed celerybeat in celeryd.</pre>
+</div>
+</li>
+<li><p class="first">The supervisor has been removed, please use something like
+<a class="reference external" href="http://supervisord.org">http://supervisord.org</a> instead. This means the <tt class="docutils literal"><span class="pre">-S</span></tt> and <tt class="docutils literal"><span class="pre">--supervised</span></tt>
+options to <tt class="docutils literal"><span class="pre">celeryd</span></tt> is no longer supported.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">TaskSet.join</span></tt> has been removed, use <tt class="docutils literal"><span class="pre">TaskSetResult.join</span></tt> instead.</p>
+</li>
+<li><p class="first">The task status <tt class="docutils literal"><span class="pre">&quot;DONE&quot;</span></tt> has been renamed to <cite>&#8220;SUCCESS&#8221;</cite>.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">AsyncResult.is_done</span></tt> has been removed, use <tt class="docutils literal"><span class="pre">AsyncResult.successful</span></tt>
+instead.</p>
+</li>
+</ul>
+<p><strong>NEWS</strong></p>
+<ul class="simple">
+<li>Rate limiting support (per task type, or globally).</li>
+<li>New periodic task system.</li>
+<li>Automatic registration.</li>
+<li>New cool task decorator syntax.</li>
+</ul>
+<p><strong>CHANGES</strong></p>
+<ul class="simple">
+<li>New dependencies: billiard, python-dateutil, django-picklefield</li>
+<li>ETA no longer sends datetime objects, but uses ISO 8601 date format in a
+string for better compatibility with other platforms.</li>
+<li>Task can now override the backend used to store results.</li>
+<li>Refactored the ExecuteWrapper, <tt class="docutils literal"><span class="pre">apply</span></tt> and <tt class="docutils literal"><span class="pre">CELERY_ALWAYS_EAGER</span></tt> now
+also executes the task callbacks and signals.</li>
+<li>Now using a proper scheduler for the tasks with an ETA. This means waiting
+eta tasks are sorted by time, so we don&#8217;t have to poll the whole list all the
+time.</li>
+</ul>
+<p><strong>DOCUMENTATION</strong></p>
+<ul class="simple">
+<li>Reference now split into two sections; API reference and internal module
+reference.</li>
+</ul>
+</div>
 <div class="section" id="p-m-cest">
 <h2>0.8.1 [2009-11-16 05:21 P.M CEST]<a class="headerlink" href="#p-m-cest" title="Permalink to this headline">¶</a></h2>
 <p><strong>VERY IMPORTANT NOTE</strong></p>
@@ -126,6 +212,9 @@ time. As with any release, you should test this version upgrade on your
 development servers before rolling it out to production!</p>
 <p><strong>IMPORTANT CHANGES</strong></p>
 <ul>
+<li><p class="first">If you&#8217;re using Python &lt; 2.6 and you use the multiprocessing backport, then
+multiprocessing version 2.6.2.1 is required.</p>
+</li>
 <li><p class="first">All AMQP_* settings has been renamed to BROKER_*, and in addition
 AMQP_SERVER has been renamed to BROKER_HOST, so before where you had:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">AMQP_SERVER</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>
@@ -164,6 +253,8 @@ that was the previously implied name.</p>
 </ul>
 <p><strong>CHANGES</strong></p>
 <ul class="simple">
+<li>Incorporated the multiprocessing backport patch that fixes the
+<tt class="docutils literal"><span class="pre">processName</span></tt> error.</li>
 <li>Ignore the result of PeriodicTask&#8217;s by default.</li>
 <li>Added a Redis result store backend</li>
 <li>Allow /etc/default/celeryd to define additional options for the celeryd init
@@ -357,7 +448,7 @@ detaching.</p>
 </dd>
 </dl>
 </li>
-<li><p class="first">jail() refactored into <a title="celery.execute.ExecuteWrapper" class="reference external" href="reference/celery.execute.html#celery.execute.ExecuteWrapper"><tt class="xref docutils literal"><span class="pre">celery.execute.ExecuteWrapper</span></tt></a>.</p>
+<li><p class="first">jail() refactored into <tt class="xref docutils literal"><span class="pre">celery.execute.ExecuteWrapper</span></tt>.</p>
 </li>
 <li><p class="first"><tt class="docutils literal"><span class="pre">views.apply</span></tt> now correctly sets mimetype to &#8220;application/json&#8221;</p>
 </li>
@@ -967,7 +1058,7 @@ the name change request is in <tt class="docutils literal"><span class="pre">doc
       <div class="clearer"></div>
     </div>
 	<div id="breadcrumbs">
-		<a href="index.html">Celery v0.8.1 (stable) documentation</a>
+		<a href="index.html">Celery v0.9.0 (unstable) documentation</a>
 		</ul>
 	</div>
   </body>

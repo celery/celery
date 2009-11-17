@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Task Result - celery.result &mdash; Celery v0.8.1 (stable) documentation</title>
+    <title>Task Result - celery.result &mdash; Celery v0.9.0 (unstable) documentation</title>
     <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.8.1 (stable)',
+        VERSION:     '0.9.0 (unstable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,14 +19,14 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.8.1 (stable) documentation" href="../index.html" />
-    <link rel="up" title="Module API Reference" href="index.html" />
+    <link rel="top" title="Celery v0.9.0 (unstable) documentation" href="../index.html" />
+    <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="Task Information and Utilities - celery.task" href="celery.task.html" />
     <link rel="prev" title="Executing Tasks - celery.execute" href="celery.execute.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v0.8.1 (stable) documentation</p>
+	<p>Celery v0.9.0 (unstable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Task Result - celery.result</h1></div>
@@ -51,12 +51,13 @@
 <li class="toctree-l1"><a class="reference external" href="../cookbook/index.html">Cookbook</a></li>
 <li class="toctree-l1"><a class="reference external" href="../tutorials/index.html">Tutorials</a></li>
 <li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1 current"><a class="reference external" href="index.html">Module API Reference</a><ul class="current">
+<li class="toctree-l1 current"><a class="reference external" href="index.html">API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference external" href="celery.decorators.html">Task Decorators - celery.decorators</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.task.base.html">Defining Tasks - celery.task.base</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.execute.html">Executing Tasks - celery.execute</a></li>
 <li class="toctree-l2 current"><a class="current reference external" href="">Task Result - celery.result</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.task.html">Task Information and Utilities - celery.task</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.registry.html">Task Registry - celery.registry</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.conf.html">Configuration - celery.conf</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.signals.html">Signals - celery.signals</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.exceptions.html">Exceptions - celery.exceptions</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.task.rest.html">Remote HTTP Tasks - celery.task.rest</a></li>
@@ -66,30 +67,13 @@
 <li class="toctree-l2"><a class="reference external" href="celery.loaders.base.html">Loader Base Classes - celery.loaders.base</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.loaders.djangoapp.html">Django Loader - celery.loaders.djangoapp</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.discovery.html">Task Discovery - celery.discovery</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.registry.html">Task Registry - celery.registry</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.monitoring.html">Statistics and Monitoring - celery.monitoring</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.messaging.html">Messaging - celery.messaging</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.worker.html">Multiprocessing Worker - celery.worker</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.worker.job.html">Executable Jobs - celery.worker.job</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.worker.controllers.html">Worker Controller Threads - celery.worker.controllers</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.pool.html">Task Pool - celery.pool</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.supervisor.html">Process Supervisor - celery.supervisor</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.backends.html">Backends - celery.backends</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.backends.base.html">Backend: Base - celery.backends.base</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.backends.database.html">Backend: Database - celery.backends.database</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.backends.cache.html">Backend: Cache - celery.backends.cache</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.backends.amqp.html">Backend: AMQP - celery.backends.amqp</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.backends.mongodb.html">Backend: MongoDB - celery.backends.mongodb</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.backends.tyrant.html">Backend: Tokyo Tyrant - celery.backends.tyrant</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.conf.html">Configuration - celery.conf</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.datastructures.html">Datastructures - celery.datastructures</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.log.html">Logging - celery.log</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.utils.html">Multiprocessing Worker - celery.worker</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.contrib.test_runner.html">Contrib: Test runner - celery.contrib.test_runner</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.views.html">Django Views - celery.views</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.managers.html">Django Model Managers - celery.managers</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.models.html">Django Models - celery.models</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.fields.html">Django Fields - celery.fields</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.bin.celerybeat.html">Celery Periodic Task Server - celery.bin.celerybeat</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.bin.celeryinit.html">Celery Initialize - celery.bin.celeryinit</a></li>
 </ul>
 </li>
@@ -153,7 +137,7 @@
 <dl class="attribute">
 <dt id="celery.result.AsyncResult.backend">
 <tt class="descname">backend</tt><a class="headerlink" href="#celery.result.AsyncResult.backend" title="Permalink to this definition">¶</a></dt>
-<dd>Instance of <a title="celery.backends.DefaultBackend" class="reference external" href="celery.backends.html#celery.backends.DefaultBackend"><tt class="xref docutils literal"><span class="pre">celery.backends.DefaultBackend</span></tt></a>.</dd></dl>
+<dd>Instance of <a title="celery.backends.DefaultBackend" class="reference external" href="../internals/reference/celery.backends.html#celery.backends.DefaultBackend"><tt class="xref docutils literal"><span class="pre">celery.backends.DefaultBackend</span></tt></a>.</dd></dl>
 
 </dd></dl>
 
@@ -195,20 +179,6 @@ task meta <a title="celery.result.BaseAsyncResult.backend" class="reference inte
 <dd>Alias to <a title="celery.result.BaseAsyncResult.wait" class="reference internal" href="#celery.result.BaseAsyncResult.wait"><tt class="xref docutils literal"><span class="pre">wait()</span></tt></a>.</dd></dl>
 
 <dl class="method">
-<dt id="celery.result.BaseAsyncResult.is_done">
-<tt class="descclassname">BaseAsyncResult.</tt><tt class="descname">is_done</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult.is_done" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task executed successfully.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
 <dt id="celery.result.BaseAsyncResult.ready">
 <tt class="descclassname">BaseAsyncResult.</tt><tt class="descname">ready</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult.ready" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task executed successfully, or raised
@@ -248,7 +218,7 @@ The task is to be retried, possibly because of failure.</blockquote>
 The task raised an exception, or has been retried more times
 than its limit. The <a title="celery.result.BaseAsyncResult.result" class="reference internal" href="#celery.result.BaseAsyncResult.result"><tt class="xref docutils literal"><span class="pre">result</span></tt></a> attribute contains the
 exception raised.</blockquote>
-<p><em>DONE</em></p>
+<p><em>SUCCESS</em></p>
 <blockquote>
 The task executed successfully. The <a title="celery.result.BaseAsyncResult.result" class="reference internal" href="#celery.result.BaseAsyncResult.result"><tt class="xref docutils literal"><span class="pre">result</span></tt></a> attribute
 contains the resulting value.</blockquote>
@@ -258,7 +228,16 @@ contains the resulting value.</blockquote>
 <dl class="method">
 <dt id="celery.result.BaseAsyncResult.successful">
 <tt class="descclassname">BaseAsyncResult.</tt><tt class="descname">successful</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult.successful" title="Permalink to this definition">¶</a></dt>
-<dd>Alias to <a title="celery.result.BaseAsyncResult.is_done" class="reference internal" href="#celery.result.BaseAsyncResult.is_done"><tt class="xref docutils literal"><span class="pre">is_done()</span></tt></a>.</dd></dl>
+<dd><p>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task executed successfully.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 <dl class="attribute">
 <dt id="celery.result.BaseAsyncResult.traceback">
@@ -298,13 +277,8 @@ exception will be re-raised.</p>
 <dd>The operation timed out.</dd></dl>
 
 <dl class="method">
-<dt id="celery.result.EagerResult.is_done">
-<tt class="descclassname">EagerResult.</tt><tt class="descname">is_done</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.EagerResult.is_done" title="Permalink to this definition">¶</a></dt>
-<dd>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task executed without failure.</dd></dl>
-
-<dl class="method">
-<dt id="celery.result.EagerResult.is_ready">
-<tt class="descclassname">EagerResult.</tt><tt class="descname">is_ready</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.EagerResult.is_ready" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.result.EagerResult.ready">
+<tt class="descclassname">EagerResult.</tt><tt class="descname">ready</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.EagerResult.ready" title="Permalink to this definition">¶</a></dt>
 <dd>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task has been executed.</dd></dl>
 
 <dl class="attribute">
@@ -316,6 +290,11 @@ exception will be re-raised.</p>
 <dt id="celery.result.EagerResult.status">
 <tt class="descclassname">EagerResult.</tt><tt class="descname">status</tt><a class="headerlink" href="#celery.result.EagerResult.status" title="Permalink to this definition">¶</a></dt>
 <dd>The tasks status</dd></dl>
+
+<dl class="method">
+<dt id="celery.result.EagerResult.successful">
+<tt class="descclassname">EagerResult.</tt><tt class="descname">successful</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.EagerResult.successful" title="Permalink to this definition">¶</a></dt>
+<dd>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task executed without failure.</dd></dl>
 
 <dl class="attribute">
 <dt id="celery.result.EagerResult.traceback">
@@ -515,8 +494,8 @@ waiting for execution.</td>
       <div class="clearer"></div>
     </div>
 	<div id="breadcrumbs">
-		<a href="index.html" accesskey="U">Module API Reference</a><img src="triangle_closed.png" alt="Right arrow">
-		<a href="../index.html">Celery v0.8.1 (stable) documentation</a>
+		<a href="index.html" accesskey="U">API Reference</a><img src="triangle_closed.png" alt="Right arrow">
+		<a href="../index.html">Celery v0.9.0 (unstable) documentation</a>
 		</ul>
 	</div>
   </body>

@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Django Loader - celery.loaders.djangoapp &mdash; Celery v0.8.1 (stable) documentation</title>
+    <title>Django Loader - celery.loaders.djangoapp &mdash; Celery v0.9.0 (unstable) documentation</title>
     <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.8.1 (stable)',
+        VERSION:     '0.9.0 (unstable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,14 +19,14 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.8.1 (stable) documentation" href="../index.html" />
-    <link rel="up" title="Module API Reference" href="index.html" />
-    <link rel="next" title="Task Discovery - celery.discovery" href="celery.discovery.html" />
+    <link rel="top" title="Celery v0.9.0 (unstable) documentation" href="../index.html" />
+    <link rel="up" title="API Reference" href="index.html" />
+    <link rel="next" title="Task Registry - celery.registry" href="celery.registry.html" />
     <link rel="prev" title="Default Loader - celery.loaders.default" href="celery.loaders.default.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v0.8.1 (stable) documentation</p>
+	<p>Celery v0.9.0 (unstable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Django Loader - celery.loaders.djangoapp</h1></div>
@@ -35,7 +35,7 @@
 		<li id="page_buttons">
 			<div class="headerButton"><a href="../genindex.html" title="General Index" accesskey="I">index</a></div>
 			<div class="headerButton"><a href="../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
-			<div class="headerButton"><a href="celery.discovery.html" title="Task Discovery - celery.discovery" accesskey="N">next</a></div>
+			<div class="headerButton"><a href="celery.registry.html" title="Task Registry - celery.registry" accesskey="N">next</a></div>
 			<div class="headerButton"><a href="celery.loaders.default.html" title="Default Loader - celery.loaders.default" accesskey="P">previous</a></div>
 		</li>
 	</ul>
@@ -51,12 +51,13 @@
 <li class="toctree-l1"><a class="reference external" href="../cookbook/index.html">Cookbook</a></li>
 <li class="toctree-l1"><a class="reference external" href="../tutorials/index.html">Tutorials</a></li>
 <li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1 current"><a class="reference external" href="index.html">Module API Reference</a><ul class="current">
+<li class="toctree-l1 current"><a class="reference external" href="index.html">API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference external" href="celery.decorators.html">Task Decorators - celery.decorators</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.task.base.html">Defining Tasks - celery.task.base</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.execute.html">Executing Tasks - celery.execute</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.result.html">Task Result - celery.result</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.task.html">Task Information and Utilities - celery.task</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.registry.html">Task Registry - celery.registry</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.conf.html">Configuration - celery.conf</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.signals.html">Signals - celery.signals</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.exceptions.html">Exceptions - celery.exceptions</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.task.rest.html">Remote HTTP Tasks - celery.task.rest</a></li>
@@ -66,30 +67,13 @@
 <li class="toctree-l2"><a class="reference external" href="celery.loaders.base.html">Loader Base Classes - celery.loaders.base</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
 <li class="toctree-l2 current"><a class="current reference external" href="">Django Loader - celery.loaders.djangoapp</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.discovery.html">Task Discovery - celery.discovery</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.registry.html">Task Registry - celery.registry</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.monitoring.html">Statistics and Monitoring - celery.monitoring</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.messaging.html">Messaging - celery.messaging</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.worker.html">Multiprocessing Worker - celery.worker</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.worker.job.html">Executable Jobs - celery.worker.job</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.worker.controllers.html">Worker Controller Threads - celery.worker.controllers</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.pool.html">Task Pool - celery.pool</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.supervisor.html">Process Supervisor - celery.supervisor</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.backends.html">Backends - celery.backends</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.backends.base.html">Backend: Base - celery.backends.base</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.backends.database.html">Backend: Database - celery.backends.database</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.backends.cache.html">Backend: Cache - celery.backends.cache</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.backends.amqp.html">Backend: AMQP - celery.backends.amqp</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.backends.mongodb.html">Backend: MongoDB - celery.backends.mongodb</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.backends.tyrant.html">Backend: Tokyo Tyrant - celery.backends.tyrant</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.conf.html">Configuration - celery.conf</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.datastructures.html">Datastructures - celery.datastructures</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.log.html">Logging - celery.log</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.utils.html">Multiprocessing Worker - celery.worker</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.contrib.test_runner.html">Contrib: Test runner - celery.contrib.test_runner</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.views.html">Django Views - celery.views</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.managers.html">Django Model Managers - celery.managers</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.models.html">Django Models - celery.models</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.fields.html">Django Fields - celery.fields</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.bin.celerybeat.html">Celery Periodic Task Server - celery.bin.celerybeat</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.bin.celeryinit.html">Celery Initialize - celery.bin.celeryinit</a></li>
 </ul>
 </li>
@@ -148,7 +132,7 @@ multiprocessing environment.</p>
 <dt id="celery.loaders.djangoapp.Loader.on_worker_init">
 <tt class="descname">on_worker_init</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.loaders.djangoapp.Loader.on_worker_init" title="Permalink to this definition">¶</a></dt>
 <dd><p>Called when the worker starts.</p>
-<p>Uses <a title="celery.discovery.autodiscover" class="reference external" href="celery.discovery.html#celery.discovery.autodiscover"><tt class="xref docutils literal"><span class="pre">celery.discovery.autodiscover()</span></tt></a> to automatically discover
+<p>Uses <a title="celery.discovery.autodiscover" class="reference external" href="../internals/reference/celery.discovery.html#celery.discovery.autodiscover"><tt class="xref docutils literal"><span class="pre">celery.discovery.autodiscover()</span></tt></a> to automatically discover
 any <tt class="docutils literal"><span class="pre">tasks.py</span></tt> files in the applications listed in
 <tt class="docutils literal"><span class="pre">INSTALLED_APPS</span></tt>.</p>
 </dd></dl>
@@ -175,8 +159,8 @@ any <tt class="docutils literal"><span class="pre">tasks.py</span></tt> files in
       <div class="clearer"></div>
     </div>
 	<div id="breadcrumbs">
-		<a href="index.html" accesskey="U">Module API Reference</a><img src="triangle_closed.png" alt="Right arrow">
-		<a href="../index.html">Celery v0.8.1 (stable) documentation</a>
+		<a href="index.html" accesskey="U">API Reference</a><img src="triangle_closed.png" alt="Right arrow">
+		<a href="../index.html">Celery v0.9.0 (unstable) documentation</a>
 		</ul>
 	</div>
   </body>
