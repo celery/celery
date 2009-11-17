@@ -39,7 +39,7 @@ class Scheduler(object):
                         yield 0
                     else:
                         heapq.heappush(q, event)
-            yield 1
+            yield None
 
     def empty(self):
         return not self._queue
