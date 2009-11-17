@@ -153,7 +153,7 @@ class TaskBucket(object):
         if task_name in self.buckets:
             return
         task_type = self.task_registry[task_name]
-        task_queue = Queue()
+        task_queue = task_type.rate_limit_queue_type()
         rate_limit = getattr(task_type, "rate_limit", None)
         rate_limit = parse_ratelimit_string(rate_limit)
         if rate_limit:

@@ -1,5 +1,6 @@
 import sys
 from datetime import timedelta
+from Queue import Queue
 
 from carrot.connection import DjangoBrokerConnection
 
@@ -149,6 +150,7 @@ class Task(object):
     default_retry_delay = 3 * 60
     serializer = conf.TASK_SERIALIZER
     rate_limit = conf.DEFAULT_RATE_LIMIT
+    rate_limit_queue_type = Queue
     backend = default_backend
 
     MaxRetriesExceededError = MaxRetriesExceededError
