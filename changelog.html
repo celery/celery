@@ -121,14 +121,14 @@
 <h2>1.0.0 [xxxx-xx-xx xx:xx x.x xxx]<a class="headerlink" href="#xxxx-xx-xx-xx-xx-x-x-xxx" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="backward-incompatible-changes">
 <h3>BACKWARD INCOMPATIBLE CHANGES<a class="headerlink" href="#backward-incompatible-changes" title="Permalink to this headline">¶</a></h3>
-<ul class="simple">
-<li>Default celeryd loglevel is now <tt class="docutils literal"><span class="pre">WARN</span></tt>, to enable the previous log level
-start celeryd with <tt class="docutils literal"><span class="pre">--loglevel=INFO</span></tt>.</li>
-<li>Tasks are automatically registered.</li>
-</ul>
+<ul>
+<li><p class="first">Default celeryd loglevel is now <tt class="docutils literal"><span class="pre">WARN</span></tt>, to enable the previous log level
+start celeryd with <tt class="docutils literal"><span class="pre">--loglevel=INFO</span></tt>.</p>
+</li>
+<li><p class="first">Tasks are automatically registered.</p>
 <p>This means you no longer have to register your tasks manually.
-You don&#8217;t have to change old code right away, because a task can&#8217;t be
-registered twice.</p>
+You don&#8217;t have to change your old code right away, as it doesn&#8217;t matter if
+a task is registered twice.</p>
 <p>If you don&#8217;t want your task to be automatically registered you can set
 the <tt class="docutils literal"><span class="pre">abstract</span></tt> attribute</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MyTask</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
@@ -140,11 +140,10 @@ registered (this works like the Django ORM).</p>
 <p>Incidentally, this change also fixes the problems with automatic name
 assignment and relative imports. So you also don&#8217;t have to specify a task name
 anymore if you use relative imports.</p>
-<ul class="simple">
-<li>You can no longer use regular functions as tasks. This change was added
+</li>
+<li><p class="first">You can no longer use regular functions as tasks. This change was added
 because it makes the internals a lot more clean and simple. However, you can
-now turn functions into tasks by using the <tt class="docutils literal"><span class="pre">&#64;task</span></tt> decorator:</li>
-</ul>
+now turn functions into tasks by using the <tt class="docutils literal"><span class="pre">&#64;task</span></tt> decorator:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.decorators</span> <span class="kn">import</span> <span class="n">task</span>
 
 <span class="nd">@task</span><span class="p">()</span>
@@ -152,8 +151,8 @@ now turn functions into tasks by using the <tt class="docutils literal"><span cl
         <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
 </pre></div>
 </div>
-<p>See the User Guide for more information.</p>
-<ul>
+<p>See the User Guide: <a class="reference external" href="userguide/tasks.html"><em>Tasks</em></a> for more information.</p>
+</li>
 <li><p class="first">The periodic task system has been rewritten to a centralized solution, this
 means <tt class="docutils literal"><span class="pre">celeryd</span></tt> no longer schedules periodic tasks by default, but a new
 daemon has been introduced: <tt class="docutils literal"><span class="pre">celerybeat</span></tt>.</p>
