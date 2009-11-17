@@ -1,8 +1,8 @@
-===============================================
- Token Bucket (rate limiting) - celery.buckets
-===============================================
+======================================================
+ Token Bucket (rate limiting) - celery.worker.buckets
+======================================================
 
-.. currentmodule:: celery.buckets
+.. currentmodule:: celery.worker.buckets
 
-.. automodule:: celery.buckets
+.. automodule:: celery.worker.buckets
     :members:

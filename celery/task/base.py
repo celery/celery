@@ -105,7 +105,7 @@ class Task(object):
         Default time in seconds before a retry of the task should be
         executed. Default is a 1 minute delay.
 
-    .. rate_limit::
+    .. attribute:: rate_limit
 
         Set the rate limit for this task type, Examples: ``None`` (no rate
         limit), ``"100/s"`` (hundred tasks a second), ``"100/m"`` (hundred
@@ -121,6 +121,7 @@ class Task(object):
         ``settings.SEND_CELERY_ERROR_EMAILS`` is on.)
 
     .. attribute:: serializer
+
         The name of a serializer that has been registered with
         :mod:`carrot.serialization.registry`. Example: ``"json"``.
 

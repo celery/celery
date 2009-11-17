@@ -9,4 +9,5 @@
     :maxdepth: 2
 
     worker
+    protocol
     reference/index

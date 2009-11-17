@@ -17,7 +17,7 @@ You don't have to change old code right away, because a task can't be
 registered twice.
 
 If you don't want your task to be automatically registered you can set
-the ``abstract`` attribute::
+the ``abstract`` attribute
 
 .. code-block:: python
 
@@ -33,15 +33,15 @@ anymore if you use relative imports.
 
 * You can no longer use regular functions as tasks. This change was added
   because it makes the internals a lot more clean and simple. However, you can
-  now turn functions into tasks by using the ``@task`` decorator::
+  now turn functions into tasks by using the ``@task`` decorator:
 
 .. code-block:: python
 
-		from celery.decorators import task
+	from celery.decorators import task
 
-		@task()
-		def add(x, y):
-			return x + y
+	@task()
+	def add(x, y):
+		return x + y
 
 See the User Guide for more information.
 
@@ -80,9 +80,6 @@ See the User Guide for more information.
 * Automatic registration.
 
 * New cool task decorator syntax.
-
-
-
 
 
 **CHANGES**
@@ -156,7 +153,7 @@ that was the previously implied name.
 **CHANGES**
 
 * Incorporated the multiprocessing backport patch that fixes the
-``processName`` error.
+  ``processName`` error.
 
 * Ignore the result of PeriodicTask's by default.
 

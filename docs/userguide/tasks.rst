@@ -9,6 +9,7 @@ With a function ``create_user``, that takes two arguments: ``username`` and
 ``password``, you can create a task like this:
 
 .. code-block:: python
+
     from celery.task import Task
 
     class CreateUserTask(Task):
