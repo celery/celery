@@ -8,6 +8,7 @@ from celery.result import EagerResult
 from celery.backends import default_backend
 from datetime import datetime, timedelta
 from celery.decorators import task as task_dec
+from celery.worker import parse_iso8601
 
 def return_True(*args, **kwargs):
     # Task run functions can't be closures/lambdas, as they're pickled.
@@ -166,7 +167,9 @@ class TestCeleryTasks(unittest.TestCase):
         self.assertEquals(task_data["task"], task_name)
         task_kwargs = task_data.get("kwargs", {})
         if test_eta:
-            self.assertTrue(isinstance(task_data.get("eta"), datetime))
+            self.assertTrue(isinstance(task_data.get("eta"), basestring))
+            to_datetime = parse_iso8601(task_data.get("eta"))
+            self.assertTrue(isinstance(to_datetime, datetime))
         for arg_name, arg_value in kwargs.items():
             self.assertEquals(task_kwargs.get(arg_name), arg_value)
 
@@ -201,7 +204,7 @@ class TestCeleryTasks(unittest.TestCase):
         self.assertNextTaskDataEquals(consumer, presult, t1.name)
 
         # With arguments.
-        presult2 = task.apply_async(t1, name="George Constanza")
+        presult2 = t1.apply_async(kwargs=dict(name="George Constanza"))
         self.assertNextTaskDataEquals(consumer, presult2, t1.name,
                 name="George Constanza")
 
