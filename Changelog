@@ -2,6 +2,111 @@
 Change history
 ==============
 
+1.0.0 [xxxx-xx-xx xx:xx x.x xxx]
+--------------------------------
+
+**BACKWARD INCOMPATIBLE CHANGES**
+
+* Default celeryd loglevel is now ``WARN``, to enable to previous log level
+  start celeryd with ``--loglevel=INFO``.
+
+* Tasks are automatically registered.
+
+This means you no longer have to register your tasks manually.
+You don't have to change old code right away, because a task can't be
+registered twice.
+
+If you don't want your task to be automatically registered you can set
+the ``abstract`` attribute::
+
+.. code-block:: python
+
+	class MyTask(Task):
+		abstract = True
+
+By using ``abstract`` only tasks subclassing this task will be automatically
+registered (this works like the Django ORM).
+
+Incidentally, this change also fixes the problems with automatic name
+assignment and relative imports. So you also don't have to specify a task name
+anymore if you use relative imports.
+
+* You can no longer use regular functions as tasks. This change was added
+  because it makes the internals a lot more clean and simple. However, you can
+  now turn functions into tasks by using the ``@task`` decorator::
+
+.. code-block:: python
+
+		from celery.decorators import task
+
+		@task()
+		def add(x, y):
+			return x + y
+
+See the User Guide for more information.
+
+* The periodic task system has been rewritten to a centralized solution, this
+  means ``celeryd`` no longer schedules periodic tasks by default, but a new
+  daemon has been introduced: ``celerybeat``.
+
+  To launch the periodic task scheduler you have to run celerybeat::
+
+		$ celerybeat --detach
+
+  Make sure this is running on one server only, if you run it twice it all
+  periodic tasks will also be executed twice.
+
+  If you only have one worker server you can embed it into celeryd like this::
+
+		$ celeryd --detatch --beat # Embed celerybeat in celeryd.
+
+* The supervisor has been removed, please use something like
+  http://supervisord.org instead. This means the ``-S`` and ``--supervised``
+  options to ``celeryd`` is no longer supported.
+
+* ``TaskSet.join`` has been removed, use ``TaskSetResult.join`` instead.
+
+* The task status ``"DONE"`` has been renamed to `"SUCCESS"`.
+
+* ``AsyncResult.is_done`` has been removed, use ``AsyncResult.successful``
+  instead.
+
+**NEWS**
+
+* Rate limiting support (per task type, or globally).
+
+* New periodic task system.
+
+* Automatic registration.
+
+* New cool task decorator syntax.
+
+
+
+
+
+**CHANGES**
+
+* New dependencies: billiard, python-dateutil, django-picklefield
+
+* ETA no longer sends datetime objects, but uses ISO 8601 date format in a
+  string for better compatibility with other platforms.
+
+* Task can now override the backend used to store results.
+
+* Refactored the ExecuteWrapper, ``apply`` and ``CELERY_ALWAYS_EAGER`` now
+  also executes the task callbacks and signals.
+
+* Now using a proper scheduler for the tasks with an ETA. This means waiting
+  eta tasks are sorted by time, so we don't have to poll the whole list all the
+  time.
+
+**DOCUMENTATION**
+
+* Reference now split into two sections; API reference and internal module
+  reference.
+
+
 0.8.1 [2009-11-16 05:21 P.M CEST]
 ---------------------------------
 
