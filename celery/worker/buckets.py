@@ -150,7 +150,8 @@ class TaskBucket(object):
         will be used.
 
         """
-        assert task_name not in self.buckets
+        if task_name in self.buckets:
+            return
         task_type = self.task_registry[task_name]
         task_queue = Queue()
         rate_limit = getattr(task_type, "rate_limit", None)
