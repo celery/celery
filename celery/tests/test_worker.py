@@ -134,7 +134,8 @@ class TestCarrotListener(unittest.TestCase):
         backend = MockBackend()
         m = create_message(backend, task=foo_task.name,
                            args=[2, 4, 8], kwargs={},
-                           eta=datetime.now() + timedelta(days=1))
+                           eta=(datetime.now() +
+                               timedelta(days=1)).isoformat())
 
         l.receive_message(m.decode(), m)
 
