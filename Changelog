@@ -13,38 +13,38 @@ BACKWARD INCOMPATIBLE CHANGES
 
 * Tasks are automatically registered.
 
-This means you no longer have to register your tasks manually.
-You don't have to change old code right away, because a task can't be
-registered twice.
+  This means you no longer have to register your tasks manually.
+  You don't have to change your old code right away, as it doesn't matter if
+  a task is registered twice.
 
-If you don't want your task to be automatically registered you can set
-the ``abstract`` attribute
+  If you don't want your task to be automatically registered you can set
+  the ``abstract`` attribute
 
-.. code-block:: python
+  .. code-block:: python
 
-	class MyTask(Task):
-		abstract = True
+		class MyTask(Task):
+			abstract = True
 
-By using ``abstract`` only tasks subclassing this task will be automatically
-registered (this works like the Django ORM).
+  By using ``abstract`` only tasks subclassing this task will be automatically
+  registered (this works like the Django ORM).
 
-Incidentally, this change also fixes the problems with automatic name
-assignment and relative imports. So you also don't have to specify a task name
-anymore if you use relative imports.
+  Incidentally, this change also fixes the problems with automatic name
+  assignment and relative imports. So you also don't have to specify a task name
+  anymore if you use relative imports.
 
 * You can no longer use regular functions as tasks. This change was added
   because it makes the internals a lot more clean and simple. However, you can
   now turn functions into tasks by using the ``@task`` decorator:
 
-.. code-block:: python
+  .. code-block:: python
 
-	from celery.decorators import task
+		from celery.decorators import task
 
-	@task()
-	def add(x, y):
-		return x + y
+		@task()
+		def add(x, y):
+			return x + y
 
-See the User Guide for more information.
+  See the User Guide: :doc:`userguide/tasks` for more information.
 
 * The periodic task system has been rewritten to a centralized solution, this
   means ``celeryd`` no longer schedules periodic tasks by default, but a new
