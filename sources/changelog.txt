@@ -3,11 +3,12 @@ Change history
 ==============
 
 1.0.0 [xxxx-xx-xx xx:xx x.x xxx]
---------------------------------
+================================
 
-**BACKWARD INCOMPATIBLE CHANGES**
+BACKWARD INCOMPATIBLE CHANGES
+-----------------------------
 
-* Default celeryd loglevel is now ``WARN``, to enable to previous log level
+* Default celeryd loglevel is now ``WARN``, to enable the previous log level
   start celeryd with ``--loglevel=INFO``.
 
 * Tasks are automatically registered.
@@ -53,7 +54,7 @@ See the User Guide for more information.
 
 		$ celerybeat --detach
 
-  Make sure this is running on one server only, if you run it twice it all
+  Make sure this is running on one server only, if you run it twice, all
   periodic tasks will also be executed twice.
 
   If you only have one worker server you can embed it into celeryd like this::
@@ -71,7 +72,8 @@ See the User Guide for more information.
 * ``AsyncResult.is_done`` has been removed, use ``AsyncResult.successful``
   instead.
 
-**NEWS**
+NEWS
+----
 
 * Rate limiting support (per task type, or globally).
 
@@ -82,7 +84,8 @@ See the User Guide for more information.
 * New cool task decorator syntax.
 
 
-**CHANGES**
+CHANGES
+-------
 
 * New dependencies: billiard, python-dateutil, django-picklefield
 
@@ -98,23 +101,26 @@ See the User Guide for more information.
   eta tasks are sorted by time, so we don't have to poll the whole list all the
   time.
 
-**DOCUMENTATION**
+DOCUMENTATION
+-------------
 
 * Reference now split into two sections; API reference and internal module
   reference.
 
 
 0.8.1 [2009-11-16 05:21 P.M CEST]
----------------------------------
+=================================
 
-**VERY IMPORTANT NOTE**
+VERY IMPORTANT NOTE
+-------------------
 
 This release (with carrot 0.8.0) enables AMQP QoS (quality of service), which
 means the workers will only receive as many messages as it can handle at a
 time. As with any release, you should test this version upgrade on your
 development servers before rolling it out to production!
 
-**IMPORTANT CHANGES**
+IMPORTANT CHANGES
+-----------------
 
 * If you're using Python < 2.6 and you use the multiprocessing backport, then
   multiprocessing version 2.6.2.1 is required.
@@ -150,7 +156,8 @@ that was the previously implied name.
 
 * New version requirement for carrot: 0.8.0
 
-**CHANGES**
+CHANGES
+-------
 
 * Incorporated the multiprocessing backport patch that fixes the
   ``processName`` error.
@@ -181,9 +188,10 @@ that was the previously implied name.
 * SQLite no concurrency limit should only be effective if the db backend is used.
 
 0.8.0 [2009-09-22 03:06 P.M CEST]
----------------------------------
+=================================
 
-**BACKWARD INCOMPATIBLE CHANGES**
+BACKWARD INCOMPATIBLE CHANGES
+-----------------------------
 
 * Add traceback to result value on failure.
 	**NOTE** If you use the database backend you have to re-create the
@@ -201,7 +209,8 @@ that was the previously implied name.
 
 * Now depends on python-daemon 1.4.8
 
-**IMPORTANT CHANGES**
+IMPORTANT CHANGES
+-----------------
 
 * Celery can now be used in pure Python (outside of a Django project).
 	This means celery is no longer Django specific.
@@ -263,7 +272,8 @@ that was the previously implied name.
     * AMQP_CONNECTION_MAX_RETRIES.
         Maximum number of restarts before we give up. Default: ``100``.
 
-**NEWS**
+NEWS
+----
 
 *  Fix an incompatibility between python-daemon and multiprocessing,
 	which resulted in the ``[Errno 10] No child processes`` problem when
@@ -312,9 +322,10 @@ that was the previously implied name.
 	Thanks mikedizon
 
 0.6.0 [2009-08-07 06:54 A.M CET]
---------------------------------
+================================
 
-**IMPORTANT CHANGES**
+IMPORTANT CHANGES
+-----------------
 
 * Fixed a bug where tasks raising unpickleable exceptions crashed pool
 	workers. So if you've had pool workers mysteriously dissapearing, or
@@ -332,7 +343,8 @@ that was the previously implied name.
 	we didn't do this before. Some documentation is updated to not manually
 	specify a task name.
 
-**NEWS**
+NEWS
+----
 
 * Tested with Django 1.1
 
@@ -384,13 +396,13 @@ that was the previously implied name.
 * Convert statistics data to unicode for use as kwargs. Thanks Lucy!
 
 0.4.1 [2009-07-02 01:42 P.M CET]
---------------------------------
+================================
 
 * Fixed a bug with parsing the message options (``mandatory``,
   ``routing_key``, ``priority``, ``immediate``)
 
-0.4.0 [2009-07-01 07:29 P.M CET] 
---------------------------------
+0.4.0 [2009-07-01 07:29 P.M CET]
+================================
 
 * Adds eager execution. ``celery.execute.apply``|``Task.apply`` executes the
   function blocking until the task is done, for API compatiblity it
@@ -402,8 +414,8 @@ that was the previously implied name.
 
 * 99% coverage using python ``coverage`` 3.0.
 
-0.3.20 [2009-06-25 08:42 P.M CET] 
----------------------------------
+0.3.20 [2009-06-25 08:42 P.M CET]
+=================================
 
 * New arguments to ``apply_async`` (the advanced version of
   ``delay_task``), ``countdown`` and ``eta``;
@@ -540,14 +552,14 @@ that was the previously implied name.
 * Tyrant Backend: Now re-establishes the connection for every task
   executed.
 
-0.3.3 [2009-06-08 01:07 P.M CET] 
---------------------------------
+0.3.3 [2009-06-08 01:07 P.M CET]
+================================
 
-	* The ``PeriodicWorkController`` now sleeps for 1 second between checking
-		for periodic tasks to execute.
+* The ``PeriodicWorkController`` now sleeps for 1 second between checking
+  for periodic tasks to execute.
 
 0.3.2 [2009-06-08 01:07 P.M CET]
---------------------------------
+================================
 
 * celeryd: Added option ``--discard``: Discard (delete!) all waiting
   messages in the queue.
@@ -555,7 +567,7 @@ that was the previously implied name.
 * celeryd: The ``--wakeup-after`` option was not handled as a float.
 
 0.3.1 [2009-06-08 01:07 P.M CET]
---------------------------------
+================================
 
 * The `PeriodicTask`` worker is now running in its own thread instead
   of blocking the ``TaskController`` loop.
@@ -563,7 +575,7 @@ that was the previously implied name.
 * Default ``QUEUE_WAKEUP_AFTER`` has been lowered to ``0.1`` (was ``0.3``)
 
 0.3.0 [2009-06-08 12:41 P.M CET]
---------------------------------
+================================
 
 **NOTE** This is a development version, for the stable release, please
 see versions 0.2.x.
@@ -637,7 +649,7 @@ arguments, so be sure to flush your task queue before you upgrade.
   stability.
 
 0.2.0 [2009-05-20 05:14 P.M CET]
---------------------------------
+================================
 
 * Final release of 0.2.0
 
@@ -647,20 +659,20 @@ arguments, so be sure to flush your task queue before you upgrade.
   from the database backend.
 
 0.2.0-pre3 [2009-05-20 05:14 P.M CET]
--------------------------------------
+=====================================
 
 * *Internal release*. Improved handling of unpickled exceptions,
   ``get_result`` now tries to recreate something looking like the
   original exception.
 
 0.2.0-pre2 [2009-05-20 01:56 P.M CET]
--------------------------------------
+=====================================
 
 * Now handles unpickleable exceptions (like the dynimically generated
   subclasses of ``django.core.exception.MultipleObjectsReturned``).
 
 0.2.0-pre1 [2009-05-20 12:33 P.M CET]
--------------------------------------
+=====================================
 
 * It's getting quite stable, with a lot of new features, so bump
   version to 0.2. This is a pre-release.
@@ -670,20 +682,20 @@ arguments, so be sure to flush your task queue before you upgrade.
   and ``celery.backends.default_backend.mark_as_failure()`` instead.
 
 0.1.15 [2009-05-19 04:13 P.M CET]
----------------------------------
+=================================
 
 * The celery daemon was leaking AMQP connections, this should be fixed,
   if you have any problems with too many files open (like ``emfile``
   errors in ``rabbit.log``, please contact us!
 
 0.1.14 [2009-05-19 01:08 P.M CET]
----------------------------------
+=================================
 
 * Fixed a syntax error in the ``TaskSet`` class.  (No such variable
   ``TimeOutError``).
 
 0.1.13 [2009-05-19 12:36 P.M CET]
----------------------------------
+=================================
 
 * Forgot to add ``yadayada`` to install requirements.
 
@@ -704,7 +716,7 @@ arguments, so be sure to flush your task queue before you upgrade.
   and the result will be in ``docs/.build/html``.
 
 0.1.12 [2009-05-18 04:38 P.M CET]
----------------------------------
+=================================
 
 * ``delay_task()`` etc. now returns ``celery.task.AsyncResult`` object,
   which lets you check the result and any failure that might have
@@ -742,13 +754,13 @@ arguments, so be sure to flush your task queue before you upgrade.
 		TT_PORT = 6657; # Port of the Tokyo Tyrant server.
 
 0.1.11 [2009-05-12 02:08 P.M CET]
----------------------------------
+=================================
 
 * The logging system was leaking file descriptors, resulting in
   servers stopping with the EMFILES (too many open files) error. (fixed)
 
 0.1.10 [2009-05-11 12:46 P.M CET]
----------------------------------
+=================================
 
 * Tasks now supports both positional arguments and keyword arguments.
 
@@ -757,7 +769,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 * The daemon now tries to reconnect if the connection is lost.
 
 0.1.8 [2009-05-07 12:27 P.M CET]
---------------------------------
+================================
 
 * Better test coverage
 * More documentation
@@ -765,7 +777,7 @@ arguments, so be sure to flush your task queue before you upgrade.
   ``settings.CELERYD_EMPTY_MSG_EMIT_EVERY`` is 0.
 
 0.1.7 [2009-04-30 1:50 P.M CET]
--------------------------------
+===============================
 
 * Added some unittests
 
@@ -780,7 +792,7 @@ arguments, so be sure to flush your task queue before you upgrade.
   and ``settings.CELERY_AMQP_CONSUMER_QUEUE``.
 
 0.1.6 [2009-04-28 2:13 P.M CET]
--------------------------------
+===============================
 
 * Introducing ``TaskSet``. A set of subtasks is executed and you can
   find out how many, or if all them, are done (excellent for progress
@@ -823,6 +835,6 @@ arguments, so be sure to flush your task queue before you upgrade.
   the name change request is in ``docs/name_change_request.txt``.
 
 0.1.0 [2009-04-24 11:28 A.M CET]
---------------------------------
+================================
 
 * Initial release
