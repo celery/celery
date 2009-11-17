@@ -19,7 +19,7 @@ class Bunch:
         self.__dict__.update(kw)
 
 
-class Backend(BaseBackend):
+class MongoBackend(BaseBackend):
 
     capabilities = ["ResultStore"]
 
@@ -59,7 +59,7 @@ class Backend(BaseBackend):
             self.mongodb_taskmeta_collection = conf.get(
                 'taskmeta_collection', self.mongodb_taskmeta_collection)
 
-        super(Backend, self).__init__(*args, **kwargs)
+        super(MongoBackend, self).__init__(*args, **kwargs)
         self._cache = {}
         self._connection = None
         self._database = None

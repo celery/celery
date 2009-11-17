@@ -9,7 +9,7 @@ except ImportError:
 from celery.loaders import settings
 
 
-class Backend(KeyValueStoreBackend):
+class RedisBackend(KeyValueStoreBackend):
     """Redis based task backend store.
 
     .. attribute:: redis_host
@@ -54,7 +54,7 @@ class Backend(KeyValueStoreBackend):
             raise ImproperlyConfigured(
                 "In order to use the Redis result store backend, you have to "
                 "set the REDIS_HOST and REDIS_PORT settings")
-        super(Backend, self).__init__()
+        super(RedisBackend, self).__init__()
         self._connection = None
 
     def open(self):

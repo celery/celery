@@ -7,7 +7,7 @@ from celery.backends.base import BaseBackend
 RESULTSTORE_EXCHANGE = "celeryresults"
 
 
-class Backend(BaseBackend):
+class AMQPBackend(BaseBackend):
     """AMQP backend. Publish results by sending messages to the broker
     using the task id as routing key.
 
@@ -20,7 +20,7 @@ class Backend(BaseBackend):
     capabilities = ["ResultStore"]
 
     def __init__(self, *args, **kwargs):
-        super(Backend, self).__init__(*args, **kwargs)
+        super(AMQPBackend, self).__init__(*args, **kwargs)
         self.connection = DjangoBrokerConnection()
         self._cache = {}
 

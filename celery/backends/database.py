@@ -3,13 +3,13 @@ from celery.models import TaskMeta
 from celery.backends.base import BaseBackend
 
 
-class Backend(BaseBackend):
+class DatabaseBackend(BaseBackend):
     """The database backends. Using Django models to store task metadata."""
 
     capabilities = ["ResultStore"]
 
     def __init__(self, *args, **kwargs):
-        super(Backend, self).__init__(*args, **kwargs)
+        super(DatabaseBackend, self).__init__(*args, **kwargs)
         self._cache = {}
 
     def store_result(self, task_id, result, status, traceback=None):

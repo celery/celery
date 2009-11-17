@@ -40,7 +40,7 @@ except InvalidCacheBackendError:
     pass
 
 
-class Backend(KeyValueStoreBackend):
+class CacheBackend(KeyValueStoreBackend):
     """Backend using the Django cache framework to store task metadata."""
 
     def get(self, key):

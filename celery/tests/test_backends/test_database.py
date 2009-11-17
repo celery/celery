@@ -1,5 +1,5 @@
 import unittest
-from celery.backends.database import Backend
+from celery.backends.database import DatabaseBackend
 from celery.utils import gen_unique_id
 from celery.task import PeriodicTask
 from celery import registry
@@ -23,7 +23,7 @@ class MyPeriodicTask(PeriodicTask):
 class TestDatabaseBackend(unittest.TestCase):
 
     def test_backend(self):
-        b = Backend()
+        b = DatabaseBackend()
         tid = gen_unique_id()
 
         self.assertFalse(b.is_successful(tid))

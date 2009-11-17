@@ -1,5 +1,5 @@
 import unittest
-from celery.backends.cache import Backend as CacheBackend
+from celery.backends.cache import CacheBackend
 from celery.utils import gen_unique_id
 
 

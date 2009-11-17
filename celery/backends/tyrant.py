@@ -9,7 +9,7 @@ from celery.backends.base import KeyValueStoreBackend
 from celery.loaders import settings
 
 
-class Backend(KeyValueStoreBackend):
+class TyrantBackend(KeyValueStoreBackend):
     """Tokyo Cabinet based task backend store.
 
     .. attribute:: tyrant_host
@@ -46,7 +46,7 @@ class Backend(KeyValueStoreBackend):
             raise ImproperlyConfigured(
                 "To use the Tokyo Tyrant backend, you have to "
                 "set the TT_HOST and TT_PORT settings in your settings.py")
-        super(Backend, self).__init__()
+        super(TyrantBackend, self).__init__()
         self._connection = None
 
     def open(self):

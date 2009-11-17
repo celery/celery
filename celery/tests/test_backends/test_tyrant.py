@@ -3,7 +3,7 @@ import unittest
 import errno
 import socket
 from celery.backends import tyrant
-from celery.backends.tyrant import Backend as TyrantBackend
+from celery.backends.tyrant import TyrantBackend
 from celery.utils import gen_unique_id
 from django.core.exceptions import ImproperlyConfigured
 
