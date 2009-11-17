@@ -1,0 +1,169 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Task Decorators - celery.decorators &mdash; Celery v0.9.0 (unstable) documentation</title>
+    <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.9.0 (unstable)',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v0.9.0 (unstable) documentation" href="../index.html" />
+    <link rel="up" title="API Reference" href="index.html" />
+    <link rel="next" title="Defining Tasks - celery.task.base" href="celery.task.base.html" />
+    <link rel="prev" title="API Reference" href="index.html" /> 
+  </head>
+  <body>
+<div id="docstitle">
+	<p>Celery v0.9.0 (unstable) documentation</p>
+</div>
+<div id="header">
+	<div id="title"><h1>Task Decorators - celery.decorators</h1></div>
+	<ul id="headerButtons">
+		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
+		<li id="page_buttons">
+			<div class="headerButton"><a href="../genindex.html" title="General Index" accesskey="I">index</a></div>
+			<div class="headerButton"><a href="../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="celery.task.base.html" title="Defining Tasks - celery.task.base" accesskey="N">next</a></div>
+			<div class="headerButton"><a href="index.html" title="API Reference" accesskey="P">previous</a></div>
+		</li>
+	</ul>
+</div>
+
+<div id="sphinxsidebar">
+  <div class="sphinxsidebarwrapper">
+	<ul><li class="toctree-l1"><a href="../index.html">Main Page</a></li></ul>
+	<ul class="current">
+<li class="toctree-l1"><a class="reference external" href="../introduction.html">celery - Distributed Task Queue</a></li>
+<li class="toctree-l1"><a class="reference external" href="../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference external" href="../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference external" href="../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference external" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1 current"><a class="reference external" href="index.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference external" href="">Task Decorators - celery.decorators</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.task.base.html">Defining Tasks - celery.task.base</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.execute.html">Executing Tasks - celery.execute</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.result.html">Task Result - celery.result</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.task.html">Task Information and Utilities - celery.task</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.conf.html">Configuration - celery.conf</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.signals.html">Signals - celery.signals</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.exceptions.html">Exceptions - celery.exceptions</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.task.rest.html">Remote HTTP Tasks - celery.task.rest</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.task.builtins.html">Built-in Task Classes - celery.task.builtins</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.task.strategy.html">Common Task Strategies - celery.task.strategy</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.loaders.html">Loaders - celery.loaders</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.loaders.base.html">Loader Base Classes - celery.loaders.base</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.loaders.djangoapp.html">Django Loader - celery.loaders.djangoapp</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.registry.html">Task Registry - celery.registry</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.monitoring.html">Statistics and Monitoring - celery.monitoring</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.messaging.html">Messaging - celery.messaging</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.contrib.test_runner.html">Contrib: Test runner - celery.contrib.test_runner</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.views.html">Django Views - celery.views</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.bin.celerybeat.html">Celery Periodic Task Server - celery.bin.celerybeat</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.bin.celeryinit.html">Celery Initialize - celery.bin.celeryinit</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="../internals/index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference external" href="../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference external" href="../links.html">Interesting Links</a></li>
+</ul>
+
+      <h3>This Page</h3>
+      <ul class="this-page-menu">
+        <li><a href="../sources/reference/celery.decorators.txt"
+               rel="nofollow">Show Source</a></li>
+      </ul>
+    <div id="searchbox" style="display: none">
+      
+        <form class="search" action="../search.html" method="get">
+			<div class="search-wrapper">
+			<span class="search-left"></span>
+			<input class="prettysearch" type="text" name="q" size="18" />
+			<span class="search-right">&nbsp;</span>
+			</div>
+          <input type="submit" value="Search" class="searchbutton" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </form>
+        <p class="searchtip" style="font-size: 90%">
+        Enter search terms or a module, class or function name.
+        </p>
+    </div>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+  </div>
+</div>
+
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-celery.decorators">
+<h1>Task Decorators - celery.decorators<a class="headerlink" href="#module-celery.decorators" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="celery.decorators.task">
+<tt class="descclassname">celery.decorators.</tt><tt class="descname">task</tt><big>(</big><em>**options</em><big>)</big><a class="headerlink" href="#celery.decorators.task" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make a task out of any callable.</p>
+<p>Examples:</p>
+<blockquote>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nd">@task</span><span class="p">()</span>
+<span class="gp">... </span><span class="k">def</span> <span class="nf">refresh_feed</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="n">Feed</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">refresh_feed</span><span class="p">(</span><span class="s">&quot;http://example.com/rss&quot;</span><span class="p">)</span> <span class="c"># Regular</span>
+<span class="go">&lt;Feed: http://example.com/rss&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">refresh_feed</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="s">&quot;http://example.com/rss&quot;</span><span class="p">)</span> <span class="c"># Async</span>
+<span class="go">&lt;AsyncResult: 8998d0f4-da0b-4669-ba03-d5ab5ac6ad5d&gt;</span>
+</pre></div>
+</div>
+<p># With setting extra options and using retry.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nd">@task</span><span class="p">(</span><span class="n">exchange</span><span class="o">=</span><span class="s">&quot;feeds&quot;</span><span class="p">)</span>
+<span class="gp">... </span><span class="k">def</span> <span class="nf">refresh_feed</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">try</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="k">return</span> <span class="n">Feed</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+<span class="gp">... </span>    <span class="k">except</span> <span class="n">socket</span><span class="o">.</span><span class="n">error</span><span class="p">,</span> <span class="n">exc</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="n">refresh_feed</span><span class="o">.</span><span class="n">retry</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="n">url</span><span class="p">],</span> <span class="n">kwargs</span><span class="o">=</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="gp">... </span>                           <span class="n">exc</span><span class="o">=</span><span class="n">exc</span><span class="p">)</span>
+</pre></div>
+</div>
+</blockquote>
+</dd></dl>
+
+</div>
+
+
+          </div> 
+        </div>
+      </div>
+    <div class="footer">
+    <p>
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.3.
+	</p>
+    </div>
+      <div class="clearer"></div>
+    </div>
+	<div id="breadcrumbs">
+		<a href="index.html" accesskey="U">API Reference</a><img src="triangle_closed.png" alt="Right arrow">
+		<a href="../index.html">Celery v0.9.0 (unstable) documentation</a>
+		</ul>
+	</div>
+  </body>
+</html>

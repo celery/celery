@@ -1,0 +1,408 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Tasks &mdash; Celery v0.9.0 (unstable) documentation</title>
+    <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.9.0 (unstable)',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v0.9.0 (unstable) documentation" href="../index.html" />
+    <link rel="up" title="User Guide" href="index.html" />
+    <link rel="next" title="Executing Tasks" href="executing.html" />
+    <link rel="prev" title="User Guide" href="index.html" /> 
+  </head>
+  <body>
+<div id="docstitle">
+	<p>Celery v0.9.0 (unstable) documentation</p>
+</div>
+<div id="header">
+	<div id="title"><h1>Tasks</h1></div>
+	<ul id="headerButtons">
+		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
+		<li id="page_buttons">
+			<div class="headerButton"><a href="../genindex.html" title="General Index" accesskey="I">index</a></div>
+			<div class="headerButton"><a href="../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="executing.html" title="Executing Tasks" accesskey="N">next</a></div>
+			<div class="headerButton"><a href="index.html" title="User Guide" accesskey="P">previous</a></div>
+		</li>
+	</ul>
+</div>
+
+<div id="sphinxsidebar">
+  <div class="sphinxsidebarwrapper">
+	<ul><li class="toctree-l1"><a href="../index.html">Main Page</a></li></ul>
+	<ul class="current">
+<li class="toctree-l1"><a class="reference external" href="../introduction.html">celery - Distributed Task Queue</a></li>
+<li class="toctree-l1"><a class="reference external" href="../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1 current"><a class="reference external" href="index.html">User Guide</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference external" href="">Tasks</a></li>
+<li class="toctree-l2"><a class="reference external" href="executing.html">Executing Tasks</a></li>
+<li class="toctree-l2"><a class="reference external" href="remote-tasks.html">Remote Tasks</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference external" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference external" href="../reference/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference external" href="../internals/index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference external" href="../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference external" href="../links.html">Interesting Links</a></li>
+</ul>
+
+      <h3>This Page</h3>
+      <ul class="this-page-menu">
+        <li><a href="../sources/userguide/tasks.txt"
+               rel="nofollow">Show Source</a></li>
+      </ul>
+    <div id="searchbox" style="display: none">
+      
+        <form class="search" action="../search.html" method="get">
+			<div class="search-wrapper">
+			<span class="search-left"></span>
+			<input class="prettysearch" type="text" name="q" size="18" />
+			<span class="search-right">&nbsp;</span>
+			</div>
+          <input type="submit" value="Search" class="searchbutton" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </form>
+        <p class="searchtip" style="font-size: 90%">
+        Enter search terms or a module, class or function name.
+        </p>
+    </div>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+  </div>
+</div>
+
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-celery.task.base">
+<h1>Tasks<a class="headerlink" href="#module-celery.task.base" title="Permalink to this headline">¶</a></h1>
+<p>A task is a class that encapsulates a function and its execution options.
+With a function <tt class="docutils literal"><span class="pre">create_user</span></tt>, that takes two arguments: <tt class="docutils literal"><span class="pre">username</span></tt> and
+<tt class="docutils literal"><span class="pre">password</span></tt>, you can create a task like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">Task</span>
+
+<span class="k">class</span> <span class="nc">CreateUserTask</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">):</span>
+        <span class="n">create_user</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>For convenience there is a shortcut decorator that turns any function into
+a task, <tt class="docutils literal"><span class="pre">celery.decorators.task</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.decorators</span> <span class="kn">import</span> <span class="n">task</span>
+<span class="kn">from</span> <span class="nn">django.contrib.auth</span> <span class="kn">import</span> <span class="n">User</span>
+
+<span class="nd">@task</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">create_user</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">):</span>
+    <span class="n">User</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="n">password</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Note the parens after <tt class="docutils literal"><span class="pre">&#64;task()</span></tt> the task decorator takes any execution
+options the <tt class="docutils literal"><span class="pre">Task</span></tt> class does:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@task</span><span class="p">(</span><span class="n">serializer</span><span class="o">=</span><span class="s">&quot;json&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">create_user</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">):</span>
+    <span class="n">User</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="n">password</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>An alternative way to use the decorator is to give the function as an argument
+instead, but if you do this be sure to set the resulting tasks <tt class="docutils literal"><span class="pre">__name__</span></tt>
+attribute, so pickle is able to find it in reverse:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">create_user_task</span> <span class="o">=</span> <span class="n">task</span><span class="p">()(</span><span class="n">create_user</span><span class="p">)</span>
+<span class="n">create_user_task</span><span class="o">.</span><span class="n">__name__</span> <span class="o">=</span> <span class="s">&quot;create_user_task&quot;</span>
+</pre></div>
+</div>
+<div class="section" id="default-keyword-arguments">
+<h2>Default keyword arguments<a class="headerlink" href="#default-keyword-arguments" title="Permalink to this headline">¶</a></h2>
+<p>Celery supports a set of default arguments that can be forwarded to any task.
+task can choose not to take these, or only list the ones it want
+(the worker will do the right thing).</p>
+<p>The current default keyword arguments are:</p>
+<ul>
+<li><p class="first">logfile</p>
+<blockquote>
+<p>The currently used log file, can be passed on to <tt class="docutils literal"><span class="pre">self.get_logger</span></tt>
+to gain access to the workers log file. See <a class="reference internal" href="#logging">Logging</a>.</p>
+</blockquote>
+</li>
+<li><p class="first">loglevel</p>
+<blockquote>
+<p>The current loglevel used.</p>
+</blockquote>
+</li>
+<li><p class="first">task_id</p>
+<blockquote>
+<p>The unique id of the executing task.</p>
+</blockquote>
+</li>
+<li><p class="first">task_name</p>
+<blockquote>
+<p>Name of the executing task.</p>
+</blockquote>
+</li>
+<li><p class="first">task_retries</p>
+<blockquote>
+<p>How many times the current task has been retried.
+(an integer starting a <tt class="docutils literal"><span class="pre">0</span></tt>).</p>
+</blockquote>
+</li>
+</ul>
+</div>
+<div class="section" id="logging">
+<h2>Logging<a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h2>
+<p>You can use the workers logger to add some diagnostic output to
+the worker log:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">AddTask</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Adding </span><span class="si">%s</span><span class="s"> + </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
+</pre></div>
+</div>
+<p>or using the decorator syntax:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@task</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">add</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Adding </span><span class="si">%s</span><span class="s"> + </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
+</pre></div>
+</div>
+<p>There are several logging levels available, and the workers <tt class="docutils literal"><span class="pre">loglevel</span></tt>
+setting decides whether they will be sent to the log file or not.</p>
+</div>
+<div class="section" id="retrying-a-task-if-something-fails">
+<h2>Retrying a task if something fails<a class="headerlink" href="#retrying-a-task-if-something-fails" title="Permalink to this headline">¶</a></h2>
+<p>Simply use <a title="celery.task.base.Task.retry" class="reference external" href="../reference/celery.task.base.html#celery.task.base.Task.retry"><tt class="xref docutils literal"><span class="pre">Task.retry()</span></tt></a> to re-sent the task, it will
+do the right thing, and respect the <a title="celery.task.base.Task.max_retries" class="reference external" href="../reference/celery.task.base.html#celery.task.base.Task.max_retries"><tt class="xref docutils literal"><span class="pre">Task.max_retries</span></tt></a>
+attribute:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@task</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">send_twitter_status</span><span class="p">(</span><span class="n">oauth</span><span class="p">,</span> <span class="n">tweet</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">twitter</span> <span class="o">=</span> <span class="n">Twitter</span><span class="p">(</span><span class="n">oauth</span><span class="p">)</span>
+        <span class="n">twitter</span><span class="o">.</span><span class="n">update_status</span><span class="p">(</span><span class="n">tweet</span><span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="n">Twitter</span><span class="o">.</span><span class="n">FailWhaleError</span><span class="p">,</span> <span class="n">Twitter</span><span class="o">.</span><span class="n">LoginError</span><span class="p">),</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="n">send_twitter_status</span><span class="o">.</span><span class="n">retry</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="n">oauth</span><span class="p">,</span> <span class="n">tweet</span><span class="p">],</span> <span class="n">exc</span><span class="o">=</span><span class="n">exc</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Here we used the <tt class="docutils literal"><span class="pre">exc</span></tt> argument to pass the current exception to
+<a title="celery.task.base.Task.retry" class="reference external" href="../reference/celery.task.base.html#celery.task.base.Task.retry"><tt class="xref docutils literal"><span class="pre">Task.retry()</span></tt></a>. At each step of the retry this exception
+is available as the tombstone (result) of the task, when
+<a title="celery.task.base.Task.max_retries" class="reference external" href="../reference/celery.task.base.html#celery.task.base.Task.max_retries"><tt class="xref docutils literal"><span class="pre">Task.max_retries</span></tt></a> has been exceeded this is the exception
+raised. However, if an <tt class="docutils literal"><span class="pre">exc</span></tt> argument is not provided the
+<tt class="xref docutils literal"><span class="pre">RetryTaskError</span></tt> exception is raised instead.</p>
+<div class="section" id="using-a-custom-retry-delay">
+<h3>Using a custom retry delay<a class="headerlink" href="#using-a-custom-retry-delay" title="Permalink to this headline">¶</a></h3>
+<p>The default countdown is in the tasks
+<a title="celery.task.base.Task.default_retry_delay" class="reference external" href="../reference/celery.task.base.html#celery.task.base.Task.default_retry_delay"><tt class="xref docutils literal"><span class="pre">Task.default_retry_delay</span></tt></a> attribute, which by
+default is set to 3 minutes.</p>
+<p>You can also provide the <tt class="docutils literal"><span class="pre">countdown</span></tt> argument to
+<a title="celery.task.base.Task.retry" class="reference external" href="../reference/celery.task.base.html#celery.task.base.Task.retry"><tt class="xref docutils literal"><span class="pre">Task.retry()</span></tt></a> to override this default.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MyTask</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
+    <span class="n">default_retry_delay</span> <span class="o">=</span> <span class="mi">30</span> <span class="o">*</span> <span class="mi">60</span> <span class="c"># retry in 30 minutes</span>
+
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="o">...</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">retry</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">],</span> <span class="n">exc</span><span class="o">=</span><span class="n">exc</span><span class="p">,</span>
+                       <span class="n">countdown</span><span class="o">=</span><span class="mi">60</span> <span class="c"># override the default and</span>
+                                    <span class="c"># retry in 1 minute</span>
+                       <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="task-options">
+<h2>Task options<a class="headerlink" href="#task-options" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><p class="first">name</p>
+<blockquote>
+<p>This is the name the task is registered as.
+You can set this name manually, or just use the default which is
+atomatically generated using the module and class name.</p>
+</blockquote>
+</li>
+<li><p class="first">abstract</p>
+<blockquote>
+<p>Abstract classes are not registered, so they&#8217;re
+only used for making new task types by subclassing.</p>
+</blockquote>
+</li>
+<li><p class="first">max_retries</p>
+<blockquote>
+<p>The maximum number of attempted retries before giving up.
+If this is exceeded the :exc`celery.execptions.MaxRetriesExceeded`
+exception will be raised. Note that you have to retry manually, it&#8217;s
+not something that happens automatically.</p>
+</blockquote>
+</li>
+<li><p class="first">default_retry_delay</p>
+<blockquote>
+<p>Default time in seconds before a retry of the task should be
+executed. Default is a 1 minute delay.</p>
+</blockquote>
+</li>
+<li><p class="first">rate_limit</p>
+<p>Set the rate limit for this task type,
+if this is <tt class="xref docutils literal"><span class="pre">None</span></tt> no rate limit is in effect.
+The rate limits can be specified in seconds, minutes or hours
+by appending <tt class="docutils literal"><span class="pre">&quot;/s&quot;</span></tt>, <tt class="docutils literal"><span class="pre">&quot;/m&quot;</span></tt> or &#8220;<tt class="docutils literal"><span class="pre">/h&quot;</span></tt>&#8220;. If this is an integer
+it is interpreted as seconds. Example: <tt class="docutils literal"><span class="pre">&quot;100/m&quot;</span> <span class="pre">(hundred</span> <span class="pre">tasks</span> <span class="pre">a</span>
+<span class="pre">minute).</span> <span class="pre">Default</span> <span class="pre">is</span> <span class="pre">the</span> <span class="pre">``CELERY_DEFAULT_RATE_LIMIT</span></tt> setting (which
+is off if not specified).</p>
+</li>
+<li><p class="first">ignore_result</p>
+<dl class="docutils">
+<dt>Don&#8217;t store the status and return value. This means you can&#8217;t</dt>
+<dd><p class="first last">use the <a title="celery.result.AsyncResult" class="reference external" href="../reference/celery.result.html#celery.result.AsyncResult"><tt class="xref docutils literal"><span class="pre">celery.result.AsyncResult</span></tt></a> to check if the task is
+done, or get its return value. Only use if you need the performance
+and is able live without these features. Any exceptions raised will
+store the return value/status as usual.</p>
+</dd>
+</dl>
+</li>
+<li><p class="first">disable_error_emails</p>
+<blockquote>
+<p>Disable all error e-mails for this task.</p>
+</blockquote>
+</li>
+<li><p class="first">serializer</p>
+<blockquote>
+<p>A string identifying the default serialization
+method to use. Defaults to the <tt class="docutils literal"><span class="pre">CELERY_TASK_SERIALIZER</span></tt> setting.
+Can be <tt class="docutils literal"><span class="pre">pickle</span></tt> <tt class="docutils literal"><span class="pre">json</span></tt>, <tt class="docutils literal"><span class="pre">yaml</span></tt>, or any custom serialization
+methods that have been registered with
+<tt class="xref docutils literal"><span class="pre">carrot.serialization.registry</span></tt>.</p>
+<p>Please see <tt class="xref docutils literal"><span class="pre">userguide/executing</span></tt> for more information.</p>
+</blockquote>
+</li>
+</ul>
+<div class="section" id="message-and-routing-options">
+<h3>Message and routing options<a class="headerlink" href="#message-and-routing-options" title="Permalink to this headline">¶</a></h3>
+<ul>
+<li><dl class="first docutils">
+<dt>routing_key</dt>
+<dd><p class="first last">Override the global default <tt class="docutils literal"><span class="pre">routing_key</span></tt> for this task.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>exchange</dt>
+<dd><p class="first last">Override the global default <tt class="docutils literal"><span class="pre">exchange</span></tt> for this task.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>mandatory</dt>
+<dd><p class="first last">If set, the task message has mandatory routing. By default the task
+is silently dropped by the broker if it can&#8217;t be routed to a queue.
+However - If the task is mandatory, an exception will be raised
+instead.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>immediate</dt>
+<dd><p class="first last">Request immediate delivery. If the task cannot be routed to a
+task worker immediately, an exception will be raised. This is
+instead of the default behaviour, where the broker will accept and
+queue the task, but with no guarantee that the task will ever
+be executed.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>priority</dt>
+<dd><p class="first last">The message priority. A number from <tt class="docutils literal"><span class="pre">0</span></tt> to <tt class="docutils literal"><span class="pre">9</span></tt>, where <tt class="docutils literal"><span class="pre">0</span></tt> is the
+highest. Note that RabbitMQ doesn&#8217;t support priorities yet.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Please see <tt class="xref docutils literal"><span class="pre">userguide/executing</span></tt> for descriptions of these options.</p>
+</div>
+</div>
+<div class="section" id="how-it-works">
+<h2>How it works<a class="headerlink" href="#how-it-works" title="Permalink to this headline">¶</a></h2>
+<p>Here comes the technical details, this part isn&#8217;t something you need to know,
+but you may be interested, so here goes.</p>
+<p>All defined tasks are listed in a registry. The registry contains
+a list of task names and their task classes. You can investigate this registry
+by yourself:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">registry</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery</span> <span class="kn">import</span> <span class="n">task</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">registry</span><span class="o">.</span><span class="n">tasks</span>
+<span class="go">{&#39;celery.delete_expired_task_meta&#39;:</span>
+<span class="go">  &lt;celery.task.builtins.DeleteExpiredTaskMetaTask object at 0x101d1f510&gt;,</span>
+<span class="go">&#39;celery.execute_remote&#39;:</span>
+<span class="go">  &lt;celery.task.base.ExecuteRemoteTask object at 0x101d17890&gt;,</span>
+<span class="go">&#39;celery.task.rest.RESTProxyTask&#39;:</span>
+<span class="go">  &lt;celery.task.rest.RESTProxyTask object at 0x101d1f410&gt;,</span>
+<span class="go">&#39;celery.task.rest.Task&#39;: &lt;celery.task.rest.Task object at 0x101d1f4d0&gt;,</span>
+<span class="go">&#39;celery.map_async&#39;:</span>
+<span class="go">  &lt;celery.task.base.AsynchronousMapTask object at 0x101d17910&gt;,</span>
+<span class="go">&#39;celery.ping&#39;: &lt;celery.task.builtins.PingTask object at 0x101d1f550&gt;}</span>
+</pre></div>
+</div>
+<p>This is the list of tasks built-in to celery. Note that we had to import
+<tt class="docutils literal"><span class="pre">celery.task</span></tt> first for these to show up. This is because the tasks will
+only be registered when the module it is defined in is imported.</p>
+<p>When using the default loader the loader imports any modules listed in the
+<tt class="docutils literal"><span class="pre">CELERY_IMPORTS</span></tt> setting. If using Django it loads all <tt class="docutils literal"><span class="pre">tasks.py</span></tt> modules
+for the applications listed in <tt class="docutils literal"><span class="pre">INSTALLED_APPS</span></tt>. If you want to do something
+special you can create your own loader to do what you want.</p>
+<p>The entity responsible for registering your task in the registry is a
+metaclass, <a title="celery.task.base.TaskType" class="reference external" href="../reference/celery.task.base.html#celery.task.base.TaskType"><tt class="xref docutils literal"><span class="pre">TaskType</span></tt></a>, this is the default metaclass for
+<tt class="docutils literal"><span class="pre">Task</span></tt>. If you want to register your task manually you can set the
+<tt class="docutils literal"><span class="pre">abstract</span></tt> attribute:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MyTask</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
+    <span class="n">abstract</span> <span class="o">=</span> <span class="bp">True</span>
+</pre></div>
+</div>
+<p>This way the task won&#8217;t be registered, but any task subclassing it will.</p>
+<p>So when we send a task, we don&#8217;t send the function code, we just send the name
+of the task, so when the worker receives the message it can just look it up in
+the task registry to find the execution code.</p>
+<p>This means that your workers must optimally be updated with the same software
+as the client, this is a drawback, but the alternative is a technical
+challenge that has yet to be solved.</p>
+</div>
+</div>
+
+
+          </div> 
+        </div>
+      </div>
+    <div class="footer">
+    <p>
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.3.
+	</p>
+    </div>
+      <div class="clearer"></div>
+    </div>
+	<div id="breadcrumbs">
+		<a href="index.html" accesskey="U">User Guide</a><img src="triangle_closed.png" alt="Right arrow">
+		<a href="../index.html">Celery v0.9.0 (unstable) documentation</a>
+		</ul>
+	</div>
+  </body>
+</html>

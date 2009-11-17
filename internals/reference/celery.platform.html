@@ -1,0 +1,132 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Platform Specific - celery.platform &mdash; Celery v0.9.0 (unstable) documentation</title>
+    <link rel="stylesheet" href="../../static/adctheme.css" type="text/css" />
+    <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.9.0 (unstable)',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../static/jquery.js"></script>
+    <script type="text/javascript" src="../../static/doctools.js"></script>
+    <link rel="top" title="Celery v0.9.0 (unstable) documentation" href="../../index.html" />
+    <link rel="up" title="Internal Module Reference" href="index.html" />
+    <link rel="next" title="Django Model Managers - celery.managers" href="celery.managers.html" />
+    <link rel="prev" title="Compat Functional Utils - celery.utils.functional" href="celery.utils.functional.html" /> 
+  </head>
+  <body>
+<div id="docstitle">
+	<p>Celery v0.9.0 (unstable) documentation</p>
+</div>
+<div id="header">
+	<div id="title"><h1>Platform Specific - celery.platform</h1></div>
+	<ul id="headerButtons">
+		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
+		<li id="page_buttons">
+			<div class="headerButton"><a href="../../genindex.html" title="General Index" accesskey="I">index</a></div>
+			<div class="headerButton"><a href="../../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="celery.managers.html" title="Django Model Managers - celery.managers" accesskey="N">next</a></div>
+			<div class="headerButton"><a href="celery.utils.functional.html" title="Compat Functional Utils - celery.utils.functional" accesskey="P">previous</a></div>
+		</li>
+	</ul>
+</div>
+
+<div id="sphinxsidebar">
+  <div class="sphinxsidebarwrapper">
+	<ul><li class="toctree-l1"><a href="../../index.html">Main Page</a></li></ul>
+	<ul>
+<li class="toctree-l1"><a class="reference external" href="../../introduction.html">celery - Distributed Task Queue</a></li>
+<li class="toctree-l1"><a class="reference external" href="../../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference external" href="../../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference external" href="../../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference external" href="../../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference external" href="../../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference external" href="../../reference/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference external" href="../index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference external" href="../../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference external" href="../../links.html">Interesting Links</a></li>
+</ul>
+
+      <h3>This Page</h3>
+      <ul class="this-page-menu">
+        <li><a href="../../sources/internals/reference/celery.platform.txt"
+               rel="nofollow">Show Source</a></li>
+      </ul>
+    <div id="searchbox" style="display: none">
+      
+        <form class="search" action="../../search.html" method="get">
+			<div class="search-wrapper">
+			<span class="search-left"></span>
+			<input class="prettysearch" type="text" name="q" size="18" />
+			<span class="search-right">&nbsp;</span>
+			</div>
+          <input type="submit" value="Search" class="searchbutton" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </form>
+        <p class="searchtip" style="font-size: 90%">
+        Enter search terms or a module, class or function name.
+        </p>
+    </div>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+  </div>
+</div>
+
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-celery.platform">
+<h1>Platform Specific - celery.platform<a class="headerlink" href="#module-celery.platform" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="celery.platform.acquire_pidlock">
+<tt class="descclassname">celery.platform.</tt><tt class="descname">acquire_pidlock</tt><big>(</big><em>pidfile</em><big>)</big><a class="headerlink" href="#celery.platform.acquire_pidlock" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the <tt class="xref docutils literal"><span class="pre">daemon.pidlockfile.PIDLockFile</span></tt> handler for
+<tt class="docutils literal"><span class="pre">pidfile</span></tt>.</p>
+<p>If the <tt class="docutils literal"><span class="pre">pidfile</span></tt> already exists, but the process is not running the
+<tt class="docutils literal"><span class="pre">pidfile</span></tt> will be removed, a <tt class="docutils literal"><span class="pre">&quot;stale</span> <span class="pre">pidfile&quot;</span></tt> message is emitted
+and execution continues as normally. However, if the process is still
+running the program will exit complaning that the program is already
+running in the background somewhere.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.platform.install_signal_handler">
+<tt class="descclassname">celery.platform.</tt><tt class="descname">install_signal_handler</tt><big>(</big><em>signal_name</em>, <em>handler</em><big>)</big><a class="headerlink" href="#celery.platform.install_signal_handler" title="Permalink to this definition">¶</a></dt>
+<dd>Install a SIGHUP handler.</dd></dl>
+
+</div>
+
+
+          </div> 
+        </div>
+      </div>
+    <div class="footer">
+    <p>
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.3.
+	</p>
+    </div>
+      <div class="clearer"></div>
+    </div>
+	<div id="breadcrumbs">
+		<a href="../index.html" accesskey="U">Internals</a><img src="triangle_closed.png" alt="Right arrow">
+		<a href="index.html" >Internal Module Reference</a><img src="triangle_closed.png" alt="Right arrow">
+		<a href="../../index.html">Celery v0.9.0 (unstable) documentation</a>
+		</ul>
+	</div>
+  </body>
+</html>
