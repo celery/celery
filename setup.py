@@ -42,6 +42,7 @@ class RunTests(Command):
 
 
 install_requires = ["django-unittest-depth",
+                    "python-dateutil",
                     "anyjson",
                     "carrot>=0.8.0",
                     "django-picklefield",
