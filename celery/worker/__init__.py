@@ -8,6 +8,7 @@ import logging
 import socket
 from Queue import Queue
 
+import dateutil
 from carrot.connection import DjangoBrokerConnection, AMQPConnectionException
 
 from celery import conf
@@ -106,6 +107,7 @@ class CarrotListener(object):
 
         eta = message_data.get("eta")
         if eta:
+            eta = dateutil.parser.parse(eta)
             self.prefetch_count.increment()
             self.logger.info("Got task from broker: %s[%s] eta:[%s]" % (
                     task.task_name, task.task_id, eta))

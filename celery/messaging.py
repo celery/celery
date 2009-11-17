@@ -46,6 +46,8 @@ class TaskPublisher(Publisher):
         """INTERNAL"""
 
         task_id = task_id or gen_unique_id()
+        eta = kwargs.get("eta")
+        eta = eta and eta.isoformat()
 
         message_data = {
             "task": task_name,
@@ -53,7 +55,7 @@ class TaskPublisher(Publisher):
             "args": task_args or [],
             "kwargs": task_kwargs or {},
             "retries": kwargs.get("retries", 0),
-            "eta": kwargs.get("eta"),
+            "eta": eta,
         }
 
         if part_of_set:
