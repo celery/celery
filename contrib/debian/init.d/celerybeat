@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/bin/sh
 
 ### BEGIN INIT INFO
 # Provides:		celerybeat
@@ -6,34 +6,53 @@
 # Required-Stop:	
 # Default-Start:	2 3 4 5
 # Default-Stop:		1
-# Short-Description:	celery clock service
+# Short-Description:	celery periodic task scheduler
 ### END INIT INFO
+
+# To use this with Django set your DJANGO_PROJECT_DIR in /etc/default/celeryd:
+#
+#   echo "DJANGO_PROJECT_DIR=/opt/Myapp" > /etc/default/celeryd
+#
+# The django project dir is the directory that contains settings and
+# manage.py.
+
+# celerybeat uses the celeryd default file by default, but you can also
+# add a /etc/default/celerybeat file to set different settings for celerybeat.
 
 set -e
 
-VIRTUALENV=/opt/Opal/current
-DJANGO_PROJECT_DIR=/opt/Opal/release/opal
 DJANGO_SETTINGS_MODULE=settings
 CELERYBEAT_PID_FILE="/var/run/celerybeat.pid"
 CELERYBEAT_LOG_FILE="/var/log/celerybeat.log"
 CELERYBEAT_LOG_LEVEL="INFO"
-CELERYBEAT="celerybeat"
+DEFAULT_CELERYBEAT="celerybeat"
 
-export DJANGO_SETTINGS_MODULE
-export DJANGO_PROJECT_DIR
+# /etc/init.d/ssh: start and stop the celery task worker daemon.
 
-# /etc/init.d/ssh: start and stop the celery clock server
-
+if test -f /etc/default/celeryd; then
+    . /etc/default/celeryd
+fi
 if test -f /etc/default/celerybeat; then
     . /etc/default/celerybeat
 fi
 
+export DJANGO_SETTINGS_MODULE
+export DJANGO_PROJECT_DIR
+
+if [ -z "$CELERYBEAT" ]; then
+    if [ ! -z "$DJANGO_PROJECT_DIR" ]; then
+        CELERYBEAT="$DJANGO_PROJECT_DIR/manage.py"
+        CELERYBEAT_OPTS="celerybeat"
+    else
+        CELERYBEAT=$DEFAULT_CELERYBEAT
+    fi
+fi
 
 . /lib/lsb/init-functions
 
 cd $DJANGO_PROJECT_DIR
 
-CELERYBEAT_OPTS="-f $CELERYBEAT_LOG_FILE -l $CELERYBEAT_LOG_LEVEL -p \
+CELERYBEAT_OPTS="$CELERYBEAT_OPTS -f $CELERYBEAT_LOG_FILE -l $CELERYBEAT_LOG_LEVEL -p \
                     $CELERYBEAT_PID_FILE -d"
 
 if [ -n "$2" ]; then
@@ -61,7 +80,6 @@ check_dev_null() {
 
 export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
 if [ ! -z "$VIRTUALENV" ]; then
-    . "$VIRTUALENV/bin/activate"
     export PATH="$VIRTUALENV/bin:$PATH"
     CELERYBEAT="$VIRTUALENV/bin/$CELERYBEAT"
 fi
@@ -69,45 +87,44 @@ fi
 
 case "$1" in
   start)
-	check_dev_null
-	log_daemon_msg "Starting celery clock server" "celerybeat"
-	if start-stop-daemon --start --quiet --oknodo --pidfile $CELERYBEAT_PID_FILE --exec $CELERYBEAT -- $CELERYBEAT_OPTS; then
-	    log_end_msg 0
-	else
-	    log_end_msg 1
-	fi
-	;;
+    check_dev_null
+    log_daemon_msg "Starting celery periodic task scheduler" "celerybeat"
+    if start-stop-daemon --start --quiet --oknodo --pidfile $CELERYBEAT_PID_FILE --exec $CELERYBEAT -- $CELERYBEAT_OPTS; then
+        log_end_msg 0
+    else
+        log_end_msg 1
+    fi
+    ;;
   stop)
-	log_daemon_msg "Stopping celery clock server" "celerybeat"
-	if start-stop-daemon --stop --quiet --oknodo --pidfile $CELERYBEAT_PID_FILE; then log_end_msg 0
-	else
-	    log_end_msg 1
-	fi
-	;;
+    log_daemon_msg "Stopping celery periodic task scheduler" "celerybeat"
+    if start-stop-daemon --stop --quiet --oknodo --pidfile $CELERYBEAT_PID_FILE; then log_end_msg 0 else
+        log_end_msg 1
+    fi
+    ;;
 
   reload|force-reload)
     echo "Use start+stop"
-	;;
+    ;;
 
   restart)
-	log_daemon_msg "Restarting celery clock server" "celerybeat"
-	start-stop-daemon --stop --quiet --oknodo --retry 30 --pidfile $CELERYBEAT_PID_FILE
-	check_dev_null log_end_msg
-	if start-stop-daemon --start --quiet --oknodo --pidfile $CELERYBEAT_PID_FILE --exec $CELERYBEAT -- $CELERYBEAT_OPTS; then
-	    log_end_msg 0
-	else
-	    log_end_msg 1
-	fi
-	;;
+    log_daemon_msg "Restarting celery periodic task scheduler" "celerybeat"
+    start-stop-daemon --stop --quiet --oknodo --retry 30 --pidfile $CELERYBEAT_PID_FILE
+    check_dev_null log_end_msg
+    if start-stop-daemon --start --quiet --oknodo --pidfile $CELERYBEAT_PID_FILE --exec $CELERYBEAT -- $CELERYBEAT_OPTS; then
+        log_end_msg 0
+    else
+        log_end_msg 1
+    fi
+    ;;
 
   try-restart)
-	log_daemon_msg "Restarting celery clock server" "celerybeat"
-	set +e
-	start-stop-daemon --stop --quiet --retry 30 --pidfile $CELERYBEAT_PID_FILE
-	RET="$?"
-	set -e
-	case $RET in
-	    0)
+    log_daemon_msg "Restarting celery periodic task scheduler" "celerybeat"
+    set +e
+    start-stop-daemon --stop --quiet --retry 30 --pidfile $CELERYBEAT_PID_FILE
+    RET="$?"
+    set -e
+    case $RET in
+        0)
 		# old daemon stopped
 		check_dev_null log_end_msg
 		if start-stop-daemon --start --quiet --oknodo --pidfile $CELERYBEAT_PID_FILE --exec $CELERYBEAT -- $CELERYBEAT_OPTS; then
