@@ -1,6 +1,6 @@
 from inspect import getargspec
 
-from celery.task.base import Task
+from celery.task.base import Task, PeriodicTask
 
 
 def task(**options):
@@ -50,3 +50,24 @@ def task(**options):
         return task
 
     return _create_task_cls
+
+
+def periodic_task(**options):
+    """Task decorator to create a periodic task.
+
+    **Usage**
+
+    Run a task once every day:
+
+    .. code-block:: python
+
+        from datetime import timedelta
+
+        @periodic_task(run_every=timedelta(days=1))
+        def cronjob(**kwargs):
+            logger = cronjob.get_logger(**kwargs)
+            logger.warn("Task running...")
+
+    """
+    options["base"] = PeriodicTask
+    return task(**options)
