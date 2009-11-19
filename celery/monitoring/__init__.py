@@ -4,6 +4,7 @@ from collections import defaultdict
 from carrot.connection import DjangoBrokerConnection
 
 from celery.events import EventReceiver
+from celery.monitoring.web import WebServerThread
 
 HEARTBEAT_EXPIRE = 120 # Heartbeats must be at most 2 minutes apart.
 
@@ -75,5 +76,7 @@ class MonitorService(object):
     def start(self):
         state = MonitorState()
         listener = MonitorListener(state)
+        webthread = WebServerThread()
+        webthread.start()
 
         listener.start()
