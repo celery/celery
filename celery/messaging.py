@@ -9,8 +9,6 @@ from celery import conf
 from celery import signals
 from celery.utils import gen_unique_id
 from celery.utils import mitemgetter
-from celery.serialization import pickle
-
 
 MSG_OPTIONS = ("mandatory", "priority",
                "immediate", "routing_key",
@@ -27,7 +25,6 @@ class TaskPublisher(Publisher):
     exchange_type = conf.AMQP_EXCHANGE_TYPE
     routing_key = conf.AMQP_PUBLISHER_ROUTING_KEY
     serializer = conf.TASK_SERIALIZER
-    encoder = pickle.dumps
 
     def delay_task(self, task_name, task_args, task_kwargs, **kwargs):
         """Delay task for execution by the celery nodes."""
@@ -77,7 +74,6 @@ class TaskConsumer(Consumer):
     exchange = conf.AMQP_EXCHANGE
     routing_key = conf.AMQP_CONSUMER_ROUTING_KEY
     exchange_type = conf.AMQP_EXCHANGE_TYPE
-    decoder = pickle.loads
     auto_ack = False
     no_ack = False
 
@@ -85,7 +81,6 @@ class TaskConsumer(Consumer):
 class StatsPublisher(Publisher):
     exchange = "celerygraph"
     routing_key = "stats"
-    encoder = pickle.dumps
 
 
 class StatsConsumer(Consumer):
@@ -93,5 +88,4 @@ class StatsConsumer(Consumer):
     exchange = "celerygraph"
     routing_key = "stats"
     exchange_type = "direct"
-    decoder = pickle.loads
     no_ack=True

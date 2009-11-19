@@ -1,15 +1,17 @@
 import unittest
 from Queue import Queue, Empty
-from carrot.connection import BrokerConnection
-from celery.worker.job import TaskWrapper
-from celery.worker import CarrotListener, WorkController
-from multiprocessing import get_logger
-from carrot.backends.base import BaseMessage
-from celery import registry
-from celery.serialization import pickle
-from celery.utils import gen_unique_id
-from celery.worker.scheduler import Scheduler
 from datetime import datetime, timedelta
+from multiprocessing import get_logger
+
+from carrot.connection import BrokerConnection
+from carrot.backends.base import BaseMessage
+from billiard.serialization import pickle
+
+from celery import registry
+from celery.utils import gen_unique_id
+from celery.worker import CarrotListener, WorkController
+from celery.worker.job import TaskWrapper
+from celery.worker.scheduler import Scheduler
 from celery.decorators import task as task_dec
 
 

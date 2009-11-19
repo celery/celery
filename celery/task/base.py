@@ -3,6 +3,7 @@ from datetime import timedelta
 from Queue import Queue
 
 from carrot.connection import DjangoBrokerConnection
+from billiard.serialization import pickle
 
 from celery import conf
 from celery.log import setup_logger
@@ -13,7 +14,6 @@ from celery.registry import tasks
 from celery.backends import default_backend
 from celery.messaging import TaskPublisher, TaskConsumer
 from celery.exceptions import MaxRetriesExceededError, RetryTaskError
-from celery.serialization import pickle
 
 
 class TaskType(type):

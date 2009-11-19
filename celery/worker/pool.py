@@ -6,9 +6,9 @@ Process Pools.
 from multiprocessing.util import get_logger
 
 from billiard.pool import DynamicPool
+from billiard.utils.functional import curry
 
 from celery.utils import noop
-from celery.utils.functional import curry
 from celery.datastructures import ExceptionInfo
 
 

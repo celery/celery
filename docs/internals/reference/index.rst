@@ -27,7 +27,6 @@
     celery.log
     celery.utils
     celery.discovery
-    celery.utils.functional
     celery.platform
     celery.managers
     celery.models

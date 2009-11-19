@@ -1,10 +1,11 @@
 """celery.backends.base"""
 import time
 
+from billiard.serialization import pickle
+from billiard.serialization import get_pickled_exception
+from billiard.serialization import get_pickleable_exception
+
 from celery.exceptions import TimeoutError
-from celery.serialization import pickle
-from celery.serialization import get_pickled_exception
-from celery.serialization import get_pickleable_exception
 
 EXCEPTION_STATES = frozenset(["RETRY", "FAILURE"])
 

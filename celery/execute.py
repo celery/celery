@@ -4,11 +4,11 @@ import traceback
 from datetime import datetime, timedelta
 
 from carrot.connection import DjangoBrokerConnection
+from billiard.utils.functional import curry
 
 from celery import signals
 from celery.conf import AMQP_CONNECTION_TIMEOUT
 from celery.utils import gen_unique_id, noop, fun_takes_kwargs
-from celery.utils.functional import curry
 from celery.result import AsyncResult, EagerResult
 from celery.registry import tasks
 from celery.messaging import TaskPublisher

@@ -13,7 +13,7 @@ from uuid import UUID, uuid4, _uuid_generate_random
 from inspect import getargspec
 from itertools import repeat
 
-from celery.utils.functional import curry
+from billiard.utils.functional import curry
 
 noop = lambda *args, **kwargs: None
 
