@@ -2,14 +2,9 @@ import threading
 
 from tornado import httpserver
 from tornado import ioloop
+from tornado.web import Application
 
-
-
-def handle_request(request):
-    message = "You requested %s\n" % request.uri
-    request.write("HTTP/1.1 200 OK\r\nContent-Length: %d\r\n\r\n%s" % (
-                    len(message), message))
-    request.finish()
+from celery.monitoring.handlers import api
 
 
 class WebServerThread(threading.Thread):
@@ -19,6 +14,12 @@ class WebServerThread(threading.Thread):
         self.setDaemon(True)
 
     def run(self):
-        http_server = httpserver.HTTPServer(handle_request)
-        http_server.listen(8888)
+        application = Application([
+            (r"/api/task/name/$", api.ListAllTasksByNameHandler),
+            (r"/api/task/name/(.+?)", api.ListTasksByNameHandler),
+            (r"/api/task/$", api.ListTasksHandler),
+            (r"/api/task/(.+)", api.TaskStateHandler),
+        ])
+        http_server = httpserver.HTTPServer(application)
+        http_server.listen(8989)
         ioloop.IOLoop.instance().start()

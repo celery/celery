@@ -8,21 +8,31 @@ class MonitorState(object):
 
     def __init__(self):
         self.hearts = {}
-        self.tasks = defaultdict(lambda: [])
+        self.tasks = {}
+        self.task_events = defaultdict(lambda: [])
         self.workers = defaultdict(lambda: [])
 
     def tasks_by_type(self):
-        types = {}
-        for id, task in self.tasks:
-            types[task["name"]] = task
-        return types
+        t = defaultdict(lambda: [])
+        for id, events in self.task_events.items():
+            try:
+                task_type = self.tasks[id]["name"]
+            except KeyError:
+                pass
+            else:
+                t[task_type].append(id)
+        return t
 
     def receive_task_event(self, event):
         event["state"] = event.pop("type")
-        self.tasks[event["uuid"]].append(event)
+        self.task_events[event["uuid"]].append(event)
 
     def receive_heartbeat(self, event):
         self.hearts[event["hostname"]] = event["timestamp"]
+
+    def receive_task_received(self, event):
+        self.tasks[event["uuid"]] = event
+        self.task_events[event["uuid"]].append(event)
 
     def receive_worker_event(self, event):
         self.workers[event["hostname"]].append(event["type"])
@@ -36,7 +46,10 @@ class MonitorState(object):
         return False
 
     def tasks_by_time(self):
-        return sorted(self.tasks.values(), key=lambda events: events[-1].timestamp)
+        return dict(sorted(self.task_events.items(),
+                        key=lambda (uuid, events): events[-1]["timestamp"]))
 
     def tasks_by_last_state(self):
-        return [events[-1] for event in self.tasks_by_time()]
+        return [events[-1] for event in self.task_by_time()]
+
+monitor_state = MonitorState()

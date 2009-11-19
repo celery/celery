@@ -1,7 +1,7 @@
 from carrot.connection import DjangoBrokerConnection
 
 from celery.events import EventReceiver
-from celery.monitoring.state import MonitorState
+from celery.monitoring.state import monitor_state
 from celery.monitoring.web import WebServerThread
 
 
@@ -13,7 +13,7 @@ class MonitorListener(object):
             "worker-heartbeat": state.receive_heartbeat,
             "worker-online": state.receive_worker_event,
             "worker-offline": state.receive_worker_event,
-            "task-received": state.receive_task_event,
+            "task-received": state.receive_task_received,
             "task-accepted": state.receive_task_event,
             "task-succeeded": state.receive_task_event,
             "task-failed": state.receive_task_event,
@@ -31,8 +31,7 @@ class MonitorService(object):
         self.is_detached = is_detached
 
     def start(self):
-        state = MonitorState()
-        listener = MonitorListener(state)
+        listener = MonitorListener(monitor_state)
         webthread = WebServerThread()
         webthread.start()
 
