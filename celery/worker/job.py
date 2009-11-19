@@ -15,7 +15,7 @@ from celery.loaders import current_loader
 from celery.execute import TaskTrace
 from celery.registry import tasks
 from celery.exceptions import NotRegistered
-from celery.monitoring import TaskTimerStats
+from celery.statistics import TaskTimerStats
 from celery.datastructures import ExceptionInfo
 
 # pep8.py borks on a inline signature separator and
