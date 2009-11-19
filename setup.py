@@ -46,7 +46,7 @@ install_requires = ["django-unittest-depth",
                     "anyjson",
                     "carrot>=0.8.0",
                     "django-picklefield",
-                    "billiard"]
+                    "billiard>=0.2.0"]
 
 # python-daemon doesn't run on windows, so check current platform
 if platform.system() == "Windows":
