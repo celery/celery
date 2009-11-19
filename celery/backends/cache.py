@@ -1,9 +1,10 @@
 """celery.backends.cache"""
+from django.utils.encoding import smart_str
 from django.core.cache import cache, get_cache
 from django.core.cache.backends.base import InvalidCacheBackendError
-from django.utils.encoding import smart_str
-from celery.backends.base import KeyValueStoreBackend
+
 from celery import conf
+from celery.backends.base import KeyValueStoreBackend
 
 # CELERY_CACHE_BACKEND overrides the django-global(tm) backend settings.
 if conf.CELERY_CACHE_BACKEND:
@@ -39,7 +40,7 @@ except InvalidCacheBackendError:
     pass
 
 
-class Backend(KeyValueStoreBackend):
+class CacheBackend(KeyValueStoreBackend):
     """Backend using the Django cache framework to store task metadata."""
 
     def get(self, key):

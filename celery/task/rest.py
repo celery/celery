@@ -1,12 +1,13 @@
-from celery.task.base import Task as BaseTask
-from celery.registry import tasks
-from celery import __version__ as celery_version
+import urllib2
 from cgi import parse_qsl
 from urllib import urlencode
 from urlparse import urlparse
+
 from anyjson import serialize, deserialize
-import httplib
-import urllib2
+
+from celery import __version__ as celery_version
+from celery.registry import tasks
+from celery.task.base import Task as BaseTask
 
 
 class InvalidResponseError(Exception):
@@ -135,7 +136,6 @@ class RESTProxyTask(BaseTask):
         logger = self.get_logger(**kwargs)
         proxy = RESTProxy(url, kwargs, logger)
         return proxy.execute()
-tasks.register(RESTProxyTask)
 
 
 def task_response(fun, *args, **kwargs):

@@ -2,6 +2,7 @@
  Remote Tasks 
 ==============
 
+.. module:: celery.task.rest
 
 Executing tasks on a remote web server
 --------------------------------------
@@ -42,7 +43,7 @@ With this information we can define a simple task in Django:
 I'm sure you'll be able to port this scheme to any language/framework.
 New examples and libraries are very welcome!
 
-To execute the task you use :class:`celery.task.rest.RESTProxyTask`:
+To execute the task you use :class:`RESTProxyTask`:
 
     >>> from celery.task import RESTProxyTask
     >>> res = RESTProxyTask.delay("http://example.com/multiply", x=10, y=10)

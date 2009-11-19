@@ -3,38 +3,45 @@
 The Multiprocessing Worker Server
 
 """
-from carrot.connection import DjangoBrokerConnection, AMQPConnectionException
-from celery.worker.controllers import Mediator, PeriodicWorkController
-from celery.worker.job import TaskWrapper
-from celery.exceptions import NotRegistered
-from celery.messaging import get_consumer_set
-from celery.conf import DAEMON_CONCURRENCY, DAEMON_LOG_FILE
-from celery.conf import AMQP_CONNECTION_RETRY, AMQP_CONNECTION_MAX_RETRIES
-from celery.log import setup_logger
-from celery.pool import TaskPool
-from celery.utils import retry_over_time
-from celery.datastructures import SharedCounter
-from celery.events import EventDispatcher
-from Queue import Queue
 import traceback
 import logging
 import socket
+from Queue import Queue
+from datetime import datetime
+
+from dateutil.parser import parse as parse_iso8601
+from carrot.connection import DjangoBrokerConnection, AMQPConnectionException
+
+from celery import conf
+from celery import registry
+from celery.log import setup_logger
+from celery.beat import ClockServiceThread
+from celery.utils import retry_over_time
+from celery.worker.pool import TaskPool
+from celery.worker.job import TaskWrapper
+from celery.worker.scheduler import Scheduler
+from celery.worker.controllers import Mediator, ScheduleController
+from celery.worker.buckets import TaskBucket
+from celery.messaging import get_consumer_set
+from celery.exceptions import NotRegistered
+from celery.datastructures import SharedCounter
+from celery.events import EventDispatcher
 
 
-class AMQPListener(object):
+class CarrotListener(object):
     """Listen for messages received from the AMQP broker and
     move them the the bucket queue for task processing.
 
-    :param bucket_queue: See :attr:`bucket_queue`.
-    :param hold_queue: See :attr:`hold_queue`.
+    :param ready_queue: See :attr:`ready_queue`.
+    :param eta_scheduler: See :attr:`eta_scheduler`.
 
-    .. attribute:: bucket_queue
+    .. attribute:: ready_queue
 
         The queue that holds tasks ready for processing immediately.
 
-    .. attribute:: hold_queue
+    .. attribute:: eta_scheduler
 
-        The queue that holds paused tasks. Reasons for being paused include
+        Scheduler for paused tasks. Reasons for being paused include
         a countdown/eta or that it's waiting for retry.
 
     .. attribute:: logger
@@ -43,12 +50,12 @@ class AMQPListener(object):
 
     """
 
-    def __init__(self, bucket_queue, hold_queue, logger,
+    def __init__(self, ready_queue, eta_scheduler, logger,
             initial_prefetch_count=2):
         self.amqp_connection = None
         self.task_consumer = None
-        self.bucket_queue = bucket_queue
-        self.hold_queue = hold_queue
+        self.ready_queue = ready_queue
+        self.eta_scheduler = eta_scheduler
         self.logger = logger
         self.prefetch_count = SharedCounter(initial_prefetch_count)
         self.event_dispatcher = None
@@ -66,17 +73,17 @@ class AMQPListener(object):
             try:
                 self.consume_messages()
             except (socket.error, AMQPConnectionException, IOError):
-                self.logger.error("AMQPListener: Connection to broker lost. "
-                                + "Trying to re-establish connection...")
+                self.logger.error("CarrotListener: Connection to broker lost."
+                                + " Trying to re-establish connection...")
 
     def consume_messages(self):
         """Consume messages forever (or until an exception is raised)."""
         task_consumer = self.task_consumer
 
-        self.logger.debug("AMQPListener: Starting message consumer...")
+        self.logger.debug("CarrotListener: Starting message consumer...")
         it = task_consumer.iterconsume(limit=None)
 
-        self.logger.debug("AMQPListener: Ready to accept tasks!")
+        self.logger.debug("CarrotListener: Ready to accept tasks!")
 
         while True:
             self.task_consumer.qos(prefetch_count=int(self.prefetch_count))
@@ -107,14 +114,18 @@ class AMQPListener(object):
         self.event_dispatcher.send("task-received", **message_data)
 
         if eta:
+            if not isinstance(eta, datetime):
+                eta = parse_iso8601(eta)
             self.prefetch_count.increment()
             self.logger.info("Got task from broker: %s[%s] eta:[%s]" % (
                     task.task_name, task.task_id, eta))
-            self.hold_queue.put((task, eta, self.prefetch_count.decrement))
+            self.eta_scheduler.enter(task,
+                                     eta=eta,
+                                     callback=self.prefetch_count.decrement)
         else:
             self.logger.info("Got task from broker: %s[%s]" % (
                     task.task_name, task.task_id))
-            self.bucket_queue.put(task)
+            self.ready_queue.put(task)
 
     def close_connection(self):
         """Close the AMQP connection."""
@@ -123,7 +134,7 @@ class AMQPListener(object):
             self.task_consumer = None
         if self.amqp_connection:
             self.logger.debug(
-                    "AMQPListener: Closing connection to the broker...")
+                    "CarrotListener: Closing connection to the broker...")
             self.amqp_connection.close()
             self.amqp_connection = None
         self.event_dispatcher = None
@@ -136,7 +147,7 @@ class AMQPListener(object):
 
         """
         self.logger.debug(
-                "AMQPListener: Re-establishing connection to the broker...")
+                "CarrotListener: Re-establishing connection to the broker...")
         self.close_connection()
         self.amqp_connection = self._open_connection()
         self.task_consumer = get_consumer_set(connection=self.amqp_connection)
@@ -161,13 +172,13 @@ class AMQPListener(object):
             connected = conn.connection # Connection is established lazily.
             return conn
 
-        if not AMQP_CONNECTION_RETRY:
+        if not conf.AMQP_CONNECTION_RETRY:
             return _establish_connection()
 
         conn = retry_over_time(_establish_connection, (socket.error, IOError),
                                errback=_connection_error_handler,
-                               max_retries=AMQP_CONNECTION_MAX_RETRIES)
-        self.logger.debug("AMQPListener: Connection Established.")
+                               max_retries=conf.AMQP_CONNECTION_MAX_RETRIES)
+        self.logger.debug("CarrotListener: Connection Established.")
         return conn
 
 
@@ -205,7 +216,7 @@ class WorkController(object):
 
         The :class:`multiprocessing.Pool` instance used.
 
-    .. attribute:: bucket_queue
+    .. attribute:: ready_queue
 
         The :class:`Queue.Queue` that holds tasks ready for immediate
         processing.
@@ -216,26 +227,26 @@ class WorkController(object):
         back the task include waiting for ``eta`` to pass or the task is being
         retried.
 
-    .. attribute:: periodic_work_controller
+    .. attribute:: schedule_controller
 
-        Instance of :class:`celery.worker.controllers.PeriodicWorkController`.
+        Instance of :class:`celery.worker.controllers.ScheduleController`.
 
     .. attribute:: mediator
 
         Instance of :class:`celery.worker.controllers.Mediator`.
 
-    .. attribute:: amqp_listener
+    .. attribute:: broker_listener
 
-        Instance of :class:`AMQPListener`.
+        Instance of :class:`CarrotListener`.
 
     """
     loglevel = logging.ERROR
-    concurrency = DAEMON_CONCURRENCY
-    logfile = DAEMON_LOG_FILE
+    concurrency = conf.DAEMON_CONCURRENCY
+    logfile = conf.DAEMON_LOG_FILE
     _state = None
 
     def __init__(self, concurrency=None, logfile=None, loglevel=None,
-            is_detached=False):
+            is_detached=False, embed_clockservice=False):
 
         # Options
         self.loglevel = loglevel or self.loglevel
@@ -243,30 +254,39 @@ class WorkController(object):
         self.logfile = logfile or self.logfile
         self.is_detached = is_detached
         self.logger = setup_logger(loglevel, logfile)
+        self.embed_clockservice = embed_clockservice
 
         # Queues
-        self.bucket_queue = Queue()
-        self.hold_queue = Queue()
+        if conf.DISABLE_RATE_LIMITS:
+            self.ready_queue = Queue()
+        else:
+            self.ready_queue = TaskBucket(task_registry=registry.tasks)
+        self.eta_scheduler = Scheduler(self.ready_queue)
 
         self.logger.debug("Instantiating thread components...")
 
         # Threads+Pool
-        self.periodic_work_controller = PeriodicWorkController(
-                                                    self.bucket_queue,
-                                                    self.hold_queue)
+        self.schedule_controller = ScheduleController(self.eta_scheduler)
         self.pool = TaskPool(self.concurrency, logger=self.logger)
-        self.amqp_listener = AMQPListener(self.bucket_queue, self.hold_queue,
-                                          logger=self.logger,
-                                          initial_prefetch_count=concurrency)
-        self.mediator = Mediator(self.bucket_queue, self.safe_process_task)
+        self.broker_listener = CarrotListener(self.ready_queue,
+                                        self.eta_scheduler,
+                                        logger=self.logger,
+                                        initial_prefetch_count=concurrency)
+        self.mediator = Mediator(self.ready_queue, self.safe_process_task)
+
+        self.clockservice = None
+        if self.embed_clockservice:
+            self.clockservice = ClockServiceThread(logger=self.logger,
+                                                is_detached=self.is_detached)
 
         # The order is important here;
         #   the first in the list is the first to start,
         # and they must be stopped in reverse order.
-        self.components = [self.pool,
-                           self.mediator,
-                           self.periodic_work_controller,
-                           self.amqp_listener]
+        self.components = filter(None, (self.pool,
+                                        self.mediator,
+                                        self.schedule_controller,
+                                        self.clockservice,
+                                        self.broker_listener))
 
     def start(self):
         """Starts the workers main loop."""

@@ -12,7 +12,7 @@ except ImportError:
     use_setuptools()
     from setuptools import setup, find_packages, Command
 
-import celery
+import celery as distmeta
 
 
 class RunTests(Command):
@@ -42,8 +42,11 @@ class RunTests(Command):
 
 
 install_requires = ["django-unittest-depth",
+                    "python-dateutil",
                     "anyjson",
-                    "carrot>=0.6.0"]
+                    "carrot>=0.8.0",
+                    "django-picklefield",
+                    "billiard>=0.2.0"]
 
 # python-daemon doesn't run on windows, so check current platform
 if platform.system() == "Windows":
@@ -59,7 +62,7 @@ py_major_version = py_version_info[0]
 py_minor_version = py_version_info[1]
 
 if (py_major_version == 2 and py_minor_version <=5) or py_major_version < 2:
-    install_requires.append("multiprocessing")
+    install_requires.append("multiprocessing==2.6.2.1")
 
 if os.path.exists("README.rst"):
     long_description = codecs.open("README.rst", "r", "utf-8").read()
@@ -69,15 +72,15 @@ else:
 
 setup(
     name='celery',
-    version=celery.__version__,
-    description=celery.__doc__,
-    author=celery.__author__,
-    author_email=celery.__contact__,
-    url=celery.__homepage__,
+    version=distmeta.__version__,
+    description=distmeta.__doc__,
+    author=distmeta.__author__,
+    author_email=distmeta.__contact__,
+    url=distmeta.__homepage__,
     platforms=["any"],
     license="BSD",
     packages=find_packages(exclude=['ez_setup']),
-    scripts=["bin/celeryd", "bin/celeryinit"],
+    scripts=["bin/celeryd", "bin/celeryinit", "bin/celerybeat"],
     zip_safe=False,
     install_requires=install_requires,
     extra_requires={

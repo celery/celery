@@ -1,15 +1,15 @@
 """celery.backends.tyrant"""
 from django.core.exceptions import ImproperlyConfigured
 from celery.backends.base import KeyValueStoreBackend
-from celery.loaders import settings
-
 try:
     import redis
 except ImportError:
     redis = None
 
+from celery.loaders import settings
 
-class Backend(KeyValueStoreBackend):
+
+class RedisBackend(KeyValueStoreBackend):
     """Redis based task backend store.
 
     .. attribute:: redis_host
@@ -30,7 +30,8 @@ class Backend(KeyValueStoreBackend):
     redis_timeout = None
     redis_connect_retry = None
 
-    def __init__(self, redis_host=None, redis_port=None, redis_db=None):
+    def __init__(self, redis_host=None, redis_port=None, redis_db=None,
+            redis_timeout=None, redis_connect_timeout=None):
         if not redis:
             raise ImproperlyConfigured(
                     "You need to install the redis library in order to use "
@@ -53,7 +54,7 @@ class Backend(KeyValueStoreBackend):
             raise ImproperlyConfigured(
                 "In order to use the Redis result store backend, you have to "
                 "set the REDIS_HOST and REDIS_PORT settings")
-        super(Backend, self).__init__()
+        super(RedisBackend, self).__init__()
         self._connection = None
 
     def open(self):

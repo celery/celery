@@ -21,6 +21,11 @@
 
     Path to pidfile.
 
+.. cmdoption:: -B, --beat
+
+    Also run the ``celerybeat`` periodic task scheduler. Please note that
+    there must only be one instance of this service.
+
 .. cmdoption:: -s, --statistics
 
     Turn on reporting of statistics (remember to flush the statistics message
@@ -29,10 +34,6 @@
 .. cmdoption:: -d, --detach, --daemon
 
     Run in the background as a daemon.
-
-.. cmdoption:: -S, --supervised
-
-    Restart the worker server if it dies.
 
 .. cmdoption:: --discard
 
@@ -63,21 +64,21 @@
 """
 import os
 import sys
-from celery.loaders import current_loader
-from celery.loaders import settings
-from celery import __version__
-from celery.supervisor import OFASupervisor
-from celery.log import emergency_error
-from celery.conf import LOG_LEVELS, DAEMON_LOG_FILE, DAEMON_LOG_LEVEL
-from celery.conf import DAEMON_CONCURRENCY, DAEMON_PID_FILE
-from celery import conf
-from celery import discovery
-from celery.task import discard_all
-from celery.worker import WorkController
-from celery import platform
 import multiprocessing
 import traceback
 import optparse
+
+from carrot.connection import DjangoBrokerConnection
+
+from celery import conf
+from celery import platform
+from celery import __version__
+from celery.log import emergency_error
+from celery.task import discard_all
+from celery.worker import WorkController
+from celery.loaders import current_loader, settings
+from celery.loaders import current_loader
+from celery.loaders import settings
 
 USE_STATISTICS = getattr(settings, "CELERY_STATISTICS", False)
 # Make sure the setting exists.
@@ -85,15 +86,17 @@ settings.CELERY_STATISTICS = USE_STATISTICS
 
 STARTUP_INFO_FMT = """
 Configuration ->
-    * Broker -> amqp://%(vhost)s@%(host)s:%(port)s
+    * Broker -> %(carrot_backend)s://%(vhost)s@%(host)s:%(port)s
     * Exchange -> %(exchange)s (%(exchange_type)s)
     * Consumer -> Queue:%(consumer_queue)s Routing:%(consumer_rkey)s
     * Concurrency -> %(concurrency)s
     * Statistics -> %(statistics)s
+    * Celerybeat -> %(celerybeat)s
 """.strip()
 
 OPTION_LIST = (
-    optparse.make_option('-c', '--concurrency', default=DAEMON_CONCURRENCY,
+    optparse.make_option('-c', '--concurrency',
+            default=conf.DAEMON_CONCURRENCY,
             action="store", dest="concurrency", type="int",
             help="Number of child processes processing the queue."),
     optparse.make_option('--discard', default=False,
@@ -104,21 +107,22 @@ OPTION_LIST = (
     optparse.make_option('-s', '--statistics', default=USE_STATISTICS,
             action="store_true", dest="statistics",
             help="Collect statistics."),
-    optparse.make_option('-f', '--logfile', default=DAEMON_LOG_FILE,
+    optparse.make_option('-f', '--logfile', default=conf.DAEMON_LOG_FILE,
             action="store", dest="logfile",
             help="Path to log file."),
-    optparse.make_option('-l', '--loglevel', default=DAEMON_LOG_LEVEL,
+    optparse.make_option('-l', '--loglevel', default=conf.DAEMON_LOG_LEVEL,
             action="store", dest="loglevel",
             help="Choose between DEBUG/INFO/WARNING/ERROR/CRITICAL/FATAL."),
-    optparse.make_option('-p', '--pidfile', default=DAEMON_PID_FILE,
+    optparse.make_option('-p', '--pidfile', default=conf.DAEMON_PID_FILE,
             action="store", dest="pidfile",
             help="Path to pidfile."),
+    optparse.make_option('-B', '--beat', default=False,
+            action="store_true", dest="run_clockservice",
+            help="Also run the celerybeat periodic task scheduler. \
+                  Please note that only one instance must be running."),
     optparse.make_option('-d', '--detach', '--daemon', default=False,
             action="store_true", dest="detach",
             help="Run in the background as a daemon."),
-    optparse.make_option('-S', '--supervised', default=False,
-            action="store_true", dest="supervised",
-            help="Restart the worker server if it dies."),
     optparse.make_option('-u', '--uid', default=None,
             action="store", dest="uid",
             help="User-id to run celeryd as when in daemon mode."),
@@ -137,19 +141,14 @@ OPTION_LIST = (
     )
 
 
-def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
-        loglevel=DAEMON_LOG_LEVEL, logfile=DAEMON_LOG_FILE, discard=False,
-        pidfile=DAEMON_PID_FILE, umask=0, uid=None, gid=None,
-        supervised=False, working_directory=None, chroot=None,
-        statistics=None, **kwargs):
+def run_worker(concurrency=conf.DAEMON_CONCURRENCY, detach=False,
+        loglevel=conf.DAEMON_LOG_LEVEL, logfile=conf.DAEMON_LOG_FILE,
+        discard=False, pidfile=conf.DAEMON_PID_FILE, umask=0,
+        uid=None, gid=None, working_directory=None,
+        chroot=None, statistics=None, run_clockservice=False, **kwargs):
     """Starts the celery worker server."""
 
     print("Celery %s is starting." % __version__)
-
-    # set SIGCLD back to the default SIG_DFL (before python-daemon overrode
-    # it) lets the parent wait() for the terminated child process and stops
-    # the 'OSError: [Errno 10] No child processes' problem.
-    platform.reset_signal("SIGCLD")
 
     if statistics is not None:
         settings.CELERY_STATISTICS = statistics
@@ -168,7 +167,7 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
 
     # Setup logging
     if not isinstance(loglevel, int):
-        loglevel = LOG_LEVELS[loglevel.upper()]
+        loglevel = conf.LOG_LEVELS[loglevel.upper()]
     if not detach:
         logfile = None # log to stderr when not running in the background.
 
@@ -180,10 +179,16 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
 
     # Dump configuration to screen so we have some basic information
     # when users sends e-mails.
+    broker_connection = DjangoBrokerConnection()
+    carrot_backend = broker_connection.backend_cls
+    if carrot_backend and not isinstance(carrot_backend, str):
+        carrot_backend = carrot_backend.__name__
+
     print(STARTUP_INFO_FMT % {
-            "vhost": getattr(settings, "AMQP_VHOST", "(default)"),
-            "host": getattr(settings, "AMQP_SERVER", "(default)"),
-            "port": getattr(settings, "AMQP_PORT", "(default)"),
+            "carrot_backend": carrot_backend or "amqp",
+            "vhost": broker_connection.virtual_host or "(default)",
+            "host": broker_connection.hostname or "(default)",
+            "port": broker_connection.port or "(port)",
             "exchange": conf.AMQP_EXCHANGE,
             "exchange_type": conf.AMQP_EXCHANGE_TYPE,
             "consumer_queue": conf.AMQP_CONSUMER_QUEUE,
@@ -193,7 +198,9 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
             "loglevel": loglevel,
             "pidfile": pidfile,
             "statistics": settings.CELERY_STATISTICS and "ON" or "OFF",
+            "celerybeat": run_clockservice and "ON" or "OFF",
     })
+    del(broker_connection)
 
     print("Celery has started.")
     if detach:
@@ -216,6 +223,7 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
         worker = WorkController(concurrency=concurrency,
                                 loglevel=loglevel,
                                 logfile=logfile,
+                                embed_clockservice=run_clockservice,
                                 is_detached=detach)
 
         # Install signal handler that restarts celeryd on SIGHUP,
@@ -229,10 +237,7 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
                             e.__class__, e, traceback.format_exc()))
 
     try:
-        if supervised:
-            OFASupervisor(target=run_worker).start()
-        else:
-            run_worker()
+        run_worker()
     except:
         if detach:
             context.close()
@@ -255,7 +260,6 @@ def install_worker_restart_handler(worker):
         os.execv(sys.executable, [sys.executable] + sys.argv)
 
     platform.install_signal_handler("SIGHUP", restart_worker_sig_handler)
-
 
 
 def parse_options(arguments):

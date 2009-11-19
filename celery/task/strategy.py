@@ -1,4 +1,5 @@
 from carrot.connection import DjangoBrokerConnection
+
 from celery.utils import chunks
 
 

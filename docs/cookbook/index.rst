@@ -6,8 +6,6 @@
     :maxdepth: 2
 
     tasks
-    task-retries
-    remote-tasks
     unit-testing
 
 This page contains common recipes and techniques.

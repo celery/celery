@@ -4,12 +4,11 @@ Sending and Receiving Messages
 
 """
 from carrot.messaging import Publisher, Consumer, ConsumerSet
+
 from celery import conf
 from celery import signals
 from celery.utils import gen_unique_id
 from celery.utils import mitemgetter
-from celery.serialization import pickle
-
 
 MSG_OPTIONS = ("mandatory", "priority",
                "immediate", "routing_key",
@@ -44,6 +43,8 @@ class TaskPublisher(Publisher):
         """INTERNAL"""
 
         task_id = task_id or gen_unique_id()
+        eta = kwargs.get("eta")
+        eta = eta and eta.isoformat()
 
         message_data = {
             "task": task_name,
@@ -51,7 +52,7 @@ class TaskPublisher(Publisher):
             "args": task_args or [],
             "kwargs": task_kwargs or {},
             "retries": kwargs.get("retries", 0),
-            "eta": kwargs.get("eta"),
+            "eta": eta,
         }
 
         if part_of_set:
@@ -101,6 +102,3 @@ class EventConsumer(Consumer):
     routing_key = "event"
     exchange_type = "direct"
     no_ack = True
-
-
-

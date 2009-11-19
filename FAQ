@@ -49,7 +49,7 @@ points are not specific to celery; If using Redis/database as a queue worked
 fine for you before, it probably will now. And you can always upgrade later.
 
 Is celery multi-lingual?
------------------------
+------------------------
 
 **Answer:** Yes.
 
@@ -61,10 +61,10 @@ messages. There's no other communication involved.
 Also, there's another way to be language indepedent, and that is to use REST
 tasks, instead of your tasks being functions, they're URLs. With this
 information you can even create simple web servers that enable preloading of
-code. For more information about REST tasks see: `Cookbook: Remote Tasks`_.
+code. For more information about REST tasks see: `User Guide: Remote Tasks`_.
 
-.. _`Cookbook: Remote Tasks`:
-    http://ask.github.com/celery/cookbook/remote-tasks.html
+.. _`User Guide: Remote Tasks`:
+    http://ask.github.com/celery/userguide/remote-tasks.html
 
 
 Troubleshooting
@@ -255,8 +255,8 @@ Use the following specific settings in your ``settings.py``:
     CARROT_BACKEND = "stomp"
 
     # STOMP hostname and port settings.
-    AMQP_SERVER = "localhost"
-    AMQP_PORT = 61613
+    BROKER_HOST = "localhost"
+    BROKER_PORT = 61613
 
     # The queue name to use (both queue and exchange must be set to the
     # same queue name when using STOMP)
@@ -299,11 +299,11 @@ configuration:
 
     .. code-block:: python
 
-        AMQP_SERVER = "rabbit"
-        AMQP_PORT = 5678
-        AMQP_USER = "myapp"
-        AMQP_PASSWORD = "secret"
-        AMQP_VHOST = "myapp"
+        BROKER_HOST = "rabbit"
+        BROKER_PORT = 5678
+        BROKER_USER = "myapp"
+        BROKER_PASSWORD = "secret"
+        BROKER_VHOST = "myapp"
 
         CELERY_AMQP_CONSUMER_QUEUE = "regular_tasks"
         CELERY_AMQP_EXCHANGE = "tasks"
@@ -315,12 +315,12 @@ configuration:
 
     .. code-block:: python
 
-        AMQP_SERVER = "rabbit"
-        AMQP_PORT = 5678
-        AMQP_USER = "myapp"
-        AMQP_PASSWORD = "secret"
-        AMQP_VHOST = "myapp"
-        
+        BROKER_HOST = "rabbit"
+        BROKER_PORT = 5678
+        BROKER_USER = "myapp"
+        BROKER_PASSWORD = "secret"
+        BROKER_VHOST = "myapp"
+
         CELERY_AMQP_EXCHANGE = "tasks"
         CELERY_AMQP_PUBLISHER_ROUTING_KEY = "task.regular"
         CELERY_AMQP_EXCHANGE_TYPE = "topic"
@@ -392,11 +392,11 @@ configuration using the database backend with MySQL:
 .. code-block:: python
 
     # Broker configuration
-    AMQP_SERVER = "localhost"
-    AMQP_PORT = "5672"
-    AMQP_VHOST = "celery"
-    AMQP_USER = "celery"
-    AMQP_PASSWORD = "celerysecret"
+    BROKER_HOST = "localhost"
+    BROKER_PORT = "5672"
+    BROKER_VHOST = "celery"
+    BROKER_USER = "celery"
+    BROKER_PASSWORD = "celerysecret"
     CARROT_BACKEND="amqp"
 
     # Using the database backend.

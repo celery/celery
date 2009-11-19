@@ -1,8 +1,9 @@
 """celery.views"""
-from django.http import HttpResponse, Http404
-from celery.task import tasks, is_done, apply_async
-from celery.result import AsyncResult
 from anyjson import serialize as JSON_dump
+from django.http import HttpResponse, Http404
+
+from celery.task import tasks, is_successful, apply_async
+from celery.result import AsyncResult
 
 
 def apply(request, task_name, *args):
@@ -28,10 +29,12 @@ def apply(request, task_name, *args):
     return HttpResponse(JSON_dump(response_data), mimetype="application/json")
 
 
-def is_task_done(request, task_id):
+def is_task_successful(request, task_id):
     """Returns task execute status in JSON format."""
-    response_data = {"task": {"id": task_id, "executed": is_done(task_id)}}
+    response_data = {"task": {"id": task_id,
+                              "executed": is_successful(task_id)}}
     return HttpResponse(JSON_dump(response_data), mimetype="application/json")
+is_task_done = is_task_successful # Backward compatible
 
 
 def task_status(request, task_id):

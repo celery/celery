@@ -1,8 +1,10 @@
 import os
-from celery.loaders.djangoapp import Loader as DjangoLoader
-from celery.loaders.default import Loader as DefaultLoader
+
 from django.conf import settings
 from django.core.management import setup_environ
+
+from celery.loaders.default import Loader as DefaultLoader
+from celery.loaders.djangoapp import Loader as DjangoLoader
 
 """
 .. class:: Loader
@@ -15,17 +17,18 @@ if settings.configured:
     Loader = DjangoLoader
 else:
     try:
-        # A settings module may be defined, but Django didn't attempt to 
+        # A settings module may be defined, but Django didn't attempt to
         # load it yet. As an alternative to calling the private _setup(),
         # we could also check whether DJANGO_SETTINGS_MODULE is set.
-        settings._setup() 
+        settings._setup()
     except ImportError:
         if not callable(getattr(os, "fork", None)):
             # Platform doesn't support fork()
-            # XXX On systems without fork, multiprocessing seems to be launching
-            # the processes in some other way which does not copy the memory
-            # of the parent process. This means that any configured env might
-            # be lost. This is a hack to make it work on Windows.
+            # XXX On systems without fork, multiprocessing seems to be
+            # launching the processes in some other way which does
+            # not copy the memory of the parent process. This means that any
+            # configured env might be lost. This is a hack to make it work
+            # on Windows.
             # A better way might be to use os.environ to set the currently
             # used configuration method so to propogate it to the "child"
             # processes. But this has to be experimented with.

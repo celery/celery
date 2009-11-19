@@ -1,0 +1,47 @@
+{% extends "basic/layout.html" %}
+{%- block doctype -%}
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+{%- endblock %}
+{%- set reldelim1 = reldelim1 is not defined and ' &raquo;' or reldelim1 %}
+{%- set reldelim2 = reldelim2 is not defined and ' |' or reldelim2 %}
+{%- block linktags %}
+{%- endblock %}
+{%- block extrahead %} {% endblock %}
+{%- block header %}{% endblock %}
+{%- block relbar1 %}
+{% endblock %}
+
+{%- block sidebar1 %}
+{% endblock %}
+{%- block document %}
+      <div class="documentwrapper">
+      {%- if not embedded %}{% if not theme_nosidebar|tobool %}
+        <div class="bodywrapper">
+      {%- endif %}{% endif %}
+          <div class="body">
+            {% block body %} {% endblock %}
+          </div>
+      {%- if not embedded %}{% if not theme_nosidebar|tobool %} 
+        </div>
+      {%- endif %}{% endif %}
+      </div>
+    <div class="footer">
+    <p>{%- if hasdoc('copyright') %}
+      {% trans path=pathto('copyright'), copyright=copyright|e %}&copy; <a href="{{ path }}">Copyright</a> {{ copyright }}.{% endtrans %}
+    {%- else %}
+      {% trans copyright=copyright|e %}&copy; Copyright {{ copyright }}.{% endtrans %}
+    {%- endif %}
+    {%- if last_updated %}
+      {% trans last_updated=last_updated|e %}Last updated on {{ last_updated }}.{% endtrans %}
+    {%- endif %}
+    {%- if show_sphinx %}
+      {% trans sphinx_version=sphinx_version|e %}Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> {{ sphinx_version }}.{% endtrans %}
+    {%- endif %}
+	</p>
+    </div>
+{%- endblock %}
+{%- block sidebar2 %}{% endblock %}
+{%- block relbar2 %}{% endblock %}
+{%- block footer %}
+{%- endblock %}

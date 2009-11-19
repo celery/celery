@@ -38,9 +38,9 @@ your Redis database::
 
     CARROT_BACKEND = "ghettoq.toproot.Redis"
 
-    AMQP_HOST = "localhost"  # Maps to redis host.
-    AMQP_PORT = 6379         # Maps to redis port.
-    AMQP_VHOST = "celery"    # Maps to database name.
+    BROKER_HOST = "localhost"  # Maps to redis host.
+    BROKER_PORT = 6379         # Maps to redis port.
+    BROKER_VHOST = "celery"    # Maps to database name.
 
 Database
 ========

@@ -11,14 +11,14 @@ def mock_task(name, status, result):
 
 
 def save_result(task):
-    if task["status"] == "DONE":
+    if task["status"] == "SUCCESS":
         default_backend.mark_as_done(task["id"], task["result"])
     else:
         default_backend.mark_as_failure(task["id"], task["result"])
 
 
 def make_mock_taskset(size=10):
-    tasks = [mock_task("ts%d" % i, "DONE", i) for i in xrange(size)]
+    tasks = [mock_task("ts%d" % i, "SUCCESS", i) for i in xrange(size)]
     [save_result(task) for task in tasks]
     return [AsyncResult(task["id"]) for task in tasks]
 
@@ -26,19 +26,19 @@ def make_mock_taskset(size=10):
 class TestAsyncResult(unittest.TestCase):
 
     def setUp(self):
-        self.task1 = mock_task("task1", "DONE", "the")
-        self.task2 = mock_task("task2", "DONE", "quick")
+        self.task1 = mock_task("task1", "SUCCESS", "the")
+        self.task2 = mock_task("task2", "SUCCESS", "quick")
         self.task3 = mock_task("task3", "FAILURE", KeyError("brown"))
 
         for task in (self.task1, self.task2, self.task3):
             save_result(task)
 
-    def test_is_done(self):
+    def test_successful(self):
         ok_res = AsyncResult(self.task1["id"])
         nok_res = AsyncResult(self.task3["id"])
 
-        self.assertTrue(ok_res.is_done())
-        self.assertFalse(nok_res.is_done())
+        self.assertTrue(ok_res.successful())
+        self.assertFalse(nok_res.successful())
 
     def test_sucessful(self):
         ok_res = AsyncResult(self.task1["id"])

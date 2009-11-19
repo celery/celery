@@ -1,4 +1,4 @@
-from celery.pool import DynamicPool
+from billiard.pool import DynamicPool
 from multiprocessing import get_logger, log_to_stderr
 import logging
 

@@ -1,18 +1,61 @@
-from carrot.connection import DjangoBrokerConnection
-from celery import conf
-from celery.messaging import TaskPublisher, TaskConsumer
-from celery.log import setup_logger
-from celery.result import TaskSetResult, EagerResult
-from celery.execute import apply_async, delay_task, apply
-from celery.utils import gen_unique_id, get_full_cls_name
-from celery.registry import tasks
-from celery.serialization import pickle
-from celery.exceptions import MaxRetriesExceededError, RetryTaskError
+import sys
 from datetime import timedelta
+from Queue import Queue
+
+from carrot.connection import DjangoBrokerConnection
+from billiard.serialization import pickle
+
+from celery import conf
+from celery.log import setup_logger
+from celery.utils import gen_unique_id, get_full_cls_name
+from celery.result import TaskSetResult, EagerResult
+from celery.execute import apply_async, apply
+from celery.registry import tasks
+from celery.backends import default_backend
+from celery.messaging import TaskPublisher, TaskConsumer
+from celery.exceptions import MaxRetriesExceededError, RetryTaskError
+
+
+class TaskType(type):
+    """Metaclass for tasks.
+
+    Automatically registers the task in the task registry, except
+    if the ``abstract`` attribute is set.
+
+    If no ``name`` attribute is provided, the name is automatically
+    set to the name of the module it was defined in, and the class name.
+
+    """
+
+    def __new__(cls, name, bases, attrs):
+        super_new = super(TaskType, cls).__new__
+        task_module = attrs["__module__"]
+
+        # Abstract class, remove the abstract attribute so
+        # any class inheriting from this won't be abstract by default.
+        if attrs.pop("abstract", None):
+            return super_new(cls, name, bases, attrs)
+
+        # Automatically generate missing name.
+        if not attrs.get("name"):
+            task_module = sys.modules[task_module]
+            task_name = ".".join([task_module.__name__, name])
+            attrs["name"] = task_name
+
+        # Because of the way import happens (recursively)
+        # we may or may not be the first time the task tries to register
+        # with the framework. There should only be one class for each task
+        # name, so we always return the registered version.
+
+        task_name = attrs["name"]
+        if task_name not in tasks:
+            task_cls = super_new(cls, name, bases, attrs)
+            tasks.register(task_cls)
+        return tasks[task_name].__class__
 
 
 class Task(object):
-    """A task that can be delayed for execution by the ``celery`` daemon.
+    """A celery task.
 
     All subclasses of :class:`Task` must define the :meth:`run` method,
     which is the actual method the ``celery`` daemon executes.
@@ -20,13 +63,11 @@ class Task(object):
     The :meth:`run` method can take use of the default keyword arguments,
     as listed in the :meth:`run` documentation.
 
-    The :meth:`run` method supports both positional, and keyword arguments.
-
     .. attribute:: name
+        Name of the task.
 
-        *REQUIRED* All subclasses of :class:`Task` has to define the
-        :attr:`name` attribute. This is the name of the task, registered
-        in the task registry, and passed to :func:`delay_task`.
+    .. attribute:: abstract
+        If ``True`` the task is an abstract base class.
 
     .. attribute:: type
 
@@ -44,22 +85,17 @@ class Task(object):
 
     .. attribute:: mandatory
 
-        If set, the message has mandatory routing. By default the message
-        is silently dropped by the broker if it can't be routed to a queue.
-        However - If the message is mandatory, an exception will be raised
-        instead.
+        Mandatory message routing. An exception will be raised if the task
+        can't be routed to a queue.
 
     .. attribute:: immediate:
 
-        Request immediate delivery. If the message cannot be routed to a
-        task worker immediately, an exception will be raised. This is
-        instead of the default behaviour, where the broker will accept and
-        queue the message, but with no guarantee that the message will ever
-        be consumed.
+        Request immediate delivery. An exception will be raised if the task
+        can't be routed to a worker immediately.
 
     .. attribute:: priority:
-
-        The message priority. A number from ``0`` to ``9``.
+        The message priority. A number from ``0`` to ``9``, where ``0`` is the
+        highest. Note that RabbitMQ doesn't support priorities yet.
 
     .. attribute:: max_retries
 
@@ -67,16 +103,18 @@ class Task(object):
 
     .. attribute:: default_retry_delay
 
-        Defeault time in seconds before a retry of the task should be
+        Default time in seconds before a retry of the task should be
         executed. Default is a 1 minute delay.
+
+    .. attribute:: rate_limit
+
+        Set the rate limit for this task type, Examples: ``None`` (no rate
+        limit), ``"100/s"`` (hundred tasks a second), ``"100/m"`` (hundred
+        tasks a minute), ``"100/h"`` (hundred tasks an hour)
 
     .. attribute:: ignore_result
 
-        Don't store the status and return value. This means you can't
-        use the :class:`celery.result.AsyncResult` to check if the task is
-        done, or get its return value. Only use if you need the performance
-        and is able live without these features. Any exceptions raised will
-        store the return value/status as usual.
+        Don't store the return value of this task.
 
     .. attribute:: disable_error_emails
 
@@ -85,48 +123,21 @@ class Task(object):
 
     .. attribute:: serializer
 
-        A string identifying the default serialization
-        method to use. Defaults to the ``CELERY_TASK_SERIALIZER`` setting.
-        Can be ``pickle`` ``json``, ``yaml``, or any custom serialization
-        methods that have been registered with
-        :mod:`carrot.serialization.registry`.
+        The name of a serializer that has been registered with
+        :mod:`carrot.serialization.registry`. Example: ``"json"``.
 
-    :raises NotImplementedError: if the :attr:`name` attribute is not set.
+    .. attribute:: backend
+
+        The result store backend used for this task.
 
     The resulting class is callable, which if called will apply the
     :meth:`run` method.
 
-    Examples
-
-    This is a simple task just logging a message,
-
-        >>> from celery.task import tasks, Task
-        >>> class MyTask(Task):
-        ...
-        ...     def run(self, some_arg=None, **kwargs):
-        ...         logger = self.get_logger(**kwargs)
-        ...         logger.info("Running MyTask with arg some_arg=%s" %
-        ...                     some_arg))
-        ...         return 42
-        ... tasks.register(MyTask)
-
-    You can delay the task using the classmethod :meth:`delay`...
-
-        >>> result = MyTask.delay(some_arg="foo")
-        >>> result.status # after some time
-        'DONE'
-        >>> result.result
-        42
-
-    ...or using the :func:`delay_task` function, by passing the name of
-    the task.
-
-        >>> from celery.task import delay_task
-        >>> result = delay_task(MyTask.name, some_arg="foo")
-
-
     """
+    __metaclass__ = TaskType
+
     name = None
+    abstract = True
     type = "regular"
     exchange = None
     routing_key = None
@@ -138,6 +149,9 @@ class Task(object):
     max_retries = 3
     default_retry_delay = 3 * 60
     serializer = conf.TASK_SERIALIZER
+    rate_limit = conf.DEFAULT_RATE_LIMIT
+    rate_limit_queue_type = Queue
+    backend = default_backend
 
     MaxRetriesExceededError = MaxRetriesExceededError
 
@@ -155,52 +169,15 @@ class Task(object):
         by the worker if the function/method supports them:
 
             * task_id
-
-                Unique id of the currently executing task.
-
             * task_name
-
-                Name of the currently executing task (same as :attr:`name`)
-
             * task_retries
-
-                How many times the current task has been retried
-                (an integer starting at ``0``).
-
             * logfile
-
-                Name of the worker log file.
-
             * loglevel
-
-                The current loglevel, an integer mapping to one of the
-                following values: ``logging.DEBUG``, ``logging.INFO``,
-                ``logging.ERROR``, ``logging.CRITICAL``, ``logging.WARNING``,
-                ``logging.FATAL``.
 
         Additional standard keyword arguments may be added in the future.
         To take these default arguments, the task can either list the ones
         it wants explicitly or just take an arbitrary list of keyword
         arguments (\*\*kwargs).
-
-        Example using an explicit list of default arguments to take:
-
-        .. code-block:: python
-
-            def run(self, x, y, logfile=None, loglevel=None):
-                self.get_logger(loglevel=loglevel, logfile=logfile)
-                return x * y
-
-
-        Example taking all default keyword arguments, and any extra arguments
-        passed on by the caller:
-
-        .. code-block:: python
-
-            def run(self, x, y, **kwargs): # CORRECT!
-                logger = self.get_logger(**kwargs)
-                adjust = kwargs.get("adjust", 0)
-                return x * y - adjust
 
         """
         raise NotImplementedError("Tasks must define a run method.")
@@ -253,15 +230,14 @@ class Task(object):
 
     @classmethod
     def delay(cls, *args, **kwargs):
-        """Delay this task for execution by the ``celery`` daemon(s).
+        """Shortcut to :meth:`apply_async` but with star arguments,
+        and doesn't support the extra options.
 
         :param \*args: positional arguments passed on to the task.
 
         :param \*\*kwargs: keyword arguments passed on to the task.
 
         :rtype: :class:`celery.result.AsyncResult`
-
-        See :func:`celery.execute.delay_task`.
 
         """
         return apply_async(cls, args, kwargs)
@@ -429,7 +405,6 @@ class ExecuteRemoteTask(Task):
         """
         callable_ = pickle.loads(ser_callable)
         return callable_(*fargs, **fkwargs)
-tasks.register(ExecuteRemoteTask)
 
 
 class AsynchronousMapTask(Task):
@@ -441,7 +416,6 @@ class AsynchronousMapTask(Task):
         """The method run by ``celeryd``."""
         timeout = kwargs.get("timeout")
         return TaskSet.map(pickle.loads(serfunc), args, timeout=timeout)
-tasks.register(AsynchronousMapTask)
 
 
 class TaskSet(object):
@@ -477,7 +451,7 @@ class TaskSet(object):
         ... ])
 
         >>> taskset_result = taskset.run()
-        >>> list_of_return_values = taskset.join()
+        >>> list_of_return_values = taskset_result.join()
 
     """
 
@@ -542,25 +516,6 @@ class TaskSet(object):
         conn.close()
         return TaskSetResult(taskset_id, subtasks)
 
-    def join(self, timeout=None):
-        """Gather the results for all of the tasks in the taskset,
-        and return a list with them ordered by the order of which they
-        were called.
-
-        :keyword timeout: The time in seconds, how long
-            it will wait for results, before the operation times out.
-
-        :raises TimeoutError: if ``timeout`` is not ``None``
-            and the operation takes longer than ``timeout`` seconds.
-
-        If any of the tasks raises an exception, the exception
-        will be reraised by :meth:`join`.
-
-        :returns: list of return values for all tasks in the taskset.
-
-        """
-        return self.run().join(timeout=timeout)
-
     @classmethod
     def remote_execute(cls, func, args):
         """Apply ``args`` to function by distributing the args to the
@@ -573,7 +528,7 @@ class TaskSet(object):
     def map(cls, func, args, timeout=None):
         """Distribute processing of the arguments and collect the results."""
         remote_task = cls.remote_execute(func, args)
-        return remote_task.join(timeout=timeout)
+        return remote_task.run().join(timeout=timeout)
 
     @classmethod
     def map_async(cls, func, args, timeout=None):
@@ -599,8 +554,6 @@ class PeriodicTask(Task):
     :raises NotImplementedError: if the :attr:`run_every` attribute is
         not defined.
 
-    You have to register the periodic task in the task registry.
-
     Example
 
         >>> from celery.task import tasks, PeriodicTask
@@ -612,10 +565,11 @@ class PeriodicTask(Task):
         ...     def run(self, **kwargs):
         ...         logger = self.get_logger(**kwargs)
         ...         logger.info("Running MyPeriodicTask")
-        >>> tasks.register(MyPeriodicTask)
 
     """
+    abstract = True
     run_every = timedelta(days=1)
+    ignore_result = True
     type = "periodic"
 
     def __init__(self):

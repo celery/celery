@@ -4,7 +4,9 @@ import sys
 import time
 import logging
 import traceback
-from celery.conf import LOG_FORMAT, DAEMON_LOG_LEVEL
+
+from celery import conf
+from celery.patch import monkeypatch
 
 
 def get_default_logger(loglevel=None):
@@ -14,13 +16,18 @@ def get_default_logger(loglevel=None):
     return logger
 
 
-def setup_logger(loglevel=DAEMON_LOG_LEVEL, logfile=None, format=LOG_FORMAT,
-        **kwargs):
+_monkeypatched = [False]
+def setup_logger(loglevel=conf.DAEMON_LOG_LEVEL, logfile=None,
+        format=conf.LOG_FORMAT, **kwargs):
     """Setup the ``multiprocessing`` logger. If ``logfile`` is not specified,
     ``stderr`` is used.
 
     Returns logger object.
     """
+    if not _monkeypatched[0]:
+        monkeypatch()
+        _monkeypatched[0] = True
+
     logger = get_default_logger(loglevel=loglevel)
     if logger.handlers:
         # Logger already configured

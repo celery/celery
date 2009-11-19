@@ -4,17 +4,17 @@ Working with tasks and task sets.
 
 """
 from carrot.connection import DjangoBrokerConnection
-from celery.messaging import TaskConsumer
+from billiard.serialization import pickle
+
 from celery.conf import AMQP_CONNECTION_TIMEOUT
+from celery.execute import apply_async
 from celery.registry import tasks
 from celery.backends import default_backend
+from celery.messaging import TaskConsumer
 from celery.task.base import Task, TaskSet, PeriodicTask
-from celery.task.base import ExecuteRemoteTask
-from celery.task.base import AsynchronousMapTask
-from celery.task.builtins import DeleteExpiredTaskMetaTask, PingTask
-from celery.execute import apply_async, delay_task
-from celery.serialization import pickle
+from celery.task.base import ExecuteRemoteTask, AsynchronousMapTask
 from celery.task.rest import RESTProxyTask
+from celery.task.builtins import DeleteExpiredTaskMetaTask, PingTask
 
 
 def discard_all(connect_timeout=AMQP_CONNECTION_TIMEOUT):
@@ -35,13 +35,13 @@ def discard_all(connect_timeout=AMQP_CONNECTION_TIMEOUT):
     return discarded_count
 
 
-def is_done(task_id):
+def is_successful(task_id):
     """Returns ``True`` if task with ``task_id`` has been executed.
 
     :rtype: bool
 
     """
-    return default_backend.is_done(task_id)
+    return default_backend.is_successful(task_id)
 
 
 def dmap(func, args, timeout=None):
@@ -72,7 +72,7 @@ def dmap_async(func, args, timeout=None):
         >>> presult
         <AsyncResult: 373550e8-b9a0-4666-bc61-ace01fa4f91d>
         >>> presult.status
-        'DONE'
+        'SUCCESS'
         >>> presult.result
         [4, 8, 16]
 

@@ -4,6 +4,7 @@ URLs defined for celery.
 
 """
 from django.conf.urls.defaults import patterns, url
+
 from celery import views
 
 

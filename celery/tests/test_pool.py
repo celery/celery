@@ -2,7 +2,7 @@ import unittest
 import logging
 import itertools
 import time
-from celery.pool import TaskPool
+from celery.worker.pool import TaskPool
 from celery.datastructures import ExceptionInfo
 import sys
 
@@ -12,7 +12,6 @@ def do_something(i):
 
 
 def long_something():
-    import time
     time.sleep(1)
 
 

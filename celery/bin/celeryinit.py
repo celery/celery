@@ -1,3 +1,4 @@
+import sys
 
 
 def main():
@@ -5,7 +6,7 @@ def main():
     loader = Loader()
     conf = loader.read_configuration()
     from django.core.management import call_command, setup_environ
-    print("Creating database tables...")
+    sys.stderr.write("Creating database tables...\n")
     setup_environ(conf)
     call_command("syncdb")
 

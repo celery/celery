@@ -3,13 +3,20 @@
 Jobs Executable by the Worker Server.
 
 """
+import sys
+import socket
+import warnings
+
+from django.core.mail import mail_admins
+
+from celery.log import get_default_logger
+from celery.utils import noop, fun_takes_kwargs
+from celery.loaders import current_loader
+from celery.execute import TaskTrace
 from celery.registry import tasks
 from celery.exceptions import NotRegistered
-from celery.execute import ExecuteWrapper
-from celery.utils import noop, fun_takes_kwargs
-from celery.log import get_default_logger
-from django.core.mail import mail_admins
-import socket
+from celery.monitoring import TaskTimerStats
+from celery.datastructures import ExceptionInfo
 
 # pep8.py borks on a inline signature separator and
 # says "trailing whitespace" ;)
@@ -35,6 +42,91 @@ class AlreadyExecutedError(Exception):
     world-wide state."""
 
 
+class WorkerTaskTrace(TaskTrace):
+    """Wraps the task in a jail, catches all exceptions, and
+    saves the status and result of the task execution to the task
+    meta backend.
+
+    If the call was successful, it saves the result to the task result
+    backend, and sets the task status to ``"SUCCESS"``.
+
+    If the call raises :exc:`celery.exceptions.RetryTaskError`, it extracts
+    the original exception, uses that as the result and sets the task status
+    to ``"RETRY"``.
+
+    If the call results in an exception, it saves the exception as the task
+    result, and sets the task status to ``"FAILURE"``.
+
+    :param task_name: The name of the task to execute.
+    :param task_id: The unique id of the task.
+    :param args: List of positional args to pass on to the function.
+    :param kwargs: Keyword arguments mapping to pass on to the function.
+
+    :returns: the function return value on success, or
+        the exception instance on failure.
+
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.loader = kwargs.pop("loader", current_loader)
+        super(WorkerTaskTrace, self).__init__(*args, **kwargs)
+
+    def execute_safe(self, *args, **kwargs):
+        try:
+            return self.execute(*args, **kwargs)
+        except Exception, exc:
+            type_, value_, tb = sys.exc_info()
+            exc = self.task.backend.prepare_exception(exc)
+            warnings.warn("Exception happend outside of task body: %s: %s" % (
+                str(exc.__class__), str(exc)))
+            return ExceptionInfo((type_, exc, tb))
+
+    def execute(self):
+        # Run task loader init handler.
+        self.loader.on_task_init(self.task_id, self.task)
+
+        # Backend process cleanup
+        self.task.backend.process_cleanup()
+
+        timer_stat = TaskTimerStats.start(self.task_id, self.task_name,
+                                          self.args, self.kwargs)
+        try:
+            return self._trace()
+        finally:
+            timer_stat.stop()
+
+    def handle_success(self, retval, *args):
+        """Handle successful execution.
+
+        Saves the result to the current result store (skipped if the task's
+            ``ignore_result`` attribute is set to ``True``).
+
+        """
+        if not self.task.ignore_result:
+            self.task.backend.mark_as_done(self.task_id, retval)
+        return super(WorkerTaskTrace, self).handle_success(retval, *args)
+
+    def handle_retry(self, exc, type_, tb, strtb):
+        """Handle retry exception."""
+        message, orig_exc = exc.args
+        self.task.backend.mark_as_retry(self.task_id, orig_exc, strtb)
+        return super(WorkerTaskTrace, self).handle_retry(exc, type_,
+                                                         tb, strtb)
+
+    def handle_failure(self, exc, type_, tb, strtb):
+        """Handle exception."""
+        # mark_as_failure returns an exception that is guaranteed to
+        # be pickleable.
+        stored_exc = self.task.backend.mark_as_failure(self.task_id,
+                                                       exc, strtb)
+        return super(WorkerTaskTrace, self).handle_failure(
+                stored_exc, type_, tb, strtb)
+
+
+def execute_and_trace(*args, **kwargs):
+    return WorkerTaskTrace(*args, **kwargs).execute_safe()
+
+
 class TaskWrapper(object):
     """Class wrapping a task to be passed around and finally
     executed inside of the worker.
@@ -42,8 +134,6 @@ class TaskWrapper(object):
     :param task_name: see :attr:`task_name`.
 
     :param task_id: see :attr:`task_id`.
-
-    :param task_func: see :attr:`task_func`
 
     :param args: see :attr:`args`
 
@@ -56,10 +146,6 @@ class TaskWrapper(object):
     .. attribute:: task_id
 
         UUID of the task.
-
-    .. attribute:: task_func
-
-        The tasks callable object.
 
     .. attribute:: args
 
@@ -88,11 +174,10 @@ class TaskWrapper(object):
     """
     fail_email_body = TASK_FAIL_EMAIL_BODY
 
-    def __init__(self, task_name, task_id, task_func, args, kwargs,
+    def __init__(self, task_name, task_id, args, kwargs,
             on_ack=noop, retries=0, **opts):
         self.task_name = task_name
         self.task_id = task_id
-        self.task_func = task_func
         self.retries = retries
         self.args = args
         self.kwargs = kwargs
@@ -104,6 +189,9 @@ class TaskWrapper(object):
             setattr(self, opt, opts.get(opt, getattr(self, opt, None)))
         if not self.logger:
             self.logger = get_default_logger()
+        if self.task_name not in tasks:
+            raise NotRegistered(self.task_name)
+        self.task = tasks[self.task_name]
 
     def __repr__(self):
         return '<%s: {name:"%s", id:"%s", args:"%s", kwargs:"%s"}>' % (
@@ -132,10 +220,7 @@ class TaskWrapper(object):
         kwargs = dict((key.encode("utf-8"), value)
                         for key, value in kwargs.items())
 
-        if task_name not in tasks:
-            raise NotRegistered(task_name)
-        task_func = tasks[task_name]
-        return cls(task_name, task_id, task_func, args, kwargs,
+        return cls(task_name, task_id, args, kwargs,
                     retries=retries, on_ack=message.ack, logger=logger)
 
     def extend_with_default_kwargs(self, loglevel, logfile):
@@ -153,18 +238,17 @@ class TaskWrapper(object):
                             "task_id": self.task_id,
                             "task_name": self.task_name,
                             "task_retries": self.retries}
-        fun = getattr(self.task_func, "run", self.task_func)
+        fun = self.task.run
         supported_keys = fun_takes_kwargs(fun, default_kwargs)
         extend_with = dict((key, val) for key, val in default_kwargs.items()
                                 if key in supported_keys)
         kwargs.update(extend_with)
         return kwargs
 
-    def _executeable(self, loglevel=None, logfile=None):
-        """Get the :class:`celery.execute.ExecuteWrapper` for this task."""
+    def _get_tracer_args(self, loglevel=None, logfile=None):
+        """Get the :class:`WorkerTaskTrace` tracer for this task."""
         task_func_kwargs = self.extend_with_default_kwargs(loglevel, logfile)
-        return ExecuteWrapper(self.task_func, self.task_id, self.task_name,
-                              self.args, task_func_kwargs)
+        return self.task_name, self.task_id, self.args, task_func_kwargs
 
     def _set_executed_bit(self):
         """Set task as executed to make sure it's not executed again."""
@@ -175,7 +259,7 @@ class TaskWrapper(object):
         self.executed = True
 
     def execute(self, loglevel=None, logfile=None):
-        """Execute the task in a :class:`celery.execute.ExecuteWrapper`.
+        """Execute the task in a :class:`WorkerTaskTrace`.
 
         :keyword loglevel: The loglevel used by the task.
 
@@ -188,7 +272,8 @@ class TaskWrapper(object):
         # acknowledge task as being processed.
         self.on_ack()
 
-        return self._executeable(loglevel, logfile)()
+        tracer = WorkerTaskTrace(*self._get_tracer_args(loglevel, logfile))
+        return tracer.execute()
 
     def execute_using_pool(self, pool, loglevel=None, logfile=None):
         """Like :meth:`execute`, but using the :mod:`multiprocessing` pool.
@@ -205,8 +290,8 @@ class TaskWrapper(object):
         # Make sure task has not already been executed.
         self._set_executed_bit()
 
-        wrapper = self._executeable(loglevel, logfile)
-        return pool.apply_async(wrapper,
+        args = self._get_tracer_args(loglevel, logfile)
+        return pool.apply_async(execute_and_trace, args=args,
                 callbacks=[self.on_success], errbacks=[self.on_failure],
                 on_ack=self.on_ack)
 

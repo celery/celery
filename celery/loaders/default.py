@@ -1,4 +1,5 @@
 import os
+
 from celery.loaders.base import BaseLoader
 
 DEFAULT_CONFIG_MODULE = "celeryconfig"

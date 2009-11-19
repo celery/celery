@@ -24,11 +24,11 @@ it should contain all you need to run a basic celery set-up.
     DATABASE_ENGINE = "sqlite3"
     DATABASE_NAME = "mydatabase.db"
 
-    AMQP_SERVER = "localhost"
-    AMQP_PORT = 5672
-    AMQP_VHOST = "/"
-    AMQP_USER = "guest"
-    AMQP_PASSWORD = "guest"
+    BROKER_HOST = "localhost"
+    BROKER_PORT = 5672
+    BROKER_VHOST = "/"
+    BROKER_USER = "guest"
+    BROKER_PASSWORD = "guest"
 
     ## If you're doing mostly I/O you can have higher concurrency,
     ## if mostly spending time in the CPU, try to keep it close to the
@@ -81,23 +81,8 @@ Task result backend settings
 .. _`Redis`: http://code.google.com/p/redis/
 .. _`Tokyo Tyrant`: http://1978th.net/tokyotyrant/
 
-
-* CELERY_PERIODIC_STATUS_BACKEND
-    The backend used to store the status of periodic tasks.
-    Can be one of the following:
-
-    * database (default)
-        Use a relational database supported by the Django ORM.
-
-    * mongodb
-        Use MongoDB.
-
-
 Database backend settings
 =========================
-
-This applies to both the result store backend and the periodic status
-backend.
 
 Please see the Django ORM database settings documentation:
 http://docs.djangoproject.com/en/dev/ref/settings/#database-engine
@@ -252,10 +237,6 @@ MongoDB backend settings
         The collection name to store task metadata.
         Defaults to "celery_taskmeta".
 
-    * periodictaskmeta_collection
-        The collection name to store periodic task metadata.
-        Defaults to "celery_periodictaskmeta".
-
 
 Example configuration
 ---------------------
@@ -329,9 +310,10 @@ Task execution settings
 
 * CELERY_ALWAYS_EAGER
     If this is ``True``, all tasks will be executed locally by blocking
-    until it is finished. ``apply_async`` and ``delay_task`` will return
+    until it is finished. ``apply_async`` and ``Task.delay`` will return
     a :class:`celery.result.EagerResult` which emulates the behaviour of
-    an :class:`celery.result.AsyncResult`.
+    :class:`celery.result.AsyncResult`, except the result has already
+    been evaluated.
 
     Tasks will never be sent to the queue, but executed locally
     instead.
@@ -341,7 +323,8 @@ Task execution settings
     stored task tombstones are deleted.
 
     **NOTE**: For the moment this only works for the database and MongoDB
-    backends.
+    backends., except the result has already
+    been evaluated.
 
 * CELERY_TASK_SERIALIZER
     A string identifying the default serialization
@@ -383,4 +366,3 @@ Process settings
 * CELERYD_PID_FILE
     Full path to the daemon pid file. Default is ``celeryd.pid``.
     Can be overridden using the ``--pidfile`` option to ``celeryd``.
-

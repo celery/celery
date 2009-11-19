@@ -33,23 +33,3 @@ RabbitMQ
 .. _`RabbitMQ`: http://rabbitmq.com/
 .. _`RabbitMQ Munin Plug-ins`: http://github.com/ask/rabbitmq-munin/
 .. _`Munin`: http://munin.projects.linpro.no/
-
-Non-relational databases
-------------------------
-
-* `CouchDB`_: Document database.
-
-* `Cassandra`_: Distributed and structured key-value store.
-
-* `Disco`_: `Map/Reduce`_ framework.
-
-* `Tokyo Cabinet`_/`Tokyo Tyrant`_: Modern and fast (networked) DBM-
-    implementation.
-
-.. _`CouchDB`: http://couchdb.org
-.. _`Cassandra`: http://incubator.apache.org/cassandra/
-.. _`Disco`: http://discoproject.org
-.. _`Map/Reduce`: http://en.wikipedia.org/wiki/MapReduce
-.. _`Tokyo Cabinet`: http://tokyocabinet.sourceforge.net/
-.. _`Tokyo Tyrant`: http://tokyocabinet.sourceforge.net/tyrantdoc/
-

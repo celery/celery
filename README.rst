@@ -2,7 +2,7 @@
  celery - Distributed Task Queue
 =================================
 
-:Version: 0.8.0
+:Version: 0.9.0
 
 Introduction
 ============
@@ -24,15 +24,6 @@ languages see `Executing tasks on a remote web server`_.
 It is used for executing tasks *asynchronously*, routed to one or more
 worker servers, running concurrently using multiprocessing.
 
-It is designed to solve certain problems related to running websites
-demanding high-availability and performance.
-
-It is perfect for filling caches, posting updates to twitter, mass
-downloading data like syndication feeds or web scraping. Use-cases are
-plentiful. Implementing these features asynchronously using ``celery`` is
-easy and fun, and the performance improvements can make it more than
-worthwhile.
-
 Overview
 ========
 
@@ -40,10 +31,9 @@ This is a high level overview of the architecture.
 
 .. image:: http://cloud.github.com/downloads/ask/celery/Celery-Overview-v4.jpg
 
-The broker is an AMQP server pushing tasks to the worker servers.
+The broker pushes tasks to the worker servers.
 A worker server is a networked machine running ``celeryd``. This can be one or
-more machines, depending on the workload. See `A look inside the worker`_ to
-see how the worker server works.
+more machines, depending on the workload.
 
 The result of the task can be stored for later retrieval (called its
 "tombstone").
@@ -51,9 +41,10 @@ The result of the task can be stored for later retrieval (called its
 Features
 ========
 
-    * Uses AMQP messaging (RabbitMQ, ZeroMQ, Qpid) to route tasks to the
+    * Uses messaging (AMQP: RabbitMQ, ZeroMQ, Qpid) to route tasks to the
       worker servers. Experimental support for STOMP (ActiveMQ) is also 
-      available.
+      available. For simple setups it's also possible to use Redis or an
+      SQL database as the message queue.
 
     * You can run as many worker servers as you want, and still
       be *guaranteed that the task is only executed once.*
@@ -70,8 +61,15 @@ Features
       `MongoDB`_, `Redis`_ or `Tokyo Tyrant`_ back-end. For high-performance
       you can also use AMQP messages to publish results.
 
+    * Supports calling tasks over HTTP to support multiple programming
+      languages and systems.
+
+    * Supports several serialization schemes, like pickle, json, yaml and
+      supports registering custom encodings .
+
     * If the task raises an exception, the exception instance is stored,
-      instead of the return value.
+      instead of the return value, and it's possible to inspect the traceback
+      after the fact.
 
     * All tasks has a Universally Unique Identifier (UUID), which is the
       task id, used for querying task status and return values.
@@ -87,7 +85,8 @@ Features
       You can find out how many, or if all of the sub-tasks has been executed.
       Excellent for progress-bar like functionality.
 
-    * Has a ``map`` like function that uses tasks, called ``dmap``.
+    * Has a ``map`` like function that uses tasks,
+      called ``celery.task.dmap``.
 
     * However, you rarely want to wait for these results in a web-environment.
       You'd rather want to use Ajax to poll the task status, which is
@@ -176,9 +175,6 @@ allow that user access to that virtual host::
 
     $ rabbitmqctl add_vhost myvhost
 
-From RabbitMQ version 1.6.0 and onward you have to use the new ACL features
-to allow access::
-
     $ rabbitmqctl set_permissions -p myvhost myuser "" ".*" ".*"
 
 See the RabbitMQ `Admin Guide`_ for more information about `access control`_.
@@ -186,11 +182,6 @@ See the RabbitMQ `Admin Guide`_ for more information about `access control`_.
 .. _`Admin Guide`: http://www.rabbitmq.com/admin-guide.html
 
 .. _`access control`: http://www.rabbitmq.com/admin-guide.html#access-control
-
-
-If you are still using version 1.5.0 or below, please use ``map_user_vhost``::
-
-    $ rabbitmqctl map_user_vhost myuser myvhost
 
 
 Configuring your Django project to use Celery
@@ -207,11 +198,11 @@ You only need three simple steps to use celery with your Django project.
     3. Configure celery to use the AMQP user and virtual host we created
         before, by adding the following to your ``settings.py``::
 
-            AMQP_SERVER = "localhost"
-            AMQP_PORT = 5672
-            AMQP_USER = "myuser"
-            AMQP_PASSWORD = "mypassword"
-            AMQP_VHOST = "myvhost"
+            BROKER_HOST = "localhost"
+            BROKER_PORT = 5672
+            BROKER_USER = "myuser"
+            BROKER_PASSWORD = "mypassword"
+            BROKER_VHOST = "myvhost"
 
 
 That's it.
@@ -252,61 +243,27 @@ Defining and executing tasks
 **Please note** All of these tasks has to be stored in a real module, they can't
 be defined in the python shell or ipython/bpython. This is because the celery
 worker server needs access to the task function to be able to run it.
-So while it looks like we use the python shell to define the tasks in these
-examples, you can't do it this way. Put them in the ``tasks`` module of your
+Put them in the ``tasks`` module of your
 Django application. The worker server will automatically load any ``tasks.py``
 file for all of the applications listed in ``settings.INSTALLED_APPS``.
 Executing tasks using ``delay`` and ``apply_async`` can be done from the
 python shell, but keep in mind that since arguments are pickled, you can't
 use custom classes defined in the shell session.
 
-While you can use regular functions, the recommended way is to define
-a task class. This way you can cleanly upgrade the task to use the more
-advanced features of celery later.
+This is a task that adds two numbers:
+::
 
-This is a task that basically does nothing but take some arguments,
-and return a value:
+    from celery.decorators import task
 
-    >>> from celery.task import Task
-    >>> from celery.registry import tasks
-    >>> class MyTask(Task):
-    ...     def run(self, some_arg, **kwargs):
-    ...         logger = self.get_logger(**kwargs)
-    ...         logger.info("Did something: %s" % some_arg)
-    ...         return 42
-    >>> tasks.register(MyTask)
+    @task()
+    def add(x, y):
+        return x + y
 
-As you can see the worker is sending some keyword arguments to this task,
-this is the default keyword arguments. A task can choose not to take these,
-or only list the ones it want (the worker will do the right thing).
-The current default keyword arguments are:
-
-    * logfile
-
-        The currently used log file, can be passed on to ``self.get_logger``
-        to gain access to the workers log file via a ``logger.Logging``
-        instance.
-
-    * loglevel
-
-        The current loglevel used.
-
-    * task_id
-
-        The unique id of the executing task.
-
-    * task_name
-
-        Name of the executing task.
-
-    * task_retries
-
-        How many times the current task has been retried.
-        (an integer starting a ``0``).
-
-Now if we want to execute this task, we can use the ``delay`` method of the
-task class (this is a handy shortcut to the ``apply_async`` method which gives
-you greater control of the task execution).
+Now if we want to execute this task, we can use the
+``delay`` method of the task class.
+This is a handy shortcut to the ``apply_async`` method which gives
+greater control of the task execution (see ``userguide/executing`` for more
+information).
 
     >>> from myapp.tasks import MyTask
     >>> MyTask.delay(some_arg="foo")
@@ -319,32 +276,42 @@ picked it up.
 that RabbitMQ is running, and that the user/password has access to the virtual
 host you configured earlier.
 
-Right now we have to check the celery worker logfiles to know what happened with
-the task. This is because we didn't keep the ``AsyncResult`` object returned
-by ``delay``.
+Right now we have to check the celery worker logfiles to know what happened
+with the task. This is because we didn't keep the ``AsyncResult`` object
+returned by ``delay``.
 
 The ``AsyncResult`` lets us find the state of the task, wait for the task to
 finish and get its return value (or exception if the task failed).
 
 So, let's execute the task again, but this time we'll keep track of the task:
 
+<<<<<<< HEAD
     >>> result = MyTask.delay("hello")
+=======
+    >>> result = add.delay(4, 4)
+>>>>>>> master
     >>> result.ready() # returns True if the task has finished processing.
     False
     >>> result.result # task is not ready, so no return value yet.
     None
-    >>> result.get()   # Waits until the task is done and return the retval.
-    42
-    >>> result.result
-    42
+    >>> result.get()   # Waits until the task is done and returns the retval.
+    8
+    >>> result.result # direct access to result, doesn't re-raise errors.
+    8
     >>> result.successful() # returns True if the task didn't end in failure.
     True
-
 
 If the task raises an exception, the return value of ``result.successful()``
 will be ``False``, and ``result.result`` will contain the exception instance
 raised by the task.
 
+<<<<<<< HEAD
+If the task raises an exception, the return value of ``result.successful()``
+will be ``False``, and ``result.result`` will contain the exception instance
+raised by the task.
+
+=======
+>>>>>>> master
 Worker auto-discovery of tasks
 ------------------------------
 
@@ -358,27 +325,48 @@ Periodic Tasks
 
 Periodic tasks are tasks that are run every ``n`` seconds. 
 Here's an example of a periodic task:
+::
 
-    >>> from celery.task import PeriodicTask
-    >>> from celery.registry import tasks
-    >>> from datetime import timedelta
-    >>> class MyPeriodicTask(PeriodicTask):
-    ...     run_every = timedelta(seconds=30)
-    ...
-    ...     def run(self, **kwargs):
-    ...         logger = self.get_logger(**kwargs)
-    ...         logger.info("Running periodic task!")
-    ...
+    from celery.task import PeriodicTask
+    from celery.registry import tasks
+    from datetime import timedelta
+
+    class MyPeriodicTask(PeriodicTask):
+        run_every = timedelta(seconds=30)
+
+        def run(self, **kwargs):
+            logger = self.get_logger(**kwargs)
+            logger.info("Running periodic task!")
     >>> tasks.register(MyPeriodicTask)
 
-**Note:** Periodic tasks does not support arguments, as this doesn't
-really make sense.
+
+If you want to use periodic tasks you need to start the ``celerybeat``
+service. You have to make sure only one instance of this server is running at
+any time, or else you will end up with multiple executions of the same task.
+
+To start the ``celerybeat`` service::
+
+    $ celerybeat --detach
+
+or if using Django::
+
+    $ python manage.py celerybeat
 
 
-A look inside the worker
-========================
+You can also start ``celerybeat`` with ``celeryd`` by using the ``-B`` option,
+this is convenient if you only have one server::
 
-.. image:: http://cloud.github.com/downloads/ask/celery/InsideTheWorker-v2.jpg
+    $ celeryd --detach -B
+
+or if using Django::
+
+    $ python manage.py celeryd --detach -B
+
+
+A look inside the components
+============================
+
+.. image:: http://cloud.github.com/downloads/ask/celery/Celery1.0-inside-worker.jpg
 
 Getting Help
 ============
@@ -423,3 +411,4 @@ This software is licensed under the ``New BSD License``. See the ``LICENSE``
 file in the top distribution directory for the full license text.
 
 .. # vim: syntax=rst expandtab tabstop=4 shiftwidth=4 shiftround
+

@@ -1,12 +1,13 @@
 """celery.backends.amqp"""
-from carrot.connection import DjangoBrokerConnection
 from carrot.messaging import Consumer, Publisher
+from carrot.connection import DjangoBrokerConnection
+
 from celery.backends.base import BaseBackend
 
 RESULTSTORE_EXCHANGE = "celeryresults"
 
 
-class Backend(BaseBackend):
+class AMQPBackend(BaseBackend):
     """AMQP backend. Publish results by sending messages to the broker
     using the task id as routing key.
 
@@ -19,7 +20,7 @@ class Backend(BaseBackend):
     capabilities = ["ResultStore"]
 
     def __init__(self, *args, **kwargs):
-        super(Backend, self).__init__(*args, **kwargs)
+        super(AMQPBackend, self).__init__(*args, **kwargs)
         self.connection = DjangoBrokerConnection()
         self._cache = {}
 
@@ -56,11 +57,7 @@ class Backend(BaseBackend):
 
     def store_result(self, task_id, result, status, traceback=None):
         """Send task return value and status."""
-        if status == "DONE":
-            result = self.prepare_result(result)
-        elif status == "FAILURE":
-            result = self.prepare_exception(result)
-
+        result = self.encode_result(result, status)
 
         meta = {"task_id": task_id,
                 "result": result,
@@ -74,9 +71,9 @@ class Backend(BaseBackend):
 
         return result
 
-    def is_done(self, task_id):
+    def is_successful(self, task_id):
         """Returns ``True`` if task with ``task_id`` has been executed."""
-        return self.get_status(task_id) == "DONE"
+        return self.get_status(task_id) == "SUCCESS"
 
     def get_status(self, task_id):
         """Get the status of a task."""
