@@ -3,6 +3,7 @@
 Sending and Receiving Messages
 
 """
+from carrot.connection import DjangoBrokerConnection
 from carrot.messaging import Publisher, Consumer, ConsumerSet
 
 from celery import conf
@@ -88,4 +89,36 @@ class StatsConsumer(Consumer):
     exchange = "celerygraph"
     routing_key = "stats"
     exchange_type = "direct"
-    no_ack=True
+    no_ack = True
+
+
+class EventPublisher(Publisher):
+    exchange = "celeryevent"
+    routing_key = "event"
+
+
+class EventConsumer(Consumer):
+    queue = "celeryevent"
+    exchange = "celeryevent"
+    routing_key = "event"
+    exchange_type = "direct"
+    no_ack = True
+
+
+def get_connection_info():
+    broker_connection = DjangoBrokerConnection()
+    carrot_backend = broker_connection.backend_cls
+    if carrot_backend and not isinstance(carrot_backend, str):
+        carrot_backend = carrot_backend.__name__
+    port = broker_connection.port or \
+                broker_connection.get_backend_cls().default_port
+    port = port and ":%s" % port or ""
+    vhost = broker_connection.virtual_host
+    if not vhost.startswith("/"):
+        vhost = "/" + vhost
+    return "%(carrot_backend)s://%(userid)s@%(host)s%(port)s%(vhost)s" % {
+                "carrot_backend": carrot_backend,
+                "userid": broker_connection.userid,
+                "host": broker_connection.hostname,
+                "port": port,
+                "vhost": vhost}
