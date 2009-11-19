@@ -37,16 +37,6 @@ class RevokeRegistry(UserDict):
         return sorted(self.items(), key=lambda (uuid, when): when)[0]
 
 
-def revoke(uuid, connection=None):
-    conn = connection or DjangoBrokerConnection()
-    close_connection = not connection and conn.close or noop
-
-    broadcast = BroadcastPublisher(conn)
-    try:
-        broadcast.send({"revoke": uuid})
-    finally:
-        broadcast.close()
-        close_connection()
 
 revoked = RevokeRegistry()
 
