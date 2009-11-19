@@ -22,9 +22,10 @@ from celery.worker.job import TaskWrapper
 from celery.worker.scheduler import Scheduler
 from celery.worker.controllers import Mediator, ScheduleController
 from celery.worker.buckets import TaskBucket
-from celery.messaging import get_consumer_set
+from celery.messaging import get_consumer_set, BroadcastConsumer
 from celery.exceptions import NotRegistered
 from celery.datastructures import SharedCounter
+from celery.worker.revoke import revoked
 
 
 class CarrotListener(object):
@@ -99,11 +100,23 @@ class CarrotListener(object):
         otherwise we move it the bucket queue for immediate processing.
 
         """
+
+        revoke_uuid = message_data.get("revoke", None)
+        if revoke_uuid:
+            revoked.add(revoke_uuid)
+            self.logger.warn("Task %s marked as revoked." % revoke_uuid)
+            return
+
         try:
             task = TaskWrapper.from_message(message, message_data,
                                             logger=self.logger)
         except NotRegistered, exc:
             self.logger.error("Unknown task ignored: %s" % (exc))
+            return
+
+        if task.task_id in revoked:
+            self.logger.warn("Got revoked task from broker: %s[%s]" % (
+                task.task_name, task.task_id))
             return
 
         eta = message_data.get("eta")
@@ -144,6 +157,8 @@ class CarrotListener(object):
         self.close_connection()
         self.amqp_connection = self._open_connection()
         self.task_consumer = get_consumer_set(connection=self.amqp_connection)
+        self.broadcast_consumer = BroadcastConsumer(self.amqp_connection)
+        self.task_consumer.add_consumer(self.broadcast_consumer)
         self.task_consumer.register_callback(self.receive_message)
 
     def _open_connection(self):

@@ -3,6 +3,7 @@
 Sending and Receiving Messages
 
 """
+from carrot.connection import DjangoBrokerConnection
 from carrot.messaging import Publisher, Consumer, ConsumerSet
 
 from celery import conf
@@ -34,14 +35,7 @@ class TaskPublisher(Publisher):
         return self._delay_task(task_name=task_name, task_args=task_args,
                                 task_kwargs=task_kwargs, **kwargs)
 
-    def delay_task_in_set(self, taskset_id, task_name, task_args, task_kwargs,
-            **kwargs):
-        """Delay a task which part of a task set."""
-        return self._delay_task(task_name=task_name, part_of_set=taskset_id,
-                                task_args=task_args, task_kwargs=task_kwargs,
-                                **kwargs)
-
-    def _delay_task(self, task_name, task_id=None, part_of_set=None,
+    def _delay_task(self, task_name, task_id=None, taskset_id=None,
             task_args=None, task_kwargs=None, **kwargs):
         """INTERNAL"""
 
@@ -58,8 +52,8 @@ class TaskPublisher(Publisher):
             "eta": eta,
         }
 
-        if part_of_set:
-            message_data["taskset"] = part_of_set
+        if taskset_id:
+            message_data["taskset"] = taskset_id
 
         self.send(message_data, **extract_msg_options(kwargs))
         signals.task_sent.send(sender=task_name, **message_data)
@@ -84,6 +78,7 @@ class TaskConsumer(Consumer):
 
 class StatsPublisher(Publisher):
     exchange = "celerygraph"
+    exchange_type = "direct"
     routing_key = "stats"
     encoder = pickle.dumps
 
@@ -95,3 +90,35 @@ class StatsConsumer(Consumer):
     exchange_type = "direct"
     decoder = pickle.loads
     no_ack=True
+
+
+class BroadcastPublisher(Publisher):
+    exchange = "celerycast"
+    exchange_type = "fanout"
+    routing_key = ""
+
+    def revoke(self, task_id):
+        self.send(dict(revoke=task_id))
+
+
+class BroadcastConsumer(Consumer):
+    queue = "celerycast"
+    exchange = "celerycast"
+    routing_key = ""
+    exchange_type = "fanout"
+    no_ack=True
+
+
+def establish_connection(connect_timeout=conf.AMQP_CONNECTION_TIMEOUT):
+    return DjangoBrokerConnection(connect_timeout=connect_timeout)
+
+
+def with_connection(fun, connection=None,
+        connect_timeout=conf.AMQP_CONNECTION_TIMEOUT):
+    conn = connection or establish_connection()
+    close_connection = not connection and conn.close or noop
+
+    try:
+        return fun(conn)
+    finally:
+        close_connection()
