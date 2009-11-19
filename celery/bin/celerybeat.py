@@ -52,12 +52,13 @@ from celery import __version__
 from celery.log import emergency_error
 from celery.beat import ClockService
 from celery.loaders import current_loader, settings
+from celery.messaging import get_connection_info
 
 STARTUP_INFO_FMT = """
 Configuration ->
-    * Broker -> amqp://%(vhost)s@%(host)s:%(port)s
+    * Broker -> %(conninfo)s
     * Exchange -> %(exchange)s (%(exchange_type)s)
-    * Consumer -> Queue:%(consumer_queue)s Routing:%(consumer_rkey)s
+    * Consumer -> Queue:%(consumer_queue)s Binding:%(consumer_rkey)s
 """.strip()
 
 OPTION_LIST = (
@@ -99,7 +100,7 @@ def run_clockservice(detach=False, loglevel=conf.CELERYBEAT_LOG_LEVEL,
         **kwargs):
     """Starts the celerybeat clock server."""
 
-    print("Celery Beat %s is starting." % __version__)
+    print("celerybeat %s is starting." % __version__)
 
     # Setup logging
     if not isinstance(loglevel, int):
@@ -109,10 +110,9 @@ def run_clockservice(detach=False, loglevel=conf.CELERYBEAT_LOG_LEVEL,
 
     # Dump configuration to screen so we have some basic information
     # when users sends e-mails.
+
     print(STARTUP_INFO_FMT % {
-            "vhost": getattr(settings, "AMQP_VHOST", "(default)"),
-            "host": getattr(settings, "AMQP_SERVER", "(default)"),
-            "port": getattr(settings, "AMQP_PORT", "(default)"),
+            "conninfo": get_connection_info(),
             "exchange": conf.AMQP_EXCHANGE,
             "exchange_type": conf.AMQP_EXCHANGE_TYPE,
             "consumer_queue": conf.AMQP_CONSUMER_QUEUE,
@@ -122,9 +122,9 @@ def run_clockservice(detach=False, loglevel=conf.CELERYBEAT_LOG_LEVEL,
             "pidfile": pidfile,
     })
 
-    print("Celery Beat has started.")
+    print("celerybeat has started.")
+    from celery.log import setup_logger, redirect_stdouts_to_logger
     if detach:
-        from celery.log import setup_logger, redirect_stdouts_to_logger
         context = platform.create_daemon_context(logfile, pidfile,
                                         chroot_directory=chroot,
                                         working_directory=working_directory,

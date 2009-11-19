@@ -77,8 +77,8 @@ from celery.log import emergency_error
 from celery.task import discard_all
 from celery.worker import WorkController
 from celery.loaders import current_loader, settings
-from celery.loaders import current_loader
 from celery.loaders import settings
+from celery.messaging import get_connection_info
 
 USE_STATISTICS = getattr(settings, "CELERY_STATISTICS", False)
 # Make sure the setting exists.
@@ -86,9 +86,9 @@ settings.CELERY_STATISTICS = USE_STATISTICS
 
 STARTUP_INFO_FMT = """
 Configuration ->
-    * Broker -> %(carrot_backend)s://%(vhost)s@%(host)s:%(port)s
+    * Broker -> %(conninfo)s
     * Exchange -> %(exchange)s (%(exchange_type)s)
-    * Consumer -> Queue:%(consumer_queue)s Routing:%(consumer_rkey)s
+    * Consumer -> Queue:%(consumer_queue)s Binding:%(consumer_rkey)s
     * Concurrency -> %(concurrency)s
     * Statistics -> %(statistics)s
     * Celerybeat -> %(celerybeat)s
@@ -179,16 +179,9 @@ def run_worker(concurrency=conf.DAEMON_CONCURRENCY, detach=False,
 
     # Dump configuration to screen so we have some basic information
     # when users sends e-mails.
-    broker_connection = DjangoBrokerConnection()
-    carrot_backend = broker_connection.backend_cls
-    if carrot_backend and not isinstance(carrot_backend, str):
-        carrot_backend = carrot_backend.__name__
 
     print(STARTUP_INFO_FMT % {
-            "carrot_backend": carrot_backend or "amqp",
-            "vhost": broker_connection.virtual_host or "(default)",
-            "host": broker_connection.hostname or "(default)",
-            "port": broker_connection.port or "(port)",
+            "conninfo": get_connection_info(),
             "exchange": conf.AMQP_EXCHANGE,
             "exchange_type": conf.AMQP_EXCHANGE_TYPE,
             "consumer_queue": conf.AMQP_CONSUMER_QUEUE,
@@ -200,7 +193,6 @@ def run_worker(concurrency=conf.DAEMON_CONCURRENCY, detach=False,
             "statistics": settings.CELERY_STATISTICS and "ON" or "OFF",
             "celerybeat": run_clockservice and "ON" or "OFF",
     })
-    del(broker_connection)
 
     print("Celery has started.")
     if detach:
