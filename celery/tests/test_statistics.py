@@ -1,7 +1,7 @@
 from __future__ import with_statement
 import unittest
 import time
-from celery.monitoring import TaskTimerStats, Statistics, StatsCollector
+from celery.statistics import TaskTimerStats, Statistics, StatsCollector
 from carrot.connection import DjangoBrokerConnection
 from celery.messaging import StatsConsumer
 from celery.tests.utils import override_stdouts

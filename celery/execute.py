@@ -10,7 +10,7 @@ from celery.exceptions import RetryTaskError
 from celery.datastructures import ExceptionInfo
 from celery.backends import default_backend
 from celery.loaders import current_loader
-from celery.monitoring import TaskTimerStats
+from celery.statistics import TaskTimerStats
 from celery import signals
 import sys
 import inspect
