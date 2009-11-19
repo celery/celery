@@ -68,6 +68,10 @@ class MonitorListener(object):
 
 class MonitorService(object):
 
+    def __init__(self, logger, is_detached=False):
+        self.logger = logger
+        self.is_detached = is_detached
+
     def start():
         state = MonitorState()
         listener = MonitorListener(state)
