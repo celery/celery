@@ -18,6 +18,7 @@ class WebServerThread(threading.Thread):
             (r"/api/task/name/$", api.ListAllTasksByNameHandler),
             (r"/api/task/name/(.+?)", api.ListTasksByNameHandler),
             (r"/api/task/$", api.ListTasksHandler),
+            (r"/api/revoke/task/(.+?)", api.RevokeTaskHandler),
             (r"/api/task/(.+)", api.TaskStateHandler),
         ])
         http_server = httpserver.HTTPServer(application)

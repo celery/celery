@@ -1,7 +1,21 @@
-from tornado.web import RequestHandler
-import simplejson
+from functools import wraps
 
+import simplejson
+from tornado.web import RequestHandler
+
+from celery.task import revoke
 from celery.monitoring.state import monitor_state
+
+
+def JSON(fun):
+
+    @wraps(fun)
+    def _write_json(self, *args, **kwargs):
+        content = fun(self, *args, **kwargs)
+        self.write(simplejson.dumps(content))
+
+    return _write_json
+
 
 class APIHandler(RequestHandler):
 
@@ -12,30 +26,35 @@ class APIHandler(RequestHandler):
 
 class TaskStateHandler(APIHandler):
 
+    @JSON
     def get(self, task_id):
-        events = simplejson.dumps(monitor_state.task_events[task_id])
-        self.write(events)
+        return monitor_state.task_events[task_id]
 
 
 class ListTasksHandler(APIHandler):
 
+    @JSON
     def get(self):
-        tasks = simplejson.dumps(monitor_state.tasks_by_time())
-        self.write(tasks)
+        return monitor_state.tasks_by_time()
 
 
 class ListTasksByNameHandler(APIHandler):
 
+    @JSON
     def get(self, name):
-        tasks = simplejson.dumps(monitor_state.tasks_by_type()[name])
-        self.write(tasks)
+        return monitor_state.tasks_by_type()[name]
 
 
 class ListAllTasksByNameHandler(APIHandler):
+
+    @JSON
     def get(self):
-        tasks = simplejson.dumps(monitor_state.tasks_by_type())
-        self.write(tasks)
+        return monitor_state.tasks_by_type()
 
 
+class RevokeTaskHandler(APIHandler):
 
-
+    @JSON
+    def get(self, task_id):
+        revoke(task_id)
+        return {"ok": True}

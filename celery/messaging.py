@@ -100,7 +100,7 @@ class EventConsumer(Consumer):
 
 
 class BroadcastPublisher(Publisher):
-    exchange = "celerycast"
+    exchange = "celeryctl"
     exchange_type = "fanout"
     routing_key = ""
 
@@ -109,8 +109,8 @@ class BroadcastPublisher(Publisher):
 
 
 class BroadcastConsumer(Consumer):
-    queue = "celerycast"
-    exchange = "celerycast"
+    queue = "celeryctl"
+    exchange = "celeryctl"
     routing_key = ""
     exchange_type = "fanout"
     no_ack = True

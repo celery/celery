@@ -10,7 +10,7 @@ from celery.conf import AMQP_CONNECTION_TIMEOUT
 from celery.execute import apply_async
 from celery.registry import tasks
 from celery.backends import default_backend
-from celery.messaging import TaskConsumer, with_connection
+from celery.messaging import TaskConsumer, BroadcastPublisher, with_connection
 from celery.task.base import Task, TaskSet, PeriodicTask
 from celery.task.base import ExecuteRemoteTask, AsynchronousMapTask
 from celery.task.rest import RESTProxyTask
@@ -43,9 +43,9 @@ def revoke(task_id, connection=None, connect_timeout=None):
     """
 
     def _revoke(connection):
-        broadcast = BroadcastPublisher(conn)
+        broadcast = BroadcastPublisher(connection)
         try:
-            broadcast.revoke(uuid)
+            broadcast.revoke(task_id)
         finally:
             broadcast.close()
 
