@@ -103,16 +103,20 @@ class CarrotListener(object):
         """
         try:
             task = TaskWrapper.from_message(message, message_data,
-                                            logger=self.logger)
+                                            logger=self.logger,
+                                            eventer=self.event_dispatcher)
         except NotRegistered, exc:
             self.logger.error("Unknown task ignored: %s" % (exc))
             return
 
         eta = message_data.get("eta")
 
-        print(message_data)
-        self.event_dispatcher.send("task-received", **message_data)
-
+        self.event_dispatcher.send("task-received", uuid=task.task_id,
+                                                    name=task.task_name,
+                                                    args=task.args,
+                                                    kwargs=task.kwargs,
+                                                    retries=task.retries,
+                                                    eta=eta)
         if eta:
             if not isinstance(eta, datetime):
                 eta = parse_iso8601(eta)

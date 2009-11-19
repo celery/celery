@@ -8,11 +8,11 @@ Events
 
 WORKER-ONLINE    hostname timestamp
 WORKER-OFFLINE   hostname timestamp
-TASK-RECEIVED    id name args kwargs retries eta queue exchange rkey timestamp
-TASK-ACCEPTED    id timestamp
-TASK-SUCCEEDED   id result timestamp
-TASK-FAILED      id exception timestamp
-TASK-RETRIED     id exception timestamp
+TASK-RECEIVED    uuid name args kwargs retries eta timestamp
+TASK-ACCEPTED    uuid timestamp
+TASK-SUCCEEDED   uuid result timestamp
+TASK-FAILED      uuid exception timestamp
+TASK-RETRIED     uuid exception timestamp
 WORKER-HEARTBEAT hostname timestamp
 
 """
@@ -32,6 +32,7 @@ class EventDispatcher(object):
         self.publisher = EventPublisher(self.connection)
 
     def send(self, type, **fields):
+        fields["timestamp"] = time.time()
         self.publisher.send(Event(type, **fields))
 
 
@@ -43,13 +44,14 @@ class EventReceiver(object):
         if handlers is not None:
             self.handlers = handlers
 
-    def process(self, event):
-        type = event["type"]
+    def process(self, type, event):
+        print("Received event: %s" % event)
         handler = self.handlers.get(type) or self.handlers.get("*")
         handler and handler(event)
 
-    def _receive(message, message_data):
-        self.process(message_data)
+    def _receive(self, message_data, message):
+        type = message_data.pop("type").lower()
+        self.process(type, Event(type, **message_data))
 
     def consume(self, limit=None):
         consumer = EventConsumer(self.connection)

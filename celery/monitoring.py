@@ -51,15 +51,15 @@ class MonitorListener(object):
 
     def __init__(self, state):
         self.connection = DjangoBrokerConnection()
-        self.receiver = EventReceiver(connection, handlers={
-            "worker-heartbeat": self.state.receive_heartbeat,
-            "worker-online": self.state.receive_worker_event,
-            "worker-offline": self.state.receive_worker_event,
-            "task-received": self.state.receive_task_event,
-            "task-accepted": self.state.receive_task_event,
-            "task-succeeded": self.state.receive_task_event,
-            "task-failed": self.state.receive_task_event,
-            "task-retried": self.state.receive_task_event
+        self.receiver = EventReceiver(self.connection, handlers={
+            "worker-heartbeat": state.receive_heartbeat,
+            "worker-online": state.receive_worker_event,
+            "worker-offline": state.receive_worker_event,
+            "task-received": state.receive_task_event,
+            "task-accepted": state.receive_task_event,
+            "task-succeeded": state.receive_task_event,
+            "task-failed": state.receive_task_event,
+            "task-retried": state.receive_task_event
         })
 
     def start(self):
@@ -72,7 +72,7 @@ class MonitorService(object):
         self.logger = logger
         self.is_detached = is_detached
 
-    def start():
+    def start(self):
         state = MonitorState()
         listener = MonitorListener(state)
 
