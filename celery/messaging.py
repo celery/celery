@@ -72,20 +72,6 @@ class TaskConsumer(Consumer):
     no_ack = False
 
 
-class StatsPublisher(Publisher):
-    exchange = "celerygraph"
-    exchange_type = "direct"
-    routing_key = "stats"
-
-
-class StatsConsumer(Consumer):
-    queue = "celerygraph"
-    exchange = "celerygraph"
-    routing_key = "stats"
-    exchange_type = "direct"
-    no_ack = True
-
-
 class EventPublisher(Publisher):
     exchange = "celeryevent"
     routing_key = "event"

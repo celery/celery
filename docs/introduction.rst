@@ -94,10 +94,6 @@ Features
       returns a JSON-serialized data structure containing the task status,
       and the return value if completed, or exception on failure.
 
-    * The worker can collect statistics, like, how many tasks has been
-      executed by type, and the time it took to process them. Very useful
-      for monitoring and profiling.
-
     * Pool workers are supervised, so if for some reason a worker crashes
         it is automatically replaced by a new worker.
 

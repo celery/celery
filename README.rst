@@ -94,10 +94,6 @@ Features
       returns a JSON-serialized data structure containing the task status,
       and the return value if completed, or exception on failure.
 
-    * The worker can collect statistics, like, how many tasks has been
-      executed by type, and the time it took to process them. Very useful
-      for monitoring and profiling.
-
     * Pool workers are supervised, so if for some reason a worker crashes
         it is automatically replaced by a new worker.
 
@@ -285,11 +281,7 @@ finish and get its return value (or exception if the task failed).
 
 So, let's execute the task again, but this time we'll keep track of the task:
 
-<<<<<<< HEAD
-    >>> result = MyTask.delay("hello")
-=======
     >>> result = add.delay(4, 4)
->>>>>>> master
     >>> result.ready() # returns True if the task has finished processing.
     False
     >>> result.result # task is not ready, so no return value yet.
@@ -305,13 +297,6 @@ If the task raises an exception, the return value of ``result.successful()``
 will be ``False``, and ``result.result`` will contain the exception instance
 raised by the task.
 
-<<<<<<< HEAD
-If the task raises an exception, the return value of ``result.successful()``
-will be ``False``, and ``result.result`` will contain the exception instance
-raised by the task.
-
-=======
->>>>>>> master
 Worker auto-discovery of tasks
 ------------------------------
 

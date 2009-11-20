@@ -16,7 +16,6 @@ from celery.loaders import current_loader
 from celery.execute import TaskTrace
 from celery.registry import tasks
 from celery.exceptions import NotRegistered
-from celery.statistics import TaskTimerStats
 from celery.datastructures import ExceptionInfo
 
 # pep8.py borks on a inline signature separator and
@@ -89,12 +88,7 @@ class WorkerTaskTrace(TaskTrace):
         # Backend process cleanup
         self.task.backend.process_cleanup()
 
-        timer_stat = TaskTimerStats.start(self.task_id, self.task_name,
-                                          self.args, self.kwargs)
-        try:
-            return self._trace()
-        finally:
-            timer_stat.stop()
+        return self._trace()
 
     def handle_success(self, retval, *args):
         """Handle successful execution.

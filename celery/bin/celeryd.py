@@ -26,11 +26,6 @@
     Also run the ``celerybeat`` periodic task scheduler. Please note that
     there must only be one instance of this service.
 
-.. cmdoption:: -s, --statistics
-
-    Turn on reporting of statistics (remember to flush the statistics message
-    queue from time to time).
-
 .. cmdoption:: -d, --detach, --daemon
 
     Run in the background as a daemon.
@@ -80,17 +75,12 @@ from celery.loaders import current_loader, settings
 from celery.loaders import settings
 from celery.messaging import get_connection_info
 
-USE_STATISTICS = getattr(settings, "CELERY_STATISTICS", False)
-# Make sure the setting exists.
-settings.CELERY_STATISTICS = USE_STATISTICS
-
 STARTUP_INFO_FMT = """
 Configuration ->
     * Broker -> %(conninfo)s
     * Exchange -> %(exchange)s (%(exchange_type)s)
     * Consumer -> Queue:%(consumer_queue)s Binding:%(consumer_rkey)s
     * Concurrency -> %(concurrency)s
-    * Statistics -> %(statistics)s
     * Celerybeat -> %(celerybeat)s
 """.strip()
 
@@ -104,9 +94,6 @@ OPTION_LIST = (
             help="Discard all waiting tasks before the server is started. "
                  "WARNING: This is unrecoverable, and the tasks will be "
                  "deleted from the messaging server."),
-    optparse.make_option('-s', '--statistics', default=USE_STATISTICS,
-            action="store_true", dest="statistics",
-            help="Collect statistics."),
     optparse.make_option('-f', '--logfile', default=conf.DAEMON_LOG_FILE,
             action="store", dest="logfile",
             help="Path to log file."),
@@ -145,13 +132,10 @@ def run_worker(concurrency=conf.DAEMON_CONCURRENCY, detach=False,
         loglevel=conf.DAEMON_LOG_LEVEL, logfile=conf.DAEMON_LOG_FILE,
         discard=False, pidfile=conf.DAEMON_PID_FILE, umask=0,
         uid=None, gid=None, working_directory=None,
-        chroot=None, statistics=None, run_clockservice=False, **kwargs):
+        chroot=None, run_clockservice=False, **kwargs):
     """Starts the celery worker server."""
 
     print("Celery %s is starting." % __version__)
-
-    if statistics is not None:
-        settings.CELERY_STATISTICS = statistics
 
     if not concurrency:
         concurrency = multiprocessing.cpu_count()
@@ -190,7 +174,6 @@ def run_worker(concurrency=conf.DAEMON_CONCURRENCY, detach=False,
             "concurrency": concurrency,
             "loglevel": loglevel,
             "pidfile": pidfile,
-            "statistics": settings.CELERY_STATISTICS and "ON" or "OFF",
             "celerybeat": run_clockservice and "ON" or "OFF",
     })
 
