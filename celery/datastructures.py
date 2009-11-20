@@ -73,7 +73,7 @@ class ExceptionInfo(object):
         return str(self.exception)
 
     def __repr__(self):
-        return "<%s.%s: %s" % (
+        return "<%s.%s: %s>" % (
                 self.__class__.__module__,
                 self.__class__.__name__,
                 str(self.exception))
