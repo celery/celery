@@ -53,6 +53,11 @@ def list_task_types(request):
     return monitor_state.tasks_by_type()
 
 
+@api_handler
+def list_workers(request):
+    return monitor_state.list_workers()
+
+
 class RevokeTaskHandler(APIHandler):
 
     SUPPORTED_METHODS = ["POST"]
@@ -70,4 +75,5 @@ API = [
        (r"/task/$", list_tasks),
        (r"/revoke/task/", RevokeTaskHandler),
        (r"/task/(.+)", task_state),
+       (r"/worker/", list_workers),
 ]

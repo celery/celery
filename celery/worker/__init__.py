@@ -17,12 +17,13 @@ from celery import registry
 from celery.log import setup_logger
 from celery.beat import ClockServiceThread
 from celery.utils import retry_over_time
-from celery.worker.pool import TaskPool
 from celery.worker.job import TaskWrapper
+from celery.worker.pool import TaskPool
+from celery.worker.revoke import revoked
+from celery.worker.buckets import TaskBucket
+from celery.worker.heartbeat import Heart
 from celery.worker.scheduler import Scheduler
 from celery.worker.controllers import Mediator, ScheduleController
-from celery.worker.buckets import TaskBucket
-from celery.worker.revoke import revoked
 from celery.messaging import get_consumer_set, BroadcastConsumer
 from celery.exceptions import NotRegistered
 from celery.datastructures import SharedCounter
@@ -60,6 +61,8 @@ class CarrotListener(object):
         self.logger = logger
         self.prefetch_count = SharedCounter(initial_prefetch_count)
         self.event_dispatcher = None
+        self.hostname = socket.gethostname()
+        self.heart = None
 
     def start(self):
         """Start the consumer.
@@ -146,6 +149,8 @@ class CarrotListener(object):
 
     def close_connection(self):
         """Close the AMQP connection."""
+        if self.heart:
+            self.heart.stop()
         if self.task_consumer:
             self.task_consumer.close()
             self.task_consumer = None
@@ -172,6 +177,8 @@ class CarrotListener(object):
         self.task_consumer.add_consumer(self.broadcast_consumer)
         self.task_consumer.register_callback(self.receive_message)
         self.event_dispatcher = EventDispatcher(self.amqp_connection)
+        self.heart = Heart(self.event_dispatcher, hostname=self.hostname)
+        self.heart.start()
 
     def _open_connection(self):
         """Retries connecting to the AMQP broker over time.
