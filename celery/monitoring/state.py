@@ -66,6 +66,15 @@ class MonitorState(object):
                 alive_workers.append({hostname: events[-1]["when"]})
         return alive_workers
 
+    def list_worker_tasks(self, hostname):
+        alive_workers = self.list_workers()
+        tasks_for_worker = defaultdict(lambda: [])
+        for hostname, when in alive_workers.items():
+            for task_id, task_info in self.tasks:
+                if task_info["hostname"] == hostname:
+                    tasks_for_worker[hostname].append(task_id)
+        return tasks_for_worker
+
     def receive_worker_event(self, event):
         event["state"] = event.pop("type")
         event["when"] = self.timestamp_to_isoformat(event["timestamp"])

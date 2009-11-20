@@ -58,6 +58,11 @@ def list_workers(request):
     return monitor_state.list_workers()
 
 
+@api_handler
+def list_worker_tasks(request, hostname):
+    return monitor_state.list_worker_tasks(hostname)
+
+
 class RevokeTaskHandler(APIHandler):
 
     SUPPORTED_METHODS = ["POST"]
@@ -76,4 +81,5 @@ API = [
        (r"/revoke/task/", RevokeTaskHandler),
        (r"/task/(.+)", task_state),
        (r"/worker/", list_workers),
+       (r"/worker/(.+?)/tasks", list_worker_tasks),
 ]
