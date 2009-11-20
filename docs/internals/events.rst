@@ -16,11 +16,12 @@ Task Events
 
     Sent just before the worker executes the task.
 
-* task-succeeded(uuid, result, hostname, timestamp)
+* task-succeeded(uuid, result, runtime, hostname, timestamp)
 
     Sent if the task executed successfully.
-    (EDIT: Should probably add the time it took to execute the task here?
-    Then we could get rid of the old statistics code.)
+    Runtime is the time it took to execute the task using the pool.
+    (Time starting from the task is sent to the pool, and ending when the
+    pool result handlers callback is called).
 
 * task-failed(uuid, exception, traceback, hostname, timestamp)
 
