@@ -1,7 +1,7 @@
 from functools import wraps
 
 import simplejson
-from tornado.web import RequestHandler
+from tornado.web import RequestHandler, Application
 
 from celery.task import revoke
 from celery.monitoring.state import monitor_state
@@ -24,37 +24,50 @@ class APIHandler(RequestHandler):
         self.set_header("Content-Type", "application/javascript")
 
 
-class TaskStateHandler(APIHandler):
+def api_handler(fun):
 
     @JSON
-    def get(self, task_id):
-        return monitor_state.task_events[task_id]
+    def get(self, *args, **kwargs):
+        return fun(self, *args, **kwargs)
+
+    return type(fun.__name__, (APIHandler, ), {"get": get})
 
 
-class ListTasksHandler(APIHandler):
-
-    @JSON
-    def get(self):
-        return monitor_state.tasks_by_time()
+@api_handler
+def task_state(request, task_id):
+    return monitor_state.get_task_info(task_id)
 
 
-class ListTasksByNameHandler(APIHandler):
-
-    @JSON
-    def get(self, name):
-        return monitor_state.tasks_by_type()[name]
+@api_handler
+def list_tasks(request):
+    return monitor_state.tasks_by_time()
 
 
-class ListAllTasksByNameHandler(APIHandler):
+@api_handler
+def list_tasks_by_name(request, name):
+    return monitor_state.tasks_by_type()[name]
 
-    @JSON
-    def get(self):
-        return monitor_state.tasks_by_type()
+
+@api_handler
+def list_task_types(request):
+    return monitor_state.tasks_by_type()
 
 
 class RevokeTaskHandler(APIHandler):
 
+    SUPPORTED_METHODS = ["POST"]
+
     @JSON
-    def get(self, task_id):
+    def post(self):
+        task_id = self.get_argument("task_id")
         revoke(task_id)
         return {"ok": True}
+
+
+API = [
+       (r"/task/name/$", list_task_types),
+       (r"/task/name/(.+?)", list_tasks_by_name),
+       (r"/task/$", list_tasks),
+       (r"/revoke/task/", RevokeTaskHandler),
+       (r"/task/(.+)", task_state),
+]

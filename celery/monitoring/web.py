@@ -7,6 +7,18 @@ from tornado.web import Application
 from celery.monitoring.handlers import api
 
 
+class Site(Application):
+
+    def __init__(self, applications, *args, **kwargs):
+        handlers = []
+        for urlprefix, application in applications:
+            for urlmatch, handler in application:
+                handlers.append((urlprefix + urlmatch, handler))
+        kwargs["handlers"] = handlers
+        super(Site, self).__init__(*args, **kwargs)
+
+
+
 class WebServerThread(threading.Thread):
 
     def __init__(self):
@@ -14,13 +26,9 @@ class WebServerThread(threading.Thread):
         self.setDaemon(True)
 
     def run(self):
-        application = Application([
-            (r"/api/task/name/$", api.ListAllTasksByNameHandler),
-            (r"/api/task/name/(.+?)", api.ListTasksByNameHandler),
-            (r"/api/task/$", api.ListTasksHandler),
-            (r"/api/revoke/task/(.+?)", api.RevokeTaskHandler),
-            (r"/api/task/(.+)", api.TaskStateHandler),
+        site = Site([
+            (r"/api", api.API),
         ])
-        http_server = httpserver.HTTPServer(application)
+        http_server = httpserver.HTTPServer(site)
         http_server.listen(8989)
         ioloop.IOLoop.instance().start()
