@@ -61,7 +61,7 @@ class CarrotListener(object):
         self.logger = logger
         self.prefetch_count = SharedCounter(initial_prefetch_count)
         self.event_dispatcher = None
-        self.hostname = socket.gethostname()
+        self.event_connection = None
         self.heart = None
 
     def start(self):
@@ -101,6 +101,13 @@ class CarrotListener(object):
         to the broker."""
         self.close_connection()
 
+    def handle_control_command(self, command):
+        if command["command"] == "revoke":
+            revoke_uuid = command["task_id"]
+            revoked.add(revoke_uuid)
+            self.logger.warn("Task %s marked as revoked." % revoke_uuid)
+            return
+
     def receive_message(self, message_data, message):
         """The callback called when a new message is received.
 
@@ -109,10 +116,10 @@ class CarrotListener(object):
 
         """
 
-        revoke_uuid = message_data.get("revoke", None)
-        if revoke_uuid:
-            revoked.add(revoke_uuid)
-            self.logger.warn("Task %s marked as revoked." % revoke_uuid)
+        control = message_data.get("control")
+        if control:
+            print("RECV CONTROL: %s" % control)
+            self.handle_control_command(control)
             return
 
         try:
@@ -162,6 +169,9 @@ class CarrotListener(object):
                     "CarrotListener: Closing connection to the broker...")
             self.amqp_connection.close()
             self.amqp_connection = None
+        if self.event_connection:
+            self.event_connection.close()
+            self.event_connection = None
         self.event_dispatcher = None
 
     def reset_connection(self):
@@ -175,13 +185,14 @@ class CarrotListener(object):
                 "CarrotListener: Re-establishing connection to the broker...")
         self.close_connection()
         self.amqp_connection = self._open_connection()
+        self.logger.debug("CarrotListener: Connection Established.")
         self.task_consumer = get_consumer_set(connection=self.amqp_connection)
         self.broadcast_consumer = BroadcastConsumer(self.amqp_connection)
         self.task_consumer.add_consumer(self.broadcast_consumer)
         self.task_consumer.register_callback(self.receive_message)
         self.event_dispatcher = EventDispatcher(self.amqp_connection)
-        self.heart = Heart(self.event_dispatcher, hostname=self.hostname)
-        self.heart.start()
+        self.heart = Heart(self.event_dispatcher)
+        #self.heart.start()
 
     def _open_connection(self):
         """Retries connecting to the AMQP broker over time.
@@ -207,7 +218,6 @@ class CarrotListener(object):
         conn = retry_over_time(_establish_connection, (socket.error, IOError),
                                errback=_connection_error_handler,
                                max_retries=conf.AMQP_CONNECTION_MAX_RETRIES)
-        self.logger.debug("CarrotListener: Connection Established.")
         return conn
 
 

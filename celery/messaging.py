@@ -105,7 +105,11 @@ class BroadcastPublisher(Publisher):
     routing_key = ""
 
     def revoke(self, task_id):
-        self.send(dict(revoke=task_id))
+        self.send("revoke", dict(task_id=task_id))
+
+    def send(self, type, data):
+        data["command"] = type
+        super(BroadcastPublisher, self).send({"control": data})
 
 
 class BroadcastConsumer(Consumer):

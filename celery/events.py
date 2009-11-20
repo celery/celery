@@ -1,6 +1,9 @@
-from celery.messaging import EventPublisher, EventConsumer
-from UserDict import UserDict
 import time
+import socket
+import threading
+from UserDict import UserDict
+
+from celery.messaging import EventPublisher, EventConsumer
 
 """
 Events
@@ -8,11 +11,11 @@ Events
 
 WORKER-ONLINE    hostname timestamp
 WORKER-OFFLINE   hostname timestamp
-TASK-RECEIVED    uuid name args kwargs retries eta timestamp
-TASK-ACCEPTED    uuid timestamp
-TASK-SUCCEEDED   uuid result timestamp
-TASK-FAILED      uuid exception timestamp
-TASK-RETRIED     uuid exception timestamp
+TASK-RECEIVED    uuid name args kwargs retries eta hostname timestamp
+TASK-ACCEPTED    uuid hostname timestamp
+TASK-SUCCEEDED   uuid result hostname timestamp
+TASK-FAILED      uuid exception hostname timestamp
+TASK-RETRIED     uuid exception hostname timestamp
 WORKER-HEARTBEAT hostname timestamp
 
 """
@@ -24,16 +27,23 @@ def Event(type, **fields):
 class EventDispatcher(object):
     """
 
-    dispatcher.send("worker-heartbeat", hostname="h8.opera.com")
+    dispatcher.send("event-name", arg1=1, arg2=2, arg3=3)
 
     """
-    def __init__(self, connection):
+    def __init__(self, connection, hostname=None):
         self.connection = connection
         self.publisher = EventPublisher(self.connection)
+        self.hostname = hostname or socket.gethostname()
+        self._lock = threading.Lock()
 
     def send(self, type, **fields):
-        fields["timestamp"] = time.time()
-        self.publisher.send(Event(type, **fields))
+        self._lock.acquire()
+        try:
+            fields["timestamp"] = time.time()
+            fields["hostname"] = self.hostname
+            self.publisher.send(Event(type, **fields))
+        finally:
+            self._lock.release()
 
 
 class EventReceiver(object):
