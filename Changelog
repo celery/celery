@@ -2,6 +2,13 @@
 Change history
 ==============
 
+0.8.2 [2009-11-20 03:40 P.M CEST]
+---------------------------------
+
+* QOS Prefetch count was not applied properly, as it was set for every message
+  received (which apparently behaves like, "receive one more"), instead of only 
+  set when our wanted value cahnged.
+
 0.8.1 [2009-11-16 05:21 P.M CEST]
 ---------------------------------
 
