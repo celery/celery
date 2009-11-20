@@ -26,13 +26,14 @@ class MonitorListener(object):
 
 class MonitorService(object):
 
-    def __init__(self, logger, is_detached=False):
+    def __init__(self, logger, is_detached=False, http_port=8989):
         self.logger = logger
         self.is_detached = is_detached
+        self.http_port = http_port
 
     def start(self):
         listener = MonitorListener(monitor_state)
-        webthread = WebServerThread()
+        webthread = WebServerThread(port=self.http_port)
         webthread.start()
 
         listener.start()

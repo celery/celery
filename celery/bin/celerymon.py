@@ -3,6 +3,10 @@
 
 .. program:: celerymon
 
+.. cmdoption:: -P, --port
+
+    Port the webserver should listen to. Default: ``8989``.
+
 .. cmdoption:: -f, --logfile
 
     Path to log file. If no logfile is specified, ``stderr`` is used.
@@ -56,6 +60,7 @@ from celery.messaging import get_connection_info
 
 STARTUP_INFO_FMT = """
 Configuration ->
+    * Webserver -> http://localhost:%(http_port)s
     * Broker -> %(conninfo)s
     * Exchange -> %(exchange)s (%(exchange_type)s)
     * Consumer -> Queue:%(consumer_queue)s Binding:%(consumer_rkey)s
@@ -69,6 +74,9 @@ OPTION_LIST = (
             default=conf.CELERYMON_LOG_LEVEL,
             action="store", dest="loglevel",
             help="Choose between DEBUG/INFO/WARNING/ERROR/CRITICAL/FATAL."),
+    optparse.make_option('-P', '--port',
+            action="store", type="int", dest="http_port", default=8989,
+            help="Port the webserver should listen to."),
     optparse.make_option('-p', '--pidfile',
             default=conf.CELERYMON_PID_FILE,
             action="store", dest="pidfile",
@@ -97,7 +105,7 @@ OPTION_LIST = (
 def run_monitor(detach=False, loglevel=conf.CELERYMON_LOG_LEVEL,
         logfile=conf.CELERYMON_LOG_FILE, pidfile=conf.CELERYMON_PID_FILE,
         umask=0, uid=None, gid=None, working_directory=None, chroot=None,
-        **kwargs):
+        http_port=8989, **kwargs):
     """Starts the celery monitor."""
 
     print("celerymon %s is starting." % __version__)
@@ -111,6 +119,7 @@ def run_monitor(detach=False, loglevel=conf.CELERYMON_LOG_LEVEL,
     # Dump configuration to screen so we have some basic information
     # when users sends e-mails.
     print(STARTUP_INFO_FMT % {
+            "http_port": http_port,
             "conninfo": get_connection_info(),
             "exchange": conf.AMQP_EXCHANGE,
             "exchange_type": conf.AMQP_EXCHANGE_TYPE,
@@ -136,7 +145,9 @@ def run_monitor(detach=False, loglevel=conf.CELERYMON_LOG_LEVEL,
 
     def _run_clock():
         logger = setup_logger(loglevel, logfile)
-        monitor = MonitorService(logger=logger, is_detached=detach)
+        monitor = MonitorService(logger=logger,
+                                 is_detached=detach,
+                                 http_port=http_port)
 
         try:
             monitor.start()
