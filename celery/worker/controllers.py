@@ -93,6 +93,7 @@ class Mediator(BackgroundThread):
             time.sleep(1)
         else:
             if task.task_id in revoked: # task revoked
+                task.on_ack()
                 logger.warn("Mediator: Skipping revoked task: %s[%s]" % (
                     task.task_name, task.task_id))
                 return
