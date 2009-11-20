@@ -4,6 +4,7 @@ Jobs Executable by the Worker Server.
 
 """
 import sys
+import time
 import socket
 import warnings
 
@@ -185,6 +186,7 @@ class TaskWrapper(object):
         self.eventer = opts.get("eventer")
         self.on_ack = on_ack
         self.executed = False
+        self.time_start = None
         for opt in ("success_msg", "fail_msg", "fail_email_subject",
                 "fail_email_body"):
             setattr(self, opt, opts.get(opt, getattr(self, opt, None)))
@@ -299,6 +301,7 @@ class TaskWrapper(object):
         self.send_event("task-accepted", uuid=self.task_id)
 
         args = self._get_tracer_args(loglevel, logfile)
+        self.time_start = time.time()
         return pool.apply_async(execute_and_trace, args=args,
                 callbacks=[self.on_success], errbacks=[self.on_failure],
                 on_ack=self.on_ack)
@@ -307,7 +310,9 @@ class TaskWrapper(object):
         """The handler used if the task was successfully processed (
         without raising an exception)."""
 
-        self.send_event("task-succeeded", uuid=self.task_id, result=ret_value)
+        runtime = time.time() - self.time_start
+        self.send_event("task-succeeded", uuid=self.task_id,
+                        result=ret_value, runtime=runtime)
 
         msg = self.success_msg.strip() % {
                 "id": self.task_id,

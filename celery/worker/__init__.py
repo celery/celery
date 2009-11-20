@@ -155,7 +155,6 @@ class WorkController(object):
 
     def stop(self):
         """Gracefully shutdown the worker server."""
-        # shut down the periodic work controller thread
         if self._state != "RUN":
             return
 

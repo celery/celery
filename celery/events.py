@@ -5,20 +5,6 @@ from UserDict import UserDict
 
 from celery.messaging import EventPublisher, EventConsumer
 
-"""
-Events
-======
-
-WORKER-ONLINE    hostname timestamp
-WORKER-OFFLINE   hostname timestamp
-TASK-RECEIVED    uuid name args kwargs retries eta hostname timestamp
-TASK-ACCEPTED    uuid hostname timestamp
-TASK-SUCCEEDED   uuid result hostname timestamp
-TASK-FAILED      uuid exception hostname timestamp
-TASK-RETRIED     uuid exception hostname timestamp
-WORKER-HEARTBEAT hostname timestamp
-
-"""
 
 def Event(type, **fields):
     return dict(fields, type=type, timestamp=time.time())
@@ -44,6 +30,10 @@ class EventDispatcher(object):
             self.publisher.send(Event(type, **fields))
         finally:
             self._lock.release()
+
+    def close(self):
+        self._lock.locked() and self._lock.release()
+        self.publisher and self.publisher.close()
 
 
 class EventReceiver(object):
