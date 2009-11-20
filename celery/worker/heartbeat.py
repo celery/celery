@@ -33,6 +33,5 @@ class Heart(threading.Thread):
 
     def stop(self):
         """Gracefully shutdown the thread."""
-        self.on_stop()
         self._shutdown.set()
         self._stopped.wait() # block until this thread is done
