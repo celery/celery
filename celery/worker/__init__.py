@@ -83,8 +83,11 @@ class CarrotListener(object):
 
         self.logger.debug("CarrotListener: Ready to accept tasks!")
 
+        prev_pcount = None
         while True:
-            self.task_consumer.qos(prefetch_count=int(self.prefetch_count))
+            if not prev_pcount or int(self.prefetch_count) != prev_pcount:
+                self.task_consumer.qos(prefetch_count=int(self.prefetch_count))
+                prev_pcount = int(self.prefetch_count)
             it.next()
 
     def stop(self):
