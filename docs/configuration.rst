@@ -334,6 +334,11 @@ Task execution settings
 
     Default is ``pickle``.
 
+* CELERY_IMPORTS
+    A sequence of modules to import when the celery daemon starts.  This is
+    useful to add tasks if you are not using django or cannot use task
+    autodiscovery.
+
 Logging settings
 ================
 
