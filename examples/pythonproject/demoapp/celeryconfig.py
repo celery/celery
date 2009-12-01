@@ -1,0 +1,6 @@
+DATABASE_ENGINE = "sqlite3"
+DATABASE_NAME = "celery.db"
+BROKER_HOST="localhost"
+BROKER_USER="guest"
+BROKER_PASSWORD="guest"
+BROKER_VHOST="/"
