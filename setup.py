@@ -41,12 +41,13 @@ class RunTests(Command):
         os.chdir(this_dir)
 
 
-install_requires = ["django-unittest-depth",
-                    "python-dateutil",
-                    "anyjson",
-                    "carrot>=0.8.0",
-                    "django-picklefield",
-                    "billiard>=0.2.0"]
+install_requires = [
+    "django",
+    "python-dateutil",
+    "anyjson",
+    "carrot>=0.8.0",
+    "django-picklefield",
+    "billiard>=0.2.0"]
 
 # python-daemon doesn't run on windows, so check current platform
 if platform.system() == "Windows":
