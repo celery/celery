@@ -40,14 +40,19 @@ class RunTests(Command):
             __file__, "test"])
         os.chdir(this_dir)
 
+install_requires = []
 
-install_requires = [
-    "django",
+try:
+    import django
+except ImportError:
+    install_requires.append("django")
+
+install_requires.extend([
     "python-dateutil",
     "anyjson",
     "carrot>=0.8.0",
     "django-picklefield",
-    "billiard>=0.2.0"]
+    "billiard>=0.2.0"])
 
 # python-daemon doesn't run on windows, so check current platform
 if platform.system() == "Windows":
