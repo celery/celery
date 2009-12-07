@@ -8,6 +8,7 @@ from celery.monitoring.handlers import api
 
 
 class Site(Application):
+    """Tornado Website with multiple :class:`Application`'s."""
 
     def __init__(self, applications, *args, **kwargs):
         handlers = []
@@ -16,7 +17,6 @@ class Site(Application):
                 handlers.append((urlprefix + urlmatch, handler))
         kwargs["handlers"] = handlers
         super(Site, self).__init__(*args, **kwargs)
-
 
 
 class WebServerThread(threading.Thread):
