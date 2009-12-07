@@ -208,4 +208,3 @@ class CarrotListener(object):
 
     def stop(self):
         self.close_connection()
-

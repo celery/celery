@@ -37,7 +37,4 @@ class RevokeRegistry(UserDict):
         return sorted(self.items(), key=lambda (uuid, when): when)[0]
 
 
-
 revoked = RevokeRegistry()
-
-

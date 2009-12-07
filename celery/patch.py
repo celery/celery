@@ -22,8 +22,8 @@ def _check_logger_class():
     finally:
         logging._releaseLock()
 
+
 def monkeypatch():
     major, minor = sys.version_info[:2]
     if major == 2 and minor < 6: # python < 2.6
         _check_logger_class()
-

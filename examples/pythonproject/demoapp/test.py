@@ -13,4 +13,3 @@ print(repr(res))
 print(">>> add.delay(4, 4).wait()")
 res = add.delay(4, 4).wait()
 print(repr(res))
-
