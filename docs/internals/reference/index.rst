@@ -9,11 +9,14 @@
     :maxdepth: 2
 
     celery.worker
+    celery.worker.listener
     celery.worker.job
     celery.worker.controllers
     celery.worker.buckets
     celery.worker.scheduler
     celery.worker.pool
+    celery.worker.heartbeat
+    celery.worker.revoke
     celery.beat
     celery.backends
     celery.backends.base
@@ -30,3 +33,4 @@
     celery.platform
     celery.managers
     celery.models
+    celery.patch
