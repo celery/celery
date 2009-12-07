@@ -4,6 +4,7 @@ Jobs Executable by the Worker Server.
 
 """
 import sys
+import time
 import socket
 import warnings
 
@@ -15,7 +16,6 @@ from celery.loaders import current_loader
 from celery.execute import TaskTrace
 from celery.registry import tasks
 from celery.exceptions import NotRegistered
-from celery.monitoring import TaskTimerStats
 from celery.datastructures import ExceptionInfo
 
 # pep8.py borks on a inline signature separator and
@@ -88,12 +88,7 @@ class WorkerTaskTrace(TaskTrace):
         # Backend process cleanup
         self.task.backend.process_cleanup()
 
-        timer_stat = TaskTimerStats.start(self.task_id, self.task_name,
-                                          self.args, self.kwargs)
-        try:
-            return self._trace()
-        finally:
-            timer_stat.stop()
+        return self._trace()
 
     def handle_success(self, retval, *args):
         """Handle successful execution.
@@ -181,9 +176,11 @@ class TaskWrapper(object):
         self.retries = retries
         self.args = args
         self.kwargs = kwargs
-        self.logger = kwargs.get("logger")
+        self.logger = opts.get("logger")
+        self.eventer = opts.get("eventer")
         self.on_ack = on_ack
         self.executed = False
+        self.time_start = None
         for opt in ("success_msg", "fail_msg", "fail_email_subject",
                 "fail_email_body"):
             setattr(self, opt, opts.get(opt, getattr(self, opt, None)))
@@ -200,7 +197,7 @@ class TaskWrapper(object):
                 self.args, self.kwargs)
 
     @classmethod
-    def from_message(cls, message, message_data, logger=None):
+    def from_message(cls, message, message_data, logger=None, eventer=None):
         """Create a :class:`TaskWrapper` from a task message sent by
         :class:`celery.messaging.TaskPublisher`.
 
@@ -221,7 +218,8 @@ class TaskWrapper(object):
                         for key, value in kwargs.items())
 
         return cls(task_name, task_id, args, kwargs,
-                    retries=retries, on_ack=message.ack, logger=logger)
+                    retries=retries, on_ack=message.ack,
+                    logger=logger, eventer=eventer)
 
     def extend_with_default_kwargs(self, loglevel, logfile):
         """Extend the tasks keyword arguments with standard task arguments.
@@ -275,6 +273,10 @@ class TaskWrapper(object):
         tracer = WorkerTaskTrace(*self._get_tracer_args(loglevel, logfile))
         return tracer.execute()
 
+    def send_event(self, type, **fields):
+        if self.eventer:
+            self.eventer.send(type, **fields)
+
     def execute_using_pool(self, pool, loglevel=None, logfile=None):
         """Like :meth:`execute`, but using the :mod:`multiprocessing` pool.
 
@@ -290,7 +292,10 @@ class TaskWrapper(object):
         # Make sure task has not already been executed.
         self._set_executed_bit()
 
+        self.send_event("task-accepted", uuid=self.task_id)
+
         args = self._get_tracer_args(loglevel, logfile)
+        self.time_start = time.time()
         return pool.apply_async(execute_and_trace, args=args,
                 callbacks=[self.on_success], errbacks=[self.on_failure],
                 on_ack=self.on_ack)
@@ -298,6 +303,11 @@ class TaskWrapper(object):
     def on_success(self, ret_value):
         """The handler used if the task was successfully processed (
         without raising an exception)."""
+
+        runtime = time.time() - self.time_start
+        self.send_event("task-succeeded", uuid=self.task_id,
+                        result=ret_value, runtime=runtime)
+
         msg = self.success_msg.strip() % {
                 "id": self.task_id,
                 "name": self.task_name,
@@ -307,6 +317,10 @@ class TaskWrapper(object):
     def on_failure(self, exc_info):
         """The handler used if the task raised an exception."""
         from celery.conf import SEND_CELERY_TASK_ERROR_EMAILS
+
+        self.send_event("task-failed", uuid=self.task_id,
+                                       exception=exc_info.exception,
+                                       traceback=exc_info.traceback)
 
         context = {
             "hostname": socket.gethostname(),
@@ -321,7 +335,7 @@ class TaskWrapper(object):
 
         task_obj = tasks.get(self.task_name, object)
         send_error_email = SEND_CELERY_TASK_ERROR_EMAILS and not \
-                getattr(task_obj, "disable_error_emails", False)
+                                task_obj.disable_error_emails
         if send_error_email:
             subject = self.fail_email_subject.strip() % context
             body = self.fail_email_body.strip() % context

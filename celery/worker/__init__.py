@@ -5,176 +5,17 @@ The Multiprocessing Worker Server
 """
 import traceback
 import logging
-import socket
 from Queue import Queue
-from datetime import datetime
-
-from dateutil.parser import parse as parse_iso8601
-from carrot.connection import DjangoBrokerConnection, AMQPConnectionException
 
 from celery import conf
 from celery import registry
 from celery.log import setup_logger
 from celery.beat import ClockServiceThread
-from celery.utils import retry_over_time
 from celery.worker.pool import TaskPool
-from celery.worker.job import TaskWrapper
+from celery.worker.buckets import TaskBucket
+from celery.worker.listener import CarrotListener
 from celery.worker.scheduler import Scheduler
 from celery.worker.controllers import Mediator, ScheduleController
-from celery.worker.buckets import TaskBucket
-from celery.messaging import get_consumer_set
-from celery.exceptions import NotRegistered
-from celery.datastructures import SharedCounter
-
-
-class CarrotListener(object):
-    """Listen for messages received from the AMQP broker and
-    move them the the bucket queue for task processing.
-
-    :param ready_queue: See :attr:`ready_queue`.
-    :param eta_scheduler: See :attr:`eta_scheduler`.
-
-    .. attribute:: ready_queue
-
-        The queue that holds tasks ready for processing immediately.
-
-    .. attribute:: eta_scheduler
-
-        Scheduler for paused tasks. Reasons for being paused include
-        a countdown/eta or that it's waiting for retry.
-
-    .. attribute:: logger
-
-        The logger used.
-
-    """
-
-    def __init__(self, ready_queue, eta_scheduler, logger,
-            initial_prefetch_count=2):
-        self.amqp_connection = None
-        self.task_consumer = None
-        self.ready_queue = ready_queue
-        self.eta_scheduler = eta_scheduler
-        self.logger = logger
-        self.prefetch_count = SharedCounter(initial_prefetch_count)
-
-    def start(self):
-        """Start the consumer.
-
-        If the connection is lost, it tries to re-establish the connection
-        over time and restart consuming messages.
-
-        """
-
-        while True:
-            self.reset_connection()
-            try:
-                self.consume_messages()
-            except (socket.error, AMQPConnectionException, IOError):
-                self.logger.error("CarrotListener: Connection to broker lost."
-                                + " Trying to re-establish connection...")
-
-    def consume_messages(self):
-        """Consume messages forever (or until an exception is raised)."""
-        task_consumer = self.task_consumer
-
-        self.logger.debug("CarrotListener: Starting message consumer...")
-        it = task_consumer.iterconsume(limit=None)
-
-        self.logger.debug("CarrotListener: Ready to accept tasks!")
-
-        prev_pcount = None
-        while True:
-            if not prev_pcount or int(self.prefetch_count) != prev_pcount:
-                self.task_consumer.qos(prefetch_count=int(self.prefetch_count))
-                prev_pcount = int(self.prefetch_count)
-            it.next()
-
-    def stop(self):
-        """Stop processing AMQP messages and close the connection
-        to the broker."""
-        self.close_connection()
-
-    def receive_message(self, message_data, message):
-        """The callback called when a new message is received.
-
-        If the message has an ``eta`` we move it to the hold queue,
-        otherwise we move it the bucket queue for immediate processing.
-
-        """
-        try:
-            task = TaskWrapper.from_message(message, message_data,
-                                            logger=self.logger)
-        except NotRegistered, exc:
-            self.logger.error("Unknown task ignored: %s" % (exc))
-            return
-
-        eta = message_data.get("eta")
-        if eta:
-            if not isinstance(eta, datetime):
-                eta = parse_iso8601(eta)
-            self.prefetch_count.increment()
-            self.logger.info("Got task from broker: %s[%s] eta:[%s]" % (
-                    task.task_name, task.task_id, eta))
-            self.eta_scheduler.enter(task,
-                                     eta=eta,
-                                     callback=self.prefetch_count.decrement)
-        else:
-            self.logger.info("Got task from broker: %s[%s]" % (
-                    task.task_name, task.task_id))
-            self.ready_queue.put(task)
-
-    def close_connection(self):
-        """Close the AMQP connection."""
-        if self.task_consumer:
-            self.task_consumer.close()
-            self.task_consumer = None
-        if self.amqp_connection:
-            self.logger.debug(
-                    "CarrotListener: Closing connection to the broker...")
-            self.amqp_connection.close()
-            self.amqp_connection = None
-
-    def reset_connection(self):
-        """Reset the AMQP connection, and reinitialize the
-        :class:`carrot.messaging.ConsumerSet` instance.
-
-        Resets the task consumer in :attr:`task_consumer`.
-
-        """
-        self.logger.debug(
-                "CarrotListener: Re-establishing connection to the broker...")
-        self.close_connection()
-        self.amqp_connection = self._open_connection()
-        self.task_consumer = get_consumer_set(connection=self.amqp_connection)
-        self.task_consumer.register_callback(self.receive_message)
-
-    def _open_connection(self):
-        """Retries connecting to the AMQP broker over time.
-
-        See :func:`celery.utils.retry_over_time`.
-
-        """
-
-        def _connection_error_handler(exc, interval):
-            """Callback handler for connection errors."""
-            self.logger.error("AMQP Listener: Connection Error: %s. " % exc
-                     + "Trying again in %d seconds..." % interval)
-
-        def _establish_connection():
-            """Establish a connection to the AMQP broker."""
-            conn = DjangoBrokerConnection()
-            connected = conn.connection # Connection is established lazily.
-            return conn
-
-        if not conf.AMQP_CONNECTION_RETRY:
-            return _establish_connection()
-
-        conn = retry_over_time(_establish_connection, (socket.error, IOError),
-                               errback=_connection_error_handler,
-                               max_retries=conf.AMQP_CONNECTION_MAX_RETRIES)
-        self.logger.debug("CarrotListener: Connection Established.")
-        return conn
 
 
 class WorkController(object):
@@ -183,6 +24,8 @@ class WorkController(object):
     :param concurrency: see :attr:`concurrency`.
     :param logfile: see :attr:`logfile`.
     :param loglevel: see :attr:`loglevel`.
+    :param embed_clockservice: see :attr:`run_clockservice`.
+    :param send_events: see :attr:`send_events`.
 
 
     .. attribute:: concurrency
@@ -198,6 +41,16 @@ class WorkController(object):
 
         The logfile used, if no logfile is specified it uses ``stderr``
         (default: :const:`celery.conf.DAEMON_LOG_FILE`).
+
+    .. attribute:: embed_clockservice
+
+        If ``True``, celerybeat is embedded, running in the main worker
+        process as a thread.
+
+    .. attribute:: send_events
+
+        Enable the sending of monitoring events, these events can be captured
+        by monitors (celerymon).
 
     .. attribute:: logger
 
@@ -241,6 +94,7 @@ class WorkController(object):
     _state = None
 
     def __init__(self, concurrency=None, logfile=None, loglevel=None,
+            send_events=conf.CELERY_SEND_EVENTS,
             is_detached=False, embed_clockservice=False):
 
         # Options
@@ -250,6 +104,7 @@ class WorkController(object):
         self.is_detached = is_detached
         self.logger = setup_logger(loglevel, logfile)
         self.embed_clockservice = embed_clockservice
+        self.send_events = send_events
 
         # Queues
         if conf.DISABLE_RATE_LIMITS:
@@ -266,6 +121,7 @@ class WorkController(object):
         self.broker_listener = CarrotListener(self.ready_queue,
                                         self.eta_scheduler,
                                         logger=self.logger,
+                                        send_events=send_events,
                                         initial_prefetch_count=concurrency)
         self.mediator = Mediator(self.ready_queue, self.safe_process_task)
 
@@ -314,7 +170,6 @@ class WorkController(object):
 
     def stop(self):
         """Gracefully shutdown the worker server."""
-        # shut down the periodic work controller thread
         if self._state != "RUN":
             return
 

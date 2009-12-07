@@ -1,6 +1,10 @@
 import os
 import sys
 import signal
+try:
+    from setproctitle import setproctitle as _setproctitle
+except ImportError:
+    _setproctitle = None
 
 
 CAN_DETACH = True
@@ -90,3 +94,8 @@ def install_signal_handler(signal_name, handler):
 
     signum = getattr(signal, signal_name)
     signal.signal(signum, handler)
+
+
+def set_process_title(title):
+    if _setproctitle is not None:
+        _setproctitle(title)

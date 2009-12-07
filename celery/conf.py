@@ -15,7 +15,6 @@ DEFAULT_LOG_FMT = '[%(asctime)s: %(levelname)s/%(processName)s] %(message)s'
 DEFAULT_DAEMON_LOG_LEVEL = "WARN"
 DEFAULT_DAEMON_LOG_FILE = "celeryd.log"
 DEFAULT_AMQP_CONNECTION_TIMEOUT = 4
-DEFAULT_STATISTICS = False
 DEFAULT_ALWAYS_EAGER = False
 DEFAULT_TASK_RESULT_EXPIRES = timedelta(days=5)
 DEFAULT_AMQP_CONNECTION_RETRY = True
@@ -27,6 +26,10 @@ DEFAULT_CELERYBEAT_PID_FILE = "celerybeat.pid"
 DEFAULT_CELERYBEAT_LOG_LEVEL = "INFO"
 DEFAULT_CELERYBEAT_LOG_FILE = "celerybeat.log"
 DEFAULT_CELERYBEAT_SCHEDULE_FILENAME = "celerybeat-schedule"
+DEFAULT_CELERYMON_PID_FILE = "celerymon.pid"
+DEFAULT_CELERYMON_LOG_LEVEL = "INFO"
+DEFAULT_CELERYMON_LOG_FILE = "celerymon.log"
+DEFAULT_SEND_EVENTS = False
 
 
 """
@@ -258,17 +261,6 @@ cache backend in ``CACHE_BACKEND`` will be used.
 """
 CELERY_CACHE_BACKEND = getattr(settings, "CELERY_CACHE_BACKEND", None)
 
-"""
-
-.. data:: CELERYBEAT_PID_FILE
-
-Name of celerybeats pid file.
-Default is: ``celerybeat.pid``.
-
-"""
-CELERYBEAT_PID_FILE = getattr(settings, "CELERYBEAT_PID_FILE",
-                              DEFAULT_CELERYBEAT_PID_FILE)
-
 
 """
 
@@ -290,6 +282,18 @@ as soon as possible.
 """
 DISABLE_RATE_LIMITS = getattr(settings, "CELERY_DISABLE_RATE_LIMITS",
                               DEFAULT_DISABLE_RATE_LIMITS)
+
+"""
+
+.. data:: CELERYBEAT_PID_FILE
+
+Name of celerybeats pid file.
+Default is: ``celerybeat.pid``.
+
+"""
+CELERYBEAT_PID_FILE = getattr(settings, "CELERYBEAT_PID_FILE",
+                              DEFAULT_CELERYBEAT_PID_FILE)
+
 
 """
 
@@ -324,3 +328,50 @@ Default is: ``celerybeat-schedule``.
 CELERYBEAT_SCHEDULE_FILENAME = getattr(settings,
                                        "CELERYBEAT_SCHEDULE_FILENAME",
                                        DEFAULT_CELERYBEAT_SCHEDULE_FILENAME)
+
+"""
+
+.. data:: CELERYMON_PID_FILE
+
+Name of celerymons pid file.
+Default is: ``celerymon.pid``.
+
+"""
+CELERYMON_PID_FILE = getattr(settings, "CELERYMON_PID_FILE",
+                              DEFAULT_CELERYMON_PID_FILE)
+
+
+"""
+
+.. data:: CELERYMON_LOG_LEVEL
+
+Default log level for celerymon.
+Default is: ``INFO``.
+
+"""
+CELERYMON_LOG_LEVEL = getattr(settings, "CELERYMON_LOG_LEVEL",
+                               DEFAULT_CELERYMON_LOG_LEVEL)
+
+"""
+
+.. data:: CELERYMON_LOG_FILE
+
+Default log file for celerymon.
+Default is: ``celerymon.log``.
+
+"""
+CELERYMON_LOG_FILE = getattr(settings, "CELERYMON_LOG_FILE",
+                              DEFAULT_CELERYMON_LOG_FILE)
+
+
+"""
+
+.. data:: CELERY_SEND_EVENTS
+
+If set, celery will send events that can be captured by monitors like
+``celerymon``.
+Default is: ``False``.
+
+"""
+CELERY_SEND_EVENTS = getattr(settings, "CELERY_SEND_EVENTS",
+                             DEFAULT_SEND_EVENTS)

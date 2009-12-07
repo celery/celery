@@ -8,7 +8,7 @@ from celery.result import EagerResult
 from celery.backends import default_backend
 from datetime import datetime, timedelta
 from celery.decorators import task as task_dec
-from celery.worker import parse_iso8601
+from celery.worker.listener import parse_iso8601
 
 def return_True(*args, **kwargs):
     # Task run functions can't be closures/lambdas, as they're pickled.
