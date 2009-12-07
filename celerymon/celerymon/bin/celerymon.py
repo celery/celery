@@ -54,9 +54,10 @@ from celery import conf
 from celery import platform
 from celery import __version__
 from celery.log import emergency_error
-from celery.monitoring import MonitorService
 from celery.loaders import settings
 from celery.messaging import get_connection_info
+
+from celerymon.service import MonitorService
 
 STARTUP_INFO_FMT = """
 Configuration ->

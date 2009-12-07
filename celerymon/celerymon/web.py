@@ -4,7 +4,7 @@ from tornado import httpserver
 from tornado import ioloop
 from tornado.web import Application
 
-from celery.monitoring.handlers import api
+from celerymon.handlers import api
 
 
 class Site(Application):
