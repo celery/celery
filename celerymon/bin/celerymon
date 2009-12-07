@@ -1,7 +1,0 @@
-#!/usr/bin/env python
-import sys
-from celerymon.bin.celerymon import run_monitor, parse_options
-
-if __name__ == "__main__":
-    options = parse_options(sys.argv[1:])
-    run_monitor(**vars(options))
