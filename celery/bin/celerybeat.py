@@ -56,9 +56,9 @@ from celery.messaging import get_connection_info
 
 STARTUP_INFO_FMT = """
 Configuration ->
-    * Broker -> %(conninfo)s
-    * Exchange -> %(exchange)s (%(exchange_type)s)
-    * Consumer -> Queue:%(consumer_queue)s Binding:%(consumer_rkey)s
+    . broker -> %(conninfo)s
+    . exchange -> %(exchange)s (%(exchange_type)s)
+    . consumer -> queue:%(consumer_queue)s binding:%(consumer_rkey)s
 """.strip()
 
 OPTION_LIST = (
