@@ -258,7 +258,8 @@ def parse_options(arguments):
 
 def set_process_status(info):
     arg_start = "manage" in sys.argv[0] and 2 or 1
-    info = "%s (%s)" % (info, " ".join(sys.argv[arg_start:]))
+    if sys.argv[arg_start:]:
+        info = "%s (%s)" % (info, " ".join(sys.argv[arg_start:]))
     platform.set_mp_process_title("celeryd", info=info)
 
 

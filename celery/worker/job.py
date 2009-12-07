@@ -10,6 +10,7 @@ import warnings
 
 from django.core.mail import mail_admins
 
+from celery import platform
 from celery.log import get_default_logger
 from celery.utils import noop, fun_takes_kwargs
 from celery.loaders import current_loader
@@ -118,8 +119,12 @@ class WorkerTaskTrace(TaskTrace):
                 stored_exc, type_, tb, strtb)
 
 
-def execute_and_trace(*args, **kwargs):
-    return WorkerTaskTrace(*args, **kwargs).execute_safe()
+def execute_and_trace(task_name, *args, **kwargs):
+    platform.set_mp_process_title("celeryd", info=task_name)
+    try:
+        return WorkerTaskTrace(task_name, *args, **kwargs).execute_safe()
+    finally:
+        platform.set_mp_process_title("celeryd")
 
 
 class TaskWrapper(object):

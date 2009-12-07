@@ -9,6 +9,7 @@ from Queue import Queue
 
 from celery import conf
 from celery import registry
+from celery import platform
 from celery.log import setup_logger
 from celery.beat import ClockServiceThread
 from celery.worker.pool import TaskPool
@@ -16,6 +17,10 @@ from celery.worker.buckets import TaskBucket
 from celery.worker.listener import CarrotListener
 from celery.worker.scheduler import Scheduler
 from celery.worker.controllers import Mediator, ScheduleController
+
+
+def process_initializer():
+    platform.set_mp_process_title("celeryd")
 
 
 class WorkController(object):
@@ -117,7 +122,8 @@ class WorkController(object):
 
         # Threads+Pool
         self.schedule_controller = ScheduleController(self.eta_scheduler)
-        self.pool = TaskPool(self.concurrency, logger=self.logger)
+        self.pool = TaskPool(self.concurrency, logger=self.logger,
+                             initializer=process_initializer)
         self.broker_listener = CarrotListener(self.ready_queue,
                                         self.eta_scheduler,
                                         logger=self.logger,
