@@ -87,7 +87,6 @@ Configuration ->
     . concurrency -> %(concurrency)s
     . events -> %(events)s
     . beat -> %(celerybeat)s
->>>>>>> events
 """.strip()
 
 OPTION_LIST = (
@@ -188,6 +187,7 @@ def run_worker(concurrency=conf.DAEMON_CONCURRENCY, detach=False,
     })
 
     print("Celery has started.")
+    set_process_status("Running...")
     if detach:
         from celery.log import setup_logger, redirect_stdouts_to_logger
         context = platform.create_daemon_context(logfile, pidfile,
@@ -225,6 +225,7 @@ def run_worker(concurrency=conf.DAEMON_CONCURRENCY, detach=False,
     try:
         run_worker()
     except:
+        set_process_status("Exiting...")
         if detach:
             context.close()
         raise
@@ -253,6 +254,12 @@ def parse_options(arguments):
     parser = optparse.OptionParser(option_list=OPTION_LIST)
     options, values = parser.parse_args(arguments)
     return options
+
+
+def set_process_status(info):
+    arg_start = "manage" in sys.argv[0] and 2 or 1
+    info = "%s (%s)" % (info, " ".join(sys.argv[arg_start:]))
+    platform.set_mp_process_title("celeryd", info=info)
 
 
 if __name__ == "__main__":

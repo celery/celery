@@ -123,6 +123,9 @@ def run_clockservice(detach=False, loglevel=conf.CELERYBEAT_LOG_LEVEL,
     })
 
     print("celerybeat has started.")
+    arg_start = "manage" in sys.argv[0] and 2 or 1
+    platform.set_process_title("celerybeat",
+                               info=" ".join(sys.argv[arg_start:]))
     from celery.log import setup_logger, redirect_stdouts_to_logger
     if detach:
         context = platform.create_daemon_context(logfile, pidfile,

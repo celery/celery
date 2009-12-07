@@ -96,6 +96,14 @@ def install_signal_handler(signal_name, handler):
     signal.signal(signum, handler)
 
 
-def set_process_title(title):
-    if _setproctitle is not None:
-        _setproctitle(title)
+def set_process_title(progname, info=None):
+    if _setproctitle:
+        proctitle = "[%s]" % progname
+        proctitle = info and "%s %s" % (proctitle, info) or proctitle
+        _setproctitle(proctitle)
+
+def set_mp_process_title(progname, info=None):
+    from multiprocessing.process import current_process
+    return set_process_title("%s.%s" % (progname, current_process().name),
+                             info=info)
+
