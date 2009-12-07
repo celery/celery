@@ -46,8 +46,5 @@ class Heart(threading.Thread):
         if not self._state == "RUN":
             return
         self._state = "CLOSE"
-        print("SET SHUTDOWN!")
         self._shutdown.set()
-        print("WAIT FOR STOPPED")
         self._stopped.wait() # block until this thread is done
-        print("STOPPED")
