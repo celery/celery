@@ -17,14 +17,18 @@ class EventDispatcher(object):
     :keyword hostname: Hostname to identify ourselves as,
         by default uses the hostname returned by :func:`socket.gethostname`.
 
+    :keyword enabled: Set to ``False`` to not actually publish any events,
+        making :meth:`send` a noop operation.
+
     You need to :meth:`close` this after use.
 
     """
 
-    def __init__(self, connection, hostname=None):
+    def __init__(self, connection, hostname=None, enabled=True):
         self.connection = connection
         self.publisher = EventPublisher(self.connection)
         self.hostname = hostname or socket.gethostname()
+        self.enabled = enabled
         self._lock = threading.Lock()
 
     def send(self, type, **fields):
@@ -34,6 +38,8 @@ class EventDispatcher(object):
         :keyword \*\*fields: Event arguments.
 
         """
+        if not self.enabled:
+            return
         self._lock.acquire()
         try:
             fields["timestamp"] = time.time()

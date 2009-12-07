@@ -41,11 +41,12 @@ class CarrotListener(object):
     """
 
     def __init__(self, ready_queue, eta_scheduler, logger,
-            initial_prefetch_count=2):
+            send_events=False, initial_prefetch_count=2):
         self.amqp_connection = None
         self.task_consumer = None
         self.ready_queue = ready_queue
         self.eta_scheduler = eta_scheduler
+        self.send_events = send_events
         self.logger = logger
         self.prefetch_count = SharedCounter(initial_prefetch_count)
         self.event_dispatcher = None
@@ -172,7 +173,8 @@ class CarrotListener(object):
         self.broadcast_consumer = BroadcastConsumer(self.amqp_connection)
         self.task_consumer.add_consumer(self.broadcast_consumer)
         self.task_consumer.register_callback(self.receive_message)
-        self.event_dispatcher = EventDispatcher(self.amqp_connection)
+        self.event_dispatcher = EventDispatcher(self.amqp_connection,
+                                                enabled=self.send_events)
         self.heart = Heart(self.event_dispatcher)
         self.heart.start()
 

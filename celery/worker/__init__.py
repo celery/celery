@@ -24,6 +24,8 @@ class WorkController(object):
     :param concurrency: see :attr:`concurrency`.
     :param logfile: see :attr:`logfile`.
     :param loglevel: see :attr:`loglevel`.
+    :param embed_clockservice: see :attr:`run_clockservice`.
+    :param send_events: see :attr:`send_events`.
 
 
     .. attribute:: concurrency
@@ -39,6 +41,16 @@ class WorkController(object):
 
         The logfile used, if no logfile is specified it uses ``stderr``
         (default: :const:`celery.conf.DAEMON_LOG_FILE`).
+
+    .. attribute:: embed_clockservice
+
+        If ``True``, celerybeat is embedded, running in the main worker
+        process as a thread.
+
+    .. attribute:: send_events
+
+        Enable the sending of monitoring events, these events can be captured
+        by monitors (celerymon).
 
     .. attribute:: logger
 
@@ -82,6 +94,7 @@ class WorkController(object):
     _state = None
 
     def __init__(self, concurrency=None, logfile=None, loglevel=None,
+            send_events=conf.CELERY_SEND_EVENTS,
             is_detached=False, embed_clockservice=False):
 
         # Options
@@ -91,6 +104,7 @@ class WorkController(object):
         self.is_detached = is_detached
         self.logger = setup_logger(loglevel, logfile)
         self.embed_clockservice = embed_clockservice
+        self.send_events = send_events
 
         # Queues
         if conf.DISABLE_RATE_LIMITS:
@@ -107,6 +121,7 @@ class WorkController(object):
         self.broker_listener = CarrotListener(self.ready_queue,
                                         self.eta_scheduler,
                                         logger=self.logger,
+                                        send_events=send_events,
                                         initial_prefetch_count=concurrency)
         self.mediator = Mediator(self.ready_queue, self.safe_process_task)
 

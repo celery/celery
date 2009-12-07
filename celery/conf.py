@@ -29,6 +29,7 @@ DEFAULT_CELERYBEAT_SCHEDULE_FILENAME = "celerybeat-schedule"
 DEFAULT_CELERYMON_PID_FILE = "celerymon.pid"
 DEFAULT_CELERYMON_LOG_LEVEL = "INFO"
 DEFAULT_CELERYMON_LOG_FILE = "celerymon.log"
+DEFAULT_SEND_EVENTS = False
 
 
 """
@@ -362,3 +363,15 @@ Default is: ``celerymon.log``.
 CELERYMON_LOG_FILE = getattr(settings, "CELERYMON_LOG_FILE",
                               DEFAULT_CELERYMON_LOG_FILE)
 
+
+"""
+
+.. data:: CELERY_SEND_EVENTS
+
+If set, celery will send events that can be captured by monitors like
+``celerymon``.
+Default is: ``False``.
+
+"""
+CELERY_SEND_EVENTS = getattr(settings, "CELERY_SEND_EVENTS",
+                             DEFAULT_SEND_EVENTS)

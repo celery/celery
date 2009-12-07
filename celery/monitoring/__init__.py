@@ -14,7 +14,7 @@ class MonitorListener(object):
             "task-received": state.receive_task_received,
             "task-accepted": state.receive_task_event,
             "task-succeeded": state.receive_task_event,
-            "task-retried": state.receive_task_event
+            "task-retried": state.receive_task_event,
             "task-failed": state.receive_task_event,
             "worker-online": state.receive_worker_event,
             "worker-offline": state.receive_worker_event,
