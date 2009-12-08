@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Task Decorators - celery.decorators &mdash; Celery v0.9.0 (unstable) documentation</title>
+    <title>Task Decorators - celery.decorators &mdash; Celery v0.9.1 (unstable) documentation</title>
     <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.9.0 (unstable)',
+        VERSION:     '0.9.1 (unstable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,14 +19,14 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.9.0 (unstable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.9.1 (unstable) documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="Defining Tasks - celery.task.base" href="celery.task.base.html" />
     <link rel="prev" title="API Reference" href="index.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v0.9.0 (unstable) documentation</p>
+	<p>Celery v0.9.1 (unstable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Task Decorators - celery.decorators</h1></div>
@@ -68,10 +68,10 @@
 <li class="toctree-l2"><a class="reference external" href="celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.loaders.djangoapp.html">Django Loader - celery.loaders.djangoapp</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.registry.html">Task Registry - celery.registry</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.monitoring.html">Statistics and Monitoring - celery.monitoring</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.messaging.html">Messaging - celery.messaging</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.contrib.test_runner.html">Contrib: Test runner - celery.contrib.test_runner</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.views.html">Django Views - celery.views</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.events.html">Events - celery.events</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.bin.celerybeat.html">Celery Periodic Task Server - celery.bin.celerybeat</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.bin.celeryinit.html">Celery Initialize - celery.bin.celeryinit</a></li>
@@ -116,6 +116,22 @@
             
   <div class="section" id="module-celery.decorators">
 <h1>Task Decorators - celery.decorators<a class="headerlink" href="#module-celery.decorators" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="celery.decorators.periodic_task">
+<tt class="descclassname">celery.decorators.</tt><tt class="descname">periodic_task</tt><big>(</big><em>**options</em><big>)</big><a class="headerlink" href="#celery.decorators.periodic_task" title="Permalink to this definition">¶</a></dt>
+<dd><p>Task decorator to create a periodic task.</p>
+<p><strong>Usage</strong></p>
+<p>Run a task once every day:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">timedelta</span>
+
+<span class="nd">@periodic_task</span><span class="p">(</span><span class="n">run_every</span><span class="o">=</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">cronjob</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">cronjob</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&quot;Task running...&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
 <dl class="function">
 <dt id="celery.decorators.task">
 <tt class="descclassname">celery.decorators.</tt><tt class="descname">task</tt><big>(</big><em>**options</em><big>)</big><a class="headerlink" href="#celery.decorators.task" title="Permalink to this definition">¶</a></dt>
@@ -162,7 +178,7 @@
     </div>
 	<div id="breadcrumbs">
 		<a href="index.html" accesskey="U">API Reference</a><img src="triangle_closed.png" alt="Right arrow">
-		<a href="../index.html">Celery v0.9.0 (unstable) documentation</a>
+		<a href="../index.html">Celery v0.9.1 (unstable) documentation</a>
 		</ul>
 	</div>
   </body>

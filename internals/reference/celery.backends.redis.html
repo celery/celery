@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Backend: Redis - celery.backends.redis &mdash; Celery v0.9.0 (unstable) documentation</title>
+    <title>Backend: Redis - celery.backends.redis &mdash; Celery v0.9.1 (unstable) documentation</title>
     <link rel="stylesheet" href="../../static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '0.9.0 (unstable)',
+        VERSION:     '0.9.1 (unstable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,14 +19,14 @@
     </script>
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.9.0 (unstable) documentation" href="../../index.html" />
+    <link rel="top" title="Celery v0.9.1 (unstable) documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="Backend: Tokyo Tyrant - celery.backends.tyrant" href="celery.backends.tyrant.html" />
     <link rel="prev" title="Backend: MongoDB - celery.backends.mongodb" href="celery.backends.mongodb.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v0.9.0 (unstable) documentation</p>
+	<p>Celery v0.9.1 (unstable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Backend: Redis - celery.backends.redis</h1></div>
@@ -93,34 +93,34 @@
 <h1>Backend: Redis - celery.backends.redis<a class="headerlink" href="#module-celery.backends.redis" title="Permalink to this headline">¶</a></h1>
 <p>celery.backends.tyrant</p>
 <dl class="class">
-<dt id="celery.backends.redis.Backend">
-<em class="property">class </em><tt class="descclassname">celery.backends.redis.</tt><tt class="descname">Backend</tt><big>(</big><em>redis_host=None</em>, <em>redis_port=None</em>, <em>redis_db=None</em>, <em>redis_timeout=None</em>, <em>redis_connect_timeout=None</em><big>)</big><a class="headerlink" href="#celery.backends.redis.Backend" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.backends.redis.RedisBackend">
+<em class="property">class </em><tt class="descclassname">celery.backends.redis.</tt><tt class="descname">RedisBackend</tt><big>(</big><em>redis_host=None</em>, <em>redis_port=None</em>, <em>redis_db=None</em>, <em>redis_timeout=None</em>, <em>redis_connect_timeout=None</em><big>)</big><a class="headerlink" href="#celery.backends.redis.RedisBackend" title="Permalink to this definition">¶</a></dt>
 <dd><p>Redis based task backend store.</p>
 <dl class="attribute">
-<dt id="celery.backends.redis.Backend.redis_host">
-<tt class="descname">redis_host</tt><a class="headerlink" href="#celery.backends.redis.Backend.redis_host" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.backends.redis.RedisBackend.redis_host">
+<tt class="descname">redis_host</tt><a class="headerlink" href="#celery.backends.redis.RedisBackend.redis_host" title="Permalink to this definition">¶</a></dt>
 <dd>The hostname to the Redis server.</dd></dl>
 
 <dl class="attribute">
-<dt id="celery.backends.redis.Backend.redis_port">
-<tt class="descname">redis_port</tt><a class="headerlink" href="#celery.backends.redis.Backend.redis_port" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.backends.redis.RedisBackend.redis_port">
+<tt class="descname">redis_port</tt><a class="headerlink" href="#celery.backends.redis.RedisBackend.redis_port" title="Permalink to this definition">¶</a></dt>
 <dd><p>The port to the Redis server.</p>
 <p>Raises <tt class="xref docutils literal"><span class="pre">django.core.exceptions.ImproperlyConfigured</span></tt> if
 <tt class="xref docutils literal"><span class="pre">REDIS_HOST</span></tt> or <tt class="xref docutils literal"><span class="pre">REDIS_PORT</span></tt> is not set.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="celery.backends.redis.Backend.close">
-<tt class="descname">close</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.backends.redis.Backend.close" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.backends.redis.RedisBackend.close">
+<tt class="descname">close</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.backends.redis.RedisBackend.close" title="Permalink to this definition">¶</a></dt>
 <dd>Close the redis connection and remove the cache.</dd></dl>
 
 <dl class="method">
-<dt id="celery.backends.redis.Backend.open">
-<tt class="descname">open</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.backends.redis.Backend.open" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.backends.redis.RedisBackend.open">
+<tt class="descname">open</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.backends.redis.RedisBackend.open" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get <tt class="xref docutils literal"><span class="pre">redis.Redis`</span></tt> instance with the current
 server configuration.</p>
 <p>The connection is then cached until you do an
-explicit <a title="celery.backends.redis.Backend.close" class="reference internal" href="#celery.backends.redis.Backend.close"><tt class="xref docutils literal"><span class="pre">close()</span></tt></a>.</p>
+explicit <a title="celery.backends.redis.RedisBackend.close" class="reference internal" href="#celery.backends.redis.RedisBackend.close"><tt class="xref docutils literal"><span class="pre">close()</span></tt></a>.</p>
 </dd></dl>
 
 </dd></dl>
@@ -142,7 +142,7 @@ explicit <a title="celery.backends.redis.Backend.close" class="reference interna
 	<div id="breadcrumbs">
 		<a href="../index.html" accesskey="U">Internals</a><img src="triangle_closed.png" alt="Right arrow">
 		<a href="index.html" >Internal Module Reference</a><img src="triangle_closed.png" alt="Right arrow">
-		<a href="../../index.html">Celery v0.9.0 (unstable) documentation</a>
+		<a href="../../index.html">Celery v0.9.1 (unstable) documentation</a>
 		</ul>
 	</div>
   </body>

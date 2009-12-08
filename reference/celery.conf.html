@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Configuration - celery.conf &mdash; Celery v0.9.0 (unstable) documentation</title>
+    <title>Configuration - celery.conf &mdash; Celery v0.9.1 (unstable) documentation</title>
     <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.9.0 (unstable)',
+        VERSION:     '0.9.1 (unstable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,14 +19,14 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.9.0 (unstable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.9.1 (unstable) documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="Signals - celery.signals" href="celery.signals.html" />
     <link rel="prev" title="Task Information and Utilities - celery.task" href="celery.task.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v0.9.0 (unstable) documentation</p>
+	<p>Celery v0.9.1 (unstable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Configuration - celery.conf</h1></div>
@@ -68,10 +68,10 @@
 <li class="toctree-l2"><a class="reference external" href="celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.loaders.djangoapp.html">Django Loader - celery.loaders.djangoapp</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.registry.html">Task Registry - celery.registry</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.monitoring.html">Statistics and Monitoring - celery.monitoring</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.messaging.html">Messaging - celery.messaging</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.contrib.test_runner.html">Contrib: Test runner - celery.contrib.test_runner</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.views.html">Django Views - celery.views</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.events.html">Events - celery.events</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.bin.celerybeat.html">Celery Periodic Task Server - celery.bin.celerybeat</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.bin.celeryinit.html">Celery Initialize - celery.bin.celeryinit</a></li>
@@ -251,12 +251,61 @@ Default is: <tt class="docutils literal"><span class="pre">celerybeat.log</span>
 <dt id="celery.conf.CELERYBEAT_PID_FILE">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">CELERYBEAT_PID_FILE</tt><a class="headerlink" href="#celery.conf.CELERYBEAT_PID_FILE" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="data">
-<dt id="celery.conf.DEFAULT_RATE_LIMIT">
-<tt class="descclassname">celery.conf.</tt><tt class="descname">DEFAULT_RATE_LIMIT</tt><a class="headerlink" href="#celery.conf.DEFAULT_RATE_LIMIT" title="Permalink to this definition">¶</a></dt>
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">CELERYBEAT_LOG_LEVEL</tt></dt>
 <dd></dd></dl>
 
-<p>The default rate limit applied to all tasks which doesn&#8217;t have a custom
-rate limit defined. (Default: None)</p>
+<p>Default log level for celerybeat.
+Default is: <tt class="docutils literal"><span class="pre">INFO</span></tt>.</p>
+</dd></dl>
+
+<dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">CELERYBEAT_SCHEDULE_FILENAME</tt></dt>
+<dd><dl class="data">
+<dt id="celery.conf.CELERYMON_PID_FILE">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">CELERYMON_PID_FILE</tt><a class="headerlink" href="#celery.conf.CELERYMON_PID_FILE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Name of celerymons pid file.
+Default is: <tt class="docutils literal"><span class="pre">celerymon.pid</span></tt>.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="celery.conf.CELERYMON_LOG_FILE">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">CELERYMON_LOG_FILE</tt><a class="headerlink" href="#celery.conf.CELERYMON_LOG_FILE" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="data">
+<dt id="celery.conf.CELERY_SEND_EVENTS">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">CELERY_SEND_EVENTS</tt><a class="headerlink" href="#celery.conf.CELERY_SEND_EVENTS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>If set, celery will send events that can be captured by monitors like
+<tt class="docutils literal"><span class="pre">celerymon</span></tt>.
+Default is: <tt class="xref docutils literal"><span class="pre">False</span></tt>.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="celery.conf.CELERYMON_LOG_LEVEL">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">CELERYMON_LOG_LEVEL</tt><a class="headerlink" href="#celery.conf.CELERYMON_LOG_LEVEL" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">CELERYMON_LOG_FILE</tt></dt>
+<dd></dd></dl>
+
+<p>Default log file for celerymon.
+Default is: <tt class="docutils literal"><span class="pre">celerymon.log</span></tt>.</p>
+</dd></dl>
+
+<dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">CELERYMON_PID_FILE</tt></dt>
+<dd><dl class="data">
+<dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">CELERYMON_LOG_LEVEL</tt></dt>
+<dd></dd></dl>
+
+<p>Default log level for celerymon.
+Default is: <tt class="docutils literal"><span class="pre">INFO</span></tt>.</p>
 </dd></dl>
 
 <dl class="data">
@@ -275,12 +324,12 @@ cache backend in <tt class="docutils literal"><span class="pre">CACHE_BACKEND</s
 <dt>
 <tt class="descclassname">celery.conf.</tt><tt class="descname">CELERY_CACHE_BACKEND</tt></dt>
 <dd><dl class="data">
-<dt>
-<tt class="descclassname">celery.conf.</tt><tt class="descname">CELERYBEAT_PID_FILE</tt></dt>
+<dt id="celery.conf.DEFAULT_RATE_LIMIT">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">DEFAULT_RATE_LIMIT</tt><a class="headerlink" href="#celery.conf.DEFAULT_RATE_LIMIT" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<p>Name of celerybeats pid file.
-Default is: <tt class="docutils literal"><span class="pre">celerybeat.pid</span></tt>.</p>
+<p>The default rate limit applied to all tasks which doesn&#8217;t have a custom
+rate limit defined. (Default: None)</p>
 </dd></dl>
 
 <dl class="data">
@@ -324,16 +373,6 @@ Default is: <tt class="docutils literal"><span class="pre">celerybeat.pid</span>
 </dd></dl>
 
 <dl class="data">
-<dt id="celery.conf.DEFAULT_CELERYBEAT_SCHEDULE_FILENAME">
-<tt class="descclassname">celery.conf.</tt><tt class="descname">DEFAULT_CELERYBEAT_SCHEDULE_FILENAME</tt><a class="headerlink" href="#celery.conf.DEFAULT_CELERYBEAT_SCHEDULE_FILENAME" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="data">
-<dt id="celery.conf.LOG_LEVELS">
-<tt class="descclassname">celery.conf.</tt><tt class="descname">LOG_LEVELS</tt><a class="headerlink" href="#celery.conf.LOG_LEVELS" title="Permalink to this definition">¶</a></dt>
-<dd>Mapping of log level names to <tt class="xref docutils literal"><span class="pre">logging</span></tt> module constants.</dd></dl>
-
-</dd></dl>
-
-<dl class="data">
 <dt>
 <tt class="descclassname">celery.conf.</tt><tt class="descname">DEFAULT_RATE_LIMIT</tt></dt>
 <dd><dl class="data">
@@ -346,15 +385,25 @@ as soon as possible.</p>
 </dd></dl>
 
 <dl class="data">
+<dt id="celery.conf.DEFAULT_STORE_ERRORS_EVEN_IF_IGNORED">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">DEFAULT_STORE_ERRORS_EVEN_IF_IGNORED</tt><a class="headerlink" href="#celery.conf.DEFAULT_STORE_ERRORS_EVEN_IF_IGNORED" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="data">
+<dt id="celery.conf.LOG_LEVELS">
+<tt class="descclassname">celery.conf.</tt><tt class="descname">LOG_LEVELS</tt><a class="headerlink" href="#celery.conf.LOG_LEVELS" title="Permalink to this definition">¶</a></dt>
+<dd>Mapping of log level names to <tt class="xref docutils literal"><span class="pre">logging</span></tt> module constants.</dd></dl>
+
+</dd></dl>
+
+<dl class="data">
 <dt>
 <tt class="descclassname">celery.conf.</tt><tt class="descname">DISABLE_RATE_LIMITS</tt></dt>
 <dd><dl class="data">
 <dt>
-<tt class="descclassname">celery.conf.</tt><tt class="descname">CELERYBEAT_LOG_LEVEL</tt></dt>
+<tt class="descclassname">celery.conf.</tt><tt class="descname">CELERYBEAT_PID_FILE</tt></dt>
 <dd></dd></dl>
 
-<p>Default log level for celerybeat.
-Default is: <tt class="docutils literal"><span class="pre">INFO</span></tt>.</p>
+<p>Name of celerybeats pid file.
+Default is: <tt class="docutils literal"><span class="pre">celerybeat.pid</span></tt>.</p>
 </dd></dl>
 
 <dl class="data">
@@ -414,7 +463,7 @@ Default is: <tt class="docutils literal"><span class="pre">INFO</span></tt>.</p>
     </div>
 	<div id="breadcrumbs">
 		<a href="index.html" accesskey="U">API Reference</a><img src="triangle_closed.png" alt="Right arrow">
-		<a href="../index.html">Celery v0.9.0 (unstable) documentation</a>
+		<a href="../index.html">Celery v0.9.1 (unstable) documentation</a>
 		</ul>
 	</div>
   </body>

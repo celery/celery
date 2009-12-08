@@ -28,6 +28,7 @@
     celery.messaging
     celery.contrib.test_runner
     celery.views
+    celery.events
     celery.bin.celeryd
     celery.bin.celerybeat
     celery.bin.celeryinit
