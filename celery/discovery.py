@@ -13,10 +13,7 @@ def find_related_module(app, related_name):
     module in the application, and running handler' if it finds it.
     """
 
-    try:
-        module = __import__(app, {}, {}, [related_name])
-    except ImportError:
-        return None
+    module = __import__(app, {}, {}, [related_name])
 
     try:
         related_module = getattr(module, related_name)
