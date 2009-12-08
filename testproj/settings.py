@@ -20,6 +20,16 @@ TEST_RUNNER = "celery.tests.runners.run_tests"
 TEST_APPS = (
     "celery",
 )
+COVERAGE_EXCLUDE_MODULES = ("celery.tests.*",
+                            "celery.management.*",
+                            "celery.contrib.*",
+                            "celery.bin.*",
+                            "celery.patch",
+                            "celery.urls",
+                            "celery.views",
+                            "celery.task.strategy")
+COVERAGE_HTML_REPORT = True
+COVERAGE_BRANCH_COVERAGE = True
 
 BROKER_HOST = "localhost"
 BROKER_PORT = 5672
@@ -59,6 +69,6 @@ except ImportError:
     pass
 else:
     pass
-    #INSTALLED_APPS += ("test_extensions", )
+    INSTALLED_APPS += ("test_extensions", )
 
 SEND_CELERY_TASK_ERROR_EMAILS = False

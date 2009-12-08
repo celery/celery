@@ -1,19 +1,22 @@
 # -*- coding: utf-8 -*-
 import sys
 import unittest
+import simplejson
+import logging
+from StringIO import StringIO
+
+from carrot.backends.base import BaseMessage
+from django.core import cache
+
 from celery.worker.job import WorkerTaskTrace, TaskWrapper
 from celery.datastructures import ExceptionInfo
 from celery.models import TaskMeta
 from celery.registry import tasks, NotRegistered
 from celery.worker.pool import TaskPool
 from celery.utils import gen_unique_id
-from carrot.backends.base import BaseMessage
-from StringIO import StringIO
 from celery.log import setup_logger
-from django.core import cache
 from celery.decorators import task as task_dec
-import simplejson
-import logging
+from celery.exceptions import RetryTaskError
 
 scratch = {"ACK": False}
 some_kwargs_scratchpad = {}
@@ -53,6 +56,17 @@ def get_db_connection(i, **kwargs):
     from django.db import connection
     return id(connection)
 get_db_connection.ignore_result = True
+
+
+class TestRetryTaskError(unittest.TestCase):
+
+    def test_retry_task_error(self):
+        try:
+            raise Exception("foo")
+        except Exception, exc:
+            ret = RetryTaskError("Retrying task", exc)
+
+        self.assertEquals(ret.exc, exc)
 
 
 class TestJail(unittest.TestCase):

@@ -13,6 +13,7 @@ from celery.worker import CarrotListener, WorkController
 from celery.worker.job import TaskWrapper
 from celery.worker.scheduler import Scheduler
 from celery.decorators import task as task_dec
+from celery.decorators import periodic_task as periodic_task_dec
 
 
 class MockEventDispatcher(object):
@@ -27,6 +28,11 @@ class MockEventDispatcher(object):
 @task_dec()
 def foo_task(x, y, z, **kwargs):
     return x * y * z
+
+
+@periodic_task_dec()
+def foo_periodic_task():
+    return "foo"
 
 
 class MockLogger(object):
@@ -86,7 +92,7 @@ class MockController(object):
 
 
 def create_message(backend, **data):
-    data["id"] = gen_unique_id()
+    data.setdefault("id", gen_unique_id())
     return BaseMessage(backend, body=pickle.dumps(dict(**data)),
                        content_type="application/x-python-serialize",
                        content_encoding="binary")
@@ -133,6 +139,24 @@ class TestCarrotListener(unittest.TestCase):
         self.assertEquals(in_bucket.task_name, foo_task.name)
         self.assertEquals(in_bucket.execute(), 2 * 4 * 8)
         self.assertTrue(self.eta_scheduler.empty())
+
+    def test_revoke(self):
+        ready_queue = Queue()
+        l = CarrotListener(ready_queue, self.eta_scheduler, self.logger,
+                           send_events=False)
+        backend = MockBackend()
+        id = gen_unique_id()
+        c = create_message(backend, control={"command": "revoke", "task_id": id})
+        t = create_message(backend, task=foo_task.name, args=[2, 4, 8],
+                           kwargs={}, id=id)
+        l.event_dispatcher = MockEventDispatcher()
+        l.receive_message(c.decode(), c)
+        from celery.worker.revoke import revoked
+        self.assertTrue(id in revoked)
+
+        l.receive_message(t.decode(), t)
+        self.assertTrue(ready_queue.empty())
+
 
     def test_receieve_message_not_registered(self):
         l = CarrotListener(self.ready_queue, self.eta_scheduler, self.logger,

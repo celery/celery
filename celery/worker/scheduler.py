@@ -30,10 +30,8 @@ class Scheduler(object):
                     yield eta - now
                 else:
                     event = pop(q)
-                    print("eta->%s priority->%s item->%s" % (
-                        eta, priority, item))
 
-                    if event is verify:
+                    if event is verify: # pragma: no cover
                         ready_queue.put(item)
                         callback and callback()
                         yield 0

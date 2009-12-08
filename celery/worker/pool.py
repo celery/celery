@@ -52,7 +52,7 @@ class TaskPool(object):
     def replace_dead_workers(self):
         self.logger.debug("TaskPool: Finding dead pool processes...")
         dead_count = self._pool.replace_dead_workers()
-        if dead_count:
+        if dead_count: # pragma: no cover
             self.logger.info(
                 "TaskPool: Replaced %d dead pool workers..." % (
                     dead_count))
@@ -88,7 +88,7 @@ class TaskPool(object):
 
         if isinstance(ret_value, ExceptionInfo):
             if isinstance(ret_value.exception, (
-                    SystemExit, KeyboardInterrupt)):
+                    SystemExit, KeyboardInterrupt)): # pragma: no cover
                 raise ret_value.exception
             [errback(ret_value) for errback in errbacks]
         else:

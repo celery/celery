@@ -3,6 +3,7 @@
 Custom Datastructures
 
 """
+import time
 import traceback
 from UserList import UserList
 from Queue import Queue, Empty as QueueEmpty
@@ -145,3 +146,45 @@ class SharedCounter(object):
 
     def __repr__(self):
         return "<SharedCounter: int(%s)>" % str(int(self))
+
+
+class LimitedSet(object):
+
+    def __init__(self, maxlen=None, expires=None):
+        self.maxlen = maxlen
+        self.expires = expires
+        self._data = {}
+
+    def add(self, value):
+        self._expire_item()
+        self._data[value] = time.time()
+
+    def pop_value(self, value):
+        self._data.pop(value, None)
+
+    def _expire_item(self):
+        while 1:
+            if self.maxlen and len(self) >= self.maxlen:
+                value, when = self.oldest
+                if not self.expires or time.time() > when + self.expires:
+                    try:
+                        self.pop_value(value)
+                    except TypeError: # pragma: no cover
+                        continue
+            break
+
+    def __contains__(self, value):
+        return value in self._data
+
+    def __iter__(self):
+        return iter(self._data.keys())
+
+    def __repr__(self):
+        return "LimitedSet([%s])" % (repr(self._data.keys()))
+
+    def __len__(self):
+        return len(self._data.keys())
+
+    @property
+    def oldest(self):
+        return sorted(self._data.items(), key=lambda (value, when): when)[0]
