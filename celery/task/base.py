@@ -1,5 +1,5 @@
 import sys
-from datetime import timedelta
+from datetime import datetime, timedelta
 from Queue import Queue
 
 from carrot.connection import DjangoBrokerConnection
@@ -584,3 +584,10 @@ class PeriodicTask(Task):
             self.__class__.run_every = timedelta(seconds=self.run_every)
 
         super(PeriodicTask, self).__init__()
+
+    def is_due(self, last_run_at):
+        """Returns ``True`` if the task is due.
+
+        You can override this to decide the interval at runtime.
+        """
+        return datetime.now() > (last_run_at + self.run_every)

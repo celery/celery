@@ -35,8 +35,8 @@ class ScheduleEntry(object):
         return self.__class__(self.name, datetime.now(),
                               self.total_run_count + 1)
 
-    def is_due(self, run_every):
-        return datetime.now() > (self.last_run_at + run_every)
+    def is_due(self, task):
+        return task.is_due(self.last_run_at)
 
 
 class Scheduler(UserDict):
@@ -91,7 +91,7 @@ class Scheduler(UserDict):
             raise NotRegistered(name)
 
     def is_due(self, entry):
-        return entry.is_due(self.get_task(entry.name).run_every)
+        return entry.is_due(self.get_task(entry.name))
 
     def apply_async(self, entry):
 
