@@ -137,6 +137,7 @@ class CarrotListener(object):
                                                 eventer=self.event_dispatcher)
             except NotRegistered, exc:
                 self.logger.error("Unknown task ignored: %s" % (exc))
+                message.ack()
             else:
                 self.on_task(task, eta=message_data.get("eta"))
             return
