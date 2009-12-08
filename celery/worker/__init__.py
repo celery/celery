@@ -10,6 +10,7 @@ from Queue import Queue
 from celery import conf
 from celery import registry
 from celery import platform
+from celery import signals
 from celery.log import setup_logger
 from celery.beat import ClockServiceThread
 from celery.worker.pool import TaskPool
@@ -178,6 +179,8 @@ class WorkController(object):
         """Gracefully shutdown the worker server."""
         if self._state != "RUN":
             return
+
+        signals.worker_shutdown.send(sender=self)
 
         [component.stop() for component in reversed(self.components)]
 

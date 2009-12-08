@@ -5,6 +5,7 @@ from dateutil.parser import parse as parse_iso8601
 from carrot.connection import DjangoBrokerConnection, AMQPConnectionException
 
 from celery import conf
+from celery import signals
 from celery.utils import retry_over_time
 from celery.worker.job import TaskWrapper
 from celery.worker.revoke import revoked
@@ -60,6 +61,8 @@ class CarrotListener(object):
         over time and restart consuming messages.
 
         """
+
+        signals.worker_ready.send(sender=self)
 
         while 1:
             self.reset_connection()

@@ -200,9 +200,6 @@ def run_worker(concurrency=conf.DAEMON_CONCURRENCY, detach=False,
         logger = setup_logger(loglevel, logfile)
         redirect_stdouts_to_logger(logger, loglevel)
 
-    # Run the worker init handler.
-    # (Usually imports task modules and such.)
-    current_loader.on_worker_init()
 
     def run_worker():
         worker = WorkController(concurrency=concurrency,
@@ -211,6 +208,11 @@ def run_worker(concurrency=conf.DAEMON_CONCURRENCY, detach=False,
                                 embed_clockservice=run_clockservice,
                                 send_events=events,
                                 is_detached=detach)
+        # Run the worker init handler.
+        # (Usually imports task modules and such.)
+        from celery import signals
+        current_loader.on_worker_init()
+        signals.worker_init.send(sender=worker)
 
         # Install signal handler that restarts celeryd on SIGHUP,
         # (only on POSIX systems)

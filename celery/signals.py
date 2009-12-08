@@ -84,3 +84,32 @@ Provides arguments:
 """
 task_postrun = Signal(providing_args=[
                         "task_id", "task", "args", "kwargs", "retval"])
+
+
+
+"""
+
+.. data:: worker_init
+
+Triggered before the worker is started.
+
+"""
+worker_init = Signal(providing_args=[])
+
+"""
+
+.. data:: worker_ready
+
+Triggered when the worker is ready to accept work.
+
+"""
+worker_ready = Signal(providing_args=[])
+
+"""
+
+.. data:: worker_shutdown
+
+Triggered when the worker is about to shut down.
+
+"""
+worker_shutdown = Signal(providing_args=[])
