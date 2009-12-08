@@ -30,6 +30,7 @@ DEFAULT_CELERYMON_PID_FILE = "celerymon.pid"
 DEFAULT_CELERYMON_LOG_LEVEL = "INFO"
 DEFAULT_CELERYMON_LOG_FILE = "celerymon.log"
 DEFAULT_SEND_EVENTS = False
+DEFAULT_STORE_ERRORS_EVEN_IF_IGNORED = False
 
 
 """
@@ -375,3 +376,7 @@ Default is: ``False``.
 """
 CELERY_SEND_EVENTS = getattr(settings, "CELERY_SEND_EVENTS",
                              DEFAULT_SEND_EVENTS)
+
+STORE_ERRORS_EVEN_IF_IGNORED = getattr(settings,
+                                       "CELERY_STORE_ERRORS_EVEN_IF_IGNORED",
+                                       DEFAULT_STORE_ERRORS_EVEN_IF_IGNORED)

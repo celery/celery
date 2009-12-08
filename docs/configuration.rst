@@ -334,6 +334,11 @@ Task execution settings
 
     Default is ``pickle``.
 
+* CELERY_STORE_ERRORS_EVEN_IF_IGNORED
+
+    If set, the worker stores all task errors in the result store even if
+    ``Task.ignore_result`` is on.
+
 * CELERY_IMPORTS
     A sequence of modules to import when the celery daemon starts.  This is
     useful to add tasks if you are not using django or cannot use task

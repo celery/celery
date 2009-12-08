@@ -72,6 +72,10 @@ class WorkerTaskTrace(TaskTrace):
         self.loader = kwargs.pop("loader", current_loader)
         super(WorkerTaskTrace, self).__init__(*args, **kwargs)
 
+        self._store_errors = True
+        if self.task.ignore_result:
+            self._store_errors = conf.STORE_ERRORS_EVEN_IF_IGNORED
+
     def execute_safe(self, *args, **kwargs):
         try:
             return self.execute(*args, **kwargs)
@@ -105,7 +109,8 @@ class WorkerTaskTrace(TaskTrace):
     def handle_retry(self, exc, type_, tb, strtb):
         """Handle retry exception."""
         message, orig_exc = exc.args
-        self.task.backend.mark_as_retry(self.task_id, orig_exc, strtb)
+        if self._store_errors:
+            self.task.backend.mark_as_retry(self.task_id, orig_exc, strtb)
         return super(WorkerTaskTrace, self).handle_retry(exc, type_,
                                                          tb, strtb)
 
@@ -113,8 +118,9 @@ class WorkerTaskTrace(TaskTrace):
         """Handle exception."""
         # mark_as_failure returns an exception that is guaranteed to
         # be pickleable.
-        stored_exc = self.task.backend.mark_as_failure(self.task_id,
-                                                       exc, strtb)
+        if self._store_errors:
+            stored_exc = self.task.backend.mark_as_failure(self.task_id,
+                                                           exc, strtb)
         return super(WorkerTaskTrace, self).handle_failure(
                 stored_exc, type_, tb, strtb)
 
