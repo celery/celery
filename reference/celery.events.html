@@ -1,0 +1,217 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Events - celery.events &mdash; Celery v0.9.1 (unstable) documentation</title>
+    <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.9.1 (unstable)',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v0.9.1 (unstable) documentation" href="../index.html" />
+    <link rel="up" title="API Reference" href="index.html" />
+    <link rel="next" title="Celery Worker Daemon - celery.bin.celeryd" href="celery.bin.celeryd.html" />
+    <link rel="prev" title="Django Views - celery.views" href="celery.views.html" /> 
+  </head>
+  <body>
+<div id="docstitle">
+	<p>Celery v0.9.1 (unstable) documentation</p>
+</div>
+<div id="header">
+	<div id="title"><h1>Events - celery.events</h1></div>
+	<ul id="headerButtons">
+		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
+		<li id="page_buttons">
+			<div class="headerButton"><a href="../genindex.html" title="General Index" accesskey="I">index</a></div>
+			<div class="headerButton"><a href="../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="celery.bin.celeryd.html" title="Celery Worker Daemon - celery.bin.celeryd" accesskey="N">next</a></div>
+			<div class="headerButton"><a href="celery.views.html" title="Django Views - celery.views" accesskey="P">previous</a></div>
+		</li>
+	</ul>
+</div>
+
+<div id="sphinxsidebar">
+  <div class="sphinxsidebarwrapper">
+	<ul><li class="toctree-l1"><a href="../index.html">Main Page</a></li></ul>
+	<ul class="current">
+<li class="toctree-l1"><a class="reference external" href="../introduction.html">celery - Distributed Task Queue</a></li>
+<li class="toctree-l1"><a class="reference external" href="../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference external" href="../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference external" href="../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference external" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1 current"><a class="reference external" href="index.html">API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference external" href="celery.decorators.html">Task Decorators - celery.decorators</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.task.base.html">Defining Tasks - celery.task.base</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.execute.html">Executing Tasks - celery.execute</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.result.html">Task Result - celery.result</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.task.html">Task Information and Utilities - celery.task</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.conf.html">Configuration - celery.conf</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.signals.html">Signals - celery.signals</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.exceptions.html">Exceptions - celery.exceptions</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.task.rest.html">Remote HTTP Tasks - celery.task.rest</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.task.builtins.html">Built-in Task Classes - celery.task.builtins</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.task.strategy.html">Common Task Strategies - celery.task.strategy</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.loaders.html">Loaders - celery.loaders</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.loaders.base.html">Loader Base Classes - celery.loaders.base</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.loaders.djangoapp.html">Django Loader - celery.loaders.djangoapp</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.registry.html">Task Registry - celery.registry</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.messaging.html">Messaging - celery.messaging</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.contrib.test_runner.html">Contrib: Test runner - celery.contrib.test_runner</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.views.html">Django Views - celery.views</a></li>
+<li class="toctree-l2 current"><a class="current reference external" href="">Events - celery.events</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.bin.celerybeat.html">Celery Periodic Task Server - celery.bin.celerybeat</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.bin.celeryinit.html">Celery Initialize - celery.bin.celeryinit</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="../internals/index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference external" href="../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference external" href="../links.html">Interesting Links</a></li>
+</ul>
+
+      <h3>This Page</h3>
+      <ul class="this-page-menu">
+        <li><a href="../sources/reference/celery.events.txt"
+               rel="nofollow">Show Source</a></li>
+      </ul>
+    <div id="searchbox" style="display: none">
+      
+        <form class="search" action="../search.html" method="get">
+			<div class="search-wrapper">
+			<span class="search-left"></span>
+			<input class="prettysearch" type="text" name="q" size="18" />
+			<span class="search-right">&nbsp;</span>
+			</div>
+          <input type="submit" value="Search" class="searchbutton" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </form>
+        <p class="searchtip" style="font-size: 90%">
+        Enter search terms or a module, class or function name.
+        </p>
+    </div>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+  </div>
+</div>
+
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-celery.events">
+<h1>Events - celery.events<a class="headerlink" href="#module-celery.events" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="celery.events.EventDispatcher">
+<em class="property">class </em><tt class="descclassname">celery.events.</tt><tt class="descname">EventDispatcher</tt><big>(</big><em>connection</em>, <em>hostname=None</em>, <em>enabled=True</em><big>)</big><a class="headerlink" href="#celery.events.EventDispatcher" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send events as messages.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><em>connection</em> &#8211; Carrot connection.</li>
+<li><em>hostname</em> &#8211; Hostname to identify ourselves as,
+by default uses the hostname returned by <tt class="xref docutils literal"><span class="pre">socket.gethostname()</span></tt>.</li>
+<li><em>enabled</em> &#8211; Set to <tt class="xref docutils literal"><span class="pre">False</span></tt> to not actually publish any events,
+making <a title="celery.events.EventDispatcher.send" class="reference internal" href="#celery.events.EventDispatcher.send"><tt class="xref docutils literal"><span class="pre">send()</span></tt></a> a noop operation.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>You need to <a title="celery.events.EventDispatcher.close" class="reference internal" href="#celery.events.EventDispatcher.close"><tt class="xref docutils literal"><span class="pre">close()</span></tt></a> this after use.</p>
+<dl class="method">
+<dt id="celery.events.EventDispatcher.close">
+<tt class="descname">close</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.events.EventDispatcher.close" title="Permalink to this definition">¶</a></dt>
+<dd>Close the event dispatcher.</dd></dl>
+
+<dl class="method">
+<dt id="celery.events.EventDispatcher.send">
+<tt class="descname">send</tt><big>(</big><em>type</em>, <em>**fields</em><big>)</big><a class="headerlink" href="#celery.events.EventDispatcher.send" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send event.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><em>type</em> &#8211; Kind of event.</li>
+<li><em>**fields</em> &#8211; Event arguments.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.events.EventReceiver">
+<em class="property">class </em><tt class="descclassname">celery.events.</tt><tt class="descname">EventReceiver</tt><big>(</big><em>connection</em>, <em>handlers=None</em><big>)</big><a class="headerlink" href="#celery.events.EventReceiver" title="Permalink to this definition">¶</a></dt>
+<dd><p>Capture events.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><em>connection</em> &#8211; Carrot connection.</li>
+<li><em>handlers</em> &#8211; Event handlers.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><tt class="xref docutils literal"><span class="pre">handlers`</span></tt> is a dict of event types and their handlers,
+the special handler <tt class="docutils literal"><span class="pre">&quot;*`&quot;</span></tt> captures all events that doesn&#8217;t have a
+handler.</p>
+<dl class="method">
+<dt id="celery.events.EventReceiver.capture">
+<tt class="descname">capture</tt><big>(</big><em>limit=None</em><big>)</big><a class="headerlink" href="#celery.events.EventReceiver.capture" title="Permalink to this definition">¶</a></dt>
+<dd>Open up a consumer capturing events. This has to be running
+in the main process, and it will never stop unless forced</dd></dl>
+
+<dl class="method">
+<dt id="celery.events.EventReceiver.process">
+<tt class="descname">process</tt><big>(</big><em>type</em>, <em>event</em><big>)</big><a class="headerlink" href="#celery.events.EventReceiver.process" title="Permalink to this definition">¶</a></dt>
+<dd>Process the received event by dispatching it to the appropriate
+handler.</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div> 
+        </div>
+      </div>
+    <div class="footer">
+    <p>
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.3.
+	</p>
+    </div>
+      <div class="clearer"></div>
+    </div>
+	<div id="breadcrumbs">
+		<a href="index.html" accesskey="U">API Reference</a><img src="triangle_closed.png" alt="Right arrow">
+		<a href="../index.html">Celery v0.9.1 (unstable) documentation</a>
+		</ul>
+	</div>
+  </body>
+</html>
