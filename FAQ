@@ -439,7 +439,7 @@ The celery test-suite is failing
 tests are failing and celerys tests are failing in that context?
 If so, read on for a trick, if not please report the test failure to our issue
 tracker at GitHub.
-    
+
     http://github.com/ask/celery/issues/
 
 That Django is running tests for all applications in ``INSTALLED_APPS``
@@ -472,3 +472,21 @@ If you just want to skip celery you could use:
     INSTALLED_APPS = (.....)
     TEST_RUNNER = "celery.tests.runners.run_tests"
     TEST_APPS = filter(lambda k: k != "celery", INSTALLED_APPS)
+
+
+Can I change the interval of a periodic task at runtime?
+--------------------------------------------------------
+
+**Answer**: Yes. You can override ``PeriodicTask.is_due`` or turn
+``PeriodicTask.run_every`` into a property:
+
+.. code-block:: python
+
+    class MyPeriodic(PeriodicTask):
+
+        def run(self):
+            # ...
+
+        @property
+        def run_every(self):
+            return get_interval_from_database(...)
