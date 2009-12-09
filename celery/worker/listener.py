@@ -55,6 +55,7 @@ class CarrotListener(object):
         self.event_dispatcher = None
         self.heart = None
         self._state = None
+        self.hostname = socket.gethostname()
 
     def start(self):
         """Start the consumer.
@@ -93,7 +94,9 @@ class CarrotListener(object):
 
     def on_control_command(self, message):
         command = message.pop("command")
-        return self.control_dispatch.dispatch(command, message)
+        destination = message.pop("destination", None)
+        if not destination or destination == self.hostname:
+            return self.control_dispatch.dispatch(command, message)
 
     def on_task(self, task, eta=None):
         """Handle received task.
