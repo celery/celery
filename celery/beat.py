@@ -131,11 +131,12 @@ class Scheduler(UserDict):
 
 class ClockService(object):
     scheduler_cls = Scheduler
-    schedule_filename = conf.CELERYBEAT_SCHEDULE_FILENAME
     registry = registry.tasks
 
-    def __init__(self, logger=None, is_detached=False):
+    def __init__(self, logger=None, is_detached=False,
+            schedule_filename=conf.CELERYBEAT_SCHEDULE_FILENAME):
         self.logger = logger
+        self.schedule_filename = schedule_filename
         self._shutdown = threading.Event()
         self._stopped = threading.Event()
 

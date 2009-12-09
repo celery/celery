@@ -3,6 +3,11 @@
 
 .. program:: celerybeat
 
+.. cmdoption:: -s, --schedule
+
+    Path to the schedule database. Defaults to celerybeat-schedule.
+    The extension ".db" will be appended to the filename.
+
 .. cmdoption:: -f, --logfile
 
     Path to log file. If no logfile is specified, ``stderr`` is used.
@@ -59,9 +64,16 @@ Configuration ->
     . broker -> %(conninfo)s
     . exchange -> %(exchange)s (%(exchange_type)s)
     . consumer -> queue:%(consumer_queue)s binding:%(consumer_rkey)s
+    . schedule -> %(schedule)s
 """.strip()
 
 OPTION_LIST = (
+    optparse.make_option('-s', '--schedule',
+            default=conf.CELERYBEAT_SCHEDULE_FILENAME,
+            action="store", dest="schedule",
+            help="Path to the schedule database. The extension \
+                    '.db' will be appended to the filename. Default: %s" % (
+                    conf.CELERYBEAT_SCHEDULE_FILENAME)),
     optparse.make_option('-f', '--logfile', default=conf.CELERYBEAT_LOG_FILE,
             action="store", dest="logfile",
             help="Path to log file."),
@@ -97,7 +109,7 @@ OPTION_LIST = (
 def run_clockservice(detach=False, loglevel=conf.CELERYBEAT_LOG_LEVEL,
         logfile=conf.CELERYBEAT_LOG_FILE, pidfile=conf.CELERYBEAT_PID_FILE,
         umask=0, uid=None, gid=None, working_directory=None, chroot=None,
-        **kwargs):
+        schedule=conf.CELERYBEAT_SCHEDULE_FILENAME, **kwargs):
     """Starts the celerybeat clock server."""
 
     print("celerybeat %s is starting." % __version__)
@@ -120,6 +132,7 @@ def run_clockservice(detach=False, loglevel=conf.CELERYBEAT_LOG_LEVEL,
             "publisher_rkey": conf.AMQP_PUBLISHER_ROUTING_KEY,
             "loglevel": loglevel,
             "pidfile": pidfile,
+            "schedule": schedule,
     })
 
     print("celerybeat has started.")
@@ -144,7 +157,8 @@ def run_clockservice(detach=False, loglevel=conf.CELERYBEAT_LOG_LEVEL,
 
     def _run_clock():
         logger = setup_logger(loglevel, logfile)
-        clockservice = ClockService(logger=logger, is_detached=detach)
+        clockservice = ClockService(logger=logger, is_detached=detach,
+                                    schedule_filename=schedule)
 
         try:
             clockservice.start()
