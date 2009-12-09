@@ -9,6 +9,7 @@ from celery import signals
 from celery.utils import retry_over_time
 from celery.worker.job import TaskWrapper
 from celery.worker.revoke import revoked
+from celery.worker.control import ControlDispatch
 from celery.worker.heartbeat import Heart
 from celery.events import EventDispatcher
 from celery.messaging import get_consumer_set, BroadcastConsumer
@@ -49,6 +50,7 @@ class CarrotListener(object):
         self.eta_scheduler = eta_scheduler
         self.send_events = send_events
         self.logger = logger
+        self.control_dispatch = ControlDispatch(logger=logger)
         self.prefetch_count = SharedCounter(initial_prefetch_count)
         self.event_dispatcher = None
         self.heart = None
@@ -89,12 +91,9 @@ class CarrotListener(object):
 
             wait_for_message()
 
-    def on_control_command(self, command):
-        if command["command"] == "revoke":
-            revoke_uuid = command["task_id"]
-            revoked.add(revoke_uuid)
-            self.logger.warn("Task %s marked as revoked." % revoke_uuid)
-            return
+    def on_control_command(self, message):
+        command = message.pop("command")
+        return self.control_dispatch.dispatch(command, message)
 
     def on_task(self, task, eta=None):
         """Handle received task.
