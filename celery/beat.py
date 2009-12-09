@@ -73,16 +73,20 @@ class Scheduler(UserDict):
     def tick(self):
         """Run a tick, that is one iteration of the scheduler.
         Executes all due tasks."""
-        for entry in self.get_due_tasks():
-            self.logger.debug("Scheduler: Sending due task %s" % (
-                    entry.name))
-            result = self.apply_async(entry)
-            self.logger.debug("Scheduler: %s sent. id->%s" % (
-                    entry.name, result.task_id))
+        remaining_times = []
+        for entry in self.schedule.values():
+            is_due, remaining = self.is_due(entry)
+            if is_due:
+                self.logger.debug("Scheduler: Sending due task %s" % (
+                        entry.name))
+                result = self.apply_async(entry)
+                self.logger.debug("Scheduler: %s sent. id->%s" % (
+                        entry.name, result.task_id))
+            else:
+                if remaining:
+                    remaining_times.append(remaining)
 
-    def get_due_tasks(self):
-        """Get all the schedule entries that are due to execution."""
-        return filter(self.is_due, self.schedule.values())
+        return min(remaining_times or [self.interval])
 
     def get_task(self, name):
         try:
@@ -147,8 +151,8 @@ class ClockService(object):
         scheduler = self.scheduler_cls(schedule=schedule,
                                        registry=self.registry,
                                        logger=self.logger)
-        self.logger.debug(
-                "ClockService: Ticking with interval->%d, schedule->%s" % (
+        self.logger.debug("ClockService: "
+            "Ticking with default interval->%d, schedule->%s" % (
                     scheduler.interval, self.schedule_filename))
 
         synced = [False]
@@ -160,12 +164,24 @@ class ClockService(object):
                 synced[0] = True
                 self._stopped.set()
 
+        times = (("days", 60 * 60 * 24),
+                 ("hours", 60 * 60),
+                 ("minutes", 60))
+
+        def humanize(seconds):
+            for desc, mul in times:
+                if seconds > mul:
+                    return "%s %s" % (seconds / mul, desc)
+            return "%d seconds" % seconds
+
         try:
             while True:
                 if self._shutdown.isSet():
                     break
-                scheduler.tick()
-                time.sleep(scheduler.interval)
+                interval = scheduler.tick()
+                self.logger.debug("ClockService: Waking up in %s" % (
+                    humanize(interval)))
+                time.sleep(interval)
         except (KeyboardInterrupt, SystemExit):
             _stop()
         finally:

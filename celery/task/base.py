@@ -585,9 +585,16 @@ class PeriodicTask(Task):
 
         super(PeriodicTask, self).__init__()
 
+    def remaining_estimate(self, last_run_at):
+        rem = (last_run_at + self.run_every) - datetime.now()
+        if not rem.days:
+            return 0
+        return rem.seconds + (rem.microseconds / 10e5)
+
     def is_due(self, last_run_at):
         """Returns ``True`` if the task is due.
 
         You can override this to decide the interval at runtime.
         """
-        return datetime.now() > (last_run_at + self.run_every)
+        remaining = self.remaining_estimate(last_run_at)
+        return not remaining, remaining
