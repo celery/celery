@@ -82,9 +82,8 @@ class Scheduler(UserDict):
                 result = self.apply_async(entry)
                 self.logger.debug("Scheduler: %s sent. id->%s" % (
                         entry.name, result.task_id))
-            else:
-                if remaining:
-                    remaining_times.append(remaining)
+            if remaining:
+                remaining_times.append(remaining)
 
         return min(remaining_times or [self.interval])
 

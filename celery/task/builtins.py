@@ -13,7 +13,7 @@ class DeleteExpiredTaskMetaTask(PeriodicTask):
 
     """
     name = "celery.delete_expired_task_meta"
-    run_every = timedelta(days=1)
+    run_every = timedelta(minutes=1)
 
     def run(self, **kwargs):
         """The method run by ``celeryd``."""

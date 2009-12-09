@@ -587,7 +587,7 @@ class PeriodicTask(Task):
 
     def remaining_estimate(self, last_run_at):
         rem = (last_run_at + self.run_every) - datetime.now()
-        if not rem.days:
+        if rem.days == -1:
             return 0
         return rem.seconds + (rem.microseconds / 10e5)
 
