@@ -70,6 +70,8 @@ class TaskBucket(object):
 
     def put(self, job):
         """Put a task into the appropiate bucket."""
+        if job.task_name not in self.buckets:
+            self.add_bucket_for_type(job.task_name)
         self.buckets[job.task_name].put_nowait(job)
     put_nowait = put
 
