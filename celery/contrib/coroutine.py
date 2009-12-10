@@ -11,7 +11,7 @@ class CoroutineTask(Task):
     def body(self):
         while True:
             args, kwargs = (yield)
-            yield self.run(*args, *kwargs)
+            yield self.run(*args, **kwargs)
 
     def run(self, *args, **kwargs):
         try:
@@ -31,7 +31,7 @@ class Aggregate(CoroutineTask):
     abstract = True
     proxied = None
     minlen = 100
-    time_max = 60
+    time_max = None
     _time_since = None
 
     def body(self):
@@ -56,6 +56,8 @@ class Aggregate(CoroutineTask):
                 "Subclasses of Aggregate needs to implement process()")
 
     def _expired(self):
+        if not self.time_max:
+            return False
         if not self._time_since:
             self._time_since = time.time()
             return False
