@@ -26,6 +26,7 @@ DEFAULT_CELERYBEAT_PID_FILE = "celerybeat.pid"
 DEFAULT_CELERYBEAT_LOG_LEVEL = "INFO"
 DEFAULT_CELERYBEAT_LOG_FILE = "celerybeat.log"
 DEFAULT_CELERYBEAT_SCHEDULE_FILENAME = "celerybeat-schedule"
+DEFAULT_CELERYBEAT_MAX_LOOP_INTERVAL = 5 * 60 # five minutes.
 DEFAULT_CELERYMON_PID_FILE = "celerymon.pid"
 DEFAULT_CELERYMON_LOG_LEVEL = "INFO"
 DEFAULT_CELERYMON_LOG_FILE = "celerymon.log"
@@ -330,8 +331,26 @@ CELERYBEAT_SCHEDULE_FILENAME = getattr(settings,
                                        "CELERYBEAT_SCHEDULE_FILENAME",
                                        DEFAULT_CELERYBEAT_SCHEDULE_FILENAME)
 
+
 """
 
+.. data:: CELERYBEAT_MAX_LOOP_INTERVAL
+
+The maximum number of seconds celerybeat is allowed to sleep between
+checking the schedule. The default is 5 minutes, which means celerybeat can
+only sleep a maximum of 5 minutes after checking the schedule run-times for a
+periodic task to apply. If you change the run_times of periodic tasks at
+run-time, you may consider lowering this value for changes to take effect
+faster (A value of 5 minutes, means the changes will take effect in 5 minutes
+at maximum).
+
+"""
+
+CELERYBEAT_MAX_LOOP_INTERVAL = getattr(settings,
+                                       "CELERYBEAT_MAX_LOOP_INTERVAL",
+                                       DEFAULT_CELERYBEAT_MAX_LOOP_INTERVAL)
+
+"""
 .. data:: CELERYMON_PID_FILE
 
 Name of celerymons pid file.
