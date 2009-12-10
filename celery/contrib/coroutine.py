@@ -37,7 +37,6 @@ class Aggregate(CoroutineTask):
     def body(self):
         waiting = deque()
 
-        timesince = time.time()
         while True:
             argtuple = (yield)
             waiting.append(argtuple)
