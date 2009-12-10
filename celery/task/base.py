@@ -586,16 +586,36 @@ class PeriodicTask(Task):
         super(PeriodicTask, self).__init__()
 
     def remaining_estimate(self, last_run_at):
-        rem = (last_run_at + self.run_every) - datetime.now()
-        now = False
-        if rem.days == -1:
-            now = True
-            rem = self.run_every
-        return now, rem.seconds + (rem.microseconds / 10e5)
+        return (last_run_at + self.run_every) - datetime.now()
+
+    def timedelta_seconds(self, d):
+        if d.days < 0:
+            return 0
+        return d.days * 86400 + d.seconds + (d.microseconds / 10e5)
 
     def is_due(self, last_run_at):
-        """Returns ``True`` if the task is due.
+        """Returns tuple of two items ``(is_due, next_time_to_run)``,
+        where next time to run is in seconds.
 
-        You can override this to decide the interval at runtime.
+        e.g.
+
+        * ``(True, 20)``, means the task should be run now, and the next
+            time to run is in 20 seconds.
+
+        * ``(False, 12)``, means the task should be run in 12 seconds.
+
+        You can override this to decide the interval at runtime,
+        but keep in mind the value of ``CELERYBEAT_MAX_LOOP_INTERVAL``, which
+        decides the maximum number of seconds celerybeat can sleep between
+        re-checking the periodic task intervals. So if you dynamically change
+        the next run at value, and the max interval is set to 5 minutes, it
+        will take 5 minutes for the change to take effect, so you may
+        consider lowering the value of ``CELERYBEAT_MAX_LOOP_INTERVAL`` if
+        responsiveness if of importance to you.
+
         """
-        return self.remaining_estimate(last_run_at)
+        rem_delta = self.remaining_estimate(last_run_at)
+        rem = self.timedelta_seconds(rem_delta)
+        if rem == 0:
+            return True, self.timedelta_seconds(self.run_every)
+        return False, rem
