@@ -2,7 +2,6 @@ import socket
 from datetime import datetime
 
 from dateutil.parser import parse as parse_iso8601
-from carrot.connection import DjangoBrokerConnection, AMQPConnectionException
 
 from celery import conf
 from celery import signals
@@ -12,6 +11,7 @@ from celery.worker.revoke import revoked
 from celery.worker.control import ControlDispatch
 from celery.worker.heartbeat import Heart
 from celery.events import EventDispatcher
+from celery.messaging import establish_connection, AMQPConnectionException
 from celery.messaging import get_consumer_set, BroadcastConsumer
 from celery.exceptions import NotRegistered
 from celery.datastructures import SharedCounter
@@ -200,7 +200,7 @@ class CarrotListener(object):
 
         def _establish_connection():
             """Establish a connection to the AMQP broker."""
-            conn = DjangoBrokerConnection()
+            conn = establish_connection()
             connected = conn.connection # Connection is established lazily.
             return conn
 

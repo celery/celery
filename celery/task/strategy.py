@@ -1,5 +1,3 @@
-from carrot.connection import DjangoBrokerConnection
-
 from celery.utils import chunks
 
 
@@ -38,7 +36,7 @@ def even_time_distribution(task, size, time_window, iterable, **apply_kwargs):
     bucketsize = size / time_window
     buckets = chunks(iterable, int(bucketsize))
 
-    connection = DjangoBrokerConnection()
+    connection = task.establish_connection()
     try:
         for bucket_count, bucket in enumerate(buckets):
             # Skew the countdown for items in this bucket by one.

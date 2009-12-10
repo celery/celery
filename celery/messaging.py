@@ -3,7 +3,7 @@
 Sending and Receiving Messages
 
 """
-from carrot.connection import DjangoBrokerConnection
+from carrot.connection import DjangoBrokerConnection, AMQPConnectionException
 from carrot.messaging import Publisher, Consumer, ConsumerSet
 
 from celery import conf

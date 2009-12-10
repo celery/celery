@@ -67,8 +67,6 @@ import multiprocessing
 import traceback
 import optparse
 
-from carrot.connection import DjangoBrokerConnection
-
 from celery import conf
 from celery import platform
 from celery import __version__

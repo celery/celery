@@ -3,7 +3,6 @@
 Working with tasks and task sets.
 
 """
-from carrot.connection import DjangoBrokerConnection
 from billiard.serialization import pickle
 
 from celery.conf import AMQP_CONNECTION_TIMEOUT
@@ -28,11 +27,15 @@ def discard_all(connect_timeout=AMQP_CONNECTION_TIMEOUT):
     :rtype: int
 
     """
-    amqp_connection = DjangoBrokerConnection(connect_timeout=connect_timeout)
-    consumer = TaskConsumer(connection=amqp_connection)
-    discarded_count = consumer.discard_all()
-    amqp_connection.close()
-    return discarded_count
+
+    def _discard(connection):
+        consumer = TaskConsumer(connection=connection)
+        try:
+            return consumer.discard_all()
+        finally:
+            consumer.close()
+
+    return with_connection(_discard, connect_timeout=connect_timeout)
 
 
 def revoke(task_id, connection=None, connect_timeout=None):

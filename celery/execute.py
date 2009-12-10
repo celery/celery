@@ -3,7 +3,6 @@ import inspect
 import traceback
 from datetime import datetime, timedelta
 
-from carrot.connection import DjangoBrokerConnection
 from billiard.utils.functional import curry
 
 from celery import signals

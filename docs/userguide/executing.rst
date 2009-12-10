@@ -101,12 +101,12 @@ establish the connection yourself and pass it to ``apply_async``:
 
 .. code-block:: python
 
-    from carrot.connection import DjangoBrokerConnection
+    from celery.messaging import establish_connection
 
     numbers = [(2, 2), (4, 4), (8, 8), (16, 16)]
 
     results = []
-    connection = DjangoBrokerConnection()
+    connection = establish_connection()
     try:
         for args in numbers:
             res = AddTask.apply_async(args=args, connection=connection)
@@ -122,12 +122,12 @@ In Python 2.5 and above, you can use the ``with`` statement:
 .. code-block:: python
 
     from __future__ import with_statement
-    from carrot.connection import DjangoBrokerConnection
+    from celery.messaging import establish_connection
 
     numbers = [(2, 2), (4, 4), (8, 8), (16, 16)]
 
     results = []
-    with DjangoBrokerConnection() as connection:
+    with establish_connection() as connection:
         for args in numbers:
             res = AddTask.apply_async(args=args, connection=connection)
             results.append(res)
@@ -146,12 +146,11 @@ argument to ``apply_async``:
 
     AddTask.apply_async([10, 10], connect_timeout=3)
 
-or if you handle your connection manually by using the connection objects
-``timeout`` argument:
+or if you handle the connection manually:
 
 .. code-block:: python
 
-    connection = DjangoAMQPConnection(timeout=3)
+    connection = establish_connection(connect_timeout=3)
 
 
 Routing options

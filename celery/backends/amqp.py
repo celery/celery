@@ -1,7 +1,7 @@
 """celery.backends.amqp"""
 from carrot.messaging import Consumer, Publisher
-from carrot.connection import DjangoBrokerConnection
 
+from celery.messaging import establish_connection
 from celery.backends.base import BaseBackend
 
 RESULTSTORE_EXCHANGE = "celeryresults"
@@ -21,7 +21,7 @@ class AMQPBackend(BaseBackend):
 
     def __init__(self, *args, **kwargs):
         super(AMQPBackend, self).__init__(*args, **kwargs)
-        self.connection = DjangoBrokerConnection()
+        self.connection = establish_connection()
         self._cache = {}
 
     def _declare_queue(self, task_id, connection):
