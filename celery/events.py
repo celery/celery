@@ -6,6 +6,11 @@ from celery.messaging import EventPublisher, EventConsumer
 
 
 def Event(type, **fields):
+    """Create an event.
+
+    An event is a dictionary, the only required field is the type.
+
+    """
     return dict(fields, type=type, timestamp=time.time())
 
 

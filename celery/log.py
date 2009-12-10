@@ -10,8 +10,8 @@ from celery.patch import monkeypatch
 
 
 def get_default_logger(loglevel=None):
-    import multiprocessing
-    logger = multiprocessing.get_logger()
+    from multiprocessing.util import get_logger
+    logger = get_logger()
     loglevel is not None and logger.setLevel(loglevel)
     return logger
 

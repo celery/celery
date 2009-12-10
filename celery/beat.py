@@ -6,6 +6,7 @@ import threading
 from UserDict import UserDict
 from datetime import datetime
 
+from celery import log
 from celery import conf
 from celery import registry
 from celery.log import setup_logger
@@ -18,6 +19,8 @@ TIME_UNITS = (("day", 60 * 60 * 24, lambda n: int(math.ceil(n))),
 
 
 def humanize_seconds(secs, prefix=""):
+    """Show seconds in human form, e.g. 60 is "1 minute", 7200 is "2
+    hours"."""
     for unit, divider, formatter in TIME_UNITS:
         if secs >= divider:
             w = secs / divider
@@ -47,10 +50,13 @@ class ScheduleEntry(object):
         self.total_run_count = total_run_count or 0
 
     def next(self):
+        """Returns a new instance of the same class, but with
+        its date and count fields updated."""
         return self.__class__(self.name, datetime.now(),
                               self.total_run_count + 1)
 
     def is_due(self, task):
+        """See :meth:`celery.task.base.PeriodicTask.is_due`."""
         return task.is_due(self.last_run_at)
 
 
@@ -66,14 +72,10 @@ class Scheduler(UserDict):
 
     def __init__(self, **kwargs):
 
-        def _get_default_logger():
-            import multiprocessing
-            return multiprocessing.get_logger()
-
         attr_defaults = {"registry": lambda: {},
                          "schedule": lambda: {},
                          "interval": lambda: self.interval,
-                         "logger": _get_default_logger}
+                         "logger": log.get_default_logger}
 
         for attr_name, attr_default_gen in attr_defaults.items():
             if attr_name in kwargs:
