@@ -72,6 +72,7 @@ from celery import platform
 from celery import __version__
 from celery.log import emergency_error
 from celery.task import discard_all
+from celery.utils import noop
 from celery.worker import WorkController
 from celery.loaders import current_loader, settings
 from celery.loaders import settings
@@ -117,10 +118,10 @@ OPTION_LIST = (
             action="store_true", dest="detach",
             help="Run in the background as a daemon."),
     optparse.make_option('-u', '--uid', default=None,
-            action="store", dest="uid", type="int",
+            action="store", dest="uid",
             help="User-id to run celeryd as when in daemon mode."),
     optparse.make_option('-g', '--gid', default=None,
-            action="store", dest="gid", type="int",
+            action="store", dest="gid",
             help="Group-id to run celeryd as when in daemon mode."),
     optparse.make_option('--umask', default=0,
             action="store", type="int", dest="umask",
@@ -186,18 +187,17 @@ def run_worker(concurrency=conf.DAEMON_CONCURRENCY, detach=False,
 
     print("Celery has started.")
     set_process_status("Running...")
+    on_stop = noop
     if detach:
         from celery.log import setup_logger, redirect_stdouts_to_logger
-        context = platform.create_daemon_context(logfile, pidfile,
+        context, on_stop = platform.create_daemon_context(logfile, pidfile,
                                         chroot_directory=chroot,
                                         working_directory=working_directory,
-                                        umask=umask,
-                                        uid=uid,
-                                        gid=gid)
+                                        umask=umask)
         context.open()
         logger = setup_logger(loglevel, logfile)
         redirect_stdouts_to_logger(logger, loglevel)
-
+        platform.set_effective_user(uid, gid)
 
     def run_worker():
         worker = WorkController(concurrency=concurrency,
@@ -226,8 +226,7 @@ def run_worker(concurrency=conf.DAEMON_CONCURRENCY, detach=False,
         run_worker()
     except:
         set_process_status("Exiting...")
-        if detach:
-            context.close()
+        on_stop()
         raise
 
 

@@ -1,5 +1,7 @@
 import os
 import sys
+import pwd
+import grp
 import signal
 try:
     from setproctitle import setproctitle as _setproctitle
@@ -12,6 +14,8 @@ try:
     import resource
 except ImportError:
     CAN_DETACH = False
+
+from celery.utils import noop
 
 
 def acquire_pidlock(pidfile):
@@ -55,7 +59,8 @@ def create_daemon_context(logfile=None, pidfile=None, **options):
         raise RuntimeError(
                 "This operating system doesn't support detach.")
 
-    from daemon import DaemonContext
+    import daemon
+    daemon.change_process_owner = noop # We handle our own user change.
 
     # set SIGCLD back to the default SIG_DFL (before python-daemon overrode
     # it) lets the parent wait() for the terminated child process and stops
@@ -69,9 +74,10 @@ def create_daemon_context(logfile=None, pidfile=None, **options):
 
     options["pidfile"] = pidfile and acquire_pidlock(pidfile)
 
-    defaults = {"uid": lambda: os.geteuid(),
-                "gid": lambda: os.getegid(),
-                "umask": lambda: 0,
+    #options["uid"] = os.getuid()
+    #options["gid"] = os.getgid()
+
+    defaults = {"umask": lambda: 0,
                 "chroot_directory": lambda: None,
                 "working_directory": lambda: os.getcwd()}
 
@@ -79,7 +85,9 @@ def create_daemon_context(logfile=None, pidfile=None, **options):
         if opt_name not in options or options[opt_name] is None:
             options[opt_name] = opt_default_gen()
 
-    return DaemonContext(**options)
+    context = daemon.DaemonContext(**options)
+
+    return context, context.close
 
 
 def reset_signal(signal_name):
@@ -102,8 +110,47 @@ def set_process_title(progname, info=None):
         proctitle = info and "%s %s" % (proctitle, info) or proctitle
         _setproctitle(proctitle)
 
+
 def set_mp_process_title(progname, info=None):
     from multiprocessing.process import current_process
     return set_process_title("%s.%s" % (progname, current_process().name),
                              info=info)
 
+
+def parse_uid(uid):
+    try:
+        return int(uid)
+    except ValueError:
+        return pwd.getpwnam(uid).pw_uid
+
+
+def parse_gid(gid):
+    try:
+        return int(gid)
+    except ValueError:
+        return grp.getgrnam(gid).gr_gid
+
+
+def setegid(gid):
+    gid = parse_uid(gid)
+    if gid != os.getgid():
+        os.setegid(gid)
+
+
+def seteuid(uid):
+    uid = parse_uid(uid)
+    if uid != os.getuid():
+        os.seteuid(uid)
+
+
+def set_effective_user(uid=None, gid=None):
+    # gid/uid can be int or username/groupname.
+    uid = uid and parse_uid(uid)
+    gid = gid and parse_gid(gid)
+
+    if uid:
+        # If gid isn't defined, get the primary gid of the user.
+        setegid(gid or pwd.getpwuid(uid).pw_gid)
+        seteuid(uid)
+    else:
+        gid and setegid(gid)

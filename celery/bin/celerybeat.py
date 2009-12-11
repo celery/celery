@@ -56,6 +56,7 @@ from celery import platform
 from celery import __version__
 from celery.log import emergency_error
 from celery.beat import ClockService
+from celery.utils import noop
 from celery.loaders import current_loader, settings
 from celery.messaging import get_connection_info
 
@@ -140,16 +141,16 @@ def run_clockservice(detach=False, loglevel=conf.CELERYBEAT_LOG_LEVEL,
     platform.set_process_title("celerybeat",
                                info=" ".join(sys.argv[arg_start:]))
     from celery.log import setup_logger, redirect_stdouts_to_logger
+    on_stop = noop
     if detach:
-        context = platform.create_daemon_context(logfile, pidfile,
+        context, on_stop = platform.create_daemon_context(logfile, pidfile,
                                         chroot_directory=chroot,
                                         working_directory=working_directory,
-                                        umask=umask,
-                                        uid=uid,
-                                        gid=gid)
+                                        umask=umask)
         context.open()
         logger = setup_logger(loglevel, logfile)
         redirect_stdouts_to_logger(logger, loglevel)
+        platform.set_effective_user(uid, gid)
 
     # Run the worker init handler.
     # (Usually imports task modules and such.)
@@ -170,8 +171,7 @@ def run_clockservice(detach=False, loglevel=conf.CELERYBEAT_LOG_LEVEL,
     try:
         _run_clock()
     except:
-        if detach:
-            context.close()
+        on_stop()
         raise
 
 
