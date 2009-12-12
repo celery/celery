@@ -134,8 +134,11 @@ class WorkController(object):
 
         self.clockservice = None
         if self.embed_clockservice:
+            # Need a tight loop interval when embedded so the program
+            # can be stopped in a sensible short time.
             self.clockservice = ClockServiceThread(logger=self.logger,
-                                                is_detached=self.is_detached)
+                                                is_detached=self.is_detached,
+                                                max_interval=1)
 
         # The order is important here;
         #   the first in the list is the first to start,

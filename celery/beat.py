@@ -68,14 +68,13 @@ class Scheduler(UserDict):
         persistent schedule ``celery.beat.schedule``.
 
     """
-    interval = 1
 
     def __init__(self, **kwargs):
 
         attr_defaults = {"registry": lambda: {},
                          "schedule": lambda: {},
-                         "interval": lambda: self.interval,
-                         "logger": log.get_default_logger}
+                         "logger": log.get_default_logger,
+                         "max_interval": conf.CELERYBEAT_MAX_LOOP_INTERVAL}
 
         for attr_name, attr_default_gen in attr_defaults.items():
             if attr_name in kwargs:
@@ -102,7 +101,7 @@ class Scheduler(UserDict):
             if next_time_to_run:
                 remaining_times.append(next_time_to_run)
 
-        return min(remaining_times + [conf.CELERYBEAT_MAX_LOOP_INTERVAL])
+        return min(remaining_times + [self.max_interval])
 
     def get_task(self, name):
         try:
@@ -154,8 +153,10 @@ class ClockService(object):
     registry = registry.tasks
 
     def __init__(self, logger=None, is_detached=False,
+            max_interval=conf.CELERYBEAT_MAX_LOOP_INTERVAL,
             schedule_filename=conf.CELERYBEAT_SCHEDULE_FILENAME):
         self.logger = logger
+        self.max_interval = max_interval
         self.schedule_filename = schedule_filename
         self._shutdown = threading.Event()
         self._stopped = threading.Event()
@@ -166,10 +167,11 @@ class ClockService(object):
         #atexit.register(schedule.close)
         scheduler = self.scheduler_cls(schedule=schedule,
                                        registry=self.registry,
-                                       logger=self.logger)
+                                       logger=self.logger,
+                                       max_interval=self.max_interval)
         self.logger.debug("ClockService: "
             "Ticking with max interval->%s, schedule->%s" % (
-                    humanize_seconds(conf.CELERYBEAT_MAX_LOOP_INTERVAL),
+                    humanize_seconds(self.max_interval),
                     self.schedule_filename))
 
         synced = [False]
@@ -180,7 +182,6 @@ class ClockService(object):
                 schedule.close()
                 synced[0] = True
                 self._stopped.set()
-
 
         try:
             while True:
