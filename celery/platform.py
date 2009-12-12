@@ -18,6 +18,29 @@ except ImportError:
 from celery.utils import noop
 
 
+def maybe_remove_file(path, ignore_perm_denied=False):
+    """Try to unlink file, but don't care if it doesn't exist.
+
+    :param path: The path of the file to remove.
+    :keyword ignore_perm_denied: Ignore permission denied errors.
+
+    """
+    try:
+        os.unlink(filename)
+    except OSError, exc:
+        if exc.errno == errno.ENOENT:
+            return
+        if exc.errno == errno.EACCES and ignore_perm_denied:
+            return
+        raise
+
+
+def remove_pidlock(pidfile):
+    """Remove pidfile created by :class:`daemon.pidlockfile.PIDLockFile`."""
+    maybe_remove_file(pidfile)
+    maybe_remove_file("%s.lock" % pidfile)
+
+
 def acquire_pidlock(pidfile):
     """Get the :class:`daemon.pidlockfile.PIDLockFile` handler for
     ``pidfile``.
@@ -29,9 +52,18 @@ def acquire_pidlock(pidfile):
     running in the background somewhere.
 
     """
-    from daemon.pidlockfile import PIDLockFile
+    from daemon.pidlockfile import PIDLockFile as _PIDLockFile
+    from lockfile import LinkFileLock
     import errno
-    pidlock = PIDLockFile(pidfile)
+
+    class SafeRemovePIDLockFile(_PIDLockFile):
+
+        def release(self):
+            if self.i_am_locking():
+                maybe_remove_file(self.path, ignore_perm_denied=True)
+            LinkFileLock.release(self)
+
+    pidlock = SafeRemovePIDLockFile(pidfile)
     if not pidlock.is_locked():
         return pidlock
     pid = pidlock.read_pid()
@@ -40,12 +72,12 @@ def acquire_pidlock(pidfile):
     except os.error, exc:
         if exc.errno == errno.ESRCH:
             sys.stderr.write("Stale pidfile exists. Removing it.\n")
-            os.unlink(pidfile)
-            return PIDLockFile(pidfile)
+            remove_pidlock(pidfile)
+            return SafeRemovePIDLockFile(pidfile)
     except TypeError, exc:
         sys.stderr.write("Broken pidfile found. Removing it.\n")
-        os.unlink(pidfile)
-        return PIDLockFile(pidfile)
+        remove_pidlock(pidfile)
+        return SafeRemovePIDLockFile(pidfile)
     else:
         raise SystemExit(
                 "ERROR: Pidfile (%s) already exists.\n"
@@ -74,9 +106,6 @@ def create_daemon_context(logfile=None, pidfile=None, **options):
 
     options["pidfile"] = pidfile and acquire_pidlock(pidfile)
 
-    #options["uid"] = os.getuid()
-    #options["gid"] = os.getgid()
-
     defaults = {"umask": lambda: 0,
                 "chroot_directory": lambda: None,
                 "working_directory": lambda: os.getcwd()}
@@ -91,20 +120,33 @@ def create_daemon_context(logfile=None, pidfile=None, **options):
 
 
 def reset_signal(signal_name):
+    """Reset signal to the default signal handler.
+
+    Does nothing if the platform doesn't support signals,
+    or the specified signal in particular.
+
+    """
     if hasattr(signal, signal_name):
         signal.signal(getattr(signal, signal_name), signal.SIG_DFL)
 
 
 def install_signal_handler(signal_name, handler):
-    """Install a SIGHUP handler."""
+    """Install a handler.
+
+    Does nothing if the current platform doesn't support signals,
+    or the specified signal in particular.
+
+    """
     if not hasattr(signal, signal_name):
-        return # Platform doesn't support signal.
+        return
 
     signum = getattr(signal, signal_name)
     signal.signal(signum, handler)
 
 
 def set_process_title(progname, info=None):
+    """Set the ps name for the currently running process
+    if :mod`setproctitle` is installed."""
     if _setproctitle:
         proctitle = "[%s]" % progname
         proctitle = info and "%s %s" % (proctitle, info) or proctitle
@@ -112,12 +154,23 @@ def set_process_title(progname, info=None):
 
 
 def set_mp_process_title(progname, info=None):
+    """Set the ps name using the multiprocessing process name.
+
+    Only works if :mod:`setproctitle` is installed.
+
+    """
     from multiprocessing.process import current_process
     return set_process_title("%s.%s" % (progname, current_process().name),
                              info=info)
 
 
 def parse_uid(uid):
+    """Parse user uid.
+
+    uid can be an integer (uid) or a string (username), if it's a username
+    the uid is taken from the system password system.
+
+    """
     try:
         return int(uid)
     except ValueError:
@@ -125,6 +178,12 @@ def parse_uid(uid):
 
 
 def parse_gid(gid):
+    """Parse group gid.
+
+    gid can be an integer (gid) or a string (group name), if it's a name
+    the gid is taken from the system password system.
+
+    """
     try:
         return int(gid)
     except ValueError:
@@ -132,18 +191,30 @@ def parse_gid(gid):
 
 
 def setegid(gid):
+    """Set effective group id."""
     gid = parse_uid(gid)
     if gid != os.getgid():
         os.setegid(gid)
 
 
 def seteuid(uid):
+    """Set effective user id."""
     uid = parse_uid(uid)
     if uid != os.getuid():
         os.seteuid(uid)
 
 
 def set_effective_user(uid=None, gid=None):
+    """Change privileges to a new user/group.
+
+    If uid and gid is set the effective user/group is set.
+
+    If only uid is set, the effective user is set, and the group is set
+    to the users primary group.
+
+    If only gid is set, the effective group is set.
+
+    """
     # gid/uid can be int or username/groupname.
     uid = uid and parse_uid(uid)
     gid = gid and parse_gid(gid)
