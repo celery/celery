@@ -30,7 +30,7 @@ def humanize_seconds(secs, prefix=""):
 
 
 class SchedulingError(Exception):
-    """An error occured while scheduling task."""
+    """An error occured while scheduling a task."""
 
 
 class ScheduleEntry(object):
@@ -43,8 +43,7 @@ class ScheduleEntry(object):
 
     """
 
-    def __init__(self, name, last_run_at=None,
-            total_run_count=None):
+    def __init__(self, name, last_run_at=None, total_run_count=None):
         self.name = name
         self.last_run_at = last_run_at or datetime.now()
         self.total_run_count = total_run_count or 0
@@ -52,8 +51,9 @@ class ScheduleEntry(object):
     def next(self):
         """Returns a new instance of the same class, but with
         its date and count fields updated."""
-        return self.__class__(self.name, datetime.now(),
-                              self.total_run_count + 1)
+        return self.__class__(name=self.name,
+                              last_run_at=datetime.now(),
+                              total_run_count=self.total_run_count + 1)
 
     def is_due(self, task):
         """See :meth:`celery.task.base.PeriodicTask.is_due`."""
@@ -66,6 +66,9 @@ class Scheduler(UserDict):
     :keyword registry: The task registry to use.
     :keyword schedule: The schedule dictionary. Default is the global
         persistent schedule ``celery.beat.schedule``.
+    :keyword logger: The logger to use.
+    :keyword max_interval: Maximum time to sleep between re-checking the
+        schedule.
 
     """
 
