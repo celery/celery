@@ -21,4 +21,4 @@ class TestDiscovery(unittest.TestCase):
         if "someapp" in settings.INSTALLED_APPS:
             settings.INSTALLED_APPS = settings.INSTALLED_APPS + \
                     ["xxxnot.aexist"]
-            self.assertDiscovery()
+            self.assertRaises(ImportError, autodiscover)
