@@ -47,6 +47,13 @@ try:
 except ImportError:
     install_requires.append("django")
 
+
+try:
+    import importlib
+except ImportError:
+    install_requires.append("importlib")
+
+
 install_requires.extend([
     "python-dateutil",
     "anyjson",
