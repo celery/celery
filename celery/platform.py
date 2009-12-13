@@ -26,7 +26,7 @@ def maybe_remove_file(path, ignore_perm_denied=False):
 
     """
     try:
-        os.unlink(filename)
+        os.unlink(path)
     except OSError, exc:
         if exc.errno == errno.ENOENT:
             return
