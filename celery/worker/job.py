@@ -117,13 +117,15 @@ class WorkerTaskTrace(TaskTrace):
 
     def handle_failure(self, exc, type_, tb, strtb):
         """Handle exception."""
-        # mark_as_failure returns an exception that is guaranteed to
-        # be pickleable.
         if self._store_errors:
-            stored_exc = self.task.backend.mark_as_failure(self.task_id,
-                                                           exc, strtb)
+            # mark_as_failure returns an exception that is guaranteed to
+            # be pickleable.
+            exc = self.task.backend.mark_as_failure(self.task_id, exc, strtb)
+        else:
+            exc = self.task.backend.prepare_exception(exc)
+
         return super(WorkerTaskTrace, self).handle_failure(
-                stored_exc, type_, tb, strtb)
+                exc, type_, tb, strtb)
 
 
 def execute_and_trace(task_name, *args, **kwargs):
