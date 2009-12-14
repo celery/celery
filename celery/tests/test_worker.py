@@ -194,7 +194,8 @@ class TestCarrotListener(unittest.TestCase):
 class TestWorkController(unittest.TestCase):
 
     def setUp(self):
-        self.worker = WorkController(concurrency=1, loglevel=0,
+        self.worker = WorkController(concurrency=1,
+                                     loglevel=0,
                                      is_detached=False)
         self.worker.logger = MockLogger()
 

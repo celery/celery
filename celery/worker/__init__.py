@@ -134,13 +134,12 @@ class WorkController(object):
         self.mediator = Mediator(self.ready_queue, self.safe_process_task,
                                  logger=self.logger)
 
-        self.clockservice = None
-        if self.embed_clockservice:
-            # Need a tight loop interval when embedded so the program
-            # can be stopped in a sensible short time.
-            self.clockservice = ClockServiceThread(logger=self.logger,
-                                                is_detached=self.is_detached,
-                                                max_interval=1)
+        # Need a tight loop interval when embedded so the program
+        # can be stopped in a sensible short time.
+        self.clockservice = self.embed_clockservice and ClockServiceThread(
+                                logger=self.logger,
+                                is_detached=self.is_detached,
+                                max_interval=1) or None
 
         # The order is important here;
         #   the first in the list is the first to start,

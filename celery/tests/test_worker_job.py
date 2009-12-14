@@ -1,22 +1,24 @@
 # -*- coding: utf-8 -*-
 import sys
+import logging
 import unittest
 import simplejson
-import logging
 from StringIO import StringIO
 
-from carrot.backends.base import BaseMessage
 from django.core import cache
+from carrot.backends.base import BaseMessage
 
-from celery.worker.job import WorkerTaskTrace, TaskWrapper
-from celery.datastructures import ExceptionInfo
-from celery.models import TaskMeta
-from celery.registry import tasks, NotRegistered
-from celery.worker.pool import TaskPool
-from celery.utils import gen_unique_id
 from celery.log import setup_logger
-from celery.decorators import task as task_dec
+from celery.task.base import Task
+from celery.utils import gen_unique_id
+from celery.models import TaskMeta
+from celery.result import AsyncResult
+from celery.worker.job import WorkerTaskTrace, TaskWrapper
+from celery.worker.pool import TaskPool
+from celery.registry import tasks, NotRegistered
 from celery.exceptions import RetryTaskError
+from celery.decorators import task as task_dec
+from celery.datastructures import ExceptionInfo
 
 scratch = {"ACK": False}
 some_kwargs_scratchpad = {}
@@ -38,6 +40,13 @@ def mytask(i, **kwargs):
 @task_dec()
 def mytask_no_kwargs(i):
     return i ** i
+
+
+class MyTaskIgnoreResult(Task):
+    ignore_result = True
+
+    def run(self, i):
+        return i ** i
 
 
 @task_dec()
@@ -80,6 +89,13 @@ class TestJail(unittest.TestCase):
                    [4], {})
         self.assertTrue(isinstance(ret, ExceptionInfo))
         self.assertEquals(ret.exception.args, (4, ))
+
+    def test_execute_ignore_result(self):
+        task_id = gen_unique_id()
+        ret = jail(id, MyTaskIgnoreResult.name,
+                   [4], {})
+        self.assertTrue(ret, 8)
+        self.assertFalse(AsyncResult(task_id).ready())
 
     def test_django_db_connection_is_closed(self):
         from django.db import connection
