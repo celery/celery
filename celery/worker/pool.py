@@ -28,11 +28,10 @@ class TaskPool(object):
 
     """
 
-    def __init__(self, limit, logger=None, initializer=None, initargs=None):
+    def __init__(self, limit, logger=None, initializer=None):
         self.limit = limit
         self.logger = logger or log.get_default_logger()
         self.initializer = initializer
-        self.initargs = initargs
         self._pool = None
 
     def start(self):
@@ -42,8 +41,7 @@ class TaskPool(object):
 
         """
         self._pool = DynamicPool(processes=self.limit,
-                                 initializer=self.initializer,
-                                 initargs=self.initargs)
+                                 initializer=self.initializer)
 
     def stop(self):
         """Terminate the pool."""
