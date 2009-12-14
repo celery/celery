@@ -8,8 +8,7 @@ from carrot.messaging import Publisher, Consumer, ConsumerSet
 
 from celery import conf
 from celery import signals
-from celery.utils import gen_unique_id
-from celery.utils import mitemgetter
+from celery.utils import gen_unique_id, mitemgetter, noop
 
 MSG_OPTIONS = ("mandatory", "priority",
                "immediate", "routing_key",
