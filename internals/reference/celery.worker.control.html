@@ -1,0 +1,201 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Worker Control - celery.worker.control &mdash; Celery v0.9.2 (unstable) documentation</title>
+    <link rel="stylesheet" href="../../static/adctheme.css" type="text/css" />
+    <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.9.2 (unstable)',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../static/jquery.js"></script>
+    <script type="text/javascript" src="../../static/doctools.js"></script>
+    <link rel="top" title="Celery v0.9.2 (unstable) documentation" href="../../index.html" />
+    <link rel="up" title="Internal Module Reference" href="index.html" />
+    <link rel="next" title="Worker Revoked Tasks - celery.worker.revoke" href="celery.worker.revoke.html" />
+    <link rel="prev" title="Worker Heartbeats - celery.worker.heartbeat" href="celery.worker.heartbeat.html" /> 
+  </head>
+  <body>
+<div id="docstitle">
+	<p>Celery v0.9.2 (unstable) documentation</p>
+</div>
+<div id="header">
+	<div id="title"><h1>Worker Control - celery.worker.control</h1></div>
+	<ul id="headerButtons">
+		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
+		<li id="page_buttons">
+			<div class="headerButton"><a href="../../genindex.html" title="General Index" accesskey="I">index</a></div>
+			<div class="headerButton"><a href="../../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="celery.worker.revoke.html" title="Worker Revoked Tasks - celery.worker.revoke" accesskey="N">next</a></div>
+			<div class="headerButton"><a href="celery.worker.heartbeat.html" title="Worker Heartbeats - celery.worker.heartbeat" accesskey="P">previous</a></div>
+		</li>
+	</ul>
+</div>
+
+<div id="sphinxsidebar">
+  <div class="sphinxsidebarwrapper">
+	<ul><li class="toctree-l1"><a href="../../index.html">Main Page</a></li></ul>
+	<ul>
+<li class="toctree-l1"><a class="reference external" href="../../introduction.html">celery - Distributed Task Queue</a></li>
+<li class="toctree-l1"><a class="reference external" href="../../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference external" href="../../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference external" href="../../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference external" href="../../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference external" href="../../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference external" href="../../reference/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference external" href="../index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference external" href="../../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference external" href="../../links.html">Interesting Links</a></li>
+</ul>
+
+      <h3>This Page</h3>
+      <ul class="this-page-menu">
+        <li><a href="../../sources/internals/reference/celery.worker.control.txt"
+               rel="nofollow">Show Source</a></li>
+      </ul>
+    <div id="searchbox" style="display: none">
+      
+        <form class="search" action="../../search.html" method="get">
+			<div class="search-wrapper">
+			<span class="search-left"></span>
+			<input class="prettysearch" type="text" name="q" size="18" />
+			<span class="search-right">&nbsp;</span>
+			</div>
+          <input type="submit" value="Search" class="searchbutton" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </form>
+        <p class="searchtip" style="font-size: 90%">
+        Enter search terms or a module, class or function name.
+        </p>
+    </div>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+  </div>
+</div>
+
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-celery.worker.control">
+<h1>Worker Control - celery.worker.control<a class="headerlink" href="#module-celery.worker.control" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="celery.worker.control.Control">
+<em class="property">class </em><tt class="descclassname">celery.worker.control.</tt><tt class="descname">Control</tt><big>(</big><em>logger</em>, <em>hostname=None</em><big>)</big><a class="headerlink" href="#celery.worker.control.Control" title="Permalink to this definition">¶</a></dt>
+<dd><p>The worker control panel.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>logger</em> &#8211; The current logger to use.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="celery.worker.control.Control.rate_limit">
+<tt class="descname">rate_limit</tt><big>(</big><em>task_name</em>, <em>rate_limit</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.worker.control.Control.rate_limit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set new rate limit for a task type.</p>
+<p>See <a title="celery.task.base.Task.rate_limit" class="reference external" href="../../reference/celery.task.base.html#celery.task.base.Task.rate_limit"><tt class="xref docutils literal"><span class="pre">celery.task.base.Task.rate_limit</span></tt></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><em>task_name</em> &#8211; Type of task.</li>
+<li><em>rate_limit</em> &#8211; New rate limit.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.control.Control.revoke">
+<tt class="descname">revoke</tt><big>(</big><em>task_id</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.worker.control.Control.revoke" title="Permalink to this definition">¶</a></dt>
+<dd>Revoke task by task id.</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.worker.control.ControlDispatch">
+<em class="property">class </em><tt class="descclassname">celery.worker.control.</tt><tt class="descname">ControlDispatch</tt><big>(</big><em>logger</em>, <em>hostname=None</em><big>)</big><a class="headerlink" href="#celery.worker.control.ControlDispatch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute worker control panel commands.</p>
+<dl class="method">
+<dt id="celery.worker.control.ControlDispatch.dispatch_from_message">
+<tt class="descname">dispatch_from_message</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#celery.worker.control.ControlDispatch.dispatch_from_message" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dispatch by using message data received by the broker.</p>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">receive_message</span><span class="p">(</span><span class="n">message_data</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">control</span> <span class="o">=</span> <span class="n">message_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;control&quot;</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="k">if</span> <span class="n">control</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="n">ControlDispatch</span><span class="p">()</span><span class="o">.</span><span class="n">dispatch_from_message</span><span class="p">(</span><span class="n">control</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.control.ControlDispatch.execute">
+<tt class="descname">execute</tt><big>(</big><em>command</em>, <em>kwargs</em><big>)</big><a class="headerlink" href="#celery.worker.control.ControlDispatch.execute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute control command by name and keyword arguments.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><em>command</em> &#8211; Name of the command to execute.</li>
+<li><em>kwargs</em> &#8211; Keyword arguments.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.worker.control.ControlDispatch.panel_cls">
+<tt class="descname">panel_cls</tt><a class="headerlink" href="#celery.worker.control.ControlDispatch.panel_cls" title="Permalink to this definition">¶</a></dt>
+<dd>alias of <a title="celery.worker.control.Control" class="reference internal" href="#celery.worker.control.Control"><tt class="xref docutils literal"><span class="pre">Control</span></tt></a></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.worker.control.expose">
+<tt class="descclassname">celery.worker.control.</tt><tt class="descname">expose</tt><big>(</big><em>fun</em><big>)</big><a class="headerlink" href="#celery.worker.control.expose" title="Permalink to this definition">¶</a></dt>
+<dd>Expose method as a celery worker control command, allowed to be called
+from a message.</dd></dl>
+
+</div>
+
+
+          </div> 
+        </div>
+      </div>
+    <div class="footer">
+    <p>
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.3.
+	</p>
+    </div>
+      <div class="clearer"></div>
+    </div>
+	<div id="breadcrumbs">
+		<a href="../index.html" accesskey="U">Internals</a><img src="triangle_closed.png" alt="Right arrow">
+		<a href="index.html" >Internal Module Reference</a><img src="triangle_closed.png" alt="Right arrow">
+		<a href="../../index.html">Celery v0.9.2 (unstable) documentation</a>
+		</ul>
+	</div>
+  </body>
+</html>
