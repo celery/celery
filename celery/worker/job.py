@@ -10,6 +10,7 @@ import warnings
 
 from django.core.mail import mail_admins
 
+from celery import conf
 from celery import platform
 from celery.log import get_default_logger
 from celery.utils import noop, fun_takes_kwargs
@@ -327,7 +328,6 @@ class TaskWrapper(object):
 
     def on_failure(self, exc_info):
         """The handler used if the task raised an exception."""
-        from celery.conf import SEND_CELERY_TASK_ERROR_EMAILS
 
         self.send_event("task-failed", uuid=self.task_id,
                                        exception=exc_info.exception,
@@ -345,7 +345,7 @@ class TaskWrapper(object):
         self.logger.error(self.fail_msg.strip() % context)
 
         task_obj = tasks.get(self.task_name, object)
-        send_error_email = SEND_CELERY_TASK_ERROR_EMAILS and not \
+        send_error_email = conf.SEND_CELERY_TASK_ERROR_EMAILS and not \
                                 task_obj.disable_error_emails
         if send_error_email:
             subject = self.fail_email_subject.strip() % context
