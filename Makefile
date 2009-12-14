@@ -17,10 +17,11 @@ flakes:
 	find . -name "*.py" | xargs pyflakes
 
 clean_readme:
-	rm -f README.rst
+	rm -f README.rst README
 
 readme: clean_readme
 	python contrib/sphinx-to-rst.py docs/introduction.rst > README.rst
+	ln -s README.rst README
 
 bump:
 	contrib/bump -c celery
