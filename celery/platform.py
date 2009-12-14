@@ -20,15 +20,12 @@ except ImportError:
 from celery.utils import noop
 
 
-def acquire_pidlock(pidfile):
-    """Get the :class:`daemon.pidlockfile.PIDLockFile` handler for
-    ``pidfile``.
+def create_pidlock(pidfile):
+    """Create a PIDFile to be used with python-daemon.
 
-    If the ``pidfile`` already exists, but the process is not running the
-    ``pidfile`` will be removed, a ``"stale pidfile"`` message is emitted
-    and execution continues as normally. However, if the process is still
-    running the program will exit complaning that the program is already
-    running in the background somewhere.
+    If the pidfile already exists the program exits with an error message,
+    however if the process it refers to is not running anymore, the pidfile
+    is just deleted.
 
     """
     from daemon import pidlockfile
@@ -105,7 +102,7 @@ def create_daemon_context(logfile=None, pidfile=None, **options):
     if logfile:
         open(logfile, "a").close()
 
-    options["pidfile"] = pidfile and acquire_pidlock(pidfile)
+    options["pidfile"] = pidfile and create_pidlock(pidfile)
 
     defaults = {"umask": lambda: 0,
                 "chroot_directory": lambda: None,
