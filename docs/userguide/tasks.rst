@@ -211,7 +211,7 @@ Task options
     methods that have been registered with
     :mod:`carrot.serialization.registry`.
 
-    Please see :doc:`userguide/executing` for more information.
+    Please see :doc:`executing` for more information.
 
 Message and routing options
 ---------------------------
@@ -239,7 +239,7 @@ Message and routing options
     The message priority. A number from ``0`` to ``9``, where ``0`` is the
     highest. Note that RabbitMQ doesn't support priorities yet.
 
-Please see :doc:`userguide/executing` for descriptions of these options.
+Please see :doc:`executing` for descriptions of these options.
 
 How it works
 ============
