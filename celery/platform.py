@@ -3,6 +3,7 @@ import sys
 import pwd
 import grp
 import signal
+import errno
 from contextlib import contextmanager
 try:
     from setproctitle import setproctitle as _setproctitle
@@ -19,38 +20,6 @@ except ImportError:
 from celery.utils import noop
 
 
-def maybe_remove_file(path, ignore_perm_denied=False):
-    """Try to unlink file, but don't care if it doesn't exist.
-
-    :param path: The path of the file to remove.
-    :keyword ignore_perm_denied: Ignore permission denied errors.
-
-    """
-    try:
-        os.unlink(path)
-    except OSError, exc:
-        if exc.errno == errno.ENOENT:
-            return
-        if exc.errno == errno.EACCES and ignore_perm_denied:
-            return
-        raise
-
-
-@contextmanager
-def pidlockfile(pidfile):
-    from daemon import pidlockfile
-    import lockfile
-
-    try:
-        pidlockfile.write_pid_to_pidfile(pidfile)
-    except OSError, exc:
-        raise lockfile.LockFailed(str(exc))
-
-    yield
-
-    maybe_remove_file(pidfile, ignore_perm_denied=True)
-
-
 def acquire_pidlock(pidfile):
     """Get the :class:`daemon.pidlockfile.PIDLockFile` handler for
     ``pidfile``.
@@ -63,35 +32,39 @@ def acquire_pidlock(pidfile):
 
     """
     from daemon import pidlockfile
-    from lockfile import LinkFileLock, LockFailed
-    import errno
+    from lockfile import LockFailed
 
-    class SafeRemovePIDLockFile(pidlockfile.PIDLockFile):
+    class PIDFile(object):
 
-        def __init__(self, path, threaded=True):
-            self.abspath = os.path.abspath(path)
-            super(SafeRemovePIDLockFile, self).__init__(path, threaded)
+        def __init__(self, path):
+            self.path = os.path.abspath(path)
 
-        def is_locked(self):
-            return os.path.exists(self.abspath)
-
-        def i_am_locking(self):
-            return self.is_locked()
-
-        def acquire(self, timeout=None):
+        def __enter__(self):
             try:
-                pidlockfile.write_pid_to_pidfile(self.abspath)
+                pidlockfile.write_pid_to_pidfile(self.path)
             except OSError, exc:
                 raise LockFailed(str(exc))
+            return self
 
-        def release(self):
-            maybe_remove_file(self.abspath, ignore_perm_denied=True)
-
-        def break_lock(self):
+        def __exit__(self, *_exc):
             self.release()
 
+        def is_locked(self):
+            return os.path.exists(self.path)
+
+        def release(self):
+            try:
+                os.unlink(self.path)
+            except OSError, exc:
+                if exc.errno in (errno.ENOENT, errno.EACCES):
+                    return
+                raise
+
+        def read_pid(self):
+            return pidlockfile.read_pid_from_pidfile(self.path)
+
         def is_stale(self):
-            pid = pidlock.read_pid()
+            pid = self.read_pid()
             try:
                 os.kill(pid, 0)
             except os.error, exc:
@@ -105,12 +78,12 @@ def acquire_pidlock(pidfile):
                 return True
             return False
 
-    pidlock = SafeRemovePIDLockFile(pidfile)
+    pidlock = PIDFile(pidfile)
     if pidlock.is_locked() and not pidlock.is_stale():
         raise SystemExit(
                 "ERROR: Pidfile (%s) already exists.\n"
-                "Seems celeryd is already running? (PID: %d)" % (
-                    pidfile, pid))
+                "Seems we're already running? (PID: %d)" % (
+                    pidfile, pidlock.read_pid()))
     return pidlock
 
 
