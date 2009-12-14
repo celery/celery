@@ -45,4 +45,3 @@ class TestScheduler(unittest.TestCase):
         sched = Scheduler(ready_queue)
 
         self.assertTrue(iter(sched).next() is None)
-

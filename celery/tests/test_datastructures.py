@@ -128,5 +128,3 @@ class TestLimitedSet(unittest.TestCase):
         items = "foo", "bar"
         map(s.add, items)
         self.assertTrue(repr(s).startswith("LimitedSet("))
-
-

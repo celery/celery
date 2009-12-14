@@ -85,8 +85,6 @@ Provides arguments:
 task_postrun = Signal(providing_args=[
                         "task_id", "task", "args", "kwargs", "retval"])
 
-
-
 """
 
 .. data:: worker_init

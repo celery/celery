@@ -146,7 +146,8 @@ class TestCarrotListener(unittest.TestCase):
                            send_events=False)
         backend = MockBackend()
         id = gen_unique_id()
-        c = create_message(backend, control={"command": "revoke", "task_id": id})
+        c = create_message(backend, control={"command": "revoke",
+                                             "task_id": id})
         t = create_message(backend, task=foo_task.name, args=[2, 4, 8],
                            kwargs={}, id=id)
         l.event_dispatcher = MockEventDispatcher()
@@ -156,7 +157,6 @@ class TestCarrotListener(unittest.TestCase):
 
         l.receive_message(t.decode(), t)
         self.assertTrue(ready_queue.empty())
-
 
     def test_receieve_message_not_registered(self):
         l = CarrotListener(self.ready_queue, self.eta_scheduler, self.logger,
