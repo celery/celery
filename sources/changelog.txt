@@ -72,6 +72,13 @@ BACKWARD INCOMPATIBLE CHANGES
 * ``AsyncResult.is_done`` has been removed, use ``AsyncResult.successful``
   instead.
 
+* The worker no longer stores errors if ``Task.ignore_result`` is set, to
+  revert to the previous behaviour set
+  ``CELERY_STORE_ERRORS_EVEN_IF_IGNORED`` to ``True``.
+
+* The staticstics functionality has been removed in favor of events,
+  so the ``-S`` and ``--statistics`` switches has been removed.
+
 NEWS
 ----
 
@@ -83,6 +90,18 @@ NEWS
 
 * New cool task decorator syntax.
 
+* celeryd now sends events if enabled with the ``-E`` argument.
+  Excellent for monitoring tools, one is already in the making:
+     http://github.com/ask/celerymon
+
+  Current events include: worker-heartbeat,
+  task-[received/succeeded/failed/retried],
+  worker-online, worker-offline.
+
+* You can now delete (revoke) tasks that has already been applied.
+
+* Message format has been standardized and now uses ISO-8601 format
+  for dates instead of datetime.
 
 CHANGES
 -------
@@ -100,6 +119,34 @@ CHANGES
 * Now using a proper scheduler for the tasks with an ETA. This means waiting
   eta tasks are sorted by time, so we don't have to poll the whole list all the
   time.
+
+* Does not longer use the python-daemon pidfile implementation, but a custom
+  one that doesn't create those weird ``.lock`` and thread files.
+
+* The ``--uid`` and ``--gid`` arguments now support supplying the uid and gid
+  as a username or group name.
+
+* Now ignores permission denied errors when removing the pidfile so it's
+  possible to shutdown when running as an unprivileged user.
+
+* ImportErrors are now properly propogated when autodiscovering tasks.
+
+* You can now use ``celery.messaging.establish_connection`` to establish a
+  connection to the broker.
+
+* When running as a separate service the periodic task scheduler does some
+  smart moves to not poll too regularly, if you need faster poll times you
+  can lower the value of ``CELERYBEAT_MAX_LOOP_INTERVAL``.
+
+* You can now change periodic task intervals at runtime, by making
+  ``run_every`` a property, or subclassing ``PeriodicTask.is_due``.
+
+* The worker now supports control commands enabled through the use of a
+  broadcast queue, you can remotely revoke tasks or set the rate limit for
+  a task type.
+
+* The services now sets informative process names (as shown in ``ps``
+  listings) if the :mod:`setproctitle` module is installed.
 
 DOCUMENTATION
 -------------

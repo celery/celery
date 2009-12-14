@@ -16,6 +16,7 @@
     celery.worker.scheduler
     celery.worker.pool
     celery.worker.heartbeat
+    celery.worker.control
     celery.worker.revoke
     celery.beat
     celery.backends
