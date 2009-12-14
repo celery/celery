@@ -93,8 +93,7 @@ case "$1" in
     log_daemon_msg "Stopping celery task worker server" "celeryd"
     if start-stop-daemon --stop --quiet --pidfile $CELERYD_PID_FILE; 
     then
-        rm -f $CELERYD_PID_FILE
-        rm -f ${CELERYD_PID_FILE}.lock
+        rm -f "$CELERYD_PID_FILE"
         log_end_msg 0
     else
         log_end_msg 1

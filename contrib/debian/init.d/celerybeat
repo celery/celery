@@ -98,6 +98,7 @@ case "$1" in
   stop)
     log_daemon_msg "Stopping celery periodic task scheduler" "celerybeat"
     if start-stop-daemon --stop --quiet --oknodo --pidfile $CELERYBEAT_PID_FILE; then log_end_msg 0 else
+        rm -f "$CELERYBEAT_PID_FILE"
         log_end_msg 1
     fi
     ;;
