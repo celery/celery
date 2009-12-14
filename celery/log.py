@@ -10,6 +10,11 @@ from celery.patch import monkeypatch
 
 
 def get_default_logger(loglevel=None):
+    """Get default logger instance.
+
+    :keyword loglevel: Initial log level.
+
+    """
     from multiprocessing.util import get_logger
     logger = get_logger()
     loglevel is not None and logger.setLevel(loglevel)
@@ -153,3 +158,19 @@ class LoggingProxy(object):
 
     def fileno(self):
         return None
+
+
+class SilenceRepeated(object):
+    """Only log action every n iterations."""
+
+    def __init__(self, action, max_iterations=10):
+        self.action = action
+        self.max_iterations = max_iterations
+        self._iterations = 0
+
+    def __call__(self, *msgs):
+        if self._iterations >= self.max_iterations:
+            map(self.action, msgs)
+            self._iterations = 0
+        else:
+            self._iterations += 1

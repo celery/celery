@@ -5,10 +5,10 @@ Worker Controller Threads
 """
 import time
 import threading
-from Queue import Empty as QueueEmpty
 from datetime import datetime
+from Queue import Empty as QueueEmpty
 
-from celery.log import get_default_logger
+from celery import log
 from celery.worker.revoke import revoked
 
 
@@ -78,14 +78,14 @@ class Mediator(BackgroundThread):
 
     """
 
-    def __init__(self, ready_queue, callback):
+    def __init__(self, ready_queue, callback, logger=None):
         super(Mediator, self).__init__()
+        self.logger = logger or log.get_default_logger()
         self.ready_queue = ready_queue
         self.callback = callback
 
     def on_iteration(self):
         """Get tasks from bucket queue and apply the task callback."""
-        logger = get_default_logger()
         try:
             # This blocks until there's a message in the queue.
             task = self.ready_queue.get(timeout=1)
@@ -94,38 +94,32 @@ class Mediator(BackgroundThread):
         else:
             if task.task_id in revoked: # task revoked
                 task.on_ack()
-                logger.warn("Mediator: Skipping revoked task: %s[%s]" % (
-                    task.task_name, task.task_id))
+                self.logger.warn("Mediator: Skipping revoked task: %s[%s]" % (
+                        task.task_name, task.task_id))
                 return
 
-            logger.debug("Mediator: Running callback for task: %s[%s]" % (
-                task.task_name, task.task_id))
+            self.logger.debug(
+                    "Mediator: Running callback for task: %s[%s]" % (
+                        task.task_name, task.task_id))
             self.callback(task) # execute
 
 
 class ScheduleController(BackgroundThread):
     """Schedules tasks with an ETA by moving them to the bucket queue."""
 
-    def __init__(self, eta_schedule):
+    def __init__(self, eta_schedule, logger=None):
         super(ScheduleController, self).__init__()
+        self.logger = logger or log.get_default_logger()
         self._scheduler = iter(eta_schedule)
-        self.iterations = 0
 
     def on_iteration(self):
         """Wake-up scheduler"""
-        logger = get_default_logger()
+        debug = log.SilenceRepeated(self.logger.debug, max_iterations=10)
         delay = self._scheduler.next()
         debug_log = True
         if delay is None:
             delay = 1
-            if self.iterations == 10:
-                self.iterations = 0
-            else:
-                debug_log = False
-                self.iterations += 1
-        if debug_log:
-            logger.debug("ScheduleController: Scheduler wake-up")
-            logger.debug(
-                "ScheduleController: Next wake-up eta %s seconds..." % (
-                    delay))
+
+        debug("ScheduleController: Scheduler wake-up",
+              "ScheduleController: Next wake-up eta %s seconds..." % delay)
         time.sleep(delay)

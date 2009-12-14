@@ -14,8 +14,8 @@ from celery.datastructures import ExceptionInfo
 class TaskPool(object):
     """Process Pool for processing tasks in parallel.
 
-    :param limit: see :attr:`limit` attribute.
-    :param logger: see :attr:`logger` attribute.
+    :param limit: see :attr:`limit`.
+    :param logger: see :attr:`logger`.
 
 
     .. attribute:: limit
@@ -28,10 +28,11 @@ class TaskPool(object):
 
     """
 
-    def __init__(self, limit, logger=None, initializer=None):
+    def __init__(self, limit, logger=None, initializer=None, initargs=None):
         self.limit = limit
         self.logger = logger or log.get_default_logger()
         self.initializer = initializer
+        self.initargs = initargs
         self._pool = None
 
     def start(self):
@@ -41,7 +42,8 @@ class TaskPool(object):
 
         """
         self._pool = DynamicPool(processes=self.limit,
-                                 initializer=self.initializer)
+                                 initializer=self.initializer,
+                                 initargs=self.initargs)
 
     def stop(self):
         """Terminate the pool."""

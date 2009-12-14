@@ -3,12 +3,23 @@ from time import time, sleep
 
 
 class Heart(threading.Thread):
-    interval = 60
+    """Thread sending heartbeats at an interval.
+
+    :param eventer: Event dispatcher used to send the event.
+    :keyword interval: Time in seconds between heartbeats.
+        Default is 2 minutes.
+
+    .. attribute:: bpm
+
+        Beats per minute.
+
+    """
+    bpm = 0.5
 
     def __init__(self, eventer, interval=None):
         super(Heart, self).__init__()
         self.eventer = eventer
-        self.interval = interval or self.interval
+        self.bpm = interval and interval / 60.0 or self.bpm
         self._shutdown = threading.Event()
         self._stopped = threading.Event()
         self.setDaemon(True)
@@ -16,11 +27,10 @@ class Heart(threading.Thread):
 
     def run(self):
         self._state = "RUN"
-        interval = self.interval
+        bpm = self.bpm
         dispatch = self.eventer.send
 
         dispatch("worker-online")
-
 
         # We can't sleep all of the interval, because then
         # it takes 60 seconds (or value of interval) to shutdown
@@ -31,7 +41,7 @@ class Heart(threading.Thread):
             if self._shutdown.isSet():
                 break
             now = time()
-            if not last_beat or now > last_beat + interval:
+            if not last_beat or now > last_beat + (60.0 / bpm):
                 last_beat = now
                 dispatch("worker-heartbeat")
             sleep(1)

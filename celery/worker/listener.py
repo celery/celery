@@ -50,12 +50,13 @@ class CarrotListener(object):
         self.eta_scheduler = eta_scheduler
         self.send_events = send_events
         self.logger = logger
-        self.control_dispatch = ControlDispatch(logger=logger)
+        self.hostname = socket.gethostname()
+        self.control_dispatch = ControlDispatch(logger=logger,
+                                                hostname=self.hostname)
         self.prefetch_count = SharedCounter(initial_prefetch_count)
         self.event_dispatcher = None
         self.heart = None
         self._state = None
-        self.hostname = socket.gethostname()
 
     def start(self):
         """Start the consumer.
@@ -91,12 +92,6 @@ class CarrotListener(object):
                 prev_pcount = pcount
 
             wait_for_message()
-
-    def on_control_command(self, message):
-        command = message.pop("command")
-        destination = message.pop("destination", None)
-        if not destination or destination == self.hostname:
-            return self.control_dispatch.dispatch(command, message)
 
     def on_task(self, task, eta=None):
         """Handle received task.
@@ -147,7 +142,7 @@ class CarrotListener(object):
         # Handle control command
         control = message_data.get("control")
         if control:
-            self.on_control_command(control)
+            self.control_dispatch.dispatch_from_message(control)
         return
 
     def close_connection(self):

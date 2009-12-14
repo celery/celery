@@ -3,12 +3,26 @@ import heapq
 
 
 class Scheduler(object):
+    """ETA scheduler.
+
+    :param ready_queue: Queue to move items ready for processing.
+
+    """
 
     def __init__(self, ready_queue):
         self.ready_queue = ready_queue
         self._queue = []
 
     def enter(self, item, eta=None, priority=0, callback=None):
+        """Enter item into the scheduler.
+
+        :param item: Item to enter.
+        :param eta: Scheduled time as a :class:`datetime.datetime` object.
+        :param priority: Unused.
+        :param callback: Callback called when the item is scheduled.
+            This callback takes no arguments.
+
+        """
         eta = time.mktime(eta.timetuple()) if eta else time.time()
         heapq.heappush(self._queue, (eta, priority, item, callback))
 
@@ -40,6 +54,7 @@ class Scheduler(object):
             yield None
 
     def empty(self):
+        """Is the schedule empty?"""
         return not self._queue
 
     @property

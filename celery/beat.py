@@ -186,13 +186,16 @@ class ClockService(object):
                 synced[0] = True
                 self._stopped.set()
 
+        silence = self.max_interval < 60 and 10 or 1
+        debug = log.SilenceRepeated(self.logger.debug, max_iterations=silence)
+
         try:
             while True:
                 if self._shutdown.isSet():
                     break
                 interval = scheduler.tick()
-                self.logger.debug("ClockService: Waking up %s." % (
-                    humanize_seconds(interval, prefix="in ")))
+                debug("ClockService: Waking up %s." % (
+                        humanize_seconds(interval, prefix="in ")))
                 time.sleep(interval)
         except (KeyboardInterrupt, SystemExit):
             _stop()

@@ -122,7 +122,8 @@ class WorkController(object):
         self.logger.debug("Instantiating thread components...")
 
         # Threads+Pool
-        self.schedule_controller = ScheduleController(self.eta_scheduler)
+        self.schedule_controller = ScheduleController(self.eta_scheduler,
+                                                      logger=self.logger)
         self.pool = TaskPool(self.concurrency, logger=self.logger,
                              initializer=process_initializer)
         self.broker_listener = CarrotListener(self.ready_queue,
@@ -130,7 +131,8 @@ class WorkController(object):
                                         logger=self.logger,
                                         send_events=send_events,
                                         initial_prefetch_count=concurrency)
-        self.mediator = Mediator(self.ready_queue, self.safe_process_task)
+        self.mediator = Mediator(self.ready_queue, self.safe_process_task,
+                                 logger=self.logger)
 
         self.clockservice = None
         if self.embed_clockservice:
