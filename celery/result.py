@@ -6,6 +6,7 @@ Asynchronous result types.
 import time
 from itertools import imap
 
+from celery.utils import any, all
 from celery.backends import default_backend
 from celery.exceptions import TimeoutError
 from celery.datastructures import PositionQueue

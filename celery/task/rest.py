@@ -1,5 +1,8 @@
 import urllib2
-from cgi import parse_qsl
+try:
+    from urlparse import parse_qsl
+except ImportError:
+    from cgi import parse_qsl
 from urllib import urlencode
 from urlparse import urlparse
 

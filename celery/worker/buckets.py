@@ -3,6 +3,8 @@ from Queue import Queue, Empty as QueueEmpty
 
 from carrot.utils import partition
 
+from celery.utils import all
+
 RATE_MODIFIER_MAP = {"s": lambda n: n,
                      "m": lambda n: n / 60.0,
                      "h": lambda n: n / 60.0 / 60.0}
