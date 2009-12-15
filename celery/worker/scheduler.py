@@ -23,7 +23,7 @@ class Scheduler(object):
             This callback takes no arguments.
 
         """
-        eta = time.mktime(eta.timetuple()) if eta else time.time()
+        eta = eta and time.mktime(eta.timetuple()) or time.time()
         heapq.heappush(self._queue, (eta, priority, item, callback))
 
     def __iter__(self):

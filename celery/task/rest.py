@@ -62,10 +62,10 @@ class URL(object):
         query = urlencode(self._utf8dict(self.query.items()))
         components = ["%s://" % u.scheme,
                       "%s" % u.netloc,
-                      "%s" % u.path if u.path else "/",
-                      ";%s" % u.params if u.params else None,
-                      "?%s" % query if query else None,
-                      "#%s" % u.fragment if u.fragment else None]
+                      u.path and "%s" % u.path or "/",
+                      u.params and ";%s" % u.params or None,
+                      query and "?%s" % query or None,
+                      u.fragment and "#%s" % u.fragment or None]
         return "".join(filter(None, components))
 
     def __repr__(self):

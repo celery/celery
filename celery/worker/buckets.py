@@ -216,7 +216,7 @@ class TokenBucketQueue(object):
         Also see :meth:`Queue.Queue.put`.
 
         """
-        put = self.queue.put if block else self.queue.put_nowait
+        put = block and self.queue.put or self.queue.put_nowait
         put(item)
 
     def put_nowait(self, item):
@@ -239,7 +239,7 @@ class TokenBucketQueue(object):
         Also see :meth:`Queue.Queue.get`.
 
         """
-        get = self.queue.get if block else self.queue.get_nowait
+        get = block and self.queue.get or self.queue.get_nowait
 
         if not self.can_consume(1):
             raise RateLimitExceeded

@@ -32,7 +32,7 @@ def skip_if(predicate, reason):
     """Skip test if predicate is ``True``."""
 
     def _inner(fun):
-        return skip(reason)(fun) if predicate else fun
+        return predicate and skip(reason)(fun) or fun
 
     return _inner
 

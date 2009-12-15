@@ -25,7 +25,7 @@ class TaskRegistry(UserDict):
         not an instance.
         """
 
-        task = task() if inspect.isclass(task) else task
+        task = inspect.isclass(task) and task() or task
         name = task.name
         self.data[name] = task
 

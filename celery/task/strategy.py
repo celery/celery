@@ -40,7 +40,7 @@ def even_time_distribution(task, size, time_window, iterable, **apply_kwargs):
     try:
         for bucket_count, bucket in enumerate(buckets):
             # Skew the countdown for items in this bucket by one.
-            seconds_eta = (60 * bucket_count if bucket_count else None)
+            seconds_eta = (bucket_count and 60 * bucket_count or None)
 
             for args, kwargs in bucket:
                 task.apply_async(args=args, kwargs=kwargs,
