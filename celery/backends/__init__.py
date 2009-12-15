@@ -1,6 +1,8 @@
 import sys
 from functools import partial
 
+from carrot.utils import rpartition
+
 from celery import conf
 
 BACKEND_ALIASES = {
@@ -18,7 +20,7 @@ _backend_cache = {}
 
 def resolve_backend(backend):
     backend = BACKEND_ALIASES.get(backend, backend)
-    backend_module_name, _, backend_cls_name = backend.rpartition(".")
+    backend_module_name, _, backend_cls_name = rpartition(backend, ".")
     return backend_module_name, backend_cls_name
 
 

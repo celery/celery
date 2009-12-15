@@ -1,6 +1,8 @@
 import time
 from Queue import Queue, Empty as QueueEmpty
 
+from carrot.utils import partition
+
 RATE_MODIFIER_MAP = {"s": lambda n: n,
                      "m": lambda n: n / 60.0,
                      "h": lambda n: n / 60.0 / 60.0}
@@ -26,7 +28,7 @@ def parse_ratelimit_string(rate_limit):
             try:
                 return int(rate_limit, base)
             except ValueError:
-                ops, _, modifier = rate_limit.partition("/")
+                ops, _, modifier = partition(rate_limit, "/")
                 return RATE_MODIFIER_MAP[modifier](int(ops, base)) or 0
         return rate_limit or 0
     return 0

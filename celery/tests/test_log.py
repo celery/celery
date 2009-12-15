@@ -1,12 +1,16 @@
 from __future__ import with_statement
+
 import os
 import sys
 import logging
 import unittest
+from tempfile import mktemp
 from StringIO import StringIO
+
+from carrot.utils import rpartition
+
 from celery.log import setup_logger, emergency_error
 from celery.tests.utils import override_stdouts
-from tempfile import mktemp
 
 
 class TestLog(unittest.TestCase):
@@ -50,7 +54,7 @@ class TestLog(unittest.TestCase):
     def test_emergency_error(self):
         sio = StringIO()
         emergency_error(sio, "Testing emergency error facility")
-        self.assertEquals(sio.getvalue().rpartition(":")[2].strip(),
+        self.assertEquals(rpartition(sio.getvalue(), ":")[2].strip(),
                              "Testing emergency error facility")
 
     def test_setup_logger_no_handlers_stream(self):
