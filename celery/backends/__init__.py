@@ -1,6 +1,6 @@
 import sys
-from functools import partial
 
+from billiard.utils.functional import curry
 from carrot.utils import rpartition
 
 from celery import conf
@@ -50,7 +50,7 @@ def get_backend_cls(backend):
     Get the backend class specified in :setting:`CELERY_BACKEND`.
 
 """
-get_default_backend_cls = partial(get_backend_cls, conf.CELERY_BACKEND)
+get_default_backend_cls = curry(get_backend_cls, conf.CELERY_BACKEND)
 
 
 """
