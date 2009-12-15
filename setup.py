@@ -74,8 +74,11 @@ py_version_info = sys.version_info
 py_major_version = py_version_info[0]
 py_minor_version = py_version_info[1]
 
-if (py_major_version == 2 and py_minor_version <=5) or py_major_version < 2:
+if (py_major_version == 2 and py_minor_version <=5):
     install_requires.append("multiprocessing==2.6.2.1")
+
+if (py_major_version == 2 and py_minor_version <= 4):
+    install_requires.append("uuid")
 
 if os.path.exists("README.rst"):
     long_description = codecs.open("README.rst", "r", "utf-8").read()
