@@ -4,7 +4,6 @@ import pwd
 import grp
 import signal
 import errno
-from contextlib import contextmanager
 try:
     from setproctitle import setproctitle as _setproctitle
 except ImportError:
