@@ -112,6 +112,12 @@ class Task(object):
         limit), ``"100/s"`` (hundred tasks a second), ``"100/m"`` (hundred
         tasks a minute), ``"100/h"`` (hundred tasks an hour)
 
+    .. attribute:: rate_limit_queue_type
+
+        Type of queue used by the rate limiter for this kind of tasks.
+        Default is a :class:`Queue.Queue`, but you can change this to
+        a :class:`Queue.LifoQueue` or an invention of your own.
+
     .. attribute:: ignore_result
 
         Don't store the return value of this task.
@@ -129,6 +135,11 @@ class Task(object):
     .. attribute:: backend
 
         The result store backend used for this task.
+
+    .. attribute:: autoregister
+        If ``True`` the task is automatically registered in the task
+        registry, which is the default behaviour.
+
 
     The resulting class is callable, which if called will apply the
     :meth:`run` method.
@@ -181,16 +192,14 @@ class Task(object):
         arguments (\*\*kwargs).
 
         """
-        raise NotImplementedError("Tasks must define a run method.")
+        raise NotImplementedError("Tasks must define the run method.")
 
-    def get_logger(self, **kwargs):
+    def get_logger(self, loglevel=None, logfile=None, **kwargs):
         """Get process-aware logger object.
 
         See :func:`celery.log.setup_logger`.
 
         """
-        logfile = kwargs.get("logfile")
-        loglevel = kwargs.get("loglevel")
         return setup_logger(loglevel=loglevel, logfile=logfile)
 
     def establish_connection(self,
