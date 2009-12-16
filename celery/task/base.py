@@ -33,7 +33,7 @@ class TaskType(type):
 
         # Abstract class, remove the abstract attribute so
         # any class inheriting from this won't be abstract by default.
-        if attrs.pop("abstract", None):
+        if attrs.pop("abstract", None) or not attrs.get("autoregister", True):
             return super_new(cls, name, bases, attrs)
 
         # Automatically generate missing name.
@@ -138,6 +138,7 @@ class Task(object):
 
     name = None
     abstract = True
+    autoregister = True
     type = "regular"
     exchange = None
     routing_key = None
