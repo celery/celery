@@ -588,12 +588,11 @@ class PeriodicTask(Task):
 
     """
     abstract = True
-    run_every = timedelta(days=1)
     ignore_result = True
     type = "periodic"
 
     def __init__(self):
-        if not self.run_every:
+        if not hasattr(self, "run_every"):
             raise NotImplementedError(
                     "Periodic tasks must have a run_every attribute")
 
