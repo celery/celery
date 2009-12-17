@@ -59,7 +59,7 @@ install_requires.extend([
     "anyjson",
     "carrot>=0.8.0",
     "django-picklefield",
-    "billiard>=0.2.0"])
+    "billiard>=0.2.1"])
 
 # python-daemon doesn't run on windows, so check current platform
 if platform.system() == "Windows":
