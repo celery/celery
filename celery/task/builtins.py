@@ -16,7 +16,7 @@ class DeleteExpiredTaskMetaTask(PeriodicTask):
     run_every = timedelta(days=1)
 
     def run(self, **kwargs):
-        """The method run by ``celeryd``."""
+        """:returns: None"""
         logger = self.get_logger(**kwargs)
         logger.info("Deleting expired task meta objects...")
         default_backend.cleanup()

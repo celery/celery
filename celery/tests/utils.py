@@ -1,9 +1,10 @@
 from __future__ import with_statement
-from contextlib import contextmanager
-from StringIO import StringIO
-from functools import wraps
+
 import sys
 import __builtin__
+from StringIO import StringIO
+from functools import wraps
+from contextlib import contextmanager
 
 
 def _skip_test(reason, sign):

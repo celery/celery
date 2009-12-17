@@ -247,17 +247,16 @@ class Task(object):
 
     @classmethod
     def delay(cls, *args, **kwargs):
-        """Shortcut to :meth:`apply_async` but with star arguments,
-        and doesn't support the extra options.
+        """Shortcut to :meth:`apply_async`, with star arguments,
+        but doesn't support the extra options.
 
         :param \*args: positional arguments passed on to the task.
-
         :param \*\*kwargs: keyword arguments passed on to the task.
 
-        :rtype: :class:`celery.result.AsyncResult`
+        :returns: :class:`celery.result.AsyncResult`
 
         """
-        return apply_async(cls, args, kwargs)
+        return cls.apply_async(args, kwargs)
 
     @classmethod
     def apply_async(cls, args=None, kwargs=None, **options):
@@ -284,12 +283,12 @@ class Task(object):
         :keyword exc: Optional exception to raise instead of
             :exc:`MaxRestartsExceededError` when the max restart limit has
             been exceeded.
-        :keyword throw: Do not raise the
-            :exc:`celery.exceptions.RetryTaskError` exception,
-            that tells the worker that the task is to be retried.
         :keyword countdown: Time in seconds to delay the retry for.
         :keyword eta: Explicit time and date to run the retry at (must be a
             :class:`datetime.datetime` instance).
+        :keyword throw: If this is ``False``, do not raise the
+            :exc:`celery.exceptions.RetryTaskError` exception,
+            that tells the worker that the task is to be retried.
         :keyword \*\*options: Any extra options to pass on to
             meth:`apply_async`. See :func:`celery.execute.apply_async`.
 
@@ -411,14 +410,11 @@ class ExecuteRemoteTask(Task):
     def run(self, ser_callable, fargs, fkwargs, **kwargs):
         """
         :param ser_callable: A pickled function or callable object.
-
         :param fargs: Positional arguments to apply to the function.
-
         :param fkwargs: Keyword arguments to apply to the function.
 
         """
-        callable_ = pickle.loads(ser_callable)
-        return callable_(*fargs, **fkwargs)
+        return pickle.loads(ser_callable)(*fargs, **fkwargs)
 
 
 class AsynchronousMapTask(Task):
@@ -426,10 +422,9 @@ class AsynchronousMapTask(Task):
     :meth:`TaskSet.map_async`.  """
     name = "celery.map_async"
 
-    def run(self, serfunc, args, **kwargs):
-        """The method run by ``celeryd``."""
-        timeout = kwargs.get("timeout")
-        return TaskSet.map(pickle.loads(serfunc), args, timeout=timeout)
+    def run(self, ser_callable, args, timeout=None, **kwargs):
+        """:see :meth:`TaskSet.dmap_async`."""
+        return TaskSet.map(pickle.loads(ser_callable), args, timeout=timeout)
 
 
 class TaskSet(object):
@@ -574,6 +569,8 @@ class TaskSet(object):
 class PeriodicTask(Task):
     """A periodic task is a task that behaves like a :manpage:`cron` job.
 
+    Results of periodic tasks are not stored by default.
+
     .. attribute:: run_every
 
         *REQUIRED* Defines how often the task is run (its interval),
@@ -588,7 +585,6 @@ class PeriodicTask(Task):
         >>> from celery.task import tasks, PeriodicTask
         >>> from datetime import timedelta
         >>> class MyPeriodicTask(PeriodicTask):
-        ...     name = "my_periodic_task"
         ...     run_every = timedelta(seconds=30)
         ...
         ...     def run(self, **kwargs):
@@ -614,12 +610,18 @@ class PeriodicTask(Task):
         super(PeriodicTask, self).__init__()
 
     def remaining_estimate(self, last_run_at):
+        """Returns when the periodic task should run next as a timedelta."""
         return (last_run_at + self.run_every) - datetime.now()
 
-    def timedelta_seconds(self, d):
-        if d.days < 0:
+    def timedelta_seconds(self, delta):
+        """Convert :class:`datetime.timedelta` to seconds.
+
+        Doesn't account for negative timedeltas.
+
+        """
+        if delta.days < 0:
             return 0
-        return d.days * 86400 + d.seconds + (d.microseconds / 10e5)
+        return delta.days * 86400 + delta.seconds + (delta.microseconds / 10e5)
 
     def is_due(self, last_run_at):
         """Returns tuple of two items ``(is_due, next_time_to_run)``,
