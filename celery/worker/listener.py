@@ -199,12 +199,12 @@ class CarrotListener(object):
             connected = conn.connection # Connection is established lazily.
             return conn
 
-        if not conf.AMQP_CONNECTION_RETRY:
+        if not conf.BROKER_CONNECTION_RETRY:
             return _establish_connection()
 
         conn = retry_over_time(_establish_connection, (socket.error, IOError),
                                errback=_connection_error_handler,
-                               max_retries=conf.AMQP_CONNECTION_MAX_RETRIES)
+                               max_retries=conf.BROKER_CONNECTION_MAX_RETRIES)
         return conn
 
     def stop(self):

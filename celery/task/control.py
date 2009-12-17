@@ -3,7 +3,8 @@ from celery.messaging import TaskConsumer, BroadcastPublisher, with_connection
 
 
 @with_connection
-def discard_all(connection=None, connect_timeout=conf.AMQP_CONNECTION_TIMEOUT):
+def discard_all(connection=None,
+        connect_timeout=conf.BROKER_CONNECTION_TIMEOUT):
     """Discard all waiting tasks.
 
     This will ignore all tasks waiting for execution, and they will
@@ -20,7 +21,7 @@ def discard_all(connection=None, connect_timeout=conf.AMQP_CONNECTION_TIMEOUT):
 
 
 def revoke(task_id, destination=None, connection=None,
-        connect_timeout=conf.AMQP_CONNECTION_TIMEOUT):
+        connect_timeout=conf.BROKER_CONNECTION_TIMEOUT):
     """Revoke a task by id.
 
     If a task is revoked, the workers will ignore the task and not execute
@@ -40,7 +41,7 @@ def revoke(task_id, destination=None, connection=None,
 
 
 def rate_limit(task_name, rate_limit, destination=None, connection=None,
-        connect_timeout=conf.AMQP_CONNECTION_TIMEOUT):
+        connect_timeout=conf.BROKER_CONNECTION_TIMEOUT):
     """Set rate limit for task by type.
 
     :param task_name: Type of task to change rate limit for.
@@ -61,7 +62,7 @@ def rate_limit(task_name, rate_limit, destination=None, connection=None,
 
 @with_connection
 def broadcast(command, arguments=None, destination=None, connection=None,
-        connect_timeout=conf.AMQP_CONNECTION_TIMEOUT):
+        connect_timeout=conf.BROKER_CONNECTION_TIMEOUT):
     """Broadcast a control command to the celery workers.
 
     :param command: Name of command to send.

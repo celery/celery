@@ -22,8 +22,8 @@ def get_default_logger(loglevel=None):
 
 
 _monkeypatched = [False]
-def setup_logger(loglevel=conf.DAEMON_LOG_LEVEL, logfile=None,
-        format=conf.LOG_FORMAT, **kwargs):
+def setup_logger(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
+        format=conf.CELERYD_LOG_FORMAT, **kwargs):
     """Setup the ``multiprocessing`` logger. If ``logfile`` is not specified,
     ``stderr`` is used.
 

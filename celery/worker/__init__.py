@@ -37,7 +37,7 @@ class WorkController(object):
     .. attribute:: concurrency
 
         The number of simultaneous processes doing work (default:
-        :const:`celery.conf.DAEMON_CONCURRENCY`)
+        :const:`celery.conf.CELERYD_CONCURRENCY`)
 
     .. attribute:: loglevel
 
@@ -46,7 +46,7 @@ class WorkController(object):
     .. attribute:: logfile
 
         The logfile used, if no logfile is specified it uses ``stderr``
-        (default: :const:`celery.conf.DAEMON_LOG_FILE`).
+        (default: :const:`celery.conf.CELERYD_LOG_FILE`).
 
     .. attribute:: embed_clockservice
 
@@ -95,8 +95,8 @@ class WorkController(object):
 
     """
     loglevel = logging.ERROR
-    concurrency = conf.DAEMON_CONCURRENCY
-    logfile = conf.DAEMON_LOG_FILE
+    concurrency = conf.CELERYD_CONCURRENCY
+    logfile = conf.CELERYD_LOG_FILE
     _state = None
 
     def __init__(self, concurrency=None, logfile=None, loglevel=None,

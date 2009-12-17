@@ -204,12 +204,12 @@ class Task(object):
         return setup_logger(loglevel=loglevel, logfile=logfile)
 
     def establish_connection(self,
-            connect_timeout=conf.AMQP_CONNECTION_TIMEOUT):
+            connect_timeout=conf.BROKER_CONNECTION_TIMEOUT):
         """Establish a connection to the message broker."""
         return _establish_connection(connect_timeout)
 
     def get_publisher(self, connection=None, exchange=None,
-            connect_timeout=conf.AMQP_CONNECTION_TIMEOUT):
+            connect_timeout=conf.BROKER_CONNECTION_TIMEOUT):
         """Get a celery task message publisher.
 
         :rtype: :class:`celery.messaging.TaskPublisher`.
@@ -230,7 +230,7 @@ class Task(object):
                              routing_key=self.routing_key)
 
     def get_consumer(self, connection=None,
-            connect_timeout=conf.AMQP_CONNECTION_TIMEOUT):
+            connect_timeout=conf.BROKER_CONNECTION_TIMEOUT):
         """Get a celery task message consumer.
 
         :rtype: :class:`celery.messaging.TaskConsumer`.
@@ -489,7 +489,7 @@ class TaskSet(object):
             "in celery v1.2.0"))
         return self.apply_async(*args, **kwargs)
 
-    def apply_async(self, connect_timeout=conf.AMQP_CONNECTION_TIMEOUT):
+    def apply_async(self, connect_timeout=conf.BROKER_CONNECTION_TIMEOUT):
         """Run all tasks in the taskset.
 
         :returns: A :class:`celery.result.TaskSetResult` instance.

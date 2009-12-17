@@ -282,7 +282,7 @@ class TestTaskWrapper(unittest.TestCase):
         tw.logger = setup_logger(logfile=logfh, loglevel=logging.INFO)
 
         from celery import conf
-        conf.SEND_CELERY_TASK_ERROR_EMAILS = True
+        conf.CELERY_SEND_TASK_ERROR_EMAILS = True
 
         tw.on_failure(exc_info)
         logvalue = logfh.getvalue()
@@ -290,4 +290,4 @@ class TestTaskWrapper(unittest.TestCase):
         self.assertTrue(tid in logvalue)
         self.assertTrue("ERROR" in logvalue)
 
-        conf.SEND_CELERY_TASK_ERROR_EMAILS = False
+        conf.CELERY_SEND_TASK_ERROR_EMAILS = False

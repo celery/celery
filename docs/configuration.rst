@@ -37,8 +37,8 @@ it should contain all you need to run a basic celery set-up.
     # CELERYD_CONCURRENCY = 8
 
     # CELERYD_LOG_FILE = "celeryd.log"
+    # CELERYD_LOG_LEVEL = "INFO"
     # CELERYD_PID_FILE = "celeryd.pid"
-    # CELERYD_DAEMON_LOG_LEVEL = "INFO"
 
 Concurrency settings
 ====================
@@ -299,20 +299,20 @@ Routing
 Connection
 ----------
 
-* CELERY_AMQP_CONNECTION_TIMEOUT
+* CELERY_BROKER_CONNECTION_TIMEOUT
     The timeout in seconds before we give up establishing a connection
     to the AMQP server. Default is 4 seconds.
 
-* CELERY_AMQP_CONNECTION_RETRY
+* CELERY_BROKER_CONNECTION_RETRY
     Automatically try to re-establish the connection to the AMQP broker if
     it's lost.
 
     The time between retries is increased for each retry, and is
-    not exhausted before ``CELERY_AMQP_CONNECTION_MAX_RETRIES`` is exceeded.
+    not exhausted before ``CELERY_BROKER_CONNECTION_MAX_RETRIES`` is exceeded.
 
     This behaviour is on by default.
 
-* CELERY_AMQP_CONNECTION_MAX_RETRIES
+* CELERY_BROKER_CONNECTION_MAX_RETRIES
     Maximum number of retries before we give up re-establishing a connection
     to the AMQP broker.
 
@@ -360,7 +360,7 @@ Worker: celeryd
 * CELERY_SEND_EVENTS
     Send events so the worker can be monitored by tools like ``celerymon``.
 
-* SEND_CELERY_TASK_ERROR_EMAILS
+* CELERY_SEND_TASK_ERROR_EMAILS
     If set to ``True``, errors in tasks will be sent to admins by e-mail.
     If unset, it will send the e-mails if ``settings.DEBUG`` is False.
 
@@ -381,7 +381,7 @@ Logging
 
     Can also be set via the ``--logfile`` argument.
 
-* CELERYD_DAEMON_LOG_LEVEL
+* CELERYD_LOG_LEVEL
     Worker log level, can be any of ``DEBUG``, ``INFO``, ``WARNING``,
     ``ERROR``, ``CRITICAL``.
 
@@ -389,7 +389,7 @@ Logging
 
     See the :mod:`logging` module for more information.
 
-* CELERYD_DAEMON_LOG_FORMAT
+* CELERYD_LOG_FORMAT
     The format to use for log messages. Can be overridden using
     the ``--loglevel`` option to ``celeryd``.
 

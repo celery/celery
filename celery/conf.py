@@ -12,39 +12,53 @@ LOG_LEVELS["FATAL"] = logging.FATAL
 LOG_LEVELS[logging.FATAL] = "FATAL"
 
 _DEFAULTS = {
+    "CELERY_BACKEND": "database",
+    "CELERY_ALWAYS_EAGER": False,
+    "CELERY_TASK_RESULT_EXPIRES": timedelta(days=5),
+    "CELERY_SEND_EVENTS": False,
+    "CELERY_STORE_ERRORS_EVEN_IF_IGNORED": False,
+    "CELERY_TASK_SERIALIZER": "pickle",
+    "CELERY_DISABLE_RATE_LIMITS": False,
     "CELERY_DEFAULT_ROUTING_KEY": "celery",
     "CELERY_DEFAULT_QUEUE": "celery",
     "CELERY_DEFAULT_EXCHANGE": "celery",
     "CELERY_DEFAULT_EXCHANGE_TYPE": "direct",
+    "CELERY_BROKER_CONNECTION_TIMEOUT": 4,
+    "CELERY_BROKER_CONNECTION_RETRY": True,
+    "CELERY_BROKER_CONNECTION_MAX_RETRIES": 100,
     "CELERYD_CONCURRENCY": 0, # defaults to cpu count
-    "CELERYD_PID_FILE": "celeryd.pid",
-    "CELERYD_DAEMON_LOG_FORMAT": DEFAULT_LOG_FMT,
-    "CELERYD_DAEMON_LOG_LEVEL": "WARN",
+    "CELERYD_LOG_FORMAT": DEFAULT_LOG_FMT,
+    "CELERYD_LOG_LEVEL": "WARN",
     "CELERYD_LOG_FILE": "celeryd.log",
-    "CELERY_ALWAYS_EAGER": False,
-    "CELERY_TASK_RESULT_EXPIRES": timedelta(days=5),
-    "CELERY_AMQP_CONNECTION_TIMEOUT": 4,
-    "CELERY_AMQP_CONNECTION_RETRY": True,
-    "CELERY_AMQP_CONNECTION_MAX_RETRIES": 100,
-    "CELERY_TASK_SERIALIZER": "pickle",
-    "CELERY_BACKEND": "database",
-    "CELERY_DISABLE_RATE_LIMITS": False,
-    "CELERYBEAT_PID_FILE": "celerybeat.pid",
-    "CELERYBEAT_LOG_LEVEL": "INFO",
-    "CELERYBEAT_LOG_FILE": "celerybeat.log",
+    "CELERYD_PID_FILE": "celeryd.pid",
     "CELERYBEAT_SCHEDULE_FILENAME": "celerybeat-schedule",
     "CELERYBEAT_MAX_LOOP_INTERVAL": 5 * 60, # five minutes.
-    "CELERYMON_PID_FILE": "celerymon.pid",
+    "CELERYBEAT_LOG_LEVEL": "INFO",
+    "CELERYBEAT_LOG_FILE": "celerybeat.log",
+    "CELERYBEAT_PID_FILE": "celerybeat.pid",
     "CELERYMON_LOG_LEVEL": "INFO",
     "CELERYMON_LOG_FILE": "celerymon.log",
-    "CELERY_SEND_EVENTS": False,
-    "CELERY_STORE_ERRORS_EVEN_IF_IGNORED": False,
+    "CELERYMON_PID_FILE": "celerymon.pid",
 }
 
-def _get(name, default=None):
+_DEPRECATION_FMT = """
+%s is deprecated in favor of %s and is schedule for removal in celery v1.2.
+""".strip()
+
+def _get(name, default=None, compat=None):
+    compat = compat or []
     if default is None:
         default = _DEFAULTS.get(name)
-    return getattr(settings, name, default)
+    compat = [name] + compat
+    for i, alias in enumerate(compat):
+        try:
+            value = getattr(settings, name)
+            i > 0 and warnings.warn(DeprecationWarning(_DEPRECATION_FMT % (
+                                                        alias, name)))
+            return value
+        except AttributeError:
+            pass
+    return default
 
 # <--- Task options                                <-   --   --- - ----- -- #
 ALWAYS_EAGER = _get("CELERY_ALWAYS_EAGER")
@@ -62,14 +76,17 @@ SEND_EVENTS = _get("CELERY_SEND_EVENTS")
 DEFAULT_RATE_LIMIT = _get("CELERY_DEFAULT_RATE_LIMIT")
 DISABLE_RATE_LIMITS = _get("CELERY_DISABLE_RATE_LIMITS")
 STORE_ERRORS_EVEN_IF_IGNORED = _get("CELERY_STORE_ERRORS_EVEN_IF_IGNORED")
-SEND_CELERY_TASK_ERROR_EMAILS = _get("SEND_CELERY_TASK_ERROR_EMAILS",
-                                     not settings.DEBUG)
-LOG_FORMAT = _get("CELERYD_DAEMON_LOG_FORMAT")
-DAEMON_LOG_FILE = _get("CELERYD_LOG_FILE")
-DAEMON_LOG_LEVEL = _get("CELERYD_DAEMON_LOG_LEVEL")
-DAEMON_LOG_LEVEL = LOG_LEVELS[DAEMON_LOG_LEVEL.upper()]
-DAEMON_PID_FILE = _get("CELERYD_PID_FILE")
-DAEMON_CONCURRENCY = _get("CELERYD_CONCURRENCY")
+CELERY_SEND_TASK_ERROR_EMAILS = _get("CELERY_SEND_TASK_ERROR_EMAILS",
+                                     not settings.DEBUG,
+                                     compat=["SEND_CELERY_TASK_ERROR_EMAILS"])
+CELERYD_LOG_FORMAT = _get("CELERYD_LOG_FORMAT",
+                          compat=["CELERYD_DAEMON_LOG_FORMAT"])
+CELERYD_LOG_FILE = _get("CELERYD_LOG_FILE")
+CELERYD_LOG_LEVEL = _get("CELERYD_LOG_LEVEL",
+                        compat=["CELERYD_DAEMON_LOG_LEVEL"])
+CELERYD_LOG_LEVEL = LOG_LEVELS[CELERYD_LOG_LEVEL.upper()]
+CELERYD_PID_FILE = _get("CELERYD_PID_FILE")
+CELERYD_CONCURRENCY = _get("CELERYD_CONCURRENCY")
 
 # <--- Message routing                             <-   --   --- - ----- -- #
 QUEUES = _get("CELERY_QUEUES")
@@ -131,9 +148,12 @@ if not QUEUES:
     QUEUES = _find_deprecated_queue_settings()
 
 # :--- Broker connections                           <-   --   --- - ----- -- #
-AMQP_CONNECTION_TIMEOUT = _get("CELERY_AMQP_CONNECTION_TIMEOUT")
-AMQP_CONNECTION_RETRY = _get("CELERY_AMQP_CONNECTION_RETRY")
-AMQP_CONNECTION_MAX_RETRIES = _get("CELERY_AMQP_CONNECTION_MAX_RETRIES")
+BROKER_CONNECTION_TIMEOUT = _get("CELERY_BROKER_CONNECTION_TIMEOUT",
+                                compat=["CELERY_AMQP_CONNECTION_TIMEOUT"])
+BROKER_CONNECTION_RETRY = _get("CELERY_BROKER_CONNECTION_RETRY",
+                                compat=["CELERY_AMQP_CONNECTION_RETRY"])
+BROKER_CONNECTION_MAX_RETRIES = _get("CELERY_BROKER_CONNECTION_MAX_RETRIES",
+                                compat=["CELERY_AMQP_CONNECTION_MAX_RETRIES"])
 
 
 # :--- Celery Beat                                  <-   --   --- - ----- -- #

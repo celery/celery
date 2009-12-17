@@ -8,10 +8,10 @@ SETTING_VARS = (
     ("CELERY_DEFAULT_ROUTING_KEY", "DEFAULT_ROUTING_KEY"),
     ("CELERY_DEFAULT_EXCHANGE_TYPE", "DEFAULT_EXCHANGE_TYPE"),
     ("CELERY_DEFAULT_EXCHANGE", "DEFAULT_EXCHANGE"),
-    ("CELERYD_CONCURRENCY", "DAEMON_CONCURRENCY"),
-    ("CELERYD_PID_FILE", "DAEMON_PID_FILE"),
-    ("CELERYD_LOG_FILE", "DAEMON_LOG_FILE"),
-    ("CELERYD_DAEMON_LOG_FORMAT", "LOG_FORMAT"),
+    ("CELERYD_CONCURRENCY", "CELERYD_CONCURRENCY"),
+    ("CELERYD_PID_FILE", "CELERYD_PID_FILE"),
+    ("CELERYD_LOG_FILE", "CELERYD_LOG_FILE"),
+    ("CELERYD_LOG_FORMAT", "CELERYD_LOG_FORMAT"),
 )
 
 
@@ -32,4 +32,4 @@ class TestConf(unittest.TestCase):
     def test_configuration_cls(self):
         for setting_name, result_var in SETTING_VARS:
             self.assertDefaultSetting(setting_name, result_var)
-        self.assertTrue(isinstance(conf.DAEMON_LOG_LEVEL, int))
+        self.assertTrue(isinstance(conf.CELERYD_LOG_LEVEL, int))

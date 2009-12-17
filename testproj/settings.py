@@ -73,4 +73,4 @@ else:
     pass
     INSTALLED_APPS += ("test_extensions", )
 
-SEND_CELERY_TASK_ERROR_EMAILS = False
+CELERY_SEND_TASK_ERROR_EMAILS = False

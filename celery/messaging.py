@@ -124,7 +124,7 @@ class BroadcastConsumer(Consumer):
     no_ack = True
 
 
-def establish_connection(connect_timeout=conf.AMQP_CONNECTION_TIMEOUT):
+def establish_connection(connect_timeout=conf.BROKER_CONNECTION_TIMEOUT):
     return DjangoBrokerConnection(connect_timeout=connect_timeout)
 
 
@@ -134,7 +134,7 @@ def with_connection(fun):
     def _inner(*args, **kwargs):
         connection = kwargs.get("connection")
         timeout = kwargs.get("connect_timeout",
-                                conf.AMQP_CONNECTION_TIMEOUT)
+                                conf.BROKER_CONNECTION_TIMEOUT)
         kwargs["connection"] = conn = connection or \
                 establish_connection(connect_timeout=timeout)
         close_connection = not connection and conn.close or noop
@@ -147,7 +147,7 @@ def with_connection(fun):
 
 
 def with_connection_inline(fun, connection=None,
-        connect_timeout=conf.AMQP_CONNECTION_TIMEOUT):
+        connect_timeout=conf.BROKER_CONNECTION_TIMEOUT):
     conn = connection or establish_connection()
     close_connection = not connection and conn.close or noop
 

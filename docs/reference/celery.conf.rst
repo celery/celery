@@ -22,12 +22,12 @@ Configuration - celery.conf
 
     Default routing key used when sending tasks.
 
-.. data:: AMQP_CONNECTION_TIMEOUT
+.. data:: BROKER_CONNECTION_TIMEOUT
 
     The timeout in seconds before we give up establishing a connection
     to the AMQP server.
 
-.. data:: SEND_CELERY_TASK_ERROR_EMAILS
+.. data:: CELERY_SEND_TASK_ERROR_EMAILS
 
     If set to ``True``, errors in tasks will be sent to admins by e-mail.
     If unset, it will send the e-mails if ``settings.DEBUG`` is False.
@@ -40,12 +40,12 @@ Configuration - celery.conf
 
     Task tombstone expire time in seconds.
 
-.. data:: AMQP_CONNECTION_RETRY
+.. data:: BROKER_CONNECTION_RETRY
 
     Automatically try to re-establish the connection to the AMQP broker if
     it's lost.
 
-.. data:: AMQP_CONNECTION_MAX_RETRIES
+.. data:: BROKER_CONNECTION_MAX_RETRIES
 
     Maximum number of retries before we give up re-establishing a connection
     to the broker.
@@ -141,19 +141,19 @@ Configuration - celery.conf
 
     The format to use for log messages.
 
-.. data:: DAEMON_LOG_FILE
+.. data:: CELERYD_LOG_FILE
 
     Filename of the daemon log file.
 
-.. data:: DAEMON_LOG_LEVEL
+.. data:: CELERYD_LOG_LEVEL
 
     Default log level for daemons. (``WARN``)
 
-.. data:: DAEMON_PID_FILE
+.. data:: CELERYD_PID_FILE
 
     Full path to the daemon pidfile.
 
-.. data:: DAEMON_CONCURRENCY
+.. data:: CELERYD_CONCURRENCY
 
     The number of concurrent worker processes.
     If set to ``0``, the total number of available CPUs/cores will be used.

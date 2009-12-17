@@ -91,7 +91,7 @@ Configuration ->
 
 OPTION_LIST = (
     optparse.make_option('-c', '--concurrency',
-            default=conf.DAEMON_CONCURRENCY,
+            default=conf.CELERYD_CONCURRENCY,
             action="store", dest="concurrency", type="int",
             help="Number of child processes processing the queue."),
     optparse.make_option('--discard', default=False,
@@ -99,13 +99,13 @@ OPTION_LIST = (
             help="Discard all waiting tasks before the server is started. "
                  "WARNING: This is unrecoverable, and the tasks will be "
                  "deleted from the messaging server."),
-    optparse.make_option('-f', '--logfile', default=conf.DAEMON_LOG_FILE,
+    optparse.make_option('-f', '--logfile', default=conf.CELERYD_LOG_FILE,
             action="store", dest="logfile",
             help="Path to log file."),
-    optparse.make_option('-l', '--loglevel', default=conf.DAEMON_LOG_LEVEL,
+    optparse.make_option('-l', '--loglevel', default=conf.CELERYD_LOG_LEVEL,
             action="store", dest="loglevel",
             help="Choose between DEBUG/INFO/WARNING/ERROR/CRITICAL/FATAL."),
-    optparse.make_option('-p', '--pidfile', default=conf.DAEMON_PID_FILE,
+    optparse.make_option('-p', '--pidfile', default=conf.CELERYD_PID_FILE,
             action="store", dest="pidfile",
             help="Path to pidfile."),
     optparse.make_option('-B', '--beat', default=False,
@@ -136,9 +136,9 @@ OPTION_LIST = (
     )
 
 
-def run_worker(concurrency=conf.DAEMON_CONCURRENCY, detach=False,
-        loglevel=conf.DAEMON_LOG_LEVEL, logfile=conf.DAEMON_LOG_FILE,
-        discard=False, pidfile=conf.DAEMON_PID_FILE, umask=0,
+def run_worker(concurrency=conf.CELERYD_CONCURRENCY, detach=False,
+        loglevel=conf.CELERYD_LOG_LEVEL, logfile=conf.CELERYD_LOG_FILE,
+        discard=False, pidfile=conf.CELERYD_PID_FILE, umask=0,
         uid=None, gid=None, working_directory=None,
         chroot=None, run_clockservice=False, events=False, **kwargs):
     """Starts the celery worker server."""
