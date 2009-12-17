@@ -100,7 +100,7 @@ class WorkController(object):
     _state = None
 
     def __init__(self, concurrency=None, logfile=None, loglevel=None,
-            send_events=conf.CELERY_SEND_EVENTS,
+            send_events=conf.SEND_EVENTS,
             is_detached=False, embed_clockservice=False):
 
         # Options

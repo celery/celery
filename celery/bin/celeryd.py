@@ -111,7 +111,7 @@ OPTION_LIST = (
             action="store_true", dest="run_clockservice",
             help="Also run the celerybeat periodic task scheduler. \
                   Please note that only one instance must be running."),
-    optparse.make_option('-E', '--events', default=conf.CELERY_SEND_EVENTS,
+    optparse.make_option('-E', '--events', default=conf.SEND_EVENTS,
             action="store_true", dest="events",
             help="Send events so celery can be monitored by e.g. celerymon."),
     optparse.make_option('-d', '--detach', '--daemon', default=False,
