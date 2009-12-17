@@ -2,7 +2,8 @@ from celery import conf
 from celery.messaging import TaskConsumer, BroadcastPublisher, with_connection
 
 
-def discard_all(connect_timeout=conf.AMQP_CONNECTION_TIMEOUT):
+@with_connection
+def discard_all(connection=None, connect_timeout=conf.AMQP_CONNECTION_TIMEOUT):
     """Discard all waiting tasks.
 
     This will ignore all tasks waiting for execution, and they will
@@ -11,17 +12,14 @@ def discard_all(connect_timeout=conf.AMQP_CONNECTION_TIMEOUT):
     :returns: the number of tasks discarded.
 
     """
-
-    def _discard(connection):
-        consumer = TaskConsumer(connection=connection)
-        try:
-            return consumer.discard_all()
-        finally:
-            consumer.close()
-
-    return with_connection(_discard, connect_timeout=connect_timeout)
+    consumer = TaskConsumer(connection=connection)
+    try:
+        return consumer.discard_all()
+    finally:
+        consumer.close()
 
 
+@with_connection
 def revoke(task_id, connection=None,
         connect_timeout=conf.AMQP_CONNECTION_TIMEOUT):
     """Revoke a task by id.
@@ -30,13 +28,8 @@ def revoke(task_id, connection=None,
     it after all.
 
     """
-
-    def _revoke(connection):
-        broadcast = BroadcastPublisher(connection)
-        try:
-            broadcast.revoke(task_id)
-        finally:
-            broadcast.close()
-
-    return with_connection(_revoke, connection=connection,
-                           connect_timeout=connect_timeout)
+    broadcast = BroadcastPublisher(connection)
+    try:
+        broadcast.revoke(task_id)
+    finally:
+        broadcast.close()

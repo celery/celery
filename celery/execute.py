@@ -10,7 +10,7 @@ from celery.conf import AMQP_CONNECTION_TIMEOUT
 from celery.utils import gen_unique_id, noop, fun_takes_kwargs
 from celery.result import AsyncResult, EagerResult
 from celery.registry import tasks
-from celery.messaging import TaskPublisher, with_connection
+from celery.messaging import TaskPublisher, with_connection_inline
 from celery.exceptions import RetryTaskError
 from celery.datastructures import ExceptionInfo
 
@@ -94,8 +94,8 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
         finally:
             publisher or publish.close()
 
-    task_id = with_connection(_delay_task, connection=connection,
-                                           connect_timeout=connect_timeout)
+    task_id = with_connection_inline(_delay_task, connection=connection,
+                                     connect_timeout=connect_timeout)
     return AsyncResult(task_id)
 
 

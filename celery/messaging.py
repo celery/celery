@@ -3,8 +3,10 @@
 Sending and Receiving Messages
 
 """
+
 from carrot.connection import DjangoBrokerConnection, AMQPConnectionException
 from carrot.messaging import Publisher, Consumer, ConsumerSet
+from billiard.utils.functional import wraps
 
 from celery import conf
 from celery import signals
@@ -109,7 +111,25 @@ def establish_connection(connect_timeout=conf.AMQP_CONNECTION_TIMEOUT):
     return DjangoBrokerConnection(connect_timeout=connect_timeout)
 
 
-def with_connection(fun, connection=None,
+def with_connection(fun):
+
+    @wraps(fun)
+    def _inner(*args, **kwargs):
+        connection = kwargs.get("connection")
+        timeout = kwargs.get("connect_timeout",
+                                conf.AMQP_CONNECTION_TIMEOUT)
+        kwargs["connection"] = conn = connection or \
+                establish_connection(connect_timeout=timeout)
+        close_connection = not connection and conn.close or noop
+
+        try:
+            return fun(*args, **kwargs)
+        finally:
+            close_connection()
+    return _inner
+
+
+def with_connection_inline(fun, connection=None,
         connect_timeout=conf.AMQP_CONNECTION_TIMEOUT):
     conn = connection or establish_connection()
     close_connection = not connection and conn.close or noop
