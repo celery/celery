@@ -11,7 +11,7 @@ from celery.backends import default_backend
 from celery.task.base import Task, TaskSet, PeriodicTask
 from celery.task.base import ExecuteRemoteTask, AsynchronousMapTask
 from celery.task.rest import RESTProxyTask
-from celery.task.control import revoke, discard_all
+from celery.task.control import discard_all
 from celery.task.builtins import DeleteExpiredTaskMetaTask, PingTask
 
 
