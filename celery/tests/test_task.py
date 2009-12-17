@@ -251,7 +251,7 @@ class TestTaskSet(unittest.TestCase):
         conf.ALWAYS_EAGER = True
         ts = task.TaskSet(return_True_task.name, [
             [[1], {}], [[2], {}], [[3], {}], [[4], {}], [[5], {}]])
-        res = ts.run()
+        res = ts.apply_async()
         self.assertEquals(res.join(), [True, True, True, True, True])
 
         conf.ALWAYS_EAGER = False
@@ -275,7 +275,7 @@ class TestTaskSet(unittest.TestCase):
 
         consumer = IncrementCounterTask().get_consumer()
         consumer.discard_all()
-        taskset_res = ts.run()
+        taskset_res = ts.apply_async()
         subtasks = taskset_res.subtasks
         taskset_id = taskset_res.taskset_id
         for subtask in subtasks:

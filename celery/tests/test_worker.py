@@ -30,7 +30,7 @@ def foo_task(x, y, z, **kwargs):
     return x * y * z
 
 
-@periodic_task_dec()
+@periodic_task_dec(run_every=60)
 def foo_periodic_task():
     return "foo"
 

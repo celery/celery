@@ -1,4 +1,5 @@
 import sys
+import warnings
 from datetime import datetime, timedelta
 from Queue import Queue
 
@@ -463,7 +464,7 @@ class TaskSet(object):
         ...                 ([], {"feed_url": "http://xkcd.com/rss"})
         ... ])
 
-        >>> taskset_result = taskset.run()
+        >>> taskset_result = taskset.apply_async()
         >>> list_of_return_values = taskset_result.join()
 
     """
@@ -484,7 +485,14 @@ class TaskSet(object):
         self.arguments = args
         self.total = len(args)
 
-    def run(self, connect_timeout=conf.AMQP_CONNECTION_TIMEOUT):
+    def run(self, *args, **kwargs):
+        """Deprecated alias to :meth:`apply_async`"""
+        warnings.warn(PendingDeprecationWarning(
+            "TaskSet.run will be deprecated in favor of TaskSet.apply_async "
+            "in celery v1.2.0"))
+        return self.apply_async(*args, **kwargs)
+
+    def apply_async(self, connect_timeout=conf.AMQP_CONNECTION_TIMEOUT):
         """Run all tasks in the taskset.
 
         :returns: A :class:`celery.result.TaskSetResult` instance.
@@ -516,7 +524,7 @@ class TaskSet(object):
         """
         from celery.conf import ALWAYS_EAGER
         if ALWAYS_EAGER:
-            return self.run_eager()
+            return self.apply()
 
         taskset_id = gen_unique_id()
 
@@ -531,7 +539,7 @@ class TaskSet(object):
             conn.close()
         return TaskSetResult(taskset_id, subtasks)
 
-    def run_eager(self):
+    def apply(self):
         taskset_id = gen_unique_id()
         subtasks = [apply(self.task, args, kwargs)
                         for args, kwargs in self.arguments]
