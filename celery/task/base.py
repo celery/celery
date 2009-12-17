@@ -208,7 +208,7 @@ class Task(object):
         """Establish a connection to the message broker."""
         return _establish_connection(connect_timeout)
 
-    def get_publisher(self, connection=None,
+    def get_publisher(self, connection=None, exchange=None,
             connect_timeout=conf.AMQP_CONNECTION_TIMEOUT):
         """Get a celery task message publisher.
 
@@ -222,9 +222,11 @@ class Task(object):
             >>> publisher.connection.close()
 
         """
+        if exchange is None:
+            exchange = self.exchange
         connection = connection or self.establish_connection(connect_timeout)
         return TaskPublisher(connection=connection,
-                             exchange=self.exchange,
+                             exchange=exchange,
                              routing_key=self.routing_key)
 
     def get_consumer(self, connection=None,
