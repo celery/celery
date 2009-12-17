@@ -15,7 +15,7 @@ from celery import platform
 from celery.log import get_default_logger
 from celery.utils import noop, fun_takes_kwargs
 from celery.loaders import current_loader
-from celery.execute import TaskTrace
+from celery.execute.trace import TaskTrace
 from celery.registry import tasks
 from celery.datastructures import ExceptionInfo
 
@@ -75,56 +75,46 @@ class WorkerTaskTrace(TaskTrace):
         self._store_errors = True
         if self.task.ignore_result:
             self._store_errors = conf.STORE_ERRORS_EVEN_IF_IGNORED
+        self.super = super(WorkerTaskTrace, self)
 
     def execute_safe(self, *args, **kwargs):
+        """Same as :meth:`execute`, but catches errors."""
         try:
             return self.execute(*args, **kwargs)
         except Exception, exc:
-            type_, value_, tb = sys.exc_info()
-            exc = self.task.backend.prepare_exception(exc)
-            warnings.warn("Exception happend outside of task body: %s: %s" % (
-                str(exc.__class__), str(exc)))
-            return ExceptionInfo((type_, exc, tb))
+            exc_info = sys.exc_info()
+            exc_info[1] = self.task_backend.prepare_exception(exc)
+            exc_info = ExceptionInfo(exc_info)
+            warnings.warn("Exception outside body: %s: %s\n%s" % tuple(
+                map(str, (exc.__class__, exc, exc_info.traceback))))
+            return exc_info
 
     def execute(self):
-        # Run task loader init handler.
+        """Execute, trace and store the result of the task."""
         self.loader.on_task_init(self.task_id, self.task)
-
-        # Backend process cleanup
         self.task.backend.process_cleanup()
-
         return self._trace()
 
     def handle_success(self, retval, *args):
-        """Handle successful execution.
-
-        Saves the result to the current result store (skipped if the task's
-            ``ignore_result`` attribute is set to ``True``).
-
-        """
+        """Handle successful execution."""
         if not self.task.ignore_result:
             self.task.backend.mark_as_done(self.task_id, retval)
-        return super(WorkerTaskTrace, self).handle_success(retval, *args)
+        return self.super.handle_success(retval, *args)
 
     def handle_retry(self, exc, type_, tb, strtb):
         """Handle retry exception."""
         message, orig_exc = exc.args
         if self._store_errors:
             self.task.backend.mark_as_retry(self.task_id, orig_exc, strtb)
-        return super(WorkerTaskTrace, self).handle_retry(exc, type_,
-                                                         tb, strtb)
+        return self.super.handle_retry(exc, type_, tb, strtb)
 
     def handle_failure(self, exc, type_, tb, strtb):
         """Handle exception."""
         if self._store_errors:
-            # mark_as_failure returns an exception that is guaranteed to
-            # be pickleable.
             exc = self.task.backend.mark_as_failure(self.task_id, exc, strtb)
         else:
             exc = self.task.backend.prepare_exception(exc)
-
-        return super(WorkerTaskTrace, self).handle_failure(
-                exc, type_, tb, strtb)
+        return self.super.handle_failure(exc, type_, tb, strtb)
 
 
 def execute_and_trace(task_name, *args, **kwargs):
