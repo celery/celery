@@ -71,6 +71,7 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
         return apply(task, args, kwargs)
 
     task = tasks[task.name] # Get instance.
+    exchange = options.get("exchange")
     options = dict(extract_exec_options(task), **options)
 
     if countdown: # Convert countdown to ETA.
