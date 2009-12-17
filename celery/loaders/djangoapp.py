@@ -45,5 +45,6 @@ class Loader(BaseLoader):
         ``INSTALLED_APPS``.
 
         """
+        self.import_default_modules()
         from celery.discovery import autodiscover
         autodiscover()

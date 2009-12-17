@@ -53,6 +53,4 @@ class Loader(BaseLoader):
         setting in ``celeryconf.py``.
 
         """
-        imports = getattr(self.conf, "CELERY_IMPORTS", [])
-        for module in imports:
-            __import__(module, [], [], [''])
+        self.import_default_modules()
