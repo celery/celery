@@ -91,12 +91,10 @@ class BroadcastPublisher(Publisher):
     exchange_type = "fanout"
     routing_key = ""
 
-    def revoke(self, task_id):
-        self.send("revoke", dict(task_id=task_id))
-
-    def send(self, type, data):
-        data["command"] = type
-        super(BroadcastPublisher, self).send({"control": data})
+    def send(self, type, arguments, destination=None):
+        arguments["command"] = type
+        arguments["destination"] = destination
+        super(BroadcastPublisher, self).send({"control": arguments})
 
 
 class BroadcastConsumer(Consumer):

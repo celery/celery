@@ -51,6 +51,11 @@ class Control(object):
             self.logger.warn("New rate limit for tasks of type %s: %s." % (
                                 task_name, rate_limit))
 
+    @expose
+    def shutdown(self, **kwargs):
+        self.logger.critical("Got shutdown from remote.")
+        raise SystemExit
+
 
 class ControlDispatch(object):
     """Execute worker control panel commands."""
@@ -76,7 +81,7 @@ class ControlDispatch(object):
         message = dict(message) # don't modify callers message.
         command = message.pop("command")
         destination = message.pop("destination", None)
-        if not destination or destination == self.hostname:
+        if not destination or self.hostname in destination:
             return self.execute(command, message)
 
     def execute(self, command, kwargs):
