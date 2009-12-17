@@ -2,29 +2,25 @@
 Configuration - celery.conf
 ============================
 
-.. data:: AMQP_EXCHANGE
+.. data:: QUEUES
 
-    Name of the AMQP exchange.
+    Queue name/options mapping.
 
-.. data:: AMQP_EXCHANGE_TYPE
+.. data:: DEFAULT_QUEUE
 
-    The exchange type.
+    Name of the default queue.
 
-.. data:: AMQP_PUBLISHER_ROUTING_KEY
+.. data:: DEFAULT_EXCHANGE
 
-    The default AMQP routing key used when publishing tasks.
+    Default exchange.
 
-.. data:: AMQP_CONSUMER_ROUTING_KEY
+.. data:: DEFAULT_EXCHANGE_TYPE
 
-    The AMQP routing key used when consuming tasks.
+    Default exchange type.
 
-.. data:: AMQP_CONSUMER_QUEUE
+.. data:: DEFAULT_ROUTING_KEY
 
-    The name of the AMQP queue.
-
-.. data:: AMQP_CONSUMER_QUEUES
-
-    Dictionary defining multiple AMQP queues.
+    Default routing key used when sending tasks.
 
 .. data:: AMQP_CONNECTION_TIMEOUT
 

@@ -63,9 +63,8 @@ from celery.messaging import get_connection_info
 STARTUP_INFO_FMT = """
 Configuration ->
     . broker -> %(conninfo)s
-    . exchange -> %(exchange)s (%(exchange_type)s)
-    . consumer -> queue:%(consumer_queue)s binding:%(consumer_rkey)s
     . schedule -> %(schedule)s
+    . sys -> %(logfile)s@%(loglevel)s %(pidfile)s
 """.strip()
 
 OPTION_LIST = (
@@ -124,15 +123,14 @@ def run_clockservice(detach=False, loglevel=conf.CELERYBEAT_LOG_LEVEL,
     # Dump configuration to screen so we have some basic information
     # when users sends e-mails.
 
+    from celery.messaging import format_routing_table
+
+
     print(STARTUP_INFO_FMT % {
             "conninfo": get_connection_info(),
-            "exchange": conf.AMQP_EXCHANGE,
-            "exchange_type": conf.AMQP_EXCHANGE_TYPE,
-            "consumer_queue": conf.AMQP_CONSUMER_QUEUE,
-            "consumer_rkey": conf.AMQP_CONSUMER_ROUTING_KEY,
-            "publisher_rkey": conf.AMQP_PUBLISHER_ROUTING_KEY,
-            "loglevel": loglevel,
-            "pidfile": pidfile,
+            "logfile": logfile or "@stderr",
+            "loglevel": conf.LOG_LEVELS[loglevel],
+            "pidfile": detach and pidfile or "",
             "schedule": schedule,
     })
 

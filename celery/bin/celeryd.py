@@ -76,14 +76,15 @@ from celery.utils import noop
 from celery.worker import WorkController
 from celery.loaders import current_loader, settings
 from celery.loaders import settings
-from celery.messaging import get_connection_info
+from celery.messaging import get_connection_info, format_routing_table
 
 STARTUP_INFO_FMT = """
 Configuration ->
     . broker -> %(conninfo)s
-    . exchange -> %(exchange)s (%(exchange_type)s)
-    . consumer -> queue:%(consumer_queue)s binding:%(consumer_rkey)s
+    . queues ->
+%(queues)s
     . concurrency -> %(concurrency)s
+    . sys -> %(logfile)s@%(loglevel)s %(pidfile)s
     . events -> %(events)s
     . beat -> %(celerybeat)s
 """.strip()
@@ -173,14 +174,11 @@ def run_worker(concurrency=conf.DAEMON_CONCURRENCY, detach=False,
 
     print(STARTUP_INFO_FMT % {
             "conninfo": get_connection_info(),
-            "exchange": conf.AMQP_EXCHANGE,
-            "exchange_type": conf.AMQP_EXCHANGE_TYPE,
-            "consumer_queue": conf.AMQP_CONSUMER_QUEUE,
-            "consumer_rkey": conf.AMQP_CONSUMER_ROUTING_KEY,
-            "publisher_rkey": conf.AMQP_PUBLISHER_ROUTING_KEY,
+            "queues": format_routing_table(indent=8),
             "concurrency": concurrency,
-            "loglevel": loglevel,
-            "pidfile": pidfile,
+            "loglevel": conf.LOG_LEVELS[loglevel],
+            "logfile": logfile or "@stderr",
+            "pidfile": detach and pidfile or "",
             "celerybeat": run_clockservice and "ON" or "OFF",
             "events": events and "ON" or "OFF",
     })

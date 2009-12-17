@@ -6,22 +6,15 @@ from celery.loaders import settings
 
 DEFAULT_LOG_FMT = '[%(asctime)s: %(levelname)s/%(processName)s] %(message)s'
 
-LOG_LEVELS = {
-    "DEBUG": logging.DEBUG,
-    "INFO": logging.INFO,
-    "WARNING": logging.WARNING,
-    "WARN": logging.WARNING,
-    "ERROR": logging.ERROR,
-    "CRITICAL": logging.CRITICAL,
-    "FATAL": logging.FATAL,
-}
+LOG_LEVELS = dict(logging._levelNames)
+LOG_LEVELS["FATAL"] = logging.FATAL
+LOG_LEVELS[logging.FATAL] = "FATAL"
 
 _DEFAULTS = {
-    "CELERY_AMQP_EXCHANGE": "celery",
-    "CELERY_AMQP_PUBLISHER_ROUTING_KEY": "celery",
-    "CELERY_AMQP_CONSUMER_ROUTING_KEY": "celery",
-    "CELERY_AMQP_CONSUMER_QUEUE": "celery",
-    "CELERY_AMQP_EXCHANGE_TYPE": "direct",
+    "CELERY_DEFAULT_ROUTING_KEY": "celery",
+    "CELERY_DEFAULT_QUEUE": "celery",
+    "CELERY_DEFAULT_EXCHANGE": "celery",
+    "CELERY_DEFAULT_EXCHANGE_TYPE": "direct",
     "CELERYD_CONCURRENCY": 0, # defaults to cpu count
     "CELERYD_PID_FILE": "celeryd.pid",
     "CELERYD_DAEMON_LOG_FORMAT": DEFAULT_LOG_FMT,
@@ -67,20 +60,16 @@ if isinstance(TASK_RESULT_EXPIRES, int):
 SEND_CELERY_TASK_ERROR_EMAILS = _get("SEND_CELERY_TASK_ERROR_EMAILS",
                                      not settings.DEBUG)
 
-AMQP_EXCHANGE = _get("CELERY_AMQP_EXCHANGE")
-AMQP_EXCHANGE_TYPE = _get("CELERY_AMQP_EXCHANGE_TYPE")
-AMQP_PUBLISHER_ROUTING_KEY = _get("CELERY_AMQP_PUBLISHER_ROUTING_KEY")
-AMQP_CONSUMER_ROUTING_KEY = _get("CELERY_AMQP_CONSUMER_ROUTING_KEY")
-AMQP_CONSUMER_QUEUE = _get("CELERY_AMQP_CONSUMER_QUEUE")
-DEFAULT_AMQP_CONSUMER_QUEUES = {
-        AMQP_CONSUMER_QUEUE: {
-            "exchange": AMQP_EXCHANGE,
-            "routing_key": AMQP_CONSUMER_ROUTING_KEY,
-            "exchange_type": AMQP_EXCHANGE_TYPE,
-        }
-}
-AMQP_CONSUMER_QUEUES = _get("CELERY_AMQP_CONSUMER_QUEUES",
-                            DEFAULT_AMQP_CONSUMER_QUEUES)
+DEFAULT_ROUTING_KEY = _get("CELERY_DEFAULT_ROUTING_KEY")
+DEFAULT_QUEUE = _get("CELERY_DEFAULT_QUEUE")
+DEFAULT_EXCHANGE = _get("CELERY_DEFAULT_EXCHANGE")
+DEFAULT_EXCHANGE_TYPE = _get("CELERY_DEFAULT_EXCHANGE_TYPE")
+
+QUEUES = _get("CELERY_QUEUES", {DEFAULT_QUEUE: {
+                                    "exchange": DEFAULT_EXCHANGE,
+                                    "exchange_type": DEFAULT_EXCHANGE_TYPE,
+                                    "binding_key": DEFAULT_ROUTING_KEY}})
+
 AMQP_CONNECTION_TIMEOUT = _get("CELERY_AMQP_CONNECTION_TIMEOUT")
 AMQP_CONNECTION_RETRY = _get("CELERY_AMQP_CONNECTION_RETRY")
 AMQP_CONNECTION_MAX_RETRIES = _get("CELERY_AMQP_CONNECTION_MAX_RETRIES")

@@ -10,22 +10,40 @@ from billiard.utils.functional import wraps
 
 from celery import conf
 from celery import signals
-from celery.utils import gen_unique_id, mitemgetter, noop
+from celery.utils import gen_unique_id, mitemgetter, noop, textindent
+
+ROUTE_INFO_FORMAT = """
+. %(name)s -> exchange:%(exchange)s (%(exchange_type)s) \
+binding:%(binding_key)s
+"""
+
 
 MSG_OPTIONS = ("mandatory", "priority",
                "immediate", "routing_key",
                "serializer")
 
 get_msg_options = mitemgetter(*MSG_OPTIONS)
-
 extract_msg_options = lambda d: dict(zip(MSG_OPTIONS, get_msg_options(d)))
+
+
+def routing_table():
+
+    def _defaults(opts):
+        opts.setdefault("exchange", conf.DEFAULT_EXCHANGE),
+        opts.setdefault("exchange_type", conf.DEFAULT_EXCHANGE_TYPE)
+        opts.setdefault("binding_key", "")
+        return opts
+
+    return dict((queue, _defaults(opts))
+                    for queue, opts in conf.QUEUES.items())
+_default_queue = routing_table()[conf.DEFAULT_QUEUE]
 
 
 class TaskPublisher(Publisher):
     """The AMQP Task Publisher class."""
-    exchange = conf.AMQP_EXCHANGE
-    exchange_type = conf.AMQP_EXCHANGE_TYPE
-    routing_key = conf.AMQP_PUBLISHER_ROUTING_KEY
+    exchange = _default_queue["exchange"]
+    exchange_type = _default_queue["exchange_type"]
+    routing_key = conf.DEFAULT_ROUTING_KEY
     serializer = conf.TASK_SERIALIZER
 
     def delay_task(self, task_name, task_args, task_kwargs, **kwargs):
@@ -59,16 +77,17 @@ class TaskPublisher(Publisher):
         return task_id
 
 
-def get_consumer_set(connection, queues=conf.AMQP_CONSUMER_QUEUES, **options):
+def get_consumer_set(connection, queues=None, **options):
+    queues = queues or routing_table()
     return ConsumerSet(connection, from_dict=queues, **options)
 
 
 class TaskConsumer(Consumer):
     """The AMQP Task Consumer class."""
-    queue = conf.AMQP_CONSUMER_QUEUE
-    exchange = conf.AMQP_EXCHANGE
-    routing_key = conf.AMQP_CONSUMER_ROUTING_KEY
-    exchange_type = conf.AMQP_EXCHANGE_TYPE
+    queue = conf.DEFAULT_QUEUE
+    exchange = _default_queue["exchange"]
+    routing_key = _default_queue["binding_key"]
+    exchange_type = _default_queue["exchange_type"]
     auto_ack = False
     no_ack = False
 
@@ -155,3 +174,11 @@ def get_connection_info():
                 "host": broker_connection.hostname,
                 "port": port,
                 "vhost": vhost}
+
+
+def format_routing_table(table=None, indent=0):
+    table = table or routing_table()
+    format = lambda **route: ROUTE_INFO_FORMAT.strip() % route
+    routes = "\n".join(format(name=name, **route)
+                            for name, route in table.items())
+    return textindent(routes, indent=indent)

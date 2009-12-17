@@ -30,14 +30,15 @@ it should contain all you need to run a basic celery set-up.
     BROKER_USER = "guest"
     BROKER_PASSWORD = "guest"
 
-    ## If you're doing mostly I/O you can have higher concurrency,
-    ## if mostly spending time in the CPU, try to keep it close to the
-    ## number of CPUs on your machine.
+    ## If you're doing mostly I/O you can have more processes,
+    ## but if mostly spending CPU, try to keep it close to the
+    ## number of CPUs on your machine. If not set, the number of CPUs/cores
+    ## available will be used.
     # CELERYD_CONCURRENCY = 8
 
-    CELERYD_LOG_FILE = "celeryd.log"
-    CELERYD_PID_FILE = "celeryd.pid"
-    CELERYD_DAEMON_LOG_LEVEL = "INFO"
+    # CELERYD_LOG_FILE = "celeryd.log"
+    # CELERYD_PID_FILE = "celeryd.pid"
+    # CELERYD_DAEMON_LOG_LEVEL = "INFO"
 
 Concurrency settings
 ====================
@@ -45,7 +46,7 @@ Concurrency settings
 * CELERYD_CONCURRENCY
     The number of concurrent worker processes, executing tasks simultaneously.
 
-    Defaults to the number of CPUs in the system.
+    Defaults to the number of CPUs/cores available.
 
 
 Task result backend settings
@@ -108,6 +109,16 @@ Example configuration
     DATABASE_PASSWORD = "mypassword"
     DATABASE_NAME = "mydatabase"
     DATABASE_HOST = "localhost"
+
+AMQP backend settings
+=====================
+
+The AMQP backend does not have any settings yet.
+
+Example configuration
+---------------------
+
+    CELERY_BACKEND = "amqp"
 
 Cache backend settings
 ======================
@@ -252,33 +263,41 @@ Example configuration
     }
 
 
-Broker settings
-===============
+Messaging settings
+==================
 
-* CELERY_AMQP_EXCHANGE
+Routing
+-------
 
-    Name of the AMQP exchange.
+* CELERY_QUEUES
+  The mapping of queues the worker consumes from. This is a dictionary
+  of queue name/options. See :doc:`userguide/routing` for more information.
 
-* CELERY_AMQP_EXCHANGE_TYPE
-    The type of exchange. If the exchange type is ``direct``, all messages
-    receives all tasks. However, if the exchange type is ``topic``, you can
-    route e.g. some tasks to one server, and others to the rest.
-    See `Exchange types and the effect of bindings`_.
+  The default is a queue/exchange/binding key of ``"celery"``, with
+  exchange type ``direct``.
 
-    .. _`Exchange types and the effect of bindings`:
-        http://bit.ly/wpamqpexchanges
+  You don't have to care about this unless you want custom routing facilities.
 
-* CELERY_AMQP_PUBLISHER_ROUTING_KEY
-    The default AMQP routing key used when publishing tasks.
+* CELERY_DEFAULT_QUEUE
+    The queue used by default, if no custom queue is specified.
+    This queue must be listed in ``CELERY_QUEUES``.
+    The default is: ``celery``.
 
-* CELERY_AMQP_CONSUMER_ROUTING_KEY
-    The AMQP routing key used when consuming tasks.
+* CELERY_DEFAULT_EXCHANGE
+    Name of the default exchange to use when no custom exchange
+    is specified.
+    The default is: ``celery``.
 
-* CELERY_AMQP_CONSUMER_QUEUE
-    The name of the AMQP queue.
+* CELERY_DEFAULT_EXCHANGE_TYPE
+    Default exchange type used when no custom exchange is specified.
+    The default is: ``direct``.
 
-* CELERY_AMQP_CONSUMER_QUEUES
-    Dictionary defining multiple AMQP queues.
+* CELERY_DEFAULT_ROUTING_KEY
+    The default routing key used when sending tasks.
+    The default is: ``celery``.
+
+Connection
+----------
 
 * CELERY_AMQP_CONNECTION_TIMEOUT
     The timeout in seconds before we give up establishing a connection
@@ -303,10 +322,6 @@ Broker settings
 
 Task execution settings
 =======================
-
-* SEND_CELERY_TASK_ERROR_EMAILS
-    If set to ``True``, errors in tasks will be sent to admins by e-mail.
-    If unset, it will send the e-mails if ``settings.DEBUG`` is False.
 
 * CELERY_ALWAYS_EAGER
     If this is ``True``, all tasks will be executed locally by blocking
@@ -334,18 +349,27 @@ Task execution settings
 
     Default is ``pickle``.
 
-* CELERY_STORE_ERRORS_EVEN_IF_IGNORED
-
-    If set, the worker stores all task errors in the result store even if
-    ``Task.ignore_result`` is on.
+Worker: celeryd
+===============
 
 * CELERY_IMPORTS
     A sequence of modules to import when the celery daemon starts.  This is
     useful to add tasks if you are not using django or cannot use task
     autodiscovery.
 
-Logging settings
-================
+* CELERY_SEND_EVENTS
+    Send events so the worker can be monitored by tools like ``celerymon``.
+
+* SEND_CELERY_TASK_ERROR_EMAILS
+    If set to ``True``, errors in tasks will be sent to admins by e-mail.
+    If unset, it will send the e-mails if ``settings.DEBUG`` is False.
+
+* CELERY_STORE_ERRORS_EVEN_IF_IGNORED
+    If set, the worker stores all task errors in the result store even if
+    ``Task.ignore_result`` is on.
+
+Logging
+-------
 
 * CELERYD_LOG_FILE
     The default filename the worker daemon logs messages to, can be
@@ -355,9 +379,13 @@ Logging settings
     when running in the background, detached as a daemon, the default
     logfile is ``celeryd.log``.
 
+    Can also be set via the ``--logfile`` argument.
+
 * CELERYD_DAEMON_LOG_LEVEL
     Worker log level, can be any of ``DEBUG``, ``INFO``, ``WARNING``,
-    ``ERROR``, ``CRITICAL``, or ``FATAL``.
+    ``ERROR``, ``CRITICAL``.
+
+    Can also be set via the ``--loglevel`` argument.
 
     See the :mod:`logging` module for more information.
 
@@ -370,9 +398,68 @@ Logging settings
     See the Python :mod:`logging` module for more information about log
     formats.
 
-Process settings
-================
+Process
+-------
 
 * CELERYD_PID_FILE
-    Full path to the daemon pid file. Default is ``celeryd.pid``.
-    Can be overridden using the ``--pidfile`` option to ``celeryd``.
+    Full path to the pid file. Default is ``celeryd.pid``.
+    Can also be set via the ``--pidfile`` argument.
+
+Periodic Task Server: celerybeat
+================================
+
+* CELERYBEAT_SCHEDULE_FILENAME
+
+    Name of the file celerybeat stores the current schedule in.
+    Can be a relative or absolute path, but be aware that the suffix ``.db``
+    will be appended to the filename.
+
+    Can also be set via the ``--schedule`` argument.
+
+* CELERYBEAT_MAX_LOOP_INTERVAL
+
+    The maximum number of seconds celerybeat can sleep between checking
+    the schedule. Default is 300 seconds (5 minutes).
+
+* CELERYBEAT_LOG_FILE
+    The default filename to log messages to, can be
+    overridden using the `--logfile`` option.
+
+    The default is to log using ``stderr`` if running in the foreground,
+    when running in the background, detached as a daemon, the default
+    logfile is ``celerybeat.log``.
+
+    Can also be set via the ``--logfile`` argument.
+
+* CELERYBEAT_LOG_LEVEL
+    Logging level. Can be any of ``DEBUG``, ``INFO``, ``WARNING``,
+    ``ERROR``, or ``CRITICAL``.
+
+    Can also be set via the ``--loglevel`` argument.
+
+    See the :mod:`logging` module for more information.
+
+* CELERYBEAT_PID_FILE
+    Full path to celerybeat's pid file. Default is ``celerybat.pid``.
+    Can also be set via the ``--pidfile`` argument.
+
+Monitor Server: celerymon
+=========================
+
+* CELERYMON_LOG_FILE
+    The default filename to log messages to, can be
+    overridden using the `--logfile`` option.
+
+    The default is to log using ``stderr`` if running in the foreground,
+    when running in the background, detached as a daemon, the default
+    logfile is ``celerymon.log``.
+
+* CELERYMON_LOG_LEVEL
+    Logging level. Can be any of ``DEBUG``, ``INFO``, ``WARNING``,
+    ``ERROR``, or ``CRITICAL``.
+
+    See the :mod:`logging` module for more information.
+
+* CELERYMON_PID_FILE
+    Full path to celerymon's pid file. Default is ``celerymon.pid``.
+    Can be overridden using the ``--pidfile`` option to ``celerymon``.

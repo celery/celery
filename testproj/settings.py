@@ -40,9 +40,11 @@ BROKER_PASSWORD = "guest"
 TT_HOST = "localhost"
 TT_PORT = 1978
 
-CELERY_AMQP_EXCHANGE = "testcelery"
-CELERY_AMQP_ROUTING_KEY = "testcelery"
-CELERY_AMQP_CONSUMER_QUEUE = "testcelery"
+CELERY_DEFAULT_EXCHANGE = "testcelery"
+CELERY_DEFAULT_ROUTING_KEY = "testcelery"
+CELERY_DEFAULT_QUEUE = "testcelery"
+
+CELERY_QUEUES = {"testcelery": {"binding_key": "testcelery"}}
 
 MANAGERS = ADMINS
 
