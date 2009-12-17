@@ -111,15 +111,14 @@ class ScheduleController(BackgroundThread):
         super(ScheduleController, self).__init__()
         self.logger = logger or log.get_default_logger()
         self._scheduler = iter(eta_schedule)
+        self.debug = log.SilenceRepeated(self.logger.debug, max_iterations=10)
 
     def on_iteration(self):
         """Wake-up scheduler"""
-        debug = log.SilenceRepeated(self.logger.debug, max_iterations=10)
         delay = self._scheduler.next()
-        debug_log = True
         if delay is None:
             delay = 1
 
-        debug("ScheduleController: Scheduler wake-up",
+        self.debug("ScheduleController: Scheduler wake-up",
               "ScheduleController: Next wake-up eta %s seconds..." % delay)
         time.sleep(delay)
