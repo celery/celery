@@ -67,6 +67,13 @@ def mitemgetter(*items):
     return lambda container: map(container.get, items)
 
 
+def mattrgetter(*attrs):
+    """Like :func:`operator.itemgetter` but returns ``None`` on missing
+    attributes instead of raising :exc:`AttributeError`."""
+    return lambda obj: dict((attr, getattr(obj, attr, None))
+                                for attr in attrs)
+
+
 def get_full_cls_name(cls):
     """With a class, get its full module and class name."""
     return ".".join([cls.__module__,

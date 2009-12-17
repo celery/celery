@@ -7,18 +7,19 @@ from billiard.utils.functional import curry
 
 from celery import conf
 from celery import signals
-from celery.utils import gen_unique_id, noop, fun_takes_kwargs
+from celery.utils import gen_unique_id, noop, fun_takes_kwargs, mattrgetter
 from celery.result import AsyncResult, EagerResult
 from celery.registry import tasks
-from celery.messaging import TaskPublisher, with_connection_inline
+from celery.messaging import TaskPublisher, with_connection
 from celery.exceptions import RetryTaskError
 from celery.datastructures import ExceptionInfo
 
-TASK_EXEC_OPTIONS = ("routing_key", "exchange",
-                     "immediate", "mandatory",
-                     "priority", "serializer")
+extract_exec_options = mattrgetter("routing_key", "exchange",
+                                   "immediate", "mandatory",
+                                   "priority", "serializer")
 
 
+@with_connection
 def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
         task_id=None, publisher=None, connection=None, connect_timeout=None,
         **options):
@@ -76,25 +77,20 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
     if conf.ALWAYS_EAGER:
         return apply(task, args, kwargs)
 
-    for option_name in TASK_EXEC_OPTIONS:
-        if option_name not in options:
-            options[option_name] = getattr(task, option_name, None)
+    options = dict(extract_exec_options(task), **options)
 
     if countdown: # Convert countdown to ETA.
         eta = datetime.now() + timedelta(seconds=countdown)
 
-    def _delay_task(connection):
-        publish = publisher or TaskPublisher(connection)
-        try:
-            return publish.delay_task(task.name, args or [], kwargs or {},
-                                      task_id=task_id,
-                                      eta=eta,
-                                      **options)
-        finally:
-            publisher or publish.close()
+    publish = publisher or TaskPublisher(connection)
+    try:
+        task_id = publish.delay_task(task.name, args or [], kwargs or {},
+                                     task_id=task_id,
+                                     eta=eta,
+                                     **options)
+    finally:
+        publisher or publish.close()
 
-    task_id = with_connection_inline(_delay_task, connection=connection,
-                                     connect_timeout=connect_timeout)
     return AsyncResult(task_id)
 
 
