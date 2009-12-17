@@ -76,7 +76,7 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
     if countdown: # Convert countdown to ETA.
         eta = datetime.now() + timedelta(seconds=countdown)
 
-    publish = publisher or task.get_publisher(connection)
+    publish = publisher or task.get_publisher(connection, exchange=exchange)
     try:
         task_id = publish.delay_task(task.name, args or [], kwargs or {},
                                      task_id=task_id,
