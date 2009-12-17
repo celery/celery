@@ -517,8 +517,7 @@ class TaskSet(object):
             [True, True]
 
         """
-        from celery.conf import ALWAYS_EAGER
-        if ALWAYS_EAGER:
+        if conf.ALWAYS_EAGER:
             return self.apply()
 
         taskset_id = gen_unique_id()

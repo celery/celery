@@ -5,8 +5,8 @@ from datetime import datetime, timedelta
 
 from billiard.utils.functional import curry
 
+from celery import conf
 from celery import signals
-from celery.conf import AMQP_CONNECTION_TIMEOUT
 from celery.utils import gen_unique_id, noop, fun_takes_kwargs
 from celery.result import AsyncResult, EagerResult
 from celery.registry import tasks
@@ -73,8 +73,7 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
     replaced by a local :func:`apply` call instead.
 
     """
-    from celery.conf import ALWAYS_EAGER
-    if ALWAYS_EAGER:
+    if conf.ALWAYS_EAGER:
         return apply(task, args, kwargs)
 
     for option_name in TASK_EXEC_OPTIONS:
