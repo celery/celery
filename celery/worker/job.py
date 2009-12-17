@@ -17,7 +17,6 @@ from celery.utils import noop, fun_takes_kwargs
 from celery.loaders import current_loader
 from celery.execute import TaskTrace
 from celery.registry import tasks
-from celery.exceptions import NotRegistered
 from celery.datastructures import ExceptionInfo
 
 # pep8.py borks on a inline signature separator and
@@ -200,8 +199,6 @@ class TaskWrapper(object):
             setattr(self, opt, opts.get(opt, getattr(self, opt, None)))
         if not self.logger:
             self.logger = get_default_logger()
-        if self.task_name not in tasks:
-            raise NotRegistered(self.task_name)
         self.task = tasks[self.task_name]
 
     def __repr__(self):

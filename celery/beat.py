@@ -10,7 +10,6 @@ from celery import log
 from celery import conf
 from celery import registry
 from celery.log import setup_logger
-from celery.exceptions import NotRegistered
 
 TIME_UNITS = (("day", 60 * 60 * 24, lambda n: int(math.ceil(n))),
               ("hour", 60 * 60, lambda n: int(math.ceil(n))),
@@ -107,10 +106,7 @@ class Scheduler(UserDict):
         return min(remaining_times + [self.max_interval])
 
     def get_task(self, name):
-        try:
-            return self.registry[name]
-        except KeyError:
-            raise NotRegistered(name)
+        return self.registry[name]
 
     def is_due(self, entry):
         return entry.is_due(self.get_task(entry.name))

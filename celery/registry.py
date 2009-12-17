@@ -41,10 +41,7 @@ class TaskRegistry(UserDict):
         """
         if hasattr(name, "run"):
             name = name.name
-        if name not in self.data:
-            raise self.NotRegistered(
-                    "Task with name %s is not registered." % name)
-        del self.data[name]
+        self.pop(name)
 
     def get_all(self):
         """Get all task types."""
@@ -67,6 +64,18 @@ class TaskRegistry(UserDict):
     def get_task(self, name):
         """Get task by name."""
         return self.data[name]
+
+    def __getitem__(self, key):
+        try:
+            return UserDict.__getitem__(self, key)
+        except KeyError, exc:
+            raise self.NotRegistered(exc)
+
+    def pop(self, key, *args):
+        try:
+            return UserDict.pop(self, key, *args)
+        except KeyError, exc:
+            raise self.NotRegistered(exc)
 
 """
 .. data:: tasks

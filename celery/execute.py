@@ -98,15 +98,13 @@ def delay_task(task_name, *args, **kwargs):
     """Delay a task for execution by the ``celery`` daemon.
 
     :param task_name: the name of a task registered in the task registry.
-
     :param \*args: positional arguments to pass on to the task.
-
     :param \*\*kwargs: keyword arguments to pass on to the task.
 
     :raises celery.exceptions.NotRegistered: exception if no such task
         has been registered in the task registry.
 
-    :rtype: :class:`celery.result.AsyncResult`.
+    :returns: :class:`celery.result.AsyncResult`.
 
     Example
 
@@ -117,12 +115,7 @@ def delay_task(task_name, *args, **kwargs):
         "Record was updated"
 
     """
-    if task_name not in tasks:
-        raise tasks.NotRegistered(
-                "Task with name %s not registered in the task registry." % (
-                    task_name))
-    task = tasks[task_name]
-    return apply_async(task, args, kwargs)
+    return apply_async(tasks[task_name], args, kwargs)
 
 
 def apply(task, args, kwargs, **options):
