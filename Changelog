@@ -28,6 +28,9 @@ BACKWARD INCOMPATIBLE CHANGES
   By using ``abstract`` only tasks subclassing this task will be automatically
   registered (this works like the Django ORM).
 
+  If you don't want subclasses to be registered either, you can set the
+  ``autoregister`` attribute to ``False``.
+
   Incidentally, this change also fixes the problems with automatic name
   assignment and relative imports. So you also don't have to specify a task name
   anymore if you use relative imports.
@@ -79,6 +82,33 @@ BACKWARD INCOMPATIBLE CHANGES
 * The staticstics functionality has been removed in favor of events,
   so the ``-S`` and ``--statistics`` switches has been removed.
 
+
+DEPRECATIONS
+------------
+
+* The following configuration variables has been renamed and will be
+  deprecated in v1.2:
+
+  	* CELERYD_DAEMON_LOG_FORMAT -> CELERYD_LOG_FORMAT
+  	* CELERYD_DAEMON_LOG_LEVEL -> CELERYD_LOG_LEVEL
+  	* CELERY_AMQP_CONNECTION_TIMEOUT -> CELERY_BROKER_CONNECTION_TIMEOUT
+  	* CELERY_AMQP_CONNECTION_RETRY -> CELERY_BROKER_CONNECTION_RETRY
+  	* CELERY_AMQP_CONNECTION_MAX_RETRIES -> CELERY_BROKER_CONNECTION_MAX_RETRIES
+  	* SEND_CELERY_TASK_ERROR_EMAILS -> CELERY_SEND_TASK_ERROR_EMAILS
+
+* The public api names in celery.conf has also changed to a consistent naming
+  scheme.
+
+* We now support consuming from an arbitrary number of queues, but to do this
+  we had to rename the configuration syntax. If you use any of the custom
+  AMQP routing options (queue/exchange/routing_key, etc), you should read the
+  new FAQ entry: http://bit.ly/aiWoH. The previous syntax is deprecated and
+  scheduled for removal in v1.2.
+
+* ``TaskSet.run`` has been renamed to ``TaskSet.apply_async``.
+  ``run`` is still deprecated, and is scheduled for removal in v1.2.
+
+
 NEWS
 ----
 
@@ -108,6 +138,8 @@ CHANGES
 
 * New dependencies: billiard, python-dateutil, django-picklefield
 
+* The ``uuid`` distribution is added as a dependency when running Python 2.4.
+
 * ETA no longer sends datetime objects, but uses ISO 8601 date format in a
   string for better compatibility with other platforms.
 
@@ -129,6 +161,9 @@ CHANGES
 * Now ignores permission denied errors when removing the pidfile so it's
   possible to shutdown when running as an unprivileged user.
 
+* Now also imports modules listed in CELERY_IMPORTS when running
+  with django (as documented).
+
 * ImportErrors are now properly propogated when autodiscovering tasks.
 
 * You can now use ``celery.messaging.establish_connection`` to establish a
@@ -143,10 +178,18 @@ CHANGES
 
 * The worker now supports control commands enabled through the use of a
   broadcast queue, you can remotely revoke tasks or set the rate limit for
-  a task type.
+  a task type. See :mod:`celery.task.control`.
 
 * The services now sets informative process names (as shown in ``ps``
   listings) if the :mod:`setproctitle` module is installed.
+
+* :exc:`celery.exceptions.NotRegistered` now inherits from :exc:`KeyError`,
+  and ``TaskRegistry.__getitem__``+``pop`` raises ``NotRegistered`` instead
+
+BUGS
+----
+
+* Fixed a race condition when storing task results in the database.
 
 DOCUMENTATION
 -------------
