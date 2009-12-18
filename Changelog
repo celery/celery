@@ -189,7 +189,8 @@ CHANGES
 BUGS
 ----
 
-* Fixed a race condition when storing task results in the database.
+* Fixed a race condition that could happen while storing task results in the
+  database.
 
 DOCUMENTATION
 -------------

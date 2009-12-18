@@ -81,6 +81,8 @@ name of the exchange to be the same as the queue::
 
 or in a custom queue-mapping:
 
+.. code-block:: python
+
     CELERY_QUEUES = {
         "tasks": {"exchange": "tasks"},
         "feeds": {"exchange": "feeds"},
