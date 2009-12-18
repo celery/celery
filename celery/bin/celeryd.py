@@ -63,9 +63,11 @@
 """
 import os
 import sys
-import multiprocessing
-import traceback
+import logging
+import textwrap
 import optparse
+import traceback
+import multiprocessing
 
 from celery import conf
 from celery import platform
@@ -87,7 +89,10 @@ Configuration ->
     . sys -> %(logfile)s@%(loglevel)s %(pidfile)s
     . events -> %(events)s
     . beat -> %(celerybeat)s
+%(tasks)s
 """.strip()
+
+TASK_LIST_FMT = """    . tasks ->\n%s"""
 
 OPTION_LIST = (
     optparse.make_option('-c', '--concurrency',
@@ -172,6 +177,13 @@ def run_worker(concurrency=conf.CELERYD_CONCURRENCY, detach=False,
     # Dump configuration to screen so we have some basic information
     # when users sends e-mails.
 
+    tasklist = ""
+    if loglevel >= logging.INFO:
+        from celery.registry import tasks
+        tasklist = TASK_LIST_FMT % "\n".join("        . %s" % (task)
+                                        for task in sorted(tasks.keys()))
+
+
     print(STARTUP_INFO_FMT % {
             "conninfo": get_connection_info(),
             "queues": format_routing_table(indent=8),
@@ -181,6 +193,7 @@ def run_worker(concurrency=conf.CELERYD_CONCURRENCY, detach=False,
             "pidfile": detach and pidfile or "",
             "celerybeat": run_clockservice and "ON" or "OFF",
             "events": events and "ON" or "OFF",
+            "tasks": tasklist,
     })
 
     print("Celery has started.")
