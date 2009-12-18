@@ -136,6 +136,7 @@ def _find_deprecated_queue_settings():
                             "exchange_type": DEFAULT_EXCHANGE_TYPE,
                             "binding_key": binding_key}}
 
+
 def _warn_if_deprecated_queue_settings():
     for setting, new_setting in _DEPRECATIONS.items():
         if _get(setting):

@@ -11,7 +11,7 @@ class TaskManager(models.Manager):
 
     def get_task(self, task_id, exception_retry_count=1):
         """Get task meta for task by ``task_id``.
-        
+
         :keyword exception_retry_count: How many times to retry with
             transaction rollback on exception. 1 by default: we assume
             the pessimistic case when we get race condition in which
@@ -81,6 +81,7 @@ class TaskManager(models.Manager):
             # until we rollback transaction
             if exception_retry_count > 0:
                 transaction.rollback_unless_managed()
-                self.store_result(task_id, result, status, traceback, exception_retry_count-1)
+                self.store_result(task_id, result, status, traceback,
+                                  exception_retry_count - 1)
             else:
                 raise

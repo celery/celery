@@ -30,8 +30,8 @@ def revoke(task_id, destination=None, connection=None,
     :param task_id: Id of the task to revoke.
     :keyword destination: If set, a list of the hosts to send the command to,
         when empty broadcast to all workers.
-    :keyword connection: Custom broker connection to use, if not set, a connection
-        will be established automatically.
+    :keyword connection: Custom broker connection to use, if not set,
+        a connection will be established automatically.
     :keyword connect_timeout: Timeout for new connection if a custom
         connection is not provided.
 
@@ -50,8 +50,8 @@ def rate_limit(task_name, rate_limit, destination=None, connection=None,
       for more information).
     :keyword destination: If set, a list of the hosts to send the command to,
         when empty broadcast to all workers.
-    :keyword connection: Custom broker connection to use, if not set, a connection
-        will be established automatically.
+    :keyword connection: Custom broker connection to use, if not set,
+        a connection will be established automatically.
     :keyword connect_timeout: Timeout for new connection if a custom
         connection is not provided.
 
@@ -59,6 +59,7 @@ def rate_limit(task_name, rate_limit, destination=None, connection=None,
     return broadcast("rate_limit", destination=destination,
                                    arguments={"task_name": task_name,
                                               "rate_limit": rate_limit})
+
 
 @with_connection
 def broadcast(command, arguments=None, destination=None, connection=None,
@@ -69,8 +70,8 @@ def broadcast(command, arguments=None, destination=None, connection=None,
     :param arguments: Keyword arguments for the command.
     :keyword destination: If set, a list of the hosts to send the command to,
         when empty broadcast to all workers.
-    :keyword connection: Custom broker connection to use, if not set, a connection
-        will be established automatically.
+    :keyword connection: Custom broker connection to use, if not set,
+        a connection will be established automatically.
     :keyword connect_timeout: Timeout for new connection if a custom
         connection is not provided.
 
