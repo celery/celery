@@ -162,12 +162,22 @@ configuration values.</p>
 <div class="section" id="important-notes">
 <h3>Important notes<a class="headerlink" href="#important-notes" title="Permalink to this headline">¶</a></h3>
 <p>These message queues does not have the concept of exchanges and routing keys,
-there&#8217;s only the queue entity. As a result of this you need to set the name of
-the exchange to be the same as the queue:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_AMQP_CONSUMER_QUEUE</span> <span class="o">=</span> <span class="s">&quot;tasks&quot;</span>
-<span class="n">CELERY_AMQP_EXCHANGE</span> <span class="o">=</span> <span class="s">&quot;tasks&quot;</span>
+there&#8217;s only the queue entity. As a result of this you need to set the
+name of the exchange to be the same as the queue:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_DEFAULT_EXCHANGE</span> <span class="o">=</span> <span class="s">&quot;tasks&quot;</span>
 </pre></div>
 </div>
+<p>or in a custom queue-mapping:</p>
+<blockquote>
+<dl class="docutils">
+<dt>CELERY_QUEUES = {</dt>
+<dd>&#8220;tasks&#8221;: {&#8220;exchange&#8221;: &#8220;tasks&#8221;},
+&#8220;feeds&#8221;: {&#8220;exchange&#8221;: &#8220;feeds&#8221;},</dd>
+</dl>
+<p>}</p>
+</blockquote>
+<p>This isn&#8217;t a problem if you use the default queue setting, as the default is
+already using the same name for queue/exchange.</p>
 </div>
 </div>
 </div>

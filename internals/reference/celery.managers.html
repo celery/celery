@@ -108,8 +108,20 @@
 
 <dl class="method">
 <dt id="celery.managers.TaskManager.get_task">
-<tt class="descname">get_task</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.managers.TaskManager.get_task" title="Permalink to this definition">¶</a></dt>
-<dd>Get task meta for task by <tt class="docutils literal"><span class="pre">task_id</span></tt>.</dd></dl>
+<tt class="descname">get_task</tt><big>(</big><em>task_id</em>, <em>exception_retry_count=1</em><big>)</big><a class="headerlink" href="#celery.managers.TaskManager.get_task" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get task meta for task by <tt class="docutils literal"><span class="pre">task_id</span></tt>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>exception_retry_count</em> &#8211; How many times to retry with
+transaction rollback on exception. 1 by default: we assume
+the pessimistic case when we get race condition in which
+task is created by other process during get_or_create</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.managers.TaskManager.is_successful">
@@ -118,7 +130,7 @@
 
 <dl class="method">
 <dt id="celery.managers.TaskManager.store_result">
-<tt class="descname">store_result</tt><big>(</big><em>task_id</em>, <em>result</em>, <em>status</em>, <em>traceback=None</em>, <em>exception_retry=True</em><big>)</big><a class="headerlink" href="#celery.managers.TaskManager.store_result" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">store_result</tt><big>(</big><em>task_id</em>, <em>result</em>, <em>status</em>, <em>traceback=None</em>, <em>exception_retry_count=2</em><big>)</big><a class="headerlink" href="#celery.managers.TaskManager.store_result" title="Permalink to this definition">¶</a></dt>
 <dd><p>Store the result and status of a task.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -133,8 +145,12 @@ instance raised by the task.</li>
 possible status values.</li>
 <li><em>traceback</em> &#8211; The traceback at the point of exception (if the
 task failed).</li>
-<li><em>exception_retry</em> &#8211; If True, we try a single retry with
-transaction rollback on exception</li>
+<li><em>exception_retry_count</em> &#8211; How many times to retry with
+transaction rollback on exception. 2 by default: we assume
+the pessimistic case when task execution by itself could
+leave broken transaction, and during second try we get
+race condition in which task is created by other process
+during get_or_create</li>
 </ul>
 </td>
 </tr>

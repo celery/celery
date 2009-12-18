@@ -306,8 +306,12 @@ the one with the most capabilities won).</p>
 
 <span class="c"># The queue name to use (both queue and exchange must be set to the</span>
 <span class="c"># same queue name when using STOMP)</span>
-<span class="n">CELERY_AMQP_CONSUMER_QUEUE</span> <span class="o">=</span> <span class="s">&quot;/queue/celery&quot;</span>
-<span class="n">CELERY_AMQP_EXCHANGE</span> <span class="o">=</span> <span class="s">&quot;/queue/celery&quot;</span>
+<span class="n">CELERY_DEFAULT_QUEUE</span> <span class="o">=</span> <span class="s">&quot;/queue/celery&quot;</span>
+<span class="n">CELERY_DEFAULT_EXCHANGE</span> <span class="o">=</span> <span class="s">&quot;/queue/celery&quot;</span>
+
+<span class="n">CELERY_QUEUES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&quot;/queue/celery&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s">&quot;exchange&quot;</span><span class="p">:</span> <span class="s">&quot;/queue/celery&quot;</span><span class="p">}</span>
+<span class="p">}</span>
 </pre></div>
 </div>
 <p>Now you can go on reading the tutorial in the README, ignoring any AMQP
@@ -329,10 +333,8 @@ using the STOMP backend:</p>
 <h2>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="can-i-send-some-tasks-to-only-some-servers">
 <h3>Can I send some tasks to only some servers?<a class="headerlink" href="#can-i-send-some-tasks-to-only-some-servers" title="Permalink to this headline">¶</a></h3>
-<p><strong>Answer:</strong> As of now there is only one use-case that works like this,
-and that is tasks of type <tt class="docutils literal"><span class="pre">A</span></tt> can be sent to servers <tt class="docutils literal"><span class="pre">x</span></tt> and <tt class="docutils literal"><span class="pre">y</span></tt>,
-while tasks of type <tt class="docutils literal"><span class="pre">B</span></tt> can be sent to server <tt class="docutils literal"><span class="pre">z</span></tt>. One server can&#8217;t
-handle more than one routing_key, but this is coming in a later release.</p>
+<p><strong>Answer:</strong> Yes. You can route tasks to an arbitrary server using AMQP,
+and a worker can bind to as many queues as it wants.</p>
 <p>Say you have two servers, <tt class="docutils literal"><span class="pre">x</span></tt>, and <tt class="docutils literal"><span class="pre">y</span></tt> that handles regular tasks,
 and one server <tt class="docutils literal"><span class="pre">z</span></tt>, that only handles feed related tasks, you can use this
 configuration:</p>
@@ -340,37 +342,42 @@ configuration:</p>
 <ul class="simple">
 <li>Servers <tt class="docutils literal"><span class="pre">x</span></tt> and <tt class="docutils literal"><span class="pre">y</span></tt>: settings.py:</li>
 </ul>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">BROKER_HOST</span> <span class="o">=</span> <span class="s">&quot;rabbit&quot;</span>
-<span class="n">BROKER_PORT</span> <span class="o">=</span> <span class="mi">5678</span>
-<span class="n">BROKER_USER</span> <span class="o">=</span> <span class="s">&quot;myapp&quot;</span>
-<span class="n">BROKER_PASSWORD</span> <span class="o">=</span> <span class="s">&quot;secret&quot;</span>
-<span class="n">BROKER_VHOST</span> <span class="o">=</span> <span class="s">&quot;myapp&quot;</span>
-
-<span class="n">CELERY_AMQP_CONSUMER_QUEUE</span> <span class="o">=</span> <span class="s">&quot;regular_tasks&quot;</span>
-<span class="n">CELERY_AMQP_EXCHANGE</span> <span class="o">=</span> <span class="s">&quot;tasks&quot;</span>
-<span class="n">CELERY_AMQP_PUBLISHER_ROUTING_KEY</span> <span class="o">=</span> <span class="s">&quot;task.regular&quot;</span>
-<span class="n">CELERY_AMQP_CONSUMER_ROUTING_KEY</span> <span class="o">=</span> <span class="s">&quot;task.#&quot;</span>
-<span class="n">CELERY_AMQP_EXCHANGE_TYPE</span> <span class="o">=</span> <span class="s">&quot;topic&quot;</span>
+<div class="highlight-python"><div class="highlight"><pre>
 </pre></div>
 </div>
+<p>CELERY_DEFAULT_QUEUE = &#8220;regular_tasks&#8221;
+CELERY_QUEUES = {</p>
+<blockquote>
+<dl class="docutils">
+<dt>&#8220;regular_tasks&#8221;: {</dt>
+<dd>&#8220;binding_key&#8221;: &#8220;task.#&#8221;,</dd>
+</dl>
+<p>},</p>
+</blockquote>
+<dl class="docutils">
+<dt>}</dt>
+<dd>CELERY_DEFAULT_EXCHANGE = &#8220;tasks&#8221;
+CELERY_DEFAULT_EXCHANGE_TYPE = &#8220;topic&#8221;
+CELERY_DEFAULT_ROUTING_KEY = &#8220;task.regular&#8221;</dd>
+</dl>
 <ul class="simple">
 <li>Server <tt class="docutils literal"><span class="pre">z</span></tt>: settings.py:</li>
 </ul>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">BROKER_HOST</span> <span class="o">=</span> <span class="s">&quot;rabbit&quot;</span>
-<span class="n">BROKER_PORT</span> <span class="o">=</span> <span class="mi">5678</span>
-<span class="n">BROKER_USER</span> <span class="o">=</span> <span class="s">&quot;myapp&quot;</span>
-<span class="n">BROKER_PASSWORD</span> <span class="o">=</span> <span class="s">&quot;secret&quot;</span>
-<span class="n">BROKER_VHOST</span> <span class="o">=</span> <span class="s">&quot;myapp&quot;</span>
-
-<span class="n">CELERY_AMQP_EXCHANGE</span> <span class="o">=</span> <span class="s">&quot;tasks&quot;</span>
-<span class="n">CELERY_AMQP_PUBLISHER_ROUTING_KEY</span> <span class="o">=</span> <span class="s">&quot;task.regular&quot;</span>
-<span class="n">CELERY_AMQP_EXCHANGE_TYPE</span> <span class="o">=</span> <span class="s">&quot;topic&quot;</span>
-<span class="c"># This is the settings different for this server:</span>
-<span class="n">CELERY_AMQP_CONSUMER_QUEUE</span> <span class="o">=</span> <span class="s">&quot;feed_tasks&quot;</span>
-<span class="n">CELERY_AMQP_CONSUMER_ROUTING_KEY</span> <span class="o">=</span> <span class="s">&quot;feed.#&quot;</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_DEFAULT_QUEUE</span> <span class="o">=</span> <span class="s">&quot;feed_tasks&quot;</span>
+<span class="n">CELERY_QUEUES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&quot;feed_tasks&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">&quot;binding_key&quot;</span><span class="p">:</span> <span class="s">&quot;feed.#&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">}</span>
+<span class="n">CELERY_DEFAULT_EXCHANGE</span> <span class="o">=</span> <span class="s">&quot;tasks&quot;</span>
+<span class="n">CELERY_DEFAULT_ROUTING_KEY</span> <span class="o">=</span> <span class="s">&quot;task.regular&quot;</span>
+<span class="n">CELERY_DEFAULT_EXCHANGE_TYPE</span> <span class="o">=</span> <span class="s">&quot;topic&quot;</span>
 </pre></div>
 </div>
 </blockquote>
+<p><tt class="docutils literal"><span class="pre">CELERY_QUEUES</span></tt> is a map of queue names and their exchange/type/binding_key,
+if you don&#8217;t set exchange or exchange type, they will be taken from the
+<tt class="docutils literal"><span class="pre">CELERY_DEFAULT_EXCHANGE</span></tt>/<tt class="docutils literal"><span class="pre">CELERY_DEFAULT_EXCHANGE_TYPE</span></tt> settings.</p>
 <p>Now to make a Task run on the <tt class="docutils literal"><span class="pre">z</span></tt> server you need to set its
 <tt class="docutils literal"><span class="pre">routing_key</span></tt> attribute so it starts with the words <tt class="docutils literal"><span class="pre">&quot;task.feed.&quot;</span></tt>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">feedaggregator.models</span> <span class="kn">import</span> <span class="n">Feed</span>
@@ -386,12 +393,59 @@ configuration:</p>
 </div>
 <p>You can also override this using the <tt class="docutils literal"><span class="pre">routing_key</span></tt> argument to
 <tt class="xref docutils literal"><span class="pre">celery.task.apply_async()</span></tt>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">apply_async</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">myapp.tasks</span> <span class="kn">import</span> <span class="n">RefreshFeedTask</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">apply_async</span><span class="p">(</span><span class="n">RefreshFeedTask</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="s">&quot;http://cnn.com/rss&quot;</span><span class="p">],</span>
-<span class="gp">... </span>            <span class="n">routing_key</span><span class="o">=</span><span class="s">&quot;feed.importer&quot;</span><span class="p">)</span>
+<blockquote>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">myapp.tasks</span> <span class="kn">import</span> <span class="n">RefreshFeedTask</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">RefreshFeedTask</span><span class="o">.</span><span class="n">apply_async</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="s">&quot;http://cnn.com/rss&quot;</span><span class="p">],</span>
+<span class="gp">... </span>                            <span class="n">routing_key</span><span class="o">=</span><span class="s">&quot;feed.importer&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
+<p>If you want, you can even have your feed processing worker handle regular
+tasks as well, maybe in times when there&#8217;s a lot of work to do.
+Just add a new queue to server <tt class="docutils literal"><span class="pre">z</span></tt>&#8216;s <tt class="docutils literal"><span class="pre">CELERY_QUEUES</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_QUEUES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&quot;feed_tasks&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">&quot;binding_key&quot;</span><span class="p">:</span> <span class="s">&quot;feed.#&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="s">&quot;regular_tasks&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">&quot;binding_key&quot;</span><span class="p">:</span> <span class="s">&quot;task.#&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</blockquote>
+<p>Since the default exchange is <tt class="docutils literal"><span class="pre">tasks</span></tt>, they will both use the same
+exchange.</p>
+<p>If you have another queue but on another exchange you want to add,
+just specify a custom exchange and exchange type:</p>
+<div class="highlight-python"><div class="highlight"><pre>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>CELERY_QUEUES = {</dt>
+<dd><blockquote class="first">
+<dl class="docutils">
+<dt>&#8220;feed_tasks&#8221;: {</dt>
+<dd>&#8220;binding_key&#8221;: &#8220;feed.#&#8221;,</dd>
+</dl>
+<p>},
+&#8220;regular_tasks&#8221;: {</p>
+<blockquote>
+&#8220;binding_key&#8221;: &#8220;task.#&#8221;,</blockquote>
+<p>}
+&#8220;image_tasks&#8221;: {</p>
+<blockquote>
+&#8220;binding_key&#8221;: &#8220;image.compress&#8221;,
+&#8220;exchange&#8221;: &#8220;mediatasks&#8221;,
+&#8220;exchange_type&#8221;: &#8220;direct&#8221;,</blockquote>
+<p>},</p>
+</blockquote>
+<p class="last">}</p>
+</dd>
+</dl>
+<p>Easy? No? If you&#8217;re confused about these terms, you should read up on
+AMQP and RabbitMQ. It might be hard to grok the concepts of
+queues, exchanges and routing/binding keys at first, but it&#8217;s all very simple,
+I assure you.</p>
 </div>
 <div class="section" id="can-i-use-celery-without-django">
 <h3>Can I use celery without Django?<a class="headerlink" href="#can-i-use-celery-without-django" title="Permalink to this headline">¶</a></h3>
@@ -420,7 +474,7 @@ whatever:</p>
 <p>You need a configuration file named <tt class="docutils literal"><span class="pre">celeryconfig.py</span></tt>, either in the
 directory you run <tt class="docutils literal"><span class="pre">celeryd</span></tt> in, or in a Python library path where it is
 able to find it. The configuration file can contain any of the settings
-described in <a title="" class="reference external" href="reference/celery.conf.html#module-celery.conf"><tt class="xref docutils literal"><span class="pre">celery.conf</span></tt></a>, and in additional if you&#8217;re using the
+described in <tt class="xref docutils literal"><span class="pre">celery.conf</span></tt>, and in additional if you&#8217;re using the
 database backend you have to configure the database. Here is an example
 configuration using the database backend with MySQL:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># Broker configuration</span>

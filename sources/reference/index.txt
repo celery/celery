@@ -14,6 +14,7 @@
     celery.result
     celery.task
     celery.conf
+    celery.task.control
     celery.signals
     celery.exceptions
     celery.task.rest

@@ -100,7 +100,7 @@ world-wide state.</dd></dl>
 
 <dl class="class">
 <dt id="celery.worker.job.TaskWrapper">
-<em class="property">class </em><tt class="descclassname">celery.worker.job.</tt><tt class="descname">TaskWrapper</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>args</em>, <em>kwargs</em>, <em>on_ack=&lt;function &lt;lambda&gt; at 0x1030f50c8&gt;</em>, <em>retries=0</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskWrapper" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.worker.job.</tt><tt class="descname">TaskWrapper</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>args</em>, <em>kwargs</em>, <em>on_ack=&lt;function &lt;lambda&gt; at 0x103572320&gt;</em>, <em>retries=0</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskWrapper" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class wrapping a task to be passed around and finally
 executed inside of the worker.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -255,6 +255,16 @@ the exception instance on failure.</p>
 </tbody>
 </table>
 <dl class="method">
+<dt id="celery.worker.job.WorkerTaskTrace.execute">
+<tt class="descname">execute</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.job.WorkerTaskTrace.execute" title="Permalink to this definition">¶</a></dt>
+<dd>Execute, trace and store the result of the task.</dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.job.WorkerTaskTrace.execute_safe">
+<tt class="descname">execute_safe</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.worker.job.WorkerTaskTrace.execute_safe" title="Permalink to this definition">¶</a></dt>
+<dd>Same as <a title="celery.worker.job.WorkerTaskTrace.execute" class="reference internal" href="#celery.worker.job.WorkerTaskTrace.execute"><tt class="xref docutils literal"><span class="pre">execute()</span></tt></a>, but catches errors.</dd></dl>
+
+<dl class="method">
 <dt id="celery.worker.job.WorkerTaskTrace.handle_failure">
 <tt class="descname">handle_failure</tt><big>(</big><em>exc</em>, <em>type_</em>, <em>tb</em>, <em>strtb</em><big>)</big><a class="headerlink" href="#celery.worker.job.WorkerTaskTrace.handle_failure" title="Permalink to this definition">¶</a></dt>
 <dd>Handle exception.</dd></dl>
@@ -267,12 +277,7 @@ the exception instance on failure.</p>
 <dl class="method">
 <dt id="celery.worker.job.WorkerTaskTrace.handle_success">
 <tt class="descname">handle_success</tt><big>(</big><em>retval</em>, <em>*args</em><big>)</big><a class="headerlink" href="#celery.worker.job.WorkerTaskTrace.handle_success" title="Permalink to this definition">¶</a></dt>
-<dd><p>Handle successful execution.</p>
-<dl class="docutils">
-<dt>Saves the result to the current result store (skipped if the task&#8217;s</dt>
-<dd><tt class="docutils literal"><span class="pre">ignore_result</span></tt> attribute is set to <tt class="xref docutils literal"><span class="pre">True</span></tt>).</dd>
-</dl>
-</dd></dl>
+<dd>Handle successful execution.</dd></dl>
 
 </dd></dl>
 

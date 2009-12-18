@@ -58,6 +58,7 @@
 <li class="toctree-l2"><a class="reference external" href="celery.result.html">Task Result - celery.result</a></li>
 <li class="toctree-l2 current"><a class="current reference external" href="">Task Information and Utilities - celery.task</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.conf.html">Configuration - celery.conf</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.task.control.html">Remote Management of Workers - celery.task.control</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.signals.html">Signals - celery.signals</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.exceptions.html">Exceptions - celery.exceptions</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.task.rest.html">Remote HTTP Tasks - celery.task.rest</a></li>
@@ -118,26 +119,8 @@
 <h1>Task Information and Utilities - celery.task<a class="headerlink" href="#module-celery.task" title="Permalink to this headline">¶</a></h1>
 <p>Working with tasks and task sets.</p>
 <dl class="function">
-<dt id="celery.task.discard_all">
-<tt class="descclassname">celery.task.</tt><tt class="descname">discard_all</tt><big>(</big><em>connect_timeout=4</em><big>)</big><a class="headerlink" href="#celery.task.discard_all" title="Permalink to this definition">¶</a></dt>
-<dd><p>Discard all waiting tasks.</p>
-<p>This will ignore all tasks waiting for execution, and they will
-be deleted from the messaging server.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body">the number of tasks discarded.</td>
-</tr>
-<tr class="field"><th class="field-name">Return type:</th><td class="field-body">int</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
 <dt id="celery.task.dmap">
-<tt class="descclassname">celery.task.</tt><tt class="descname">dmap</tt><big>(</big><em>func</em>, <em>args</em>, <em>timeout=None</em><big>)</big><a class="headerlink" href="#celery.task.dmap" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.task.</tt><tt class="descname">dmap</tt><big>(</big><em>fun</em>, <em>args</em>, <em>timeout=None</em><big>)</big><a class="headerlink" href="#celery.task.dmap" title="Permalink to this definition">¶</a></dt>
 <dd><p>Distribute processing of the arguments and collect the results.</p>
 <p>Example</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">dmap</span>
@@ -150,7 +133,7 @@ be deleted from the messaging server.</p>
 
 <dl class="function">
 <dt id="celery.task.dmap_async">
-<tt class="descclassname">celery.task.</tt><tt class="descname">dmap_async</tt><big>(</big><em>func</em>, <em>args</em>, <em>timeout=None</em><big>)</big><a class="headerlink" href="#celery.task.dmap_async" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.task.</tt><tt class="descname">dmap_async</tt><big>(</big><em>fun</em>, <em>args</em>, <em>timeout=None</em><big>)</big><a class="headerlink" href="#celery.task.dmap_async" title="Permalink to this definition">¶</a></dt>
 <dd><p>Distribute processing of the arguments and collect the results
 asynchronously.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -177,14 +160,14 @@ asynchronously.</p>
 
 <dl class="function">
 <dt id="celery.task.execute_remote">
-<tt class="descclassname">celery.task.</tt><tt class="descname">execute_remote</tt><big>(</big><em>func</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.execute_remote" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.task.</tt><tt class="descname">execute_remote</tt><big>(</big><em>fun</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.execute_remote" title="Permalink to this definition">¶</a></dt>
 <dd><p>Execute arbitrary function/object remotely.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><em>func</em> &#8211; A callable function or object.</li>
+<li><em>fun</em> &#8211; A callable function or object.</li>
 <li><em>*args</em> &#8211; Positional arguments to apply to the function.</li>
 <li><em>**kwargs</em> &#8211; Keyword arguments to apply to the function.</li>
 </ul>
@@ -228,13 +211,6 @@ defined in the REPL (the objects must have an associated module).</p>
 <span class="go">&#39;pong&#39;</span>
 </pre></div>
 </div>
-</dd></dl>
-
-<dl class="function">
-<dt id="celery.task.revoke">
-<tt class="descclassname">celery.task.</tt><tt class="descname">revoke</tt><big>(</big><em>task_id</em>, <em>connection=None</em>, <em>connect_timeout=None</em><big>)</big><a class="headerlink" href="#celery.task.revoke" title="Permalink to this definition">¶</a></dt>
-<dd><p>Revoke a task by id.</p>
-<p>Revoked tasks will not be executed after all.</p>
 </dd></dl>
 
 </div>

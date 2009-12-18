@@ -27,6 +27,7 @@
     celery.backends.mongodb
     celery.backends.redis
     celery.backends.tyrant
+    celery.execute.trace
     celery.datastructures
     celery.log
     celery.utils

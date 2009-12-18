@@ -74,8 +74,17 @@ Important notes
 ---------------
 
 These message queues does not have the concept of exchanges and routing keys,
-there's only the queue entity. As a result of this you need to set the name of
-the exchange to be the same as the queue::
+there's only the queue entity. As a result of this you need to set the
+name of the exchange to be the same as the queue::
 
-    CELERY_AMQP_CONSUMER_QUEUE = "tasks"
-    CELERY_AMQP_EXCHANGE = "tasks"
+    CELERY_DEFAULT_EXCHANGE = "tasks"
+
+or in a custom queue-mapping:
+
+    CELERY_QUEUES = {
+        "tasks": {"exchange": "tasks"},
+        "feeds": {"exchange": "feeds"},
+    }
+
+This isn't a problem if you use the default queue setting, as the default is
+already using the same name for queue/exchange.

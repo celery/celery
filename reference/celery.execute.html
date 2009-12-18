@@ -58,6 +58,7 @@
 <li class="toctree-l2"><a class="reference external" href="celery.result.html">Task Result - celery.result</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.task.html">Task Information and Utilities - celery.task</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.conf.html">Configuration - celery.conf</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.task.control.html">Remote Management of Workers - celery.task.control</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.signals.html">Signals - celery.signals</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.exceptions.html">Exceptions - celery.exceptions</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.task.rest.html">Remote HTTP Tasks - celery.task.rest</a></li>
@@ -126,7 +127,7 @@
 
 <dl class="function">
 <dt id="celery.execute.apply_async">
-<tt class="descclassname">celery.execute.</tt><tt class="descname">apply_async</tt><big>(</big><em>task</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>countdown=None</em>, <em>eta=None</em>, <em>task_id=None</em>, <em>publisher=None</em>, <em>connection=None</em>, <em>connect_timeout=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.execute.apply_async" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.execute.</tt><tt class="descname">apply_async</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.execute.apply_async" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run a task asynchronously by the celery daemon(s).</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -194,7 +195,7 @@ replaced by a local <a title="celery.execute.apply" class="reference internal" h
 has been registered in the task registry.</p>
 </td>
 </tr>
-<tr class="field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a title="celery.result.AsyncResult" class="reference external" href="celery.result.html#celery.result.AsyncResult"><tt class="xref docutils literal"><span class="pre">celery.result.AsyncResult</span></tt></a>.</p>
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><a title="celery.result.AsyncResult" class="reference external" href="celery.result.html#celery.result.AsyncResult"><tt class="xref docutils literal"><span class="pre">celery.result.AsyncResult</span></tt></a>.</p>
 </td>
 </tr>
 </tbody>

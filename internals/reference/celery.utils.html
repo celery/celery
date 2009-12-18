@@ -158,9 +158,15 @@ collission.</p>
 <dd>With a class, get its full module and class name.</dd></dl>
 
 <dl class="function">
+<dt id="celery.utils.mattrgetter">
+<tt class="descclassname">celery.utils.</tt><tt class="descname">mattrgetter</tt><big>(</big><em>*attrs</em><big>)</big><a class="headerlink" href="#celery.utils.mattrgetter" title="Permalink to this definition">¶</a></dt>
+<dd>Like <tt class="xref docutils literal"><span class="pre">operator.itemgetter()</span></tt> but returns <tt class="xref docutils literal"><span class="pre">None</span></tt> on missing
+attributes instead of raising <tt class="xref docutils literal"><span class="pre">AttributeError</span></tt>.</dd></dl>
+
+<dl class="function">
 <dt id="celery.utils.mitemgetter">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">mitemgetter</tt><big>(</big><em>*keys</em><big>)</big><a class="headerlink" href="#celery.utils.mitemgetter" title="Permalink to this definition">¶</a></dt>
-<dd>Like <tt class="xref docutils literal"><span class="pre">operator.itemgetter()</span></tt> but returns <cite>None</cite> on missing keys
+<tt class="descclassname">celery.utils.</tt><tt class="descname">mitemgetter</tt><big>(</big><em>*items</em><big>)</big><a class="headerlink" href="#celery.utils.mitemgetter" title="Permalink to this definition">¶</a></dt>
+<dd>Like <tt class="xref docutils literal"><span class="pre">operator.itemgetter()</span></tt> but returns <tt class="xref docutils literal"><span class="pre">None</span></tt> on missing items
 instead of raising <tt class="xref docutils literal"><span class="pre">KeyError</span></tt>.</dd></dl>
 
 <dl class="function">
@@ -171,7 +177,7 @@ yield the last value infinitely.</dd></dl>
 
 <dl class="function">
 <dt id="celery.utils.retry_over_time">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">retry_over_time</tt><big>(</big><em>fun</em>, <em>catch</em>, <em>args=</em><span class="optional">[</span><span class="optional">]</span>, <em>kwargs={}</em>, <em>errback=&lt;function &lt;lambda&gt; at 0x1030f50c8&gt;</em>, <em>max_retries=None</em>, <em>interval_start=2</em>, <em>interval_step=2</em>, <em>interval_max=30</em><big>)</big><a class="headerlink" href="#celery.utils.retry_over_time" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.utils.</tt><tt class="descname">retry_over_time</tt><big>(</big><em>fun</em>, <em>catch</em>, <em>args=</em><span class="optional">[</span><span class="optional">]</span>, <em>kwargs={}</em>, <em>errback=&lt;function &lt;lambda&gt; at 0x103572320&gt;</em>, <em>max_retries=None</em>, <em>interval_start=2</em>, <em>interval_step=2</em>, <em>interval_max=30</em><big>)</big><a class="headerlink" href="#celery.utils.retry_over_time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retry the function over and over until max retries is exceeded.</p>
 <p>For each retry we sleep a for a while before we try again, this interval
 is increased for every retry until the max seconds is reached.</p>
@@ -202,6 +208,11 @@ retry.</li>
 </tbody>
 </table>
 </dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.textindent">
+<tt class="descclassname">celery.utils.</tt><tt class="descname">textindent</tt><big>(</big><em>t</em>, <em>indent=0</em><big>)</big><a class="headerlink" href="#celery.utils.textindent" title="Permalink to this definition">¶</a></dt>
+<dd>Indent text.</dd></dl>
 
 </div>
 
