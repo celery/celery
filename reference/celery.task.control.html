@@ -1,0 +1,231 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Remote Management of Workers - celery.task.control &mdash; Celery v0.9.2 (unstable) documentation</title>
+    <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.9.2 (unstable)',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v0.9.2 (unstable) documentation" href="../index.html" />
+    <link rel="up" title="API Reference" href="index.html" />
+    <link rel="next" title="Signals - celery.signals" href="celery.signals.html" />
+    <link rel="prev" title="Configuration - celery.conf" href="celery.conf.html" /> 
+  </head>
+  <body>
+<div id="docstitle">
+	<p>Celery v0.9.2 (unstable) documentation</p>
+</div>
+<div id="header">
+	<div id="title"><h1>Remote Management of Workers - celery.task.control</h1></div>
+	<ul id="headerButtons">
+		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
+		<li id="page_buttons">
+			<div class="headerButton"><a href="../genindex.html" title="General Index" accesskey="I">index</a></div>
+			<div class="headerButton"><a href="../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="celery.signals.html" title="Signals - celery.signals" accesskey="N">next</a></div>
+			<div class="headerButton"><a href="celery.conf.html" title="Configuration - celery.conf" accesskey="P">previous</a></div>
+		</li>
+	</ul>
+</div>
+
+<div id="sphinxsidebar">
+  <div class="sphinxsidebarwrapper">
+	<ul><li class="toctree-l1"><a href="../index.html">Main Page</a></li></ul>
+	<ul class="current">
+<li class="toctree-l1"><a class="reference external" href="../introduction.html">celery - Distributed Task Queue</a></li>
+<li class="toctree-l1"><a class="reference external" href="../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference external" href="../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference external" href="../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference external" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1 current"><a class="reference external" href="index.html">API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference external" href="celery.decorators.html">Task Decorators - celery.decorators</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.task.base.html">Defining Tasks - celery.task.base</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.execute.html">Executing Tasks - celery.execute</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.result.html">Task Result - celery.result</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.task.html">Task Information and Utilities - celery.task</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.conf.html">Configuration - celery.conf</a></li>
+<li class="toctree-l2 current"><a class="current reference external" href="">Remote Management of Workers - celery.task.control</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.signals.html">Signals - celery.signals</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.exceptions.html">Exceptions - celery.exceptions</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.task.rest.html">Remote HTTP Tasks - celery.task.rest</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.task.builtins.html">Built-in Task Classes - celery.task.builtins</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.task.strategy.html">Common Task Strategies - celery.task.strategy</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.loaders.html">Loaders - celery.loaders</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.loaders.base.html">Loader Base Classes - celery.loaders.base</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.loaders.djangoapp.html">Django Loader - celery.loaders.djangoapp</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.registry.html">Task Registry - celery.registry</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.messaging.html">Messaging - celery.messaging</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.contrib.test_runner.html">Contrib: Test runner - celery.contrib.test_runner</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.views.html">Django Views - celery.views</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.events.html">Events - celery.events</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.bin.celerybeat.html">Celery Periodic Task Server - celery.bin.celerybeat</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.bin.celeryinit.html">Celery Initialize - celery.bin.celeryinit</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="../internals/index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference external" href="../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference external" href="../links.html">Interesting Links</a></li>
+</ul>
+
+      <h3>This Page</h3>
+      <ul class="this-page-menu">
+        <li><a href="../sources/reference/celery.task.control.txt"
+               rel="nofollow">Show Source</a></li>
+      </ul>
+    <div id="searchbox" style="display: none">
+      
+        <form class="search" action="../search.html" method="get">
+			<div class="search-wrapper">
+			<span class="search-left"></span>
+			<input class="prettysearch" type="text" name="q" size="18" />
+			<span class="search-right">&nbsp;</span>
+			</div>
+          <input type="submit" value="Search" class="searchbutton" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </form>
+        <p class="searchtip" style="font-size: 90%">
+        Enter search terms or a module, class or function name.
+        </p>
+    </div>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+  </div>
+</div>
+
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-celery.task.control">
+<h1>Remote Management of Workers - celery.task.control<a class="headerlink" href="#module-celery.task.control" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="celery.task.control.broadcast">
+<tt class="descclassname">celery.task.control.</tt><tt class="descname">broadcast</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.control.broadcast" title="Permalink to this definition">¶</a></dt>
+<dd><p>Broadcast a control command to the celery workers.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><em>command</em> &#8211; Name of command to send.</li>
+<li><em>arguments</em> &#8211; Keyword arguments for the command.</li>
+<li><em>destination</em> &#8211; If set, a list of the hosts to send the command to,
+when empty broadcast to all workers.</li>
+<li><em>connection</em> &#8211; Custom broker connection to use, if not set, a connection
+will be established automatically.</li>
+<li><em>connect_timeout</em> &#8211; Timeout for new connection if a custom
+connection is not provided.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.task.control.discard_all">
+<tt class="descclassname">celery.task.control.</tt><tt class="descname">discard_all</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.control.discard_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Discard all waiting tasks.</p>
+<p>This will ignore all tasks waiting for execution, and they will
+be deleted from the messaging server.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body">the number of tasks discarded.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.task.control.rate_limit">
+<tt class="descclassname">celery.task.control.</tt><tt class="descname">rate_limit</tt><big>(</big><em>task_name</em>, <em>rate_limit</em>, <em>destination=None</em>, <em>connection=None</em>, <em>connect_timeout=4</em><big>)</big><a class="headerlink" href="#celery.task.control.rate_limit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set rate limit for task by type.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><em>task_name</em> &#8211; Type of task to change rate limit for.</li>
+<li><em>rate_limit</em> &#8211; The rate limit as tasks per second, or a rate limit
+string (<tt class="docutils literal"><span class="pre">&quot;100/m&quot;</span></tt>, etc. see <a title="celery.task.base.Task.rate_limit" class="reference external" href="celery.task.base.html#celery.task.base.Task.rate_limit"><tt class="xref docutils literal"><span class="pre">celery.task.base.Task.rate_limit</span></tt></a>
+for more information).</li>
+<li><em>destination</em> &#8211; If set, a list of the hosts to send the command to,
+when empty broadcast to all workers.</li>
+<li><em>connection</em> &#8211; Custom broker connection to use, if not set, a connection
+will be established automatically.</li>
+<li><em>connect_timeout</em> &#8211; Timeout for new connection if a custom
+connection is not provided.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.task.control.revoke">
+<tt class="descclassname">celery.task.control.</tt><tt class="descname">revoke</tt><big>(</big><em>task_id</em>, <em>destination=None</em>, <em>connection=None</em>, <em>connect_timeout=4</em><big>)</big><a class="headerlink" href="#celery.task.control.revoke" title="Permalink to this definition">¶</a></dt>
+<dd><p>Revoke a task by id.</p>
+<p>If a task is revoked, the workers will ignore the task and not execute
+it after all.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><em>task_id</em> &#8211; Id of the task to revoke.</li>
+<li><em>destination</em> &#8211; If set, a list of the hosts to send the command to,
+when empty broadcast to all workers.</li>
+<li><em>connection</em> &#8211; Custom broker connection to use, if not set, a connection
+will be established automatically.</li>
+<li><em>connect_timeout</em> &#8211; Timeout for new connection if a custom
+connection is not provided.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+          </div> 
+        </div>
+      </div>
+    <div class="footer">
+    <p>
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.3.
+	</p>
+    </div>
+      <div class="clearer"></div>
+    </div>
+	<div id="breadcrumbs">
+		<a href="index.html" accesskey="U">API Reference</a><img src="triangle_closed.png" alt="Right arrow">
+		<a href="../index.html">Celery v0.9.2 (unstable) documentation</a>
+		</ul>
+	</div>
+  </body>
+</html>
