@@ -136,6 +136,8 @@ NEWS
 CHANGES
 -------
 
+* Now depends on carrot >= 0.8.1
+
 * New dependencies: billiard, python-dateutil, django-picklefield
 
 * The ``uuid`` distribution is added as a dependency when running Python 2.4.
