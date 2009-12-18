@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Frequently Asked Questions &mdash; Celery v0.9.2 (unstable) documentation</title>
+    <title>Frequently Asked Questions &mdash; Celery v0.9.3 (unstable) documentation</title>
     <link rel="stylesheet" href="static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.9.2 (unstable)',
+        VERSION:     '0.9.3 (unstable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,13 +19,13 @@
     </script>
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v0.9.2 (unstable) documentation" href="index.html" />
+    <link rel="top" title="Celery v0.9.3 (unstable) documentation" href="index.html" />
     <link rel="next" title="API Reference" href="reference/index.html" />
     <link rel="prev" title="Tutorial: Creating a click counter using carrot and celery" href="tutorials/clickcounter.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v0.9.2 (unstable) documentation</p>
+	<p>Celery v0.9.3 (unstable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Frequently Asked Questions</h1></div>
@@ -338,28 +338,20 @@ and a worker can bind to as many queues as it wants.</p>
 <p>Say you have two servers, <tt class="docutils literal"><span class="pre">x</span></tt>, and <tt class="docutils literal"><span class="pre">y</span></tt> that handles regular tasks,
 and one server <tt class="docutils literal"><span class="pre">z</span></tt>, that only handles feed related tasks, you can use this
 configuration:</p>
-<blockquote>
 <ul class="simple">
 <li>Servers <tt class="docutils literal"><span class="pre">x</span></tt> and <tt class="docutils literal"><span class="pre">y</span></tt>: settings.py:</li>
 </ul>
-<div class="highlight-python"><div class="highlight"><pre>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_DEFAULT_QUEUE</span> <span class="o">=</span> <span class="s">&quot;regular_tasks&quot;</span>
+<span class="n">CELERY_QUEUES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&quot;regular_tasks&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">&quot;binding_key&quot;</span><span class="p">:</span> <span class="s">&quot;task.#&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">}</span>
+<span class="n">CELERY_DEFAULT_EXCHANGE</span> <span class="o">=</span> <span class="s">&quot;tasks&quot;</span>
+<span class="n">CELERY_DEFAULT_EXCHANGE_TYPE</span> <span class="o">=</span> <span class="s">&quot;topic&quot;</span>
+<span class="n">CELERY_DEFAULT_ROUTING_KEY</span> <span class="o">=</span> <span class="s">&quot;task.regular&quot;</span>
 </pre></div>
 </div>
-<p>CELERY_DEFAULT_QUEUE = &#8220;regular_tasks&#8221;
-CELERY_QUEUES = {</p>
-<blockquote>
-<dl class="docutils">
-<dt>&#8220;regular_tasks&#8221;: {</dt>
-<dd>&#8220;binding_key&#8221;: &#8220;task.#&#8221;,</dd>
-</dl>
-<p>},</p>
-</blockquote>
-<dl class="docutils">
-<dt>}</dt>
-<dd>CELERY_DEFAULT_EXCHANGE = &#8220;tasks&#8221;
-CELERY_DEFAULT_EXCHANGE_TYPE = &#8220;topic&#8221;
-CELERY_DEFAULT_ROUTING_KEY = &#8220;task.regular&#8221;</dd>
-</dl>
 <ul class="simple">
 <li>Server <tt class="docutils literal"><span class="pre">z</span></tt>: settings.py:</li>
 </ul>
@@ -374,20 +366,24 @@ CELERY_DEFAULT_ROUTING_KEY = &#8220;task.regular&#8221;</dd>
 <span class="n">CELERY_DEFAULT_EXCHANGE_TYPE</span> <span class="o">=</span> <span class="s">&quot;topic&quot;</span>
 </pre></div>
 </div>
-</blockquote>
 <p><tt class="docutils literal"><span class="pre">CELERY_QUEUES</span></tt> is a map of queue names and their exchange/type/binding_key,
 if you don&#8217;t set exchange or exchange type, they will be taken from the
 <tt class="docutils literal"><span class="pre">CELERY_DEFAULT_EXCHANGE</span></tt>/<tt class="docutils literal"><span class="pre">CELERY_DEFAULT_EXCHANGE_TYPE</span></tt> settings.</p>
 <p>Now to make a Task run on the <tt class="docutils literal"><span class="pre">z</span></tt> server you need to set its
 <tt class="docutils literal"><span class="pre">routing_key</span></tt> attribute so it starts with the words <tt class="docutils literal"><span class="pre">&quot;task.feed.&quot;</span></tt>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">feedaggregator.models</span> <span class="kn">import</span> <span class="n">Feed</span>
-<span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">Task</span>
+<span class="kn">from</span> <span class="nn">celery.decorators</span> <span class="kn">import</span> <span class="n">task</span>
 
-<span class="k">class</span> <span class="nc">FeedImportTask</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
+<span class="nd">@task</span><span class="p">(</span><span class="n">routing_key</span><span class="o">=</span><span class="s">&quot;feed.importer&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">import_feed</span><span class="p">(</span><span class="n">feed_url</span><span class="p">):</span>
+    <span class="n">Feed</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">import_feed</span><span class="p">(</span><span class="n">feed_url</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>or if subclassing the <tt class="docutils literal"><span class="pre">Task</span></tt> class directly:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">FeedImportTask</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
     <span class="n">routing_key</span> <span class="o">=</span> <span class="s">&quot;feed.importer&quot;</span>
 
     <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feed_url</span><span class="p">):</span>
-        <span class="c"># something importing the feed</span>
         <span class="n">Feed</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">import_feed</span><span class="p">(</span><span class="n">feed_url</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -417,31 +413,20 @@ Just add a new queue to server <tt class="docutils literal"><span class="pre">z<
 exchange.</p>
 <p>If you have another queue but on another exchange you want to add,
 just specify a custom exchange and exchange type:</p>
-<div class="highlight-python"><div class="highlight"><pre>
-</pre></div>
+<div class="highlight-python"><pre>CELERY_QUEUES = {
+        "feed_tasks": {
+            "binding_key": "feed.#",
+        },
+        "regular_tasks": {
+            "binding_key": "task.#",
+        }
+        "image_tasks": {
+            "binding_key": "image.compress",
+            "exchange": "mediatasks",
+            "exchange_type": "direct",
+        },
+    }</pre>
 </div>
-<dl class="docutils">
-<dt>CELERY_QUEUES = {</dt>
-<dd><blockquote class="first">
-<dl class="docutils">
-<dt>&#8220;feed_tasks&#8221;: {</dt>
-<dd>&#8220;binding_key&#8221;: &#8220;feed.#&#8221;,</dd>
-</dl>
-<p>},
-&#8220;regular_tasks&#8221;: {</p>
-<blockquote>
-&#8220;binding_key&#8221;: &#8220;task.#&#8221;,</blockquote>
-<p>}
-&#8220;image_tasks&#8221;: {</p>
-<blockquote>
-&#8220;binding_key&#8221;: &#8220;image.compress&#8221;,
-&#8220;exchange&#8221;: &#8220;mediatasks&#8221;,
-&#8220;exchange_type&#8221;: &#8220;direct&#8221;,</blockquote>
-<p>},</p>
-</blockquote>
-<p class="last">}</p>
-</dd>
-</dl>
 <p>Easy? No? If you&#8217;re confused about these terms, you should read up on
 AMQP and RabbitMQ. It might be hard to grok the concepts of
 queues, exchanges and routing/binding keys at first, but it&#8217;s all very simple,
@@ -581,7 +566,7 @@ TEST_APPS = filter(lambda k: k != "celery", INSTALLED_APPS)</pre>
       <div class="clearer"></div>
     </div>
 	<div id="breadcrumbs">
-		<a href="index.html">Celery v0.9.2 (unstable) documentation</a>
+		<a href="index.html">Celery v0.9.3 (unstable) documentation</a>
 		</ul>
 	</div>
   </body>
