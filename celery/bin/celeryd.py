@@ -174,15 +174,21 @@ def run_worker(concurrency=conf.CELERYD_CONCURRENCY, detach=False,
         print("discard: Erased %d %s from the queue.\n" % (
                 discarded_count, what))
 
+    # Run the worker init handler.
+    # (Usually imports task modules and such.)
+    current_loader.on_worker_init()
+
     # Dump configuration to screen so we have some basic information
     # when users sends e-mails.
 
     tasklist = ""
-    if loglevel >= logging.INFO:
+    if loglevel <= logging.INFO:
         from celery.registry import tasks
-        tasklist = TASK_LIST_FMT % "\n".join("        . %s" % (task)
-                                        for task in sorted(tasks.keys()))
-
+        tasklist = tasks.keys()
+        if not loglevel <= logging.DEBUG:
+            tasklist = filter(lambda s: not s.startswith("celery."), tasklist)
+        tasklist = TASK_LIST_FMT % "\n".join("        . %s" % task
+                                                for task in sorted(tasklist))
 
     print(STARTUP_INFO_FMT % {
             "conninfo": get_connection_info(),
@@ -217,12 +223,8 @@ def run_worker(concurrency=conf.CELERYD_CONCURRENCY, detach=False,
                                 embed_clockservice=run_clockservice,
                                 send_events=events,
                                 is_detached=detach)
-        # Run the worker init handler.
-        # (Usually imports task modules and such.)
         from celery import signals
-        current_loader.on_worker_init()
         signals.worker_init.send(sender=worker)
-
         # Install signal handler that restarts celeryd on SIGHUP,
         # (only on POSIX systems)
         install_worker_restart_handler(worker)
