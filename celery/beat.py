@@ -129,8 +129,7 @@ class Scheduler(UserDict):
 
     def schedule_registry(self):
         """Add the current contents of the registry to the schedule."""
-        periodic_tasks = self.registry.get_all_periodic()
-        for name, task in self.registry.get_all_periodic().items():
+        for name, task in self.registry.periodic().items():
             if name not in self.schedule:
                 self.logger.debug(
                         "Scheduler: Adding periodic task %s to schedule" % (

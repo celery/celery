@@ -2,7 +2,7 @@
 import inspect
 from UserDict import UserDict
 
-from celery.exceptions import NotRegistered, AlreadyRegistered
+from celery.exceptions import NotRegistered
 
 
 class TaskRegistry(UserDict):
@@ -13,11 +13,20 @@ class TaskRegistry(UserDict):
     def __init__(self):
         self.data = {}
 
+    def regular(self):
+        """Get all regular task types."""
+        return self.filter_types("regular")
+
+    def periodic(self):
+        """Get all periodic task types."""
+        return self.filter_types("periodic")
+
     def register(self, task):
         """Register a task in the task registry.
 
-        The task will be automatically instantiated if it's a class
-        not an instance.
+        The task will be automatically instantiated if not already an
+        instance.
+
         """
 
         task = inspect.isclass(task) and task() or task
@@ -28,7 +37,7 @@ class TaskRegistry(UserDict):
         """Unregister task by name.
 
         :param name: name of the task to unregister, or a
-            :class:`celery.task.Task` class with a valid ``name`` attribute.
+            :class:`celery.task.base.Task` with a valid ``name`` attribute.
 
         :raises celery.exceptions.NotRegistered: if the task has not
             been registered.
@@ -38,27 +47,11 @@ class TaskRegistry(UserDict):
             name = name.name
         self.pop(name)
 
-    def get_all(self):
-        """Get all task types."""
-        return self.data
-
     def filter_types(self, type):
         """Return all tasks of a specific type."""
         return dict((task_name, task)
                         for task_name, task in self.data.items()
                             if task.type == type)
-
-    def get_all_regular(self):
-        """Get all regular task types."""
-        return self.filter_types(type="regular")
-
-    def get_all_periodic(self):
-        """Get all periodic task types."""
-        return self.filter_types(type="periodic")
-
-    def get_task(self, name):
-        """Get task by name."""
-        return self.data[name]
 
     def __getitem__(self, key):
         try:
@@ -71,6 +64,7 @@ class TaskRegistry(UserDict):
             return UserDict.pop(self, key, *args)
         except KeyError, exc:
             raise self.NotRegistered(exc)
+
 
 """
 .. data:: tasks

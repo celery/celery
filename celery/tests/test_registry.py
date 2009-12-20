@@ -1,4 +1,5 @@
 import unittest
+
 from celery import registry
 from celery.task import Task, PeriodicTask
 
@@ -38,21 +39,21 @@ class TestTaskRegistry(unittest.TestCase):
         self.assertRegisterUnregisterCls(r, TestTask)
         self.assertRegisterUnregisterCls(r, TestPeriodicTask)
 
-        tasks = r.get_all()
+        tasks = r.all()
         self.assertTrue(isinstance(tasks.get(TestTask.name), TestTask))
         self.assertTrue(isinstance(tasks.get(TestPeriodicTask.name),
                                    TestPeriodicTask))
 
-        regular = r.get_all_regular()
+        regular = r.regular()
         self.assertTrue(TestTask.name in regular)
         self.assertFalse(TestPeriodicTask.name in regular)
 
-        periodic = r.get_all_periodic()
+        periodic = r.periodic()
         self.assertFalse(TestTask.name in periodic)
         self.assertTrue(TestPeriodicTask.name in periodic)
 
-        self.assertTrue(isinstance(r.get_task(TestTask.name), TestTask))
-        self.assertTrue(isinstance(r.get_task(TestPeriodicTask.name),
+        self.assertTrue(isinstance(r[TestTask.name], TestTask))
+        self.assertTrue(isinstance(r[TestPeriodicTask.name],
                                    TestPeriodicTask))
 
         r.unregister(TestTask)
