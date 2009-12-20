@@ -7,11 +7,18 @@ from billiard.serialization import get_pickleable_exception
 
 from celery.exceptions import TimeoutError
 
+READY_STATES = frozenset(["SUCCESS", "FAILURE"])
+UNREADY_STATES = frozenset(["PENDING", "RETRY"])
 EXCEPTION_STATES = frozenset(["RETRY", "FAILURE"])
 
 
 class BaseBackend(object):
     """The base backend class. All backends should inherit from this."""
+
+    READY_STATES = READY_STATES
+    UNREADY_STATES = UNREADY_STATES
+    EXCEPTION_STATES = EXCEPTION_STATES
+
 
     capabilities = []
     TimeoutError = TimeoutError
@@ -19,7 +26,7 @@ class BaseBackend(object):
     def encode_result(self, result, status):
         if status == "SUCCESS":
             return self.prepare_value(result)
-        elif status in EXCEPTION_STATES:
+        elif status in self.EXCEPTION_STATES:
             return self.prepare_exception(result)
 
     def store_result(self, task_id, result, status):
@@ -106,11 +113,7 @@ class BaseBackend(object):
                 raise TimeoutError("The operation timed out.")
 
     def process_cleanup(self):
-        """Cleanup actions to do at the end of a task worker process.
-
-        See :func:`celery.worker.jail`.
-
-        """
+        """Cleanup actions to do at the end of a task worker process."""
         pass
 
 
