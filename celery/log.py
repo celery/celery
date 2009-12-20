@@ -6,7 +6,8 @@ import logging
 import traceback
 
 from celery import conf
-from celery.patch import monkeypatch
+from celery.utils import noop
+from celery.utils.patch import monkeypatch
 
 
 def get_default_logger(loglevel=None):
@@ -38,16 +39,16 @@ def setup_logger(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
         # Logger already configured
         return logger
     if logfile:
+        handler = logging.FileHandler
         if hasattr(logfile, "write"):
-            log_file_handler = logging.StreamHandler(logfile)
-        else:
-            log_file_handler = logging.FileHandler(logfile)
+            handler = logging.StreamHandler
+        loghandler = handler(logfile)
         formatter = logging.Formatter(format)
-        log_file_handler.setFormatter(formatter)
-        logger.addHandler(log_file_handler)
+        loghandler.setFormatter(formatter)
+        logger.addHandler(loghandler)
     else:
-        import multiprocessing
-        multiprocessing.log_to_stderr()
+        from multiprocessing.util import log_to_stderr
+        log_to_stderr()
     return logger
 
 
@@ -55,20 +56,20 @@ def emergency_error(logfile, message):
     """Emergency error logging, for when there's no standard file
     descriptors open because the process has been daemonized or for
     some other reason."""
-    logfh_needs_to_close = False
-    if not logfile:
-        logfile = sys.__stderr__
+    closefh = noop
+    logfile = logfile or sys.__stderr__
     if hasattr(logfile, "write"):
         logfh = logfile
     else:
         logfh = open(logfile, "a")
-        logfh_needs_to_close = True
-    logfh.write("[%(asctime)s: FATAL/%(pid)d]: %(message)s\n" % {
-                    "asctime": time.asctime(),
-                    "pid": os.getpid(),
-                    "message": message})
-    if logfh_needs_to_close:
-        logfh.close()
+        closefh = logfh.close
+    try:
+        logfh.write("[%(asctime)s: CRITICAL/%(pid)d]: %(message)s\n" % {
+                        "asctime": time.asctime(),
+                        "pid": os.getpid(),
+                        "message": message})
+    finally:
+        closefh()
 
 
 def redirect_stdouts_to_logger(logger, loglevel=None):
@@ -80,8 +81,7 @@ def redirect_stdouts_to_logger(logger, loglevel=None):
 
     """
     proxy = LoggingProxy(logger, loglevel)
-    sys.stdout = proxy
-    sys.stderr = proxy
+    sys.stdout = sys.stderr = proxy
     return proxy
 
 

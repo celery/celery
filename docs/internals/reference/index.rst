@@ -34,4 +34,3 @@
     celery.platform
     celery.managers
     celery.models
-    celery.patch

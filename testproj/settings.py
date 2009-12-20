@@ -24,7 +24,7 @@ COVERAGE_EXCLUDE_MODULES = ("celery.tests.*",
                             "celery.management.*",
                             "celery.contrib.*",
                             "celery.bin.*",
-                            "celery.patch",
+                            "celery.utils.patch",
                             "celery.urls",
                             "celery.views",
                             "celery.task.strategy")
