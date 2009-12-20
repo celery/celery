@@ -31,7 +31,6 @@
     celery.datastructures
     celery.log
     celery.utils
-    celery.discovery
     celery.platform
     celery.managers
     celery.models

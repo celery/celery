@@ -2,7 +2,6 @@
 import inspect
 from UserDict import UserDict
 
-from celery import discovery
 from celery.exceptions import NotRegistered, AlreadyRegistered
 
 
@@ -13,10 +12,6 @@ class TaskRegistry(UserDict):
 
     def __init__(self):
         self.data = {}
-
-    def autodiscover(self):
-        """Autodiscovers tasks using :func:`celery.discovery.autodiscover`."""
-        discovery.autodiscover()
 
     def register(self, task):
         """Register a task in the task registry.
