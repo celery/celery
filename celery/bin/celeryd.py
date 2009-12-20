@@ -76,8 +76,6 @@ from celery.log import emergency_error
 from celery.task import discard_all
 from celery.utils import noop
 from celery.worker import WorkController
-from celery.loaders import current_loader, settings
-from celery.loaders import settings
 from celery.messaging import get_connection_info, format_routing_table
 
 STARTUP_INFO_FMT = """
@@ -86,7 +84,8 @@ Configuration ->
     . queues ->
 %(queues)s
     . concurrency -> %(concurrency)s
-    . sys -> %(logfile)s@%(loglevel)s %(pidfile)s
+    . loader -> %(loader)s
+    . sys -> logfile:%(logfile)s@%(loglevel)s %(pidfile)s
     . events -> %(events)s
     . beat -> %(celerybeat)s
 %(tasks)s
@@ -150,6 +149,8 @@ def run_worker(concurrency=conf.CELERYD_CONCURRENCY, detach=False,
 
     print("Celery %s is starting." % __version__)
 
+    from celery.loaders import Loader, current_loader, settings
+
     if not concurrency:
         concurrency = multiprocessing.cpu_count()
 
@@ -195,11 +196,12 @@ def run_worker(concurrency=conf.CELERYD_CONCURRENCY, detach=False,
             "queues": format_routing_table(indent=8),
             "concurrency": concurrency,
             "loglevel": conf.LOG_LEVELS[loglevel],
-            "logfile": logfile or "@stderr",
-            "pidfile": detach and pidfile or "",
+            "logfile": logfile or "[stderr]",
+            "pidfile": detach and "pidfile:%s" % pidfile or "",
             "celerybeat": run_clockservice and "ON" or "OFF",
             "events": events and "ON" or "OFF",
             "tasks": tasklist,
+            "loader": Loader.__module__,
     })
 
     print("Celery has started.")
