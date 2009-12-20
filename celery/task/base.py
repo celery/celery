@@ -157,7 +157,7 @@ class Task(object):
     immediate = False
     mandatory = False
     priority = None
-    ignore_result = False
+    ignore_result = conf.IGNORE_RESULT
     disable_error_emails = False
     max_retries = 3
     default_retry_delay = 3 * 60
