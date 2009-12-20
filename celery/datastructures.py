@@ -54,7 +54,6 @@ class ExceptionInfo(object):
     :param exc_info: The exception tuple info as returned by
         :func:`traceback.format_exception`.
 
-
     .. attribute:: exception
 
         The original exception.
@@ -81,7 +80,22 @@ class ExceptionInfo(object):
 
 
 def consume_queue(queue):
-    while True:
+    """Iterator yielding all immediately available items in a
+    :class:`Queue.Queue`.
+
+    The iterator stops as soon as the queue raises :exc:`Queue.Empty`.
+
+    Example
+
+        >>> q = Queue()
+        >>> map(q.put, range(4))
+        >>> list(consume_queue(q))
+        [0, 1, 2, 3]
+        >>> list(consume_queue(q))
+        []
+
+    """
+    while 1:
         try:
             yield queue.get_nowait()
         except QueueEmpty:
@@ -89,7 +103,7 @@ def consume_queue(queue):
 
 
 class SharedCounter(object):
-    """An integer that can be updated by several threads at once.
+    """Thread-safe counter.
 
     Please note that the final value is not synchronized, this means
     that you should not update the value by using a previous value, the only
@@ -149,6 +163,17 @@ class SharedCounter(object):
 
 
 class LimitedSet(object):
+    """Kind-of Set with limitations.
+
+    Good for when you need to test for membership (``a in set``),
+    but the list might become to big, so you want to limit it so it doesn't
+    consume too much resources.
+
+    :keyword maxlen: Maximum number of members before we start
+        deleting expired members.
+    :keyword expires: Time in seconds, before a membership expires.
+
+    """
 
     def __init__(self, maxlen=None, expires=None):
         self.maxlen = maxlen
@@ -156,16 +181,19 @@ class LimitedSet(object):
         self._data = {}
 
     def add(self, value):
+        """Add a new member."""
         self._expire_item()
         self._data[value] = time.time()
 
     def pop_value(self, value):
+        """Remove membership by finding value."""
         self._data.pop(value, None)
 
     def _expire_item(self):
+        """Hunt down and remove an expired item."""
         while 1:
             if self.maxlen and len(self) >= self.maxlen:
-                value, when = self.oldest
+                value, when = self.first
                 if not self.expires or time.time() > when + self.expires:
                     try:
                         self.pop_value(value)
@@ -179,12 +207,17 @@ class LimitedSet(object):
     def __iter__(self):
         return iter(self._data.keys())
 
-    def __repr__(self):
-        return "LimitedSet([%s])" % (repr(self._data.keys()))
-
     def __len__(self):
         return len(self._data.keys())
 
+    def __repr__(self):
+        return "LimitedSet([%s])" % (repr(self._data.keys()))
+
     @property
-    def oldest(self):
-        return sorted(self._data.items(), key=lambda (value, when): when)[0]
+    def chronologically(self):
+        return sorted(self._data.items(), key=lambda (value, when): when)
+
+    @property
+    def first(self):
+        """Get the oldest member."""
+        return self.chronologically[0]
