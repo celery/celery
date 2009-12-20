@@ -1,4 +1,5 @@
 import sys
+import importlib
 
 from billiard.utils.functional import curry
 from carrot.utils import rpartition
@@ -26,19 +27,12 @@ def resolve_backend(backend):
 
 def _get_backend_cls(backend):
     backend_module_name, backend_cls_name = resolve_backend(backend)
-    __import__(backend_module_name)
-    backend_module = sys.modules[backend_module_name]
+    backend_module = importlib.import_module(backend_module_name)
     return getattr(backend_module, backend_cls_name)
 
 
 def get_backend_cls(backend):
-    """Get backend class by name.
-
-    If the name does not include "``.``" (is not fully qualified),
-    ``"celery.backends."`` will be prepended to the name. e.g.
-    ``"database"`` becomes ``"celery.backends.database"``.
-
-    """
+    """Get backend class by name/alias"""
     if backend not in _backend_cache:
         _backend_cache[backend] = _get_backend_cls(backend)
     return _backend_cache[backend]
