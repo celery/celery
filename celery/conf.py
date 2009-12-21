@@ -39,6 +39,14 @@ _DEFAULTS = {
     "CELERYMON_LOG_LEVEL": "INFO",
     "CELERYMON_LOG_FILE": "celerymon.log",
     "CELERYMON_PID_FILE": "celerymon.pid",
+    "CELERY_BROADCAST_QUEUE": "celeryctl",
+    "CELERY_BROADCAST_EXCHANGE": "celeryctl",
+    "CELERY_BROADCAST_EXCHANGE_TYPE": "fanout",
+    "CELERY_EVENT_QUEUE": "celeryevent",
+    "CELERY_EVENT_EXCHANGE": "celeryevent",
+    "CELERY_EVENT_EXCHANGE_TYPE": "direct",
+    "CELERY_EVENT_ROUTING_KEY": "celeryevent",
+    "CELERY_RESULT_EXCHANGE": "celeryresults",
 }
 
 _DEPRECATION_FMT = """
@@ -149,6 +157,19 @@ _warn_if_deprecated_queue_settings()
 if not QUEUES:
     QUEUES = _find_deprecated_queue_settings()
 
+# :--- Broadcast queue settings                     <-   --   --- - ----- -- #
+
+BROADCAST_QUEUE = _get("CELERY_BROADCAST_QUEUE")
+BROADCAST_EXCHANGE = _get("CELERY_BROADCAST_EXCHANGE")
+BROADCAST_EXCHANGE_TYPE = _get("CELERY_BROADCAST_EXCHANGE_TYPE")
+
+# :--- Event queue settings                         <-   --   --- - ----- -- #
+
+EVENT_QUEUE = _get("CELERY_EVENT_QUEUE")
+EVENT_EXCHANGE = _get("CELERY_EVENT_EXCHANGE")
+EVENT_EXCHANGE_TYPE = _get("CELERY_EVENT_EXCHANGE_TYPE")
+EVENT_ROUTING_KEY = _get("CELERY_EVENT_ROUTING_KEY")
+
 # :--- Broker connections                           <-   --   --- - ----- -- #
 BROKER_CONNECTION_TIMEOUT = _get("CELERY_BROKER_CONNECTION_TIMEOUT",
                                 compat=["CELERY_AMQP_CONNECTION_TIMEOUT"])
@@ -157,6 +178,9 @@ BROKER_CONNECTION_RETRY = _get("CELERY_BROKER_CONNECTION_RETRY",
 BROKER_CONNECTION_MAX_RETRIES = _get("CELERY_BROKER_CONNECTION_MAX_RETRIES",
                                 compat=["CELERY_AMQP_CONNECTION_MAX_RETRIES"])
 
+# :--- Backend settings                             <-   --   --- - ----- -- #
+
+RESULT_EXCHANGE = _get("CELERY_RESULT_EXCHANGE")
 
 # :--- Celery Beat                                  <-   --   --- - ----- -- #
 CELERYBEAT_PID_FILE = _get("CELERYBEAT_PID_FILE")

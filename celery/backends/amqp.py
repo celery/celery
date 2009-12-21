@@ -1,10 +1,9 @@
 """celery.backends.amqp"""
 from carrot.messaging import Consumer, Publisher
 
+from celery import conf
 from celery.messaging import establish_connection
 from celery.backends.base import BaseBackend
-
-RESULTSTORE_EXCHANGE = "celeryresults"
 
 
 class AMQPBackend(BaseBackend):
@@ -17,6 +16,7 @@ class AMQPBackend(BaseBackend):
 
     """
 
+    exchange = conf.RESULT_EXCHANGE
     capabilities = ["ResultStore"]
 
     def __init__(self, *args, **kwargs):
@@ -29,18 +29,18 @@ class AMQPBackend(BaseBackend):
         backend = connection.create_backend()
         backend.queue_declare(queue=routing_key, durable=True,
                                 exclusive=False, auto_delete=True)
-        backend.exchange_declare(exchange=RESULTSTORE_EXCHANGE,
+        backend.exchange_declare(exchange=self.exchange,
                                  type="direct",
                                  durable=True,
                                  auto_delete=False)
-        backend.queue_bind(queue=routing_key, exchange=RESULTSTORE_EXCHANGE,
+        backend.queue_bind(queue=routing_key, exchange=self.exchange,
                            routing_key=routing_key)
         backend.close()
 
     def _publisher_for_task_id(self, task_id, connection):
         routing_key = task_id.replace("-", "")
         self._declare_queue(task_id, connection)
-        p = Publisher(connection, exchange=RESULTSTORE_EXCHANGE,
+        p = Publisher(connection, exchange=self.exchange,
                       exchange_type="direct",
                       routing_key=routing_key)
         return p
@@ -49,7 +49,7 @@ class AMQPBackend(BaseBackend):
         routing_key = task_id.replace("-", "")
         self._declare_queue(task_id, connection)
         return Consumer(connection, queue=routing_key,
-                        exchange=RESULTSTORE_EXCHANGE,
+                        exchange=self.exchange,
                         exchange_type="direct",
                         no_ack=False, auto_ack=False,
                         auto_delete=True,

@@ -65,24 +65,24 @@ class TaskConsumer(Consumer):
 
 class EventPublisher(Publisher):
     """Publish events"""
-    exchange = "celeryevent"
-    routing_key = "event"
+    exchange = conf.EVENT_EXCHANGE
+    exchange_type = conf.EVENT_EXCHANGE_TYPE
+    routing_key = conf.EVENT_ROUTING_KEY
 
 
 class EventConsumer(Consumer):
     """Consume events"""
-    queue = "celeryevent"
-    exchange = "celeryevent"
-    routing_key = "event"
-    exchange_type = "direct"
+    queue = conf.EVENT_QUEUE
+    exchange = conf.EVENT_EXCHANGE
+    exchange_type = conf.EVENT_EXCHANGE_TYPE
+    routing_key = conf.EVENT_ROUTING_KEY
     no_ack = True
 
 
 class BroadcastPublisher(Publisher):
     """Publish broadcast commands"""
-    exchange = "celeryctl"
-    exchange_type = "fanout"
-    routing_key = ""
+    exchange = conf.BROADCAST_EXCHANGE
+    exchange_type = conf.BROADCAST_EXCHANGE_TYPE
 
     def send(self, type, arguments, destination=None):
         """Send broadcast command."""
@@ -93,10 +93,9 @@ class BroadcastPublisher(Publisher):
 
 class BroadcastConsumer(Consumer):
     """Consume broadcast commands"""
-    queue = "celeryctl"
-    exchange = "celeryctl"
-    routing_key = ""
-    exchange_type = "fanout"
+    queue = conf.BROADCAST_QUEUE
+    exchange = conf.BROADCAST_EXCHANGE
+    exchange_type = conf.BROADCAST_EXCHANGE_TYPE
     no_ack = True
 
 
