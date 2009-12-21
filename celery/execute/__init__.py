@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 from celery import conf
 from celery.utils import gen_unique_id, fun_takes_kwargs, mattrgetter
-from celery.result import AsyncResult, EagerResult
+from celery.result import EagerResult
 from celery.execute.trace import TaskTrace
 from celery.registry import tasks
 from celery.messaging import with_connection
@@ -95,7 +95,7 @@ def _apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
     finally:
         publisher or publish.close()
 
-    return AsyncResult(task_id)
+    return task.AsyncResult(task_id)
 
 
 def delay_task(task_name, *args, **kwargs):
