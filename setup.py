@@ -27,6 +27,9 @@ class RunTests(Command):
         pass
 
     def run(self):
+        self.run_tests()
+
+    def run_tests(self):
         this_dir = os.getcwd()
         testproj_dir = os.path.join(this_dir, "testproj")
         os.chdir(testproj_dir)
@@ -39,6 +42,17 @@ class RunTests(Command):
         execute_manager(settings_mod, argv=[
             __file__, "test"])
         os.chdir(this_dir)
+
+
+class QuickRunTests(RunTests):
+
+    quicktest_envs = dict(SKIP_RLIMITS=1)
+
+    def run(self):
+        for env_name, env_value in self.quicktest_envs.items():
+            os.environ[env_name] = str(env_value)
+        self.run_tests()
+
 
 install_requires = []
 
@@ -102,7 +116,7 @@ setup(
     extra_requires={
         "Tyrant": ["pytyrant"],
     },
-    cmdclass = {"test": RunTests},
+    cmdclass = {"test": RunTests, "quicktest": QuickRunTests},
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Framework :: Django",

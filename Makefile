@@ -37,6 +37,9 @@ coverage:
 test:
 	(cd testproj; python manage.py test)
 
+quicktest:
+	(cd testproj; SKIP_RLIMITS=1 python manage.py test)
+
 testverbose:
 	(cd testproj; python manage.py test --verbosity=2)
 
