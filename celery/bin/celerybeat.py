@@ -56,7 +56,7 @@ from celery import __version__
 from celery.log import emergency_error
 from celery.beat import ClockService
 from celery.utils import noop
-from celery.messaging import get_connection_info
+from celery.utils import info
 
 STARTUP_INFO_FMT = """
 Configuration ->
@@ -128,7 +128,7 @@ def run_clockservice(detach=False, loglevel=conf.CELERYBEAT_LOG_LEVEL,
     # when users sends e-mails.
 
     print(STARTUP_INFO_FMT % {
-            "conninfo": get_connection_info(),
+            "conninfo": info.format_broker_info(),
             "logfile": logfile or "@stderr",
             "loglevel": conf.LOG_LEVELS[loglevel],
             "pidfile": detach and pidfile or "",

@@ -74,8 +74,8 @@ from celery import __version__
 from celery.log import emergency_error
 from celery.task import discard_all
 from celery.utils import noop
+from celery.utils import info
 from celery.worker import WorkController
-from celery.messaging import get_connection_info, format_routing_table
 
 STARTUP_INFO_FMT = """
 Configuration ->
@@ -191,8 +191,8 @@ def run_worker(concurrency=conf.CELERYD_CONCURRENCY, detach=False,
                                                 for task in sorted(tasklist))
 
     print(STARTUP_INFO_FMT % {
-            "conninfo": get_connection_info(),
-            "queues": format_routing_table(indent=8),
+            "conninfo": info.format_broker_info(),
+            "queues": info.format_routing_table(indent=8),
             "concurrency": concurrency,
             "loglevel": conf.LOG_LEVELS[loglevel],
             "logfile": logfile or "[stderr]",

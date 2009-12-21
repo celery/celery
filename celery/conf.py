@@ -169,3 +169,18 @@ CELERYBEAT_MAX_LOOP_INTERVAL = _get("CELERYBEAT_MAX_LOOP_INTERVAL")
 CELERYMON_PID_FILE = _get("CELERYMON_PID_FILE")
 CELERYMON_LOG_LEVEL = _get("CELERYMON_LOG_LEVEL")
 CELERYMON_LOG_FILE = _get("CELERYMON_LOG_FILE")
+
+
+def _init_routing_table():
+    """Convert configuration mapping to a table of queues digestible
+    by a :class:`carrot.messaging.ConsumerSet`."""
+
+    def _defaults(opts):
+        opts.setdefault("exchange", DEFAULT_EXCHANGE),
+        opts.setdefault("exchange_type", DEFAULT_EXCHANGE_TYPE)
+        opts.setdefault("binding_key", "")
+        return opts
+
+    return dict((queue, _defaults(opts)) for queue, opts in QUEUES.items())
+
+routing_table = _init_routing_table()

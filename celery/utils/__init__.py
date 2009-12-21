@@ -229,7 +229,3 @@ except NameError:
         return False
 
 
-def textindent(t, indent=0):
-    """Indent text."""
-    indent = " " * indent
-    return "\n".join(indent + p for p in t.split("\n"))
