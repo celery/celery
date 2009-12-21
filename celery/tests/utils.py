@@ -1,10 +1,28 @@
 from __future__ import with_statement
 
 import sys
+import os
 import __builtin__
 from StringIO import StringIO
 from functools import wraps
 from contextlib import contextmanager
+
+
+def skip_if_environ(env_var_name):
+
+    def _wrap_test(fun):
+
+        @wraps(fun)
+        def _skips_if_environ(*args, **kwargs):
+            if os.environ.get(env_var_name):
+                sys.stderr.write("SKIP %s: %s set\n" % (
+                    fun.__name__, env_var_name))
+                return
+            return fun(*args, **kwargs)
+
+        return _skips_if_environ
+
+    return _wrap_test
 
 
 def _skip_test(reason, sign):
@@ -13,7 +31,7 @@ def _skip_test(reason, sign):
 
         @wraps(fun)
         def _skipped_test(*args, **kwargs):
-            sys.stderr.write("(%s: %s) " % (sign, reason))
+            sys.stderr.write("%s: %s " % (sign, reason))
 
         return _skipped_test
     return _wrap_test
