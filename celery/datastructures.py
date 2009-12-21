@@ -3,6 +3,7 @@
 Custom Datastructures
 
 """
+import sys
 import time
 import traceback
 from UserList import UserList
@@ -77,29 +78,6 @@ class ExceptionInfo(object):
                 self.__class__.__module__,
                 self.__class__.__name__,
                 str(self.exception))
-
-
-def consume_queue(queue):
-    """Iterator yielding all immediately available items in a
-    :class:`Queue.Queue`.
-
-    The iterator stops as soon as the queue raises :exc:`Queue.Empty`.
-
-    Example
-
-        >>> q = Queue()
-        >>> map(q.put, range(4))
-        >>> list(consume_queue(q))
-        [0, 1, 2, 3]
-        >>> list(consume_queue(q))
-        []
-
-    """
-    while 1:
-        try:
-            yield queue.get_nowait()
-        except QueueEmpty:
-            break
 
 
 class SharedCounter(object):
@@ -221,3 +199,26 @@ class LimitedSet(object):
     def first(self):
         """Get the oldest member."""
         return self.chronologically[0]
+
+
+def consume_queue(queue):
+    """Iterator yielding all immediately available items in a
+    :class:`Queue.Queue`.
+
+    The iterator stops as soon as the queue raises :exc:`Queue.Empty`.
+
+    Example
+
+        >>> q = Queue()
+        >>> map(q.put, range(4))
+        >>> list(consume_queue(q))
+        [0, 1, 2, 3]
+        >>> list(consume_queue(q))
+        []
+
+    """
+    while 1:
+        try:
+            yield queue.get_nowait()
+        except QueueEmpty:
+            break

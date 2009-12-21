@@ -25,8 +25,6 @@ COVERAGE_EXCLUDE_MODULES = ("celery.tests.*",
                             "celery.contrib.*",
                             "celery.bin.*",
                             "celery.utils.patch",
-                            "celery.urls",
-                            "celery.views",
                             "celery.task.strategy")
 COVERAGE_HTML_REPORT = True
 COVERAGE_BRANCH_COVERAGE = True

@@ -3,12 +3,13 @@ from django.http import HttpResponse, Http404
 
 from anyjson import serialize as JSON_dump
 
+from celery.utils import get_full_cls_name
 from celery.result import AsyncResult
-from celery.execute import apply_async
 from celery.registry import tasks
+from celery.backends import default_backend
 
 
-def apply(request, task_name, *args):
+def apply(request, task_name, args):
     """View applying a task.
 
     Example:
@@ -18,6 +19,7 @@ def apply(request, task_name, *args):
     without ensuring your code is safe!
 
     """
+    args = args.split("/")
     kwargs = request.method == "POST" and \
             request.POST.copy() or request.GET.copy()
     kwargs = dict((key.encode("utf-8"), value)
@@ -26,7 +28,7 @@ def apply(request, task_name, *args):
         raise Http404("apply: no such task")
 
     task = tasks[task_name]
-    result = apply_async(task, args=args, kwargs=kwargs)
+    result = task.apply_async(args=args, kwargs=kwargs)
     response_data = {"ok": "true", "task_id": result.task_id}
     return HttpResponse(JSON_dump(response_data), mimetype="application/json")
 
@@ -41,21 +43,14 @@ is_task_done = is_task_successful # Backward compatible
 
 def task_status(request, task_id):
     """Returns task status and result in JSON format."""
-    async_result = AsyncResult(task_id)
-    status = async_result.status
-    result = async_result.result
-    if status in ("FAILURE", "RETRY"):
-        response_data = {
-            "id": task_id,
-            "status": status,
-            "result": result.args[0],
-            "traceback": result.traceback,
-        }
-    else:
-        response_data = {
-            "id": task_id,
-            "status": status,
-            "result": result,
-        }
+    status = default_backend.get_status(task_id)
+    res = default_backend.get_result(task_id)
+    response_data = dict(id=task_id, status=status, result=res)
+    if status in default_backend.EXCEPTION_STATES:
+        traceback = default_backend.get_traceback(task_id)
+        response_data.update({"result": str(res.args[0]),
+                              "exc": get_full_cls_name(res.__class__),
+                              "traceback": traceback})
+
     return HttpResponse(JSON_dump({"task": response_data}),
             mimetype="application/json")
