@@ -7,22 +7,12 @@ from billiard.serialization import pickle
 
 from celery.execute import apply_async
 from celery.registry import tasks
-from celery.backends import default_backend
-from celery.task.base import Task, TaskSet, PeriodicTask
-from celery.task.base import ExecuteRemoteTask, AsynchronousMapTask
-from celery.task.rest import RESTProxyTask
+from celery.task.base import Task, TaskSet, PeriodicTask, ExecuteRemoteTask
 from celery.task.control import discard_all
-from celery.task.builtins import DeleteExpiredTaskMetaTask, PingTask
+from celery.task.builtins import PingTask
 
-
-def is_successful(task_id):
-    """Returns ``True`` if task with ``task_id`` has been executed.
-
-    :rtype: bool
-
-    """
-    return default_backend.is_successful(task_id)
-
+__all__ = ["Task", "TaskSet", "PeriodicTask", "tasks", "discard_all",
+           "is_successful", "dmap", "dmap_async", "execute_remote", "ping"]
 
 def dmap(fun, args, timeout=None):
     """Distribute processing of the arguments and collect the results.
