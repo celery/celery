@@ -13,13 +13,10 @@ from celery.datastructures import PositionQueue
 
 
 class BaseAsyncResult(object):
-    """Base class for pending result, supports custom
-    task meta :attr:`backend`
+    """Base class for pending result, supports custom task result backend.
 
     :param task_id: see :attr:`task_id`.
-
     :param backend: see :attr:`backend`.
-
 
     .. attribute:: task_id
 
@@ -37,14 +34,14 @@ class BaseAsyncResult(object):
         self.task_id = task_id
         self.backend = backend
 
-    def get(self):
+    def get(self, timeout=None):
         """Alias to :meth:`wait`."""
-        return self.wait()
+        return self.wait(timeout=timeout)
 
     def wait(self, timeout=None):
         """Wait for task, and return the result when it arrives.
 
-        :keyword timeout: How long to wait in seconds, before the
+        :keyword timeout: How long to wait, in seconds, before the
             operation times out.
 
         :raises celery.exceptions.TimeoutError: if ``timeout`` is not ``None``
@@ -65,7 +62,7 @@ class BaseAsyncResult(object):
 
         """
         status = self.backend.get_status(self.task_id)
-        return status not in ["PENDING", "RETRY"]
+        return status not in self.backend.UNREADY_STATES
 
     def successful(self):
         """Returns ``True`` if the task executed successfully.
@@ -89,7 +86,7 @@ class BaseAsyncResult(object):
         If the task raised an exception, this will be the exception instance.
 
         """
-        if self.status == "SUCCESS" or self.status == "FAILURE":
+        if self.status in self.backend.READY_STATES:
             return self.backend.get_result(self.task_id)
         return None
 
@@ -246,7 +243,7 @@ class TaskSetResult(object):
         while results:
             for task_id, pending_result in results.items():
                 if pending_result.status == "SUCCESS":
-                    del(results[task_id])
+                    results.pop(task_id, None)
                     yield pending_result.result
                 elif pending_result.status == "FAILURE":
                     raise pending_result.result

@@ -19,9 +19,9 @@ class BaseBackend(object):
     UNREADY_STATES = UNREADY_STATES
     EXCEPTION_STATES = EXCEPTION_STATES
 
+    TimeoutError = TimeoutError
 
     capabilities = []
-    TimeoutError = TimeoutError
 
     def encode_result(self, result, status):
         if status == "SUCCESS":
