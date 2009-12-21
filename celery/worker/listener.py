@@ -25,13 +25,13 @@ class CarrotListener(object):
     move them the the ready queue for task processing.
 
     :param ready_queue: See :attr:`ready_queue`.
-    :param eta_scheduler: See :attr:`eta_scheduler`.
+    :param eta_schedule: See :attr:`eta_schedule`.
 
     .. attribute:: ready_queue
 
         The queue that holds tasks ready for processing immediately.
 
-    .. attribute:: eta_scheduler
+    .. attribute:: eta_schedule
 
         Scheduler for paused tasks. Reasons for being paused include
         a countdown/eta or that it's waiting for retry.
@@ -42,12 +42,12 @@ class CarrotListener(object):
 
     """
 
-    def __init__(self, ready_queue, eta_scheduler, logger,
+    def __init__(self, ready_queue, eta_schedule, logger,
             send_events=False, initial_prefetch_count=2):
         self.amqp_connection = None
         self.task_consumer = None
         self.ready_queue = ready_queue
-        self.eta_scheduler = eta_scheduler
+        self.eta_schedule = eta_schedule
         self.send_events = send_events
         self.logger = logger
         self.hostname = socket.gethostname()
@@ -116,8 +116,8 @@ class CarrotListener(object):
             self.prefetch_count.increment()
             self.logger.info("Got task from broker: %s[%s] eta:[%s]" % (
                     task.task_name, task.task_id, eta))
-            self.eta_scheduler.enter(task, eta=eta,
-                                     callback=self.prefetch_count.decrement)
+            self.eta_schedule.enter(task, eta=eta,
+                                    callback=self.prefetch_count.decrement)
         else:
             self.logger.info("Got task from broker: %s[%s]" % (
                     task.task_name, task.task_id))

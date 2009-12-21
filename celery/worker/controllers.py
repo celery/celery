@@ -20,7 +20,6 @@ class BackgroundThread(threading.Thread):
     the :meth:`stop` method.
 
     """
-    is_infinite = True
 
     def __init__(self):
         super(BackgroundThread, self).__init__()
@@ -36,7 +35,7 @@ class BackgroundThread(threading.Thread):
         """
         self.on_start()
 
-        while self.is_infinite:
+        while 1:
             if self._shutdown.isSet():
                 break
             self.on_iteration()

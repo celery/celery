@@ -89,7 +89,7 @@ class WorkController(object):
 
         Instance of :class:`celery.worker.controllers.Mediator`.
 
-    .. attribute:: broker_listener
+    .. attribute:: listener
 
         Instance of :class:`CarrotListener`.
 
@@ -117,38 +117,39 @@ class WorkController(object):
             self.ready_queue = Queue()
         else:
             self.ready_queue = TaskBucket(task_registry=registry.tasks)
-        self.eta_scheduler = Scheduler(self.ready_queue)
+        self.eta_schedule = Scheduler(self.ready_queue)
 
         self.logger.debug("Instantiating thread components...")
 
-        # Threads+Pool
-        self.schedule_controller = ScheduleController(self.eta_scheduler,
-                                                      logger=self.logger)
-        self.pool = TaskPool(self.concurrency, logger=self.logger,
+        # Threads + Pool + Consumer
+        self.pool = TaskPool(self.concurrency,
+                             logger=self.logger,
                              initializer=process_initializer)
-        self.broker_listener = CarrotListener(self.ready_queue,
-                                        self.eta_scheduler,
-                                        logger=self.logger,
-                                        send_events=send_events,
-                                        initial_prefetch_count=concurrency)
-        self.mediator = Mediator(self.ready_queue, self.safe_process_task,
+        self.mediator = Mediator(self.ready_queue,
+                                 callback=self.process_task,
                                  logger=self.logger)
-
+        self.scheduler = ScheduleController(self.eta_schedule,
+                                            logger=self.logger)
         # Need a tight loop interval when embedded so the program
         # can be stopped in a sensible short time.
         self.clockservice = self.embed_clockservice and ClockServiceThread(
                                 logger=self.logger,
                                 is_detached=self.is_detached,
                                 max_interval=1) or None
+        self.listener = CarrotListener(self.ready_queue,
+                                       self.eta_schedule,
+                                       logger=self.logger,
+                                       send_events=send_events,
+                                       initial_prefetch_count=concurrency)
 
         # The order is important here;
         #   the first in the list is the first to start,
         # and they must be stopped in reverse order.
         self.components = filter(None, (self.pool,
                                         self.mediator,
-                                        self.schedule_controller,
+                                        self.scheduler,
                                         self.clockservice,
-                                        self.broker_listener))
+                                        self.listener))
 
     def start(self):
         """Starts the workers main loop."""
@@ -162,22 +163,17 @@ class WorkController(object):
         finally:
             self.stop()
 
-    def safe_process_task(self, task):
-        """Same as :meth:`process_task`, but catches all exceptions
-        the task raises and log them as errors, to make sure the
-        worker doesn't die."""
+    def process_task(self, task):
+        """Process task by sending it to the pool of workers."""
         try:
             try:
-                self.process_task(task)
+                task.execute_using_pool(self.pool, self.loglevel,
+                                        self.logfile)
             except Exception, exc:
                 self.logger.critical("Internal error %s: %s\n%s" % (
                                 exc.__class__, exc, traceback.format_exc()))
         except (SystemExit, KeyboardInterrupt):
             self.stop()
-
-    def process_task(self, task):
-        """Process task by sending it to the pool of workers."""
-        task.execute_using_pool(self.pool, self.loglevel, self.logfile)
 
     def stop(self):
         """Gracefully shutdown the worker server."""
@@ -185,7 +181,6 @@ class WorkController(object):
             return
 
         signals.worker_shutdown.send(sender=self)
-
         [component.stop() for component in reversed(self.components)]
 
         self._state = "STOP"

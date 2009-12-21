@@ -16,7 +16,6 @@ def task(**options):
         def refresh_feed(url):
             return Feed.objects.get(url=url).refresh()
 
-
     With setting extra options and using retry.
 
     .. code-block:: python
@@ -28,7 +27,7 @@ def task(**options):
             except socket.error, exc:
                 refresh_feed.retry(args=[url], kwargs=kwargs, exc=exc)
 
-    Calling the resulting task.
+    Calling the resulting task:
 
         >>> refresh_feed("http://example.com/rss") # Regular
         <Feed: http://example.com/rss>
@@ -54,8 +53,6 @@ def task(**options):
 
 def periodic_task(**options):
     """Task decorator to create a periodic task.
-
-    **Usage**
 
     Run a task once every day:
 
