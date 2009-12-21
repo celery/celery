@@ -110,17 +110,17 @@ class TestCarrotListener(unittest.TestCase):
                            send_events=False)
 
         l.reset_connection()
-        self.assertTrue(isinstance(l.amqp_connection, BrokerConnection))
+        self.assertTrue(isinstance(l.connection, BrokerConnection))
 
         l.close_connection()
-        self.assertTrue(l.amqp_connection is None)
+        self.assertTrue(l.connection is None)
         self.assertTrue(l.task_consumer is None)
 
         l.reset_connection()
-        self.assertTrue(isinstance(l.amqp_connection, BrokerConnection))
+        self.assertTrue(isinstance(l.connection, BrokerConnection))
 
         l.stop()
-        self.assertTrue(l.amqp_connection is None)
+        self.assertTrue(l.connection is None)
         self.assertTrue(l.task_consumer is None)
 
     def test_receieve_message(self):
