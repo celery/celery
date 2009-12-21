@@ -1,9 +1,9 @@
 import unittest
-from celery.backends.database import DatabaseBackend
-from celery.utils import gen_unique_id
-from celery.task import PeriodicTask
-from celery import registry
 from datetime import timedelta
+
+from celery.task import PeriodicTask
+from celery.utils import gen_unique_id
+from celery.backends.database import DatabaseBackend
 
 
 class SomeClass(object):

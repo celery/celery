@@ -8,7 +8,6 @@ from celery.utils import all
 RATE_MODIFIER_MAP = {"s": lambda n: n,
                      "m": lambda n: n / 60.0,
                      "h": lambda n: n / 60.0 / 60.0}
-
 BASE_IDENTIFIERS = {"0x": 16, "0o": 8, "0b": 2}
 
 

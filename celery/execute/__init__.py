@@ -5,7 +5,7 @@ from celery.utils import gen_unique_id, fun_takes_kwargs, mattrgetter
 from celery.result import AsyncResult, EagerResult
 from celery.execute.trace import TaskTrace
 from celery.registry import tasks
-from celery.messaging import TaskPublisher, with_connection
+from celery.messaging import with_connection
 
 extract_exec_options = mattrgetter("routing_key", "exchange",
                                    "immediate", "mandatory",

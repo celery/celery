@@ -2,7 +2,6 @@ import logging
 import warnings
 from datetime import timedelta
 
-from celery.registry import tasks
 from celery.loaders import settings
 
 DEFAULT_LOG_FMT = '[%(asctime)s: %(levelname)s/%(processName)s] %(message)s'

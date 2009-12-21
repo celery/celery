@@ -5,7 +5,6 @@ Worker Controller Threads
 """
 import time
 import threading
-from datetime import datetime
 from Queue import Empty as QueueEmpty
 
 from celery import log

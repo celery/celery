@@ -15,8 +15,7 @@ from celery.models import TaskMeta
 from celery.result import AsyncResult
 from celery.worker.job import WorkerTaskTrace, TaskWrapper
 from celery.worker.pool import TaskPool
-from celery.registry import tasks, NotRegistered
-from celery.exceptions import RetryTaskError
+from celery.exceptions import RetryTaskError, NotRegistered
 from celery.decorators import task as task_dec
 from celery.datastructures import ExceptionInfo
 
@@ -107,12 +106,11 @@ class TestJail(unittest.TestCase):
             return old_connection_close(*args, **kwargs)
 
         connection.close = monkeypatched_connection_close
-
-        ret = jail(gen_unique_id(),
-                   get_db_connection.name, [2], {})
-        self.assertTrue(connection._was_closed)
-
-        connection.close = old_connection_close
+        try:
+            jail(gen_unique_id(), get_db_connection.name, [2], {})
+            self.assertTrue(connection._was_closed)
+        finally:
+            connection.close = old_connection_close
 
     def test_django_cache_connection_is_closed(self):
         old_cache_close = getattr(cache.cache, "close", None)

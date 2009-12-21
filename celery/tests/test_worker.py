@@ -7,7 +7,6 @@ from carrot.connection import BrokerConnection
 from carrot.backends.base import BaseMessage
 from billiard.serialization import pickle
 
-from celery import registry
 from celery.utils import gen_unique_id
 from celery.worker import CarrotListener, WorkController
 from celery.worker.job import TaskWrapper
@@ -110,14 +109,14 @@ class TestCarrotListener(unittest.TestCase):
         l = CarrotListener(self.ready_queue, self.eta_schedule, self.logger,
                            send_events=False)
 
-        c = l.reset_connection()
+        l.reset_connection()
         self.assertTrue(isinstance(l.amqp_connection, BrokerConnection))
 
         l.close_connection()
         self.assertTrue(l.amqp_connection is None)
         self.assertTrue(l.task_consumer is None)
 
-        c = l.reset_connection()
+        l.reset_connection()
         self.assertTrue(isinstance(l.amqp_connection, BrokerConnection))
 
         l.stop()

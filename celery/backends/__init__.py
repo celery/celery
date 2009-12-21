@@ -1,4 +1,3 @@
-import sys
 import importlib
 
 from billiard.utils.functional import curry

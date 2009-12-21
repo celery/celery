@@ -1,12 +1,11 @@
 import unittest
 from StringIO import StringIO
+from datetime import datetime, timedelta
 
 from celery import task
-from celery import registry
 from celery import messaging
 from celery.result import EagerResult
 from celery.backends import default_backend
-from datetime import datetime, timedelta
 from celery.decorators import task as task_dec
 from celery.worker.listener import parse_iso8601
 
@@ -222,16 +221,13 @@ class TestCeleryTasks(unittest.TestCase):
 
         # Discarding all tasks.
         task.discard_all()
-        tid3 = task.apply_async(t1)
+        task.apply_async(t1)
         self.assertEquals(task.discard_all(), 1)
         self.assertTrue(consumer.fetch() is None)
 
-        self.assertFalse(task.is_successful(presult.task_id))
         self.assertFalse(presult.successful())
         default_backend.mark_as_done(presult.task_id, result=None)
-        self.assertTrue(task.is_successful(presult.task_id))
         self.assertTrue(presult.successful())
-
 
         publisher = t1.get_publisher()
         self.assertTrue(isinstance(publisher, messaging.TaskPublisher))

@@ -3,15 +3,12 @@
 Django Models.
 
 """
-from datetime import datetime
-
 import django
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from picklefield.fields import PickledObjectField
 
 from celery import conf
-from celery.registry import tasks
 from celery.managers import TaskManager
 
 TASK_STATUS_PENDING = "PENDING"

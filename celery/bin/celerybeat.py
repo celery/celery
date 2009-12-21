@@ -46,7 +46,6 @@
     Change root directory to this path when in daemon mode.
 
 """
-import os
 import sys
 import traceback
 import optparse
@@ -57,7 +56,6 @@ from celery import __version__
 from celery.log import emergency_error
 from celery.beat import ClockService
 from celery.utils import noop
-from celery.loaders import current_loader, settings
 from celery.messaging import get_connection_info
 
 STARTUP_INFO_FMT = """
@@ -120,11 +118,14 @@ def run_clockservice(detach=False, loglevel=conf.CELERYBEAT_LOG_LEVEL,
     if not detach:
         logfile = None # log to stderr when not running in the background.
 
+    # Run the worker init handler.
+    # (Usually imports task modules and such.)
+    from celery.loaders import current_loader
+    current_loader.on_worker_init()
+
+
     # Dump configuration to screen so we have some basic information
     # when users sends e-mails.
-
-    from celery.messaging import format_routing_table
-
 
     print(STARTUP_INFO_FMT % {
             "conninfo": get_connection_info(),
@@ -149,10 +150,6 @@ def run_clockservice(detach=False, loglevel=conf.CELERYBEAT_LOG_LEVEL,
         logger = setup_logger(loglevel, logfile)
         redirect_stdouts_to_logger(logger, loglevel)
         platform.set_effective_user(uid, gid)
-
-    # Run the worker init handler.
-    # (Usually imports task modules and such.)
-    current_loader.on_worker_init()
 
     def _run_clock():
         logger = setup_logger(loglevel, logfile)

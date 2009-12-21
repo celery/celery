@@ -1,7 +1,6 @@
-import unittest
 import time
-from Queue import Queue, Empty
-from datetime import datetime, timedelta
+import unittest
+from Queue import Queue
 
 from celery.worker.controllers import Mediator
 from celery.worker.controllers import BackgroundThread

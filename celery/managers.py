@@ -19,9 +19,9 @@ class TaskManager(models.Manager):
         """
         try:
             task, created = self.get_or_create(task_id=task_id)
-        except Exception, exc:
-            # depending on the database backend we can get various exceptions,
-            # so we catch every exception type
+        except Exception:
+            # We don't have a map of the different exceptions backends can
+            # throw, so we have to catch everything.
             if exception_retry_count > 0:
                 transaction.rollback_unless_managed()
                 return self.get_task(task_id, exception_retry_count-1)
@@ -74,7 +74,7 @@ class TaskManager(models.Manager):
                 task.result = result
                 task.traceback = traceback
                 task.save()
-        except Exception, exc:
+        except Exception:
             # depending on the database backend we can get various exceptions.
             # for excample, psycopg2 raises an exception if some operation
             # breaks transaction, and saving task result won't be possible

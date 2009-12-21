@@ -1,6 +1,4 @@
 import unittest
-from Queue import Queue, Empty
-from datetime import datetime, timedelta
 
 from celery.worker import revoke
 

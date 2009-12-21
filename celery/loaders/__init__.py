@@ -1,16 +1,12 @@
 import os
 import importlib
 
-from django.conf import settings
-from django.core.management import setup_environ
-
-from carrot.utils import rpartition
 from celery.loaders.default import Loader as DefaultLoader
 from celery.loaders.djangoapp import Loader as DjangoLoader
 
+LOADER_CLASS_NAME = "Loader"
 LOADER_ALIASES = {"django": "celery.loaders.djangoapp",
                   "default": "celery.loaders.default"}
-LOADER_CLASS_NAME = "Loader"
 _loader_cache = {}
 
 
@@ -36,6 +32,7 @@ def _detect_loader():
     if loader:
         return get_loader_cls(loader)
 
+    from django.conf import settings
     if settings.configured:
         return DjangoLoader
     try:
@@ -55,6 +52,7 @@ def _detect_loader():
             # used configuration method so to propogate it to the "child"
             # processes. But this has to be experimented with.
             # [asksol/heyman]
+            from django.core.management import setup_environ
             try:
                 settings_mod = os.environ.get("DJANGO_SETTINGS_MODULE",
                                                 "settings")

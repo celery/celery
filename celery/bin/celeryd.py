@@ -64,7 +64,6 @@
 import os
 import sys
 import logging
-import textwrap
 import optparse
 import traceback
 import multiprocessing

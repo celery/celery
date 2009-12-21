@@ -12,7 +12,8 @@ from celery.task.control import discard_all
 from celery.task.builtins import PingTask
 
 __all__ = ["Task", "TaskSet", "PeriodicTask", "tasks", "discard_all",
-           "is_successful", "dmap", "dmap_async", "execute_remote", "ping"]
+           "dmap", "dmap_async", "execute_remote", "ping"]
+
 
 def dmap(fun, args, timeout=None):
     """Distribute processing of the arguments and collect the results.

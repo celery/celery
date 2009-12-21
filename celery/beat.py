@@ -9,7 +9,6 @@ from datetime import datetime
 from celery import log
 from celery import conf
 from celery import registry
-from celery.log import setup_logger
 
 TIME_UNITS = (("day", 60 * 60 * 24, lambda n: int(math.ceil(n))),
               ("hour", 60 * 60, lambda n: int(math.ceil(n))),
@@ -162,7 +161,7 @@ class ClockService(object):
     def start(self):
         self.logger.info("ClockService: Starting...")
         schedule = shelve.open(filename=self.schedule_filename)
-        #atexit.register(schedule.close)
+        atexit.register(schedule.close)
         scheduler = self.scheduler_cls(schedule=schedule,
                                        registry=self.registry,
                                        logger=self.logger,

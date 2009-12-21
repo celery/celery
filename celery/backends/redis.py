@@ -31,7 +31,9 @@ class RedisBackend(KeyValueStoreBackend):
     redis_connect_retry = None
 
     def __init__(self, redis_host=None, redis_port=None, redis_db=None,
-            redis_timeout=None, redis_connect_timeout=None):
+            redis_timeout=None,
+            redis_connect_retry=None,
+            redis_connect_timeout=None):
         if not redis:
             raise ImproperlyConfigured(
                     "You need to install the redis library in order to use "
@@ -76,7 +78,6 @@ class RedisBackend(KeyValueStoreBackend):
 
     def close(self):
         """Close the redis connection and remove the cache."""
-        # connection overrides bool() # XXX Was the case with tyrant lib!
         if self._connection is not None:
             self._connection.close()
             self._connection = None
