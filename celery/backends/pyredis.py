@@ -1,12 +1,12 @@
-"""celery.backends.tyrant"""
 from django.core.exceptions import ImproperlyConfigured
+
 from celery.backends.base import KeyValueStoreBackend
+from celery.loaders import settings
+
 try:
     import redis
 except ImportError:
     redis = None
-
-from celery.loaders import settings
 
 
 class RedisBackend(KeyValueStoreBackend):
@@ -24,8 +24,8 @@ class RedisBackend(KeyValueStoreBackend):
         :setting:`REDIS_HOST` or :setting:`REDIS_PORT` is not set.
 
     """
-    redis_host = None
-    redis_port = None
+    redis_host = "localhost"
+    redis_port = 6379
     redis_db = "celery_results"
     redis_timeout = None
     redis_connect_retry = None
@@ -34,7 +34,7 @@ class RedisBackend(KeyValueStoreBackend):
             redis_timeout=None,
             redis_connect_retry=None,
             redis_connect_timeout=None):
-        if not redis:
+        if redis is None:
             raise ImproperlyConfigured(
                     "You need to install the redis library in order to use "
                   + "Redis result store backend.")
@@ -73,13 +73,14 @@ class RedisBackend(KeyValueStoreBackend):
                                     port=self.redis_port,
                                     db=self.redis_db,
                                     timeout=self.redis_timeout,
-                                    connect_retry=self.redis_connect_retry)
+                                    retry_connection=self.redis_connect_retry)
+            self._connection.connect()
         return self._connection
 
     def close(self):
-        """Close the redis connection and remove the cache."""
+        """Close the connection to redis."""
         if self._connection is not None:
-            self._connection.close()
+            self._connection.disconnect()
             self._connection = None
 
     def process_cleanup(self):

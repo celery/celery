@@ -97,9 +97,7 @@ class BaseAsyncResult(object):
         If the task raised an exception, this will be the exception instance.
 
         """
-        if self.status in self.backend.READY_STATES:
-            return self.backend.get_result(self.task_id)
-        return None
+        return self.backend.get_result(self.task_id)
 
     @property
     def traceback(self):

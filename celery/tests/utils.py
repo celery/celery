@@ -25,6 +25,10 @@ def skip_if_environ(env_var_name):
     return _wrap_test
 
 
+def skip_if_quick(fun):
+    return skip_if_environ("QUICKTEST")(fun)
+
+
 def _skip_test(reason, sign):
 
     def _wrap_test(fun):

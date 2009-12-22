@@ -1,14 +1,13 @@
 import time
 import math
 import shelve
-import atexit
 import threading
 from datetime import datetime
 from UserDict import UserDict
 
 from celery import log
 from celery import conf
-from celery import registry
+from celery import registry as _registry
 from celery.utils.info import humanize_seconds
 
 
@@ -82,8 +81,8 @@ class Scheduler(UserDict):
 
     def __init__(self, registry=None, schedule=None, logger=None,
             max_interval=None):
-        self.registry = registry or {}
-        self.schedule = schedule or {}
+        self.registry = registry or _registry.TaskRegistry()
+        self.data = schedule or {}
         self.logger = logger or log.get_default_logger()
         self.max_interval = max_interval or conf.CELERYBEAT_MAX_LOOP_INTERVAL
 
@@ -153,58 +152,71 @@ class Scheduler(UserDict):
 
 class ClockService(object):
     scheduler_cls = Scheduler
-    registry = registry.tasks
+    registry = _registry.tasks
+    open_schedule = shelve.open
 
     def __init__(self, logger=None, is_detached=False,
             max_interval=conf.CELERYBEAT_MAX_LOOP_INTERVAL,
             schedule_filename=conf.CELERYBEAT_SCHEDULE_FILENAME):
-        self.logger = logger
+        self.logger = logger or log.get_default_logger()
         self.max_interval = max_interval
         self.schedule_filename = schedule_filename
         self._shutdown = threading.Event()
         self._stopped = threading.Event()
+        self._schedule = None
+        self._scheduler = None
+        self._in_sync = False
+        silence = self.max_interval < 60 and 10 or 1
+        self.debug = log.SilenceRepeated(self.logger.debug,
+                                         max_iterations=silence)
 
     def start(self):
         self.logger.info("ClockService: Starting...")
-        schedule = shelve.open(filename=self.schedule_filename)
-        atexit.register(schedule.close)
-        scheduler = self.scheduler_cls(schedule=schedule,
-                                       registry=self.registry,
-                                       logger=self.logger,
-                                       max_interval=self.max_interval)
         self.logger.debug("ClockService: "
             "Ticking with max interval->%s, schedule->%s" % (
                     humanize_seconds(self.max_interval),
                     self.schedule_filename))
 
-        synced = [False]
-        def _stop():
-            if not synced[0]:
-                self.logger.debug("ClockService: Syncing schedule to disk...")
-                schedule.sync()
-                schedule.close()
-                synced[0] = True
-                self._stopped.set()
-
-        silence = self.max_interval < 60 and 10 or 1
-        debug = log.SilenceRepeated(self.logger.debug, max_iterations=silence)
-
         try:
             while True:
                 if self._shutdown.isSet():
                     break
-                interval = scheduler.tick()
-                debug("ClockService: Waking up %s." % (
+                interval = self.scheduler.tick()
+                self.debug("ClockService: Waking up %s." % (
                         humanize_seconds(interval, prefix="in ")))
                 time.sleep(interval)
         except (KeyboardInterrupt, SystemExit):
-            _stop()
+            self.sync()
         finally:
-            _stop()
+            self.sync()
+
+    def sync(self):
+        if self._schedule is not None and not self._in_sync:
+            self.logger.debug("ClockService: Syncing schedule to disk...")
+            self._schedule.sync()
+            self._schedule.close()
+            self._in_sync = True
+            self._stopped.set()
 
     def stop(self, wait=False):
         self._shutdown.set()
         wait and self._stopped.wait() # block until shutdown done.
+
+    @property
+    def schedule(self):
+        if self._schedule is None:
+            filename = self.schedule_filename
+            self._schedule = self.open_schedule(filename=filename)
+        return self._schedule
+
+    @property
+    def scheduler(self):
+        if self._scheduler is None:
+            self._scheduler = self.scheduler_cls(schedule=self.schedule,
+                                            registry=self.registry,
+                                            logger=self.logger,
+                                            max_interval=self.max_interval)
+        return self._scheduler
 
 
 class ClockServiceThread(threading.Thread):

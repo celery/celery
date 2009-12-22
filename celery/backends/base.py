@@ -149,7 +149,7 @@ class KeyValueStoreBackend(BaseBackend):
     def get_result(self, task_id):
         """Get the result of a task."""
         meta = self._get_task_meta_for(task_id)
-        if meta["status"] == "FAILURE":
+        if meta["status"] in self.EXCEPTION_STATES:
             return self.exception_to_python(meta["result"])
         else:
             return meta["result"]

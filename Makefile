@@ -26,13 +26,11 @@ readme: clean_readme
 bump:
 	contrib/bump -c celery
 
-coverage2:
-	[ -d testproj/temp ] || mkdir -p testproj/temp
-	(cd testproj; python manage.py test --figleaf)
-
 coverage:
-	[ -d testproj/temp ] || mkdir -p testproj/temp
 	(cd testproj; python manage.py test --coverage)
+
+quickcoverage:
+	(cd testproj; env QUICKTEST=1 SKIP_RLIMITS=1 python manage.py test --coverage)
 
 test:
 	(cd testproj; python manage.py test)

@@ -36,6 +36,10 @@ class TestBaseBackendInterface(unittest.TestCase):
         self.assertRaises(NotImplementedError,
                 b.get_result, "SOMExx-N0nex1stant-IDxx-")
 
+    def test_get_traceback(self):
+        self.assertRaises(NotImplementedError,
+                b.get_traceback, "SOMExx-N0nex1stant-IDxx-")
+
 
 class TestPickleException(unittest.TestCase):
 

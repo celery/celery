@@ -9,7 +9,7 @@ BACKEND_ALIASES = {
     "amqp": "celery.backends.amqp.AMQPBackend",
     "database": "celery.backends.database.DatabaseBackend",
     "db": "celery.backends.database.DatabaseBackend",
-    "redis": "celery.backends.redis.RedisBackend",
+    "redis": "celery.backends.pyredis.RedisBackend",
     "cache": "celery.backends.cache.CacheBackend",
     "mongodb": "celery.backends.mongodb.MongoBackend",
     "tyrant": "celery.backends.tyrant.TyrantBackend",

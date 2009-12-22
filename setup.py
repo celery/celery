@@ -46,7 +46,7 @@ class RunTests(Command):
 
 class QuickRunTests(RunTests):
 
-    quicktest_envs = dict(SKIP_RLIMITS=1)
+    quicktest_envs = dict(SKIP_RLIMITS=1, QUICKTEST=1)
 
     def run(self):
         for env_name, env_value in self.quicktest_envs.items():

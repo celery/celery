@@ -20,11 +20,18 @@ TEST_RUNNER = "celery.tests.runners.run_tests"
 TEST_APPS = (
     "celery",
 )
-COVERAGE_EXCLUDE_MODULES = ("celery.tests.*",
+COVERAGE_EXCLUDE_MODULES = ("celery.__init__",
+                            "celery.conf",
+                            "celery.tests.*",
                             "celery.management.*",
                             "celery.contrib.*",
                             "celery.bin.*",
                             "celery.utils.patch",
+                            "celery.task.rest",
+                            "celery.platform", # FIXME
+                            "celery.loaders.default", # FIXME
+                            "celery.backends.mongodb", # FIXME
+                            "celery.backends.tyrant", # FIXME
                             "celery.task.strategy")
 COVERAGE_HTML_REPORT = True
 COVERAGE_BRANCH_COVERAGE = True
