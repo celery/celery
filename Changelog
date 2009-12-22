@@ -2,6 +2,15 @@
 Change history
 ==============
 
+0.8.3 [2009-12-22 09:43 A.M CEST]
+---------------------------------
+
+* Fixed a possible race condition that could happen when storing/querying
+  task results using the the database backend.
+
+* Now has console script entry points in the setup.py file, so tools like
+  buildout will correctly install the programs celerybin and celeryinit.
+
 0.8.2 [2009-11-20 03:40 P.M CEST]
 ---------------------------------
 
