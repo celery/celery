@@ -271,6 +271,9 @@ def parse_options(arguments):
     return options
 
 
-if __name__ == "__main__":
+def main():
     options = parse_options(sys.argv[1:])
     run_worker(**vars(options))
+
+if __name__ == "__main__":
+    main()
