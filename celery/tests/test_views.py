@@ -1,10 +1,11 @@
 import sys
 import unittest
 
+from django.http import HttpResponse
 from django.test.client import Client
 from django.test.testcases import TestCase as DjangoTestCase
 from django.core.urlresolvers import reverse
-from django.http import HttpResponse
+from django.template import TemplateDoesNotExist
 
 from anyjson import deserialize as JSON_load
 from billiard.utils.functional import curry
@@ -60,6 +61,17 @@ class TestTaskApply(ViewTestCase):
             ret = self.client.get(task_apply(kwargs={"task_name": mytask.name,
                                                      "args": "4/4"}))
             self.assertEquals(scratch["result"], 16)
+        finally:
+            conf.ALWAYS_EAGER = False
+
+    def test_apply_raises_404_on_unregistered_task(self):
+        conf.ALWAYS_EAGER = True
+        try:
+            name = "xxx.does.not.exist"
+            action = curry(self.client.get, task_apply(kwargs={
+                                                        "task_name": name,
+                                                        "args": "4/4"}))
+            self.assertRaises(TemplateDoesNotExist, action)
         finally:
             conf.ALWAYS_EAGER = False
 

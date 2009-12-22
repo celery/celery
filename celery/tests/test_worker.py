@@ -139,6 +139,24 @@ class TestCarrotListener(unittest.TestCase):
         self.assertEquals(in_bucket.execute(), 2 * 4 * 8)
         self.assertTrue(self.eta_schedule.empty())
 
+    def test_receieve_message_eta_isoformat(self):
+        l = CarrotListener(self.ready_queue, self.eta_schedule, self.logger,
+                           send_events=False)
+        backend = MockBackend()
+        m = create_message(backend, task=foo_task.name,
+                           eta=datetime.now().isoformat(),
+                           args=[2, 4, 8], kwargs={})
+
+        l.event_dispatcher = MockEventDispatcher()
+        l.receive_message(m.decode(), m)
+
+        items = [entry[2] for entry in self.eta_schedule.queue]
+        found = 0
+        for item in items:
+            if item.task_name == foo_task.name:
+                found = True
+        self.assertTrue(found)
+
     def test_revoke(self):
         ready_queue = Queue()
         l = CarrotListener(ready_queue, self.eta_schedule, self.logger,
