@@ -82,9 +82,9 @@ class WorkerTaskTrace(TaskTrace):
         try:
             return self.execute(*args, **kwargs)
         except Exception, exc:
-            exc_info = sys.exc_info()
-            exc_info[1] = self.task_backend.prepare_exception(exc)
-            exc_info = ExceptionInfo(exc_info)
+            _type, _value, _tb = sys.exc_info()
+            _value = self.task.backend.prepare_exception(exc)
+            exc_info = ExceptionInfo((_type, _value, _tb))
             warnings.warn("Exception outside body: %s: %s\n%s" % tuple(
                 map(str, (exc.__class__, exc, exc_info.traceback))))
             return exc_info

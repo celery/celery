@@ -27,6 +27,7 @@ COVERAGE_EXCLUDE_MODULES = ("celery.__init__",
                             "celery.contrib.*",
                             "celery.bin.*",
                             "celery.utils.patch",
+                            "celery.utils.compat",
                             "celery.task.rest",
                             "celery.platform", # FIXME
                             "celery.loaders.default", # FIXME

@@ -82,7 +82,7 @@ class ControlDispatch(object):
 
     panel_cls = Control
 
-    def __init__(self, logger, hostname=None):
+    def __init__(self, logger=None, hostname=None):
         self.logger = logger or log.get_default_logger()
         self.hostname = hostname
         self.panel = self.panel_cls(self.logger, hostname=self.hostname)
@@ -104,13 +104,14 @@ class ControlDispatch(object):
         if not destination or self.hostname in destination:
             return self.execute(command, message)
 
-    def execute(self, command, kwargs):
+    def execute(self, command, kwargs=None):
         """Execute control command by name and keyword arguments.
 
         :param command: Name of the command to execute.
         :param kwargs: Keyword arguments.
 
         """
+        kwargs = kwargs or {}
         control = None
         try:
             control = getattr(self.panel, command)
