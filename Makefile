@@ -43,10 +43,16 @@ quicktest:
 testverbose:
 	(cd testproj; python manage.py test --verbosity=2)
 
-releaseok: pep8 autodoc test
+releaseok: pep8 autodoc test gitclean
 
 removepyc:
 	find . -name "*.pyc" | xargs rm
 
 release: releaseok ghdocs removepyc
+
+gitclean:
+	git clean -xdn
+
+gitcleanforce:
+	git clean -xdf
 
