@@ -65,20 +65,18 @@ class TaskManager(models.Manager):
 
     def get_task(self, task_id, exception_retry_count=1):
         """Get task meta for task by ``task_id``.
-        
-        :keyword exception_retry_count: How many times to retry with
-            transaction rollback on exception. 1 by default: we assume
-            the pessimistic case when we get race condition in which
-            task is created by other process during get_or_create
+
+        :keyword exception_retry_count: How many times to retry by
+            transaction rollback on exception. This could theoretically
+            happen in a race condition if another worker is trying to
+            create the same task. The default is to retry once.
         """
         try:
             task, created = self.get_or_create(task_id=task_id)
         except Exception, exc:
-            # depending on the database backend we can get various exceptions,
-            # so we catch every exception type
             if exception_retry_count > 0:
                 transaction.rollback_unless_managed()
-                return self.get_task(task_id, exception_retry_count-1)
+                return self.get_task(task_id, exception_retry_count - 1)
             else:
                 raise
         return task
@@ -111,12 +109,11 @@ class TaskManager(models.Manager):
         :keyword traceback: The traceback at the point of exception (if the
             task failed).
 
-        :keyword exception_retry_count: How many times to retry with
-            transaction rollback on exception. 2 by default: we assume
-            the pessimistic case when task execution by itself could
-            leave broken transaction, and during second try we get
-            race condition in which task is created by other process
-            during get_or_create
+        :keyword exception_retry_count: How many times to retry by
+            transaction rollback on exception. This could theoretically
+            happen in a race condition if another worker is trying to
+            create the same task. The default is to retry twice.
+
         """
         try:
             task, created = self.get_or_create(task_id=task_id, defaults={
@@ -129,13 +126,10 @@ class TaskManager(models.Manager):
                 task.traceback = traceback
                 task.save()
         except Exception, exc:
-            # depending on the database backend we can get various exceptions.
-            # for excample, psycopg2 raises an exception if some operation
-            # breaks transaction, and saving task result won't be possible
-            # until we rollback transaction
             if exception_retry_count > 0:
                 transaction.rollback_unless_managed()
-                self.store_result(task_id, result, status, traceback, exception_retry_count-1)
+                self.store_result(task_id, result, status, traceback,
+                                  exception_retry_count - 1)
             else:
                 raise
 
