@@ -50,9 +50,9 @@ removepyc:
 
 release: releaseok ghdocs removepyc
 
-gitclean:
+gitclean: removepyc
 	git clean -xdn
 
-gitcleanforce:
+gitcleanforce: removepyc
 	git clean -xdf
 
