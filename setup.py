@@ -101,8 +101,7 @@ setup(
         'console_scripts': [
             'celeryd = celery.bin.celeryd:main',
             'celeryinit = celery.bin.celeryinit:main',
-            'celerybeat = celery.bin.celerybeat:main'
-            ]
+            ],
     },
     long_description=long_description,
 )
