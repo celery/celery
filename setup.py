@@ -130,5 +130,12 @@ setup(
         "Topic :: System :: Distributed Computing",
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
+    entry_points={
+        'console_scripts': [
+            'celeryd = celery.bin.celeryd:main',
+            'celeryinit = celery.bin.celeryinit:main',
+            'celerybeat = celery.bin.celerybeat:main'
+            ]
+    },
     long_description=long_description,
 )

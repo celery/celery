@@ -275,7 +275,9 @@ def set_process_status(info):
         info = "%s (%s)" % (info, " ".join(sys.argv[arg_start:]))
     platform.set_mp_process_title("celeryd", info=info)
 
-
-if __name__ == "__main__":
+def main():
     options = parse_options(sys.argv[1:])
     run_worker(**vars(options))
+
+if __name__ == "__main__":
+    main()
