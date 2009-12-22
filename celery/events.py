@@ -29,9 +29,10 @@ class EventDispatcher(object):
 
     """
 
-    def __init__(self, connection, hostname=None, enabled=True):
+    def __init__(self, connection, hostname=None, enabled=True,
+            publisher=None):
         self.connection = connection
-        self.publisher = EventPublisher(self.connection)
+        self.publisher = publisher or EventPublisher(self.connection)
         self.hostname = hostname or socket.gethostname()
         self.enabled = enabled
         self._lock = threading.Lock()
