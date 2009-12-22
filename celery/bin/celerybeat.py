@@ -176,7 +176,9 @@ def parse_options(arguments):
     options, values = parser.parse_args(arguments)
     return options
 
-
-if __name__ == "__main__":
+def main():
     options = parse_options(sys.argv[1:])
     run_clockservice(**vars(options))
+
+if __name__ == "__main__":
+    main()
