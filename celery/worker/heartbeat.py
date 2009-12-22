@@ -38,12 +38,12 @@ class Heart(threading.Thread):
 
         last_beat = None
         while 1:
-            if self._shutdown.isSet():
-                break
             now = time()
             if not last_beat or now > last_beat + (60.0 / bpm):
                 last_beat = now
                 dispatch("worker-heartbeat")
+            if self._shutdown.isSet():
+                break
             sleep(1)
 
         try:

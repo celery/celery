@@ -1,3 +1,5 @@
+import math
+
 from celery import conf
 from celery.messaging import establish_connection
 
@@ -10,7 +12,7 @@ BROKER_FORMAT = "%(carrot_backend)s://%(userid)s@%(host)s%(port)s%(vhost)s"
 TIME_UNITS = (("day", 60 * 60 * 24, lambda n: int(math.ceil(n))),
               ("hour", 60 * 60, lambda n: int(math.ceil(n))),
               ("minute", 60, lambda n: int(math.ceil(n))),
-              ("second", 1, lambda n: "%.2d" % n))
+              ("second", 1, lambda n: "%.2f" % n))
 
 
 def humanize_seconds(secs, prefix=""):
