@@ -150,17 +150,19 @@ class CarrotListener(object):
             return
         self._state = CLOSE
 
-        self.logger.debug("Heart: Going into cardiac arrest...")
-        self.heart = self.heart and self.heart.stop()
+        if self.heart:
+            self.logger.debug("Heart: Going into cardiac arrest...")
+            self.heart = self.heart.stop()
 
         self.logger.debug("TaskConsumer: Shutting down...")
         self.task_consumer = self.task_consumer and self.task_consumer.close()
 
-        self.logger.debug("EventDispatcher: Shutting down...")
-        self.event_dispatcher = self.event_dispatcher and \
-                                    self.event_dispatcher.close()
-        self.logger.debug(
-                "CarrotListener: Closing connection to broker...")
+        if self.event_dispatcher:
+            self.logger.debug("EventDispatcher: Shutting down...")
+            self.event_dispatcher = self.event_dispatcher.close()
+
+        self.logger.debug("CarrotListener: "
+                          "Closing connection to broker...")
         self.connection = self.connection and self.connection.close()
 
     def reset_connection(self):

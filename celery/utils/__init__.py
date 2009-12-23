@@ -9,11 +9,7 @@ try:
     import ctypes
 except ImportError:
     ctypes = None
-from uuid import UUID, uuid4
-try:
-    from uuid import _uuid_generate_random
-except ImportError:
-    _uuid_generate_random = None
+from uuid import UUID, uuid4, _uuid_generate_random
 from inspect import getargspec
 from itertools import repeat
 
@@ -87,7 +83,7 @@ def repeatlast(it):
     yield the last value infinitely."""
     for item in it:
         yield item
-    for item in repeat(item):
+    for item in repeat(item): # pragma: no cover
         yield item
 
 

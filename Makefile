@@ -26,10 +26,12 @@ readme: clean_readme
 bump:
 	contrib/bump -c celery
 
-coverage:
+cover:
 	(cd testproj; python manage.py test --coverage)
 
-quickcoverage:
+coverage: cover
+
+quickcover:
 	(cd testproj; env QUICKTEST=1 SKIP_RLIMITS=1 python manage.py test --coverage)
 
 test:
