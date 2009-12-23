@@ -27,7 +27,7 @@ def get_loader_cls(loader):
     return _loader_cache[loader]
 
 
-def _detect_loader():
+def _detect_loader(): # pragma: no cover
     loader = os.environ.get("CELERY_LOADER")
     if loader:
         return get_loader_cls(loader)

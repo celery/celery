@@ -107,7 +107,7 @@ class LoggingProxy(object):
         ``sys.__stderr__`` instead of ``sys.stderr`` to circumvent
         infinite loops."""
 
-        def wrap_handler(handler):
+        def wrap_handler(handler): # pragma: no cover
 
             class WithSafeHandleError(logging.Handler):
 

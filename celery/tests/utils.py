@@ -1,11 +1,46 @@
 from __future__ import with_statement
 
-import sys
 import os
+import sys
 import __builtin__
 from StringIO import StringIO
 from functools import wraps
 from contextlib import contextmanager
+
+from celery.utils import noop
+
+
+def with_environ(env_name, env_value):
+
+    def _envpatched(fun):
+
+        @wraps(fun)
+        def _patch_environ(*args, **kwargs):
+            prev_val = os.environ.get(env_name)
+            os.environ[env_name] = env_value
+            try:
+                return fun(*args, **kwargs)
+            finally:
+                if prev_val is not None:
+                    os.environ[env_name] = prev_val
+
+        return _patch_environ
+    return _envpatched
+
+
+def sleepdeprived(fun):
+
+    @wraps(fun)
+    def _sleepdeprived(*args, **kwargs):
+        import time
+        old_sleep = time.sleep
+        time.sleep = noop
+        try:
+            return fun(*args, **kwargs)
+        finally:
+            time.sleep = old_sleep
+
+    return _sleepdeprived
 
 
 def skip_if_environ(env_var_name):

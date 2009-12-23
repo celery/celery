@@ -5,6 +5,7 @@ import unittest
 from billiard.utils.functional import wraps
 
 from celery import utils
+from celery.tests.utils import sleepdeprived
 
 
 class TestChunks(unittest.TestCase):
@@ -52,21 +53,6 @@ class TestDivUtils(unittest.TestCase):
             self.assertEquals(it.next(), i)
         for j in items:
             self.assertEquals(it.next(), i)
-
-
-def sleepdeprived(fun):
-
-    @wraps(fun)
-    def _sleepdeprived(*args, **kwargs):
-        import time
-        old_sleep = time.sleep
-        time.sleep = utils.noop
-        try:
-            return fun(*args, **kwargs)
-        finally:
-            time.sleep = old_sleep
-
-    return _sleepdeprived
 
 
 class TestRetryOverTime(unittest.TestCase):

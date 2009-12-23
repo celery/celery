@@ -252,7 +252,7 @@ class TaskSetResult(object):
         :raises: The exception if any of the tasks raised an exception.
 
         """
-        results = dict((subtask.task_id, AsyncResult(subtask.task_id))
+        results = dict((subtask.task_id, subtask.__class__(subtask.task_id))
                             for subtask in self.subtasks)
         while results:
             for task_id, pending_result in results.items():

@@ -2,6 +2,7 @@ import unittest
 
 from celery.task import control
 from celery.task.builtins import PingTask
+from celery.utils import gen_unique_id
 
 
 class MockBroadcastPublisher(object):
@@ -45,4 +46,18 @@ class TestBroadcast(unittest.TestCase):
     @with_mock_broadcast
     def test_revoke(self):
         control.revoke("foozbaaz")
+        self.assertTrue("revoke" in MockBroadcastPublisher.sent)
+
+    @with_mock_broadcast
+    def test_revoke_from_result(self):
+        from celery.result import AsyncResult
+        AsyncResult("foozbazzbar").revoke()
+        self.assertTrue("revoke" in MockBroadcastPublisher.sent)
+
+    @with_mock_broadcast
+    def test_revoke_from_resultset(self):
+        from celery.result import TaskSetResult, AsyncResult
+        r = TaskSetResult(gen_unique_id(), map(AsyncResult, [gen_unique_id()
+                                                            for i in range(10)]))
+        r.revoke()
         self.assertTrue("revoke" in MockBroadcastPublisher.sent)
