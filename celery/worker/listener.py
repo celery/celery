@@ -1,4 +1,5 @@
 import socket
+import warnings
 from datetime import datetime
 
 from dateutil.parser import parse as parse_iso8601
@@ -143,7 +144,12 @@ class CarrotListener(object):
         control = message_data.get("control")
         if control:
             self.control_dispatch.dispatch_from_message(control)
-        return
+            return
+
+        warnings.warn(RuntimeWarning(
+            "Received and deleted unknown message. Wrong destination?!? \
+             the message was: %s" % message_data))
+        message.ack()
 
     def close_connection(self):
         if not self._state == RUN:

@@ -20,7 +20,7 @@ class TaskManager(models.Manager):
         """
         try:
             task, created = self.get_or_create(task_id=task_id)
-        except Exception:
+        except Exception: # pragma: no cover
             # We don't have a map of the different exceptions backends can
             # throw, so we have to catch everything.
             if exception_retry_count > 0:
@@ -74,7 +74,7 @@ class TaskManager(models.Manager):
                 task.result = result
                 task.traceback = traceback
                 task.save()
-        except Exception:
+        except Exception: # pragma: no cover
             # depending on the database backend we can get various exceptions.
             # for excample, psycopg2 raises an exception if some operation
             # breaks transaction, and saving task result won't be possible
