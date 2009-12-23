@@ -30,7 +30,6 @@ COVERAGE_EXCLUDE_MODULES = ("celery.__init__",
                             "celery.utils.compat",
                             "celery.task.rest",
                             "celery.platform", # FIXME
-                            "celery.loaders.default", # FIXME
                             "celery.backends.mongodb", # FIXME
                             "celery.backends.tyrant", # FIXME
                             )

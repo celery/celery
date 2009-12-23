@@ -1,4 +1,5 @@
 import os
+import sys
 import unittest
 
 from billiard.utils.functional import wraps
@@ -6,6 +7,7 @@ from billiard.utils.functional import wraps
 from celery import loaders
 from celery.loaders import base
 from celery.loaders import djangoapp
+from celery.loaders import default
 from celery.tests.utils import with_environ
 
 
@@ -85,3 +87,39 @@ class TestDjangoLoader(unittest.TestCase):
 
     def test_find_related_module_no_related(self):
         self.assertFalse(djangoapp.find_related_module("someapp", "frobulators"))
+
+
+class TestDefaultLoader(unittest.TestCase):
+
+    def test_wanted_module_item(self):
+        self.assertTrue(default.wanted_module_item("FOO"))
+        self.assertTrue(default.wanted_module_item("foo"))
+        self.assertFalse(default.wanted_module_item("_foo"))
+        self.assertFalse(default.wanted_module_item("__foo"))
+
+
+    def test_read_configuration(self):
+        from types import ModuleType
+
+        class ConfigModule(ModuleType):
+            pass
+
+        celeryconfig = ConfigModule("celeryconfig")
+        celeryconfig.CELERY_IMPORTS = ("os", "sys")
+
+        sys.modules["celeryconfig"] = celeryconfig
+        try:
+           l = default.Loader()
+           settings = l.read_configuration()
+           self.assertEquals(settings.CELERY_IMPORTS, ("os", "sys"))
+           from django.conf import settings
+           settings.configured = False
+           settings = l.read_configuration()
+           self.assertEquals(settings.CELERY_IMPORTS, ("os", "sys"))
+           self.assertTrue(settings.configured)
+           l.on_worker_init()
+        finally:
+            sys.modules.pop("celeryconfig", None)
+
+
+

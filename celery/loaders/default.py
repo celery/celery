@@ -13,8 +13,7 @@ DEFAULT_SETTINGS = {
 
 
 def wanted_module_item(item):
-    is_private = item.startswith("_")
-    return not is_private
+    return not item.startswith("_")
 
 
 class Loader(BaseLoader):
@@ -40,8 +39,8 @@ class Loader(BaseLoader):
             settings.configure()
         for config_key, config_value in usercfg.items():
             setattr(settings, config_key, config_value)
-        installed_apps = set(DEFAULT_SETTINGS["INSTALLED_APPS"] + \
-                             settings.INSTALLED_APPS)
+        installed_apps = set(list(DEFAULT_SETTINGS["INSTALLED_APPS"]) + \
+                             list(settings.INSTALLED_APPS))
         settings.INSTALLED_APPS = tuple(installed_apps)
         return settings
 
