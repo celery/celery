@@ -33,7 +33,7 @@ COVERAGE_EXCLUDE_MODULES = ("celery.__init__",
                             "celery.loaders.default", # FIXME
                             "celery.backends.mongodb", # FIXME
                             "celery.backends.tyrant", # FIXME
-                            "celery.task.strategy")
+                            )
 COVERAGE_HTML_REPORT = True
 COVERAGE_BRANCH_COVERAGE = True
 
