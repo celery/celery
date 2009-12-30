@@ -152,7 +152,7 @@ class Scheduler(UserDict):
 class ClockService(object):
     scheduler_cls = Scheduler
     registry = _registry.tasks
-    open_schedule = shelve.open
+    open_schedule = lambda self, filename: shelve.open(filename)
 
     def __init__(self, logger=None, is_detached=False,
             max_interval=conf.CELERYBEAT_MAX_LOOP_INTERVAL,
