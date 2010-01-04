@@ -11,7 +11,7 @@ except ImportError:
     ctypes = None
 from uuid import UUID, uuid4, _uuid_generate_random
 from inspect import getargspec
-from itertools import repeat
+from itertools import repeat, islice
 
 from billiard.utils.functional import curry
 
@@ -36,13 +36,8 @@ def chunks(it, n):
         [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10]]
 
     """
-    acc = []
-    for i, item in enumerate(it):
-        if i and not i % n:
-            yield acc
-            acc = []
-        acc.append(item)
-    yield acc
+    for first in it:
+        yield [first] + list(islice(it, n - 1))
 
 
 def gen_unique_id():
@@ -57,6 +52,10 @@ def gen_unique_id():
         _uuid_generate_random(buffer)
         return str(UUID(bytes=buffer.raw))
     return str(uuid4())
+
+
+def mexpand(container, size):
+    return container[:size] + [None] * (size - len(container))
 
 
 def mitemgetter(*items):
