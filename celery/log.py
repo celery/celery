@@ -95,7 +95,7 @@ class LoggingProxy(object):
     mode = "w"
     name = None
     closed = False
-    loglevel = logging.INFO
+    loglevel = logging.ERROR
 
     def __init__(self, logger, loglevel=None):
         self.logger = logger
