@@ -13,6 +13,7 @@ from celery import platform
 from celery import signals
 from celery.log import setup_logger
 from celery.beat import ClockServiceThread
+
 from celery.worker.pool import TaskPool
 from celery.worker.buckets import TaskBucket
 from celery.worker.listener import CarrotListener

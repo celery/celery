@@ -532,13 +532,17 @@ class TaskSet(object):
         conn = self.task.establish_connection(connect_timeout=connect_timeout)
         publisher = self.task.get_publisher(connection=conn)
         try:
-            subtasks = [apply_async(self.task, args, kwargs,
-                                    taskset_id=taskset_id, publisher=publisher)
-                            for args, kwargs in self.arguments]
+            subtasks = [self.apply_part(self.arguments, taskset_id, publisher)
+                            for arglist in self.arguments]
         finally:
             publisher.close()
             conn.close()
         return TaskSetResult(taskset_id, subtasks)
+
+    def apply_part(self, arglist, taskset_id, publisher):
+        args, kwargs, opts = mexpand(arglist, 4)
+        return apply_async(self.task, args, kwargs,
+                           taskset_id=taskset_id, publisher=publisher, **opts)
 
     def apply(self):
         taskset_id = gen_unique_id()

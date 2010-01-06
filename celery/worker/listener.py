@@ -63,7 +63,7 @@ class CarrotListener(object):
         """Start the consumer.
 
         If the connection is lost, it tries to re-establish the connection
-        over time and restart consuming messages.
+        and restarts consuming messages.
 
         """
 
@@ -87,7 +87,7 @@ class CarrotListener(object):
 
         prev_pcount = None
         while 1:
-            pcount = int(self.prefetch_count) # Convert SharedCounter to int
+            pcount = int(self.prefetch_count) # SharedCounter() -> int()
             if not prev_pcount or pcount != prev_pcount:
                 task_consumer.qos(prefetch_count=pcount)
                 prev_pcount = pcount
