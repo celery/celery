@@ -2,8 +2,9 @@ import os
 import sys
 import pwd
 import grp
-import signal
 import errno
+import atexit
+import signal
 try:
     from setproctitle import setproctitle as _setproctitle
 except ImportError:
@@ -17,6 +18,11 @@ except ImportError:
     CAN_DETACH = False
 
 from celery.utils import noop
+
+DAEMON_UMASK = 0
+DAEMON_WORKDIR = "/"
+DAEMON_MAXFD = 1024
+DAEMON_REDIRECT_TO = getattr(os, "devnull", "/dev/null")
 
 
 def create_pidlock(pidfile):
@@ -83,13 +89,60 @@ def create_pidlock(pidfile):
     return pidlock
 
 
+class DaemonContext(object):
+    _is_open = False
+
+    def __init__(self, pidfile=None, chroot_directory=None, 
+            working_directory=DAEMON_WORKDIR, umask=DAEMON_UMASK, **kwargs):
+        self.pidfile = pidfile
+        self.chroot_directory = chroot_directory
+        self.working_directory = working_directory
+        self.umask = umask
+
+    def detach(self):
+        if os.fork() == 0: # first child
+            os.setsid() # create new session.
+            if os.fork() > 0: # second child
+                os._exit(0)
+        else:
+            os._exit(0)
+
+    def open(self):
+        from daemon import daemon
+        if self._is_open:
+            return
+
+        self.detach()
+
+        if self.pidfile is not None:
+                self.pidfile.__enter__()
+
+        if self.chroot_directory is not None:
+            daemon.change_root_directory(self.chroot_directory)
+        os.chdir(self.working_directory)
+        os.umask(self.umask)
+
+        daemon.close_all_open_files()
+
+        os.open(DAEMON_REDIRECT_TO, os.O_RDWR)
+        os.dup2(0, 1)
+        os.dup2(0, 2)
+
+        self._is_open = True
+        atexit.register(self.close)
+
+    def close(self):
+        if not self._is_open:
+            return
+        if self.pidfile is not None:
+            self.pidfile.__exit__()
+        self._is_open = False
+
+
 def create_daemon_context(logfile=None, pidfile=None, **options):
     if not CAN_DETACH:
         raise RuntimeError(
                 "This operating system doesn't support detach.")
-
-    import daemon
-    daemon.change_process_owner = noop # We handle our own user change.
 
     # set SIGCLD back to the default SIG_DFL (before python-daemon overrode
     # it) lets the parent wait() for the terminated child process and stops
@@ -111,7 +164,7 @@ def create_daemon_context(logfile=None, pidfile=None, **options):
         if opt_name not in options or options[opt_name] is None:
             options[opt_name] = opt_default_gen()
 
-    context = daemon.DaemonContext(**options)
+    context = DaemonContext(**options)
 
     return context, context.close
 
