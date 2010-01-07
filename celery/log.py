@@ -35,9 +35,10 @@ def setup_logger(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
         _monkeypatched[0] = True
 
     logger = get_default_logger(loglevel=loglevel)
-    if logger.handlers:
+    if getattr(logger, "_configured", False):
         # Logger already configured
         return logger
+    logger.handlers = []
     if logfile:
         handler = logging.FileHandler
         if hasattr(logfile, "write"):
@@ -49,6 +50,7 @@ def setup_logger(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
     else:
         from multiprocessing.util import log_to_stderr
         log_to_stderr()
+    logger._configured = True
     return logger
 
 

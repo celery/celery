@@ -22,6 +22,13 @@ from celery.worker.controllers import Mediator, ScheduleController
 
 
 def process_initializer():
+    # There seems to a bug in multiprocessing (backport?)
+    # when detached, where the worker gets EOFErrors from time to time
+    # and the logger is left from the parent process causing a crash.
+    from logging import Logger
+    from multiprocessing import util as mputil
+    Logger.manager.loggerDict.clear()
+    mputil._logger = None
     platform.set_mp_process_title("celeryd")
 
 
