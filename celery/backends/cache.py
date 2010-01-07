@@ -32,9 +32,10 @@ class DjangoMemcacheWrapper(object):
 # Check if django is using memcache as the cache backend. If so, wrap the
 # cache object in a DjangoMemcacheWrapper that fixes a bug with retrieving
 # pickled data
+from django.core.cache.backends.base import InvalidCacheBackendError
 try:
     from django.core.cache.backends.memcached import CacheClass
-except ImportError:
+except InvalidCacheBackendError:
     pass
 else:
     if isinstance(cache, CacheClass):
