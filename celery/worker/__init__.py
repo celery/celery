@@ -166,6 +166,13 @@ class AMQPListener(object):
         return conn
 
 
+def process_initializer():
+    from logging import Logger
+    from multiprocessing import util as mputil
+    Logger.manager.loggerDict.clear()
+    mputil._logger = None
+
+
 class WorkController(object):
     """Executes tasks waiting in the task queue.
 
@@ -249,7 +256,9 @@ class WorkController(object):
         self.periodic_work_controller = PeriodicWorkController(
                                                     self.bucket_queue,
                                                     self.hold_queue)
-        self.pool = TaskPool(self.concurrency, logger=self.logger)
+        self.pool = TaskPool(self.concurrency,
+                             logger=self.logger,
+                             initializer=process_initializer)
         self.amqp_listener = AMQPListener(self.bucket_queue, self.hold_queue,
                                           logger=self.logger,
                                           initial_prefetch_count=concurrency)

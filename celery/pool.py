@@ -193,9 +193,10 @@ class TaskPool(object):
 
     """
 
-    def __init__(self, limit, logger=None):
+    def __init__(self, limit, logger=None, initializer=None):
         self.limit = limit
         self.logger = logger or multiprocessing.get_logger()
+        self.initializer = initializer
         self._pool = None
 
     def start(self):
@@ -204,7 +205,8 @@ class TaskPool(object):
         Will pre-fork all workers so they're ready to accept tasks.
 
         """
-        self._pool = DynamicPool(processes=self.limit)
+        self._pool = DynamicPool(processes=self.limit,
+                                 initializer=self.initializer)
 
     def stop(self):
         """Terminate the pool."""
