@@ -587,6 +587,12 @@ class PeriodicTask(Task):
         it can be either a :class:`datetime.timedelta` object or an
         integer specifying the time in seconds.
 
+    .. attribute:: relative
+
+        If set to ``True``, run times are relative to the time when the
+        server was started. This was the previous behaviour, periodic tasks
+        are now scheduled by the clock.
+
     :raises NotImplementedError: if the :attr:`run_every` attribute is
         not defined.
 
@@ -605,7 +611,7 @@ class PeriodicTask(Task):
     abstract = True
     ignore_result = True
     type = "periodic"
-    exact = False
+    relative = False
 
     def __init__(self):
         if not hasattr(self, "run_every"):
@@ -623,7 +629,7 @@ class PeriodicTask(Task):
     def remaining_estimate(self, last_run_at):
         """Returns when the periodic task should run next as a timedelta."""
         next_run_at = last_run_at + self.run_every
-        if self.exact:
+        if not self.relative:
             next_run_at = self.delta_resolution(next_run_at, self.run_every)
         return next_run_at - datetime.now()
 
@@ -665,7 +671,9 @@ class PeriodicTask(Task):
         return False, rem
 
     def delta_resolution(self, dt, delta):
-        resolution = {4: lambda x: x / 3600, 5: lambda x: x / 60}
+        resolution = {3: lambda x: x / 86400,
+                      4: lambda x: x / 3600,
+                      5: lambda x: x / 60}
         args = dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second
         r = None
         for res, calc in resolution.items():
