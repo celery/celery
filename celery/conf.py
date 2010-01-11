@@ -4,7 +4,8 @@ from datetime import timedelta
 
 from celery.loaders import settings
 
-DEFAULT_LOG_FMT = '[%(asctime)s: %(levelname)s/%(processName)s] %(message)s'
+DEFAULT_P_LOG_FMT = '[%(asctime)s: %(levelname)s/%(processName)s] %(message)s'
+DEFAULT_LOG_FMT = '[%(asctime)s: %(levelname)s] %(message)s'
 
 LOG_LEVELS = dict(logging._levelNames)
 LOG_LEVELS["FATAL"] = logging.FATAL
@@ -27,7 +28,7 @@ _DEFAULTS = {
     "CELERY_BROKER_CONNECTION_RETRY": True,
     "CELERY_BROKER_CONNECTION_MAX_RETRIES": 100,
     "CELERYD_CONCURRENCY": 0, # defaults to cpu count
-    "CELERYD_LOG_FORMAT": DEFAULT_LOG_FMT,
+    "CELERYD_LOG_FORMAT": DEFAULT_P_LOG_FMT,
     "CELERYD_LOG_LEVEL": "WARN",
     "CELERYD_LOG_FILE": "celeryd.log",
     "CELERYD_PID_FILE": "celeryd.pid",
@@ -39,6 +40,7 @@ _DEFAULTS = {
     "CELERYMON_LOG_LEVEL": "INFO",
     "CELERYMON_LOG_FILE": "celerymon.log",
     "CELERYMON_PID_FILE": "celerymon.pid",
+    "CELERYMON_LOG_FORMAT": DEFAULT_LOG_FMT,
     "CELERY_BROADCAST_QUEUE": "celeryctl",
     "CELERY_BROADCAST_EXCHANGE": "celeryctl",
     "CELERY_BROADCAST_EXCHANGE_TYPE": "fanout",
