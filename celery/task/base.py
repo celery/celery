@@ -605,6 +605,7 @@ class PeriodicTask(Task):
     abstract = True
     ignore_result = True
     type = "periodic"
+    exact = False
 
     def __init__(self):
         if not hasattr(self, "run_every"):
@@ -621,7 +622,10 @@ class PeriodicTask(Task):
 
     def remaining_estimate(self, last_run_at):
         """Returns when the periodic task should run next as a timedelta."""
-        return (last_run_at + self.run_every) - datetime.now()
+        next_run_at = last_run_at + self.run_every
+        if self.exact:
+            next_run_at = self.delta_resolution(next_run_at, self.run_every)
+        return next_run_at - datetime.now()
 
     def timedelta_seconds(self, delta):
         """Convert :class:`datetime.timedelta` to seconds.
@@ -659,3 +663,12 @@ class PeriodicTask(Task):
         if rem == 0:
             return True, self.timedelta_seconds(self.run_every)
         return False, rem
+
+    def delta_resolution(self, dt, delta):
+        resolution = {4: lambda x: x / 3600, 5: lambda x: x / 60}
+        args = dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second
+        r = None
+        for res, calc in resolution.items():
+            if calc(self.timedelta_seconds(delta)):
+                r = res
+        return datetime(*args[:r])
