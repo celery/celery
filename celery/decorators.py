@@ -5,7 +5,7 @@ from billiard.utils.functional import wraps
 from celery.task.base import Task, PeriodicTask
 
 
-def task(**options):
+def task(*args, **options):
     """Decorator to create a task class out of any callable.
 
     Examples:
@@ -37,18 +37,25 @@ def task(**options):
 
     """
 
-    def _create_task_cls(fun):
-        base = options.pop("base", Task)
+    def inner_create_task_cls(**options):
 
-        @wraps(fun)
-        def run(self, *args, **kwargs):
-            return fun(*args, **kwargs)
-        run.argspec = getargspec(fun)
+        def _create_task_cls(fun):
+            base = options.pop("base", Task)
 
-        cls_dict = dict(options, run=run, __module__=fun.__module__)
-        return type(fun.__name__, (base, ), cls_dict)()
+            @wraps(fun)
+            def run(self, *args, **kwargs):
+                return fun(*args, **kwargs)
+            run.argspec = getargspec(fun)
 
-    return _create_task_cls
+            cls_dict = dict(options, run=run, __module__=fun.__module__)
+            return type(fun.__name__, (base, ), cls_dict)()
+
+        return _create_task_cls
+
+    if len(args) == 1 and callable(args[0]):
+        return inner_create_task_cls()(*args)
+    return inner_create_task_cls(**options)
+
 
 
 def periodic_task(**options):
