@@ -2,12 +2,21 @@
  celery - Distributed Task Queue
 =================================
 
-:Version: 0.9.4
+:Version: 1.0.0
 
 Introduction
 ============
 
-Celery is a distributed task queue.
+Keywords: task queue, job queue, asynchronous, rabbitmq, amqp, redis.
+
+Celery is a task queue/job queue based on distributed message passing.
+It is focused on real-time operation, but has support for scheduling as well.
+
+The execution units, called tasks, are executed concurrently on one or more
+worker servers, asynchronously (in the background) or synchronously
+(wait until ready).
+
+Celery is already used in production to process millions of tasks a day.
 
 It was first created for Django, but is now usable from Python.
 It can also operate with other languages via HTTP+JSON.
@@ -20,9 +29,6 @@ languages see `Executing tasks on a remote web server`_.
 .. _`Can I use Celery without Django?`: http://bit.ly/WPa6n
 
 .. _`Executing tasks on a remote web server`: http://bit.ly/CgXSc
-
-It is used for executing tasks *asynchronously*, routed to one or more
-worker servers, running concurrently using multiprocessing.
 
 Overview
 ========
@@ -84,9 +90,6 @@ Features
     * Supports *task-sets*, which is a task consisting of several sub-tasks.
       You can find out how many, or if all of the sub-tasks has been executed.
       Excellent for progress-bar like functionality.
-
-    * Has a ``map`` like function that uses tasks,
-      called :func:`celery.task.dmap`.
 
     * However, you rarely want to wait for these results in a web-environment.
       You'd rather want to use Ajax to poll the task status, which is
