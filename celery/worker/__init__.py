@@ -11,7 +11,7 @@ from celery import conf
 from celery import registry
 from celery import platform
 from celery import signals
-from celery.log import setup_logger
+from celery.log import setup_logger, _hijack_multiprocessing_logger
 from celery.beat import ClockServiceThread
 
 from celery.worker.pool import TaskPool
@@ -25,10 +25,7 @@ def process_initializer():
     # There seems to a bug in multiprocessing (backport?)
     # when detached, where the worker gets EOFErrors from time to time
     # and the logger is left from the parent process causing a crash.
-    from logging import Logger
-    from multiprocessing import util as mputil
-    Logger.manager.loggerDict.clear()
-    mputil._logger = None
+    _hijack_multiprocessing_logger()
     platform.set_mp_process_title("celeryd")
 
 

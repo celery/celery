@@ -7,7 +7,38 @@ import traceback
 
 from celery import conf
 from celery.utils import noop
-from celery.utils.patch import monkeypatch
+
+_hijacked = False
+_monkeypatched = False
+
+def _ensure_process_aware_logger():
+    global _monkeypatched
+
+    if not _monkeypatched:
+        from celery.utils.patch import monkeypatch
+        monkeypatch()
+        _monkeypatched = True
+
+
+def _hijack_multiprocessing_logger():
+    from multiprocessing import util as mputil
+    global _hijacked
+
+    if _hijacked:
+        return mputil.get_logger()
+
+    _ensure_process_aware_logger()
+
+    logging.Logger.manager.loggerDict.clear()
+
+    try:
+        if mputil._logger is not None:
+            mputil.logger = None
+    except AttributeError:
+        pass
+
+    _hijacked = True
+    return mputil.get_logger()
 
 
 def get_default_logger(loglevel=None):
@@ -16,13 +47,12 @@ def get_default_logger(loglevel=None):
     :keyword loglevel: Initial log level.
 
     """
-    from multiprocessing.util import get_logger
-    logger = get_logger()
-    loglevel is not None and logger.setLevel(loglevel)
+    logger = _hijack_multiprocessing_logger()
+    if loglevel is not None:
+        logger.setLevel(loglevel)
     return logger
 
 
-_monkeypatched = [False]
 def setup_logger(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
         format=conf.CELERYD_LOG_FORMAT, **kwargs):
     """Setup the ``multiprocessing`` logger. If ``logfile`` is not specified,
@@ -30,15 +60,11 @@ def setup_logger(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
 
     Returns logger object.
     """
-    if not _monkeypatched[0]:
-        monkeypatch()
-        _monkeypatched[0] = True
 
     logger = get_default_logger(loglevel=loglevel)
-    if getattr(logger, "_configured", False):
+    if logger.handlers:
         # Logger already configured
         return logger
-    logger.handlers = []
     if logfile:
         handler = logging.FileHandler
         if hasattr(logfile, "write"):
@@ -50,7 +76,6 @@ def setup_logger(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
     else:
         from multiprocessing.util import log_to_stderr
         log_to_stderr()
-    logger._configured = True
     return logger
 
 
