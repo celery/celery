@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Worker Message Listener - celery.worker.listener &mdash; Celery v0.9.3 (unstable) documentation</title>
+    <title>Worker Message Listener - celery.worker.listener &mdash; Celery v0.9.4 (unstable) documentation</title>
     <link rel="stylesheet" href="../../static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '0.9.3 (unstable)',
+        VERSION:     '0.9.4 (unstable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,14 +19,14 @@
     </script>
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.9.3 (unstable) documentation" href="../../index.html" />
+    <link rel="top" title="Celery v0.9.4 (unstable) documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="Executable Jobs - celery.worker.job" href="celery.worker.job.html" />
     <link rel="prev" title="Multiprocessing Worker - celery.worker" href="celery.worker.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v0.9.3 (unstable) documentation</p>
+	<p>Celery v0.9.4 (unstable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Worker Message Listener - celery.worker.listener</h1></div>
@@ -89,69 +89,8 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="module-celery.worker.listener">
-<h1>Worker Message Listener - celery.worker.listener<a class="headerlink" href="#module-celery.worker.listener" title="Permalink to this headline">¶</a></h1>
-<dl class="class">
-<dt id="celery.worker.listener.CarrotListener">
-<em class="property">class </em><tt class="descclassname">celery.worker.listener.</tt><tt class="descname">CarrotListener</tt><big>(</big><em>ready_queue</em>, <em>eta_scheduler</em>, <em>logger</em>, <em>send_events=False</em>, <em>initial_prefetch_count=2</em><big>)</big><a class="headerlink" href="#celery.worker.listener.CarrotListener" title="Permalink to this definition">¶</a></dt>
-<dd><p>Listen for messages received from the broker and
-move them the the ready queue for task processing.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><em>ready_queue</em> &#8211; See <a title="celery.worker.listener.CarrotListener.ready_queue" class="reference internal" href="#celery.worker.listener.CarrotListener.ready_queue"><tt class="xref docutils literal"><span class="pre">ready_queue</span></tt></a>.</li>
-<li><em>eta_scheduler</em> &#8211; See <a title="celery.worker.listener.CarrotListener.eta_scheduler" class="reference internal" href="#celery.worker.listener.CarrotListener.eta_scheduler"><tt class="xref docutils literal"><span class="pre">eta_scheduler</span></tt></a>.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-<dl class="attribute">
-<dt id="celery.worker.listener.CarrotListener.ready_queue">
-<tt class="descname">ready_queue</tt><a class="headerlink" href="#celery.worker.listener.CarrotListener.ready_queue" title="Permalink to this definition">¶</a></dt>
-<dd>The queue that holds tasks ready for processing immediately.</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.worker.listener.CarrotListener.eta_scheduler">
-<tt class="descname">eta_scheduler</tt><a class="headerlink" href="#celery.worker.listener.CarrotListener.eta_scheduler" title="Permalink to this definition">¶</a></dt>
-<dd>Scheduler for paused tasks. Reasons for being paused include
-a countdown/eta or that it&#8217;s waiting for retry.</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.worker.listener.CarrotListener.logger">
-<tt class="descname">logger</tt><a class="headerlink" href="#celery.worker.listener.CarrotListener.logger" title="Permalink to this definition">¶</a></dt>
-<dd>The logger used.</dd></dl>
-
-<dl class="method">
-<dt id="celery.worker.listener.CarrotListener.consume_messages">
-<tt class="descname">consume_messages</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.listener.CarrotListener.consume_messages" title="Permalink to this definition">¶</a></dt>
-<dd>Consume messages forever (or until an exception is raised).</dd></dl>
-
-<dl class="method">
-<dt id="celery.worker.listener.CarrotListener.on_task">
-<tt class="descname">on_task</tt><big>(</big><em>task</em>, <em>eta=None</em><big>)</big><a class="headerlink" href="#celery.worker.listener.CarrotListener.on_task" title="Permalink to this definition">¶</a></dt>
-<dd><p>Handle received task.</p>
-<p>If the task has an <tt class="docutils literal"><span class="pre">eta</span></tt> we enter it into the ETA schedule,
-otherwise we move it the ready queue for immediate processing.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.worker.listener.CarrotListener.receive_message">
-<tt class="descname">receive_message</tt><big>(</big><em>message_data</em>, <em>message</em><big>)</big><a class="headerlink" href="#celery.worker.listener.CarrotListener.receive_message" title="Permalink to this definition">¶</a></dt>
-<dd>The callback called when a new message is received.</dd></dl>
-
-<dl class="method">
-<dt id="celery.worker.listener.CarrotListener.start">
-<tt class="descname">start</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.listener.CarrotListener.start" title="Permalink to this definition">¶</a></dt>
-<dd><p>Start the consumer.</p>
-<p>If the connection is lost, it tries to re-establish the connection
-over time and restart consuming messages.</p>
-</dd></dl>
-
-</dd></dl>
-
+  <div class="section" id="worker-message-listener-celery-worker-listener">
+<h1>Worker Message Listener - celery.worker.listener<a class="headerlink" href="#worker-message-listener-celery-worker-listener" title="Permalink to this headline">¶</a></h1>
 </div>
 
 
@@ -169,7 +108,7 @@ over time and restart consuming messages.</p>
 	<div id="breadcrumbs">
 		<a href="../index.html" accesskey="U">Internals</a><img src="triangle_closed.png" alt="Right arrow">
 		<a href="index.html" >Internal Module Reference</a><img src="triangle_closed.png" alt="Right arrow">
-		<a href="../../index.html">Celery v0.9.3 (unstable) documentation</a>
+		<a href="../../index.html">Celery v0.9.4 (unstable) documentation</a>
 		</ul>
 	</div>
   </body>

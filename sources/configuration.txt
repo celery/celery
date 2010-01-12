@@ -333,6 +333,13 @@ Task execution settings
     Tasks will never be sent to the queue, but executed locally
     instead.
 
+* CELERY_IGNORE_RESULT
+
+    Wheter to store the task return values or not (tombstones).
+    If you still want to store errors, just not successful return values,
+    you can set ``CELERY_STORE_ERRORS_EVEN_IF_IGNORED``.
+
+
 * CELERY_TASK_RESULT_EXPIRES
     Time (in seconds, or a :class:`datetime.timedelta` object) for when after
     stored task tombstones are deleted.

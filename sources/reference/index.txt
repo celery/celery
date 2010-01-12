@@ -19,7 +19,6 @@
     celery.exceptions
     celery.task.rest
     celery.task.builtins
-    celery.task.strategy
     celery.loaders
     celery.loaders.base
     celery.loaders.default

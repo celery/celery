@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Change history &mdash; Celery v0.9.3 (unstable) documentation</title>
+    <title>Change history &mdash; Celery v0.9.4 (unstable) documentation</title>
     <link rel="stylesheet" href="static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.9.3 (unstable)',
+        VERSION:     '0.9.4 (unstable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,13 +19,13 @@
     </script>
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v0.9.3 (unstable) documentation" href="index.html" />
+    <link rel="top" title="Celery v0.9.4 (unstable) documentation" href="index.html" />
     <link rel="next" title="Interesting Links" href="links.html" />
-    <link rel="prev" title="Compatibility Patches - celery.patch" href="internals/reference/celery.patch.html" /> 
+    <link rel="prev" title="Django Models - celery.models" href="internals/reference/celery.models.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v0.9.3 (unstable) documentation</p>
+	<p>Celery v0.9.4 (unstable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Change history</h1></div>
@@ -35,7 +35,7 @@
 			<div class="headerButton"><a href="genindex.html" title="General Index" accesskey="I">index</a></div>
 			<div class="headerButton"><a href="modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
 			<div class="headerButton"><a href="links.html" title="Interesting Links" accesskey="N">next</a></div>
-			<div class="headerButton"><a href="internals/reference/celery.patch.html" title="Compatibility Patches - celery.patch" accesskey="P">previous</a></div>
+			<div class="headerButton"><a href="internals/reference/celery.models.html" title="Django Models - celery.models" accesskey="P">previous</a></div>
 		</li>
 	</ul>
 </div>
@@ -239,6 +239,7 @@ for dates instead of datetime.</p>
 <div class="section" id="changes">
 <h3>CHANGES<a class="headerlink" href="#changes" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
+<li>Now depends on carrot &gt;= 0.8.1</li>
 <li>New dependencies: billiard, python-dateutil, django-picklefield</li>
 <li>The <tt class="docutils literal"><span class="pre">uuid</span></tt> distribution is added as a dependency when running Python 2.4.</li>
 <li>ETA no longer sends datetime objects, but uses ISO 8601 date format in a
@@ -267,7 +268,7 @@ can lower the value of <tt class="docutils literal"><span class="pre">CELERYBEAT
 <tt class="docutils literal"><span class="pre">run_every</span></tt> a property, or subclassing <tt class="docutils literal"><span class="pre">PeriodicTask.is_due</span></tt>.</li>
 <li>The worker now supports control commands enabled through the use of a
 broadcast queue, you can remotely revoke tasks or set the rate limit for
-a task type. See <a title="" class="reference external" href="reference/celery.task.control.html#module-celery.task.control"><tt class="xref docutils literal"><span class="pre">celery.task.control</span></tt></a>.</li>
+a task type. See <tt class="xref docutils literal"><span class="pre">celery.task.control</span></tt>.</li>
 <li>The services now sets informative process names (as shown in <tt class="docutils literal"><span class="pre">ps</span></tt>
 listings) if the <tt class="xref docutils literal"><span class="pre">setproctitle</span></tt> module is installed.</li>
 <li><a title="celery.exceptions.NotRegistered" class="reference external" href="reference/celery.exceptions.html#celery.exceptions.NotRegistered"><tt class="xref docutils literal"><span class="pre">celery.exceptions.NotRegistered</span></tt></a> now inherits from <tt class="xref docutils literal"><span class="pre">KeyError</span></tt>,
@@ -435,10 +436,10 @@ incredibly fast!</p>
 <li><dl class="first docutils">
 <dt>Add Task.on_success, .on_retry, .on_failure handlers</dt>
 <dd><dl class="first last docutils">
-<dt>See <a title="celery.task.base.Task.on_success" class="reference external" href="reference/celery.task.base.html#celery.task.base.Task.on_success"><tt class="xref docutils literal"><span class="pre">celery.task.base.Task.on_success()</span></tt></a>,</dt>
+<dt>See <tt class="xref docutils literal"><span class="pre">celery.task.base.Task.on_success()</span></tt>,</dt>
 <dd><dl class="first last docutils">
-<dt><a title="celery.task.base.Task.on_retry" class="reference external" href="reference/celery.task.base.html#celery.task.base.Task.on_retry"><tt class="xref docutils literal"><span class="pre">celery.task.base.Task.on_retry()</span></tt></a>,</dt>
-<dd><p class="first last"><a title="celery.task.base.Task.on_failure" class="reference external" href="reference/celery.task.base.html#celery.task.base.Task.on_failure"><tt class="xref docutils literal"><span class="pre">celery.task.base.Task.on_failure()</span></tt></a>,</p>
+<dt><tt class="xref docutils literal"><span class="pre">celery.task.base.Task.on_retry()</span></tt>,</dt>
+<dd><p class="first last"><tt class="xref docutils literal"><span class="pre">celery.task.base.Task.on_failure()</span></tt>,</p>
 </dd>
 </dl>
 </dd>
@@ -511,7 +512,7 @@ detaching.</p>
 </li>
 <li><dl class="first docutils">
 <dt>New signals introduced: <tt class="docutils literal"><span class="pre">task_sent</span></tt>, <tt class="docutils literal"><span class="pre">task_prerun</span></tt> and</dt>
-<dd><p class="first last"><tt class="docutils literal"><span class="pre">task_postrun</span></tt>, see <a title="" class="reference external" href="reference/celery.signals.html#module-celery.signals"><tt class="xref docutils literal"><span class="pre">celery.signals</span></tt></a> for more information.</p>
+<dd><p class="first last"><tt class="docutils literal"><span class="pre">task_postrun</span></tt>, see <tt class="xref docutils literal"><span class="pre">celery.signals</span></tt> for more information.</p>
 </dd>
 </dl>
 </li>
@@ -1156,7 +1157,7 @@ the name change request is in <tt class="docutils literal"><span class="pre">doc
       <div class="clearer"></div>
     </div>
 	<div id="breadcrumbs">
-		<a href="index.html">Celery v0.9.3 (unstable) documentation</a>
+		<a href="index.html">Celery v0.9.4 (unstable) documentation</a>
 		</ul>
 	</div>
   </body>
