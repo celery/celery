@@ -305,10 +305,10 @@ The tasks granularity is the degree of parallelization your task have.
 It's better to have a lot of small tasks, than just a few long running
 ones.
 
-With smaller tasks, you can process more tasks in parallell and the tasks
+With smaller tasks, you can process more tasks in parallel and the tasks
 won't run long enough to block the worker from processing other waiting tasks.
 
-But there's a limit, sending messages takes processing power too. If
+But there's a limit, sending messages takes processing power and bandwidth. If
 your tasks are so short the overhead of passing them around is worse than
 just executing them inline, you should reconsider your strategy. There is no
 universal answer here.
@@ -321,8 +321,8 @@ possible. The best would be to have a copy in memory, the worst being a
 full transfer from another continent.
 
 If the data is far away, you could try to run another worker at location, or
-if that's not possible, cache often used data, or preload data you know you
-know is going to be used.
+if that's not possible, cache often used data, or preload data you know
+is going to be used.
 
 The easiest way to share data between workers is to use a distributed caching
 system, like `memcached`_.
