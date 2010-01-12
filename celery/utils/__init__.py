@@ -54,8 +54,8 @@ def gen_unique_id():
     return str(uuid4())
 
 
-def mexpand(container, size):
-    return container[:size] + [None] * (size - len(container))
+def mexpand(container, size, default=None):
+    return container[:size] + [default] * (size - len(container))
 
 
 def mitemgetter(*items):
