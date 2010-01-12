@@ -76,7 +76,6 @@ class TestRetryOverTime(unittest.TestCase):
         self.assertRaises(KeyError, utils.retry_over_time, _fun,
                          (socket.error, ), args=[32, 32], max_retries=3)
 
-
     @sleepdeprived
     def test_retries_on_failure(self):
 

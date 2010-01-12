@@ -57,7 +57,6 @@ def task(*args, **options):
     return inner_create_task_cls(**options)
 
 
-
 def periodic_task(**options):
     """Task decorator to create a periodic task.
 

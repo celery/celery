@@ -37,7 +37,7 @@ class TestHeart(unittest.TestCase):
         heart.stop()
         heart.stop()
         self.assertTrue(heart._state == "CLOSE")
- 
+
         heart = Heart(eventer, interval=0.00001)
         heart._shutdown.set()
         for i in range(10):

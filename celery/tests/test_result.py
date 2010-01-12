@@ -77,7 +77,6 @@ class TestAsyncResult(unittest.TestCase):
         self.assertTrue(nok_res.traceback)
         self.assertTrue(nok_res2.traceback)
 
-
     def test_get(self):
         ok_res = AsyncResult(self.task1["id"])
         ok2_res = AsyncResult(self.task2["id"])

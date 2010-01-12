@@ -32,7 +32,6 @@ ROUTE_FORMAT = """
 """.strip()
 
 
-
 class TestInfo(unittest.TestCase):
 
     def test_humanize_seconds(self):

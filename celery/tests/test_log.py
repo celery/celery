@@ -27,7 +27,6 @@ def wrap_logger(logger, loglevel=logging.ERROR):
     logger.handlers = old_handlers
 
 
-
 class TestLog(unittest.TestCase):
 
     def _assertLog(self, logger, logmsg, loglevel=logging.ERROR):
@@ -125,5 +124,3 @@ class TestLog(unittest.TestCase):
             p.close()
             self.assertFalse(p.isatty())
             self.assertTrue(p.fileno() is None)
-
-

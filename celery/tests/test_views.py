@@ -121,7 +121,7 @@ class TestTaskIsSuccessful(ViewTestCase):
 
     def test_is_successful_pending(self):
         self.assertStatusForIs("PENDING", False)
- 
+
     def test_is_successful_failure(self):
         self.assertStatusForIs("FAILURE", False)
 

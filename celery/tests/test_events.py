@@ -20,6 +20,7 @@ class MockPublisher(object):
                 return event
         return False
 
+
 class TestEvent(unittest.TestCase):
 
     def test_constructor(self):
@@ -38,6 +39,7 @@ class TestEventDispatcher(unittest.TestCase):
         eventer.enabled = True
         eventer.send("World War II", ended=True)
         self.assertTrue(publisher.has_event("World War II"))
+
 
 class TestEventReceiver(unittest.TestCase):
 

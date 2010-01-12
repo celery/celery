@@ -92,7 +92,7 @@ def create_pidlock(pidfile):
 class DaemonContext(object):
     _is_open = False
 
-    def __init__(self, pidfile=None, chroot_directory=None, 
+    def __init__(self, pidfile=None, chroot_directory=None,
             working_directory=DAEMON_WORKDIR, umask=DAEMON_UMASK, **kwargs):
         self.pidfile = pidfile
         self.chroot_directory = chroot_directory

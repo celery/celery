@@ -79,7 +79,6 @@ class RetryTaskMockApply(task.Task):
             kwargs.update({"kwarg": kwarg})
             return self.retry(args=[arg1, arg2], kwargs=kwargs, countdown=0)
 
-
     @classmethod
     def apply_async(self, *args, **kwargs):
         self.applied = 1
@@ -132,7 +131,6 @@ class TestTaskRetries(unittest.TestCase):
             self.assertTrue(RetryTaskMockApply.applied)
         finally:
             RetryTaskMockApply.applied = 0
-
 
     def test_retry_with_kwargs(self):
         RetryTaskCustomExc.max_retries = 3
@@ -298,7 +296,6 @@ class TestCeleryTasks(unittest.TestCase):
         finally:
             base.TaskPublisher = old_pub
 
-
     def test_get_logger(self):
         T1 = self.createTaskCls("T1", "c.unittest.t.t1")
         t1 = T1()
@@ -381,7 +378,6 @@ class MyPeriodic(task.PeriodicTask):
     run_every = timedelta(hours=1)
 
 
-
 class TestPeriodicTask(unittest.TestCase):
 
     def test_must_have_run_every(self):
@@ -416,4 +412,3 @@ class TestPeriodicTask(unittest.TestCase):
         due, remaining = p.is_due(datetime.now() - p.run_every)
         self.assertTrue(due)
         self.assertEquals(remaining, p.timedelta_seconds(p.run_every))
-

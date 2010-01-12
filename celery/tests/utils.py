@@ -100,7 +100,6 @@ def skip_unless(predicate, reason):
     return skip_if(not predicate, reason)
 
 
-
 # Taken from
 # http://bitbucket.org/runeh/snippets/src/tip/missing_modules.py
 @contextmanager

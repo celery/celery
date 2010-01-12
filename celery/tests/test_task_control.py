@@ -58,6 +58,6 @@ class TestBroadcast(unittest.TestCase):
     def test_revoke_from_resultset(self):
         from celery.result import TaskSetResult, AsyncResult
         r = TaskSetResult(gen_unique_id(), map(AsyncResult, [gen_unique_id()
-                                                            for i in range(10)]))
+                                                        for i in range(10)]))
         r.revoke()
         self.assertTrue("revoke" in MockBroadcastPublisher.sent)

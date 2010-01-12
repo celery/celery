@@ -158,7 +158,6 @@ class TestScheduler(unittest.TestCase):
         self.assertTrue(self.scheduler.is_due(due)[0])
         self.assertFalse(self.scheduler.is_due(pending)[0])
 
-
     def test_tick(self):
         self.scheduler.schedule.pop(DuePeriodicTaskRaising.name, None)
         self.registry.pop(DuePeriodicTaskRaising.name, None)
@@ -200,8 +199,6 @@ class TestClockService(unittest.TestCase):
         self.assertTrue(s._shutdown.isSet())
 
 
-
-
 class TestClockServiceThread(unittest.TestCase):
 
     def test_start_stop(self):
@@ -214,4 +211,3 @@ class TestClockServiceThread(unittest.TestCase):
 
         s.stop()
         self.assertTrue(s.clockservice.stopped)
-

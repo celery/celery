@@ -255,7 +255,6 @@ class TestTaskWrapper(unittest.TestCase):
         w.handle_retry(value_, type_, tb_, "")
         self.assertEquals(mytask.backend.get_status(uuid), "RETRY")
 
-
     def test_worker_task_trace_handle_failure(self):
         from celery.worker.job import WorkerTaskTrace
         uuid = gen_unique_id()
@@ -267,7 +266,6 @@ class TestTaskWrapper(unittest.TestCase):
         w._store_errors = True
         w.handle_failure(value_, type_, tb_, "")
         self.assertEquals(mytask.backend.get_status(uuid), "FAILURE")
-
 
     def test_executed_bit(self):
         from celery.worker.job import AlreadyExecutedError
