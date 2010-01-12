@@ -24,12 +24,11 @@ a task, ``celery.decorators.task``:
     from celery.decorators import task
     from django.contrib.auth import User
 
-    @task()
+    @task
     def create_user(username, password):
         User.objects.create(username=username, password=password)
 
-Note the parens after ``@task()`` the task decorator takes any execution
-options the ``Task`` class does:
+The task decorator takes the same execution options the ``Task`` class does:
 
 .. code-block:: python
 
@@ -296,5 +295,89 @@ This means that your workers must optimally be updated with the same software
 as the client, this is a drawback, but the alternative is a technical
 challenge that has yet to be solved.
 
+Performance and Strategies
+==========================
 
+Granularity
+-----------
 
+The tasks granularity is the degree of parallelization your task have.
+It's better to have a lot of small tasks, than just a few long running
+ones.
+
+With smaller tasks, you can process more tasks in parallell and the tasks
+won't run long enough to block the worker from processing other waiting tasks.
+
+But there's a limit, sending messages takes processing power too. If
+your tasks are so short the overhead of passing them around is worse than
+just executing them inline, you should reconsider your strategy. There is no
+universal answer here.
+
+Data locality
+-------------
+
+The worker processing the task should optimally be as close to the data as
+possible. The best would be to have a copy in memory, the worst being a
+full transfer from another continent.
+
+If the data is far away, you could try to run another worker at location, or
+if that's not possible, cache often used data, or preload data you know you
+know is going to be used.
+
+The easiest way to share data between workers is to use a distributed caching
+system, like `memcached`_.
+
+.. _`memcached`: http://memcached.org/
+http://research.microsoft.com/pubs/70001/tr-2003-24.pdf
+
+State
+-----
+
+Since celery is a distributed system, you can't know in which process, or even
+on what machine the task will run, also you can't even know if the task will
+run in a timely manner, so please be wary of the state you pass on to tasks.
+
+One gotcha is Django model objects, they shouldn't be passed on as arguments
+to task classes, it's almost always better to refetch the object from the
+database instead, as there are possible race conditions involved.
+
+Imagine the following scenario where you have an article, and a task
+that automatically expands some abbreviations in it.
+
+.. code-block:: python
+
+    class Article(models.Model):
+        title = models.CharField()
+        body = models.TextField()
+
+    @task
+    def expand_abbreviations(article):
+        article.body.replace("MyCorp", "My Corporation")
+        article.save()
+
+First, an author creates an article and saves it, then the author
+clicks on a button that initiates the abbreviation task.
+
+    >>> article = Article.objects.get(id=102)
+    >>> expand_abbreviations.delay(model_object)
+
+Now, the queue is very busy, so the task won't be run for another 2 minutes,
+in the meantime another author makes some changes to the article,
+when the task is finally run, the body of the article is reverted to the old
+version, because the task had the old body in its argument.
+
+Fixing the race condition is easy, just use the article id instead, and
+refetch the article in the task body:
+
+.. code-block:: python
+
+    @task
+    def expand_abbreviations(article_id)
+        article = Article.objects.get(id=article_id)
+        article.body.replace("MyCorp", "My Corporation")
+        article.save()
+
+    >>> expand_abbreviations(article_id)
+
+There might even be performance benefits to this approach, as sending large
+messages may be expensive.
