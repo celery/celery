@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Disabled</key>
+    <false/>
+    <key>GroupName</key>
+    <string>celerymon</string>
+    <key>KeepAlive</key>
+    <true/>
+    <key>Label</key>
+    <string>org.celeryq.celerymon</string>
+    <key>Program</key>
+    <string>celerymon</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>--loglevel=WARNING</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>Umask</key>
+    <integer>7</integer>
+    <key>UserName</key>
+    <string>nobody</string>
+    <key>WorkingDirectory</key>
+    <string>/</string>
+</dict>
+</plist>
