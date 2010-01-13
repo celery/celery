@@ -327,8 +327,11 @@ is going to be used.
 The easiest way to share data between workers is to use a distributed caching
 system, like `memcached`_.
 
-.. _`memcached`: http://memcached.org/
+For more information about data-locality, please read
 http://research.microsoft.com/pubs/70001/tr-2003-24.pdf
+
+.. _`memcached`: http://memcached.org/
+
 
 State
 -----

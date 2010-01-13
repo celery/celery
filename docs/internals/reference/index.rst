@@ -25,12 +25,15 @@
     celery.backends.database
     celery.backends.cache
     celery.backends.mongodb
-    celery.backends.redis
+    celery.backends.pyredis
     celery.backends.tyrant
     celery.execute.trace
     celery.datastructures
     celery.log
     celery.utils
+    celery.utils.info
+    celery.utils.compat
+    celery.utils.patch
     celery.platform
     celery.managers
     celery.models
