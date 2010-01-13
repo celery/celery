@@ -114,31 +114,27 @@ trick. Celery provides a simple testrunner, but it&#8217;s easy enough to roll y
 own if you have other things that need to be done.
 <a class="reference external" href="http://docs.djangoproject.com/en/dev/topics/testing/#defining-a-test-runner">http://docs.djangoproject.com/en/dev/topics/testing/#defining-a-test-runner</a></p>
 <p>For this example, we&#8217;ll use the <tt class="docutils literal"><span class="pre">celery.contrib.test_runner</span></tt> to test the
-<tt class="docutils literal"><span class="pre">FeedImporter</span></tt> from the <tt class="docutils literal"><span class="pre">Writing</span> <span class="pre">Tasks</span></tt> example.</p>
+<tt class="docutils literal"><span class="pre">add</span></tt> task from the <a class="reference external" href="../userguide/tasks.html"><em>User Guide: Tasks</em></a> examples.</p>
 <p>To enable the testrunner, set the following settings:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">TEST_RUNNER</span> <span class="o">=</span> <span class="s">&#39;celery.contrib.test_runner.run_tests&#39;</span>
 </pre></div>
 </div>
 <p>Then we can write our actually test in a <tt class="docutils literal"><span class="pre">tests.py</span></tt> somewhere:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">django.test</span> <span class="kn">import</span> <span class="n">TestCase</span>
-<span class="kn">from</span> <span class="nn">feeds.tasks</span> <span class="kn">import</span> <span class="n">FeedImporter</span>
+<span class="kn">from</span> <span class="nn">myapp.tasks</span> <span class="kn">import</span> <span class="n">add</span>
 
-<span class="k">class</span> <span class="nc">FeedImporterTestCase</span><span class="p">(</span><span class="n">TestCase</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">AddTestCase</span><span class="p">(</span><span class="n">TestCase</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="nf">testNoError</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Test that the ``FeedImporter`` task runs with no errors.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">feed_url</span> <span class="o">=</span> <span class="s">&#39;http://github.com/feeds/ask/commits/celery/master&#39;</span>
+        <span class="sd">&quot;&quot;&quot;Test that the ``add`` task runs with no errors,</span>
+<span class="sd">        and returns the correct result.&quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">add</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
 
-        <span class="n">feed_importer</span> <span class="o">=</span> <span class="n">FeedImporter</span><span class="p">()</span>
-        <span class="n">task_result</span> <span class="o">=</span> <span class="n">feed_importer</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">feed_url</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">task_result</span><span class="o">.</span><span class="n">status</span><span class="p">,</span> <span class="s">&#39;DONE&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">task_result</span><span class="o">.</span><span class="n">result</span><span class="p">,</span> <span class="n">feed_url</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEquals</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(),</span> <span class="mi">16</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">successful</span><span class="p">())</span>
 </pre></div>
 </div>
-<p>This test assumes that you put your example FeedImporter task in <tt class="docutils literal"><span class="pre">feeds.tasks</span></tt>
+<p>This test assumes that you put your example <tt class="docutils literal"><span class="pre">add</span></tt> task in <tt class="docutils literal"><span class="pre">maypp.tasks</span></tt>
 so of course adjust the import for wherever you actually put the class.</p>
 </div>
 </div>

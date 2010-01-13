@@ -170,6 +170,13 @@ attributes instead of raising <tt class="xref docutils literal"><span class="pre
 instead of raising <tt class="xref docutils literal"><span class="pre">KeyError</span></tt>.</dd></dl>
 
 <dl class="function">
+<dt id="celery.utils.noop">
+<tt class="descclassname">celery.utils.</tt><tt class="descname">noop</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.utils.noop" title="Permalink to this definition">¶</a></dt>
+<dd><p>No operation.</p>
+<p>Takes any arguments/keyword arguments and does nothing.</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="celery.utils.repeatlast">
 <tt class="descclassname">celery.utils.</tt><tt class="descname">repeatlast</tt><big>(</big><em>it</em><big>)</big><a class="headerlink" href="#celery.utils.repeatlast" title="Permalink to this definition">¶</a></dt>
 <dd>Iterate over all elements in the iterator, and when its exhausted
@@ -177,7 +184,7 @@ yield the last value infinitely.</dd></dl>
 
 <dl class="function">
 <dt id="celery.utils.retry_over_time">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">retry_over_time</tt><big>(</big><em>fun</em>, <em>catch</em>, <em>args=</em><span class="optional">[</span><span class="optional">]</span>, <em>kwargs={}</em>, <em>errback=&lt;function &lt;lambda&gt; at 0x102ecff50&gt;</em>, <em>max_retries=None</em>, <em>interval_start=2</em>, <em>interval_step=2</em>, <em>interval_max=30</em><big>)</big><a class="headerlink" href="#celery.utils.retry_over_time" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.utils.</tt><tt class="descname">retry_over_time</tt><big>(</big><em>fun</em>, <em>catch</em>, <em>args=</em><span class="optional">[</span><span class="optional">]</span>, <em>kwargs={}</em>, <em>errback=&lt;function noop at 0x10314ec08&gt;</em>, <em>max_retries=None</em>, <em>interval_start=2</em>, <em>interval_step=2</em>, <em>interval_max=30</em><big>)</big><a class="headerlink" href="#celery.utils.retry_over_time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retry the function over and over until max retries is exceeded.</p>
 <p>For each retry we sleep a for a while before we try again, this interval
 is increased for every retry until the max seconds is reached.</p>

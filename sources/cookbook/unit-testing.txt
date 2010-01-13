@@ -2,7 +2,6 @@
  Unit Testing
 ================
 
-
 Testing with Django
 -------------------
 
@@ -26,7 +25,7 @@ own if you have other things that need to be done.
 http://docs.djangoproject.com/en/dev/topics/testing/#defining-a-test-runner
 
 For this example, we'll use the ``celery.contrib.test_runner`` to test the
-``FeedImporter`` from the ``Writing Tasks`` example.
+``add`` task from the :doc:`User Guide: Tasks<../userguide/tasks>` examples.
 
 To enable the testrunner, set the following settings:
 
@@ -40,22 +39,18 @@ Then we can write our actually test in a ``tests.py`` somewhere:
 .. code-block:: python
 
     from django.test import TestCase
-    from feeds.tasks import FeedImporter
+    from myapp.tasks import add
 
-    class FeedImporterTestCase(TestCase):
+    class AddTestCase(TestCase):
 
         def testNoError(self):
-            """
-            Test that the ``FeedImporter`` task runs with no errors.
-            """
-            feed_url = 'http://github.com/feeds/ask/commits/celery/master'
+            """Test that the ``add`` task runs with no errors,
+            and returns the correct result."""
+            result = add.delay(8, 8)
 
-            feed_importer = FeedImporter()
-            task_result = feed_importer.delay(feed_url)
-
-            self.assertEqual(task_result.status, 'DONE')
-            self.assertEqual(task_result.result, feed_url)
+            self.assertEquals(result.get(), 16)
+            self.assertTrue(result.successful())
 
 
-This test assumes that you put your example FeedImporter task in ``feeds.tasks``
+This test assumes that you put your example ``add`` task in ``maypp.tasks``
 so of course adjust the import for wherever you actually put the class.

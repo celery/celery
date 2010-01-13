@@ -128,6 +128,7 @@ celery.loaders.base.BaseLoader.on_task_init method reference/celery.loaders.base
 celery.task.base.TaskSet.map classmethod reference/celery.task.base.html
 celery.exceptions.MaxRetriesExceededError exception reference/celery.exceptions.html
 celery.task.Task.routing_key attribute reference/celery.task.html
+celery.utils.noop function internals/reference/celery.utils.html
 CELERY_SEND_EVENTS data reference/celery.conf.html
 celery.backends.amqp.AMQPBackend.get_status method internals/reference/celery.backends.amqp.html
 celery.worker.job.TaskWrapper.kwargs attribute internals/reference/celery.worker.job.html
