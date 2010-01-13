@@ -8,6 +8,37 @@ Change history
 BACKWARD INCOMPATIBLE CHANGES
 -----------------------------
 
+* Celery does not support detaching anymore, so you have to use the tools
+  available on your platform, or something like supervisord to make
+  celeryd/celerybeat/celerymon into background processes.
+
+  We've had too many problems with celeryd daemonizing itself, so it was
+  decided it has to be removed. Example startup scripts has been added to
+  ``contrib/``:
+
+      * Debian, Ubuntu, (start-stop-daemon)
+
+           ``contrib/debian/init.d/celeryd``
+           ``contrib/debian/init.d/celerybeat``
+
+      * Mac OS X launchd
+
+            ``contrib/mac/org.celeryq.celeryd.plist``
+            ``contrib/mac/org.celeryq.celerybeat.plist``
+            ``contrib/mac/org.celeryq.celerymon.plist``
+
+      * Supervisord (http://supervisord.org)
+
+            ``contrib/supervisord/supervisord.conf``
+
+  In addition to ``--detach``, the following program arguments has been
+  removed: ``--uid``, ``--gid``, ``--workdir``, ``--chroot``, ``--pidfile``,
+  ``--umask``. All good daemonization tools should support equivalent
+  functionality, so don't worry.
+
+  Also the following configuration keys has been removed:
+  ``CELERYD_PID_FILE``, ``CELERYBEAT_PID_FILE``, ``CELERYMON_PID_FILE``.
+
 * Default celeryd loglevel is now ``WARN``, to enable the previous log level
   start celeryd with ``--loglevel=INFO``.
 
@@ -43,7 +74,7 @@ BACKWARD INCOMPATIBLE CHANGES
 
 		from celery.decorators import task
 
-		@task()
+		@task
 		def add(x, y):
 			return x + y
 
@@ -81,6 +112,11 @@ BACKWARD INCOMPATIBLE CHANGES
 
 * The staticstics functionality has been removed in favor of events,
   so the ``-S`` and ``--statistics`` switches has been removed.
+
+* The module ``celery.task.strategy`` has been removed.
+
+* ``celery.discovery`` has been removed, and it's ``autodiscover`` function is
+  now in ``celery.loaders.djangoapp``. Reason: Internal API.
 
 
 DEPRECATIONS
@@ -133,6 +169,21 @@ NEWS
 * Message format has been standardized and now uses ISO-8601 format
   for dates instead of datetime.
 
+* ``celeryd`` now responds to the ``HUP`` signal by restarting itself.
+
+* Periodic tasks are now scheduled on the clock, i.e. ``timedelta(hours=1)``
+  means every hour at :00 minutes, not every hour from the server starts.
+  To revert to the previous behaviour you can set
+  ``PeriodicTask.relative = True``.
+
+* Now supports passing execute options to a TaskSets list of args, e.g.:
+
+    >>> ts = TaskSet(add, [([2, 2], {}, {"countdown": 1}),
+    ...                   ([4, 4], {}, {"countdown": 2}),
+    ...                   ([8, 8], {}, {"countdown": 3})])
+    >>> ts.run()
+
+
 CHANGES
 -------
 
@@ -140,7 +191,13 @@ CHANGES
 
 * New dependencies: billiard, python-dateutil, django-picklefield
 
+* No longer depends on python-daemon
+
 * The ``uuid`` distribution is added as a dependency when running Python 2.4.
+
+* Now remembers the previously detected loader by keeping it in
+  the ``CELERY_LOADER`` environment variable. This may help on windows where
+  fork emulation is used.
 
 * ETA no longer sends datetime objects, but uses ISO 8601 date format in a
   string for better compatibility with other platforms.
@@ -154,17 +211,10 @@ CHANGES
   eta tasks are sorted by time, so we don't have to poll the whole list all the
   time.
 
-* Does not longer use the python-daemon pidfile implementation, but a custom
-  one that doesn't create those weird ``.lock`` and thread files.
-
-* The ``--uid`` and ``--gid`` arguments now support supplying the uid and gid
-  as a username or group name.
-
-* Now ignores permission denied errors when removing the pidfile so it's
-  possible to shutdown when running as an unprivileged user.
-
 * Now also imports modules listed in CELERY_IMPORTS when running
   with django (as documented).
+
+* Loglevel for stdout/stderr changed from INFO to ERROR
 
 * ImportErrors are now properly propogated when autodiscovering tasks.
 
@@ -187,6 +237,11 @@ CHANGES
 
 * :exc:`celery.exceptions.NotRegistered` now inherits from :exc:`KeyError`,
   and ``TaskRegistry.__getitem__``+``pop`` raises ``NotRegistered`` instead
+
+* You can set the loader via the ``CELERY_LOADER`` environment variable.
+
+* You can now set ``CELERY_IGNORE_RESULT`` to ignore task results by default
+  (if enabled, tasks doesn't save results or errors to the backend used).
 
 BUGS
 ----

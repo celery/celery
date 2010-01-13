@@ -13,6 +13,9 @@ ghdocs:
 autodoc:
 	contrib/doc4allmods celery
 
+verifyindex:
+	contrib/verify-reference-index.sh
+
 flakes:
 	find . -name "*.py" | xargs pyflakes
 
@@ -43,7 +46,7 @@ quicktest:
 testverbose:
 	(cd testproj; python manage.py test --verbosity=2)
 
-releaseok: pep8 autodoc test gitclean
+releaseok: pep8 autodoc verifyindex test gitclean
 
 removepyc:
 	find . -name "*.pyc" | xargs rm

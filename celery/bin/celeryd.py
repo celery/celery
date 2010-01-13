@@ -189,6 +189,7 @@ def install_worker_restart_handler(worker):
 
     platform.install_signal_handler("SIGHUP", restart_worker_sig_handler)
 
+
 def parse_options(arguments):
     """Parse the available options to ``celeryd``."""
     parser = optparse.OptionParser(option_list=OPTION_LIST)
