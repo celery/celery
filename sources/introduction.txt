@@ -223,12 +223,15 @@ see what's going on without consulting the logfile::
 
     $ python manage.py celeryd
 
-
 However, in production you probably want to run the worker in the
-background, as a daemon:: 
+background as a daemon. To do this you need to use to tools provided by your
+platform, or something like `supervisord`_.
 
-    $ python manage.py celeryd --detach
+For example startup scripts see ``contrib/debian/init.d`` for using
+``start-stop-daemon`` on Debian/Ubuntu, or ``contrib/mac/org.celeryq.*`` for using
+``launchd`` on Mac OS X.
 
+.. _`supervisord`: http://supervisord.org/
 
 For a complete listing of the command line arguments available, with a short
 description, you can use the help command::
@@ -336,7 +339,7 @@ any time, or else you will end up with multiple executions of the same task.
 
 To start the ``celerybeat`` service::
 
-    $ celerybeat --detach
+    $ celerybeat
 
 or if using Django::
 
@@ -346,11 +349,11 @@ or if using Django::
 You can also start ``celerybeat`` with ``celeryd`` by using the ``-B`` option,
 this is convenient if you only have one server::
 
-    $ celeryd --detach -B
+    $ celeryd -B
 
 or if using Django::
 
-    $ python manage.py celeryd --detach -B
+    $ python manage.py celeryd  -B
 
 
 A look inside the components

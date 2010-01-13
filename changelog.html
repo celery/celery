@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Change history &mdash; Celery v0.9.4 (unstable) documentation</title>
+    <title>Change history &mdash; Celery v0.9.5 (unstable) documentation</title>
     <link rel="stylesheet" href="static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.9.4 (unstable)',
+        VERSION:     '0.9.5 (unstable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,13 +19,13 @@
     </script>
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v0.9.4 (unstable) documentation" href="index.html" />
+    <link rel="top" title="Celery v0.9.5 (unstable) documentation" href="index.html" />
     <link rel="next" title="Interesting Links" href="links.html" />
     <link rel="prev" title="Django Models - celery.models" href="internals/reference/celery.models.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v0.9.4 (unstable) documentation</p>
+	<p>Celery v0.9.5 (unstable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Change history</h1></div>
@@ -122,6 +122,39 @@
 <div class="section" id="backward-incompatible-changes">
 <h3>BACKWARD INCOMPATIBLE CHANGES<a class="headerlink" href="#backward-incompatible-changes" title="Permalink to this headline">¶</a></h3>
 <ul>
+<li><p class="first">Celery does not support detaching anymore, so you have to use the tools
+available on your platform, or something like supervisord to make
+celeryd/celerybeat/celerymon into background processes.</p>
+<p>We&#8217;ve had too many problems with celeryd daemonizing itself, so it was
+decided it has to be removed. Example startup scripts has been added to
+<tt class="docutils literal"><span class="pre">contrib/</span></tt>:</p>
+<ul>
+<li><p class="first">Debian, Ubuntu, (start-stop-daemon)</p>
+<blockquote>
+<p><tt class="docutils literal"><span class="pre">contrib/debian/init.d/celeryd</span></tt>
+<tt class="docutils literal"><span class="pre">contrib/debian/init.d/celerybeat</span></tt></p>
+</blockquote>
+</li>
+<li><p class="first">Mac OS X launchd</p>
+<blockquote>
+<p><tt class="docutils literal"><span class="pre">contrib/mac/org.celeryq.celeryd.plist</span></tt>
+<tt class="docutils literal"><span class="pre">contrib/mac/org.celeryq.celerybeat.plist</span></tt>
+<tt class="docutils literal"><span class="pre">contrib/mac/org.celeryq.celerymon.plist</span></tt></p>
+</blockquote>
+</li>
+<li><p class="first">Supervisord (<a class="reference external" href="http://supervisord.org">http://supervisord.org</a>)</p>
+<blockquote>
+<p><tt class="docutils literal"><span class="pre">contrib/supervisord/supervisord.conf</span></tt></p>
+</blockquote>
+</li>
+</ul>
+<p>In addition to <tt class="docutils literal"><span class="pre">--detach</span></tt>, the following program arguments has been
+removed: <tt class="docutils literal"><span class="pre">--uid</span></tt>, <tt class="docutils literal"><span class="pre">--gid</span></tt>, <tt class="docutils literal"><span class="pre">--workdir</span></tt>, <tt class="docutils literal"><span class="pre">--chroot</span></tt>, <tt class="docutils literal"><span class="pre">--pidfile</span></tt>,
+<tt class="docutils literal"><span class="pre">--umask</span></tt>. All good daemonization tools should support equivalent
+functionality, so don&#8217;t worry.</p>
+<p>Also the following configuration keys has been removed:
+<tt class="docutils literal"><span class="pre">CELERYD_PID_FILE</span></tt>, <tt class="docutils literal"><span class="pre">CELERYBEAT_PID_FILE</span></tt>, <tt class="docutils literal"><span class="pre">CELERYMON_PID_FILE</span></tt>.</p>
+</li>
 <li><p class="first">Default celeryd loglevel is now <tt class="docutils literal"><span class="pre">WARN</span></tt>, to enable the previous log level
 start celeryd with <tt class="docutils literal"><span class="pre">--loglevel=INFO</span></tt>.</p>
 </li>
@@ -148,7 +181,7 @@ because it makes the internals a lot more clean and simple. However, you can
 now turn functions into tasks by using the <tt class="docutils literal"><span class="pre">&#64;task</span></tt> decorator:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.decorators</span> <span class="kn">import</span> <span class="n">task</span>
 
-<span class="nd">@task</span><span class="p">()</span>
+<span class="nd">@task</span>
 <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
 </pre></div>
@@ -159,12 +192,12 @@ now turn functions into tasks by using the <tt class="docutils literal"><span cl
 means <tt class="docutils literal"><span class="pre">celeryd</span></tt> no longer schedules periodic tasks by default, but a new
 daemon has been introduced: <tt class="docutils literal"><span class="pre">celerybeat</span></tt>.</p>
 <p>To launch the periodic task scheduler you have to run celerybeat:</p>
-<div class="highlight-python"><pre>$ celerybeat --detach</pre>
+<div class="highlight-python"><pre>$ celerybeat</pre>
 </div>
 <p>Make sure this is running on one server only, if you run it twice, all
 periodic tasks will also be executed twice.</p>
 <p>If you only have one worker server you can embed it into celeryd like this:</p>
-<div class="highlight-python"><pre>$ celeryd --detatch --beat # Embed celerybeat in celeryd.</pre>
+<div class="highlight-python"><pre>$ celeryd --beat # Embed celerybeat in celeryd.</pre>
 </div>
 </li>
 <li><p class="first">The supervisor has been removed, please use something like
@@ -184,6 +217,11 @@ revert to the previous behaviour set
 </li>
 <li><p class="first">The staticstics functionality has been removed in favor of events,
 so the <tt class="docutils literal"><span class="pre">-S</span></tt> and <tt class="docutils literal"><span class="pre">--statistics</span></tt> switches has been removed.</p>
+</li>
+<li><p class="first">The module <tt class="docutils literal"><span class="pre">celery.task.strategy</span></tt> has been removed.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">celery.discovery</span></tt> has been removed, and it&#8217;s <tt class="docutils literal"><span class="pre">autodiscover</span></tt> function is
+now in <tt class="docutils literal"><span class="pre">celery.loaders.djangoapp</span></tt>. Reason: Internal API.</p>
 </li>
 </ul>
 </div>
@@ -234,6 +272,21 @@ worker-online, worker-offline.</p>
 <li><p class="first">Message format has been standardized and now uses ISO-8601 format
 for dates instead of datetime.</p>
 </li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">celeryd</span></tt> now responds to the <tt class="docutils literal"><span class="pre">HUP</span></tt> signal by restarting itself.</p>
+</li>
+<li><p class="first">Periodic tasks are now scheduled on the clock, i.e. <tt class="docutils literal"><span class="pre">timedelta(hours=1)</span></tt>
+means every hour at :00 minutes, not every hour from the server starts.
+To revert to the previous behaviour you can set
+<tt class="docutils literal"><span class="pre">PeriodicTask.relative</span> <span class="pre">=</span> <span class="pre">True</span></tt>.</p>
+</li>
+<li><p class="first">Now supports passing execute options to a TaskSets list of args, e.g.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">ts</span> <span class="o">=</span> <span class="n">TaskSet</span><span class="p">(</span><span class="n">add</span><span class="p">,</span> <span class="p">[([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">{},</span> <span class="p">{</span><span class="s">&quot;countdown&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}),</span>
+<span class="gp">... </span>                  <span class="p">([</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">{},</span> <span class="p">{</span><span class="s">&quot;countdown&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}),</span>
+<span class="gp">... </span>                  <span class="p">([</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">],</span> <span class="p">{},</span> <span class="p">{</span><span class="s">&quot;countdown&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">})])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ts</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+</li>
 </ul>
 </div>
 <div class="section" id="changes">
@@ -241,7 +294,11 @@ for dates instead of datetime.</p>
 <ul class="simple">
 <li>Now depends on carrot &gt;= 0.8.1</li>
 <li>New dependencies: billiard, python-dateutil, django-picklefield</li>
+<li>No longer depends on python-daemon</li>
 <li>The <tt class="docutils literal"><span class="pre">uuid</span></tt> distribution is added as a dependency when running Python 2.4.</li>
+<li>Now remembers the previously detected loader by keeping it in
+the <tt class="docutils literal"><span class="pre">CELERY_LOADER</span></tt> environment variable. This may help on windows where
+fork emulation is used.</li>
 <li>ETA no longer sends datetime objects, but uses ISO 8601 date format in a
 string for better compatibility with other platforms.</li>
 <li>Task can now override the backend used to store results.</li>
@@ -250,14 +307,9 @@ also executes the task callbacks and signals.</li>
 <li>Now using a proper scheduler for the tasks with an ETA. This means waiting
 eta tasks are sorted by time, so we don&#8217;t have to poll the whole list all the
 time.</li>
-<li>Does not longer use the python-daemon pidfile implementation, but a custom
-one that doesn&#8217;t create those weird <tt class="docutils literal"><span class="pre">.lock</span></tt> and thread files.</li>
-<li>The <tt class="docutils literal"><span class="pre">--uid</span></tt> and <tt class="docutils literal"><span class="pre">--gid</span></tt> arguments now support supplying the uid and gid
-as a username or group name.</li>
-<li>Now ignores permission denied errors when removing the pidfile so it&#8217;s
-possible to shutdown when running as an unprivileged user.</li>
 <li>Now also imports modules listed in CELERY_IMPORTS when running
 with django (as documented).</li>
+<li>Loglevel for stdout/stderr changed from INFO to ERROR</li>
 <li>ImportErrors are now properly propogated when autodiscovering tasks.</li>
 <li>You can now use <tt class="docutils literal"><span class="pre">celery.messaging.establish_connection</span></tt> to establish a
 connection to the broker.</li>
@@ -268,11 +320,14 @@ can lower the value of <tt class="docutils literal"><span class="pre">CELERYBEAT
 <tt class="docutils literal"><span class="pre">run_every</span></tt> a property, or subclassing <tt class="docutils literal"><span class="pre">PeriodicTask.is_due</span></tt>.</li>
 <li>The worker now supports control commands enabled through the use of a
 broadcast queue, you can remotely revoke tasks or set the rate limit for
-a task type. See <tt class="xref docutils literal"><span class="pre">celery.task.control</span></tt>.</li>
+a task type. See <a title="" class="reference external" href="reference/celery.task.control.html#module-celery.task.control"><tt class="xref docutils literal"><span class="pre">celery.task.control</span></tt></a>.</li>
 <li>The services now sets informative process names (as shown in <tt class="docutils literal"><span class="pre">ps</span></tt>
 listings) if the <tt class="xref docutils literal"><span class="pre">setproctitle</span></tt> module is installed.</li>
 <li><a title="celery.exceptions.NotRegistered" class="reference external" href="reference/celery.exceptions.html#celery.exceptions.NotRegistered"><tt class="xref docutils literal"><span class="pre">celery.exceptions.NotRegistered</span></tt></a> now inherits from <tt class="xref docutils literal"><span class="pre">KeyError</span></tt>,
 and <tt class="docutils literal"><span class="pre">TaskRegistry.__getitem__``+``pop</span></tt> raises <tt class="docutils literal"><span class="pre">NotRegistered</span></tt> instead</li>
+<li>You can set the loader via the <tt class="docutils literal"><span class="pre">CELERY_LOADER</span></tt> environment variable.</li>
+<li>You can now set <tt class="docutils literal"><span class="pre">CELERY_IGNORE_RESULT</span></tt> to ignore task results by default
+(if enabled, tasks doesn&#8217;t save results or errors to the backend used).</li>
 </ul>
 </div>
 <div class="section" id="bugs">
@@ -436,10 +491,10 @@ incredibly fast!</p>
 <li><dl class="first docutils">
 <dt>Add Task.on_success, .on_retry, .on_failure handlers</dt>
 <dd><dl class="first last docutils">
-<dt>See <tt class="xref docutils literal"><span class="pre">celery.task.base.Task.on_success()</span></tt>,</dt>
+<dt>See <a title="celery.task.base.Task.on_success" class="reference external" href="reference/celery.task.base.html#celery.task.base.Task.on_success"><tt class="xref docutils literal"><span class="pre">celery.task.base.Task.on_success()</span></tt></a>,</dt>
 <dd><dl class="first last docutils">
-<dt><tt class="xref docutils literal"><span class="pre">celery.task.base.Task.on_retry()</span></tt>,</dt>
-<dd><p class="first last"><tt class="xref docutils literal"><span class="pre">celery.task.base.Task.on_failure()</span></tt>,</p>
+<dt><a title="celery.task.base.Task.on_retry" class="reference external" href="reference/celery.task.base.html#celery.task.base.Task.on_retry"><tt class="xref docutils literal"><span class="pre">celery.task.base.Task.on_retry()</span></tt></a>,</dt>
+<dd><p class="first last"><a title="celery.task.base.Task.on_failure" class="reference external" href="reference/celery.task.base.html#celery.task.base.Task.on_failure"><tt class="xref docutils literal"><span class="pre">celery.task.base.Task.on_failure()</span></tt></a>,</p>
 </dd>
 </dl>
 </dd>
@@ -1157,7 +1212,7 @@ the name change request is in <tt class="docutils literal"><span class="pre">doc
       <div class="clearer"></div>
     </div>
 	<div id="breadcrumbs">
-		<a href="index.html">Celery v0.9.4 (unstable) documentation</a>
+		<a href="index.html">Celery v0.9.5 (unstable) documentation</a>
 		</ul>
 	</div>
   </body>

@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Configuration and defaults &mdash; Celery v0.9.4 (unstable) documentation</title>
+    <title>Configuration and defaults &mdash; Celery v0.9.5 (unstable) documentation</title>
     <link rel="stylesheet" href="static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.9.4 (unstable)',
+        VERSION:     '0.9.5 (unstable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,13 +19,13 @@
     </script>
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v0.9.4 (unstable) documentation" href="index.html" />
+    <link rel="top" title="Celery v0.9.5 (unstable) documentation" href="index.html" />
     <link rel="next" title="User Guide" href="userguide/index.html" />
     <link rel="prev" title="celery - Distributed Task Queue" href="introduction.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v0.9.4 (unstable) documentation</p>
+	<p>Celery v0.9.5 (unstable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Configuration and defaults</h1></div>
@@ -134,7 +134,6 @@ it should contain all you need to run a basic celery set-up.</p>
 
 <span class="c"># CELERYD_LOG_FILE = &quot;celeryd.log&quot;</span>
 <span class="c"># CELERYD_LOG_LEVEL = &quot;INFO&quot;</span>
-<span class="c"># CELERYD_PID_FILE = &quot;celeryd.pid&quot;</span>
 </pre></div>
 </div>
 </div>
@@ -486,8 +485,8 @@ to the AMQP broker.</p>
 <dt>CELERY_ALWAYS_EAGER</dt>
 <dd><p class="first">If this is <tt class="xref docutils literal"><span class="pre">True</span></tt>, all tasks will be executed locally by blocking
 until it is finished. <tt class="docutils literal"><span class="pre">apply_async</span></tt> and <tt class="docutils literal"><span class="pre">Task.delay</span></tt> will return
-a <tt class="xref docutils literal"><span class="pre">celery.result.EagerResult</span></tt> which emulates the behaviour of
-<tt class="xref docutils literal"><span class="pre">celery.result.AsyncResult</span></tt>, except the result has already
+a <a title="celery.result.EagerResult" class="reference external" href="reference/celery.result.html#celery.result.EagerResult"><tt class="xref docutils literal"><span class="pre">celery.result.EagerResult</span></tt></a> which emulates the behaviour of
+<a title="celery.result.AsyncResult" class="reference external" href="reference/celery.result.html#celery.result.AsyncResult"><tt class="xref docutils literal"><span class="pre">celery.result.AsyncResult</span></tt></a>, except the result has already
 been evaluated.</p>
 <p class="last">Tasks will never be sent to the queue, but executed locally
 instead.</p>
@@ -562,10 +561,8 @@ If unset, it will send the e-mails if <tt class="docutils literal"><span class="
 <dt>CELERYD_LOG_FILE</dt>
 <dd><p class="first">The default filename the worker daemon logs messages to, can be
 overridden using the <cite>&#8211;logfile`</cite> option to <tt class="docutils literal"><span class="pre">celeryd</span></tt>.</p>
-<p>The default is to log using <tt class="docutils literal"><span class="pre">stderr</span></tt> if running in the foreground,
-when running in the background, detached as a daemon, the default
-logfile is <tt class="docutils literal"><span class="pre">celeryd.log</span></tt>.</p>
-<p class="last">Can also be set via the <tt class="docutils literal"><span class="pre">--logfile</span></tt> argument.</p>
+<p class="last">The default is <tt class="xref docutils literal"><span class="pre">None</span></tt> (<tt class="docutils literal"><span class="pre">stderr</span></tt>)
+Can also be set via the <tt class="docutils literal"><span class="pre">--logfile</span></tt> argument.</p>
 </dd>
 </dl>
 </li>
@@ -585,18 +582,6 @@ the <tt class="docutils literal"><span class="pre">--loglevel</span></tt> option
 <p>Default is <tt class="docutils literal"><span class="pre">[%(asctime)s:</span> <span class="pre">%(levelname)s/%(processName)s]</span> <span class="pre">%(message)s</span></tt></p>
 <p class="last">See the Python <tt class="xref docutils literal"><span class="pre">logging</span></tt> module for more information about log
 formats.</p>
-</dd>
-</dl>
-</li>
-</ul>
-</div>
-<div class="section" id="process">
-<h3>Process<a class="headerlink" href="#process" title="Permalink to this headline">¶</a></h3>
-<ul>
-<li><dl class="first docutils">
-<dt>CELERYD_PID_FILE</dt>
-<dd><p class="first last">Full path to the pid file. Default is <tt class="docutils literal"><span class="pre">celeryd.pid</span></tt>.
-Can also be set via the <tt class="docutils literal"><span class="pre">--pidfile</span></tt> argument.</p>
 </dd>
 </dl>
 </li>
@@ -624,10 +609,8 @@ the schedule. Default is 300 seconds (5 minutes).</p>
 <dt>CELERYBEAT_LOG_FILE</dt>
 <dd><p class="first">The default filename to log messages to, can be
 overridden using the <cite>&#8211;logfile`</cite> option.</p>
-<p>The default is to log using <tt class="docutils literal"><span class="pre">stderr</span></tt> if running in the foreground,
-when running in the background, detached as a daemon, the default
-logfile is <tt class="docutils literal"><span class="pre">celerybeat.log</span></tt>.</p>
-<p class="last">Can also be set via the <tt class="docutils literal"><span class="pre">--logfile</span></tt> argument.</p>
+<p class="last">The default is <tt class="xref docutils literal"><span class="pre">None</span></tt> (<tt class="docutils literal"><span class="pre">stderr</span></tt>).
+Can also be set via the <tt class="docutils literal"><span class="pre">--logfile</span></tt> argument.</p>
 </dd>
 </dl>
 </li>
@@ -640,13 +623,6 @@ logfile is <tt class="docutils literal"><span class="pre">celerybeat.log</span><
 </dd>
 </dl>
 </li>
-<li><dl class="first docutils">
-<dt>CELERYBEAT_PID_FILE</dt>
-<dd><p class="first last">Full path to celerybeat&#8217;s pid file. Default is <tt class="docutils literal"><span class="pre">celerybat.pid</span></tt>.
-Can also be set via the <tt class="docutils literal"><span class="pre">--pidfile</span></tt> argument.</p>
-</dd>
-</dl>
-</li>
 </ul>
 </div>
 <div class="section" id="monitor-server-celerymon">
@@ -656,9 +632,8 @@ Can also be set via the <tt class="docutils literal"><span class="pre">--pidfile
 <dt>CELERYMON_LOG_FILE</dt>
 <dd><p class="first">The default filename to log messages to, can be
 overridden using the <cite>&#8211;logfile`</cite> option.</p>
-<p class="last">The default is to log using <tt class="docutils literal"><span class="pre">stderr</span></tt> if running in the foreground,
-when running in the background, detached as a daemon, the default
-logfile is <tt class="docutils literal"><span class="pre">celerymon.log</span></tt>.</p>
+<p class="last">The default is <tt class="xref docutils literal"><span class="pre">None</span></tt> (<tt class="docutils literal"><span class="pre">stderr</span></tt>)
+Can also be set via the <tt class="docutils literal"><span class="pre">--logfile</span></tt> argument.</p>
 </dd>
 </dl>
 </li>
@@ -667,13 +642,6 @@ logfile is <tt class="docutils literal"><span class="pre">celerymon.log</span></
 <dd><p class="first">Logging level. Can be any of <tt class="docutils literal"><span class="pre">DEBUG</span></tt>, <tt class="docutils literal"><span class="pre">INFO</span></tt>, <tt class="docutils literal"><span class="pre">WARNING</span></tt>,
 <tt class="docutils literal"><span class="pre">ERROR</span></tt>, or <tt class="docutils literal"><span class="pre">CRITICAL</span></tt>.</p>
 <p class="last">See the <tt class="xref docutils literal"><span class="pre">logging</span></tt> module for more information.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt>CELERYMON_PID_FILE</dt>
-<dd><p class="first last">Full path to celerymon&#8217;s pid file. Default is <tt class="docutils literal"><span class="pre">celerymon.pid</span></tt>.
-Can be overridden using the <tt class="docutils literal"><span class="pre">--pidfile</span></tt> option to <tt class="docutils literal"><span class="pre">celerymon</span></tt>.</p>
 </dd>
 </dl>
 </li>
@@ -694,7 +662,7 @@ Can be overridden using the <tt class="docutils literal"><span class="pre">--pid
       <div class="clearer"></div>
     </div>
 	<div id="breadcrumbs">
-		<a href="index.html">Celery v0.9.4 (unstable) documentation</a>
+		<a href="index.html">Celery v0.9.5 (unstable) documentation</a>
 		</ul>
 	</div>
   </body>

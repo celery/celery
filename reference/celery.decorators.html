@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Task Decorators - celery.decorators &mdash; Celery v0.9.4 (unstable) documentation</title>
+    <title>Task Decorators - celery.decorators &mdash; Celery v0.9.5 (unstable) documentation</title>
     <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.9.4 (unstable)',
+        VERSION:     '0.9.5 (unstable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,14 +19,14 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.9.4 (unstable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.9.5 (unstable) documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="Defining Tasks - celery.task.base" href="celery.task.base.html" />
     <link rel="prev" title="API Reference" href="index.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v0.9.4 (unstable) documentation</p>
+	<p>Celery v0.9.5 (unstable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Task Decorators - celery.decorators</h1></div>
@@ -114,8 +114,51 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="task-decorators-celery-decorators">
-<h1>Task Decorators - celery.decorators<a class="headerlink" href="#task-decorators-celery-decorators" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="module-celery.decorators">
+<h1>Task Decorators - celery.decorators<a class="headerlink" href="#module-celery.decorators" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="celery.decorators.periodic_task">
+<tt class="descclassname">celery.decorators.</tt><tt class="descname">periodic_task</tt><big>(</big><em>**options</em><big>)</big><a class="headerlink" href="#celery.decorators.periodic_task" title="Permalink to this definition">¶</a></dt>
+<dd><p>Task decorator to create a periodic task.</p>
+<p>Run a task once every day:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">timedelta</span>
+
+<span class="nd">@periodic_task</span><span class="p">(</span><span class="n">run_every</span><span class="o">=</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">cronjob</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">cronjob</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&quot;Task running...&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.decorators.task">
+<tt class="descclassname">celery.decorators.</tt><tt class="descname">task</tt><big>(</big><em>*args</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.decorators.task" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decorator to create a task class out of any callable.</p>
+<p>Examples:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@task</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">refresh_feed</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">Feed</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>With setting extra options and using retry.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@task</span><span class="p">(</span><span class="n">exchange</span><span class="o">=</span><span class="s">&quot;feeds&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">refresh_feed</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Feed</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span>
+    <span class="k">except</span> <span class="n">socket</span><span class="o">.</span><span class="n">error</span><span class="p">,</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="n">refresh_feed</span><span class="o">.</span><span class="n">retry</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="n">url</span><span class="p">],</span> <span class="n">kwargs</span><span class="o">=</span><span class="n">kwargs</span><span class="p">,</span> <span class="n">exc</span><span class="o">=</span><span class="n">exc</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Calling the resulting task:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">refresh_feed</span><span class="p">(</span><span class="s">&quot;http://example.com/rss&quot;</span><span class="p">)</span> <span class="c"># Regular</span>
+<span class="go">&lt;Feed: http://example.com/rss&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">refresh_feed</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="s">&quot;http://example.com/rss&quot;</span><span class="p">)</span> <span class="c"># Async</span>
+<span class="go">&lt;AsyncResult: 8998d0f4-da0b-4669-ba03-d5ab5ac6ad5d&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
 </div>
 
 
@@ -132,7 +175,7 @@
     </div>
 	<div id="breadcrumbs">
 		<a href="index.html" accesskey="U">API Reference</a><img src="triangle_closed.png" alt="Right arrow">
-		<a href="../index.html">Celery v0.9.4 (unstable) documentation</a>
+		<a href="../index.html">Celery v0.9.5 (unstable) documentation</a>
 		</ul>
 	</div>
   </body>

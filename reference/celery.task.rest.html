@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Remote HTTP Tasks - celery.task.rest &mdash; Celery v0.9.4 (unstable) documentation</title>
+    <title>Remote HTTP Tasks - celery.task.rest &mdash; Celery v0.9.5 (unstable) documentation</title>
     <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.9.4 (unstable)',
+        VERSION:     '0.9.5 (unstable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,14 +19,14 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.9.4 (unstable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.9.5 (unstable) documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="Built-in Task Classes - celery.task.builtins" href="celery.task.builtins.html" />
     <link rel="prev" title="Exceptions - celery.exceptions" href="celery.exceptions.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v0.9.4 (unstable) documentation</p>
+	<p>Celery v0.9.5 (unstable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Remote HTTP Tasks - celery.task.rest</h1></div>
@@ -114,8 +114,44 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="remote-http-tasks-celery-task-rest">
-<h1>Remote HTTP Tasks - celery.task.rest<a class="headerlink" href="#remote-http-tasks-celery-task-rest" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="module-celery.task.rest">
+<h1>Remote HTTP Tasks - celery.task.rest<a class="headerlink" href="#module-celery.task.rest" title="Permalink to this headline">¶</a></h1>
+<dl class="exception">
+<dt id="celery.task.rest.InvalidResponseError">
+<em class="property">exception </em><tt class="descclassname">celery.task.rest.</tt><tt class="descname">InvalidResponseError</tt><a class="headerlink" href="#celery.task.rest.InvalidResponseError" title="Permalink to this definition">¶</a></dt>
+<dd>The remote server gave an invalid response.</dd></dl>
+
+<dl class="exception">
+<dt id="celery.task.rest.RemoteExecuteError">
+<em class="property">exception </em><tt class="descclassname">celery.task.rest.</tt><tt class="descname">RemoteExecuteError</tt><a class="headerlink" href="#celery.task.rest.RemoteExecuteError" title="Permalink to this definition">¶</a></dt>
+<dd>The remote task gave a custom error.</dd></dl>
+
+<dl class="class">
+<dt id="celery.task.rest.URL">
+<em class="property">class </em><tt class="descclassname">celery.task.rest.</tt><tt class="descname">URL</tt><big>(</big><em>url</em><big>)</big><a class="headerlink" href="#celery.task.rest.URL" title="Permalink to this definition">¶</a></dt>
+<dd><p>Object wrapping a Uniform Resource Locator.</p>
+<p>Supports editing the query parameter list.
+You can convert the object back to a string, the query will be
+properly urlencoded.</p>
+<p>Examples</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">url</span> <span class="o">=</span> <span class="n">URL</span><span class="p">(</span><span class="s">&quot;http://www.google.com:6580/foo/bar?x=3&amp;y=4#foo&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">url</span><span class="o">.</span><span class="n">query</span>
+<span class="go">{&#39;x&#39;: &#39;3&#39;, &#39;y&#39;: &#39;4&#39;}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">str</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+<span class="go">&#39;http://www.google.com:6580/foo/bar?y=4&amp;x=3#foo&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">url</span><span class="o">.</span><span class="n">query</span><span class="p">[</span><span class="s">&quot;x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">url</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s">&quot;George&quot;</span><span class="p">:</span> <span class="s">&quot;Constanza&quot;</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">str</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+<span class="go">&#39;http://www.google.com:6580/foo/bar?y=4&amp;x=10&amp;George=Constanza#foo&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="exception">
+<dt id="celery.task.rest.UnknownStatusError">
+<em class="property">exception </em><tt class="descclassname">celery.task.rest.</tt><tt class="descname">UnknownStatusError</tt><a class="headerlink" href="#celery.task.rest.UnknownStatusError" title="Permalink to this definition">¶</a></dt>
+<dd>The remote server gave an unknown status.</dd></dl>
+
 </div>
 
 
@@ -132,7 +168,7 @@
     </div>
 	<div id="breadcrumbs">
 		<a href="index.html" accesskey="U">API Reference</a><img src="triangle_closed.png" alt="Right arrow">
-		<a href="../index.html">Celery v0.9.4 (unstable) documentation</a>
+		<a href="../index.html">Celery v0.9.5 (unstable) documentation</a>
 		</ul>
 	</div>
   </body>
