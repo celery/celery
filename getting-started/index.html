@@ -1,0 +1,149 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Getting Started &mdash; Celery v0.9.5 (unstable) documentation</title>
+    <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.9.5 (unstable)',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v0.9.5 (unstable) documentation" href="../index.html" />
+    <link rel="next" title="Installation" href="installation.html" />
+    <link rel="prev" title="Introduction" href="../introduction.html" /> 
+  </head>
+  <body>
+<div id="docstitle">
+	<p>Celery v0.9.5 (unstable) documentation</p>
+</div>
+<div id="header">
+	<div id="title"><h1>Getting Started</h1></div>
+	<ul id="headerButtons">
+		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
+		<li id="page_buttons">
+			<div class="headerButton"><a href="../genindex.html" title="General Index" accesskey="I">index</a></div>
+			<div class="headerButton"><a href="../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="installation.html" title="Installation" accesskey="N">next</a></div>
+			<div class="headerButton"><a href="../introduction.html" title="Introduction" accesskey="P">previous</a></div>
+		</li>
+	</ul>
+</div>
+
+<div id="sphinxsidebar">
+  <div class="sphinxsidebarwrapper">
+	<ul><li class="toctree-l1"><a href="../index.html">Main Page</a></li></ul>
+	<ul class="current">
+<li class="toctree-l1"><a class="reference external" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1 current"><a class="current reference external" href="">Getting Started</a><ul>
+<li class="toctree-l2"><a class="reference external" href="installation.html">Installation</a></li>
+<li class="toctree-l2"><a class="reference external" href="first-steps-with-python.html">First steps with Python</a></li>
+<li class="toctree-l2"><a class="reference external" href="first-steps-with-django.html">First steps with Django</a></li>
+<li class="toctree-l2"><a class="reference external" href="periodic-tasks.html">Periodic Tasks</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference external" href="../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference external" href="../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference external" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference external" href="../reference/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference external" href="../internals/index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference external" href="../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference external" href="../links.html">Interesting Links</a></li>
+</ul>
+
+      <h3>This Page</h3>
+      <ul class="this-page-menu">
+        <li><a href="../sources/getting-started/index.txt"
+               rel="nofollow">Show Source</a></li>
+      </ul>
+    <div id="searchbox" style="display: none">
+      
+        <form class="search" action="../search.html" method="get">
+			<div class="search-wrapper">
+			<span class="search-left"></span>
+			<input class="prettysearch" type="text" name="q" size="18" />
+			<span class="search-right">&nbsp;</span>
+			</div>
+          <input type="submit" value="Search" class="searchbutton" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </form>
+        <p class="searchtip" style="font-size: 90%">
+        Enter search terms or a module, class or function name.
+        </p>
+    </div>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+  </div>
+</div>
+
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="getting-started">
+<h1>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h1>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Release:</th><td class="field-body">0.9</td>
+</tr>
+<tr class="field"><th class="field-name">Date:</th><td class="field-body">January 13, 2010</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference external" href="installation.html#installing-rabbitmq">Installing RabbitMQ</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="first-steps-with-python.html">First steps with Python</a><ul>
+<li class="toctree-l2"><a class="reference external" href="first-steps-with-python.html#creating-a-simple-task">Creating a simple task</a></li>
+<li class="toctree-l2"><a class="reference external" href="first-steps-with-python.html#configuration">Configuration</a></li>
+<li class="toctree-l2"><a class="reference external" href="first-steps-with-python.html#running-the-celery-worker-server">Running the celery worker server</a></li>
+<li class="toctree-l2"><a class="reference external" href="first-steps-with-python.html#executing-the-task">Executing the task</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="first-steps-with-django.html">First steps with Django</a><ul>
+<li class="toctree-l2"><a class="reference external" href="first-steps-with-django.html#configuring-your-django-project-to-use-celery">Configuring your Django project to use Celery</a></li>
+<li class="toctree-l2"><a class="reference external" href="first-steps-with-django.html#running-the-celery-worker-server">Running the celery worker server</a></li>
+<li class="toctree-l2"><a class="reference external" href="first-steps-with-django.html#defining-and-executing-tasks">Defining and executing tasks</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="periodic-tasks.html">Periodic Tasks</a></li>
+</ul>
+</div>
+
+
+          </div> 
+        </div>
+      </div>
+    <div class="footer">
+    <p>
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+	</p>
+    </div>
+      <div class="clearer"></div>
+    </div>
+	<div id="breadcrumbs">
+		<a href="../index.html">Celery v0.9.5 (unstable) documentation</a>
+		</ul>
+	</div>
+  </body>
+</html>
