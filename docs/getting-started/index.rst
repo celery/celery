@@ -13,3 +13,4 @@
     first-steps-with-python
     first-steps-with-django
     periodic-tasks
+    resources
