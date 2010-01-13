@@ -38,7 +38,6 @@ it should contain all you need to run a basic celery set-up.
 
     # CELERYD_LOG_FILE = "celeryd.log"
     # CELERYD_LOG_LEVEL = "INFO"
-    # CELERYD_PID_FILE = "celeryd.pid"
 
 Concurrency settings
 ====================
@@ -339,7 +338,6 @@ Task execution settings
     If you still want to store errors, just not successful return values,
     you can set ``CELERY_STORE_ERRORS_EVEN_IF_IGNORED``.
 
-
 * CELERY_TASK_RESULT_EXPIRES
     Time (in seconds, or a :class:`datetime.timedelta` object) for when after
     stored task tombstones are deleted.
@@ -382,10 +380,7 @@ Logging
     The default filename the worker daemon logs messages to, can be
     overridden using the `--logfile`` option to ``celeryd``.
 
-    The default is to log using ``stderr`` if running in the foreground,
-    when running in the background, detached as a daemon, the default
-    logfile is ``celeryd.log``.
-
+    The default is ``None`` (``stderr``)
     Can also be set via the ``--logfile`` argument.
 
 * CELERYD_LOG_LEVEL
@@ -404,13 +399,6 @@ Logging
 
     See the Python :mod:`logging` module for more information about log
     formats.
-
-Process
--------
-
-* CELERYD_PID_FILE
-    Full path to the pid file. Default is ``celeryd.pid``.
-    Can also be set via the ``--pidfile`` argument.
 
 Periodic Task Server: celerybeat
 ================================
@@ -432,10 +420,7 @@ Periodic Task Server: celerybeat
     The default filename to log messages to, can be
     overridden using the `--logfile`` option.
 
-    The default is to log using ``stderr`` if running in the foreground,
-    when running in the background, detached as a daemon, the default
-    logfile is ``celerybeat.log``.
-
+    The default is ``None`` (``stderr``).
     Can also be set via the ``--logfile`` argument.
 
 * CELERYBEAT_LOG_LEVEL
@@ -446,10 +431,6 @@ Periodic Task Server: celerybeat
 
     See the :mod:`logging` module for more information.
 
-* CELERYBEAT_PID_FILE
-    Full path to celerybeat's pid file. Default is ``celerybat.pid``.
-    Can also be set via the ``--pidfile`` argument.
-
 Monitor Server: celerymon
 =========================
 
@@ -457,16 +438,11 @@ Monitor Server: celerymon
     The default filename to log messages to, can be
     overridden using the `--logfile`` option.
 
-    The default is to log using ``stderr`` if running in the foreground,
-    when running in the background, detached as a daemon, the default
-    logfile is ``celerymon.log``.
+    The default is ``None`` (``stderr``)
+    Can also be set via the ``--logfile`` argument.
 
 * CELERYMON_LOG_LEVEL
     Logging level. Can be any of ``DEBUG``, ``INFO``, ``WARNING``,
     ``ERROR``, or ``CRITICAL``.
 
     See the :mod:`logging` module for more information.
-
-* CELERYMON_PID_FILE
-    Full path to celerymon's pid file. Default is ``celerymon.pid``.
-    Can be overridden using the ``--pidfile`` option to ``celerymon``.

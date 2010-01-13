@@ -55,7 +55,7 @@ BACKWARD INCOMPATIBLE CHANGES
 
   To launch the periodic task scheduler you have to run celerybeat::
 
-		$ celerybeat --detach
+		$ celerybeat
 
   Make sure this is running on one server only, if you run it twice, all
   periodic tasks will also be executed twice.

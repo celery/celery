@@ -36,7 +36,7 @@ Configuration - celery.conf
 
     Always execute tasks locally, don't send to the queue.
 
-.. data: TASK_RESULT_EXPIRES
+.. data:: TASK_RESULT_EXPIRES
 
     Task tombstone expire time in seconds.
 
@@ -88,11 +88,6 @@ Configuration - celery.conf
     If ``True`` all rate limits will be disabled and all tasks will be executed
     as soon as possible.
 
-.. data:: CELERYBEAT_PID_FILE
-
-    Name of celerybeats pid file.
-    Default is: ``celerybeat.pid``.
-
 .. data:: CELERYBEAT_LOG_LEVEL
 
     Default log level for celerybeat.
@@ -101,7 +96,7 @@ Configuration - celery.conf
 .. data:: CELERYBEAT_LOG_FILE
 
     Default log file for celerybeat.
-    Default is: ``celerybeat.log``.
+    Default is: ``None`` (stderr)
 
 .. data:: CELERYBEAT_SCHEDULE_FILENAME
 
@@ -118,11 +113,6 @@ Configuration - celery.conf
     faster (A value of 5 minutes, means the changes will take effect in 5 minutes
     at maximum).
 
-.. data:: CELERYMON_PID_FILE
-
-    Name of celerymons pid file.
-    Default is: ``celerymon.pid``.
-
 .. data:: CELERYMON_LOG_LEVEL
 
     Default log level for celerymon.
@@ -131,7 +121,7 @@ Configuration - celery.conf
 .. data:: CELERYMON_LOG_FILE
 
     Default log file for celerymon.
-    Default is: ``celerymon.log``.
+    Default is: ``None`` (stderr)
 
 .. data:: LOG_LEVELS
 
@@ -144,17 +134,13 @@ Configuration - celery.conf
 .. data:: CELERYD_LOG_FILE
 
     Filename of the daemon log file.
+    Default is: ``None`` (stderr)
 
 .. data:: CELERYD_LOG_LEVEL
 
     Default log level for daemons. (``WARN``)
 
-.. data:: CELERYD_PID_FILE
-
-    Full path to the daemon pidfile.
-
 .. data:: CELERYD_CONCURRENCY
 
     The number of concurrent worker processes.
     If set to ``0``, the total number of available CPUs/cores will be used.
-
