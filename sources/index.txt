@@ -7,10 +7,9 @@ Contents:
 .. toctree::
     :maxdepth: 2
 
-    introduction
     getting-started/index
-    configuration
     userguide/index
+    configuration
     cookbook/index
     tutorials/index
     faq
