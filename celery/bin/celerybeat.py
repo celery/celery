@@ -72,7 +72,7 @@ OPTION_LIST = (
             help="Path to the schedule database. The extension \
                     '.db' will be appended to the filename. Default: %s" % (
                     conf.CELERYBEAT_SCHEDULE_FILENAME)),
-    optparse.make_option('-f', '--logfile', default=conf.CELERYBEAT_LOG_FILE,
+    optparse.make_option('-f', '--logfile', default=EAT_LOG_FILE,
             action="store", dest="logfile",
             help="Path to log file."),
     optparse.make_option('-l', '--loglevel',
@@ -115,8 +115,6 @@ def run_clockservice(detach=False, loglevel=conf.CELERYBEAT_LOG_LEVEL,
     # Setup logging
     if not isinstance(loglevel, int):
         loglevel = conf.LOG_LEVELS[loglevel.upper()]
-    if not detach:
-        logfile = None # log to stderr when not running in the background.
 
     # Run the worker init handler.
     # (Usually imports task modules and such.)

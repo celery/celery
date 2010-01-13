@@ -165,8 +165,6 @@ def run_worker(concurrency=conf.CELERYD_CONCURRENCY, detach=False,
     # Setup logging
     if not isinstance(loglevel, int):
         loglevel = conf.LOG_LEVELS[loglevel.upper()]
-    if not detach:
-        logfile = None # log to stderr when not running in the background.
 
     if discard:
         discarded_count = discard_all()

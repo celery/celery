@@ -30,15 +30,15 @@ _DEFAULTS = {
     "CELERYD_CONCURRENCY": 0, # defaults to cpu count
     "CELERYD_LOG_FORMAT": DEFAULT_P_LOG_FMT,
     "CELERYD_LOG_LEVEL": "WARN",
-    "CELERYD_LOG_FILE": "celeryd.log",
+    "CELERYD_LOG_FILE": None, # stderr
     "CELERYD_PID_FILE": "celeryd.pid",
     "CELERYBEAT_SCHEDULE_FILENAME": "celerybeat-schedule",
     "CELERYBEAT_MAX_LOOP_INTERVAL": 5 * 60, # five minutes.
     "CELERYBEAT_LOG_LEVEL": "INFO",
-    "CELERYBEAT_LOG_FILE": "celerybeat.log",
+    "CELERYBEAT_LOG_FILE": None, # stderr
     "CELERYBEAT_PID_FILE": "celerybeat.pid",
     "CELERYMON_LOG_LEVEL": "INFO",
-    "CELERYMON_LOG_FILE": "celerymon.log",
+    "CELERYMON_LOG_FILE": None, # stderr
     "CELERYMON_PID_FILE": "celerymon.pid",
     "CELERYMON_LOG_FORMAT": DEFAULT_LOG_FMT,
     "CELERY_BROADCAST_QUEUE": "celeryctl",
