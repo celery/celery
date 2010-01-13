@@ -8,6 +8,7 @@ Contents:
     :maxdepth: 2
 
     introduction
+    getting-started/index
     configuration
     userguide/index
     cookbook/index
