@@ -17,10 +17,6 @@
     Logging level, choose between ``DEBUG``, ``INFO``, ``WARNING``,
     ``ERROR``, ``CRITICAL``, or ``FATAL``.
 
-.. cmdoption:: -p, --pidfile
-
-    Path to pidfile.
-
 .. cmdoption:: -B, --beat
 
     Also run the ``celerybeat`` periodic task scheduler. Please note that
@@ -30,35 +26,11 @@
 
     Send events that can be captured by monitors like ``celerymon``.
 
-.. cmdoption:: -d, --detach, --daemon
-
-    Run in the background as a daemon.
-
 .. cmdoption:: --discard
 
     Discard all waiting tasks before the daemon is started.
     **WARNING**: This is unrecoverable, and the tasks will be
     deleted from the messaging server.
-
-.. cmdoption:: -u, --uid
-
-    User-id to run ``celeryd`` as when in daemon mode.
-
-.. cmdoption:: -g, --gid
-
-    Group-id to run ``celeryd`` as when in daemon mode.
-
-.. cmdoption:: --umask
-
-    umask of the process when in daemon mode.
-
-.. cmdoption:: --workdir
-
-    Directory to change to when in daemon mode.
-
-.. cmdoption:: --chroot
-
-    Change root directory to this path when in daemon mode.
 
 """
 import os
@@ -84,7 +56,7 @@ Configuration ->
 %(queues)s
     . concurrency -> %(concurrency)s
     . loader -> %(loader)s
-    . sys -> logfile:%(logfile)s@%(loglevel)s %(pidfile)s
+    . logfile -> %(logfile)s@%(loglevel)s
     . events -> %(events)s
     . beat -> %(celerybeat)s
 %(tasks)s
@@ -108,9 +80,6 @@ OPTION_LIST = (
     optparse.make_option('-l', '--loglevel', default=conf.CELERYD_LOG_LEVEL,
             action="store", dest="loglevel",
             help="Choose between DEBUG/INFO/WARNING/ERROR/CRITICAL/FATAL."),
-    optparse.make_option('-p', '--pidfile', default=conf.CELERYD_PID_FILE,
-            action="store", dest="pidfile",
-            help="Path to pidfile."),
     optparse.make_option('-B', '--beat', default=False,
             action="store_true", dest="run_clockservice",
             help="Also run the celerybeat periodic task scheduler. \
@@ -118,32 +87,12 @@ OPTION_LIST = (
     optparse.make_option('-E', '--events', default=conf.SEND_EVENTS,
             action="store_true", dest="events",
             help="Send events so celery can be monitored by e.g. celerymon."),
-    optparse.make_option('-d', '--detach', '--daemon', default=False,
-            action="store_true", dest="detach",
-            help="Run in the background as a daemon."),
-    optparse.make_option('-u', '--uid', default=None,
-            action="store", dest="uid",
-            help="User-id to run celeryd as when in daemon mode."),
-    optparse.make_option('-g', '--gid', default=None,
-            action="store", dest="gid",
-            help="Group-id to run celeryd as when in daemon mode."),
-    optparse.make_option('--umask', default=0,
-            action="store", type="int", dest="umask",
-            help="umask of the process when in daemon mode."),
-    optparse.make_option('--workdir', default=None,
-            action="store", dest="working_directory",
-            help="Directory to change to when in daemon mode."),
-    optparse.make_option('--chroot', default=None,
-            action="store", dest="chroot",
-            help="Change root directory to this path when in daemon mode."),
-    )
+)
 
 
-def run_worker(concurrency=conf.CELERYD_CONCURRENCY, detach=False,
+def run_worker(concurrency=conf.CELERYD_CONCURRENCY,
         loglevel=conf.CELERYD_LOG_LEVEL, logfile=conf.CELERYD_LOG_FILE,
-        discard=False, pidfile=conf.CELERYD_PID_FILE, umask=0,
-        uid=None, gid=None, working_directory=None,
-        chroot=None, run_clockservice=False, events=False, **kwargs):
+        discard=False, run_clockservice=False, events=False, **kwargs):
     """Starts the celery worker server."""
 
     print("Celery %s is starting." % __version__)
@@ -194,7 +143,6 @@ def run_worker(concurrency=conf.CELERYD_CONCURRENCY, detach=False,
             "concurrency": concurrency,
             "loglevel": conf.LOG_LEVELS[loglevel],
             "logfile": logfile or "[stderr]",
-            "pidfile": detach and "pidfile:%s" % pidfile or "",
             "celerybeat": run_clockservice and "ON" or "OFF",
             "events": events and "ON" or "OFF",
             "tasks": tasklist,
@@ -203,30 +151,15 @@ def run_worker(concurrency=conf.CELERYD_CONCURRENCY, detach=False,
 
     print("Celery has started.")
     set_process_status("Running...")
-    on_stop = noop
-    if detach:
-        from celery.log import setup_logger, redirect_stdouts_to_logger
-        context, on_stop = platform.create_daemon_context(logfile, pidfile,
-                                        chroot_directory=chroot,
-                                        working_directory=working_directory,
-                                        umask=umask)
-        context.open()
-        logger = setup_logger(loglevel, logfile)
-        redirect_stdouts_to_logger(logger, loglevel)
-        platform.set_effective_user(uid, gid)
 
     def run_worker():
         worker = WorkController(concurrency=concurrency,
                                 loglevel=loglevel,
                                 logfile=logfile,
                                 embed_clockservice=run_clockservice,
-                                send_events=events,
-                                is_detached=detach)
+                                send_events=events)
         from celery import signals
         signals.worker_init.send(sender=worker)
-        # Install signal handler that restarts celeryd on SIGHUP,
-        # (only on POSIX systems)
-        install_worker_restart_handler(worker)
 
         try:
             worker.start()
@@ -238,26 +171,7 @@ def run_worker(concurrency=conf.CELERYD_CONCURRENCY, detach=False,
         run_worker()
     except:
         set_process_status("Exiting...")
-        on_stop()
         raise
-
-
-def install_worker_restart_handler(worker):
-
-    def restart_worker_sig_handler(signum, frame):
-        """Signal handler restarting the current python program."""
-        worker.logger.info("Restarting celeryd (%s)" % (
-            " ".join(sys.argv)))
-        if worker.is_detached:
-            pid = os.fork()
-            if pid:
-                worker.stop()
-                sys.exit(0)
-        else:
-            worker.stop()
-        os.execv(sys.executable, [sys.executable] + sys.argv)
-
-    platform.install_signal_handler("SIGHUP", restart_worker_sig_handler)
 
 
 def parse_options(arguments):

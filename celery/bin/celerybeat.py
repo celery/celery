@@ -17,34 +17,6 @@
     Logging level, choose between ``DEBUG``, ``INFO``, ``WARNING``,
     ``ERROR``, ``CRITICAL``, or ``FATAL``.
 
-.. cmdoption:: -p, --pidfile
-
-    Path to pidfile.
-
-.. cmdoption:: -d, --detach, --daemon
-
-    Run in the background as a daemon.
-
-.. cmdoption:: -u, --uid
-
-    User-id to run ``celerybeat`` as when in daemon mode.
-
-.. cmdoption:: -g, --gid
-
-    Group-id to run ``celerybeat`` as when in daemon mode.
-
-.. cmdoption:: --umask
-
-    umask of the process when in daemon mode.
-
-.. cmdoption:: --workdir
-
-    Directory to change to when in daemon mode.
-
-.. cmdoption:: --chroot
-
-    Change root directory to this path when in daemon mode.
-
 """
 import sys
 import traceback
@@ -62,7 +34,7 @@ STARTUP_INFO_FMT = """
 Configuration ->
     . broker -> %(conninfo)s
     . schedule -> %(schedule)s
-    . sys -> %(logfile)s@%(loglevel)s %(pidfile)s
+    . logfile -> %(logfile)s@%(loglevel)s
 """.strip()
 
 OPTION_LIST = (
@@ -79,34 +51,11 @@ OPTION_LIST = (
             default=conf.CELERYBEAT_LOG_LEVEL,
             action="store", dest="loglevel",
             help="Choose between DEBUG/INFO/WARNING/ERROR/CRITICAL/FATAL."),
-    optparse.make_option('-p', '--pidfile',
-            default=conf.CELERYBEAT_PID_FILE,
-            action="store", dest="pidfile",
-            help="Path to pidfile."),
-    optparse.make_option('-d', '--detach', '--daemon', default=False,
-            action="store_true", dest="detach",
-            help="Run in the background as a daemon."),
-    optparse.make_option('-u', '--uid', default=None,
-            action="store", dest="uid",
-            help="User-id to run celerybeat as when in daemon mode."),
-    optparse.make_option('-g', '--gid', default=None,
-            action="store", dest="gid",
-            help="Group-id to run celerybeat as when in daemon mode."),
-    optparse.make_option('--umask', default=0,
-            action="store", type="int", dest="umask",
-            help="umask of the process when in daemon mode."),
-    optparse.make_option('--workdir', default=None,
-            action="store", dest="working_directory",
-            help="Directory to change to when in daemon mode."),
-    optparse.make_option('--chroot', default=None,
-            action="store", dest="chroot",
-            help="Change root directory to this path when in daemon mode."),
-    )
+)
 
 
-def run_clockservice(detach=False, loglevel=conf.CELERYBEAT_LOG_LEVEL,
-        logfile=conf.CELERYBEAT_LOG_FILE, pidfile=conf.CELERYBEAT_PID_FILE,
-        umask=0, uid=None, gid=None, working_directory=None, chroot=None,
+def run_clockservice(loglevel=conf.CELERYBEAT_LOG_LEVEL,
+        logfile=conf.CELERYBEAT_LOG_FILE,
         schedule=conf.CELERYBEAT_SCHEDULE_FILENAME, **kwargs):
     """Starts the celerybeat clock server."""
 
@@ -129,7 +78,6 @@ def run_clockservice(detach=False, loglevel=conf.CELERYBEAT_LOG_LEVEL,
             "conninfo": info.format_broker_info(),
             "logfile": logfile or "@stderr",
             "loglevel": conf.LOG_LEVELS[loglevel],
-            "pidfile": detach and pidfile or "",
             "schedule": schedule,
     })
 
@@ -138,21 +86,10 @@ def run_clockservice(detach=False, loglevel=conf.CELERYBEAT_LOG_LEVEL,
     platform.set_process_title("celerybeat",
                                info=" ".join(sys.argv[arg_start:]))
     from celery.log import setup_logger, redirect_stdouts_to_logger
-    on_stop = noop
-    if detach:
-        context, on_stop = platform.create_daemon_context(logfile, pidfile,
-                                        chroot_directory=chroot,
-                                        working_directory=working_directory,
-                                        umask=umask)
-        context.open()
-        logger = setup_logger(loglevel, logfile)
-        redirect_stdouts_to_logger(logger, loglevel)
-        platform.set_effective_user(uid, gid)
 
     def _run_clock():
         logger = setup_logger(loglevel, logfile)
-        clockservice = ClockService(logger=logger, is_detached=detach,
-                                    schedule_filename=schedule)
+        clockservice = ClockService(logger=logger, schedule_filename=schedule)
 
         try:
             clockservice.start()
@@ -161,11 +98,7 @@ def run_clockservice(detach=False, loglevel=conf.CELERYBEAT_LOG_LEVEL,
                     "celerybeat raised exception %s: %s\n%s" % (
                             e.__class__, e, traceback.format_exc()))
 
-    try:
-        _run_clock()
-    except:
-        on_stop()
-        raise
+    _run_clock()
 
 
 def parse_options(arguments):

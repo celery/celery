@@ -67,10 +67,6 @@ class WorkController(object):
 
         The :class:`logging.Logger` instance used for logging.
 
-    .. attribute:: is_detached
-
-        Flag describing if the worker is running as a daemon or not.
-
     .. attribute:: pool
 
         The :class:`multiprocessing.Pool` instance used.
@@ -105,14 +101,12 @@ class WorkController(object):
     _state = None
 
     def __init__(self, concurrency=None, logfile=None, loglevel=None,
-            send_events=conf.SEND_EVENTS,
-            is_detached=False, embed_clockservice=False):
+            send_events=conf.SEND_EVENTS, embed_clockservice=False):
 
         # Options
         self.loglevel = loglevel or self.loglevel
         self.concurrency = concurrency or self.concurrency
         self.logfile = logfile or self.logfile
-        self.is_detached = is_detached
         self.logger = setup_logger(loglevel, logfile)
         self.embed_clockservice = embed_clockservice
         self.send_events = send_events
@@ -139,7 +133,6 @@ class WorkController(object):
         # can be stopped in a sensible short time.
         self.clockservice = self.embed_clockservice and ClockServiceThread(
                                 logger=self.logger,
-                                is_detached=self.is_detached,
                                 max_interval=1) or None
         self.listener = CarrotListener(self.ready_queue,
                                        self.eta_schedule,

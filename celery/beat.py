@@ -154,7 +154,7 @@ class ClockService(object):
     registry = _registry.tasks
     open_schedule = lambda self, filename: shelve.open(filename)
 
-    def __init__(self, logger=None, is_detached=False,
+    def __init__(self, logger=None,
             max_interval=conf.CELERYBEAT_MAX_LOOP_INTERVAL,
             schedule_filename=conf.CELERYBEAT_SCHEDULE_FILENAME):
         self.logger = logger or log.get_default_logger()

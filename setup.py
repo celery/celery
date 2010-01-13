@@ -75,15 +75,6 @@ install_requires.extend([
     "django-picklefield",
     "billiard>=0.2.1"])
 
-# python-daemon doesn't run on windows, so check current platform
-if platform.system() == "Windows":
-    print("""
-    ***WARNING***
-    I see you are using windows. You will not be able to run celery
-    in daemon mode with the --detach parameter.""")
-else:
-    install_requires.append("python-daemon>=1.4.8")
-
 py_version_info = sys.version_info
 py_major_version = py_version_info[0]
 py_minor_version = py_version_info[1]

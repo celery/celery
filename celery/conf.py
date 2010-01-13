@@ -31,15 +31,12 @@ _DEFAULTS = {
     "CELERYD_LOG_FORMAT": DEFAULT_P_LOG_FMT,
     "CELERYD_LOG_LEVEL": "WARN",
     "CELERYD_LOG_FILE": None, # stderr
-    "CELERYD_PID_FILE": "celeryd.pid",
     "CELERYBEAT_SCHEDULE_FILENAME": "celerybeat-schedule",
     "CELERYBEAT_MAX_LOOP_INTERVAL": 5 * 60, # five minutes.
     "CELERYBEAT_LOG_LEVEL": "INFO",
     "CELERYBEAT_LOG_FILE": None, # stderr
-    "CELERYBEAT_PID_FILE": "celerybeat.pid",
     "CELERYMON_LOG_LEVEL": "INFO",
     "CELERYMON_LOG_FILE": None, # stderr
-    "CELERYMON_PID_FILE": "celerymon.pid",
     "CELERYMON_LOG_FORMAT": DEFAULT_LOG_FMT,
     "CELERY_BROADCAST_QUEUE": "celeryctl",
     "CELERY_BROADCAST_EXCHANGE": "celeryctl",
@@ -96,7 +93,6 @@ CELERYD_LOG_FILE = _get("CELERYD_LOG_FILE")
 CELERYD_LOG_LEVEL = _get("CELERYD_LOG_LEVEL",
                         compat=["CELERYD_DAEMON_LOG_LEVEL"])
 CELERYD_LOG_LEVEL = LOG_LEVELS[CELERYD_LOG_LEVEL.upper()]
-CELERYD_PID_FILE = _get("CELERYD_PID_FILE")
 CELERYD_CONCURRENCY = _get("CELERYD_CONCURRENCY")
 
 # <--- Message routing                             <-   --   --- - ----- -- #
@@ -185,14 +181,12 @@ BROKER_CONNECTION_MAX_RETRIES = _get("CELERY_BROKER_CONNECTION_MAX_RETRIES",
 RESULT_EXCHANGE = _get("CELERY_RESULT_EXCHANGE")
 
 # :--- Celery Beat                                  <-   --   --- - ----- -- #
-CELERYBEAT_PID_FILE = _get("CELERYBEAT_PID_FILE")
 CELERYBEAT_LOG_LEVEL = _get("CELERYBEAT_LOG_LEVEL")
 CELERYBEAT_LOG_FILE = _get("CELERYBEAT_LOG_FILE")
 CELERYBEAT_SCHEDULE_FILENAME = _get("CELERYBEAT_SCHEDULE_FILENAME")
 CELERYBEAT_MAX_LOOP_INTERVAL = _get("CELERYBEAT_MAX_LOOP_INTERVAL")
 
 # :--- Celery Monitor                               <-   --   --- - ----- -- #
-CELERYMON_PID_FILE = _get("CELERYMON_PID_FILE")
 CELERYMON_LOG_LEVEL = _get("CELERYMON_LOG_LEVEL")
 CELERYMON_LOG_FILE = _get("CELERYMON_LOG_FILE")
 
