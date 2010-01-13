@@ -158,6 +158,10 @@ def run_worker(concurrency=conf.CELERYD_CONCURRENCY,
                                 logfile=logfile,
                                 embed_clockservice=run_clockservice,
                                 send_events=events)
+
+        # Install signal handler so SIGHUP restarts the worker.
+        install_worker_restart_handler(worker)
+
         from celery import signals
         signals.worker_init.send(sender=worker)
 
@@ -173,6 +177,17 @@ def run_worker(concurrency=conf.CELERYD_CONCURRENCY,
         set_process_status("Exiting...")
         raise
 
+
+def install_worker_restart_handler(worker):
+
+    def restart_worker_sig_handler(signum, frame):
+        """Signal handler restarting the current python program."""
+        worker.logger.warn("Restarting celeryd (%s)" % (
+            " ".join(sys.argv)))
+        worker.stop()
+        os.execv(sys.executable, [sys.executable] + sys.argv)
+
+    platform.install_signal_handler("SIGHUP", restart_worker_sig_handler)
 
 def parse_options(arguments):
     """Parse the available options to ``celeryd``."""
