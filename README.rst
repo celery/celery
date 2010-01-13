@@ -166,6 +166,8 @@ A look inside the components
 
 .. image:: http://cloud.github.com/downloads/ask/celery/Celery1.0-inside-worker.jpg
 
+
+
 Getting Help
 ============
 

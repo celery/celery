@@ -3,3 +3,5 @@
 =================================
 
 .. include:: ../includes/introduction.txt
+
+.. include:: ../includes/resources.txt

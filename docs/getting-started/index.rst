@@ -8,7 +8,8 @@
 .. toctree::
     :maxdepth: 2
 
-    installation
+    introduction
+    broker-installation
     first-steps-with-python
     first-steps-with-django
     periodic-tasks

@@ -1,6 +1,6 @@
-==============
- Installation
-==============
+=====================
+ Broker Installation
+=====================
 
 Installing RabbitMQ
 ===================
