@@ -17,7 +17,14 @@ from billiard.utils.functional import curry
 
 from celery.utils.compat import all, any, defaultdict
 
-noop = lambda *args, **kwargs: None
+
+def noop(*args, **kwargs):
+    """No operation.
+
+    Takes any arguments/keyword arguments and does nothing.
+
+    """
+    pass
 
 
 def chunks(it, n):
