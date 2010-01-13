@@ -1,7 +1,3 @@
-=================================
- celery - Distributed Task Queue
-=================================
-
 :Version: 1.0.0-pre1
 :Keywords: task queue, job queue, asynchronous, rabbitmq, amqp, redis.
 
@@ -181,4 +177,3 @@ This software is licensed under the ``New BSD License``. See the ``LICENSE``
 file in the top distribution directory for the full license text.
 
 .. # vim: syntax=rst expandtab tabstop=4 shiftwidth=4 shiftround
-
