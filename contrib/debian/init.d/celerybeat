@@ -52,8 +52,7 @@ fi
 
 cd $DJANGO_PROJECT_DIR
 
-CELERYBEAT_OPTS="$CELERYBEAT_OPTS -f $CELERYBEAT_LOG_FILE -l $CELERYBEAT_LOG_LEVEL -p \
-                    $CELERYBEAT_PID_FILE -d"
+CELERYBEAT_OPTS="$CELERYBEAT_OPTS -f $CELERYBEAT_LOG_FILE -l $CELERYBEAT_LOG_LEVEL"
 
 if [ -n "$2" ]; then
     CELERYBEAT_OPTS="$CELERYBEAT_OPTS $2"
@@ -89,7 +88,7 @@ case "$1" in
   start)
     check_dev_null
     log_daemon_msg "Starting celery periodic task scheduler" "celerybeat"
-    if start-stop-daemon --start --quiet --oknodo --pidfile $CELERYBEAT_PID_FILE --exec $CELERYBEAT -- $CELERYBEAT_OPTS; then
+    if start-stop-daemon --start --quiet --oknodo --background --make-pidfile --pidfile $CELERYBEAT_PID_FILE --exec $CELERYBEAT -- $CELERYBEAT_OPTS; then
         log_end_msg 0
     else
         log_end_msg 1
@@ -111,7 +110,7 @@ case "$1" in
     log_daemon_msg "Restarting celery periodic task scheduler" "celerybeat"
     start-stop-daemon --stop --quiet --oknodo --retry 30 --pidfile $CELERYBEAT_PID_FILE
     check_dev_null log_end_msg
-    if start-stop-daemon --start --quiet --oknodo --pidfile $CELERYBEAT_PID_FILE --exec $CELERYBEAT -- $CELERYBEAT_OPTS; then
+    if start-stop-daemon --start --quiet --oknodo --background --make-pidfile --pidfile $CELERYBEAT_PID_FILE --exec $CELERYBEAT -- $CELERYBEAT_OPTS; then
         log_end_msg 0
     else
         log_end_msg 1
@@ -128,7 +127,7 @@ case "$1" in
         0)
 		# old daemon stopped
 		check_dev_null log_end_msg
-		if start-stop-daemon --start --quiet --oknodo --pidfile $CELERYBEAT_PID_FILE --exec $CELERYBEAT -- $CELERYBEAT_OPTS; then
+		if start-stop-daemon --start --quiet --oknodo --background --make-pidfile --pidfile $CELERYBEAT_PID_FILE --exec $CELERYBEAT -- $CELERYBEAT_OPTS; then
 		    log_end_msg 0
 		else
 		    log_end_msg 1

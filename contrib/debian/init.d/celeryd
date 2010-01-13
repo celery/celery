@@ -46,8 +46,7 @@ fi
 
 cd $DJANGO_PROJECT_DIR
 
-CELERYD_OPTS="$CELERYD_OPTS -f $CELERYD_LOG_FILE -l $CELERYD_LOG_LEVEL -p \
-                    $CELERYD_PID_FILE -d"
+CELERYD_OPTS="$CELERYD_OPTS -f $CELERYD_LOG_FILE -l $CELERYD_LOG_LEVEL"
 
 if [ -n "$2" ]; then
     CELERYD_OPTS="$CELERYD_OPTS $2"
@@ -83,7 +82,7 @@ case "$1" in
   start)
     check_dev_null
     log_daemon_msg "Starting celery task worker server" "celeryd"
-    if start-stop-daemon --start --quiet --oknodo --pidfile $CELERYD_PID_FILE --exec $CELERYD -- $CELERYD_OPTS; then
+    if start-stop-daemon --start --quiet --oknodo --background --make-pidfile --pidfile $CELERYD_PID_FILE --exec $CELERYD -- $CELERYD_OPTS; then
         log_end_msg 0
     else
         log_end_msg 1
@@ -91,10 +90,7 @@ case "$1" in
     ;;
   stop)
     log_daemon_msg "Stopping celery task worker server" "celeryd"
-    if start-stop-daemon --stop --quiet --pidfile $CELERYD_PID_FILE; 
-    then
-        rm -f "$CELERYD_PID_FILE"
-        log_end_msg 0
+    if start-stop-daemon --stop --quiet --oknodo --pidfile $CELERYD_PID_FILE; then log_end_msg 0
     else
         log_end_msg 1
     fi
@@ -108,7 +104,7 @@ case "$1" in
     log_daemon_msg "Restarting celery task worker server" "celeryd"
     start-stop-daemon --stop --quiet --oknodo --retry 30 --pidfile $CELERYD_PID_FILE
     check_dev_null log_end_msg
-    if start-stop-daemon --start --quiet --oknodo --pidfile $CELERYD_PID_FILE --exec $CELERYD -- $CELERYD_OPTS; then
+    if start-stop-daemon --start --quiet --oknodo --background --make-pidfile --pidfile $CELERYD_PID_FILE --exec $CELERYD -- $CELERYD_OPTS; then
         log_end_msg 0
     else
         log_end_msg 1
@@ -125,7 +121,7 @@ case "$1" in
         0)
 		# old daemon stopped
 		check_dev_null log_end_msg
-		if start-stop-daemon --start --quiet --oknodo --pidfile $CELERYD_PID_FILE --exec $CELERYD -- $CELERYD_OPTS; then
+		if start-stop-daemon --start --quiet --oknodo --background --make-pidfile --pidfile $CELERYD_PID_FILE --exec $CELERYD -- $CELERYD_OPTS; then
 		    log_end_msg 0
 		else
 		    log_end_msg 1
