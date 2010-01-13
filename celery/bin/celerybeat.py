@@ -44,7 +44,7 @@ OPTION_LIST = (
             help="Path to the schedule database. The extension \
                     '.db' will be appended to the filename. Default: %s" % (
                     conf.CELERYBEAT_SCHEDULE_FILENAME)),
-    optparse.make_option('-f', '--logfile', default=EAT_LOG_FILE,
+    optparse.make_option('-f', '--logfile', default=conf.CELERYBEAT_LOG_FILE,
             action="store", dest="logfile",
             help="Path to log file."),
     optparse.make_option('-l', '--loglevel',
