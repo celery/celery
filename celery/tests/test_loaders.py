@@ -27,7 +27,7 @@ class TestLoaders(unittest.TestCase):
 
     @with_environ("CELERY_LOADER", "default")
     def test_detect_loader_CELERY_LOADER(self):
-        self.assertEquals(loaders._detect_loader(), loaders.DefaultLoader)
+        self.assertEquals(loaders.detect_loader(), loaders.DefaultLoader)
 
 
 class DummyLoader(base.BaseLoader):

@@ -1,6 +1,7 @@
 import os
 import importlib
 
+from celery.utils import get_full_cls_name
 from celery.loaders.default import Loader as DefaultLoader
 from celery.loaders.djangoapp import Loader as DjangoLoader
 
@@ -27,11 +28,18 @@ def get_loader_cls(loader):
     return _loader_cache[loader]
 
 
-def _detect_loader(): # pragma: no cover
+def detect_loader():
     loader = os.environ.get("CELERY_LOADER")
     if loader:
         return get_loader_cls(loader)
 
+    loader = _detect_loader()
+    os.environ["CELERY_LOADER"] = get_full_cls_name(loader)
+
+    return loader
+
+
+def _detect_loader(): # pragma: no cover
     from django.conf import settings
     if settings.configured:
         return DjangoLoader
@@ -72,7 +80,7 @@ def _detect_loader(): # pragma: no cover
 The current loader class.
 
 """
-Loader = _detect_loader()
+Loader = detect_loader()
 
 """
 .. data:: current_loader
