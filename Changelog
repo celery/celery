@@ -62,7 +62,7 @@ BACKWARD INCOMPATIBLE CHANGES
 
   If you only have one worker server you can embed it into celeryd like this::
 
-		$ celeryd --detatch --beat # Embed celerybeat in celeryd.
+		$ celeryd --beat # Embed celerybeat in celeryd.
 
 * The supervisor has been removed, please use something like
   http://supervisord.org instead. This means the ``-S`` and ``--supervised``
