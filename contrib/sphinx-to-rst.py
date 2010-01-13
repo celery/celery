@@ -13,9 +13,17 @@ RE_REFERENCE = re.compile(r':(.+?):`(.+?)`')
 
 
 def include_file(lines, pos, match):
-    filename = os.path.join(dirname, match.groups()[0])
+    global dirname
+    orig_filename = match.groups()[0]
+    filename = os.path.join(dirname, orig_filename)
     with file(filename) as fh:
-        lines[pos] = "".join(fh.readlines())
+        old_dirname = dirname
+        dirname = os.path.dirname(orig_filename)
+        try:
+            lines[pos] = sphinx_to_rst(fh)
+        finally:
+            dirname = old_dirname
+
 
 
 def replace_code_block(lines, pos, match):

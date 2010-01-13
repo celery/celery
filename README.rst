@@ -40,8 +40,7 @@ Example
 
 You probably want to see some code by now, so I'll give you an example task
 adding two numbers:
-
-.. code-block:: python
+::
 
     from celery.decorators import task
 
@@ -69,7 +68,7 @@ Features
       be *guaranteed that the task is only executed once.*
 
     * Tasks are executed *concurrently* using the Python 2.6
-      :mod:`multiprocessing` module (also available as a back-port
+      ``multiprocessing`` module (also available as a back-port
       to older python versions)
 
     * Supports *periodic tasks*, which makes it a (better) replacement
@@ -131,7 +130,36 @@ is hosted at Github.
 Installation
 =============
 
-.. include:: installation.txt
+You can install ``celery`` either via the Python Package Index (PyPI)
+or from source.
+
+To install using ``pip``,::
+
+    $ pip install celery
+
+To install using ``easy_install``,::
+
+    $ easy_install celery
+
+Downloading and installing from source
+--------------------------------------
+
+Download the latest version of ``celery`` from
+http://pypi.python.org/pypi/celery/
+
+You can install it by doing the following,::
+
+    $ tar xvfz celery-0.0.0.tar.gz
+    $ cd celery-0.0.0
+    $ python setup.py build
+    # python setup.py install # as root
+
+Using the development version
+------------------------------
+
+You can clone the repository by doing the following::
+
+    $ git clone git://github.com/ask/celery.git
 
 A look inside the components
 ============================
