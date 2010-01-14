@@ -262,7 +262,8 @@ class ExecuteWrapper(object):
         except (SystemExit, KeyboardInterrupt):
             raise
         except RetryTaskError, exc:
-            retval = self.handle_retry(exc, sys.exc_info())
+            self.handle_retry(exc, sys.exc_info())
+            retval = None
         except Exception, exc:
             retval = self.handle_failure(exc, sys.exc_info())
         else:
