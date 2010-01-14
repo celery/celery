@@ -1,5 +1,6 @@
 :Version: 1.0.0-pre1
-:Keywords: task queue, job queue, asynchronous, rabbitmq, amqp, redis.
+:Keywords: task queue, job queue, asynchronous, rabbitmq, amqp, redis,
+  django, python, webhooks, queue, distributed
 
 --
 
@@ -56,13 +57,12 @@ Simple!
 Features
 ========
 
-    * Uses messaging (AMQP: RabbitMQ, ZeroMQ, Qpid) to route tasks to the
-      worker servers. Experimental support for STOMP (ActiveMQ) is also 
-      available. For simple setups it's also possible to use Redis or an
-      SQL database as the message queue.
+    * Supports using `RabbitMQ`_, `AMQP`_, `Stomp`_, `Redis`_ or a database
+      as the message queue. However, `RabbitMQ`_ is the recommended solution,
+      so most of the documentation refers to it.
 
-    * You can run as many worker servers as you want, and still
-      be *guaranteed that the task is only executed once.*
+    * Using RabbitMQ, celery is *very robust*. It should survive most
+      scenarios, and your tasks will never be lost.
 
     * Tasks are executed *concurrently* using the Python 2.6
       :mod:`multiprocessing` module (also available as a back-port
@@ -112,6 +112,9 @@ Features
     * Can be configured to send e-mails to the administrators when a task
       fails.
 
+.. _`RabbitMQ`: http://www.rabbitmq.com/
+.. _`AMQP`: http://www.amqp.org/
+.. _`Stomp`: http://stomp.codehaus.org/
 .. _`MongoDB`: http://www.mongodb.org/
 .. _`Redis`: http://code.google.com/p/redis/
 .. _`Tokyo Tyrant`: http://tokyocabinet.sourceforge.net/
@@ -157,9 +160,3 @@ Using the development version
 You can clone the repository by doing the following::
 
     $ git clone git://github.com/ask/celery.git
-
-A look inside the components
-============================
-
-.. image:: http://cloud.github.com/downloads/ask/celery/Celery1.0-inside-worker.jpg
-

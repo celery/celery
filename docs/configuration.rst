@@ -235,7 +235,7 @@ MongoDB backend settings
         The port the MongoDB server is listening to. Defaults to 27017.
 
     * user
-        Username to authenticate to the MongoDB server as (optional).
+        User name to authenticate to the MongoDB server as (optional).
 
     * password
         Password to authenticate to the MongoDB server (optional).
@@ -244,7 +244,7 @@ MongoDB backend settings
         The database name to connect to. Defaults to "celery".
 
     * taskmeta_collection
-        The collection name to store task metadata.
+        The collection name to store task meta data.
         Defaults to "celery_taskmeta".
 
 
@@ -309,7 +309,7 @@ Connection
     The time between retries is increased for each retry, and is
     not exhausted before ``CELERY_BROKER_CONNECTION_MAX_RETRIES`` is exceeded.
 
-    This behaviour is on by default.
+    This behavior is on by default.
 
 * CELERY_BROKER_CONNECTION_MAX_RETRIES
     Maximum number of retries before we give up re-establishing a connection
@@ -325,7 +325,7 @@ Task execution settings
 * CELERY_ALWAYS_EAGER
     If this is ``True``, all tasks will be executed locally by blocking
     until it is finished. ``apply_async`` and ``Task.delay`` will return
-    a :class:`celery.result.EagerResult` which emulates the behaviour of
+    a :class:`celery.result.EagerResult` which emulates the behavior of
     :class:`celery.result.AsyncResult`, except the result has already
     been evaluated.
 
@@ -334,7 +334,7 @@ Task execution settings
 
 * CELERY_IGNORE_RESULT
 
-    Wheter to store the task return values or not (tombstones).
+    Whether to store the task return values or not (tombstones).
     If you still want to store errors, just not successful return values,
     you can set ``CELERY_STORE_ERRORS_EVEN_IF_IGNORED``.
 
@@ -360,7 +360,7 @@ Worker: celeryd
 * CELERY_IMPORTS
     A sequence of modules to import when the celery daemon starts.  This is
     useful to add tasks if you are not using django or cannot use task
-    autodiscovery.
+    auto-discovery.
 
 * CELERY_SEND_EVENTS
     Send events so the worker can be monitored by tools like ``celerymon``.
@@ -377,7 +377,7 @@ Logging
 -------
 
 * CELERYD_LOG_FILE
-    The default filename the worker daemon logs messages to, can be
+    The default file name the worker daemon logs messages to, can be
     overridden using the `--logfile`` option to ``celeryd``.
 
     The default is ``None`` (``stderr``)
@@ -407,7 +407,7 @@ Periodic Task Server: celerybeat
 
     Name of the file celerybeat stores the current schedule in.
     Can be a relative or absolute path, but be aware that the suffix ``.db``
-    will be appended to the filename.
+    will be appended to the file name.
 
     Can also be set via the ``--schedule`` argument.
 
@@ -417,7 +417,7 @@ Periodic Task Server: celerybeat
     the schedule. Default is 300 seconds (5 minutes).
 
 * CELERYBEAT_LOG_FILE
-    The default filename to log messages to, can be
+    The default file name to log messages to, can be
     overridden using the `--logfile`` option.
 
     The default is ``None`` (``stderr``).
@@ -435,7 +435,7 @@ Monitor Server: celerymon
 =========================
 
 * CELERYMON_LOG_FILE
-    The default filename to log messages to, can be
+    The default file name to log messages to, can be
     overridden using the `--logfile`` option.
 
     The default is ``None`` (``stderr``)

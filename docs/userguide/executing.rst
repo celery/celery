@@ -52,7 +52,7 @@ specified date and time has passed, but not necessarily at that exact time.
 
 While ``countdown`` is an integer, ``eta`` must be a ``datetime`` object,
 specifying an exact date and time in the future. This is good if you already
-have a ``datatime`` object and need to modify it with a ``timedelta``, or when
+have a ``datetime`` object and need to modify it with a ``timedelta``, or when
 using time in seconds is not very readable.
 
 .. code-block:: python
@@ -79,7 +79,7 @@ serialization method is sent with the message so the worker knows how to
 deserialize any task (of course, if you use a custom serializer, this must also be
 registered in the worker.)
 
-When sending a task the serializition method is taken from the following
+When sending a task the serialization method is taken from the following
 places in order: The ``serializer`` argument to ``apply_async``, the
 Task's ``serializer`` attribute, and finally the global default ``CELERY_SERIALIZER``
 configuration directive.
@@ -135,7 +135,7 @@ In Python 2.5 and above, you can use the ``with`` statement:
     print([res.get() for res in results])
 
 
-*NOTE* TaskSets already re-uses the same connection, but not if you need to
+*NOTE* Task Sets already re-uses the same connection, but not if you need to
 execute more than one TaskSet.
 
 The connection timeout is the number of seconds to wait before we give up on
@@ -157,7 +157,7 @@ Routing options
 ---------------
 
 Celery uses the AMQP routing mechanisms to route tasks to different workers.
-You can route tasks using the following entitites: exchange, queue and routing key.
+You can route tasks using the following entities: exchange, queue and routing key.
 
 Messages (tasks) are sent to exchanges, a queue binds to an exchange with a
 routing key. Let's look at an example:
@@ -179,7 +179,7 @@ different ways, the exchange types are:
 * topic
 
     In the topic exchange the routing key is made up of words separated by dots (``.``).
-    Words can be matched by the wildcars ``*`` and ``#``, where ``*`` matches one
+    Words can be matched by the wild cards ``*`` and ``#``, where ``*`` matches one
     exact word, and ``#`` matches one or many.
 
     For example, ``*.stock.#`` matches the routing keys ``usd.stock`` and

@@ -161,12 +161,12 @@ Task options
 
     This is the name the task is registered as.
     You can set this name manually, or just use the default which is
-    atomatically generated using the module and class name.
+    automatically generated using the module and class name.
 
 * abstract
 
     Abstract classes are not registered, so they're
-    only used for making new task types by subclassing.
+    only used for making new task types by sub classing.
 
 * max_retries
 
@@ -230,7 +230,7 @@ Message and routing options
 * immediate
     Request immediate delivery. If the task cannot be routed to a
     task worker immediately, an exception will be raised. This is
-    instead of the default behaviour, where the broker will accept and
+    instead of the default behavior, where the broker will accept and
     queue the task, but with no guarantee that the task will ever
     be executed.
 
@@ -276,7 +276,7 @@ for the applications listed in ``INSTALLED_APPS``. If you want to do something
 special you can create your own loader to do what you want.
 
 The entity responsible for registering your task in the registry is a
-metaclass, :class:`TaskType`, this is the default metaclass for
+meta class, :class:`TaskType`, this is the default meta class for
 ``Task``. If you want to register your task manually you can set the
 ``abstract`` attribute:
 
@@ -285,7 +285,7 @@ metaclass, :class:`TaskType`, this is the default metaclass for
     class MyTask(Task):
         abstract = True
 
-This way the task won't be registered, but any task subclassing it will.
+This way the task won't be registered, but any task sub classing it will.
 
 So when we send a task, we don't send the function code, we just send the name
 of the task, so when the worker receives the message it can just look it up in
@@ -310,7 +310,7 @@ won't run long enough to block the worker from processing other waiting tasks.
 
 But there's a limit, sending messages takes processing power and bandwidth. If
 your tasks are so short the overhead of passing them around is worse than
-just executing them inline, you should reconsider your strategy. There is no
+just executing them in-line, you should reconsider your strategy. There is no
 universal answer here.
 
 Data locality
@@ -341,7 +341,7 @@ on what machine the task will run, also you can't even know if the task will
 run in a timely manner, so please be wary of the state you pass on to tasks.
 
 One gotcha is Django model objects, they shouldn't be passed on as arguments
-to task classes, it's almost always better to refetch the object from the
+to task classes, it's almost always better to re-fetch the object from the
 database instead, as there are possible race conditions involved.
 
 Imagine the following scenario where you have an article, and a task
@@ -370,7 +370,7 @@ when the task is finally run, the body of the article is reverted to the old
 version, because the task had the old body in its argument.
 
 Fixing the race condition is easy, just use the article id instead, and
-refetch the article in the task body:
+re-fetch the article in the task body:
 
 .. code-block:: python
 
