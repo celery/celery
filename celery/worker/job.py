@@ -106,7 +106,7 @@ class WorkerTaskTrace(TaskTrace):
         message, orig_exc = exc.args
         if self._store_errors:
             self.task.backend.mark_as_retry(self.task_id, orig_exc, strtb)
-        return self.super.handle_retry(exc, type_, tb, strtb)
+        self.super.handle_retry(exc, type_, tb, strtb)
 
     def handle_failure(self, exc, type_, tb, strtb):
         """Handle exception."""
