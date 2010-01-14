@@ -401,6 +401,9 @@ class Task(object):
         """
         pass
 
+    def execute(self, wrapper, pool, loglevel, logfile):
+        wrapper.execute_using_pool(pool, loglevel, logfile)
+
 
 class ExecuteRemoteTask(Task):
     """Execute an arbitrary function or object.
