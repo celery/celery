@@ -64,6 +64,12 @@ Features
     | Robust          | Using `RabbitMQ`, celery survives most error       |
     |                 | scenarios, and your tasks will never be lost.      |
     +-----------------+----------------------------------------------------+
+    | Distributed     | Runs on one or more machines. Supports             |
+    |                 | `clustering`_ when used in combination with        |
+    |                 | `RabbitMQ`_. You can set up new workers without    |
+    |                 | central configuration (e.g. use your dads laptop   |
+    |                 | while the queue is temporarily overloaded).        |
+    +-----------------+----------------------------------------------------+
     | Concurrency     | Tasks are executed in parallel using the           |
     |                 | :mod:`multiprocessing` module.                     |
     +-----------------+----------------------------------------------------+
@@ -128,6 +134,7 @@ Features
 
 
 .. _`RabbitMQ`: http://www.rabbitmq.com/
+.. _`clustering`: http://www.rabbitmq.com/clustering.html
 .. _`AMQP`: http://www.amqp.org/
 .. _`Stomp`: http://stomp.codehaus.org/
 .. _`MongoDB`: http://www.mongodb.org/
