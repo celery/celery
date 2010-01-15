@@ -8,7 +8,15 @@ cycomplex:
 	find celery -type f -name "*.py" | xargs pygenie.py complexity
 
 ghdocs:
+	rm -rf docs/.build
 	contrib/doc2ghpages
+
+upload_github_docs: ghdocs
+
+upload_pypi_docs:
+	python setup.py build_sphinx && python setup.py upload_sphinx
+
+upload_docs: upload_github_docs upload_pypi_docs
 
 autodoc:
 	contrib/doc4allmods celery
