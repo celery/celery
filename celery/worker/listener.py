@@ -178,7 +178,8 @@ class CarrotListener(object):
         self.connection = self._open_connection()
         self.logger.debug("CarrotListener: Connection Established.")
         self.task_consumer = get_consumer_set(connection=self.connection)
-        self.broadcast_consumer = BroadcastConsumer(self.connection)
+        self.broadcast_consumer = BroadcastConsumer(self.connection,
+                                                    hostname=self.hostname)
         self.task_consumer.register_callback(self.receive_message)
         self.event_dispatcher = EventDispatcher(self.connection,
                                                 enabled=self.send_events)

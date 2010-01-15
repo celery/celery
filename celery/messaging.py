@@ -3,6 +3,7 @@
 Sending and Receiving Messages
 
 """
+import socket
 
 from carrot.connection import DjangoBrokerConnection, AMQPConnectionException
 from carrot.messaging import Publisher, Consumer, ConsumerSet
@@ -97,6 +98,11 @@ class BroadcastConsumer(Consumer):
     exchange = conf.BROADCAST_EXCHANGE
     exchange_type = conf.BROADCAST_EXCHANGE_TYPE
     no_ack = True
+
+    def __init__(self, *args, **kwargs):
+        hostname = kwargs.pop("hostname", None) or socket.gethostname()
+        self.queue = "%s_%s" % (self.queue, hostname)
+        super(BroadcastConsumer, self).__init__(*args, **kwargs)
 
 
 def establish_connection(connect_timeout=conf.BROKER_CONNECTION_TIMEOUT):
