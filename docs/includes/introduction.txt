@@ -79,7 +79,7 @@ Features
     +-----------------+----------------------------------------------------+
     | Performance     | Able to execute tasks while the user waits.        |
     +-----------------+----------------------------------------------------+
-    | Return Values   | Task return values can be stored to the selected   |
+    | Return Values   | Task return values can be saved to the selected    |
     |                 | result store backend. You can wait for the result, |
     |                 | retrieve it later, or ignore it.                   |
     +-----------------+----------------------------------------------------+
@@ -89,13 +89,16 @@ Features
     | Webhooks        | Your tasks can also be HTTP callbacks, enabling    |
     |                 | cross-language communication.                      |
     +-----------------+----------------------------------------------------+
-    | Rate limiting   | Supports rate limiting, globally or by task type.  |
+    | Rate limiting   | Supports rate limiting by using the token bucket   |
+    |                 | algorithm, which accounts for bursts of traffic.   |
+    |                 | Rate limits can be set for each task type, or      |
+    |                 | globally for all.                                  |
     +-----------------+----------------------------------------------------+
     | Routing         | Using AMQP you can route tasks arbitrarily to      |
     |                 | different workers.                                 |
     +-----------------+----------------------------------------------------+
-    | Remote-control  | You can control workers remotely to rate limit,    |
-    |                 | and delete tasks.                                  |
+    | Remote-control  | You can rate limit and delete (revoke) tasks       |
+    |                 | remotely.                                          |
     +-----------------+----------------------------------------------------+
     | Monitoring      | You can capture everything happening with the      |
     |                 | workers in real-time by subscribing to events.     |
@@ -108,14 +111,15 @@ Features
     | Tracebacks      | Errors and tracebacks are stored and can be        |
     |                 | investigated after the fact.                       |
     +-----------------+----------------------------------------------------+
-    | UUID            | Every task has a UUID (Universally Unique          |
+    | UUID            | Every task has an UUID (Universally Unique         |
     |                 | Identifier), which is the task id used to query    |
-    |                 | task status and return values.                     |
+    |                 | task status and return value.                      |
     +-----------------+----------------------------------------------------+
-    | Retries         | Tasks can be retried if they fail, with a          |
-    |                 | configurable maximum number of retries.            |
+    | Retries         | Tasks can be retried if they fail, with            |
+    |                 | configurable maximum number of retries, and delays |
+    |                 | between each retry.                                |
     +-----------------+----------------------------------------------------+
-    | Task Sets       | A Task Set is a task consisting of several         |
+    | Task Sets       | A Task set is a task consisting of several         |
     |                 | sub-tasks. You can find out how many, or if all    |
     |                 | of the sub-tasks has been executed, and even       |
     |                 | retrieve the results in order. Progress bars,      |
@@ -126,7 +130,7 @@ Features
     |                 | Ajax.                                              |
     +-----------------+----------------------------------------------------+
     | Error e-mails   | Can be configured to send e-mails to the           |
-    |                 | administrators when a task fails.                  |
+    |                 | administrators when tasks fails.                   |
     +-----------------+----------------------------------------------------+
     | Supervised      | Pool workers are supervised and automatically      |
     |                 | replaced if they crash.                            |
