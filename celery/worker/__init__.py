@@ -134,11 +134,12 @@ class WorkController(object):
         self.clockservice = self.embed_clockservice and ClockServiceThread(
                                 logger=self.logger,
                                 max_interval=1) or None
+        prefetch_count = concurrency * conf.CELERYD_PREFETCH_MULTIPLIER
         self.listener = CarrotListener(self.ready_queue,
                                        self.eta_schedule,
                                        logger=self.logger,
                                        send_events=send_events,
-                                       initial_prefetch_count=concurrency)
+                                       initial_prefetch_count=prefetch_count)
 
         # The order is important here;
         #   the first in the list is the first to start,

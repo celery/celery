@@ -48,6 +48,16 @@ Concurrency settings
     Defaults to the number of CPUs/cores available.
 
 
+* CELERYD_PREFETCH_MULTIPLIER
+    How many messages to prefetch at a time multiplied by the number of
+    concurrent processes. The default is 4 (four messages for each
+    process). The default setting seems pretty good here, but if you have
+    very long running tasks waiting in the queue and you have to start the
+    workers, make note that the first worker to start will receive four times the
+    number of messages initially, which might not be fairly balanced among the
+    workers.
+
+
 Task result backend settings
 ============================
 
