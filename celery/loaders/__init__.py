@@ -9,6 +9,8 @@ LOADER_CLASS_NAME = "Loader"
 LOADER_ALIASES = {"django": "celery.loaders.djangoapp",
                   "default": "celery.loaders.default"}
 _loader_cache = {}
+_loader = None
+_settings = None
 
 
 def resolve_loader(loader):
@@ -74,27 +76,18 @@ def _detect_loader(): # pragma: no cover
 
     return DefaultLoader
 
-"""
-.. class:: Loader
 
-The current loader class.
-
-"""
-Loader = detect_loader()
-
-"""
-.. data:: current_loader
-
-The current loader instance.
-
-"""
-current_loader = Loader()
+def current_loader():
+    """Detect and return the current loader."""
+    global _loader
+    if _loader is None:
+        _loader = _detect_loader()()
+    return _loader
 
 
-"""
-.. data:: settings
-
-The global settings object.
-
-"""
-settings = current_loader.conf
+def load_settings():
+    """Load the global settings object."""
+    global _settings
+    if _settings is None:
+        _settings = current_loader().conf
+    return _settings

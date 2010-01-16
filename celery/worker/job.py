@@ -69,7 +69,7 @@ class WorkerTaskTrace(TaskTrace):
     """
 
     def __init__(self, *args, **kwargs):
-        self.loader = kwargs.pop("loader", current_loader)
+        self.loader = kwargs.pop("loader", current_loader())
         super(WorkerTaskTrace, self).__init__(*args, **kwargs)
 
         self._store_errors = True

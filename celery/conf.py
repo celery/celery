@@ -2,7 +2,7 @@ import logging
 import warnings
 from datetime import timedelta
 
-from celery.loaders import settings
+from celery.loaders import load_settings
 
 DEFAULT_P_LOG_FMT = '[%(asctime)s: %(levelname)s/%(processName)s] %(message)s'
 DEFAULT_LOG_FMT = '[%(asctime)s: %(levelname)s] %(message)s'
@@ -10,6 +10,8 @@ DEFAULT_LOG_FMT = '[%(asctime)s: %(levelname)s] %(message)s'
 LOG_LEVELS = dict(logging._levelNames)
 LOG_LEVELS["FATAL"] = logging.FATAL
 LOG_LEVELS[logging.FATAL] = "FATAL"
+
+settings = load_settings()
 
 _DEFAULTS = {
     "CELERY_BACKEND": "database",

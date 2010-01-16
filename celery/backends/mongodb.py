@@ -9,7 +9,7 @@ except ImportError:
     pymongo = None
 
 from celery.backends.base import BaseBackend
-from celery.loaders import settings
+from celery.loaders import load_settings
 from celery.conf import TASK_RESULT_EXPIRES
 
 
@@ -42,6 +42,8 @@ class MongoBackend(BaseBackend):
             raise ImproperlyConfigured(
                 "You need to install the pymongo library to use the "
                 "MongoDB backend.")
+
+        settings = load_settings()
 
         conf = getattr(settings, "CELERY_MONGODB_BACKEND_SETTINGS", None)
         if conf is not None:

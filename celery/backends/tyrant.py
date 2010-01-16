@@ -6,7 +6,7 @@ except ImportError:
     pytyrant = None
 
 from celery.backends.base import KeyValueStoreBackend
-from celery.loaders import settings
+from celery.loaders import load_settings
 
 
 class TyrantBackend(KeyValueStoreBackend):
@@ -36,6 +36,7 @@ class TyrantBackend(KeyValueStoreBackend):
             raise ImproperlyConfigured(
                     "You need to install the pytyrant library to use the "
                   + "Tokyo Tyrant backend.")
+        settings = load_settings()
         self.tyrant_host = tyrant_host or \
                             getattr(settings, "TT_HOST", self.tyrant_host)
         self.tyrant_port = tyrant_port or \

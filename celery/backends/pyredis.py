@@ -1,7 +1,7 @@
 from django.core.exceptions import ImproperlyConfigured
 
 from celery.backends.base import KeyValueStoreBackend
-from celery.loaders import settings
+from celery.loaders import load_settings
 
 try:
     import redis
@@ -38,6 +38,8 @@ class RedisBackend(KeyValueStoreBackend):
             raise ImproperlyConfigured(
                     "You need to install the redis library in order to use "
                   + "Redis result store backend.")
+
+        settings = load_settings()
         self.redis_host = redis_host or \
                             getattr(settings, "REDIS_HOST", self.redis_host)
         self.redis_port = redis_port or \

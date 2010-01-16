@@ -97,7 +97,8 @@ def run_worker(concurrency=conf.CELERYD_CONCURRENCY,
 
     print("Celery %s is starting." % __version__)
 
-    from celery.loaders import Loader, current_loader, settings
+    from celery.loaders import Loader, current_loader, load_settings
+    settings = load_settings()
 
     if not concurrency:
         concurrency = multiprocessing.cpu_count()
@@ -123,7 +124,7 @@ def run_worker(concurrency=conf.CELERYD_CONCURRENCY,
 
     # Run the worker init handler.
     # (Usually imports task modules and such.)
-    current_loader.on_worker_init()
+    current_loader().on_worker_init()
 
     # Dump configuration to screen so we have some basic information
     # when users sends e-mails.
