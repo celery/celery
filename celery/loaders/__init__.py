@@ -81,7 +81,7 @@ def current_loader():
     """Detect and return the current loader."""
     global _loader
     if _loader is None:
-        _loader = _detect_loader()()
+        _loader = detect_loader()()
     return _loader
 
 
