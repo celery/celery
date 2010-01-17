@@ -72,7 +72,13 @@ class TestDjangoLoader(unittest.TestCase):
         self.loader = loaders.DjangoLoader()
 
     def test_on_worker_init(self):
-        self.assertRaises(ImportError, self.loader.on_worker_init)
+        from django.conf import settings
+        old_imports = settings.CELERY_IMPORTS
+        settings.CELERY_IMPORTS = ("xxx.does.not.exist", )
+        try:
+            self.assertRaises(ImportError, self.loader.on_worker_init)
+        finally:
+            settings.CELERY_IMPORTS = old_imports
 
     def test_race_protection(self):
         djangoapp._RACE_PROTECTION = True
