@@ -238,6 +238,7 @@ Message and routing options
     The message priority. A number from ``0`` to ``9``, where ``0`` is the
     highest. Note that RabbitMQ doesn't support priorities yet.
 
+Please see :doc:`executing` for descriptions of these options.
 
 Example
 =======
