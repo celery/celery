@@ -238,7 +238,132 @@ Message and routing options
     The message priority. A number from ``0`` to ``9``, where ``0`` is the
     highest. Note that RabbitMQ doesn't support priorities yet.
 
-Please see :doc:`executing` for descriptions of these options.
+
+Example
+=======
+
+Let's take a real wold example; A blog where comments posted needs to be
+filtered for spam. When the comment is created, we run the spam filter in the
+background, so the user doesn't have to wait for it to finish.
+
+We hvae a Django blog application allowing comments
+on blog posts. We'll describe parts of the models/views and tasks for this
+application.
+
+blog/models.py
+--------------
+
+The comment model looks like this:
+
+.. code-block:: python
+
+    from django.db import models
+    from django.utils.translation import ugettext_lazy as _
+
+
+    class Comment(models.Model):
+        name = models.CharField(_("name"), max_length=64)
+        email_address = models.EmailField(_("e-mail address"))
+        homepage = models.URLField(_("home page"),
+                                   blank=True, verify_exists=False)
+        comment = models.TextField(_("comment"))
+        pub_date = models.DateTimeField(_("Published date"),
+                                        editable=False, auto_add_now=True)
+        is_spam = models.BooleanField(_("spam?"),
+                                      default=False, editable=False)
+
+        class Meta:
+            verbose_name = _("comment")
+            verbose_name_plural = _("comments")
+
+
+In the view where the comment is posted, we first write the comment
+to the database, then we launch the spam filter task in the background.
+
+blog/views.py
+-------------
+
+.. code-block:: python
+
+    from django import forms
+    frmo django.http import HttpResponseRedirect
+    from django.template.context import RequestContext
+    from django.shortcuts import get_object_or_404, render_to_response
+
+    from blog import tasks
+    from blog.models import Comment
+
+
+    class CommentForm(forms.ModelForm):
+
+        class Meta:
+            model = Comment
+
+
+    def add_comment(request, slug, template_name="comments/create.html"):
+        post = get_object_or_404(Entry, slug=slug)
+        remote_addr = request.META.get("REMOTE_ADDR")
+
+        if request.method == "post":
+            form = CommentForm(request.POST, request.FILES)
+            if form.is_valid():
+                comment = form.save()
+                # Check spam asynchronously.
+                tasks.spam_filter.delay(comment_id=comment.id,
+                                        remote_addr=remote_addr)
+                return HttpResponseRedirect(post.get_absolute_url())
+        else:
+            form = CommentForm()
+
+        context = RequestContext(request, {"form": form})
+        return render_to_response(template_name, context_instance=context)
+
+
+To filter spam in comments we use `Akismet`_, the service
+used to filter spam in comments posted to the free weblog platform
+`Wordpress`. `Akismet`_ is free for personal use, but for commercial use you
+need to pay. You have to sign up to their service to get an API key.
+
+To make API calls to `Akismet`_ we use the `akismet.py`_ library written by
+Michael Foord.
+
+blog/tasks.py
+-------------
+
+.. code-block:: python
+
+    from akismet import Akismet
+    from celery.decorators import task
+
+    from django.core.exceptions import ImproperlyConfigured
+    from django.contrib.sites.models import Site
+
+    from blog.models import Comment
+
+
+    def spam_filter(comment_id, remote_addr=None, **kwargs):
+            logger = spam_filter.get_logger(**kwargs)
+            logger.info("Running spam filter for comment %s" % comment_id)
+
+            comment = Comment.objects.get(pk=comment_id)
+            current_domain = Site.objects.get_current().domain
+            akismet = Akismet(settings.AKISMET_KEY, "http://%s" % domain)
+            if not akismet.verify_key():
+                raise ImproperlyConfigured("Invalid AKISMET_KEY")
+
+
+            is_spam = akismet.comment_check(user_ip=remote_addr,
+                                comment_content=comment.comment,
+                                comment_author=comment.name,
+                                comment_author_email=comment.email_address)
+            if is_spam:
+                comment.is_spam = True
+                comment.save()
+
+            return is_spam
+
+.. _`Akismet`: http://akismet.com/faq/
+.. _`akismet.py`: http://www.voidspace.org.uk/downloads/akismet.py
 
 How it works
 ============
