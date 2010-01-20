@@ -247,7 +247,7 @@ Let's take a real wold example; A blog where comments posted needs to be
 filtered for spam. When the comment is created, we run the spam filter in the
 background, so the user doesn't have to wait for it to finish.
 
-We hvae a Django blog application allowing comments
+We have a Django blog application allowing comments
 on blog posts. We'll describe parts of the models/views and tasks for this
 application.
 
