@@ -1,26 +1,43 @@
 import os
+import string
+import warnings
 import importlib
+
+from carrot.utils import rpartition
 
 from celery.utils import get_full_cls_name
 from celery.loaders.default import Loader as DefaultLoader
 from celery.loaders.djangoapp import Loader as DjangoLoader
 
-LOADER_CLASS_NAME = "Loader"
-LOADER_ALIASES = {"django": "celery.loaders.djangoapp",
-                  "default": "celery.loaders.default"}
+_DEFAULT_LOADER_CLASS_NAME = "Loader"
+LOADER_ALIASES = {"django": "celery.loaders.djangoapp.Loader",
+                  "default": "celery.loaders.default.Loader"}
 _loader_cache = {}
 _loader = None
 _settings = None
 
 
+def first_char(s):
+    for char in s:
+        if char in string.letters:
+            return char
+
+
 def resolve_loader(loader):
-    return LOADER_ALIASES.get(loader, loader)
+    loader = LOADER_ALIASES.get(loader, loader)
+    loader_module_name, _, loader_cls_name = rpartition(loader, ".")
+    if first_char(loader_cls_name) not in string.uppercase:
+        warnings.warn(DeprecationWarning(
+            "CELERY_LOADER now needs loader class name, e.g. %s.%s" % (
+                loader, DEFAULT_LOADER_CLASS_NAME)))
+        return loader, DEFAULT_LOADER_CLASS_NAME
+    return loader_module_name, loader_cls_name
 
 
 def _get_loader_cls(loader):
-    loader = resolve_loader(loader)
-    loader_module = importlib.import_module(loader)
-    return getattr(loader_module, LOADER_CLASS_NAME)
+    loader_module_name, loader_cls_name = resolve_loader(loader)
+    loader_module = importlib.import_module(loader_module_name)
+    return getattr(loader_module, loader_cls_name)
 
 
 def get_loader_cls(loader):
