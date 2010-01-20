@@ -17,7 +17,7 @@ _loader = None
 _settings = None
 
 
-def first_char(s):
+def first_letter(s):
     for char in s:
         if char in string.letters:
             return char
@@ -26,7 +26,7 @@ def first_char(s):
 def resolve_loader(loader):
     loader = LOADER_ALIASES.get(loader, loader)
     loader_module_name, _, loader_cls_name = rpartition(loader, ".")
-    if first_char(loader_cls_name) not in string.uppercase:
+    if first_letter(loader_cls_name) not in string.uppercase:
         warnings.warn(DeprecationWarning(
             "CELERY_LOADER now needs loader class name, e.g. %s.%s" % (
                 loader, DEFAULT_LOADER_CLASS_NAME)))
