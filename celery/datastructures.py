@@ -68,10 +68,10 @@ class ExceptionInfo(object):
     def __init__(self, exc_info):
         type_, exception, tb = exc_info
         self.exception = exception
-        self.traceback = '\n'.join(traceback.format_exception(*exc_info))
+        self.traceback = ''.join(traceback.format_exception(*exc_info))
 
     def __str__(self):
-        return str(self.exception)
+        return self.traceback
 
     def __repr__(self):
         return "<%s.%s: %s>" % (
