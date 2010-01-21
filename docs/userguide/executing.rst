@@ -15,11 +15,11 @@ The same thing using ``apply_async`` is written like this:
 
 .. code-block:: python
 
-    AddTask.delay(args=[arg1, arg2], kwargs={"kwarg1": "x", "kwarg2": "y"})
+    AddTask.apply_async(args=[arg1, arg2], kwargs={"kwarg1": "x", "kwarg2": "y"})
 
 But ``delay`` doesn't give you as much control as using ``apply_async``.
 With ``apply_async`` you can override the execution options available as attributes on
-the ``Task`` class; ``routing_key``, ``exchange``, ``immediate``, ``mandatory``,
+the ``Task`` class: ``routing_key``, ``exchange``, ``immediate``, ``mandatory``,
 ``priority``, and ``serializer``.  In addition you can set a countdown or an eta, provide
 a custom broker connection or change the broker connection timeout.
 
