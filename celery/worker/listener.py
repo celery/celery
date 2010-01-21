@@ -217,7 +217,7 @@ class CarrotListener(object):
         def _establish_connection():
             """Establish a connection to the AMQP broker."""
             conn = establish_connection()
-            conn.connection # Connection is established lazily, so connect.
+            conn.connect() # Connection is established lazily, so connect.
             return conn
 
         if not conf.BROKER_CONNECTION_RETRY:
