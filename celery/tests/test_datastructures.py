@@ -47,7 +47,7 @@ class TestExceptionInfo(unittest.TestCase):
             exc_info = sys.exc_info()
 
         einfo = ExceptionInfo(exc_info)
-        self.assertEquals(str(einfo), "The quick brown fox jumps...")
+        self.assertEquals(str(einfo), einfo.traceback)
         self.assertTrue(isinstance(einfo.exception, LookupError))
         self.assertEquals(einfo.exception.args,
                 ("The quick brown fox jumps...", ))
