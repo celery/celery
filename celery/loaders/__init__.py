@@ -29,8 +29,8 @@ def resolve_loader(loader):
     if first_letter(loader_cls_name) not in string.uppercase:
         warnings.warn(DeprecationWarning(
             "CELERY_LOADER now needs loader class name, e.g. %s.%s" % (
-                loader, DEFAULT_LOADER_CLASS_NAME)))
-        return loader, DEFAULT_LOADER_CLASS_NAME
+                loader, _DEFAULT_LOADER_CLASS_NAME)))
+        return loader, _DEFAULT_LOADER_CLASS_NAME
     return loader_module_name, loader_cls_name
 
 
