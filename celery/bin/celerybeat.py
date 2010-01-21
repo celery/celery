@@ -68,7 +68,7 @@ def run_clockservice(loglevel=conf.CELERYBEAT_LOG_LEVEL,
     # Run the worker init handler.
     # (Usually imports task modules and such.)
     from celery.loaders import current_loader
-    current_loader.on_worker_init()
+    current_loader().on_worker_init()
 
 
     # Dump configuration to screen so we have some basic information
