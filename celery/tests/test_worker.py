@@ -1,3 +1,5 @@
+from __future__ import with_statement
+
 import unittest
 from Queue import Queue, Empty
 from datetime import datetime, timedelta
