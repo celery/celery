@@ -147,6 +147,18 @@ it should contain all you need to run a basic celery set-up.</p>
 </dd>
 </dl>
 </li>
+<li><dl class="first docutils">
+<dt>CELERYD_PREFETCH_MULTIPLIER</dt>
+<dd><p class="first last">How many messages to prefetch at a time multiplied by the number of
+concurrent processes. The default is 4 (four messages for each
+process). The default setting seems pretty good here, but if you have
+very long running tasks waiting in the queue and you have to start the
+workers, make note that the first worker to start will receive four times the
+number of messages initially, which might not be fairly balanced among the
+workers.</p>
+</dd>
+</dl>
+</li>
 </ul>
 </div>
 <div class="section" id="task-result-backend-settings">
@@ -362,7 +374,7 @@ false.</p>
 </li>
 <li><dl class="first docutils">
 <dt>user</dt>
-<dd><p class="first last">Username to authenticate to the MongoDB server as (optional).</p>
+<dd><p class="first last">User name to authenticate to the MongoDB server as (optional).</p>
 </dd>
 </dl>
 </li>
@@ -380,7 +392,7 @@ false.</p>
 </li>
 <li><dl class="first docutils">
 <dt>taskmeta_collection</dt>
-<dd><p class="first last">The collection name to store task metadata.
+<dd><p class="first last">The collection name to store task meta data.
 Defaults to &#8220;celery_taskmeta&#8221;.</p>
 </dd>
 </dl>
@@ -462,7 +474,7 @@ to the AMQP server. Default is 4 seconds.</p>
 it&#8217;s lost.</p>
 <p>The time between retries is increased for each retry, and is
 not exhausted before <tt class="docutils literal"><span class="pre">CELERY_BROKER_CONNECTION_MAX_RETRIES</span></tt> is exceeded.</p>
-<p class="last">This behaviour is on by default.</p>
+<p class="last">This behavior is on by default.</p>
 </dd>
 </dl>
 </li>
@@ -485,7 +497,7 @@ to the AMQP broker.</p>
 <dt>CELERY_ALWAYS_EAGER</dt>
 <dd><p class="first">If this is <tt class="xref docutils literal"><span class="pre">True</span></tt>, all tasks will be executed locally by blocking
 until it is finished. <tt class="docutils literal"><span class="pre">apply_async</span></tt> and <tt class="docutils literal"><span class="pre">Task.delay</span></tt> will return
-a <a title="celery.result.EagerResult" class="reference external" href="reference/celery.result.html#celery.result.EagerResult"><tt class="xref docutils literal"><span class="pre">celery.result.EagerResult</span></tt></a> which emulates the behaviour of
+a <a title="celery.result.EagerResult" class="reference external" href="reference/celery.result.html#celery.result.EagerResult"><tt class="xref docutils literal"><span class="pre">celery.result.EagerResult</span></tt></a> which emulates the behavior of
 <a title="celery.result.AsyncResult" class="reference external" href="reference/celery.result.html#celery.result.AsyncResult"><tt class="xref docutils literal"><span class="pre">celery.result.AsyncResult</span></tt></a>, except the result has already
 been evaluated.</p>
 <p class="last">Tasks will never be sent to the queue, but executed locally
@@ -495,7 +507,7 @@ instead.</p>
 </li>
 <li><p class="first">CELERY_IGNORE_RESULT</p>
 <blockquote>
-<p>Wheter to store the task return values or not (tombstones).
+<p>Whether to store the task return values or not (tombstones).
 If you still want to store errors, just not successful return values,
 you can set <tt class="docutils literal"><span class="pre">CELERY_STORE_ERRORS_EVEN_IF_IGNORED</span></tt>.</p>
 </blockquote>
@@ -504,9 +516,8 @@ you can set <tt class="docutils literal"><span class="pre">CELERY_STORE_ERRORS_E
 <dt>CELERY_TASK_RESULT_EXPIRES</dt>
 <dd><p class="first">Time (in seconds, or a <tt class="xref docutils literal"><span class="pre">datetime.timedelta</span></tt> object) for when after
 stored task tombstones are deleted.</p>
-<p class="last"><strong>NOTE</strong>: For the moment this only works for the database and MongoDB
-backends., except the result has already
-been evaluated.</p>
+<p class="last"><strong>NOTE</strong>: For the moment this only works with the database, cache and MongoDB
+backends.</p>
 </dd>
 </dl>
 </li>
@@ -529,7 +540,7 @@ been registered with <tt class="xref docutils literal"><span class="pre">carrot.
 <dt>CELERY_IMPORTS</dt>
 <dd><p class="first last">A sequence of modules to import when the celery daemon starts.  This is
 useful to add tasks if you are not using django or cannot use task
-autodiscovery.</p>
+auto-discovery.</p>
 </dd>
 </dl>
 </li>
@@ -559,7 +570,7 @@ If unset, it will send the e-mails if <tt class="docutils literal"><span class="
 <ul>
 <li><dl class="first docutils">
 <dt>CELERYD_LOG_FILE</dt>
-<dd><p class="first">The default filename the worker daemon logs messages to, can be
+<dd><p class="first">The default file name the worker daemon logs messages to, can be
 overridden using the <cite>&#8211;logfile`</cite> option to <tt class="docutils literal"><span class="pre">celeryd</span></tt>.</p>
 <p class="last">The default is <tt class="xref docutils literal"><span class="pre">None</span></tt> (<tt class="docutils literal"><span class="pre">stderr</span></tt>)
 Can also be set via the <tt class="docutils literal"><span class="pre">--logfile</span></tt> argument.</p>
@@ -595,7 +606,7 @@ formats.</p>
 <blockquote>
 <p>Name of the file celerybeat stores the current schedule in.
 Can be a relative or absolute path, but be aware that the suffix <tt class="docutils literal"><span class="pre">.db</span></tt>
-will be appended to the filename.</p>
+will be appended to the file name.</p>
 <p>Can also be set via the <tt class="docutils literal"><span class="pre">--schedule</span></tt> argument.</p>
 </blockquote>
 </li>
@@ -607,7 +618,7 @@ the schedule. Default is 300 seconds (5 minutes).</p>
 </li>
 <li><dl class="first docutils">
 <dt>CELERYBEAT_LOG_FILE</dt>
-<dd><p class="first">The default filename to log messages to, can be
+<dd><p class="first">The default file name to log messages to, can be
 overridden using the <cite>&#8211;logfile`</cite> option.</p>
 <p class="last">The default is <tt class="xref docutils literal"><span class="pre">None</span></tt> (<tt class="docutils literal"><span class="pre">stderr</span></tt>).
 Can also be set via the <tt class="docutils literal"><span class="pre">--logfile</span></tt> argument.</p>
@@ -630,7 +641,7 @@ Can also be set via the <tt class="docutils literal"><span class="pre">--logfile
 <ul>
 <li><dl class="first docutils">
 <dt>CELERYMON_LOG_FILE</dt>
-<dd><p class="first">The default filename to log messages to, can be
+<dd><p class="first">The default file name to log messages to, can be
 overridden using the <cite>&#8211;logfile`</cite> option.</p>
 <p class="last">The default is <tt class="xref docutils literal"><span class="pre">None</span></tt> (<tt class="docutils literal"><span class="pre">stderr</span></tt>)
 Can also be set via the <tt class="docutils literal"><span class="pre">--logfile</span></tt> argument.</p>

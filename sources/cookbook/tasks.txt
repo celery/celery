@@ -11,7 +11,7 @@ You can accomplish this by using a lock.
 In this example we'll be using the cache framework to set a lock that is
 accessible for all workers.
 
-It's part of an imaginary RSS Feed application called ``djangofeeds``.
+It's part of an imaginary RSS feed importer called ``djangofeeds``.
 The task takes a feed URL as a single argument, and imports that feed into
 a Django model called ``Feed``. We ensure that it's not possible for two or
 more workers to import the same feed at the same time by setting a cache key

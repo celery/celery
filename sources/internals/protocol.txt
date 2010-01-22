@@ -47,3 +47,20 @@ format::
      "kwargs": {},
      "retries": 0,
      "eta": "2009-11-17T12:30:56.527191"}
+
+
+Serialization
+=============
+
+The protocol supports several serialization formats using the
+``content_encoding`` message header.
+
+The MIME-types supported by default are shown in the following table.
+
+    =============== =================================
+         Scheme                 MIME Type
+    =============== =================================
+    json            application/json
+    yaml            application/x-yaml
+    pickle          application/x-python-serialize
+    =============== =================================

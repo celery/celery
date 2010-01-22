@@ -82,7 +82,7 @@ However, in production you probably want to run the worker in the
 background as a daemon. To do this you need to use to tools provided by your
 platform, or something like `supervisord`_.
 
-For example startup scripts see ``contrib/debian/init.d`` for using
+For example start-up scripts see ``contrib/debian/init.d`` for using
 ``start-stop-daemon`` on Debian/Ubuntu, or ``contrib/mac/org.celeryq.*`` for using
 ``launchd`` on Mac OS X.
 
@@ -115,7 +115,7 @@ picked it up.
 that RabbitMQ is running, and that the user/password has access to the virtual
 host you configured earlier.
 
-Right now we have to check the celery worker logfiles to know what happened
+Right now we have to check the celery worker log files to know what happened
 with the task. This is because we didn't keep the ``AsyncResult`` object
 returned by ``delay``.
 

@@ -157,6 +157,34 @@ format:</p>
 </pre></div>
 </div>
 </div>
+<div class="section" id="serialization">
+<h2>Serialization<a class="headerlink" href="#serialization" title="Permalink to this headline">¶</a></h2>
+<p>The protocol supports several serialization formats using the
+<tt class="docutils literal"><span class="pre">content_encoding</span></tt> message header.</p>
+<p>The MIME-types supported by default are shown in the following table.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="31%" />
+<col width="69%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Scheme</th>
+<th class="head">MIME Type</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td>json</td>
+<td>application/json</td>
+</tr>
+<tr><td>yaml</td>
+<td>application/x-yaml</td>
+</tr>
+<tr><td>pickle</td>
+<td>application/x-python-serialize</td>
+</tr>
+</tbody>
+</table>
+</div>
 </div>
 
 

@@ -2,7 +2,7 @@
  Using Celery with Redis/Database as the messaging queue.
 ==========================================================
 
-There's a plugin for celery that enables the use of Redis or an SQL database
+There's a plug-in for celery that enables the use of Redis or an SQL database
 as the messaging queue. This is not part of celery itself, but exists as
 an extension to `carrot`_.
 
@@ -65,7 +65,7 @@ configuration values.
 
     $ python manage.py syncdb
 
-* Or if you're not using django, but the default loader instad run
+* Or if you're not using django, but the default loader instead run
   ``celeryinit``::
 
     $ celeryinit

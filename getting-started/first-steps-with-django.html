@@ -142,7 +142,7 @@ see what&#8217;s going on without consulting the logfile:</p>
 <p>However, in production you probably want to run the worker in the
 background as a daemon. To do this you need to use to tools provided by your
 platform, or something like <a class="reference external" href="http://supervisord.org/">supervisord</a>.</p>
-<p>For example startup scripts see <tt class="docutils literal"><span class="pre">contrib/debian/init.d</span></tt> for using
+<p>For example start-up scripts see <tt class="docutils literal"><span class="pre">contrib/debian/init.d</span></tt> for using
 <tt class="docutils literal"><span class="pre">start-stop-daemon</span></tt> on Debian/Ubuntu, or <tt class="docutils literal"><span class="pre">contrib/mac/org.celeryq.*</span></tt> for using
 <tt class="docutils literal"><span class="pre">launchd</span></tt> on Mac OS X.</p>
 <p>For a complete listing of the command line arguments available, with a short
@@ -184,7 +184,7 @@ picked it up.</p>
 <p><em>Note</em> If everything is just hanging when you execute <tt class="docutils literal"><span class="pre">delay</span></tt>, please check
 that RabbitMQ is running, and that the user/password has access to the virtual
 host you configured earlier.</p>
-<p>Right now we have to check the celery worker logfiles to know what happened
+<p>Right now we have to check the celery worker log files to know what happened
 with the task. This is because we didn&#8217;t keep the <tt class="docutils literal"><span class="pre">AsyncResult</span></tt> object
 returned by <tt class="docutils literal"><span class="pre">delay</span></tt>.</p>
 <p>The <tt class="docutils literal"><span class="pre">AsyncResult</span></tt> lets us find the state of the task, wait for the task to

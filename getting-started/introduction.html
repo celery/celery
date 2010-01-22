@@ -105,7 +105,8 @@
 <tbody valign="top">
 <tr class="field"><th class="field-name">Version:</th><td class="field-body">1.0.0-pre1</td>
 </tr>
-<tr class="field"><th class="field-name">Keywords:</th><td class="field-body">task queue, job queue, asynchronous, rabbitmq, amqp, redis.</td>
+<tr class="field"><th class="field-name">Keywords:</th><td class="field-body">task queue, job queue, asynchronous, rabbitmq, amqp, redis,
+django, python, webhooks, queue, distributed</td>
 </tr>
 </tbody>
 </table>
@@ -149,67 +150,112 @@ adding two numbers:</p>
 </div>
 <div class="section" id="features">
 <h2>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
-<ul>
-<li><p class="first">Uses messaging (AMQP: RabbitMQ, ZeroMQ, Qpid) to route tasks to the
-worker servers. Experimental support for STOMP (ActiveMQ) is also
-available. For simple setups it&#8217;s also possible to use Redis or an
-SQL database as the message queue.</p>
-</li>
-<li><p class="first">You can run as many worker servers as you want, and still
-be <em>guaranteed that the task is only executed once.</em></p>
-</li>
-<li><p class="first">Tasks are executed <em>concurrently</em> using the Python 2.6
-<tt class="xref docutils literal"><span class="pre">multiprocessing</span></tt> module (also available as a back-port
-to older python versions)</p>
-</li>
-<li><p class="first">Supports <em>periodic tasks</em>, which makes it a (better) replacement
-for cronjobs.</p>
-</li>
-<li><p class="first">When a task has been executed, the return value can be stored using
-either a MySQL/Oracle/PostgreSQL/SQLite database, Memcached,
-<a class="reference external" href="http://www.mongodb.org/">MongoDB</a>, <a class="reference external" href="http://code.google.com/p/redis/">Redis</a> or <a class="reference external" href="http://tokyocabinet.sourceforge.net/">Tokyo Tyrant</a> back-end. For high-performance
-you can also use AMQP messages to publish results.</p>
-</li>
-<li><p class="first">Supports calling tasks over HTTP to support multiple programming
-languages and systems.</p>
-</li>
-<li><p class="first">Supports several serialization schemes, like pickle, json, yaml and
-supports registering custom encodings .</p>
-</li>
-<li><p class="first">If the task raises an exception, the exception instance is stored,
-instead of the return value, and it&#8217;s possible to inspect the traceback
-after the fact.</p>
-</li>
-<li><p class="first">All tasks has a Universally Unique Identifier (UUID), which is the
-task id, used for querying task status and return values.</p>
-</li>
-<li><p class="first">Tasks can be retried if they fail, with a configurable maximum number
-of retries.</p>
-</li>
-<li><p class="first">Tasks can be configured to run at a specific time and date in the
-future (ETA) or you can set a countdown in seconds for when the
-task should be executed.</p>
-</li>
-<li><p class="first">Supports <em>task-sets</em>, which is a task consisting of several sub-tasks.
-You can find out how many, or if all of the sub-tasks has been executed.
-Excellent for progress-bar like functionality.</p>
-</li>
-<li><p class="first">However, you rarely want to wait for these results in a web-environment.
-You&#8217;d rather want to use Ajax to poll the task status, which is
-available from a URL like <tt class="docutils literal"><span class="pre">celery/&lt;task_id&gt;/status/</span></tt>. This view
-returns a JSON-serialized data structure containing the task status,
-and the return value if completed, or exception on failure.</p>
-</li>
-<li><dl class="first docutils">
-<dt>Pool workers are supervised, so if for some reason a worker crashes</dt>
-<dd><p class="first last">it is automatically replaced by a new worker.</p>
-</dd>
-</dl>
-</li>
-<li><p class="first">Can be configured to send e-mails to the administrators when a task
-fails.</p>
-</li>
-</ul>
+<table border="1" class="docutils">
+<colgroup>
+<col width="25%" />
+<col width="75%" />
+</colgroup>
+<tbody valign="top">
+<tr><td>Messaging</td>
+<td>Supported brokers include <a class="reference external" href="http://www.rabbitmq.com/">RabbitMQ</a>, <a class="reference external" href="http://stomp.codehaus.org/">Stomp</a>,
+<a class="reference external" href="http://code.google.com/p/redis/">Redis</a>, and the most common SQL databases.</td>
+</tr>
+<tr><td>Robust</td>
+<td>Using <cite>RabbitMQ</cite>, celery survives most error
+scenarios, and your tasks will never be lost.</td>
+</tr>
+<tr><td>Distributed</td>
+<td>Runs on one or more machines. Supports
+<a class="reference external" href="http://www.rabbitmq.com/clustering.html">clustering</a> when used in combination with
+<a class="reference external" href="http://www.rabbitmq.com/">RabbitMQ</a>. You can set up new workers without
+central configuration (e.g. use your dads laptop
+while the queue is temporarily overloaded).</td>
+</tr>
+<tr><td>Concurrency</td>
+<td>Tasks are executed in parallel using the
+<tt class="xref docutils literal"><span class="pre">multiprocessing</span></tt> module.</td>
+</tr>
+<tr><td>Scheduling</td>
+<td>Supports recurring tasks like cron, or specifying
+an exact date or countdown for when after the task
+should be executed.</td>
+</tr>
+<tr><td>Performance</td>
+<td>Able to execute tasks while the user waits.</td>
+</tr>
+<tr><td>Return Values</td>
+<td>Task return values can be saved to the selected
+result store backend. You can wait for the result,
+retrieve it later, or ignore it.</td>
+</tr>
+<tr><td>Result Stores</td>
+<td>Database, <a class="reference external" href="http://www.mongodb.org/">MongoDB</a>, <a class="reference external" href="http://code.google.com/p/redis/">Redis</a>, <cite>Tokyo Tyrant</cite>,
+<a class="reference external" href="http://www.amqp.org/">AMQP</a> (high performance).</td>
+</tr>
+<tr><td>Webhooks</td>
+<td>Your tasks can also be HTTP callbacks, enabling
+cross-language communication.</td>
+</tr>
+<tr><td>Rate limiting</td>
+<td>Supports rate limiting by using the token bucket
+algorithm, which accounts for bursts of traffic.
+Rate limits can be set for each task type, or
+globally for all.</td>
+</tr>
+<tr><td>Routing</td>
+<td>Using AMQP you can route tasks arbitrarily to
+different workers.</td>
+</tr>
+<tr><td>Remote-control</td>
+<td>You can rate limit and delete (revoke) tasks
+remotely.</td>
+</tr>
+<tr><td>Monitoring</td>
+<td>You can capture everything happening with the
+workers in real-time by subscribing to events.
+A real-time web monitor is in development.</td>
+</tr>
+<tr><td>Serialization</td>
+<td>Supports Pickle, JSON, YAML, or easily defined
+custom schemes. One task invocation can have a
+different scheme than another.</td>
+</tr>
+<tr><td>Tracebacks</td>
+<td>Errors and tracebacks are stored and can be
+investigated after the fact.</td>
+</tr>
+<tr><td>UUID</td>
+<td>Every task has an UUID (Universally Unique
+Identifier), which is the task id used to query
+task status and return value.</td>
+</tr>
+<tr><td>Retries</td>
+<td>Tasks can be retried if they fail, with
+configurable maximum number of retries, and delays
+between each retry.</td>
+</tr>
+<tr><td>Task Sets</td>
+<td>A Task set is a task consisting of several
+sub-tasks. You can find out how many, or if all
+of the sub-tasks has been executed, and even
+retrieve the results in order. Progress bars,
+anyone?</td>
+</tr>
+<tr><td>Made for Web</td>
+<td>You can query status and results via URLs,
+enabling the ability to poll task status using
+Ajax.</td>
+</tr>
+<tr><td>Error e-mails</td>
+<td>Can be configured to send e-mails to the
+administrators when tasks fails.</td>
+</tr>
+<tr><td>Supervised</td>
+<td>Pool workers are supervised and automatically
+replaced if they crash.</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="section" id="documentation">
 <h2>Documentation<a class="headerlink" href="#documentation" title="Permalink to this headline">¶</a></h2>
@@ -243,10 +289,6 @@ $ python setup.py build
 <div class="highlight-python"><pre>$ git clone git://github.com/ask/celery.git</pre>
 </div>
 </div>
-</div>
-<div class="section" id="a-look-inside-the-components">
-<h2>A look inside the components<a class="headerlink" href="#a-look-inside-the-components" title="Permalink to this headline">¶</a></h2>
-<img alt="http://cloud.github.com/downloads/ask/celery/Celery1.0-inside-worker.jpg" src="http://cloud.github.com/downloads/ask/celery/Celery1.0-inside-worker.jpg" />
 </div>
 </div>
 

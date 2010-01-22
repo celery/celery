@@ -172,12 +172,12 @@ this exchange using this routing key will receive these messages.</p>
 click it processes all of the messages first, calculates the new click count
 and issues one update per URL. A message that has been received will not be
 deleted from the broker until it has been acknowledged by the receiver, so
-if the reciever dies in the middle of processing the message, it will be
+if the receiver dies in the middle of processing the message, it will be
 re-sent at a later point in time. This guarantees delivery and we respect
 this feature here by not acknowledging the message until the clicks has
 actually been written to disk.</p>
 <p><strong>Note</strong>: This could probably be optimized further with
-some hand-written SQL, but it will do for now. Let&#8217;s say it&#8217;s an excersise
+some hand-written SQL, but it will do for now. Let&#8217;s say it&#8217;s an exercise
 left for the picky reader, albeit a discouraged one if you can survive
 without doing it.</p>
 </li>
@@ -292,7 +292,7 @@ function we wrote earlier.</p>
 <div class="section" id="finishing">
 <h2>Finishing<a class="headerlink" href="#finishing" title="Permalink to this headline">¶</a></h2>
 <p>There are still ways to improve this application. The URLs could be cleaned
-so the url <a class="reference external" href="http://google.com">http://google.com</a> and <a class="reference external" href="http://google.com/">http://google.com/</a> is the same. Maybe it&#8217;s
+so the URL <a class="reference external" href="http://google.com">http://google.com</a> and <a class="reference external" href="http://google.com/">http://google.com/</a> is the same. Maybe it&#8217;s
 even possible to update the click count using a single UPDATE query?</p>
 <p>If you have any questions regarding this tutorial, please send a mail to the
 mailing-list or come join us in the #celery IRC channel at Freenode:

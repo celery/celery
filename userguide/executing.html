@@ -103,12 +103,12 @@ function:</p>
 </pre></div>
 </div>
 <p>The same thing using <tt class="docutils literal"><span class="pre">apply_async</span></tt> is written like this:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">AddTask</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">],</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s">&quot;kwarg1&quot;</span><span class="p">:</span> <span class="s">&quot;x&quot;</span><span class="p">,</span> <span class="s">&quot;kwarg2&quot;</span><span class="p">:</span> <span class="s">&quot;y&quot;</span><span class="p">})</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">AddTask</span><span class="o">.</span><span class="n">apply_async</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">],</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s">&quot;kwarg1&quot;</span><span class="p">:</span> <span class="s">&quot;x&quot;</span><span class="p">,</span> <span class="s">&quot;kwarg2&quot;</span><span class="p">:</span> <span class="s">&quot;y&quot;</span><span class="p">})</span>
 </pre></div>
 </div>
 <p>But <tt class="docutils literal"><span class="pre">delay</span></tt> doesn&#8217;t give you as much control as using <tt class="docutils literal"><span class="pre">apply_async</span></tt>.
 With <tt class="docutils literal"><span class="pre">apply_async</span></tt> you can override the execution options available as attributes on
-the <tt class="docutils literal"><span class="pre">Task</span></tt> class; <tt class="docutils literal"><span class="pre">routing_key</span></tt>, <tt class="docutils literal"><span class="pre">exchange</span></tt>, <tt class="docutils literal"><span class="pre">immediate</span></tt>, <tt class="docutils literal"><span class="pre">mandatory</span></tt>,
+the <tt class="docutils literal"><span class="pre">Task</span></tt> class: <tt class="docutils literal"><span class="pre">routing_key</span></tt>, <tt class="docutils literal"><span class="pre">exchange</span></tt>, <tt class="docutils literal"><span class="pre">immediate</span></tt>, <tt class="docutils literal"><span class="pre">mandatory</span></tt>,
 <tt class="docutils literal"><span class="pre">priority</span></tt>, and <tt class="docutils literal"><span class="pre">serializer</span></tt>.  In addition you can set a countdown or an eta, provide
 a custom broker connection or change the broker connection timeout.</p>
 <p>Let&#8217;s go over these in more detail. The following examples uses this simple
@@ -133,7 +133,7 @@ by seconds into the future.</p>
 specified date and time has passed, but not necessarily at that exact time.</p>
 <p>While <tt class="docutils literal"><span class="pre">countdown</span></tt> is an integer, <tt class="docutils literal"><span class="pre">eta</span></tt> must be a <tt class="docutils literal"><span class="pre">datetime</span></tt> object,
 specifying an exact date and time in the future. This is good if you already
-have a <tt class="docutils literal"><span class="pre">datatime</span></tt> object and need to modify it with a <tt class="docutils literal"><span class="pre">timedelta</span></tt>, or when
+have a <tt class="docutils literal"><span class="pre">datetime</span></tt> object and need to modify it with a <tt class="docutils literal"><span class="pre">timedelta</span></tt>, or when
 using time in seconds is not very readable.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span>
 
@@ -155,7 +155,7 @@ custom serializers by registering them in the carrot serializer registry.</p>
 serialization method is sent with the message so the worker knows how to
 deserialize any task (of course, if you use a custom serializer, this must also be
 registered in the worker.)</p>
-<p>When sending a task the serializition method is taken from the following
+<p>When sending a task the serialization method is taken from the following
 places in order: The <tt class="docutils literal"><span class="pre">serializer</span></tt> argument to <tt class="docutils literal"><span class="pre">apply_async</span></tt>, the
 Task&#8217;s <tt class="docutils literal"><span class="pre">serializer</span></tt> attribute, and finally the global default <tt class="docutils literal"><span class="pre">CELERY_SERIALIZER</span></tt>
 configuration directive.</p>
@@ -202,7 +202,7 @@ establish the connection yourself and pass it to <tt class="docutils literal"><s
 <span class="k">print</span><span class="p">([</span><span class="n">res</span><span class="o">.</span><span class="n">get</span><span class="p">()</span> <span class="k">for</span> <span class="n">res</span> <span class="ow">in</span> <span class="n">results</span><span class="p">])</span>
 </pre></div>
 </div>
-<p><em>NOTE</em> TaskSets already re-uses the same connection, but not if you need to
+<p><em>NOTE</em> Task Sets already re-uses the same connection, but not if you need to
 execute more than one TaskSet.</p>
 <p>The connection timeout is the number of seconds to wait before we give up on
 establishing the connection, you can set this with the <tt class="docutils literal"><span class="pre">connect_timeout</span></tt>
@@ -218,7 +218,7 @@ argument to <tt class="docutils literal"><span class="pre">apply_async</span></t
 <div class="section" id="routing-options">
 <h2>Routing options<a class="headerlink" href="#routing-options" title="Permalink to this headline">¶</a></h2>
 <p>Celery uses the AMQP routing mechanisms to route tasks to different workers.
-You can route tasks using the following entitites: exchange, queue and routing key.</p>
+You can route tasks using the following entities: exchange, queue and routing key.</p>
 <p>Messages (tasks) are sent to exchanges, a queue binds to an exchange with a
 routing key. Let&#8217;s look at an example:</p>
 <p>Our application has a lot of tasks, some process video, others process images,
@@ -238,7 +238,7 @@ different ways, the exchange types are:</p>
 <li><p class="first">topic</p>
 <blockquote>
 <p>In the topic exchange the routing key is made up of words separated by dots (<tt class="docutils literal"><span class="pre">.</span></tt>).
-Words can be matched by the wildcars <tt class="docutils literal"><span class="pre">*</span></tt> and <tt class="docutils literal"><span class="pre">#</span></tt>, where <tt class="docutils literal"><span class="pre">*</span></tt> matches one
+Words can be matched by the wild cards <tt class="docutils literal"><span class="pre">*</span></tt> and <tt class="docutils literal"><span class="pre">#</span></tt>, where <tt class="docutils literal"><span class="pre">*</span></tt> matches one
 exact word, and <tt class="docutils literal"><span class="pre">#</span></tt> matches one or many.</p>
 <p>For example, <tt class="docutils literal"><span class="pre">*.stock.#</span></tt> matches the routing keys <tt class="docutils literal"><span class="pre">usd.stock</span></tt> and
 <tt class="docutils literal"><span class="pre">euro.stock.db</span></tt> but not <tt class="docutils literal"><span class="pre">stock.nasdaq</span></tt>.</p>

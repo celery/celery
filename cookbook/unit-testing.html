@@ -98,7 +98,7 @@
 <div class="section" id="testing-with-django">
 <h2>Testing with Django<a class="headerlink" href="#testing-with-django" title="Permalink to this headline">¶</a></h2>
 <p>The problem that you&#8217;ll first run in to when trying to write a test that runs a
-task is that Django&#8217;s testrunner doesn&#8217;t use the same database that your celery
+task is that Django&#8217;s test runner doesn&#8217;t use the same database that your celery
 daemon is using. If you&#8217;re using the database backend, this means that your
 tombstones won&#8217;t show up in your test database and you won&#8217;t be able to check
 on your tasks to get the return value or check the status.</p>
@@ -106,16 +106,16 @@ on your tasks to get the return value or check the status.</p>
 <tt class="docutils literal"><span class="pre">CELERY_ALWAYS_EAGER</span> <span class="pre">=</span> <span class="pre">True</span></tt> to skip the daemon, or you can avoid testing
 anything that needs to check the status or result of a task.</p>
 </div>
-<div class="section" id="using-a-custom-testrunner-to-test-with-celery">
-<h2>Using a custom testrunner to test with celery<a class="headerlink" href="#using-a-custom-testrunner-to-test-with-celery" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="using-a-custom-test-runner-to-test-with-celery">
+<h2>Using a custom test runner to test with celery<a class="headerlink" href="#using-a-custom-test-runner-to-test-with-celery" title="Permalink to this headline">¶</a></h2>
 <p>If you&#8217;re going the <tt class="docutils literal"><span class="pre">CELERY_ALWAYS_EAGER</span></tt> route, which is probably better than
-just never testing some parts of your app, a custom Django testrunner does the
-trick. Celery provides a simple testrunner, but it&#8217;s easy enough to roll your
+just never testing some parts of your app, a custom Django test runner does the
+trick. Celery provides a simple test runner, but it&#8217;s easy enough to roll your
 own if you have other things that need to be done.
 <a class="reference external" href="http://docs.djangoproject.com/en/dev/topics/testing/#defining-a-test-runner">http://docs.djangoproject.com/en/dev/topics/testing/#defining-a-test-runner</a></p>
 <p>For this example, we&#8217;ll use the <tt class="docutils literal"><span class="pre">celery.contrib.test_runner</span></tt> to test the
 <tt class="docutils literal"><span class="pre">add</span></tt> task from the <a class="reference external" href="../userguide/tasks.html"><em>User Guide: Tasks</em></a> examples.</p>
-<p>To enable the testrunner, set the following settings:</p>
+<p>To enable the test runner, set the following settings:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">TEST_RUNNER</span> <span class="o">=</span> <span class="s">&#39;celery.contrib.test_runner.run_tests&#39;</span>
 </pre></div>
 </div>

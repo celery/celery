@@ -235,13 +235,13 @@ default is set to 3 minutes.</p>
 <blockquote>
 <p>This is the name the task is registered as.
 You can set this name manually, or just use the default which is
-atomatically generated using the module and class name.</p>
+automatically generated using the module and class name.</p>
 </blockquote>
 </li>
 <li><p class="first">abstract</p>
 <blockquote>
 <p>Abstract classes are not registered, so they&#8217;re
-only used for making new task types by subclassing.</p>
+only used for making new task types by sub classing.</p>
 </blockquote>
 </li>
 <li><p class="first">max_retries</p>
@@ -321,7 +321,7 @@ instead.</p>
 <dt>immediate</dt>
 <dd><p class="first last">Request immediate delivery. If the task cannot be routed to a
 task worker immediately, an exception will be raised. This is
-instead of the default behaviour, where the broker will accept and
+instead of the default behavior, where the broker will accept and
 queue the task, but with no guarantee that the task will ever
 be executed.</p>
 </dd>
@@ -336,6 +336,117 @@ highest. Note that RabbitMQ doesn&#8217;t support priorities yet.</p>
 </li>
 </ul>
 <p>Please see <a class="reference external" href="executing.html"><em>Executing Tasks</em></a> for descriptions of these options.</p>
+</div>
+</div>
+<div class="section" id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<p>Let&#8217;s take a real wold example; A blog where comments posted needs to be
+filtered for spam. When the comment is created, we run the spam filter in the
+background, so the user doesn&#8217;t have to wait for it to finish.</p>
+<p>We have a Django blog application allowing comments
+on blog posts. We&#8217;ll describe parts of the models/views and tasks for this
+application.</p>
+<div class="section" id="blog-models-py">
+<h3>blog/models.py<a class="headerlink" href="#blog-models-py" title="Permalink to this headline">¶</a></h3>
+<p>The comment model looks like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">models</span>
+<span class="kn">from</span> <span class="nn">django.utils.translation</span> <span class="kn">import</span> <span class="n">ugettext_lazy</span> <span class="k">as</span> <span class="n">_</span>
+
+
+<span class="k">class</span> <span class="nc">Comment</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s">&quot;name&quot;</span><span class="p">),</span> <span class="n">max_length</span><span class="o">=</span><span class="mi">64</span><span class="p">)</span>
+    <span class="n">email_address</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">EmailField</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s">&quot;e-mail address&quot;</span><span class="p">))</span>
+    <span class="n">homepage</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">URLField</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s">&quot;home page&quot;</span><span class="p">),</span>
+                               <span class="n">blank</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">verify_exists</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="n">comment</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s">&quot;comment&quot;</span><span class="p">))</span>
+    <span class="n">pub_date</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s">&quot;Published date&quot;</span><span class="p">),</span>
+                                    <span class="n">editable</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">auto_add_now</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">is_spam</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s">&quot;spam?&quot;</span><span class="p">),</span>
+                                  <span class="n">default</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">editable</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">verbose_name</span> <span class="o">=</span> <span class="n">_</span><span class="p">(</span><span class="s">&quot;comment&quot;</span><span class="p">)</span>
+        <span class="n">verbose_name_plural</span> <span class="o">=</span> <span class="n">_</span><span class="p">(</span><span class="s">&quot;comments&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>In the view where the comment is posted, we first write the comment
+to the database, then we launch the spam filter task in the background.</p>
+</div>
+<div class="section" id="blog-views-py">
+<h3>blog/views.py<a class="headerlink" href="#blog-views-py" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python"><pre>from django import forms
+frmo django.http import HttpResponseRedirect
+from django.template.context import RequestContext
+from django.shortcuts import get_object_or_404, render_to_response
+
+from blog import tasks
+from blog.models import Comment
+
+
+class CommentForm(forms.ModelForm):
+
+    class Meta:
+        model = Comment
+
+
+def add_comment(request, slug, template_name="comments/create.html"):
+    post = get_object_or_404(Entry, slug=slug)
+    remote_addr = request.META.get("REMOTE_ADDR")
+
+    if request.method == "post":
+        form = CommentForm(request.POST, request.FILES)
+        if form.is_valid():
+            comment = form.save()
+            # Check spam asynchronously.
+            tasks.spam_filter.delay(comment_id=comment.id,
+                                    remote_addr=remote_addr)
+            return HttpResponseRedirect(post.get_absolute_url())
+    else:
+        form = CommentForm()
+
+    context = RequestContext(request, {"form": form})
+    return render_to_response(template_name, context_instance=context)</pre>
+</div>
+<p>To filter spam in comments we use <a class="reference external" href="http://akismet.com/faq/">Akismet</a>, the service
+used to filter spam in comments posted to the free weblog platform
+<cite>Wordpress</cite>. <a class="reference external" href="http://akismet.com/faq/">Akismet</a> is free for personal use, but for commercial use you
+need to pay. You have to sign up to their service to get an API key.</p>
+<p>To make API calls to <a class="reference external" href="http://akismet.com/faq/">Akismet</a> we use the <a class="reference external" href="http://www.voidspace.org.uk/downloads/akismet.py">akismet.py</a> library written by
+Michael Foord.</p>
+</div>
+<div class="section" id="blog-tasks-py">
+<h3>blog/tasks.py<a class="headerlink" href="#blog-tasks-py" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">akismet</span> <span class="kn">import</span> <span class="n">Akismet</span>
+<span class="kn">from</span> <span class="nn">celery.decorators</span> <span class="kn">import</span> <span class="n">task</span>
+
+<span class="kn">from</span> <span class="nn">django.core.exceptions</span> <span class="kn">import</span> <span class="n">ImproperlyConfigured</span>
+<span class="kn">from</span> <span class="nn">django.contrib.sites.models</span> <span class="kn">import</span> <span class="n">Site</span>
+
+<span class="kn">from</span> <span class="nn">blog.models</span> <span class="kn">import</span> <span class="n">Comment</span>
+
+
+<span class="k">def</span> <span class="nf">spam_filter</span><span class="p">(</span><span class="n">comment_id</span><span class="p">,</span> <span class="n">remote_addr</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">logger</span> <span class="o">=</span> <span class="n">spam_filter</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Running spam filter for comment </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">comment_id</span><span class="p">)</span>
+
+        <span class="n">comment</span> <span class="o">=</span> <span class="n">Comment</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">pk</span><span class="o">=</span><span class="n">comment_id</span><span class="p">)</span>
+        <span class="n">current_domain</span> <span class="o">=</span> <span class="n">Site</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_current</span><span class="p">()</span><span class="o">.</span><span class="n">domain</span>
+        <span class="n">akismet</span> <span class="o">=</span> <span class="n">Akismet</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">AKISMET_KEY</span><span class="p">,</span> <span class="s">&quot;http://</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">domain</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">akismet</span><span class="o">.</span><span class="n">verify_key</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">ImproperlyConfigured</span><span class="p">(</span><span class="s">&quot;Invalid AKISMET_KEY&quot;</span><span class="p">)</span>
+
+
+        <span class="n">is_spam</span> <span class="o">=</span> <span class="n">akismet</span><span class="o">.</span><span class="n">comment_check</span><span class="p">(</span><span class="n">user_ip</span><span class="o">=</span><span class="n">remote_addr</span><span class="p">,</span>
+                            <span class="n">comment_content</span><span class="o">=</span><span class="n">comment</span><span class="o">.</span><span class="n">comment</span><span class="p">,</span>
+                            <span class="n">comment_author</span><span class="o">=</span><span class="n">comment</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                            <span class="n">comment_author_email</span><span class="o">=</span><span class="n">comment</span><span class="o">.</span><span class="n">email_address</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">is_spam</span><span class="p">:</span>
+            <span class="n">comment</span><span class="o">.</span><span class="n">is_spam</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="n">comment</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">is_spam</span>
+</pre></div>
+</div>
 </div>
 </div>
 <div class="section" id="how-it-works">
@@ -368,14 +479,14 @@ only be registered when the module it is defined in is imported.</p>
 for the applications listed in <tt class="docutils literal"><span class="pre">INSTALLED_APPS</span></tt>. If you want to do something
 special you can create your own loader to do what you want.</p>
 <p>The entity responsible for registering your task in the registry is a
-metaclass, <a title="celery.task.base.TaskType" class="reference external" href="../reference/celery.task.base.html#celery.task.base.TaskType"><tt class="xref docutils literal"><span class="pre">TaskType</span></tt></a>, this is the default metaclass for
+meta class, <a title="celery.task.base.TaskType" class="reference external" href="../reference/celery.task.base.html#celery.task.base.TaskType"><tt class="xref docutils literal"><span class="pre">TaskType</span></tt></a>, this is the default meta class for
 <tt class="docutils literal"><span class="pre">Task</span></tt>. If you want to register your task manually you can set the
 <tt class="docutils literal"><span class="pre">abstract</span></tt> attribute:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MyTask</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
     <span class="n">abstract</span> <span class="o">=</span> <span class="bp">True</span>
 </pre></div>
 </div>
-<p>This way the task won&#8217;t be registered, but any task subclassing it will.</p>
+<p>This way the task won&#8217;t be registered, but any task sub classing it will.</p>
 <p>So when we send a task, we don&#8217;t send the function code, we just send the name
 of the task, so when the worker receives the message it can just look it up in
 the task registry to find the execution code.</p>
@@ -394,7 +505,7 @@ ones.</p>
 won&#8217;t run long enough to block the worker from processing other waiting tasks.</p>
 <p>But there&#8217;s a limit, sending messages takes processing power and bandwidth. If
 your tasks are so short the overhead of passing them around is worse than
-just executing them inline, you should reconsider your strategy. There is no
+just executing them in-line, you should reconsider your strategy. There is no
 universal answer here.</p>
 </div>
 <div class="section" id="data-locality">
@@ -416,7 +527,7 @@ system, like <a class="reference external" href="http://memcached.org/">memcache
 on what machine the task will run, also you can&#8217;t even know if the task will
 run in a timely manner, so please be wary of the state you pass on to tasks.</p>
 <p>One gotcha is Django model objects, they shouldn&#8217;t be passed on as arguments
-to task classes, it&#8217;s almost always better to refetch the object from the
+to task classes, it&#8217;s almost always better to re-fetch the object from the
 database instead, as there are possible race conditions involved.</p>
 <p>Imagine the following scenario where you have an article, and a task
 that automatically expands some abbreviations in it.</p>
@@ -441,7 +552,7 @@ in the meantime another author makes some changes to the article,
 when the task is finally run, the body of the article is reverted to the old
 version, because the task had the old body in its argument.</p>
 <p>Fixing the race condition is easy, just use the article id instead, and
-refetch the article in the task body:</p>
+re-fetch the article in the task body:</p>
 <div class="highlight-python"><pre>@task
 def expand_abbreviations(article_id)
     article = Article.objects.get(id=article_id)
