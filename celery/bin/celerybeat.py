@@ -19,15 +19,14 @@
 
 """
 import sys
-import traceback
 import optparse
+import traceback
 
+import celery
 from celery import conf
 from celery import platform
-from celery import __version__
 from celery.log import emergency_error
 from celery.beat import ClockService
-from celery.utils import noop
 from celery.utils import info
 
 STARTUP_INFO_FMT = """
@@ -59,7 +58,7 @@ def run_clockservice(loglevel=conf.CELERYBEAT_LOG_LEVEL,
         schedule=conf.CELERYBEAT_SCHEDULE_FILENAME, **kwargs):
     """Starts the celerybeat clock server."""
 
-    print("celerybeat %s is starting." % __version__)
+    print("celerybeat %s is starting." % celery.__version__)
 
     # Setup logging
     if not isinstance(loglevel, int):
@@ -85,9 +84,9 @@ def run_clockservice(loglevel=conf.CELERYBEAT_LOG_LEVEL,
     arg_start = "manage" in sys.argv[0] and 2 or 1
     platform.set_process_title("celerybeat",
                                info=" ".join(sys.argv[arg_start:]))
-    from celery.log import setup_logger, redirect_stdouts_to_logger
 
     def _run_clock():
+        from celery.log import setup_logger
         logger = setup_logger(loglevel, logfile)
         clockservice = ClockService(logger=logger, schedule_filename=schedule)
 

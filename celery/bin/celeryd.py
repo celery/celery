@@ -40,12 +40,11 @@ import optparse
 import traceback
 import multiprocessing
 
+import celery
 from celery import conf
 from celery import platform
-from celery import __version__
 from celery.log import emergency_error
 from celery.task import discard_all
-from celery.utils import noop
 from celery.utils import info
 from celery.worker import WorkController
 
@@ -95,7 +94,7 @@ def run_worker(concurrency=conf.CELERYD_CONCURRENCY,
         discard=False, run_clockservice=False, events=False, **kwargs):
     """Starts the celery worker server."""
 
-    print("Celery %s is starting." % __version__)
+    print("Celery %s is starting." % celery.__version__)
 
     from celery.loaders import current_loader, load_settings
     loader = current_loader()

@@ -1,5 +1,4 @@
 import logging
-import sys
 
 
 def _check_logger_class():

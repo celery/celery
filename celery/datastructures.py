@@ -3,7 +3,6 @@
 Custom Datastructures
 
 """
-import sys
 import time
 import traceback
 from UserList import UserList

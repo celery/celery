@@ -5,9 +5,6 @@ except ImportError:
     _setproctitle = None
 
 
-from celery.utils import noop
-
-
 def reset_signal(signal_name):
     """Reset signal to the default signal handler.
 
