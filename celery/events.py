@@ -5,13 +5,19 @@ import threading
 from celery.messaging import EventPublisher, EventConsumer
 
 
+def create_event(type, fields):
+    std = {"type": type,
+           "timestamp": fields.get("timestamp") or time.time()}
+    return dict(fields, **std)
+
+
 def Event(type, **fields):
     """Create an event.
 
     An event is a dictionary, the only required field is the type.
 
     """
-    return dict(fields, type=type, timestamp=time.time())
+    return create_event(type, fields)
 
 
 class EventDispatcher(object):
@@ -96,4 +102,4 @@ class EventReceiver(object):
 
     def _receive(self, message_data, message):
         type = message_data.pop("type").lower()
-        self.process(type, Event(type, **message_data))
+        self.process(type, create_event(type, message_data))
