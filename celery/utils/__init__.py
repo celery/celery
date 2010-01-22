@@ -163,3 +163,14 @@ def fun_takes_kwargs(fun, kwlist=[]):
     if keywords != None:
         return kwlist
     return filter(curry(operator.contains, args), kwlist)
+
+
+def timedelta_seconds(delta):
+    """Convert :class:`datetime.timedelta` to seconds.
+
+    Doesn't account for negative values.
+
+    """
+    if delta.days < 0:
+        return 0
+    return delta.days * 86400 + delta.seconds + (delta.microseconds / 10e5)

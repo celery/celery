@@ -1,9 +1,12 @@
 """celery.backends.cache"""
+from datetime import timedelta
+
 from django.utils.encoding import smart_str
 from django.core.cache import cache, get_cache
 from django.core.cache.backends.base import InvalidCacheBackendError
 
 from celery import conf
+from celery.utils import timedelta_seconds
 from celery.backends.base import KeyValueStoreBackend
 
 # CELERY_CACHE_BACKEND overrides the django-global(tm) backend settings.
@@ -45,8 +48,15 @@ else:
 class CacheBackend(KeyValueStoreBackend):
     """Backend using the Django cache framework to store task metadata."""
 
+    def __init__(self, *args, **kwargs):
+        super(CacheBackend, self).__init__(self, *args, **kwargs)
+        expires = conf.TASK_RESULT_EXPIRES
+        if isinstance(expires, timedelta):
+            expires = timedelta_seconds(conf.TASK_RESULT_EXPIRES)
+        self.expires = expires
+
     def get(self, key):
         return cache.get(key)
 
     def set(self, key, value):
-        cache.set(key, value)
+        cache.set(key, value, self.expires)

@@ -352,9 +352,8 @@ Task execution settings
     Time (in seconds, or a :class:`datetime.timedelta` object) for when after
     stored task tombstones are deleted.
 
-    **NOTE**: For the moment this only works for the database and MongoDB
-    backends., except the result has already
-    been evaluated.
+    **NOTE**: For the moment this only works with the database, cache and MongoDB
+    backends.
 
 * CELERY_TASK_SERIALIZER
     A string identifying the default serialization

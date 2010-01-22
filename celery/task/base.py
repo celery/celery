@@ -7,7 +7,7 @@ from billiard.serialization import pickle
 
 from celery import conf
 from celery.log import setup_logger
-from celery.utils import gen_unique_id, get_full_cls_name, mexpand
+from celery.utils import gen_unique_id, mexpand, timedelta_seconds
 from celery.result import BaseAsyncResult, TaskSetResult, EagerResult
 from celery.execute import apply_async, apply
 from celery.registry import tasks
@@ -639,9 +639,7 @@ class PeriodicTask(Task):
         Doesn't account for negative timedeltas.
 
         """
-        if delta.days < 0:
-            return 0
-        return delta.days * 86400 + delta.seconds + (delta.microseconds / 10e5)
+        return timedelta_seconds(delta)
 
     def is_due(self, last_run_at):
         """Returns tuple of two items ``(is_due, next_time_to_run)``,
