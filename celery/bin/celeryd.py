@@ -17,6 +17,10 @@
     Logging level, choose between ``DEBUG``, ``INFO``, ``WARNING``,
     ``ERROR``, ``CRITICAL``, or ``FATAL``.
 
+.. cmdoption:: -n, --hostname
+
+    Set custom hostname.
+
 .. cmdoption:: -B, --beat
 
     Also run the ``celerybeat`` periodic task scheduler. Please note that
@@ -35,6 +39,7 @@
 """
 import os
 import sys
+import socket
 import logging
 import optparse
 import traceback
@@ -79,6 +84,9 @@ OPTION_LIST = (
     optparse.make_option('-l', '--loglevel', default=conf.CELERYD_LOG_LEVEL,
             action="store", dest="loglevel",
             help="Choose between DEBUG/INFO/WARNING/ERROR/CRITICAL/FATAL."),
+    optparse.make_option('-n', '--hostname', default=None,
+            action="store", dest="hostname",
+            help="Set custom host name. E.g. 'foo.example.com'."),
     optparse.make_option('-B', '--beat', default=False,
             action="store_true", dest="run_clockservice",
             help="Also run the celerybeat periodic task scheduler. \
@@ -91,10 +99,13 @@ OPTION_LIST = (
 
 def run_worker(concurrency=conf.CELERYD_CONCURRENCY,
         loglevel=conf.CELERYD_LOG_LEVEL, logfile=conf.CELERYD_LOG_FILE,
+        hostname=None,
         discard=False, run_clockservice=False, events=False, **kwargs):
     """Starts the celery worker server."""
 
-    print("Celery %s is starting." % celery.__version__)
+    hostname = hostname or socket.gethostname()
+
+    print("celery@%s v%s is starting." % (hostname, celery.__version__))
 
     from celery.loaders import current_loader, load_settings
     loader = current_loader()
@@ -157,6 +168,7 @@ def run_worker(concurrency=conf.CELERYD_CONCURRENCY,
         worker = WorkController(concurrency=concurrency,
                                 loglevel=loglevel,
                                 logfile=logfile,
+                                hostname=hostname,
                                 embed_clockservice=run_clockservice,
                                 send_events=events)
 

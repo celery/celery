@@ -44,14 +44,14 @@ class CarrotListener(object):
     """
 
     def __init__(self, ready_queue, eta_schedule, logger,
-            send_events=False, initial_prefetch_count=2):
+            send_events=False, hostname=None, initial_prefetch_count=2):
         self.connection = None
         self.task_consumer = None
         self.ready_queue = ready_queue
         self.eta_schedule = eta_schedule
         self.send_events = send_events
         self.logger = logger
-        self.hostname = socket.gethostname()
+        self.hostname = hostname or socket.gethostname()
         self.control_dispatch = ControlDispatch(logger=logger,
                                                 hostname=self.hostname)
         self.prefetch_count = SharedCounter(initial_prefetch_count)

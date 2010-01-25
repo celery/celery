@@ -3,8 +3,9 @@
 The Multiprocessing Worker Server
 
 """
-import traceback
+import socket
 import logging
+import traceback
 from Queue import Queue
 
 from celery import conf
@@ -101,13 +102,15 @@ class WorkController(object):
     _state = None
 
     def __init__(self, concurrency=None, logfile=None, loglevel=None,
-            send_events=conf.SEND_EVENTS, embed_clockservice=False):
+            send_events=conf.SEND_EVENTS, hostname=None,
+            embed_clockservice=False):
 
         # Options
         self.loglevel = loglevel or self.loglevel
         self.concurrency = concurrency or self.concurrency
         self.logfile = logfile or self.logfile
         self.logger = setup_logger(loglevel, logfile)
+        self.hostname = hostname or socket.gethostname()
         self.embed_clockservice = embed_clockservice
         self.send_events = send_events
 
@@ -129,15 +132,18 @@ class WorkController(object):
                                  logger=self.logger)
         self.scheduler = ScheduleController(self.eta_schedule,
                                             logger=self.logger)
+
         # Need a tight loop interval when embedded so the program
         # can be stopped in a sensible short time.
         self.clockservice = self.embed_clockservice and ClockServiceThread(
                                 logger=self.logger,
                                 max_interval=1) or None
+
         prefetch_count = concurrency * conf.CELERYD_PREFETCH_MULTIPLIER
         self.listener = CarrotListener(self.ready_queue,
                                        self.eta_schedule,
                                        logger=self.logger,
+                                       hostname=self.hostname,
                                        send_events=send_events,
                                        initial_prefetch_count=prefetch_count)
 
