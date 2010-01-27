@@ -76,7 +76,7 @@ Features
     |                 | while the queue is temporarily overloaded).        |
     +-----------------+----------------------------------------------------+
     | Concurrency     | Tasks are executed in parallel using the           |
-    |                 | ``multiprocessing`` module.                     |
+    |                 | ``multiprocessing`` module.                        |
     +-----------------+----------------------------------------------------+
     | Scheduling      | Supports recurring tasks like cron, or specifying  |
     |                 | an exact date or countdown for when after the task |
