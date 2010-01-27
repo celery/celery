@@ -2,13 +2,14 @@
  celery - Distributed Task Queue
 =================================
 
+.. image:: http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png
+
 :Version: 1.0.0-pre1
 :Keywords: task queue, job queue, asynchronous, rabbitmq, amqp, redis,
   django, python, webhooks, queue, distributed
 
 --
 
-.. image:: http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png
 
 Celery is a task queue/job queue based on distributed message passing.
 It is focused on real-time operation, but has support for scheduling as well.
