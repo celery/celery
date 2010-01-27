@@ -3,9 +3,12 @@
 =================================
 
 :Version: 1.0.0-pre1
-:Keywords: task queue, job queue, asynchronous, rabbitmq, amqp, redis.
+:Keywords: task queue, job queue, asynchronous, rabbitmq, amqp, redis,
+  django, python, webhooks, queue, distributed
 
 --
+
+.. image:: http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png
 
 Celery is a task queue/job queue based on distributed message passing.
 It is focused on real-time operation, but has support for scheduling as well.
@@ -59,62 +62,90 @@ Simple!
 Features
 ========
 
-    * Uses messaging (AMQP: RabbitMQ, ZeroMQ, Qpid) to route tasks to the
-      worker servers. Experimental support for STOMP (ActiveMQ) is also 
-      available. For simple setups it's also possible to use Redis or an
-      SQL database as the message queue.
+    +-----------------+----------------------------------------------------+
+    | Messaging       | Supported brokers include `RabbitMQ`_, `Stomp`_,   |
+    |                 | `Redis`_, and the most common SQL databases.       |
+    +-----------------+----------------------------------------------------+
+    | Robust          | Using `RabbitMQ`, celery survives most error       |
+    |                 | scenarios, and your tasks will never be lost.      |
+    +-----------------+----------------------------------------------------+
+    | Distributed     | Runs on one or more machines. Supports             |
+    |                 | `clustering`_ when used in combination with        |
+    |                 | `RabbitMQ`_. You can set up new workers without    |
+    |                 | central configuration (e.g. use your dads laptop   |
+    |                 | while the queue is temporarily overloaded).        |
+    +-----------------+----------------------------------------------------+
+    | Concurrency     | Tasks are executed in parallel using the           |
+    |                 | ``multiprocessing`` module.                     |
+    +-----------------+----------------------------------------------------+
+    | Scheduling      | Supports recurring tasks like cron, or specifying  |
+    |                 | an exact date or countdown for when after the task |
+    |                 | should be executed.                                |
+    +-----------------+----------------------------------------------------+
+    | Performance     | Able to execute tasks while the user waits.        |
+    +-----------------+----------------------------------------------------+
+    | Return Values   | Task return values can be saved to the selected    |
+    |                 | result store backend. You can wait for the result, |
+    |                 | retrieve it later, or ignore it.                   |
+    +-----------------+----------------------------------------------------+
+    | Result Stores   | Database, `MongoDB`_, `Redis`_, `Tokyo Tyrant`,    |
+    |                 | `AMQP`_ (high performance).                        |
+    +-----------------+----------------------------------------------------+
+    | Webhooks        | Your tasks can also be HTTP callbacks, enabling    |
+    |                 | cross-language communication.                      |
+    +-----------------+----------------------------------------------------+
+    | Rate limiting   | Supports rate limiting by using the token bucket   |
+    |                 | algorithm, which accounts for bursts of traffic.   |
+    |                 | Rate limits can be set for each task type, or      |
+    |                 | globally for all.                                  |
+    +-----------------+----------------------------------------------------+
+    | Routing         | Using AMQP you can route tasks arbitrarily to      |
+    |                 | different workers.                                 |
+    +-----------------+----------------------------------------------------+
+    | Remote-control  | You can rate limit and delete (revoke) tasks       |
+    |                 | remotely.                                          |
+    +-----------------+----------------------------------------------------+
+    | Monitoring      | You can capture everything happening with the      |
+    |                 | workers in real-time by subscribing to events.     |
+    |                 | A real-time web monitor is in development.         |
+    +-----------------+----------------------------------------------------+
+    | Serialization   | Supports Pickle, JSON, YAML, or easily defined     |
+    |                 | custom schemes. One task invocation can have a     |
+    |                 | different scheme than another.                     |
+    +-----------------+----------------------------------------------------+
+    | Tracebacks      | Errors and tracebacks are stored and can be        |
+    |                 | investigated after the fact.                       |
+    +-----------------+----------------------------------------------------+
+    | UUID            | Every task has an UUID (Universally Unique         |
+    |                 | Identifier), which is the task id used to query    |
+    |                 | task status and return value.                      |
+    +-----------------+----------------------------------------------------+
+    | Retries         | Tasks can be retried if they fail, with            |
+    |                 | configurable maximum number of retries, and delays |
+    |                 | between each retry.                                |
+    +-----------------+----------------------------------------------------+
+    | Task Sets       | A Task set is a task consisting of several         |
+    |                 | sub-tasks. You can find out how many, or if all    |
+    |                 | of the sub-tasks has been executed, and even       |
+    |                 | retrieve the results in order. Progress bars,      |
+    |                 | anyone?                                            |
+    +-----------------+----------------------------------------------------+
+    | Made for Web    | You can query status and results via URLs,         |
+    |                 | enabling the ability to poll task status using     |
+    |                 | Ajax.                                              |
+    +-----------------+----------------------------------------------------+
+    | Error e-mails   | Can be configured to send e-mails to the           |
+    |                 | administrators when tasks fails.                   |
+    +-----------------+----------------------------------------------------+
+    | Supervised      | Pool workers are supervised and automatically      |
+    |                 | replaced if they crash.                            |
+    +-----------------+----------------------------------------------------+
 
-    * You can run as many worker servers as you want, and still
-      be *guaranteed that the task is only executed once.*
 
-    * Tasks are executed *concurrently* using the Python 2.6
-      ``multiprocessing`` module (also available as a back-port
-      to older python versions)
-
-    * Supports *periodic tasks*, which makes it a (better) replacement
-      for cronjobs.
-
-    * When a task has been executed, the return value can be stored using
-      either a MySQL/Oracle/PostgreSQL/SQLite database, Memcached,
-      `MongoDB`_, `Redis`_ or `Tokyo Tyrant`_ back-end. For high-performance
-      you can also use AMQP messages to publish results.
-
-    * Supports calling tasks over HTTP to support multiple programming
-      languages and systems.
-
-    * Supports several serialization schemes, like pickle, json, yaml and
-      supports registering custom encodings .
-
-    * If the task raises an exception, the exception instance is stored,
-      instead of the return value, and it's possible to inspect the traceback
-      after the fact.
-
-    * All tasks has a Universally Unique Identifier (UUID), which is the
-      task id, used for querying task status and return values.
-
-    * Tasks can be retried if they fail, with a configurable maximum number
-      of retries.
-
-    * Tasks can be configured to run at a specific time and date in the
-      future (ETA) or you can set a countdown in seconds for when the
-      task should be executed.
-
-    * Supports *task-sets*, which is a task consisting of several sub-tasks.
-      You can find out how many, or if all of the sub-tasks has been executed.
-      Excellent for progress-bar like functionality.
-
-    * However, you rarely want to wait for these results in a web-environment.
-      You'd rather want to use Ajax to poll the task status, which is
-      available from a URL like ``celery/<task_id>/status/``. This view
-      returns a JSON-serialized data structure containing the task status,
-      and the return value if completed, or exception on failure.
-
-    * Pool workers are supervised, so if for some reason a worker crashes
-        it is automatically replaced by a new worker.
-
-    * Can be configured to send e-mails to the administrators when a task
-      fails.
-
+.. _`RabbitMQ`: http://www.rabbitmq.com/
+.. _`clustering`: http://www.rabbitmq.com/clustering.html
+.. _`AMQP`: http://www.amqp.org/
+.. _`Stomp`: http://stomp.codehaus.org/
 .. _`MongoDB`: http://www.mongodb.org/
 .. _`Redis`: http://code.google.com/p/redis/
 .. _`Tokyo Tyrant`: http://tokyocabinet.sourceforge.net/
@@ -160,12 +191,6 @@ Using the development version
 You can clone the repository by doing the following::
 
     $ git clone git://github.com/ask/celery.git
-
-A look inside the components
-============================
-
-.. image:: http://cloud.github.com/downloads/ask/celery/Celery1.0-inside-worker.jpg
-
 
 
 Getting Help
