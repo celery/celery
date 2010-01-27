@@ -25,7 +25,6 @@ def include_file(lines, pos, match):
             dirname = old_dirname
 
 
-
 def replace_code_block(lines, pos, match):
     lines[pos] = ""
     curpos = pos - 1

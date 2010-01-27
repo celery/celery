@@ -6,7 +6,6 @@ from celery.messaging import establish_connection
 from celery.backends.base import BaseBackend
 
 
-
 class AMQPBackend(BaseBackend):
     """AMQP backend. Publish results by sending messages to the broker
     using the task id as routing key.
