@@ -38,6 +38,10 @@ celeryd at %%(hostname)s.
 """ % {"EMAIL_SIGNATURE_SEP": EMAIL_SIGNATURE_SEP}
 
 
+class InvalidTaskError(Exception):
+    """The task has invalid data or is not properly constructed."""
+
+
 class AlreadyExecutedError(Exception):
     """Tasks can only be executed once, as they might change
     world-wide state."""
@@ -213,6 +217,9 @@ class TaskWrapper(object):
         args = message_data["args"]
         kwargs = message_data["kwargs"]
         retries = message_data.get("retries", 0)
+
+        if not hasattr(kwargs, "items"):
+            raise InvalidTaskError("Task kwargs must be a dictionary.")
 
         # Convert any unicode keys in the keyword arguments to ascii.
         kwargs = dict((key.encode("utf-8"), value)
