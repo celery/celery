@@ -7,6 +7,7 @@ from urllib import urlencode
 from urlparse import urlparse
 
 from anyjson import serialize, deserialize
+from billiard.utils.functional import wraps
 
 from celery import __version__ as celery_version
 from celery.task.base import Task as BaseTask
@@ -79,6 +80,12 @@ class URL(object):
     def _set_query(self, query):
         self._query = query
 
+    def get_async(self, **kwargs):
+        return HttpDispatchTask.delay(str(self), "GET", **kwargs)
+
+    def post_async(self, **kwargs):
+        return HttpDispatchTask.delay(str(self), "POST", **kwargs)
+
     query = property(_get_query, _set_query)
 
 
@@ -86,14 +93,16 @@ class HttpDispatch(object):
     user_agent = "celery/%s" % celery_version
     timeout = 5
 
-    def __init__(self, url, task_kwargs, logger):
+    def __init__(self, url, method, task_kwargs, logger):
         self.url = url
+        self.method = method
         self.task_kwargs = task_kwargs
         self.logger = logger
 
     def _create_request(self):
         url = URL(self.url)
         url.query.update(self.task_kwargs)
+        print("URL: %s" % str(url))
         req = urllib2.Request(str(url))
         req.headers.update(self.http_headers)
         return req
@@ -132,9 +141,9 @@ class HttpDispatch(object):
 
 class HttpDispatchTask(BaseTask):
 
-    def run(self, url, **kwargs):
+    def run(self, url, method="GET", **kwargs):
         logger = self.get_logger(**kwargs)
-        return HttpDispatch(url, kwargs, logger).execute()
+        return HttpDispatch(url, method, kwargs, logger).execute()
 
 
 def http_task_response(fun, *args, **kwargs):
