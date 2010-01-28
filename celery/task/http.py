@@ -1,4 +1,5 @@
 import urllib2
+import warnings
 try:
     from urlparse import parse_qsl
 except ImportError:
@@ -25,7 +26,21 @@ class UnknownStatusError(InvalidResponseError):
     """The remote server gave an unknown status."""
 
 
-class URL(object):
+def maybe_utf8(value):
+    """Encode utf-8 value, only if the value is actually utf-8."""
+    if isinstance(value, unicode):
+        return value.encode("utf-8")
+    return value
+
+
+def utf8dict(self, tup):
+    """With a dict's items() tuple return a new dict with any utf-8
+    keys/values encoded."""
+    return dict((key.encode("utf-8"), maybe_utf8(value))
+                    for key, value in tup)
+
+
+class MutableURL(object):
     """Object wrapping a Uniform Resource Locator.
 
     Supports editing the query parameter list.
@@ -45,24 +60,14 @@ class URL(object):
         'http://www.google.com:6580/foo/bar?y=4&x=10&George=Constanza#foo'
 
     """
-
     def __init__(self, url):
         self.url = urlparse(url)
         self._query = dict(parse_qsl(self.url.query))
 
-    def _utf8dict(self, tuple_):
-
-        def value_encode(val):
-            if isinstance(val, unicode):
-                return val.encode("utf-8")
-            return val
-
-        return dict((key.encode("utf-8"), value_encode(value))
-                        for key, value in tuple_)
 
     def __str__(self):
         u = self.url
-        query = urlencode(self._utf8dict(self.query.items()))
+        query = urlencode(utf8dict(self.query.items()))
         components = ["%s://" % u.scheme,
                       "%s" % u.netloc,
                       u.path and "%s" % u.path or "/",
@@ -80,16 +85,20 @@ class URL(object):
     def _set_query(self, query):
         self._query = query
 
-    def get_async(self, **kwargs):
-        return HttpDispatchTask.delay(str(self), "GET", **kwargs)
-
-    def post_async(self, **kwargs):
-        return HttpDispatchTask.delay(str(self), "POST", **kwargs)
 
     query = property(_get_query, _set_query)
 
 
 class HttpDispatch(object):
+    """Make task HTTP request and collect the task result.
+
+    :param url: The URL to request.
+    :param method: HTTP method used. Currently supported methods are ``GET``
+        and``POST``.
+    :param task_kwargs: Task keyword arguments.
+    :param logger: Logger used for user/system feedback.
+
+    """
     user_agent = "celery/%s" % celery_version
     timeout = 5
 
@@ -99,22 +108,31 @@ class HttpDispatch(object):
         self.task_kwargs = task_kwargs
         self.logger = logger
 
-    def _create_request(self):
-        url = URL(self.url)
-        url.query.update(self.task_kwargs)
-        print("URL: %s" % str(url))
-        req = urllib2.Request(str(url))
-        req.headers.update(self.http_headers)
-        return req
-
-    def _make_request(self):
-        request = self._create_request()
-        opener = urllib2.build_opener()
-        response = opener.open(request)
+    def make_request(self, url, method, params):
+        """Makes an HTTP request and returns the response."""
+        request = urllib2.Request(url, params, headers=self.http_headers)
+        request.headers.update(self.http_headers)
+        response = urllib2.urlopen(request) # user catches errors.
         return response.read()
 
+    def _dispatch_raw(self):
+        """Dispatches the callback and returns the raw response text."""
+        url = MutableURL(self.url)
+        params = None
+        if self.method == "GET":
+            url.query.update(self.task_kwargs)
+        elif self.method == "POST":
+            params = urlencode(utf8dict(self.task_kwargs.items()))
+        return self.make_request(str(url), self.method, params)
+
     def execute(self):
-        response = self._make_request()
+        warnings.warn(DeprecationWarning(
+            "execute() has been deprecated and is scheduled for removal in \
+            celery v1.2, please use dispatch() instead."))
+
+    def dispatch(self):
+        """Dispatch callback and return result."""
+        response = self._dispatch()
         if not response:
             raise InvalidResponseError("Empty response")
         try:
@@ -122,8 +140,6 @@ class HttpDispatch(object):
         except ValueError, exc:
             raise InvalidResponseError(str(exc))
 
-        # {"status": "success", "retval": 300}
-        # {"status": "failure": "reason": "Invalid moon alignment."}
         status = payload["status"]
         if status == "success":
             return payload["retval"]
@@ -140,25 +156,57 @@ class HttpDispatch(object):
 
 
 class HttpDispatchTask(BaseTask):
+    """Task dispatching to an URL.
 
-    def run(self, url, method="GET", **kwargs):
+    :keyword url: The URL location of the HTTP callback task.
+    :keyword method: Method to use when dispatching the callback. Usually
+        ``GET`` or ``POST``.
+    :keyword \*\*kwargs: Keyword arguments to pass on to the HTTP callback.
+
+    .. attribute:: url
+
+        If this is set, this is used as the default URL for requests.
+        Default is to require the user of the task to supply the url as an
+        argument, as this attribute is intended for subclasses.
+
+    .. attribute:: method
+
+        If this is set, this is the default method used for requests.
+        Default is to require the user of the task to supply the method as an
+        argument, as this attribute is intended for subclasses.
+
+    """
+
+    url = None
+    method = None
+
+    def run(self, url=None, method="GET", **kwargs):
+        url = url or self.url
+        method = method or self.method
         logger = self.get_logger(**kwargs)
         return HttpDispatch(url, method, kwargs, logger).execute()
 
 
-def http_task_response(fun, *args, **kwargs):
-    try:
-        retval = fun(*args, **kwargs)
-    except Exception, exc:
-        response = {"status": "failure", "reason": str(exc)}
-    else:
-        response = {"status": "success", "retval": retval}
+class URL(MutableURL):
+    """HTTP Callback URL
 
-    return serialize(response)
+    Supports requesting an URL asynchronously.
+
+    :param url: URL to request.
+    :keyword dispatcher: Class used to dispatch the request.
+        By default this is :class:`HttpDispatchTask`.
+
+    """
+    dispatcher = HttpDispatchTask
+
+    def __init__(self, url, dispatcher=None):
+        super(URL, self).__init__(url)
+        self.dispatcher = dispatcher or self.dispatcher
+
+    def get_async(self, **kwargs):
+        return self.dispatcher.delay(str(self), "GET", **kwargs)
+
+    def post_async(self, **kwargs):
+        return self.dispatcher.delay(str(self), "POST", **kwargs)
 
 
-class Task(BaseTask):
-    abstract = True
-
-    def __call__(self, *args, **kwargs):
-        return http_task_response(self.run, *args, **kwargs)

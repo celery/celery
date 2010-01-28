@@ -2,6 +2,7 @@
 from django.http import HttpResponse, Http404
 
 from anyjson import serialize as JSON_dump
+from billiard.utils.functional import wraps
 
 from celery.utils import get_full_cls_name
 from celery.result import AsyncResult
@@ -54,3 +55,40 @@ def task_status(request, task_id):
 
     return HttpResponse(JSON_dump({"task": response_data}),
             mimetype="application/json")
+
+
+
+def task_webhook(fun):
+    """Decorator turning a function into a task webhook.
+
+    If an exception is raised within the function, the decorated
+    function catches this and returns an error JSON response, otherwise
+    it returns the result as a JSON response.
+
+
+    Example:
+
+        @task_webhook
+        def add(request):
+            x = int(request.GET["x"])
+            y = int(request.GET["y"])
+            return x + y
+
+        >>> response = add(request)
+        >>> response.content
+        '{"status": "success", "retval": 100}'
+
+    """
+
+    @wraps(fun)
+    def _inner(*args, **kwargs):
+        try:
+            retval = fun(*args, **kwargs)
+        except Exception, exc:
+            response = {"status": "failure", "reason": str(exc)}
+        else:
+            response = {"status": "success", "retval": retval}
+
+        return HttpResponse(JSON_dump(response), mimetype="application/json")
+
+    return _inner

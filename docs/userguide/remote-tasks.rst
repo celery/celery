@@ -68,19 +68,19 @@ To execute the task you use the :class:`URL` class:
     >>> from celery.task.http import URL
     >>> res = URL("http://example.com/multiply").get_async(x=10, y=10)
 
+
+:class:`URL` is a shortcut to the :class:`HttpDispatchTask`. You can subclass this to extend the
+functionality.
+
     >>> from celery.task.http import HttpDispatchTask
     >>> res = HttpDispatchTask.delay(url="http://example.com/multiply", method="GET", x=10, y=10)
     >>> res.get()
     100
 
-which uses the :class:`HttpDispatchTask` in the background; This class you can use
-to subclass and extend the functionality.
-
-
 The output of celeryd (or the logfile if you've enabled it) should show the task being processed::
 
     [INFO/MainProcess] Task celery.task.http.HttpDispatchTask
-        [f2cc8efc-2a14-40cd-85ad-f1c77c94beeb] processed: 100
+            [f2cc8efc-2a14-40cd-85ad-f1c77c94beeb] processed: 100
 
 Since applying tasks can be done via HTTP using the
 ``celery.views.apply`` view, executing tasks from other languages is easy.
