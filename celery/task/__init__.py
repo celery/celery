@@ -10,9 +10,10 @@ from celery.registry import tasks
 from celery.task.base import Task, TaskSet, PeriodicTask, ExecuteRemoteTask
 from celery.task.control import discard_all
 from celery.task.builtins import PingTask
+from celery.task.http import HttpDispatchTask
 
 __all__ = ["Task", "TaskSet", "PeriodicTask", "tasks", "discard_all",
-           "dmap", "dmap_async", "execute_remote", "ping"]
+           "dmap", "dmap_async", "execute_remote", "ping", "HttpDispatchTask"]
 
 
 def dmap(fun, args, timeout=None):

@@ -7,7 +7,7 @@ from dateutil.parser import parse as parse_iso8601
 from celery import conf
 from celery import signals
 from celery.utils import retry_over_time
-from celery.worker.job import TaskWrapper
+from celery.worker.job import TaskWrapper, InvalidTaskError
 from celery.worker.revoke import revoked
 from celery.worker.control import ControlDispatch
 from celery.worker.heartbeat import Heart
@@ -134,7 +134,12 @@ class CarrotListener(object):
                                                 logger=self.logger,
                                                 eventer=self.event_dispatcher)
             except NotRegistered, exc:
-                self.logger.error("Unknown task ignored: %s" % (exc))
+                self.logger.error("Unknown task ignored: %s: %s" % (
+                        str(exc), message_data))
+                message.ack()
+            except InvalidTaskError, exc:
+                self.logger.error("Invalid task ignored: %s: %s" % (
+                        str(exc), message_data))
                 message.ack()
             else:
                 self.on_task(task, eta=message_data.get("eta"))

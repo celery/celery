@@ -1,31 +1,37 @@
 ==============
- Remote Tasks 
+ Remote Tasks
 ==============
 
-.. module:: celery.task.rest
+.. module:: celery.task.http
 
 Executing tasks on a remote web server
 --------------------------------------
 
 If you need to call into another language, framework or similar, you can
-do so by using HTTP tasks.
+do so by using HTTP callback tasks.
 
-The HTTP tasks (or REST task) uses a simple REST+JSON scheme to take arguments
-and return results, the scheme to call a task is::
+The HTTP callback tasks uses GET/POST arguments and uses a simple JSON response
+to return results. The scheme to call a task is::
 
     GET http://example.com/mytask/?arg1=a,arg2=b,arg3=c
+
+or using POST::
+
+    POST http://example.com/mytask
+
+Whether to use GET or POST is up to you and your requirements.
 
 The web page should then return a response in the following format
 if the execution was successful::
 
     {"status": "success", "retval": ....}
 
-or in the following format if there was an error::
+or if there was an error::
 
     {"status": "failure": "reason": "Invalid moon alignment."}
 
 
-With this information we can define a simple task in Django:
+With this information you could define a simple task in Django:
 
 .. code-block:: python
 
@@ -40,21 +46,43 @@ With this information we can define a simple task in Django:
         response = {"status": "success", "retval": result}
         return HttpResponse(serialize(response), mimetype="application/json")
 
-I'm sure you'll be able to port this scheme to any language/framework.
-New examples and libraries are very welcome!
 
-To execute the task you use :class:`RESTProxyTask`:
+or in Ruby on Rails:
 
-    >>> from celery.task import RESTProxyTask
-    >>> res = RESTProxyTask.delay("http://example.com/multiply", x=10, y=10)
+.. code-block:: ruby
+
+    def multiply
+        @x = params[:x].to_i
+        @y = params[:y].to_i
+
+        @status = {:status => "success", :retval => @x * @y}
+
+        render :json => @status
+    end
+
+You can easily port this scheme to any language/framework;
+New examples and libraries are very welcome.
+
+To execute the task you use the :class:`URL` class:
+
+    >>> from celery.task.http import URL
+    >>> res = URL("http://example.com/multiply").get_async(x=10, y=10)
+
+
+:class:`URL` is a shortcut to the :class:`HttpDispatchTask`. You can subclass this to extend the
+functionality.
+
+    >>> from celery.task.http import HttpDispatchTask
+    >>> res = HttpDispatchTask.delay(url="http://example.com/multiply", method="GET", x=10, y=10)
     >>> res.get()
     100
 
-In your ``celeryd.log`` file you should see the task being processed::
+The output of celeryd (or the logfile if you've enabled it) should show the task being processed::
 
-    [INFO/MainProcess] Task celery.task.rest.RESTProxyTask
-        [f2cc8efc-2a14-40cd-85ad-f1c77c94beeb] processed: 100
+    [INFO/MainProcess] Task celery.task.http.HttpDispatchTask
+            [f2cc8efc-2a14-40cd-85ad-f1c77c94beeb] processed: 100
 
-Since applying tasks can also simply be done via the web and the
-``celery.views.apply`` view, executing tasks from other languages should be a
-no-brainer.
+Since applying tasks can be done via HTTP using the
+``celery.views.apply`` view, executing tasks from other languages is easy.
+For an example service exposing tasks via HTTP you should have a look at
+``examples/celery_http_gateway``.
