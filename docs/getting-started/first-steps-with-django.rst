@@ -49,10 +49,9 @@ see what's going on without consulting the logfile::
 
 However, in production you probably want to run the worker in the
 background as a daemon. To do this you need to use to tools provided by your
-platform, or something like `supervisord`_. FIXME: See solutions for deamonizing.
+platform. See :doc:`daemon mode reference<../cookbook>`.
 
-For a complete listing of the command line arguments available, with a short
-description, you can use the help command::
+For a complete listing of the command line options available, use the help command::
 
     $ python manage.py help celeryd
 

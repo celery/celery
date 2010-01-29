@@ -82,9 +82,7 @@ There are more options available, like how many processes you want to
 process work in parallel (the ``CELERY_CONCURRENCY`` setting), and we
 could use a persistent result store backend, but for now, this should
 do. For all of the options available, see the 
-:doc:`configuration directive
-
-reference<../configuration>`.
+:doc:`configuration directive reference<../configuration>`.
 
 Running the celery worker server
 ================================
@@ -103,15 +101,8 @@ help command::
 
     $  celeryd --help
 
-
-FIXME: Move this to a FAQ section or something and link it from the
-supervisord line above:
-
-For example start-up scripts see ``contrib/debian/init.d`` for using
-``start-stop-daemon`` on Debian/Ubuntu, or ``contrib/mac/org.celeryq.*`` for using
-``launchd`` on Mac OS X.
-
-.. _`supervisord`: http://supervisord.org/
+For info on how to run celery as standalone daemon, see 
+:doc:`daemon mode reference<../cookbook>`
 
 
 
