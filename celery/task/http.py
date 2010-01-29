@@ -7,8 +7,7 @@ except ImportError:
 from urllib import urlencode
 from urlparse import urlparse
 
-from anyjson import serialize, deserialize
-from billiard.utils.functional import wraps
+from anyjson import deserialize
 
 from celery import __version__ as celery_version
 from celery.task.base import Task as BaseTask
@@ -63,7 +62,6 @@ class MutableURL(object):
     def __init__(self, url):
         self.url = urlparse(url)
         self._query = dict(parse_qsl(self.url.query))
-
 
     def __str__(self):
         u = self.url
@@ -208,5 +206,3 @@ class URL(MutableURL):
 
     def post_async(self, **kwargs):
         return self.dispatcher.delay(str(self), "POST", **kwargs)
-
-

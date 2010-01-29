@@ -27,7 +27,8 @@ def task_view(task):
 
         result = task.apply_async(kwargs=kwargs)
         response_data = {"ok": "true", "task_id": result.task_id}
-        return HttpResponse(JSON_dump(response_data), mimetype="application/json")
+        return HttpResponse(JSON_dump(response_data),
+                            mimetype="application/json")
 
     return _applier
 

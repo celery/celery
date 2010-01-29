@@ -127,9 +127,6 @@ class BaseBackend(object):
                 "get_taskset is not supported by this backend.")
 
 
-
-
-
 class KeyValueStoreBackend(BaseBackend):
 
     capabilities = ["ResultStore"]

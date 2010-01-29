@@ -5,7 +5,7 @@ Sending and Receiving Messages
 """
 import socket
 
-from carrot.connection import DjangoBrokerConnection, AMQPConnectionException
+from carrot.connection import DjangoBrokerConnection
 from carrot.messaging import Publisher, Consumer, ConsumerSet
 from billiard.utils.functional import wraps
 

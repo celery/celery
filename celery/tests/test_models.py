@@ -53,7 +53,8 @@ class TestModels(unittest.TestCase):
         self.assertTrue(m1.taskset_id)
         self.assertTrue(isinstance(m1.date_done, datetime))
 
-        self.assertEquals(TaskSetMeta.objects.get_taskset(m1.taskset_id).taskset_id,
+        self.assertEquals(
+                TaskSetMeta.objects.get_taskset(m1.taskset_id).taskset_id,
                 m1.taskset_id)
 
         # Have to avoid save() because it applies the auto_now=True.

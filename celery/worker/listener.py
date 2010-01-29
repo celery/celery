@@ -3,6 +3,7 @@ import warnings
 from datetime import datetime
 
 from dateutil.parser import parse as parse_iso8601
+from carrot.connection import AMQPConnectionException
 
 from celery import conf
 from celery import signals
@@ -12,7 +13,7 @@ from celery.worker.revoke import revoked
 from celery.worker.control import ControlDispatch
 from celery.worker.heartbeat import Heart
 from celery.events import EventDispatcher
-from celery.messaging import establish_connection, AMQPConnectionException
+from celery.messaging import establish_connection
 from celery.messaging import get_consumer_set, BroadcastConsumer
 from celery.exceptions import NotRegistered
 from celery.datastructures import SharedCounter
