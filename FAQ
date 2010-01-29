@@ -539,3 +539,15 @@ Can I change the interval of a periodic task at runtime?
         @property
         def run_every(self):
             return get_interval_from_database(...)
+
+
+Does celery support task priorities?
+------------------------------------
+
+**Answer**: No, or theoretically as AMQP supports priorities but
+RabbitMQ doesn't implement them yet.
+
+However the usual way to prioritize work in celery, is to route high priority tasks
+to different servers. In the real world this may actually work better than per. message
+priorities. You can use this in combination with rate limting to achieve a
+highly performant system.
