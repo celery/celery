@@ -9,29 +9,28 @@ function:
 
 .. code-block:: python
 
-    MyTask.delay(arg1, arg2, kwarg1="x", kwarg2="y")
+    Task.delay(arg1, arg2, kwarg1="x", kwarg2="y")
 
 The same thing using ``apply_async`` is written like this:
 
 .. code-block:: python
 
-    AddTask.apply_async(args=[arg1, arg2], kwargs={"kwarg1": "x", "kwarg2": "y"})
+    Task.apply_async(args=[arg1, arg2], kwargs={"kwarg1": "x", "kwarg2": "y"})
 
 But ``delay`` doesn't give you as much control as using ``apply_async``.
 With ``apply_async`` you can override the execution options available as attributes on
 the ``Task`` class: ``routing_key``, ``exchange``, ``immediate``, ``mandatory``,
-``priority``, and ``serializer``.  In addition you can set a countdown or an eta, provide
-a custom broker connection or change the broker connection timeout.
+``priority``, and ``serializer``.  In addition you can set a countdown/eta, or provide
+a custom broker connection.
 
 Let's go over these in more detail. The following examples uses this simple
 task, used to add two numbers:
 
 .. code-block:: python
 
-    class AddTask(Task):
-
-        def run(self, x, y):
-            return x + y
+    @task
+    def add(x, y):
+        return x + y
 
 
 ETA and countdown
@@ -43,7 +42,7 @@ by seconds into the future.
 
 .. code-block:: python
 
-    >>> result = AddTask.apply_async(args=[10, 10], countdown=3)
+    >>> result = add.apply_async(args=[10, 10], countdown=3)
     >>> result.get()    # this takes at least 3 seconds to return
     20
 
@@ -69,15 +68,14 @@ using time in seconds is not very readable.
 Serializer
 ----------
 
-The default serializer used is :mod:`pickle`, but you can change this default by
-changing the ``CELERY_SERIALIZER`` configuration directive. There is built-in
-support for using ``pickle``, ``JSON`` and ``YAML``, and you can add your own
-custom serializers by registering them in the carrot serializer registry.
+The default serializer used is :mod:`pickle`, but you can change this for each
+task. There is built-in support for using ``pickle``, ``JSON`` and ``YAML``,
+and you can add your own custom serializers by registering them into the
+carrot serializer registry.
 
-You don't have to do any work on the worker receiving the task, the
-serialization method is sent with the message so the worker knows how to
-deserialize any task (of course, if you use a custom serializer, this must also be
-registered in the worker.)
+The serialization method is sent with the message, so the worker knows how to
+deserialize any task. Of course, if you use a custom serializer, this must
+also be registered in the worker.
 
 When sending a task the serialization method is taken from the following
 places in order: The ``serializer`` argument to ``apply_async``, the
@@ -86,14 +84,14 @@ configuration directive.
 
 .. code-block:: python
 
-    >>> AddTask.apply_async(args=[10, 10], serializer="JSON")
+    >>> add.apply_async(args=[10, 10], serializer="json")
 
 Connections and connection timeouts.
 ------------------------------------
 
-Currently there is no support for broker connection pooling in celery, but
-this might change in the future. This is something you need to be aware of
-when sending more than one task at a time, as ``apply_async`` establishes and
+Currently there is no support for broker connection pools in celery,
+so this is something you need to be aware of when sending more than
+one task at a time, as ``apply_async``/``delay`` establishes and
 closes a connection every time.
 
 If you need to send more than one task at the same time, it's a good idea to
@@ -109,7 +107,7 @@ establish the connection yourself and pass it to ``apply_async``:
     connection = establish_connection()
     try:
         for args in numbers:
-            res = AddTask.apply_async(args=args, connection=connection)
+            res = add.apply_async(args=args, connection=connection)
             results.append(res)
     finally:
         connection.close()
@@ -129,22 +127,18 @@ In Python 2.5 and above, you can use the ``with`` statement:
     results = []
     with establish_connection() as connection:
         for args in numbers:
-            res = AddTask.apply_async(args=args, connection=connection)
+            res = add.apply_async(args=args, connection=connection)
             results.append(res)
 
     print([res.get() for res in results])
 
-
-*NOTE* Task Sets already re-uses the same connection, but not if you need to
-execute more than one TaskSet.
-
-The connection timeout is the number of seconds to wait before we give up on
+The connection timeout is the number of seconds to wait before we give up
 establishing the connection, you can set this with the ``connect_timeout``
 argument to ``apply_async``:
 
 .. code-block:: python
 
-    AddTask.apply_async([10, 10], connect_timeout=3)
+    add.apply_async([10, 10], connect_timeout=3)
 
 or if you handle the connection manually:
 

@@ -13,7 +13,7 @@ do so by using HTTP callback tasks.
 The HTTP callback tasks uses GET/POST arguments and uses a simple JSON response
 to return results. The scheme to call a task is::
 
-    GET http://example.com/mytask/?arg1=a,arg2=b,arg3=c
+    GET http://example.com/mytask/?arg1=a&arg2=b&arg3=c
 
 or using POST::
 
