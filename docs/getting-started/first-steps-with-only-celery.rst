@@ -27,11 +27,9 @@ All celery tasks are classes that inherit from the ``Task``
 class. In this case we're using a decorator that wraps the add
 function in an appropriate class for us automatically. The full
 documentation on how to create tasks and task classes are in
-FIXMELINKHERE.
+:doc:`Executing Tasks<../userguide/tasks>`.
 
-Celery workers maintain a registry of all the available tasks. For it
-to be able to do this you need to give it a list of which modules it
-should import. FIXME: move this below?
+
 
 Configuration
 =============
@@ -71,8 +69,10 @@ be handled elsewhere?
 
         CELERY_BACKEND = "amqp"
 
-4. Finally, we list the modules to import. We only have a single task
-   module, ``tasks.py``, which we added earlier::
+4. Finally, we list the modules to import, that is, all the modules
+   that contain tasks. This is so celery knows about what tasks it can
+   be asked to perform. We only have a single task module,
+   ``tasks.py``, which we added earlier::
 
         CELERY_IMPORTS = ("tasks", )
 
