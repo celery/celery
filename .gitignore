@@ -10,4 +10,4 @@ build/
 pip-log.txt
 .directory
 erl_crash.dump
-celery.db
+*.db
