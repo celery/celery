@@ -8,9 +8,10 @@ try:
 except ImportError:
     pymongo = None
 
+from celery import conf
+from celery import states
 from celery.backends.base import BaseBackend
 from celery.loaders import load_settings
-from celery.conf import TASK_RESULT_EXPIRES
 
 
 class Bunch:
@@ -113,10 +114,6 @@ class MongoBackend(BaseBackend):
 
         taskmeta_collection.save(meta, safe=True)
 
-    def is_successful(self, task_id):
-        """Returns ``True`` if the task executed successfully."""
-        return self.get_status(task_id) == "SUCCESS"
-
     def get_status(self, task_id):
         """Get status of a task."""
         return self._get_task_meta_for(task_id)["status"]
@@ -129,7 +126,7 @@ class MongoBackend(BaseBackend):
     def get_result(self, task_id):
         """Get the result for a task."""
         meta = self._get_task_meta_for(task_id)
-        if meta["status"] == "FAILURE":
+        if meta["status"] in states.EXCEPTION_STATES:
             return self.exception_to_python(meta["result"])
         else:
             return meta["result"]
@@ -143,7 +140,7 @@ class MongoBackend(BaseBackend):
         taskmeta_collection = db[self.mongodb_taskmeta_collection]
         obj = taskmeta_collection.find_one({"_id": task_id})
         if not obj:
-            return {"status": "PENDING", "result": None}
+            return {"status": states.PENDING, "result": None}
 
         meta = {
             "task_id": obj["_id"],
@@ -152,7 +149,7 @@ class MongoBackend(BaseBackend):
             "date_done": obj["date_done"],
             "traceback": pickle.loads(str(obj["traceback"])),
         }
-        if meta["status"] == "SUCCESS":
+        if meta["status"] == states.SUCCESS:
             self._cache[task_id] = meta
 
         return meta
@@ -163,6 +160,6 @@ class MongoBackend(BaseBackend):
         taskmeta_collection = db[self.mongodb_taskmeta_collection]
         taskmeta_collection.remove({
                 "date_done": {
-                    "$lt": datetime.now() - TASK_RESULT_EXPIRES,
+                    "$lt": datetime.now() - conf.TASK_RESULT_EXPIRES,
                  }
         })

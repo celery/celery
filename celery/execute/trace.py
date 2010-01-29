@@ -1,6 +1,7 @@
 import sys
 import traceback
 
+from celery import states
 from celery import signals
 from celery.registry import tasks
 from celery.exceptions import RetryTaskError
@@ -8,7 +9,7 @@ from celery.datastructures import ExceptionInfo
 
 
 class TraceInfo(object):
-    def __init__(self, status="PENDING", retval=None, exc_info=None):
+    def __init__(self, status=states.PENDING, retval=None, exc_info=None):
         self.status = status
         self.retval = retval
         self.exc_info = exc_info
@@ -25,13 +26,13 @@ class TraceInfo(object):
         """Trace the execution of a function, calling the appropiate callback
         if the function raises retry, an failure or returned successfully."""
         try:
-            return cls("SUCCESS", retval=fun(*args, **kwargs))
+            return cls(states.SUCCESS, retval=fun(*args, **kwargs))
         except (SystemExit, KeyboardInterrupt):
             raise
         except RetryTaskError, exc:
-            return cls("RETRY", retval=exc, exc_info=sys.exc_info())
+            return cls(states.RETRY, retval=exc, exc_info=sys.exc_info())
         except Exception, exc:
-            return cls("FAILURE", retval=exc, exc_info=sys.exc_info())
+            return cls(states.FAILURE, retval=exc, exc_info=sys.exc_info())
 
 
 class TaskTrace(object):
@@ -42,11 +43,11 @@ class TaskTrace(object):
         self.args = args
         self.kwargs = kwargs
         self.task = task or tasks[self.task_name]
-        self.status = "PENDING"
+        self.status = states.PENDING
         self.strtb = None
-        self._trace_handlers = {"FAILURE": self.handle_failure,
-                                "RETRY": self.handle_retry,
-                                "SUCCESS": self.handle_success}
+        self._trace_handlers = {states.FAILURE: self.handle_failure,
+                                states.RETRY: self.handle_retry,
+                                states.SUCCESS: self.handle_success}
 
     def __call__(self):
         return self.execute()

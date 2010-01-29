@@ -1,3 +1,4 @@
+from celery import states
 from celery.models import TaskMeta, TaskSetMeta
 from celery.backends.base import BaseBackend
 
@@ -23,10 +24,6 @@ class DatabaseBackend(BaseBackend):
         TaskSetMeta.objects.store_result(taskset_id, result)
         return result
 
-    def is_successful(self, task_id):
-        """Returns ``True`` if task with ``task_id`` has been executed."""
-        return self.get_status(task_id) == "SUCCESS"
-
     def get_status(self, task_id):
         """Get the status of a task."""
         return self._get_task_meta_for(task_id).status
@@ -38,7 +35,7 @@ class DatabaseBackend(BaseBackend):
     def get_result(self, task_id):
         """Get the result for a task."""
         meta = self._get_task_meta_for(task_id)
-        if meta.status == "FAILURE":
+        if meta.status in states.EXCEPTION_STATES:
             return self.exception_to_python(meta.result)
         else:
             return meta.result
@@ -48,7 +45,7 @@ class DatabaseBackend(BaseBackend):
         if task_id in self._cache:
             return self._cache[task_id]
         meta = TaskMeta.objects.get_task(task_id)
-        if meta.status == "SUCCESS":
+        if meta.status == states.SUCCESS:
             self._cache[task_id] = meta
         return meta
 

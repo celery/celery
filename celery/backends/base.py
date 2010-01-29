@@ -6,25 +6,22 @@ from billiard.serialization import get_pickled_exception
 from billiard.serialization import get_pickleable_exception
 
 from celery.exceptions import TimeoutError
-
-READY_STATES = frozenset(["SUCCESS", "FAILURE"])
-UNREADY_STATES = frozenset(["PENDING", "RETRY"])
-EXCEPTION_STATES = frozenset(["RETRY", "FAILURE"])
+from celery import states
 
 
 class BaseBackend(object):
     """The base backend class. All backends should inherit from this."""
 
-    READY_STATES = READY_STATES
-    UNREADY_STATES = UNREADY_STATES
-    EXCEPTION_STATES = EXCEPTION_STATES
+    READY_STATES = states.READY_STATES
+    UNREADY_STATES = states.UNREADY_STATES
+    EXCEPTION_STATES = states.EXCEPTION_STATES
 
     TimeoutError = TimeoutError
 
     capabilities = []
 
     def encode_result(self, result, status):
-        if status == "SUCCESS":
+        if status == states.SUCCESS:
             return self.prepare_value(result)
         elif status in self.EXCEPTION_STATES:
             return self.prepare_exception(result)
@@ -36,17 +33,17 @@ class BaseBackend(object):
 
     def mark_as_done(self, task_id, result):
         """Mark task as successfully executed."""
-        return self.store_result(task_id, result, status="SUCCESS")
+        return self.store_result(task_id, result, status=states.SUCCESS)
 
     def mark_as_failure(self, task_id, exc, traceback=None):
         """Mark task as executed with failure. Stores the execption."""
-        return self.store_result(task_id, exc, status="FAILURE",
+        return self.store_result(task_id, exc, status=states.FAILURE,
                                  traceback=traceback)
 
     def mark_as_retry(self, task_id, exc, traceback=None):
         """Mark task as being retries. Stores the current
         exception (if any)."""
-        return self.store_result(task_id, exc, status="RETRY",
+        return self.store_result(task_id, exc, status=states.RETRY,
                                  traceback=traceback)
 
     def prepare_exception(self, exc):
@@ -78,7 +75,7 @@ class BaseBackend(object):
 
     def is_successful(self, task_id):
         """Returns ``True`` if the task was successfully executed."""
-        return self.get_status(task_id) == "SUCCESS"
+        return self.get_status(task_id) == states.SUCCESS
 
     def cleanup(self):
         """Backend cleanup. Is run by
@@ -102,9 +99,9 @@ class BaseBackend(object):
 
         while True:
             status = self.get_status(task_id)
-            if status == "SUCCESS":
+            if status == states.SUCCESS:
                 return self.get_result(task_id)
-            elif status == "FAILURE":
+            elif status == states.FAILURE:
                 raise self.get_result(task_id)
             # avoid hammering the CPU checking status.
             time.sleep(sleep_inbetween)
@@ -169,18 +166,14 @@ class KeyValueStoreBackend(BaseBackend):
         meta = self._get_task_meta_for(task_id)
         return meta["traceback"]
 
-    def is_successful(self, task_id):
-        """Returns ``True`` if the task executed successfully."""
-        return self.get_status(task_id) == "SUCCESS"
-
     def _get_task_meta_for(self, task_id):
         """Get task metadata for a task by id."""
         if task_id in self._cache:
             return self._cache[task_id]
         meta = self.get(self.get_cache_key_for_task(task_id))
         if not meta:
-            return {"status": "PENDING", "result": None}
+            return {"status": states.PENDING, "result": None}
         meta = pickle.loads(str(meta))
-        if meta.get("status") == "SUCCESS":
+        if meta.get("status") == states.SUCCESS:
             self._cache[task_id] = meta
         return meta

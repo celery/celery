@@ -6,6 +6,7 @@ Asynchronous result types.
 import time
 from itertools import imap
 
+from celery import states
 from celery.utils import any, all
 from celery.backends import default_backend
 from celery.messaging import with_connection
@@ -256,10 +257,10 @@ class TaskSetResult(object):
                             for subtask in self.subtasks)
         while results:
             for task_id, pending_result in results.items():
-                if pending_result.status == "SUCCESS":
+                if pending_result.status == states.SUCCESS:
                     results.pop(task_id, None)
                     yield pending_result.result
-                elif pending_result.status == "FAILURE":
+                elif pending_result.status == states.FAILURE:
                     raise pending_result.result
 
     def join(self, timeout=None):
@@ -289,9 +290,9 @@ class TaskSetResult(object):
 
         while True:
             for position, pending_result in enumerate(self.subtasks):
-                if pending_result.status == "SUCCESS":
+                if pending_result.status == states.SUCCESS:
                     results[position] = pending_result.result
-                elif pending_result.status == "FAILURE":
+                elif pending_result.status == states.FAILURE:
                     raise pending_result.result
             if results.full():
                 # Make list copy, so the returned type is not a position
@@ -320,7 +321,7 @@ class EagerResult(BaseAsyncResult):
 
     def successful(self):
         """Returns ``True`` if the task executed without failure."""
-        return self.status == "SUCCESS"
+        return self.status == states.SUCCESS
 
     def ready(self):
         """Returns ``True`` if the task has been executed."""
@@ -328,9 +329,9 @@ class EagerResult(BaseAsyncResult):
 
     def wait(self, timeout=None):
         """Wait until the task has been executed and return its result."""
-        if self.status == "SUCCESS":
+        if self.status == states.SUCCESS:
             return self.result
-        elif self.status == "FAILURE":
+        elif self.status == states.FAILURE:
             raise self.result.exception
 
     def revoke(self):

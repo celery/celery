@@ -7,6 +7,8 @@ from django.db import models
 from django.db import transaction
 from django.db.models.query import QuerySet
 
+from celery import states
+
 
 def transaction_retry(max_retries=1):
     """Decorator for methods doing database operations.
@@ -95,10 +97,6 @@ class TaskManager(ResultManager):
         """
         task, created = self.get_or_create(task_id=task_id)
         return task
-
-    def is_successful(self, task_id):
-        """Returns ``True`` if the task was executed successfully."""
-        return self.get_task(task_id).status == "SUCCESS"
 
     @transaction_retry(max_retries=2)
     def store_result(self, task_id, result, status, traceback=None):

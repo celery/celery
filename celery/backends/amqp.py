@@ -2,6 +2,7 @@
 from carrot.messaging import Consumer, Publisher
 
 from celery import conf
+from celery import states
 from celery.messaging import establish_connection
 from celery.backends.base import BaseBackend
 
@@ -79,7 +80,7 @@ class AMQPBackend(BaseBackend):
 
     def is_successful(self, task_id):
         """Returns ``True`` if task with ``task_id`` has been executed."""
-        return self.get_status(task_id) == "SUCCESS"
+        return self.get_status(task_id) == states.SUCCESS
 
     def get_status(self, task_id):
         """Get the status of a task."""
@@ -118,7 +119,7 @@ class AMQPBackend(BaseBackend):
     def get_result(self, task_id):
         """Get the result for a task."""
         result = self._get_task_meta_for(task_id)
-        if result["status"] == "FAILURE":
+        if result["status"] in states.EXCEPTION_STATES:
             return self.exception_to_python(result["result"])
         else:
             return result["result"]
