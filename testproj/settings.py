@@ -20,19 +20,36 @@ TEST_RUNNER = "celery.tests.runners.run_tests"
 TEST_APPS = (
     "celery",
 )
+COVERAGE_EXCLUDE_MODULES = ("celery.__init__",
+                            "celery.conf",
+                            "celery.tests.*",
+                            "celery.management.*",
+                            "celery.contrib.*",
+                            "celery.bin.*",
+                            "celery.utils.patch",
+                            "celery.utils.compat",
+                            "celery.task.rest",
+                            "celery.platform", # FIXME
+                            "celery.backends.mongodb", # FIXME
+                            "celery.backends.tyrant", # FIXME
+                            )
+COVERAGE_HTML_REPORT = True
+COVERAGE_BRANCH_COVERAGE = True
 
-AMQP_SERVER = "localhost"
-AMQP_PORT = 5672
-AMQP_VHOST = "/"
-AMQP_USER = "guest"
-AMQP_PASSWORD = "guest"
+BROKER_HOST = "localhost"
+BROKER_PORT = 5672
+BROKER_VHOST = "/"
+BROKER_USER = "guest"
+BROKER_PASSWORD = "guest"
 
 TT_HOST = "localhost"
 TT_PORT = 1978
 
-CELERY_AMQP_EXCHANGE = "testcelery"
-CELERY_AMQP_ROUTING_KEY = "testcelery"
-CELERY_AMQP_CONSUMER_QUEUE = "testcelery"
+CELERY_DEFAULT_EXCHANGE = "testcelery"
+CELERY_DEFAULT_ROUTING_KEY = "testcelery"
+CELERY_DEFAULT_QUEUE = "testcelery"
+
+CELERY_QUEUES = {"testcelery": {"binding_key": "testcelery"}}
 
 MANAGERS = ADMINS
 
@@ -59,6 +76,6 @@ except ImportError:
     pass
 else:
     pass
-    #INSTALLED_APPS += ("test_extensions", )
+    INSTALLED_APPS += ("test_extensions", )
 
-SEND_CELERY_TASK_ERROR_EMAILS = False
+CELERY_SEND_TASK_ERROR_EMAILS = False

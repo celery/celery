@@ -1,23 +1,18 @@
-"""
-
-Django Models.
-
-"""
 import django
 from django.db import models
-from celery.registry import tasks
-from celery.managers import TaskManager, TaskSetManager, PeriodicTaskManager
-from celery.fields import PickledObjectField
-from celery import conf
 from django.utils.translation import ugettext_lazy as _
-from datetime import datetime
+
+from picklefield.fields import PickledObjectField
+
+from celery import conf
+from celery.managers import TaskManager, TaskSetManager
 
 TASK_STATUS_PENDING = "PENDING"
 TASK_STATUS_RETRY = "RETRY"
 TASK_STATUS_FAILURE = "FAILURE"
-TASK_STATUS_DONE = "DONE"
+TASK_STATUS_SUCCESS = "SUCCESS"
 TASK_STATUSES = (TASK_STATUS_PENDING, TASK_STATUS_RETRY,
-                 TASK_STATUS_FAILURE, TASK_STATUS_DONE)
+                 TASK_STATUS_FAILURE, TASK_STATUS_SUCCESS)
 TASK_STATUSES_CHOICES = zip(TASK_STATUSES, TASK_STATUSES)
 
 
@@ -38,7 +33,8 @@ class TaskMeta(models.Model):
         verbose_name_plural = _(u"task meta")
 
     def __unicode__(self):
-        return u"<Task: %s done:%s>" % (self.task_id, self.status)
+        return u"<Task: %s successful: %s>" % (self.task_id, self.status)
+
 
 class TaskSetMeta(models.Model):
     """TaskSet result"""
@@ -56,42 +52,9 @@ class TaskSetMeta(models.Model):
     def __unicode__(self):
         return u"<TaskSet: %s>" % (self.taskset_id)
 
-class PeriodicTaskMeta(models.Model):
-    """Information about a Periodic Task."""
-    name = models.CharField(_(u"name"), max_length=255, unique=True)
-    last_run_at = models.DateTimeField(_(u"last time run"),
-                                       blank=True,
-                                       default=datetime.fromtimestamp(0))
-    total_run_count = models.PositiveIntegerField(_(u"total run count"),
-                                                  default=0)
-
-    objects = PeriodicTaskManager()
-
-    class Meta:
-        """Model meta-data."""
-        verbose_name = _(u"periodic task")
-        verbose_name_plural = _(u"periodic tasks")
-
-    def __unicode__(self):
-        return u"<PeriodicTask: %s [last-run:%s, total-run:%d]>" % (
-                self.name, self.last_run_at, self.total_run_count)
-
-    def delay(self, *args, **kwargs):
-        """Apply the periodic task immediately."""
-        self.task.delay()
-        self.total_run_count = self.total_run_count + 1
-        self.save()
-
-    @property
-    def task(self):
-        """The entry registered in the task registry for this task."""
-        return tasks[self.name]
-
-
 if (django.VERSION[0], django.VERSION[1]) >= (1, 1):
-    # keep models away from syncdb/reset if database backend is not being used.
+    # keep models away from syncdb/reset if database backend is not
+    # being used.
     if conf.CELERY_BACKEND != 'database':
         TaskMeta._meta.managed = False
         TaskSetMeta._meta.managed = False
-    if conf.CELERY_PERIODIC_STATUS_BACKEND != 'database':
-        PeriodicTaskMeta._meta.managed = False

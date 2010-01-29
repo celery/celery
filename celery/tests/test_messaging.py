@@ -1,5 +1,5 @@
 import unittest
-from celery.messaging import MSG_OPTIONS, get_msg_options, extract_msg_options
+from celery.messaging import MSG_OPTIONS, extract_msg_options
 
 
 class TestMsgOptions(unittest.TestCase):

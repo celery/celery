@@ -1,10 +1,11 @@
 import sys
 import unittest
-import errno
-import socket
-from celery.backends.cache import Backend as CacheBackend
+
+from billiard.serialization import pickle
+
 from celery.utils import gen_unique_id
-from django.conf import settings
+from celery.backends.cache import CacheBackend
+from celery.datastructures import ExceptionInfo
 
 
 class SomeClass(object):
@@ -20,13 +21,13 @@ class TestCacheBackend(unittest.TestCase):
 
         tid = gen_unique_id()
 
-        self.assertFalse(cb.is_done(tid))
+        self.assertFalse(cb.is_successful(tid))
         self.assertEquals(cb.get_status(tid), "PENDING")
         self.assertEquals(cb.get_result(tid), None)
 
         cb.mark_as_done(tid, 42)
-        self.assertTrue(cb.is_done(tid))
-        self.assertEquals(cb.get_status(tid), "DONE")
+        self.assertTrue(cb.is_successful(tid))
+        self.assertEquals(cb.get_status(tid), "SUCCESS")
         self.assertEquals(cb.get_result(tid), 42)
         self.assertTrue(cb._cache.get(tid))
         self.assertTrue(cb.get_result(tid), 42)
@@ -45,17 +46,65 @@ class TestCacheBackend(unittest.TestCase):
     def test_mark_as_failure(self):
         cb = CacheBackend()
 
+        einfo = None
         tid3 = gen_unique_id()
         try:
             raise KeyError("foo")
         except KeyError, exception:
+            einfo = ExceptionInfo(sys.exc_info())
             pass
-        cb.mark_as_failure(tid3, exception)
-        self.assertFalse(cb.is_done(tid3))
+        cb.mark_as_failure(tid3, exception, traceback=einfo.traceback)
+        self.assertFalse(cb.is_successful(tid3))
         self.assertEquals(cb.get_status(tid3), "FAILURE")
         self.assertTrue(isinstance(cb.get_result(tid3), KeyError))
+        self.assertEquals(cb.get_traceback(tid3), einfo.traceback)
 
     def test_process_cleanup(self):
         cb = CacheBackend()
 
         cb.process_cleanup()
+
+
+class TestCustomCacheBackend(unittest.TestCase):
+
+    def test_custom_cache_backend(self):
+        from celery import conf
+        prev_backend = conf.CELERY_CACHE_BACKEND
+        prev_module = sys.modules["celery.backends.cache"]
+        conf.CELERY_CACHE_BACKEND = "dummy://"
+        sys.modules.pop("celery.backends.cache")
+        try:
+            from celery.backends.cache import cache
+            from django.core.cache import cache as django_cache
+            self.assertEquals(cache.__class__.__module__,
+                              "django.core.cache.backends.dummy")
+            self.assertTrue(cache is not django_cache)
+        finally:
+            conf.CELERY_CACHE_BACKEND = prev_backend
+            sys.modules["celery.backends.cache"] = prev_module
+
+
+class TestMemcacheWrapper(unittest.TestCase):
+
+    def test_memcache_wrapper(self):
+
+        from django.core.cache.backends import memcached
+        from django.core.cache.backends import locmem
+        prev_cache_cls = memcached.CacheClass
+        memcached.CacheClass = locmem.CacheClass
+        prev_backend_module = sys.modules.pop("celery.backends.cache")
+        try:
+            from celery.backends.cache import cache, DjangoMemcacheWrapper
+            self.assertTrue(isinstance(cache, DjangoMemcacheWrapper))
+
+            key = "cu.test_memcache_wrapper"
+            val = "The quick brown fox."
+            default = "The lazy dog."
+
+            self.assertEquals(cache.get(key, default=default), default)
+            cache.set(key, val)
+            self.assertEquals(pickle.loads(cache.get(key, default=default)),
+                              val)
+        finally:
+            memcached.CacheClass = prev_cache_cls
+            sys.modules["celery.backends.cache"] = prev_backend_module

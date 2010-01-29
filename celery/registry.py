@@ -1,57 +1,43 @@
 """celery.registry"""
-from celery import discovery
-from celery.utils import get_full_cls_name
-from celery.exceptions import NotRegistered, AlreadyRegistered
+import inspect
 from UserDict import UserDict
+
+from celery.exceptions import NotRegistered
 
 
 class TaskRegistry(UserDict):
     """Site registry for tasks."""
 
-    AlreadyRegistered = AlreadyRegistered
     NotRegistered = NotRegistered
 
     def __init__(self):
         self.data = {}
 
-    def autodiscover(self):
-        """Autodiscovers tasks using :func:`celery.discovery.autodiscover`."""
-        discovery.autodiscover()
+    def regular(self):
+        """Get all regular task types."""
+        return self.filter_types("regular")
 
-    def register(self, task, name=None):
+    def periodic(self):
+        """Get all periodic task types."""
+        return self.filter_types("periodic")
+
+    def register(self, task):
         """Register a task in the task registry.
 
-        Task can either be a regular function, or a class inheriting
-        from :class:`celery.task.Task`.
-
-        :keyword name: By default the :attr:`Task.name` attribute on the
-            task is used as the name of the task, but you can override it
-            using this option.
-
-        :raises AlreadyRegistered: if the task is already registered.
+        The task will be automatically instantiated if not already an
+        instance.
 
         """
-        is_class = hasattr(task, "run")
-        if is_class:
-            task = task() # instantiate Task class
-        if not name:
-            name = getattr(task, "name")
 
-        if name in self.data:
-            raise self.AlreadyRegistered(
-                    "Task with name %s is already registered." % name)
-
-        if not is_class:
-            task.name = name
-            task.type = "regular"
-
+        task = inspect.isclass(task) and task() or task
+        name = task.name
         self.data[name] = task
 
     def unregister(self, name):
         """Unregister task by name.
 
         :param name: name of the task to unregister, or a
-            :class:`celery.task.Task` class with a valid ``name`` attribute.
+            :class:`celery.task.base.Task` with a valid ``name`` attribute.
 
         :raises celery.exceptions.NotRegistered: if the task has not
             been registered.
@@ -59,14 +45,7 @@ class TaskRegistry(UserDict):
         """
         if hasattr(name, "run"):
             name = name.name
-        if name not in self.data:
-            raise self.NotRegistered(
-                    "Task with name %s is not registered." % name)
-        del self.data[name]
-
-    def get_all(self):
-        """Get all task types."""
-        return self.data
+        self.pop(name)
 
     def filter_types(self, type):
         """Return all tasks of a specific type."""
@@ -74,17 +53,18 @@ class TaskRegistry(UserDict):
                         for task_name, task in self.data.items()
                             if task.type == type)
 
-    def get_all_regular(self):
-        """Get all regular task types."""
-        return self.filter_types(type="regular")
+    def __getitem__(self, key):
+        try:
+            return UserDict.__getitem__(self, key)
+        except KeyError, exc:
+            raise self.NotRegistered(exc)
 
-    def get_all_periodic(self):
-        """Get all periodic task types."""
-        return self.filter_types(type="periodic")
+    def pop(self, key, *args):
+        try:
+            return UserDict.pop(self, key, *args)
+        except KeyError, exc:
+            raise self.NotRegistered(exc)
 
-    def get_task(self, name):
-        """Get task by name."""
-        return self.data[name]
 
 """
 .. data:: tasks

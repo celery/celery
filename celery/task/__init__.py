@@ -3,48 +3,20 @@
 Working with tasks and task sets.
 
 """
-from carrot.connection import DjangoBrokerConnection
-from celery.messaging import TaskConsumer
-from celery.conf import AMQP_CONNECTION_TIMEOUT
+from billiard.serialization import pickle
+
+from celery.execute import apply_async
 from celery.registry import tasks
-from celery.backends import default_backend
-from celery.task.base import Task, TaskSet, PeriodicTask
-from celery.task.base import ExecuteRemoteTask
-from celery.task.base import AsynchronousMapTask
-from celery.task.builtins import DeleteExpiredTaskMetaTask, PingTask
-from celery.execute import apply_async, delay_task
-from celery.serialization import pickle
-from celery.task.rest import RESTProxyTask
+from celery.task.base import Task, TaskSet, PeriodicTask, ExecuteRemoteTask
+from celery.task.control import discard_all
+from celery.task.builtins import PingTask
+from celery.task.http import HttpDispatchTask
+
+__all__ = ["Task", "TaskSet", "PeriodicTask", "tasks", "discard_all",
+           "dmap", "dmap_async", "execute_remote", "ping", "HttpDispatchTask"]
 
 
-def discard_all(connect_timeout=AMQP_CONNECTION_TIMEOUT):
-    """Discard all waiting tasks.
-
-    This will ignore all tasks waiting for execution, and they will
-    be deleted from the messaging server.
-
-    :returns: the number of tasks discarded.
-
-    :rtype: int
-
-    """
-    amqp_connection = DjangoBrokerConnection(connect_timeout=connect_timeout)
-    consumer = TaskConsumer(connection=amqp_connection)
-    discarded_count = consumer.discard_all()
-    amqp_connection.close()
-    return discarded_count
-
-
-def is_done(task_id):
-    """Returns ``True`` if task with ``task_id`` has been executed.
-
-    :rtype: bool
-
-    """
-    return default_backend.is_done(task_id)
-
-
-def dmap(func, args, timeout=None):
+def dmap(fun, args, timeout=None):
     """Distribute processing of the arguments and collect the results.
 
     Example
@@ -55,10 +27,10 @@ def dmap(func, args, timeout=None):
         [4, 8, 16]
 
     """
-    return TaskSet.map(func, args, timeout=timeout)
+    return TaskSet.map(fun, args, timeout=timeout)
 
 
-def dmap_async(func, args, timeout=None):
+def dmap_async(fun, args, timeout=None):
     """Distribute processing of the arguments and collect the results
     asynchronously.
 
@@ -72,21 +44,19 @@ def dmap_async(func, args, timeout=None):
         >>> presult
         <AsyncResult: 373550e8-b9a0-4666-bc61-ace01fa4f91d>
         >>> presult.status
-        'DONE'
+        'SUCCESS'
         >>> presult.result
         [4, 8, 16]
 
     """
-    return TaskSet.map_async(func, args, timeout=timeout)
+    return TaskSet.map_async(fun, args, timeout=timeout)
 
 
-def execute_remote(func, *args, **kwargs):
+def execute_remote(fun, *args, **kwargs):
     """Execute arbitrary function/object remotely.
 
-    :param func: A callable function or object.
-
+    :param fun: A callable function or object.
     :param \*args: Positional arguments to apply to the function.
-
     :param \*\*kwargs: Keyword arguments to apply to the function.
 
     The object must be picklable, so you can't use lambdas or functions
@@ -95,7 +65,7 @@ def execute_remote(func, *args, **kwargs):
     :returns: class:`celery.result.AsyncResult`.
 
     """
-    return ExecuteRemoteTask.delay(pickle.dumps(func), args, kwargs)
+    return ExecuteRemoteTask.delay(pickle.dumps(fun), args, kwargs)
 
 
 def ping():

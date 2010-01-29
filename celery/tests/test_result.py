@@ -1,9 +1,11 @@
 import unittest
-from celery.backends import default_backend
-from celery.result import AsyncResult
-from celery.result import TaskSetResult
-from celery.result import TimeoutError
+
 from celery.utils import gen_unique_id
+from celery.tests.utils import skip_if_quick
+from celery.result import AsyncResult, TaskSetResult
+from celery.backends import default_backend
+from celery.exceptions import TimeoutError
+from celery.task.base import Task
 
 
 def mock_task(name, status, result):
@@ -11,14 +13,19 @@ def mock_task(name, status, result):
 
 
 def save_result(task):
-    if task["status"] == "DONE":
+    traceback = "Some traceback"
+    if task["status"] == "SUCCESS":
         default_backend.mark_as_done(task["id"], task["result"])
+    elif task["status"] == "RETRY":
+        default_backend.mark_as_retry(task["id"], task["result"],
+                traceback=traceback)
     else:
-        default_backend.mark_as_failure(task["id"], task["result"])
+        default_backend.mark_as_failure(task["id"], task["result"],
+                traceback=traceback)
 
 
 def make_mock_taskset(size=10):
-    tasks = [mock_task("ts%d" % i, "DONE", i) for i in xrange(size)]
+    tasks = [mock_task("ts%d" % i, "SUCCESS", i) for i in xrange(size)]
     [save_result(task) for task in tasks]
     return [AsyncResult(task["id"]) for task in tasks]
 
@@ -26,26 +33,22 @@ def make_mock_taskset(size=10):
 class TestAsyncResult(unittest.TestCase):
 
     def setUp(self):
-        self.task1 = mock_task("task1", "DONE", "the")
-        self.task2 = mock_task("task2", "DONE", "quick")
+        self.task1 = mock_task("task1", "SUCCESS", "the")
+        self.task2 = mock_task("task2", "SUCCESS", "quick")
         self.task3 = mock_task("task3", "FAILURE", KeyError("brown"))
+        self.task4 = mock_task("task3", "RETRY", KeyError("red"))
 
-        for task in (self.task1, self.task2, self.task3):
+        for task in (self.task1, self.task2, self.task3, self.task4):
             save_result(task)
 
-    def test_is_done(self):
+    def test_successful(self):
         ok_res = AsyncResult(self.task1["id"])
         nok_res = AsyncResult(self.task3["id"])
-
-        self.assertTrue(ok_res.is_done())
-        self.assertFalse(nok_res.is_done())
-
-    def test_sucessful(self):
-        ok_res = AsyncResult(self.task1["id"])
-        nok_res = AsyncResult(self.task3["id"])
+        nok_res2 = AsyncResult(self.task4["id"])
 
         self.assertTrue(ok_res.successful())
         self.assertFalse(nok_res.successful())
+        self.assertFalse(nok_res2.successful())
 
     def test_str(self):
         ok_res = AsyncResult(self.task1["id"])
@@ -66,20 +69,62 @@ class TestAsyncResult(unittest.TestCase):
         self.assertEquals(repr(nok_res), "<AsyncResult: %s>" % (
                 self.task3["id"]))
 
+    def test_get_traceback(self):
+        ok_res = AsyncResult(self.task1["id"])
+        nok_res = AsyncResult(self.task3["id"])
+        nok_res2 = AsyncResult(self.task4["id"])
+        self.assertFalse(ok_res.traceback)
+        self.assertTrue(nok_res.traceback)
+        self.assertTrue(nok_res2.traceback)
+
     def test_get(self):
         ok_res = AsyncResult(self.task1["id"])
         ok2_res = AsyncResult(self.task2["id"])
         nok_res = AsyncResult(self.task3["id"])
+        nok2_res = AsyncResult(self.task4["id"])
 
         self.assertEquals(ok_res.get(), "the")
         self.assertEquals(ok2_res.get(), "quick")
         self.assertRaises(KeyError, nok_res.get)
+        self.assertTrue(isinstance(nok2_res.result, KeyError))
+
+    def test_get_timeout(self):
+        res = AsyncResult(self.task4["id"]) # has RETRY status
+        self.assertRaises(TimeoutError, res.get, timeout=0.1)
+
+    @skip_if_quick
+    def test_get_timeout_longer(self):
+        res = AsyncResult(self.task4["id"]) # has RETRY status
+        self.assertRaises(TimeoutError, res.get, timeout=1)
 
     def test_ready(self):
         oks = (AsyncResult(self.task1["id"]),
                AsyncResult(self.task2["id"]),
                AsyncResult(self.task3["id"]))
         [self.assertTrue(ok.ready()) for ok in oks]
+        self.assertFalse(AsyncResult(self.task4["id"]).ready())
+
+
+class MockAsyncResultFailure(AsyncResult):
+
+    @property
+    def result(self):
+        return KeyError("baz")
+
+    @property
+    def status(self):
+        return "FAILURE"
+
+
+class MockAsyncResultSuccess(AsyncResult):
+
+    @property
+    def result(self):
+        return 42
+
+    @property
+    def status(self):
+        return "SUCCESS"
 
 
 class TestTaskSetResult(unittest.TestCase):
@@ -90,6 +135,27 @@ class TestTaskSetResult(unittest.TestCase):
 
     def test_total(self):
         self.assertEquals(self.ts.total, self.size)
+
+    def test_iterate_raises(self):
+        ar = MockAsyncResultFailure(gen_unique_id())
+        ts = TaskSetResult(gen_unique_id(), [ar])
+        it = iter(ts)
+        self.assertRaises(KeyError, it.next)
+
+    def test_iterate_yields(self):
+        ar = MockAsyncResultSuccess(gen_unique_id())
+        ar2 = MockAsyncResultSuccess(gen_unique_id())
+        ts = TaskSetResult(gen_unique_id(), [ar, ar2])
+        it = iter(ts)
+        self.assertEquals(it.next(), 42)
+        self.assertEquals(it.next(), 42)
+
+    def test_join_timeout(self):
+        ar = MockAsyncResultSuccess(gen_unique_id())
+        ar2 = MockAsyncResultSuccess(gen_unique_id())
+        ar3 = AsyncResult(gen_unique_id())
+        ts = TaskSetResult(gen_unique_id(), [ar, ar2, ar3])
+        self.assertRaises(TimeoutError, ts.join, timeout=0.0000001)
 
     def test_itersubtasks(self):
 
@@ -192,3 +258,24 @@ class TestTaskSetPending(unittest.TestCase):
 
     def x_join(self):
         self.assertRaises(TimeoutError, self.ts.join, timeout=0.001)
+
+    @skip_if_quick
+    def x_join_longer(self):
+        self.assertRaises(TimeoutError, self.ts.join, timeout=1)
+
+
+class RaisingTask(Task):
+
+    def run(self, x, y):
+        raise KeyError("xy")
+
+
+class TestEagerResult(unittest.TestCase):
+
+    def test_wait_raises(self):
+        res = RaisingTask.apply(args=[3, 3])
+        self.assertRaises(KeyError, res.wait)
+
+    def test_revoke(self):
+        res = RaisingTask.apply(args=[3, 3])
+        self.assertFalse(res.revoke())

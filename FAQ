@@ -2,6 +2,71 @@
  Frequently Asked Questions
 ============================
 
+Misconceptions
+==============
+
+Is celery dependent on pickle?
+------------------------------
+
+**Answer:** No.
+
+Celery can support any serialization scheme and has support for JSON/YAML and
+Pickle by default. You can even send one task using pickle, and another one
+with JSON seamlessly, this is because every task is associated with a
+content-type. The default serialization scheme is pickle because it's the most
+used, and it has support for sending complex objects as task arguments.
+
+You can set a global default serializer, the default serializer for a
+particular Task, and even what serializer to use when sending a single task
+instance.
+
+Is celery for Django only?
+--------------------------
+
+**Answer:** No.
+
+While django itself is a dependency, you can still use all of celerys features
+outside of a django project.
+
+Do I have to use AMQP/RabbitMQ?
+-------------------------------
+
+**Answer**: No.
+
+You can also use Redis or an SQL database, for instructions see `Using other
+queues`_.
+
+.. _`Using other queues`:
+    http://ask.github.com/celery/tutorials/otherqueues.html
+
+Redis or a database won't meet up to the standards
+of an AMQP broker. If you have strict reliability requirements you are
+encouraged to use RabbitMQ or another AMQP broker. Redis/database also uses
+pulling, so they are likely to consume more resources. However, if you for
+some reason is not able to use AMQP, feel free to use these alternatives.
+They will probably work fine for most use cases, and note that the above
+points are not specific to celery; If using Redis/database as a queue worked
+fine for you before, it probably will now. And you can always upgrade later.
+
+Is celery multi-lingual?
+------------------------
+
+**Answer:** Yes.
+
+celeryd is an implementation of celery in python. If the language has an AMQP
+client, there shouldn't be much work to create a worker in your language.
+A celery worker is just a program connecting to the broker to consume
+messages. There's no other communication involved.
+
+Also, there's another way to be language indepedent, and that is to use REST
+tasks, instead of your tasks being functions, they're URLs. With this
+information you can even create simple web servers that enable preloading of
+code. For more information about REST tasks see: `User Guide: Remote Tasks`_.
+
+.. _`User Guide: Remote Tasks`:
+    http://ask.github.com/celery/userguide/remote-tasks.html
+
+
 Troubleshooting
 ===============
 
@@ -43,6 +108,10 @@ Why won't celeryd run on FreeBSD?
 **Answer:** multiprocessing.Pool requires a working POSIX semaphore
 implementation which isn't enabled in FreeBSD by default. You have to enable
 POSIX semaphores in the kernel and manually recompile multiprocessing.
+
+Luckily, Viktor Petersson has written a tutorial to get you started with
+Celery on FreeBSD here:
+http://www.playingwithwire.com/2009/10/how-to-get-celeryd-to-work-on-freebsd/
 
 I'm having ``IntegrityError: Duplicate Key`` errors. Why?
 ----------------------------------------------------------
@@ -89,14 +158,14 @@ Why won't my Task run?
 (or in some other module Django loads by default, like ``models.py``?).
 Also there might be syntax errors preventing the tasks module being imported.
 
-You can find out if the celery daemon is able to run the task by executing the
+You can find out if celery is able to run the task by executing the
 task manually:
 
     >>> from myapp.tasks import MyPeriodicTask
     >>> MyPeriodicTask.delay()
 
-Watch celery daemons logfile (or output if not running as a daemon), to see
-if it's able to find the task, or if some other error is happening.
+Watch celeryds logfile to see if it's able to find the task, or if some
+other error is happening.
 
 Why won't my Periodic Task run?
 -------------------------------
@@ -186,14 +255,18 @@ Use the following specific settings in your ``settings.py``:
     CARROT_BACKEND = "stomp"
 
     # STOMP hostname and port settings.
-    AMQP_HOST = "localhost"
-    AMQP_PORT = 61613
+    BROKER_HOST = "localhost"
+    BROKER_PORT = 61613
 
     # The queue name to use (both queue and exchange must be set to the
     # same queue name when using STOMP)
-    CELERY_AMQP_CONSUMER_QUEUE = "/queue/celery"
-    CELERY_AMQP_EXCHANGE = "/queue/celery" 
-   
+    CELERY_DEFAULT_QUEUE = "/queue/celery"
+    CELERY_DEFAULT_EXCHANGE = "/queue/celery" 
+
+    CELERY_QUEUES = {
+        "/queue/celery": {"exchange": "/queue/celery"}
+    }
+
 Now you can go on reading the tutorial in the README, ignoring any AMQP
 specific options. 
 
@@ -217,47 +290,44 @@ Features
 Can I send some tasks to only some servers?
 --------------------------------------------
 
-**Answer:** As of now there is only one use-case that works like this,
-and that is tasks of type ``A`` can be sent to servers ``x`` and ``y``,
-while tasks of type ``B`` can be sent to server ``z``. One server can't
-handle more than one routing_key, but this is coming in a later release.
+**Answer:** Yes. You can route tasks to an arbitrary server using AMQP,
+and a worker can bind to as many queues as it wants.
 
 Say you have two servers, ``x``, and ``y`` that handles regular tasks,
 and one server ``z``, that only handles feed related tasks, you can use this
 configuration:
 
-    * Servers ``x`` and ``y``: settings.py:
+* Servers ``x`` and ``y``: settings.py:
 
-    .. code-block:: python
+.. code-block:: python
 
-        AMQP_SERVER = "rabbit"
-        AMQP_PORT = 5678
-        AMQP_USER = "myapp"
-        AMQP_PASSWORD = "secret"
-        AMQP_VHOST = "myapp"
+    CELERY_DEFAULT_QUEUE = "regular_tasks"
+    CELERY_QUEUES = {
+        "regular_tasks": {
+            "binding_key": "task.#",
+        },
+    }
+    CELERY_DEFAULT_EXCHANGE = "tasks"
+    CELERY_DEFAULT_EXCHANGE_TYPE = "topic"
+    CELERY_DEFAULT_ROUTING_KEY = "task.regular"
 
-        CELERY_AMQP_CONSUMER_QUEUE = "regular_tasks"
-        CELERY_AMQP_EXCHANGE = "tasks"
-        CELERY_AMQP_PUBLISHER_ROUTING_KEY = "task.regular"
-        CELERY_AMQP_CONSUMER_ROUTING_KEY = "task.#"
-        CELERY_AMQP_EXCHANGE_TYPE = "topic"
+* Server ``z``: settings.py:
 
-    * Server ``z``: settings.py:
+.. code-block:: python
 
-    .. code-block:: python
+        CELERY_DEFAULT_QUEUE = "feed_tasks"
+        CELERY_QUEUES = {
+            "feed_tasks": {
+                "binding_key": "feed.#",
+            },
+        }
+        CELERY_DEFAULT_EXCHANGE = "tasks"
+        CELERY_DEFAULT_ROUTING_KEY = "task.regular"
+        CELERY_DEFAULT_EXCHANGE_TYPE = "topic"
 
-        AMQP_SERVER = "rabbit"
-        AMQP_PORT = 5678
-        AMQP_USER = "myapp"
-        AMQP_PASSWORD = "secret"
-        AMQP_VHOST = "myapp"
-        
-        CELERY_AMQP_EXCHANGE = "tasks"
-        CELERY_AMQP_PUBLISHER_ROUTING_KEY = "task.regular"
-        CELERY_AMQP_EXCHANGE_TYPE = "topic"
-        # This is the settings different for this server:
-        CELERY_AMQP_CONSUMER_QUEUE = "feed_tasks"
-        CELERY_AMQP_CONSUMER_ROUTING_KEY = "feed.#"
+``CELERY_QUEUES`` is a map of queue names and their exchange/type/binding_key,
+if you don't set exchange or exchange type, they will be taken from the
+``CELERY_DEFAULT_EXCHANGE``/``CELERY_DEFAULT_EXCHANGE_TYPE`` settings.
 
 Now to make a Task run on the ``z`` server you need to set its
 ``routing_key`` attribute so it starts with the words ``"task.feed."``:
@@ -265,24 +335,72 @@ Now to make a Task run on the ``z`` server you need to set its
 .. code-block:: python
 
     from feedaggregator.models import Feed
-    from celery.task import Task
+    from celery.decorators import task
+
+    @task(routing_key="feed.importer")
+    def import_feed(feed_url):
+        Feed.objects.import_feed(feed_url)
+
+or if subclassing the ``Task`` class directly:
+
+.. code-block:: python
 
     class FeedImportTask(Task):
         routing_key = "feed.importer"
 
         def run(self, feed_url):
-            # something importing the feed
             Feed.objects.import_feed(feed_url)
 
 
 You can also override this using the ``routing_key`` argument to
 :func:`celery.task.apply_async`:
 
-    >>> from celery.task import apply_async
     >>> from myapp.tasks import RefreshFeedTask
-    >>> apply_async(RefreshFeedTask, args=["http://cnn.com/rss"],
-    ...             routing_key="feed.importer")
+    >>> RefreshFeedTask.apply_async(args=["http://cnn.com/rss"],
+    ...                             routing_key="feed.importer")
 
+
+ If you want, you can even have your feed processing worker handle regular
+ tasks as well, maybe in times when there's a lot of work to do.
+ Just add a new queue to server ``z``'s ``CELERY_QUEUES``:
+
+ .. code-block:: python
+
+        CELERY_QUEUES = {
+            "feed_tasks": {
+                "binding_key": "feed.#",
+            },
+            "regular_tasks": {
+                "binding_key": "task.#",
+            },
+        }
+
+Since the default exchange is ``tasks``, they will both use the same
+exchange.
+
+If you have another queue but on another exchange you want to add,
+just specify a custom exchange and exchange type:
+
+.. code-block:: python
+
+    CELERY_QUEUES = {
+            "feed_tasks": {
+                "binding_key": "feed.#",
+            },
+            "regular_tasks": {
+                "binding_key": "task.#",
+            }
+            "image_tasks": {
+                "binding_key": "image.compress",
+                "exchange": "mediatasks",
+                "exchange_type": "direct",
+            },
+        }
+
+Easy? No? If you're confused about these terms, you should read up on
+AMQP and RabbitMQ. It might be hard to grok the concepts of
+queues, exchanges and routing/binding keys at first, but it's all very simple,
+I assure you.
 
 Can I use celery without Django?
 --------------------------------
@@ -323,11 +441,11 @@ configuration using the database backend with MySQL:
 .. code-block:: python
 
     # Broker configuration
-    AMQP_SERVER = "localhost"
-    AMQP_PORT = "5672"
-    AMQP_VHOST = "celery"
-    AMQP_USER = "celery"
-    AMQP_PASSWORD = "celerysecret"
+    BROKER_HOST = "localhost"
+    BROKER_PORT = "5672"
+    BROKER_VHOST = "celery"
+    BROKER_USER = "celery"
+    BROKER_PASSWORD = "celerysecret"
     CARROT_BACKEND="amqp"
 
     # Using the database backend.
@@ -370,7 +488,7 @@ The celery test-suite is failing
 tests are failing and celerys tests are failing in that context?
 If so, read on for a trick, if not please report the test failure to our issue
 tracker at GitHub.
-    
+
     http://github.com/ask/celery/issues/
 
 That Django is running tests for all applications in ``INSTALLED_APPS``
@@ -403,3 +521,21 @@ If you just want to skip celery you could use:
     INSTALLED_APPS = (.....)
     TEST_RUNNER = "celery.tests.runners.run_tests"
     TEST_APPS = filter(lambda k: k != "celery", INSTALLED_APPS)
+
+
+Can I change the interval of a periodic task at runtime?
+--------------------------------------------------------
+
+**Answer**: Yes. You can override ``PeriodicTask.is_due`` or turn
+``PeriodicTask.run_every`` into a property:
+
+.. code-block:: python
+
+    class MyPeriodic(PeriodicTask):
+
+        def run(self):
+            # ...
+
+        @property
+        def run_every(self):
+            return get_interval_from_database(...)

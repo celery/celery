@@ -1,25 +1,35 @@
 import unittest
-import uuid
-import logging
 from StringIO import StringIO
+from datetime import datetime, timedelta
 
 from celery import task
-from celery import registry
-from celery.log import setup_logger
 from celery import messaging
 from celery.result import EagerResult
 from celery.backends import default_backend
-from datetime import datetime, timedelta
+from celery.decorators import task as task_dec
+from celery.worker.listener import parse_iso8601
+from celery.exceptions import RetryTaskError
 
-
-def return_True(self, **kwargs):
+def return_True(*args, **kwargs):
     # Task run functions can't be closures/lambdas, as they're pickled.
     return True
-registry.tasks.register(return_True, "cu.return-true")
+
+
+return_True_task = task_dec()(return_True)
 
 
 def raise_exception(self, **kwargs):
     raise Exception("%s error" % self.__class__)
+
+
+class MockApplyTask(task.Task):
+
+    def run(self, x, y):
+        return x * y
+
+    @classmethod
+    def apply_async(self, *args, **kwargs):
+        pass
 
 
 class IncrementCounterTask(task.Task):
@@ -54,6 +64,26 @@ class RetryTask(task.Task):
             return self.retry(args=[arg1, arg2], kwargs=kwargs, countdown=0)
 
 
+class RetryTaskMockApply(task.Task):
+    max_retries = 3
+    iterations = 0
+    applied = 0
+
+    def run(self, arg1, arg2, kwarg=1, **kwargs):
+        self.__class__.iterations += 1
+
+        retries = kwargs["task_retries"]
+        if retries >= 3:
+            return arg1
+        else:
+            kwargs.update({"kwarg": kwarg})
+            return self.retry(args=[arg1, arg2], kwargs=kwargs, countdown=0)
+
+    @classmethod
+    def apply_async(self, *args, **kwargs):
+        self.applied = 1
+
+
 class MyCustomException(Exception):
     """Random custom exception."""
 
@@ -86,6 +116,22 @@ class TestTaskRetries(unittest.TestCase):
         self.assertEquals(result.get(), 0xFF)
         self.assertEquals(RetryTask.iterations, 4)
 
+    def test_retry_not_eager(self):
+        exc = Exception("baz")
+        try:
+            RetryTaskMockApply.retry(args=[4, 4], kwargs={},
+                                     exc=exc, throw=False)
+            self.assertTrue(RetryTaskMockApply.applied)
+        finally:
+            RetryTaskMockApply.applied = 0
+
+        try:
+            self.assertRaises(RetryTaskError, RetryTaskMockApply.retry,
+                    args=[4, 4], kwargs={}, exc=exc, throw=True)
+            self.assertTrue(RetryTaskMockApply.applied)
+        finally:
+            RetryTaskMockApply.applied = 0
+
     def test_retry_with_kwargs(self):
         RetryTaskCustomExc.max_retries = 3
         RetryTaskCustomExc.iterations = 0
@@ -117,12 +163,19 @@ class TestTaskRetries(unittest.TestCase):
         self.assertEquals(RetryTask.iterations, 2)
 
 
+class MockPublisher(object):
+
+    def __init__(self, *args, **kwargs):
+        self.kwargs = kwargs
+
+
 class TestCeleryTasks(unittest.TestCase):
 
     def createTaskCls(self, cls_name, task_name=None):
-        attrs = {}
+        attrs = {"__module__": self.__module__}
         if task_name:
             attrs["name"] = task_name
+
         cls = type(cls_name, (task.Task, ), attrs)
         cls.run = return_True
         return cls
@@ -166,7 +219,9 @@ class TestCeleryTasks(unittest.TestCase):
         self.assertEquals(task_data["task"], task_name)
         task_kwargs = task_data.get("kwargs", {})
         if test_eta:
-            self.assertTrue(isinstance(task_data.get("eta"), datetime))
+            self.assertTrue(isinstance(task_data.get("eta"), basestring))
+            to_datetime = parse_iso8601(task_data.get("eta"))
+            self.assertTrue(isinstance(to_datetime, datetime))
         for arg_name, arg_value in kwargs.items():
             self.assertEquals(task_kwargs.get(arg_name), arg_value)
 
@@ -190,7 +245,6 @@ class TestCeleryTasks(unittest.TestCase):
         T2 = self.createTaskCls("T2")
         self.assertEquals(T2().name, "celery.tests.test_task.T2")
 
-        registry.tasks.register(T1)
         t1 = T1()
         consumer = t1.get_consumer()
         self.assertRaises(NotImplementedError, consumer.receive, "foo", "foo")
@@ -202,7 +256,7 @@ class TestCeleryTasks(unittest.TestCase):
         self.assertNextTaskDataEquals(consumer, presult, t1.name)
 
         # With arguments.
-        presult2 = task.delay_task(t1.name, name="George Constanza")
+        presult2 = t1.apply_async(kwargs=dict(name="George Constanza"))
         self.assertNextTaskDataEquals(consumer, presult2, t1.name,
                 name="George Constanza")
 
@@ -218,24 +272,29 @@ class TestCeleryTasks(unittest.TestCase):
         self.assertNextTaskDataEquals(consumer, presult2, t1.name,
                 name="George Constanza", test_eta=True)
 
-        self.assertRaises(registry.tasks.NotRegistered, task.delay_task,
-                "some.task.that.should.never.exist.X.X.X.X.X")
-
         # Discarding all tasks.
         task.discard_all()
-        tid3 = task.delay_task(t1.name)
+        task.apply_async(t1)
         self.assertEquals(task.discard_all(), 1)
         self.assertTrue(consumer.fetch() is None)
 
-        self.assertFalse(task.is_done(presult.task_id))
-        self.assertFalse(presult.is_done())
+        self.assertFalse(presult.successful())
         default_backend.mark_as_done(presult.task_id, result=None)
-        self.assertTrue(task.is_done(presult.task_id))
-        self.assertTrue(presult.is_done())
-
+        self.assertTrue(presult.successful())
 
         publisher = t1.get_publisher()
         self.assertTrue(isinstance(publisher, messaging.TaskPublisher))
+
+    def test_get_publisher(self):
+        from celery.task import base
+        old_pub = base.TaskPublisher
+        base.TaskPublisher = MockPublisher
+        try:
+            p = IncrementCounterTask.get_publisher(exchange="foo",
+                                                   connection="bar")
+            self.assertEquals(p.kwargs["exchange"], "foo")
+        finally:
+            base.TaskPublisher = old_pub
 
     def test_get_logger(self):
         T1 = self.createTaskCls("T1", "c.unittest.t.t1")
@@ -250,9 +309,9 @@ class TestTaskSet(unittest.TestCase):
     def test_function_taskset(self):
         from celery import conf
         conf.ALWAYS_EAGER = True
-        ts = task.TaskSet("cu.return-true", [
+        ts = task.TaskSet(return_True_task.name, [
             [[1], {}], [[2], {}], [[3], {}], [[4], {}], [[5], {}]])
-        res = ts.run()
+        res = ts.apply_async()
         self.assertEquals(res.join(), [True, True, True, True, True])
 
         conf.ALWAYS_EAGER = False
@@ -276,11 +335,11 @@ class TestTaskSet(unittest.TestCase):
 
         consumer = IncrementCounterTask().get_consumer()
         consumer.discard_all()
-        taskset_res = ts.run()
+        taskset_res = ts.apply_async()
         subtasks = taskset_res.subtasks
         taskset_id = taskset_res.taskset_id
         for subtask in subtasks:
-            m = consumer.decoder(consumer.fetch().body)
+            m = consumer.fetch().payload
             self.assertEquals(m.get("taskset"), taskset_id)
             self.assertEquals(m.get("task"), IncrementCounterTask.name)
             self.assertEquals(m.get("id"), subtask.task_id)
@@ -304,22 +363,52 @@ class TestTaskApply(unittest.TestCase):
         e = IncrementCounterTask.apply(kwargs={"increment_by": 4})
         self.assertEquals(e.get(), 6)
 
-        self.assertTrue(e.is_done())
-        self.assertTrue(e.is_ready())
+        self.assertTrue(e.successful())
+        self.assertTrue(e.ready())
         self.assertTrue(repr(e).startswith("<EagerResult:"))
 
         f = RaisingTask.apply()
-        self.assertTrue(f.is_ready())
-        self.assertFalse(f.is_done())
+        self.assertTrue(f.ready())
+        self.assertFalse(f.successful())
         self.assertTrue(f.traceback)
         self.assertRaises(KeyError, f.get)
 
 
+class MyPeriodic(task.PeriodicTask):
+    run_every = timedelta(hours=1)
+
+
 class TestPeriodicTask(unittest.TestCase):
 
-    def test_interface(self):
+    def test_must_have_run_every(self):
+        self.assertRaises(NotImplementedError, type, "Foo",
+            (task.PeriodicTask, ), {"__module__": __name__})
 
-        class MyPeriodicTask(task.PeriodicTask):
-            run_every = None
+    def test_remaining_estimate(self):
+        self.assertTrue(isinstance(
+            MyPeriodic().remaining_estimate(datetime.now()),
+            timedelta))
 
-        self.assertRaises(NotImplementedError, MyPeriodicTask)
+    def test_timedelta_seconds_returns_0_on_negative_time(self):
+        delta = timedelta(days=-2)
+        self.assertEquals(MyPeriodic().timedelta_seconds(delta), 0)
+
+    def test_timedelta_seconds(self):
+        deltamap = ((timedelta(seconds=1), 1),
+                    (timedelta(seconds=27), 27),
+                    (timedelta(minutes=3), 3 * 60),
+                    (timedelta(hours=4), 4 * 60 * 60),
+                    (timedelta(days=3), 3 * 86400))
+        for delta, seconds in deltamap:
+            self.assertEquals(MyPeriodic().timedelta_seconds(delta), seconds)
+
+    def test_is_due_not_due(self):
+        due, remaining = MyPeriodic().is_due(datetime.now())
+        self.assertFalse(due)
+        self.assertTrue(remaining > 60)
+
+    def test_is_due(self):
+        p = MyPeriodic()
+        due, remaining = p.is_due(datetime.now() - p.run_every)
+        self.assertTrue(due)
+        self.assertEquals(remaining, p.timedelta_seconds(p.run_every))

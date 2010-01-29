@@ -4,17 +4,27 @@ Utility functions
 
 """
 import time
-from itertools import repeat
-from inspect import getargspec
-from uuid import UUID, uuid4, _uuid_generate_random
-from celery.utils.functional import curry
 import operator
 try:
     import ctypes
 except ImportError:
     ctypes = None
+from uuid import UUID, uuid4, _uuid_generate_random
+from inspect import getargspec
+from itertools import repeat, islice
 
-noop = lambda *args, **kwargs: None
+from billiard.utils.functional import curry
+
+from celery.utils.compat import all, any, defaultdict
+
+
+def noop(*args, **kwargs):
+    """No operation.
+
+    Takes any arguments/keyword arguments and does nothing.
+
+    """
+    pass
 
 
 def chunks(it, n):
@@ -33,13 +43,8 @@ def chunks(it, n):
         [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10]]
 
     """
-    acc = []
-    for i, item in enumerate(it):
-        if i and not i % n:
-            yield acc
-            acc = []
-        acc.append(item)
-    yield acc
+    for first in it:
+        yield [first] + list(islice(it, n - 1))
 
 
 def gen_unique_id():
@@ -56,10 +61,21 @@ def gen_unique_id():
     return str(uuid4())
 
 
-def mitemgetter(*keys):
-    """Like :func:`operator.itemgetter` but returns `None` on missing keys
+def mexpand(container, size, default=None):
+    return container[:size] + [default] * (size - len(container))
+
+
+def mitemgetter(*items):
+    """Like :func:`operator.itemgetter` but returns ``None`` on missing items
     instead of raising :exc:`KeyError`."""
-    return lambda dict_: map(dict_.get, keys)
+    return lambda container: map(container.get, items)
+
+
+def mattrgetter(*attrs):
+    """Like :func:`operator.itemgetter` but returns ``None`` on missing
+    attributes instead of raising :exc:`AttributeError`."""
+    return lambda obj: dict((attr, getattr(obj, attr, None))
+                                for attr in attrs)
 
 
 def get_full_cls_name(cls):
@@ -73,7 +89,7 @@ def repeatlast(it):
     yield the last value infinitely."""
     for item in it:
         yield item
-    for item in repeat(item):
+    for item in repeat(item): # pragma: no cover
         yield item
 
 
@@ -124,6 +140,9 @@ def fun_takes_kwargs(fun, kwlist=[]):
     """With a function, and a list of keyword arguments, returns arguments
     in the list which the function takes.
 
+    If the object has an ``argspec`` attribute that is used instead
+    of using the :meth:`inspect.getargspec`` introspection.
+
     :param fun: The function to inspect arguments of.
     :param kwlist: The list of keyword arguments.
 
@@ -139,7 +158,19 @@ def fun_takes_kwargs(fun, kwlist=[]):
         ["logfile", "loglevel", "task_id"]
 
     """
-    args, _varargs, keywords, _defaults = getargspec(fun)
+    argspec = getattr(fun, "argspec", getargspec(fun))
+    args, _varargs, keywords, _defaults = argspec
     if keywords != None:
         return kwlist
     return filter(curry(operator.contains, args), kwlist)
+
+
+def timedelta_seconds(delta):
+    """Convert :class:`datetime.timedelta` to seconds.
+
+    Doesn't account for negative values.
+
+    """
+    if delta.days < 0:
+        return 0
+    return delta.days * 86400 + delta.seconds + (delta.microseconds / 10e5)

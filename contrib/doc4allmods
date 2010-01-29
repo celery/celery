@@ -2,7 +2,7 @@
 
 PACKAGE="$1"
 SKIP_PACKAGES="$PACKAGE tests management urls"
-SKIP_FILES="celery.bin.rst celery.serialization.rst"
+SKIP_FILES="celery.bin.rst celery.contrib.rst"
 
 modules=$(find "$PACKAGE" -name "*.py")
 
@@ -19,11 +19,13 @@ for module in $modules; do
     for skip_file in $SKIP_FILES; do
         [ "$skip_file" == "$rst" ] && skip=1
     done
-    
+
     if [ $skip -eq 0 ]; then
         if [ ! -f "docs/reference/$rst" ]; then
-            echo $rst :: FAIL
-            failed=1
+            if [ ! -f "docs/internals/reference/$rst" ]; then
+                echo $rst :: FAIL
+                failed=1
+            fi
         fi
     fi
 done

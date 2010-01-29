@@ -1,22 +1,41 @@
-"""celery.backends"""
-from functools import partial
+import importlib
+
+from billiard.utils.functional import curry
+from carrot.utils import rpartition
+
 from celery import conf
-import sys
+
+BACKEND_ALIASES = {
+    "amqp": "celery.backends.amqp.AMQPBackend",
+    "database": "celery.backends.database.DatabaseBackend",
+    "db": "celery.backends.database.DatabaseBackend",
+    "redis": "celery.backends.pyredis.RedisBackend",
+    "cache": "celery.backends.cache.CacheBackend",
+    "mongodb": "celery.backends.mongodb.MongoBackend",
+    "tyrant": "celery.backends.tyrant.TyrantBackend",
+}
+
+_backend_cache = {}
+
+
+def resolve_backend(backend):
+    backend = BACKEND_ALIASES.get(backend, backend)
+    backend_module_name, _, backend_cls_name = rpartition(backend, ".")
+    return backend_module_name, backend_cls_name
+
+
+def _get_backend_cls(backend):
+    backend_module_name, backend_cls_name = resolve_backend(backend)
+    backend_module = importlib.import_module(backend_module_name)
+    return getattr(backend_module, backend_cls_name)
 
 
 def get_backend_cls(backend):
-    """Get backend class by name.
+    """Get backend class by name/alias"""
+    if backend not in _backend_cache:
+        _backend_cache[backend] = _get_backend_cls(backend)
+    return _backend_cache[backend]
 
-    If the name does not include "``.``" (is not fully qualified),
-    ``"celery.backends."`` will be prepended to the name. e.g.
-    ``"database"`` becomes ``"celery.backends.database"``.
-
-    """
-    if backend.find(".") == -1:
-        backend = "celery.backends.%s" % backend
-    __import__(backend)
-    backend_module = sys.modules[backend]
-    return getattr(backend_module, "Backend")
 
 """
 .. function:: get_default_backend_cls()
@@ -24,18 +43,7 @@ def get_backend_cls(backend):
     Get the backend class specified in :setting:`CELERY_BACKEND`.
 
 """
-get_default_backend_cls = partial(get_backend_cls, conf.CELERY_BACKEND)
-
-
-"""
-.. function:: get_default_periodicstatus_backend_cls()
-
-    Get the backend class specified in
-    :setting:`CELERY_PERIODIC_STATUS_BACKEND`.
-
-"""
-get_default_periodicstatus_backend_cls = partial(get_backend_cls,
-                                        conf.CELERY_PERIODIC_STATUS_BACKEND)
+get_default_backend_cls = curry(get_backend_cls, conf.CELERY_BACKEND)
 
 
 """
@@ -47,16 +55,6 @@ get_default_periodicstatus_backend_cls = partial(get_backend_cls,
 """
 DefaultBackend = get_default_backend_cls()
 
-
-"""
-.. class:: DefaultPeriodicStatusBackend
-
-    The default backend for storing periodic task metadata, specified
-    in :setting:`CELERY_PERIODIC_STATUS_BACKEND`.
-
-"""
-DefaultPeriodicStatusBackend = get_default_periodicstatus_backend_cls()
-
 """
 .. data:: default_backend
 
@@ -64,11 +62,3 @@ DefaultPeriodicStatusBackend = get_default_periodicstatus_backend_cls()
 
 """
 default_backend = DefaultBackend()
-
-"""
-.. data:: default_periodic_status_backend
-
-    An instance of :class:`DefaultPeriodicStatusBackend`.
-
-"""
-default_periodic_status_backend = DefaultPeriodicStatusBackend()

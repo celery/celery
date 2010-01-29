@@ -89,13 +89,13 @@ functions:
   click it processes all of the messages first, calculates the new click count
   and issues one update per URL. A message that has been received will not be
   deleted from the broker until it has been acknowledged by the receiver, so
-  if the reciever dies in the middle of processing the message, it will be
+  if the receiver dies in the middle of processing the message, it will be
   re-sent at a later point in time. This guarantees delivery and we respect
   this feature here by not acknowledging the message until the clicks has
   actually been written to disk.
   
   **Note**: This could probably be optimized further with
-  some hand-written SQL, but it will do for now. Let's say it's an excersise
+  some hand-written SQL, but it will do for now. Let's say it's an exercise
   left for the picky reader, albeit a discouraged one if you can survive
   without doing it.
 
@@ -208,7 +208,6 @@ Processing the clicks every 30 minutes is easy using celery periodic tasks.
 .. code-block:: python
 
     from celery.task import PeriodicTask
-    from celery.registry import tasks
     from clickmuncher.messaging import process_clicks
     from datetime import timedelta
 
@@ -218,19 +217,17 @@ Processing the clicks every 30 minutes is easy using celery periodic tasks.
     
         def run(self, \*\*kwargs):
             process_clicks()
-    tasks.register(ProcessClicksTask)
 
 We subclass from :class:`celery.task.base.PeriodicTask`, set the ``run_every``
 attribute and in the body of the task just call the ``process_clicks``
-function we wrote earlier. Finally, we register the task in the task registry
-so the celery workers is able to recognize and find it.
+function we wrote earlier. 
 
 
 Finishing
 =========
 
 There are still ways to improve this application. The URLs could be cleaned
-so the url http://google.com and http://google.com/ is the same. Maybe it's
+so the URL http://google.com and http://google.com/ is the same. Maybe it's
 even possible to update the click count using a single UPDATE query?
 
 If you have any questions regarding this tutorial, please send a mail to the

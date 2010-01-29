@@ -1,41 +1,19 @@
-"""celery.backends.database"""
-from celery.models import TaskMeta, TaskSetMeta, PeriodicTaskMeta
+from celery.models import TaskMeta, TaskSetMeta
 from celery.backends.base import BaseBackend
 
 
-class Backend(BaseBackend):
+class DatabaseBackend(BaseBackend):
     """The database backends. Using Django models to store task metadata."""
 
-    capabilities = ["ResultStore", "PeriodicStatus"]
+    capabilities = ["ResultStore"]
 
     def __init__(self, *args, **kwargs):
-        super(Backend, self).__init__(*args, **kwargs)
+        super(DatabaseBackend, self).__init__(*args, **kwargs)
         self._cache = {}
-
-    def init_periodic_tasks(self):
-        """Create entries for all periodic tasks in the database."""
-        PeriodicTaskMeta.objects.init_entries()
-
-    def run_periodic_tasks(self):
-        """Run all waiting periodic tasks.
-
-        :returns: a list of ``(task, task_id)`` tuples containing
-            the task class and id for the resulting tasks applied.
-
-        """
-        waiting_tasks = PeriodicTaskMeta.objects.get_waiting_tasks()
-        task_id_tuples = []
-        for waiting_task in waiting_tasks:
-            task_id = waiting_task.delay()
-            task_id_tuples.append((waiting_task, task_id))
-        return task_id_tuples
 
     def store_result(self, task_id, result, status, traceback=None):
         """Store return value and status of an executed task."""
-        if status == "DONE":
-            result = self.prepare_result(result)
-        elif status in ["FAILURE", "RETRY"]:
-            result = self.prepare_exception(result)
+        result = self.encode_result(result, status)
         TaskMeta.objects.store_result(task_id, result, status,
                                       traceback=traceback)
         return result
@@ -45,9 +23,9 @@ class Backend(BaseBackend):
         TaskSetMeta.objects.store_result(taskset_id, result)
         return result
 
-    def is_done(self, task_id):
+    def is_successful(self, task_id):
         """Returns ``True`` if task with ``task_id`` has been executed."""
-        return self.get_status(task_id) == "DONE"
+        return self.get_status(task_id) == "SUCCESS"
 
     def get_status(self, task_id):
         """Get the status of a task."""
@@ -70,7 +48,7 @@ class Backend(BaseBackend):
         if task_id in self._cache:
             return self._cache[task_id]
         meta = TaskMeta.objects.get_task(task_id)
-        if meta.status == "DONE":
+        if meta.status == "SUCCESS":
             self._cache[task_id] = meta
         return meta
 
@@ -93,4 +71,3 @@ class Backend(BaseBackend):
         """Delete expired metadata."""
         TaskMeta.objects.delete_expired()
         TaskSetMeta.objects.delete_expired()
-

@@ -1,10 +1,9 @@
 import unittest
-from celery.backends.database import Backend
-from celery.utils import gen_unique_id
+from datetime import timedelta
+
 from celery.task import PeriodicTask
-from celery import registry
-from celery.models import PeriodicTaskMeta
-from datetime import datetime, timedelta
+from celery.utils import gen_unique_id
+from celery.backends.database import DatabaseBackend
 
 
 class SomeClass(object):
@@ -19,33 +18,21 @@ class MyPeriodicTask(PeriodicTask):
 
     def run(self, **kwargs):
         return 42
-registry.tasks.register(MyPeriodicTask)
 
 
 class TestDatabaseBackend(unittest.TestCase):
 
-    def test_run_periodic_tasks(self):
-        #obj, created = PeriodicTaskMeta.objects.get_or_create(
-        #                    name=MyPeriodicTask.name,
-        #                    defaults={"last_run_at": datetime.now() -
-        #                        timedelta(days=-4)})
-        #if not created:
-        #    obj.last_run_at = datetime.now() - timedelta(days=4)
-        #    obj.save()
-        b = Backend()
-        b.run_periodic_tasks()
-
     def test_backend(self):
-        b = Backend()
+        b = DatabaseBackend()
         tid = gen_unique_id()
 
-        self.assertFalse(b.is_done(tid))
+        self.assertFalse(b.is_successful(tid))
         self.assertEquals(b.get_status(tid), "PENDING")
         self.assertTrue(b.get_result(tid) is None)
 
         b.mark_as_done(tid, 42)
-        self.assertTrue(b.is_done(tid))
-        self.assertEquals(b.get_status(tid), "DONE")
+        self.assertTrue(b.is_successful(tid))
+        self.assertEquals(b.get_status(tid), "SUCCESS")
         self.assertEquals(b.get_result(tid), 42)
         self.assertTrue(b._cache.get(tid))
         self.assertTrue(b.get_result(tid), 42)
@@ -64,7 +51,7 @@ class TestDatabaseBackend(unittest.TestCase):
         except KeyError, exception:
             pass
         b.mark_as_failure(tid3, exception)
-        self.assertFalse(b.is_done(tid3))
+        self.assertFalse(b.is_successful(tid3))
         self.assertEquals(b.get_status(tid3), "FAILURE")
         self.assertTrue(isinstance(b.get_result(tid3), KeyError))
 

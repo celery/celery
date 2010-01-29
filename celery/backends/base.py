@@ -1,17 +1,33 @@
 """celery.backends.base"""
 import time
-import operator
-from celery.serialization import pickle
-from celery.serialization import get_pickled_exception
-from celery.serialization import get_pickleable_exception
+
+from billiard.serialization import pickle
+from billiard.serialization import get_pickled_exception
+from billiard.serialization import get_pickleable_exception
+
 from celery.exceptions import TimeoutError
+
+READY_STATES = frozenset(["SUCCESS", "FAILURE"])
+UNREADY_STATES = frozenset(["PENDING", "RETRY"])
+EXCEPTION_STATES = frozenset(["RETRY", "FAILURE"])
 
 
 class BaseBackend(object):
     """The base backend class. All backends should inherit from this."""
 
-    capabilities = []
+    READY_STATES = READY_STATES
+    UNREADY_STATES = UNREADY_STATES
+    EXCEPTION_STATES = EXCEPTION_STATES
+
     TimeoutError = TimeoutError
+
+    capabilities = []
+
+    def encode_result(self, result, status):
+        if status == "SUCCESS":
+            return self.prepare_value(result)
+        elif status in self.EXCEPTION_STATES:
+            return self.prepare_exception(result)
 
     def store_result(self, task_id, result, status):
         """Store the result and status of a task."""
@@ -20,7 +36,7 @@ class BaseBackend(object):
 
     def mark_as_done(self, task_id, result):
         """Mark task as successfully executed."""
-        return self.store_result(task_id, result, status="DONE")
+        return self.store_result(task_id, result, status="SUCCESS")
 
     def mark_as_failure(self, task_id, exc, traceback=None):
         """Mark task as executed with failure. Stores the execption."""
@@ -46,10 +62,8 @@ class BaseBackend(object):
         raise NotImplementedError(
                 "get_status is not supported by this backend.")
 
-    def prepare_result(self, result):
-        """Prepare result for storage."""
-        if result is None:
-            return True
+    def prepare_value(self, result):
+        """Prepare value for storage."""
         return result
 
     def get_result(self, task_id):
@@ -62,9 +76,9 @@ class BaseBackend(object):
         raise NotImplementedError(
                 "get_traceback is not supported by this backend.")
 
-    def is_done(self, task_id):
+    def is_successful(self, task_id):
         """Returns ``True`` if the task was successfully executed."""
-        return self.get_status(task_id) == "DONE"
+        return self.get_status(task_id) == "SUCCESS"
 
     def cleanup(self):
         """Backend cleanup. Is run by
@@ -88,7 +102,7 @@ class BaseBackend(object):
 
         while True:
             status = self.get_status(task_id)
-            if status == "DONE":
+            if status == "SUCCESS":
                 return self.get_result(task_id)
             elif status == "FAILURE":
                 raise self.get_result(task_id)
@@ -99,11 +113,7 @@ class BaseBackend(object):
                 raise TimeoutError("The operation timed out.")
 
     def process_cleanup(self):
-        """Cleanup actions to do at the end of a task worker process.
-
-        See :func:`celery.worker.jail`.
-
-        """
+        """Cleanup actions to do at the end of a task worker process."""
         pass
 
     def store_taskset(self, taskset_id, result):
@@ -140,10 +150,7 @@ class KeyValueStoreBackend(BaseBackend):
 
     def store_result(self, task_id, result, status, traceback=None):
         """Store task result and status."""
-        if status == "DONE":
-            result = self.prepare_result(result)
-        elif status == "FAILURE":
-            result = self.prepare_exception(result)
+        result = self.encode_result(result, status)
         meta = {"status": status, "result": result, "traceback": traceback}
         self.set(self.get_cache_key_for_task(task_id), pickle.dumps(meta))
         return result
@@ -155,7 +162,7 @@ class KeyValueStoreBackend(BaseBackend):
     def get_result(self, task_id):
         """Get the result of a task."""
         meta = self._get_task_meta_for(task_id)
-        if meta["status"] == "FAILURE":
+        if meta["status"] in self.EXCEPTION_STATES:
             return self.exception_to_python(meta["result"])
         else:
             return meta["result"]
@@ -165,9 +172,9 @@ class KeyValueStoreBackend(BaseBackend):
         meta = self._get_task_meta_for(task_id)
         return meta["traceback"]
 
-    def is_done(self, task_id):
+    def is_successful(self, task_id):
         """Returns ``True`` if the task executed successfully."""
-        return self.get_status(task_id) == "DONE"
+        return self.get_status(task_id) == "SUCCESS"
 
     def _get_task_meta_for(self, task_id):
         """Get task metadata for a task by id."""
@@ -177,6 +184,6 @@ class KeyValueStoreBackend(BaseBackend):
         if not meta:
             return {"status": "PENDING", "result": None}
         meta = pickle.loads(str(meta))
-        if meta.get("status") == "DONE":
+        if meta.get("status") == "SUCCESS":
             self._cache[task_id] = meta
         return meta

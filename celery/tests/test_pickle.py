@@ -1,5 +1,6 @@
 import unittest
-from celery.serialization import pickle
+
+from billiard.serialization import pickle
 
 
 class RegularException(Exception):

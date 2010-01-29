@@ -2,10 +2,373 @@
 Change history
 ==============
 
-0.8.0 [2009-09-22 03:06 P.M CET]
---------------------------------
+1.0.0 [xxxx-xx-xx xx:xx x.x xxx]
+================================
 
-**BACKWARD INCOMPATIBLE CHANGES**
+BACKWARD INCOMPATIBLE CHANGES
+-----------------------------
+
+* Celery does not support detaching anymore, so you have to use the tools
+  available on your platform, or something like supervisord to make
+  celeryd/celerybeat/celerymon into background processes.
+
+  We've had too many problems with celeryd daemonizing itself, so it was
+  decided it has to be removed. Example startup scripts has been added to
+  ``contrib/``:
+
+      * Debian, Ubuntu, (start-stop-daemon)
+
+           ``contrib/debian/init.d/celeryd``
+           ``contrib/debian/init.d/celerybeat``
+
+      * Mac OS X launchd
+
+            ``contrib/mac/org.celeryq.celeryd.plist``
+            ``contrib/mac/org.celeryq.celerybeat.plist``
+            ``contrib/mac/org.celeryq.celerymon.plist``
+
+      * Supervisord (http://supervisord.org)
+
+            ``contrib/supervisord/supervisord.conf``
+
+  In addition to ``--detach``, the following program arguments has been
+  removed: ``--uid``, ``--gid``, ``--workdir``, ``--chroot``, ``--pidfile``,
+  ``--umask``. All good daemonization tools should support equivalent
+  functionality, so don't worry.
+
+  Also the following configuration keys has been removed:
+  ``CELERYD_PID_FILE``, ``CELERYBEAT_PID_FILE``, ``CELERYMON_PID_FILE``.
+
+* Default celeryd loglevel is now ``WARN``, to enable the previous log level
+  start celeryd with ``--loglevel=INFO``.
+
+* Tasks are automatically registered.
+
+  This means you no longer have to register your tasks manually.
+  You don't have to change your old code right away, as it doesn't matter if
+  a task is registered twice.
+
+  If you don't want your task to be automatically registered you can set
+  the ``abstract`` attribute
+
+  .. code-block:: python
+
+		class MyTask(Task):
+			abstract = True
+
+  By using ``abstract`` only tasks subclassing this task will be automatically
+  registered (this works like the Django ORM).
+
+  If you don't want subclasses to be registered either, you can set the
+  ``autoregister`` attribute to ``False``.
+
+  Incidentally, this change also fixes the problems with automatic name
+  assignment and relative imports. So you also don't have to specify a task name
+  anymore if you use relative imports.
+
+* You can no longer use regular functions as tasks. This change was added
+  because it makes the internals a lot more clean and simple. However, you can
+  now turn functions into tasks by using the ``@task`` decorator:
+
+  .. code-block:: python
+
+		from celery.decorators import task
+
+		@task
+		def add(x, y):
+			return x + y
+
+  See the User Guide: :doc:`userguide/tasks` for more information.
+
+* The periodic task system has been rewritten to a centralized solution, this
+  means ``celeryd`` no longer schedules periodic tasks by default, but a new
+  daemon has been introduced: ``celerybeat``.
+
+  To launch the periodic task scheduler you have to run celerybeat::
+
+		$ celerybeat
+
+  Make sure this is running on one server only, if you run it twice, all
+  periodic tasks will also be executed twice.
+
+  If you only have one worker server you can embed it into celeryd like this::
+
+		$ celeryd --beat # Embed celerybeat in celeryd.
+
+* The supervisor has been removed, please use something like
+  http://supervisord.org instead. This means the ``-S`` and ``--supervised``
+  options to ``celeryd`` is no longer supported.
+
+* ``TaskSet.join`` has been removed, use ``TaskSetResult.join`` instead.
+
+* The task status ``"DONE"`` has been renamed to `"SUCCESS"`.
+
+* ``AsyncResult.is_done`` has been removed, use ``AsyncResult.successful``
+  instead.
+
+* The worker no longer stores errors if ``Task.ignore_result`` is set, to
+  revert to the previous behaviour set
+  ``CELERY_STORE_ERRORS_EVEN_IF_IGNORED`` to ``True``.
+
+* The staticstics functionality has been removed in favor of events,
+  so the ``-S`` and ``--statistics`` switches has been removed.
+
+* The module ``celery.task.strategy`` has been removed.
+
+* ``celery.discovery`` has been removed, and it's ``autodiscover`` function is
+  now in ``celery.loaders.djangoapp``. Reason: Internal API.
+
+* ``CELERY_LOADER`` now needs loader class name in addition to module name,
+  e.g. where you previously had: ``"celery.loaders.default"``, you now need
+  ``"celery.loaders.default.Loader"``, using the previous syntax will result
+  in a DeprecationWarning.
+
+* Detecting the loader is now lazy, and so is not done when importing
+  ``celery.loaders``. To make this happen ``celery.loaders.settings`` has
+  been renamed to ``load_settings`` and is now a function returning the
+  settings object. ``celery.loaders.current_loader`` is now also
+  a function, returning the current loader.
+
+  So::
+
+    	loader = current_loader
+
+  needs to be changed to::
+
+    	loader = current_loader()
+
+DEPRECATIONS
+------------
+
+* The following configuration variables has been renamed and will be
+  deprecated in v1.2:
+
+  	* CELERYD_DAEMON_LOG_FORMAT -> CELERYD_LOG_FORMAT
+  	* CELERYD_DAEMON_LOG_LEVEL -> CELERYD_LOG_LEVEL
+  	* CELERY_AMQP_CONNECTION_TIMEOUT -> CELERY_BROKER_CONNECTION_TIMEOUT
+  	* CELERY_AMQP_CONNECTION_RETRY -> CELERY_BROKER_CONNECTION_RETRY
+  	* CELERY_AMQP_CONNECTION_MAX_RETRIES -> CELERY_BROKER_CONNECTION_MAX_RETRIES
+  	* SEND_CELERY_TASK_ERROR_EMAILS -> CELERY_SEND_TASK_ERROR_EMAILS
+
+* The public api names in celery.conf has also changed to a consistent naming
+  scheme.
+
+* We now support consuming from an arbitrary number of queues, but to do this
+  we had to rename the configuration syntax. If you use any of the custom
+  AMQP routing options (queue/exchange/routing_key, etc), you should read the
+  new FAQ entry: http://bit.ly/aiWoH. The previous syntax is deprecated and
+  scheduled for removal in v1.2.
+
+* ``TaskSet.run`` has been renamed to ``TaskSet.apply_async``.
+  ``run`` is still deprecated, and is scheduled for removal in v1.2.
+
+
+NEWS
+----
+
+* Rate limiting support (per task type, or globally).
+
+* New periodic task system.
+
+* Automatic registration.
+
+* New cool task decorator syntax.
+
+* celeryd now sends events if enabled with the ``-E`` argument.
+  Excellent for monitoring tools, one is already in the making
+  (http://github.com/ask/celerymon).
+
+  Current events include: worker-heartbeat,
+  task-[received/succeeded/failed/retried],
+  worker-online, worker-offline.
+
+* You can now delete (revoke) tasks that has already been applied.
+
+* You can now set the hostname celeryd identifies as using the ``--hostname``
+  argument.
+
+* Cache backend now respects ``CELERY_TASK_RESULT_EXPIRES``.
+
+* Message format has been standardized and now uses ISO-8601 format
+  for dates instead of datetime.
+
+* ``celeryd`` now responds to the ``HUP`` signal by restarting itself.
+
+* Periodic tasks are now scheduled on the clock, i.e. ``timedelta(hours=1)``
+  means every hour at :00 minutes, not every hour from the server starts.
+  To revert to the previous behaviour you can set
+  ``PeriodicTask.relative = True``.
+
+* Now supports passing execute options to a TaskSets list of args, e.g.:
+
+    >>> ts = TaskSet(add, [([2, 2], {}, {"countdown": 1}),
+    ...                   ([4, 4], {}, {"countdown": 2}),
+    ...                   ([8, 8], {}, {"countdown": 3})])
+    >>> ts.run()
+
+* Got a 3x performance gain by setting the prefetch count to four times the 
+  concurrency, (from an average task round-trip of 0.1s to 0.03s!). A new
+  setting has been added: ``CELERYD_PREFETCH_MULTIPLIER``, which is set
+  to ``4`` by default.
+
+CHANGES
+-------
+
+* Now depends on carrot >= 0.8.1
+
+* New dependencies: billiard, python-dateutil, django-picklefield
+
+* No longer depends on python-daemon
+
+* The ``uuid`` distribution is added as a dependency when running Python 2.4.
+
+* Now remembers the previously detected loader by keeping it in
+  the ``CELERY_LOADER`` environment variable. This may help on windows where
+  fork emulation is used.
+
+* ETA no longer sends datetime objects, but uses ISO 8601 date format in a
+  string for better compatibility with other platforms.
+
+* No longer sends error mails for retried tasks.
+
+* Task can now override the backend used to store results.
+
+* Refactored the ExecuteWrapper, ``apply`` and ``CELERY_ALWAYS_EAGER`` now
+  also executes the task callbacks and signals.
+
+* Now using a proper scheduler for the tasks with an ETA. This means waiting
+  eta tasks are sorted by time, so we don't have to poll the whole list all the
+  time.
+
+* Now also imports modules listed in CELERY_IMPORTS when running
+  with django (as documented).
+
+* Loglevel for stdout/stderr changed from INFO to ERROR
+
+* ImportErrors are now properly propogated when autodiscovering tasks.
+
+* You can now use ``celery.messaging.establish_connection`` to establish a
+  connection to the broker.
+
+* When running as a separate service the periodic task scheduler does some
+  smart moves to not poll too regularly, if you need faster poll times you
+  can lower the value of ``CELERYBEAT_MAX_LOOP_INTERVAL``.
+
+* You can now change periodic task intervals at runtime, by making
+  ``run_every`` a property, or subclassing ``PeriodicTask.is_due``.
+
+* The worker now supports control commands enabled through the use of a
+  broadcast queue, you can remotely revoke tasks or set the rate limit for
+  a task type. See :mod:`celery.task.control`.
+
+* The services now sets informative process names (as shown in ``ps``
+  listings) if the :mod:`setproctitle` module is installed.
+
+* :exc:`celery.exceptions.NotRegistered` now inherits from :exc:`KeyError`,
+  and ``TaskRegistry.__getitem__``+``pop`` raises ``NotRegistered`` instead
+
+* You can set the loader via the ``CELERY_LOADER`` environment variable.
+
+* You can now set ``CELERY_IGNORE_RESULT`` to ignore task results by default
+  (if enabled, tasks doesn't save results or errors to the backend used).
+
+BUGS
+----
+
+* Fixed a race condition that could happen while storing task results in the
+  database.
+
+DOCUMENTATION
+-------------
+
+* Reference now split into two sections; API reference and internal module
+  reference.
+
+
+0.8.1 [2009-11-16 05:21 P.M CEST]
+=================================
+
+VERY IMPORTANT NOTE
+-------------------
+
+This release (with carrot 0.8.0) enables AMQP QoS (quality of service), which
+means the workers will only receive as many messages as it can handle at a
+time. As with any release, you should test this version upgrade on your
+development servers before rolling it out to production!
+
+IMPORTANT CHANGES
+-----------------
+
+* If you're using Python < 2.6 and you use the multiprocessing backport, then
+  multiprocessing version 2.6.2.1 is required.
+
+* All AMQP_* settings has been renamed to BROKER_*, and in addition
+  AMQP_SERVER has been renamed to BROKER_HOST, so before where you had::
+
+		AMQP_SERVER = "localhost"
+		AMQP_PORT = 5678
+		AMQP_USER = "myuser"
+		AMQP_PASSWORD = "mypassword"
+		AMQP_VHOST = "celery"
+
+You need to change that to::
+
+		BROKER_HOST = "localhost"
+		BROKER_PORT = 5678
+		BROKER_USER = "myuser"
+		BROKER_PASSWORD = "mypassword"
+		BROKER_VHOST = "celery"
+
+* Custom carrot backends now need to include the backend class name, so before
+  where you had::
+
+		CARROT_BACKEND = "mycustom.backend.module"
+
+you need to change it to::
+
+		CARROT_BACKEND = "mycustom.backend.module.Backend"
+
+where ``Backend`` is the class name. This is probably ``"Backend"``, as
+that was the previously implied name.
+
+* New version requirement for carrot: 0.8.0
+
+CHANGES
+-------
+
+* Incorporated the multiprocessing backport patch that fixes the
+  ``processName`` error.
+
+* Ignore the result of PeriodicTask's by default.
+
+* Added a Redis result store backend
+
+* Allow /etc/default/celeryd to define additional options for the celeryd init
+  script.
+
+* MongoDB periodic tasks issue when using different time than UTC fixed.
+
+* Windows specific: Negate test for available os.fork (thanks miracle2k)
+
+* Now tried to handle broken PID files.
+
+* Added a Django test runner to contrib that sets CELERY_ALWAYS_EAGER = True for testing with the database backend
+
+* Added a CELERY_CACHE_BACKEND setting for using something other than the django-global cache backend.
+
+* Use custom implementation of functools.partial (curry) for Python 2.4 support
+  (Probably still problems with running on 2.4, but it will eventually be
+  supported)
+
+* Prepare exception to pickle when saving RETRY status for all backends.
+
+* SQLite no concurrency limit should only be effective if the db backend is used.
+
+0.8.0 [2009-09-22 03:06 P.M CEST]
+=================================
+
+BACKWARD INCOMPATIBLE CHANGES
+-----------------------------
 
 * Add traceback to result value on failure.
 	**NOTE** If you use the database backend you have to re-create the
@@ -23,7 +386,8 @@ Change history
 
 * Now depends on python-daemon 1.4.8
 
-**IMPORTANT CHANGES**
+IMPORTANT CHANGES
+-----------------
 
 * Celery can now be used in pure Python (outside of a Django project).
 	This means celery is no longer Django specific.
@@ -85,7 +449,8 @@ Change history
     * AMQP_CONNECTION_MAX_RETRIES.
         Maximum number of restarts before we give up. Default: ``100``.
 
-**NEWS**
+NEWS
+----
 
 *  Fix an incompatibility between python-daemon and multiprocessing,
 	which resulted in the ``[Errno 10] No child processes`` problem when
@@ -134,9 +499,10 @@ Change history
 	Thanks mikedizon
 
 0.6.0 [2009-08-07 06:54 A.M CET]
---------------------------------
+================================
 
-**IMPORTANT CHANGES**
+IMPORTANT CHANGES
+-----------------
 
 * Fixed a bug where tasks raising unpickleable exceptions crashed pool
 	workers. So if you've had pool workers mysteriously dissapearing, or
@@ -154,7 +520,8 @@ Change history
 	we didn't do this before. Some documentation is updated to not manually
 	specify a task name.
 
-**NEWS**
+NEWS
+----
 
 * Tested with Django 1.1
 
@@ -206,13 +573,13 @@ Change history
 * Convert statistics data to unicode for use as kwargs. Thanks Lucy!
 
 0.4.1 [2009-07-02 01:42 P.M CET]
---------------------------------
+================================
 
 * Fixed a bug with parsing the message options (``mandatory``,
   ``routing_key``, ``priority``, ``immediate``)
 
-0.4.0 [2009-07-01 07:29 P.M CET] 
---------------------------------
+0.4.0 [2009-07-01 07:29 P.M CET]
+================================
 
 * Adds eager execution. ``celery.execute.apply``|``Task.apply`` executes the
   function blocking until the task is done, for API compatiblity it
@@ -224,8 +591,8 @@ Change history
 
 * 99% coverage using python ``coverage`` 3.0.
 
-0.3.20 [2009-06-25 08:42 P.M CET] 
----------------------------------
+0.3.20 [2009-06-25 08:42 P.M CET]
+=================================
 
 * New arguments to ``apply_async`` (the advanced version of
   ``delay_task``), ``countdown`` and ``eta``;
@@ -362,14 +729,14 @@ Change history
 * Tyrant Backend: Now re-establishes the connection for every task
   executed.
 
-0.3.3 [2009-06-08 01:07 P.M CET] 
---------------------------------
+0.3.3 [2009-06-08 01:07 P.M CET]
+================================
 
-	* The ``PeriodicWorkController`` now sleeps for 1 second between checking
-		for periodic tasks to execute.
+* The ``PeriodicWorkController`` now sleeps for 1 second between checking
+  for periodic tasks to execute.
 
 0.3.2 [2009-06-08 01:07 P.M CET]
---------------------------------
+================================
 
 * celeryd: Added option ``--discard``: Discard (delete!) all waiting
   messages in the queue.
@@ -377,7 +744,7 @@ Change history
 * celeryd: The ``--wakeup-after`` option was not handled as a float.
 
 0.3.1 [2009-06-08 01:07 P.M CET]
---------------------------------
+================================
 
 * The `PeriodicTask`` worker is now running in its own thread instead
   of blocking the ``TaskController`` loop.
@@ -385,7 +752,7 @@ Change history
 * Default ``QUEUE_WAKEUP_AFTER`` has been lowered to ``0.1`` (was ``0.3``)
 
 0.3.0 [2009-06-08 12:41 P.M CET]
---------------------------------
+================================
 
 **NOTE** This is a development version, for the stable release, please
 see versions 0.2.x.
@@ -459,7 +826,7 @@ arguments, so be sure to flush your task queue before you upgrade.
   stability.
 
 0.2.0 [2009-05-20 05:14 P.M CET]
---------------------------------
+================================
 
 * Final release of 0.2.0
 
@@ -469,20 +836,20 @@ arguments, so be sure to flush your task queue before you upgrade.
   from the database backend.
 
 0.2.0-pre3 [2009-05-20 05:14 P.M CET]
--------------------------------------
+=====================================
 
 * *Internal release*. Improved handling of unpickled exceptions,
   ``get_result`` now tries to recreate something looking like the
   original exception.
 
 0.2.0-pre2 [2009-05-20 01:56 P.M CET]
--------------------------------------
+=====================================
 
 * Now handles unpickleable exceptions (like the dynimically generated
   subclasses of ``django.core.exception.MultipleObjectsReturned``).
 
 0.2.0-pre1 [2009-05-20 12:33 P.M CET]
--------------------------------------
+=====================================
 
 * It's getting quite stable, with a lot of new features, so bump
   version to 0.2. This is a pre-release.
@@ -492,20 +859,20 @@ arguments, so be sure to flush your task queue before you upgrade.
   and ``celery.backends.default_backend.mark_as_failure()`` instead.
 
 0.1.15 [2009-05-19 04:13 P.M CET]
----------------------------------
+=================================
 
 * The celery daemon was leaking AMQP connections, this should be fixed,
   if you have any problems with too many files open (like ``emfile``
   errors in ``rabbit.log``, please contact us!
 
 0.1.14 [2009-05-19 01:08 P.M CET]
----------------------------------
+=================================
 
 * Fixed a syntax error in the ``TaskSet`` class.  (No such variable
   ``TimeOutError``).
 
 0.1.13 [2009-05-19 12:36 P.M CET]
----------------------------------
+=================================
 
 * Forgot to add ``yadayada`` to install requirements.
 
@@ -526,7 +893,7 @@ arguments, so be sure to flush your task queue before you upgrade.
   and the result will be in ``docs/.build/html``.
 
 0.1.12 [2009-05-18 04:38 P.M CET]
----------------------------------
+=================================
 
 * ``delay_task()`` etc. now returns ``celery.task.AsyncResult`` object,
   which lets you check the result and any failure that might have
@@ -564,13 +931,13 @@ arguments, so be sure to flush your task queue before you upgrade.
 		TT_PORT = 6657; # Port of the Tokyo Tyrant server.
 
 0.1.11 [2009-05-12 02:08 P.M CET]
----------------------------------
+=================================
 
 * The logging system was leaking file descriptors, resulting in
   servers stopping with the EMFILES (too many open files) error. (fixed)
 
 0.1.10 [2009-05-11 12:46 P.M CET]
----------------------------------
+=================================
 
 * Tasks now supports both positional arguments and keyword arguments.
 
@@ -579,7 +946,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 * The daemon now tries to reconnect if the connection is lost.
 
 0.1.8 [2009-05-07 12:27 P.M CET]
---------------------------------
+================================
 
 * Better test coverage
 * More documentation
@@ -587,7 +954,7 @@ arguments, so be sure to flush your task queue before you upgrade.
   ``settings.CELERYD_EMPTY_MSG_EMIT_EVERY`` is 0.
 
 0.1.7 [2009-04-30 1:50 P.M CET]
--------------------------------
+===============================
 
 * Added some unittests
 
@@ -602,7 +969,7 @@ arguments, so be sure to flush your task queue before you upgrade.
   and ``settings.CELERY_AMQP_CONSUMER_QUEUE``.
 
 0.1.6 [2009-04-28 2:13 P.M CET]
--------------------------------
+===============================
 
 * Introducing ``TaskSet``. A set of subtasks is executed and you can
   find out how many, or if all them, are done (excellent for progress
@@ -645,6 +1012,6 @@ arguments, so be sure to flush your task queue before you upgrade.
   the name change request is in ``docs/name_change_request.txt``.
 
 0.1.0 [2009-04-24 11:28 A.M CET]
---------------------------------
+================================
 
 * Initial release

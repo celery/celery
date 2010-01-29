@@ -1,29 +1,39 @@
 from __future__ import with_statement
+
 import os
 import sys
 import logging
 import unittest
-import multiprocessing
-from StringIO import StringIO
-from celery.log import setup_logger, emergency_error
-from celery.tests.utils import override_stdouts
 from tempfile import mktemp
+from StringIO import StringIO
+from contextlib import contextmanager
+
+from carrot.utils import rpartition
+
+from celery.log import (setup_logger, emergency_error,
+                        redirect_stdouts_to_logger, LoggingProxy)
+from celery.tests.utils import override_stdouts
+
+
+@contextmanager
+def wrap_logger(logger, loglevel=logging.ERROR):
+    old_handlers = logger.handlers
+    sio = StringIO()
+    siohandler = logging.StreamHandler(sio)
+    logger.handlers = [siohandler]
+
+    yield sio
+
+    logger.handlers = old_handlers
 
 
 class TestLog(unittest.TestCase):
 
     def _assertLog(self, logger, logmsg, loglevel=logging.ERROR):
-        # Save old handlers
-        old_handler = logger.handlers[0]
-        logger.removeHandler(old_handler)
-        sio = StringIO()
-        siohandler = logging.StreamHandler(sio)
-        logger.addHandler(siohandler)
-        logger.log(loglevel, logmsg)
-        logger.removeHandler(siohandler)
-        # Reset original handlers
-        logger.addHandler(old_handler)
-        return sio.getvalue().strip()
+
+        with wrap_logger(logger, loglevel=loglevel) as sio:
+            logger.log(loglevel, logmsg)
+            return sio.getvalue().strip()
 
     def assertDidLogTrue(self, logger, logmsg, reason, loglevel=None):
         val = self._assertLog(logger, logmsg, loglevel=loglevel)
@@ -51,7 +61,7 @@ class TestLog(unittest.TestCase):
     def test_emergency_error(self):
         sio = StringIO()
         emergency_error(sio, "Testing emergency error facility")
-        self.assertEquals(sio.getvalue().rpartition(":")[2].strip(),
+        self.assertEquals(rpartition(sio.getvalue(), ":")[2].strip(),
                              "Testing emergency error facility")
 
     def test_setup_logger_no_handlers_stream(self):
@@ -85,3 +95,32 @@ class TestLog(unittest.TestCase):
         with open(tempfile, "r") as tempfilefh:
             self.assertTrue("Vandelay Industries" in "".join(tempfilefh))
         os.unlink(tempfile)
+
+    def test_redirect_stdouts(self):
+        logger = setup_logger(loglevel=logging.ERROR, logfile=None)
+        try:
+            with wrap_logger(logger) as sio:
+                redirect_stdouts_to_logger(logger, loglevel=logging.ERROR)
+                logger.error("foo")
+                self.assertTrue("foo" in sio.getvalue())
+        finally:
+            sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
+
+    def test_logging_proxy(self):
+        logger = setup_logger(loglevel=logging.ERROR, logfile=None)
+        with wrap_logger(logger) as sio:
+            p = LoggingProxy(logger)
+            p.close()
+            p.write("foo")
+            self.assertTrue("foo" not in sio.getvalue())
+            p.closed = False
+            p.write("foo")
+            self.assertTrue("foo" in sio.getvalue())
+            lines = ["baz", "xuzzy"]
+            p.writelines(lines)
+            for line in lines:
+                self.assertTrue(line in sio.getvalue())
+            p.flush()
+            p.close()
+            self.assertFalse(p.isatty())
+            self.assertTrue(p.fileno() is None)

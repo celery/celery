@@ -6,4 +6,3 @@ class SomeAppTask(Task):
 
     def run(self, **kwargs):
         return 42
-tasks.register(SomeAppTask)

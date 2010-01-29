@@ -1,4 +1,5 @@
 import os
+
 from celery.loaders.base import BaseLoader
 
 DEFAULT_CONFIG_MODULE = "celeryconfig"
@@ -12,8 +13,7 @@ DEFAULT_SETTINGS = {
 
 
 def wanted_module_item(item):
-    is_private = item.startswith("_")
-    return not is_private
+    return not item.startswith("_")
 
 
 class Loader(BaseLoader):
@@ -23,26 +23,30 @@ class Loader(BaseLoader):
 
     """
 
+    def setup_django_env(self, settingsdict):
+        config = dict(DEFAULT_SETTINGS, **settingsdict)
+
+        from django.conf import settings
+        if not settings.configured:
+            settings.configure()
+        for config_key, config_value in config.items():
+            setattr(settings, config_key, config_value)
+        installed_apps = set(list(DEFAULT_SETTINGS["INSTALLED_APPS"]) + \
+                             list(settings.INSTALLED_APPS))
+        settings.INSTALLED_APPS = tuple(installed_apps)
+
+        return settings
+
     def read_configuration(self):
         """Read configuration from ``celeryconfig.py`` and configure
         celery and Django so it can be used by regular Python."""
-        config = dict(DEFAULT_SETTINGS)
         configname = os.environ.get("CELERY_CONFIG_MODULE",
                                     DEFAULT_CONFIG_MODULE)
         celeryconfig = __import__(configname, {}, {}, [''])
         usercfg = dict((key, getattr(celeryconfig, key))
                             for key in dir(celeryconfig)
                                 if wanted_module_item(key))
-        config.update(usercfg)
-        from django.conf import settings
-        if not settings.configured:
-            settings.configure()
-        for config_key, config_value in usercfg.items():
-            setattr(settings, config_key, config_value)
-        installed_apps = set(DEFAULT_SETTINGS["INSTALLED_APPS"] + \
-                             settings.INSTALLED_APPS)
-        settings.INSTALLED_APPS = tuple(installed_apps)
-        return settings
+        return self.setup_django_env(usercfg)
 
     def on_worker_init(self):
         """Imports modules at worker init so tasks can be registered
@@ -52,6 +56,4 @@ class Loader(BaseLoader):
         setting in ``celeryconf.py``.
 
         """
-        imports = getattr(self.conf, "CELERY_IMPORTS", [])
-        for module in imports:
-            __import__(module, [], [], [''])
+        self.import_default_modules()

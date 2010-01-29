@@ -1,22 +1,16 @@
 """MongoDB backend for celery."""
-
-import random
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from django.core.exceptions import ImproperlyConfigured
-from celery.serialization import pickle
-from celery.backends.base import BaseBackend
-from celery.loaders import settings
-from celery.conf import TASK_RESULT_EXPIRES
-from celery.registry import tasks
-
+from billiard.serialization import pickle
 try:
     import pymongo
 except ImportError:
     pymongo = None
 
-# taken from celery.managers.PeriodicTaskManager
-SERVER_DRIFT = timedelta(seconds=random.vonmisesvariate(1, 4))
+from celery.backends.base import BaseBackend
+from celery.loaders import load_settings
+from celery.conf import TASK_RESULT_EXPIRES
 
 
 class Bunch:
@@ -25,9 +19,9 @@ class Bunch:
         self.__dict__.update(kw)
 
 
-class Backend(BaseBackend):
+class MongoBackend(BaseBackend):
 
-    capabilities = ("ResultStore", "PeriodicStatus")
+    capabilities = ["ResultStore"]
 
     mongodb_host = 'localhost'
     mongodb_port = 27017
@@ -35,7 +29,6 @@ class Backend(BaseBackend):
     mongodb_password = None
     mongodb_database = 'celery'
     mongodb_taskmeta_collection = 'celery_taskmeta'
-    mongodb_periodictaskmeta_collection = 'celery_periodictaskmeta'
 
     def __init__(self, *args, **kwargs):
         """Initialize MongoDB backend instance.
@@ -49,6 +42,8 @@ class Backend(BaseBackend):
             raise ImproperlyConfigured(
                 "You need to install the pymongo library to use the "
                 "MongoDB backend.")
+
+        settings = load_settings()
 
         conf = getattr(settings, "CELERY_MONGODB_BACKEND_SETTINGS", None)
         if conf is not None:
@@ -65,11 +60,8 @@ class Backend(BaseBackend):
                     'database', self.mongodb_database)
             self.mongodb_taskmeta_collection = conf.get(
                 'taskmeta_collection', self.mongodb_taskmeta_collection)
-            self.mongodb_collection_periodictaskmeta = conf.get(
-                'periodictaskmeta_collection',
-                self.mongodb_periodictaskmeta_collection)
 
-        super(Backend, self).__init__(*args, **kwargs)
+        super(MongoBackend, self).__init__(*args, **kwargs)
         self._cache = {}
         self._connection = None
         self._database = None
@@ -104,96 +96,16 @@ class Backend(BaseBackend):
             # goes out of scope
             self._connection = None
 
-    def init_periodic_tasks(self):
-        """Create collection for periodic tasks in database."""
-        db = self._get_database()
-        collection = db[self.mongodb_periodictaskmeta_collection]
-        collection.ensure_index("name", pymongo.ASCENDING, unique=True)
-
-        periodic_tasks = tasks.get_all_periodic()
-        for task_name in periodic_tasks.keys():
-            if not collection.find_one({"name": task_name}):
-                collection.save({"name": task_name,
-                                 "last_run_at": datetime.fromtimestamp(0),
-                                 "total_run_count": 0}, safe=True)
-
-    def run_periodic_tasks(self):
-        """Run all waiting periodic tasks.
-
-        :returns: a list of ``(task, task_id)`` tuples containing
-            the task class and id for the resulting tasks applied.
-        """
-        db = self._get_database()
-        collection = db[self.mongodb_periodictaskmeta_collection]
-
-        waiting_tasks = self._get_waiting_tasks()
-        task_id_tuples = []
-        for waiting_task in waiting_tasks:
-            task = tasks[waiting_task['name']]
-            resp = task.delay()
-            collection.update({'_id': waiting_task['_id']},
-                              {"$inc": {"total_run_count": 1}})
-
-            task_meta = Bunch(name=waiting_task['name'],
-                              last_run_at=waiting_task['last_run_at'],
-                              total_run_count=waiting_task['total_run_count'])
-            task_id_tuples.append((task_meta, resp.task_id))
-
-        return task_id_tuples
-
-    def _is_time(self, last_run_at, run_every):
-        """Check if if it is time to run the periodic task.
-
-        :param last_run_at: Last time the periodic task was run.
-        :param run_every: How often to run the periodic task.
-
-        :rtype bool:
-
-        """
-        # code taken from celery.managers.PeriodicTaskManager
-        run_every_drifted = run_every + SERVER_DRIFT
-        run_at = last_run_at + run_every_drifted
-        if datetime.now() > run_at:
-            return True
-        return False
-
-    def _get_waiting_tasks(self):
-        """Get all waiting periodic tasks."""
-        db = self._get_database()
-        collection = db[self.mongodb_periodictaskmeta_collection]
-
-        periodic_tasks = tasks.get_all_periodic()
-
-        # find all periodic tasks to be run
-        waiting = []
-        for task_meta in collection.find():
-            if task_meta['name'] in periodic_tasks:
-                task = periodic_tasks[task_meta['name']]
-                run_every = task.run_every
-                if self._is_time(task_meta['last_run_at'], run_every):
-                    collection.update(
-                        {"name": task_meta['name'],
-                         "last_run_at": task_meta['last_run_at']},
-                        {"$set": {"last_run_at": datetime.utcnow()}})
-
-                    if db.last_status()['updatedExisting']:
-                        waiting.append(task_meta)
-
-        return waiting
-
     def store_result(self, task_id, result, status, traceback=None):
         """Store return value and status of an executed task."""
         from pymongo.binary import Binary
 
-        if status == 'DONE':
-            result = self.prepare_result(result)
-        elif status == 'FAILURE':
-            result = self.prepare_exception(result)
+        result = self.encode_result(result, status)
 
         meta = {"_id": task_id,
                 "status": status,
                 "result": Binary(pickle.dumps(result)),
-                "date_done": datetime.utcnow(),
+                "date_done": datetime.now(),
                 "traceback": Binary(pickle.dumps(traceback))}
 
         db = self._get_database()
@@ -201,9 +113,9 @@ class Backend(BaseBackend):
 
         taskmeta_collection.save(meta, safe=True)
 
-    def is_done(self, task_id):
+    def is_successful(self, task_id):
         """Returns ``True`` if the task executed successfully."""
-        return self.get_status(task_id) == "DONE"
+        return self.get_status(task_id) == "SUCCESS"
 
     def get_status(self, task_id):
         """Get status of a task."""
@@ -240,7 +152,7 @@ class Backend(BaseBackend):
             "date_done": obj["date_done"],
             "traceback": pickle.loads(str(obj["traceback"])),
         }
-        if meta["status"] == "DONE":
+        if meta["status"] == "SUCCESS":
             self._cache[task_id] = meta
 
         return meta

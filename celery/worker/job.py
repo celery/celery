@@ -3,13 +3,21 @@
 Jobs Executable by the Worker Server.
 
 """
-from celery.registry import tasks
-from celery.exceptions import NotRegistered
-from celery.execute import ExecuteWrapper
-from celery.utils import noop, fun_takes_kwargs
-from celery.log import get_default_logger
-from django.core.mail import mail_admins
+import sys
+import time
 import socket
+import warnings
+
+from django.core.mail import mail_admins
+
+from celery import conf
+from celery import platform
+from celery.log import get_default_logger
+from celery.utils import noop, fun_takes_kwargs
+from celery.loaders import current_loader
+from celery.execute.trace import TaskTrace
+from celery.registry import tasks
+from celery.datastructures import ExceptionInfo
 
 # pep8.py borks on a inline signature separator and
 # says "trailing whitespace" ;)
@@ -30,9 +38,95 @@ celeryd at %%(hostname)s.
 """ % {"EMAIL_SIGNATURE_SEP": EMAIL_SIGNATURE_SEP}
 
 
+class InvalidTaskError(Exception):
+    """The task has invalid data or is not properly constructed."""
+
+
 class AlreadyExecutedError(Exception):
     """Tasks can only be executed once, as they might change
     world-wide state."""
+
+
+class WorkerTaskTrace(TaskTrace):
+    """Wraps the task in a jail, catches all exceptions, and
+    saves the status and result of the task execution to the task
+    meta backend.
+
+    If the call was successful, it saves the result to the task result
+    backend, and sets the task status to ``"SUCCESS"``.
+
+    If the call raises :exc:`celery.exceptions.RetryTaskError`, it extracts
+    the original exception, uses that as the result and sets the task status
+    to ``"RETRY"``.
+
+    If the call results in an exception, it saves the exception as the task
+    result, and sets the task status to ``"FAILURE"``.
+
+    :param task_name: The name of the task to execute.
+    :param task_id: The unique id of the task.
+    :param args: List of positional args to pass on to the function.
+    :param kwargs: Keyword arguments mapping to pass on to the function.
+
+    :returns: the function return value on success, or
+        the exception instance on failure.
+
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.loader = kwargs.pop("loader", current_loader())
+        super(WorkerTaskTrace, self).__init__(*args, **kwargs)
+
+        self._store_errors = True
+        if self.task.ignore_result:
+            self._store_errors = conf.STORE_ERRORS_EVEN_IF_IGNORED
+        self.super = super(WorkerTaskTrace, self)
+
+    def execute_safe(self, *args, **kwargs):
+        """Same as :meth:`execute`, but catches errors."""
+        try:
+            return self.execute(*args, **kwargs)
+        except Exception, exc:
+            _type, _value, _tb = sys.exc_info()
+            _value = self.task.backend.prepare_exception(exc)
+            exc_info = ExceptionInfo((_type, _value, _tb))
+            warnings.warn("Exception outside body: %s: %s\n%s" % tuple(
+                map(str, (exc.__class__, exc, exc_info.traceback))))
+            return exc_info
+
+    def execute(self):
+        """Execute, trace and store the result of the task."""
+        self.loader.on_task_init(self.task_id, self.task)
+        self.task.backend.process_cleanup()
+        return self._trace()
+
+    def handle_success(self, retval, *args):
+        """Handle successful execution."""
+        if not self.task.ignore_result:
+            self.task.backend.mark_as_done(self.task_id, retval)
+        return self.super.handle_success(retval, *args)
+
+    def handle_retry(self, exc, type_, tb, strtb):
+        """Handle retry exception."""
+        message, orig_exc = exc.args
+        if self._store_errors:
+            self.task.backend.mark_as_retry(self.task_id, orig_exc, strtb)
+        self.super.handle_retry(exc, type_, tb, strtb)
+
+    def handle_failure(self, exc, type_, tb, strtb):
+        """Handle exception."""
+        if self._store_errors:
+            exc = self.task.backend.mark_as_failure(self.task_id, exc, strtb)
+        else:
+            exc = self.task.backend.prepare_exception(exc)
+        return self.super.handle_failure(exc, type_, tb, strtb)
+
+
+def execute_and_trace(task_name, *args, **kwargs):
+    platform.set_mp_process_title("celeryd", info=task_name)
+    try:
+        return WorkerTaskTrace(task_name, *args, **kwargs).execute_safe()
+    finally:
+        platform.set_mp_process_title("celeryd")
 
 
 class TaskWrapper(object):
@@ -42,8 +136,6 @@ class TaskWrapper(object):
     :param task_name: see :attr:`task_name`.
 
     :param task_id: see :attr:`task_id`.
-
-    :param task_func: see :attr:`task_func`
 
     :param args: see :attr:`args`
 
@@ -56,10 +148,6 @@ class TaskWrapper(object):
     .. attribute:: task_id
 
         UUID of the task.
-
-    .. attribute:: task_func
-
-        The tasks callable object.
 
     .. attribute:: args
 
@@ -88,22 +176,24 @@ class TaskWrapper(object):
     """
     fail_email_body = TASK_FAIL_EMAIL_BODY
 
-    def __init__(self, task_name, task_id, task_func, args, kwargs,
+    def __init__(self, task_name, task_id, args, kwargs,
             on_ack=noop, retries=0, **opts):
         self.task_name = task_name
         self.task_id = task_id
-        self.task_func = task_func
         self.retries = retries
         self.args = args
         self.kwargs = kwargs
-        self.logger = kwargs.get("logger")
+        self.logger = opts.get("logger")
+        self.eventer = opts.get("eventer")
         self.on_ack = on_ack
         self.executed = False
+        self.time_start = None
         for opt in ("success_msg", "fail_msg", "fail_email_subject",
                 "fail_email_body"):
             setattr(self, opt, opts.get(opt, getattr(self, opt, None)))
         if not self.logger:
             self.logger = get_default_logger()
+        self.task = tasks[self.task_name]
 
     def __repr__(self):
         return '<%s: {name:"%s", id:"%s", args:"%s", kwargs:"%s"}>' % (
@@ -112,7 +202,7 @@ class TaskWrapper(object):
                 self.args, self.kwargs)
 
     @classmethod
-    def from_message(cls, message, message_data, logger=None):
+    def from_message(cls, message, message_data, logger=None, eventer=None):
         """Create a :class:`TaskWrapper` from a task message sent by
         :class:`celery.messaging.TaskPublisher`.
 
@@ -128,15 +218,16 @@ class TaskWrapper(object):
         kwargs = message_data["kwargs"]
         retries = message_data.get("retries", 0)
 
+        if not hasattr(kwargs, "items"):
+            raise InvalidTaskError("Task kwargs must be a dictionary.")
+
         # Convert any unicode keys in the keyword arguments to ascii.
         kwargs = dict((key.encode("utf-8"), value)
                         for key, value in kwargs.items())
 
-        if task_name not in tasks:
-            raise NotRegistered(task_name)
-        task_func = tasks[task_name]
-        return cls(task_name, task_id, task_func, args, kwargs,
-                    retries=retries, on_ack=message.ack, logger=logger)
+        return cls(task_name, task_id, args, kwargs,
+                    retries=retries, on_ack=message.ack,
+                    logger=logger, eventer=eventer)
 
     def extend_with_default_kwargs(self, loglevel, logfile):
         """Extend the tasks keyword arguments with standard task arguments.
@@ -153,18 +244,17 @@ class TaskWrapper(object):
                             "task_id": self.task_id,
                             "task_name": self.task_name,
                             "task_retries": self.retries}
-        fun = getattr(self.task_func, "run", self.task_func)
+        fun = self.task.run
         supported_keys = fun_takes_kwargs(fun, default_kwargs)
         extend_with = dict((key, val) for key, val in default_kwargs.items()
                                 if key in supported_keys)
         kwargs.update(extend_with)
         return kwargs
 
-    def _executeable(self, loglevel=None, logfile=None):
-        """Get the :class:`celery.execute.ExecuteWrapper` for this task."""
+    def _get_tracer_args(self, loglevel=None, logfile=None):
+        """Get the :class:`WorkerTaskTrace` tracer for this task."""
         task_func_kwargs = self.extend_with_default_kwargs(loglevel, logfile)
-        return ExecuteWrapper(self.task_func, self.task_id, self.task_name,
-                              self.args, task_func_kwargs)
+        return self.task_name, self.task_id, self.args, task_func_kwargs
 
     def _set_executed_bit(self):
         """Set task as executed to make sure it's not executed again."""
@@ -175,7 +265,7 @@ class TaskWrapper(object):
         self.executed = True
 
     def execute(self, loglevel=None, logfile=None):
-        """Execute the task in a :class:`celery.execute.ExecuteWrapper`.
+        """Execute the task in a :class:`WorkerTaskTrace`.
 
         :keyword loglevel: The loglevel used by the task.
 
@@ -188,7 +278,12 @@ class TaskWrapper(object):
         # acknowledge task as being processed.
         self.on_ack()
 
-        return self._executeable(loglevel, logfile)()
+        tracer = WorkerTaskTrace(*self._get_tracer_args(loglevel, logfile))
+        return tracer.execute()
+
+    def send_event(self, type, **fields):
+        if self.eventer:
+            self.eventer.send(type, **fields)
 
     def execute_using_pool(self, pool, loglevel=None, logfile=None):
         """Like :meth:`execute`, but using the :mod:`multiprocessing` pool.
@@ -205,14 +300,22 @@ class TaskWrapper(object):
         # Make sure task has not already been executed.
         self._set_executed_bit()
 
-        wrapper = self._executeable(loglevel, logfile)
-        return pool.apply_async(wrapper,
+        self.send_event("task-accepted", uuid=self.task_id)
+
+        args = self._get_tracer_args(loglevel, logfile)
+        self.time_start = time.time()
+        return pool.apply_async(execute_and_trace, args=args,
                 callbacks=[self.on_success], errbacks=[self.on_failure],
                 on_ack=self.on_ack)
 
     def on_success(self, ret_value):
         """The handler used if the task was successfully processed (
         without raising an exception)."""
+
+        runtime = time.time() - self.time_start
+        self.send_event("task-succeeded", uuid=self.task_id,
+                        result=ret_value, runtime=runtime)
+
         msg = self.success_msg.strip() % {
                 "id": self.task_id,
                 "name": self.task_name,
@@ -221,7 +324,10 @@ class TaskWrapper(object):
 
     def on_failure(self, exc_info):
         """The handler used if the task raised an exception."""
-        from celery.conf import SEND_CELERY_TASK_ERROR_EMAILS
+
+        self.send_event("task-failed", uuid=self.task_id,
+                                       exception=exc_info.exception,
+                                       traceback=exc_info.traceback)
 
         context = {
             "hostname": socket.gethostname(),
@@ -235,8 +341,8 @@ class TaskWrapper(object):
         self.logger.error(self.fail_msg.strip() % context)
 
         task_obj = tasks.get(self.task_name, object)
-        send_error_email = SEND_CELERY_TASK_ERROR_EMAILS and not \
-                getattr(task_obj, "disable_error_emails", False)
+        send_error_email = conf.CELERY_SEND_TASK_ERROR_EMAILS and not \
+                                task_obj.disable_error_emails
         if send_error_email:
             subject = self.fail_email_subject.strip() % context
             body = self.fail_email_body.strip() % context

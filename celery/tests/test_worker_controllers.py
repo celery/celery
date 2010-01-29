@@ -1,25 +1,27 @@
-import unittest
 import time
-import multiprocessing
-from Queue import Queue, Empty
-from datetime import datetime, timedelta
+import unittest
+from Queue import Queue
 
-from celery.worker.controllers import Mediator, PeriodicWorkController
-from celery.worker.controllers import BackgroundThread
+from celery.utils import gen_unique_id
+from celery.worker.controllers import Mediator
+from celery.worker.controllers import BackgroundThread, ScheduleController
 
 
 class MockTask(object):
     task_id = 1234
     task_name = "mocktask"
+    acked = False
 
     def __init__(self, value, **kwargs):
         self.value = value
+
+    def on_ack(self):
+        self.acked = True
 
 
 class MyBackgroundThread(BackgroundThread):
 
     def on_iteration(self):
-        import time
         time.sleep(1)
 
 
@@ -48,8 +50,8 @@ class TestBackgroundThread(unittest.TestCase):
 class TestMediator(unittest.TestCase):
 
     def test_mediator_start__stop(self):
-        bucket_queue = Queue()
-        m = Mediator(bucket_queue, lambda t: t)
+        ready_queue = Queue()
+        m = Mediator(ready_queue, lambda t: t)
         m.start()
         self.assertFalse(m._shutdown.isSet())
         self.assertFalse(m._stopped.isSet())
@@ -59,57 +61,57 @@ class TestMediator(unittest.TestCase):
         self.assertTrue(m._stopped.isSet())
 
     def test_mediator_on_iteration(self):
-        bucket_queue = Queue()
+        ready_queue = Queue()
         got = {}
 
         def mycallback(value):
             got["value"] = value.value
 
-        m = Mediator(bucket_queue, mycallback)
-        bucket_queue.put(MockTask("George Constanza"))
+        m = Mediator(ready_queue, mycallback)
+        ready_queue.put(MockTask("George Constanza"))
 
         m.on_iteration()
 
         self.assertEquals(got["value"], "George Constanza")
 
+    def test_mediator_on_iteration_revoked(self):
+        ready_queue = Queue()
+        got = {}
 
-class TestPeriodicWorkController(unittest.TestCase):
+        def mycallback(value):
+            got["value"] = value.value
 
-    def test_process_hold_queue(self):
-        bucket_queue = Queue()
-        hold_queue = Queue()
-        m = PeriodicWorkController(bucket_queue, hold_queue)
-        m.process_hold_queue()
+        m = Mediator(ready_queue, mycallback)
+        t = MockTask("Jerry Seinfeld")
+        t.task_id = gen_unique_id()
+        from celery.worker.revoke import revoked
+        revoked.add(t.task_id)
+        ready_queue.put(t)
 
-        scratchpad = {}
+        m.on_iteration()
 
-        def on_accept():
-            scratchpad["accepted"] = True
+        self.assertTrue("value" not in got)
+        self.assertTrue(t.acked)
 
-        hold_queue.put((MockTask("task1"),
-                        datetime.now() - timedelta(days=1),
-                        on_accept))
 
-        m.process_hold_queue()
-        self.assertRaises(Empty, hold_queue.get_nowait)
-        self.assertTrue(scratchpad.get("accepted"))
-        self.assertEquals(bucket_queue.get_nowait().value, "task1")
-        tomorrow = datetime.now() + timedelta(days=1)
-        hold_queue.put((MockTask("task2"), tomorrow, on_accept))
-        m.process_hold_queue()
-        self.assertRaises(Empty, bucket_queue.get_nowait)
-        value, eta, on_accept = hold_queue.get_nowait()
-        self.assertEquals(value.value, "task2")
-        self.assertEquals(eta, tomorrow)
-
-    def test_run_periodic_tasks(self):
-        bucket_queue = Queue()
-        hold_queue = Queue()
-        m = PeriodicWorkController(bucket_queue, hold_queue)
-        m.run_periodic_tasks()
+class TestScheduleController(unittest.TestCase):
 
     def test_on_iteration(self):
-        bucket_queue = Queue()
-        hold_queue = Queue()
-        m = PeriodicWorkController(bucket_queue, hold_queue)
-        m.on_iteration()
+        times = range(10) + [None]
+        c = ScheduleController(times)
+
+        import time
+        slept = [None]
+
+        def _sleep(count):
+            slept[0] = count
+
+        old_sleep = time.sleep
+        time.sleep = _sleep
+        try:
+            for i in times:
+                c.on_iteration()
+                res = i is None and 1 or i
+                self.assertEquals(slept[0], res)
+        finally:
+            time.sleep = old_sleep

@@ -17,22 +17,18 @@
     Logging level, choose between ``DEBUG``, ``INFO``, ``WARNING``,
     ``ERROR``, ``CRITICAL``, or ``FATAL``.
 
-.. cmdoption:: -p, --pidfile
+.. cmdoption:: -n, --hostname
 
-    Path to pidfile.
+    Set custom hostname.
 
-.. cmdoption:: -s, --statistics
+.. cmdoption:: -B, --beat
 
-    Turn on reporting of statistics (remember to flush the statistics message
-    queue from time to time).
+    Also run the ``celerybeat`` periodic task scheduler. Please note that
+    there must only be one instance of this service.
 
-.. cmdoption:: -d, --detach, --daemon
+.. cmdoption:: -E, --events
 
-    Run in the background as a daemon.
-
-.. cmdoption:: -S, --supervised
-
-    Restart the worker server if it dies.
+    Send events that can be captured by monitors like ``celerymon``.
 
 .. cmdoption:: --discard
 
@@ -40,67 +36,41 @@
     **WARNING**: This is unrecoverable, and the tasks will be
     deleted from the messaging server.
 
-.. cmdoption:: -u, --uid
-
-    User-id to run ``celeryd`` as when in daemon mode.
-
-.. cmdoption:: -g, --gid
-
-    Group-id to run ``celeryd`` as when in daemon mode.
-
-.. cmdoption:: --umask
-
-    umask of the process when in daemon mode.
-
-.. cmdoption:: --workdir
-
-    Directory to change to when in daemon mode.
-
-.. cmdoption:: --chroot
-
-    Change root directory to this path when in daemon mode.
-
 """
 import os
 import sys
-CAN_DETACH = True
-try:
-    import resource
-except ImportError:
-    CAN_DETACH = False
-
-from celery.loaders import current_loader
-from celery.loaders import settings
-from celery import __version__
-from celery.supervisor import OFASupervisor
-from celery.log import emergency_error
-from celery.conf import LOG_LEVELS, DAEMON_LOG_FILE, DAEMON_LOG_LEVEL
-from celery.conf import DAEMON_CONCURRENCY, DAEMON_PID_FILE
-from celery import conf
-from celery import discovery
-from celery.task import discard_all
-from celery.worker import WorkController
-import signal
-import multiprocessing
-import traceback
+import socket
+import logging
 import optparse
-import atexit
+import traceback
+import multiprocessing
 
-USE_STATISTICS = getattr(settings, "CELERY_STATISTICS", False)
-# Make sure the setting exists.
-settings.CELERY_STATISTICS = USE_STATISTICS
+import celery
+from celery import conf
+from celery import platform
+from celery.log import emergency_error
+from celery.task import discard_all
+from celery.utils import info
+from celery.worker import WorkController
 
 STARTUP_INFO_FMT = """
 Configuration ->
-    * Broker -> amqp://%(vhost)s@%(host)s:%(port)s
-    * Exchange -> %(exchange)s (%(exchange_type)s)
-    * Consumer -> Queue:%(consumer_queue)s Routing:%(consumer_rkey)s
-    * Concurrency -> %(concurrency)s
-    * Statistics -> %(statistics)s
+    . broker -> %(conninfo)s
+    . queues ->
+%(queues)s
+    . concurrency -> %(concurrency)s
+    . loader -> %(loader)s
+    . logfile -> %(logfile)s@%(loglevel)s
+    . events -> %(events)s
+    . beat -> %(celerybeat)s
+%(tasks)s
 """.strip()
 
+TASK_LIST_FMT = """    . tasks ->\n%s"""
+
 OPTION_LIST = (
-    optparse.make_option('-c', '--concurrency', default=DAEMON_CONCURRENCY,
+    optparse.make_option('-c', '--concurrency',
+            default=conf.CELERYD_CONCURRENCY,
             action="store", dest="concurrency", type="int",
             help="Number of child processes processing the queue."),
     optparse.make_option('--discard', default=False,
@@ -108,92 +78,38 @@ OPTION_LIST = (
             help="Discard all waiting tasks before the server is started. "
                  "WARNING: This is unrecoverable, and the tasks will be "
                  "deleted from the messaging server."),
-    optparse.make_option('-s', '--statistics', default=USE_STATISTICS,
-            action="store_true", dest="statistics",
-            help="Collect statistics."),
-    optparse.make_option('-f', '--logfile', default=DAEMON_LOG_FILE,
+    optparse.make_option('-f', '--logfile', default=conf.CELERYD_LOG_FILE,
             action="store", dest="logfile",
             help="Path to log file."),
-    optparse.make_option('-l', '--loglevel', default=DAEMON_LOG_LEVEL,
+    optparse.make_option('-l', '--loglevel', default=conf.CELERYD_LOG_LEVEL,
             action="store", dest="loglevel",
             help="Choose between DEBUG/INFO/WARNING/ERROR/CRITICAL/FATAL."),
-    optparse.make_option('-p', '--pidfile', default=DAEMON_PID_FILE,
-            action="store", dest="pidfile",
-            help="Path to pidfile."),
-    optparse.make_option('-d', '--detach', '--daemon', default=False,
-            action="store_true", dest="detach",
-            help="Run in the background as a daemon."),
-    optparse.make_option('-S', '--supervised', default=False,
-            action="store_true", dest="supervised",
-            help="Restart the worker server if it dies."),
-    optparse.make_option('-u', '--uid', default=None,
-            action="store", dest="uid",
-            help="User-id to run celeryd as when in daemon mode."),
-    optparse.make_option('-g', '--gid', default=None,
-            action="store", dest="gid",
-            help="Group-id to run celeryd as when in daemon mode."),
-    optparse.make_option('--umask', default=0,
-            action="store", type="int", dest="umask",
-            help="umask of the process when in daemon mode."),
-    optparse.make_option('--workdir', default=None,
-            action="store", dest="working_directory",
-            help="Directory to change to when in daemon mode."),
-    optparse.make_option('--chroot', default=None,
-            action="store", dest="chroot",
-            help="Change root directory to this path when in daemon mode."),
-    )
+    optparse.make_option('-n', '--hostname', default=None,
+            action="store", dest="hostname",
+            help="Set custom host name. E.g. 'foo.example.com'."),
+    optparse.make_option('-B', '--beat', default=False,
+            action="store_true", dest="run_clockservice",
+            help="Also run the celerybeat periodic task scheduler. \
+                  Please note that only one instance must be running."),
+    optparse.make_option('-E', '--events', default=conf.SEND_EVENTS,
+            action="store_true", dest="events",
+            help="Send events so celery can be monitored by e.g. celerymon."),
+)
 
 
-def acquire_pidlock(pidfile):
-    """Get the :class:`daemon.pidlockfile.PIDLockFile` handler for
-    ``pidfile``.
-
-    If the ``pidfile`` already exists, but the process is not running the
-    ``pidfile`` will be removed, a ``"stale pidfile"`` message is emitted
-    and execution continues as normally. However, if the process is still
-    running the program will exit complaning that the program is already
-    running in the background somewhere.
-
-    """
-    from daemon.pidlockfile import PIDLockFile
-    import errno
-    pidlock = PIDLockFile(pidfile)
-    if not pidlock.is_locked():
-        return pidlock
-    pid = pidlock.read_pid()
-    try:
-        os.kill(pid, 0)
-    except os.error, exc:
-        if exc.errno == errno.ESRCH:
-            sys.stderr.write("Stale pidfile exists. Removing it.\n")
-            os.unlink(pidfile)
-            return PIDLockFile(pidfile)
-    else:
-        raise SystemExit(
-                "ERROR: Pidfile (%s) already exists.\n"
-                "Seems celeryd is already running? (PID: %d)" % (
-                    pidfile, pid))
-    return pidlock
-
-
-def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
-        loglevel=DAEMON_LOG_LEVEL, logfile=DAEMON_LOG_FILE, discard=False,
-        pidfile=DAEMON_PID_FILE, umask=0, uid=None, gid=None,
-        supervised=False, working_directory=None, chroot=None,
-        statistics=None, **kwargs):
+def run_worker(concurrency=conf.CELERYD_CONCURRENCY,
+        loglevel=conf.CELERYD_LOG_LEVEL, logfile=conf.CELERYD_LOG_FILE,
+        hostname=None,
+        discard=False, run_clockservice=False, events=False, **kwargs):
     """Starts the celery worker server."""
 
-    # set SIGCLD back to the default SIG_DFL (before python-daemon overrode
-    # it) lets the parent wait() for the terminated child process and stops
-    # the 'OSError: [Errno 10] No child processes' problem.
+    hostname = hostname or socket.gethostname()
 
-    if hasattr(signal, "SIGCLD"): # Make sure the platform supports signals.
-        signal.signal(signal.SIGCLD, signal.SIG_DFL)
+    print("celery@%s v%s is starting." % (hostname, celery.__version__))
 
-    print("Celery %s is starting." % __version__)
-
-    if statistics is not None:
-        settings.CELERY_STATISTICS = statistics
+    from celery.loaders import current_loader, load_settings
+    loader = current_loader()
+    settings = load_settings()
 
     if not concurrency:
         concurrency = multiprocessing.cpu_count()
@@ -209,9 +125,7 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
 
     # Setup logging
     if not isinstance(loglevel, int):
-        loglevel = LOG_LEVELS[loglevel.upper()]
-    if not detach:
-        logfile = None # log to stderr when not running in the background.
+        loglevel = conf.LOG_LEVELS[loglevel.upper()]
 
     if discard:
         discarded_count = discard_all()
@@ -219,65 +133,50 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
         print("discard: Erased %d %s from the queue.\n" % (
                 discarded_count, what))
 
+    # Run the worker init handler.
+    # (Usually imports task modules and such.)
+    loader.on_worker_init()
+
     # Dump configuration to screen so we have some basic information
     # when users sends e-mails.
+
+    tasklist = ""
+    if loglevel <= logging.INFO:
+        from celery.registry import tasks
+        tasklist = tasks.keys()
+        if not loglevel <= logging.DEBUG:
+            tasklist = filter(lambda s: not s.startswith("celery."), tasklist)
+        tasklist = TASK_LIST_FMT % "\n".join("        . %s" % task
+                                                for task in sorted(tasklist))
+
     print(STARTUP_INFO_FMT % {
-            "vhost": getattr(settings, "AMQP_VHOST", "(default)"),
-            "host": getattr(settings, "AMQP_SERVER", "(default)"),
-            "port": getattr(settings, "AMQP_PORT", "(default)"),
-            "exchange": conf.AMQP_EXCHANGE,
-            "exchange_type": conf.AMQP_EXCHANGE_TYPE,
-            "consumer_queue": conf.AMQP_CONSUMER_QUEUE,
-            "consumer_rkey": conf.AMQP_CONSUMER_ROUTING_KEY,
-            "publisher_rkey": conf.AMQP_PUBLISHER_ROUTING_KEY,
+            "conninfo": info.format_broker_info(),
+            "queues": info.format_routing_table(indent=8),
             "concurrency": concurrency,
-            "loglevel": loglevel,
-            "pidfile": pidfile,
-            "statistics": settings.CELERY_STATISTICS and "ON" or "OFF",
+            "loglevel": conf.LOG_LEVELS[loglevel],
+            "logfile": logfile or "[stderr]",
+            "celerybeat": run_clockservice and "ON" or "OFF",
+            "events": events and "ON" or "OFF",
+            "tasks": tasklist,
+            "loader": loader.__class__.__module__,
     })
 
     print("Celery has started.")
-    if detach:
-        if not CAN_DETACH:
-            raise RuntimeError(
-                    "This operating system doesn't support detach. ")
-        from daemon import DaemonContext
-        from celery.log import setup_logger, redirect_stdouts_to_logger
-
-        # Since without stderr any errors will be silently suppressed,
-        # we need to know that we have access to the logfile
-        if logfile:
-            open(logfile, "a").close()
-
-        pidlock = acquire_pidlock(pidfile)
-        if not umask:
-            umask = 0
-        uid = uid and int(uid) or os.geteuid()
-        gid = gid and int(gid) or os.getegid()
-        working_directory = working_directory or os.getcwd()
-        context = DaemonContext(chroot_directory=chroot,
-                                working_directory=working_directory,
-                                umask=umask,
-                                pidfile=pidlock,
-                                uid=uid,
-                                gid=gid)
-        context.open()
-        logger = setup_logger(loglevel, logfile)
-        redirect_stdouts_to_logger(logger, loglevel)
-
-    # Run the worker init handler.
-    # (Usually imports task modules and such.)
-    current_loader.on_worker_init()
+    set_process_status("Running...")
 
     def run_worker():
         worker = WorkController(concurrency=concurrency,
                                 loglevel=loglevel,
                                 logfile=logfile,
-                                is_detached=detach)
+                                hostname=hostname,
+                                embed_clockservice=run_clockservice,
+                                send_events=events)
 
-        # Install signal handler that restarts celeryd on SIGHUP,
-        # (only on POSIX systems)
-        install_restart_signal_handler(worker)
+        # Install signal handler so SIGHUP restarts the worker.
+        install_worker_restart_handler(worker)
+
+        from celery import signals
+        signals.worker_init.send(sender=worker)
 
         try:
             worker.start()
@@ -286,37 +185,22 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
                             e.__class__, e, traceback.format_exc()))
 
     try:
-        if supervised:
-            OFASupervisor(target=run_worker).start()
-        else:
-            run_worker()
+        run_worker()
     except:
-        if detach:
-            context.close()
+        set_process_status("Exiting...")
         raise
 
 
-def install_restart_signal_handler(worker):
-    """Installs a signal handler that restarts the current program
-    when it receives the ``SIGHUP`` signal.
-    """
-    if not hasattr(signal, "SIGHUP"):
-        return  # platform is not POSIX
+def install_worker_restart_handler(worker):
 
-    def restart_self(signum, frame):
+    def restart_worker_sig_handler(signum, frame):
         """Signal handler restarting the current python program."""
-        worker.logger.info("Restarting celeryd (%s)" % (
+        worker.logger.warn("Restarting celeryd (%s)" % (
             " ".join(sys.argv)))
-        if worker.is_detached:
-            pid = os.fork()
-            if pid:
-                worker.stop()
-                sys.exit(0)
-        else:
-            worker.stop()
+        worker.stop()
         os.execv(sys.executable, [sys.executable] + sys.argv)
 
-    signal.signal(signal.SIGHUP, restart_self)
+    platform.install_signal_handler("SIGHUP", restart_worker_sig_handler)
 
 
 def parse_options(arguments):
@@ -326,6 +210,16 @@ def parse_options(arguments):
     return options
 
 
-if __name__ == "__main__":
+def set_process_status(info):
+    arg_start = "manage" in sys.argv[0] and 2 or 1
+    if sys.argv[arg_start:]:
+        info = "%s (%s)" % (info, " ".join(sys.argv[arg_start:]))
+    platform.set_mp_process_title("celeryd", info=info)
+
+
+def main():
     options = parse_options(sys.argv[1:])
     run_worker(**vars(options))
+
+if __name__ == "__main__":
+    main()

@@ -1,69 +1,102 @@
 # -*- coding: utf-8 -*-
+from __future__ import with_statement
+
 import sys
-import unittest
-from celery.execute import ExecuteWrapper
-from celery.worker.job import TaskWrapper
-from celery.datastructures import ExceptionInfo
-from celery.models import TaskMeta
-from celery.registry import tasks, NotRegistered
-from celery.pool import TaskPool
-from celery.utils import gen_unique_id
-from carrot.backends.base import BaseMessage
-from StringIO import StringIO
-from celery.log import setup_logger
-from django.core import cache
-import simplejson
 import logging
+import unittest
+import simplejson
+from StringIO import StringIO
+
+from django.core import cache
+from carrot.backends.base import BaseMessage
+
+from celery.log import setup_logger
+from celery.task.base import Task
+from celery.utils import gen_unique_id
+from celery.models import TaskMeta
+from celery.result import AsyncResult
+from celery.worker.job import WorkerTaskTrace, TaskWrapper
+from celery.worker.pool import TaskPool
+from celery.exceptions import RetryTaskError, NotRegistered
+from celery.decorators import task as task_dec
+from celery.datastructures import ExceptionInfo
 
 scratch = {"ACK": False}
 some_kwargs_scratchpad = {}
 
 
-def jail(task_id, task_name, fun, args, kwargs):
-    return ExecuteWrapper(fun, task_id, task_name, args, kwargs)()
+def jail(task_id, task_name, args, kwargs):
+    return WorkerTaskTrace(task_name, task_id, args, kwargs)()
 
 
 def on_ack():
     scratch["ACK"] = True
 
 
+@task_dec()
 def mytask(i, **kwargs):
     return i ** i
-tasks.register(mytask, name="cu.mytask")
 
 
+@task_dec()
 def mytask_no_kwargs(i):
     return i ** i
-tasks.register(mytask_no_kwargs, name="mytask_no_kwargs")
 
 
+class MyTaskIgnoreResult(Task):
+    ignore_result = True
+
+    def run(self, i):
+        return i ** i
+
+
+@task_dec()
 def mytask_some_kwargs(i, logfile):
     some_kwargs_scratchpad["logfile"] = logfile
     return i ** i
-tasks.register(mytask_some_kwargs, name="mytask_some_kwargs")
 
 
+@task_dec()
 def mytask_raising(i, **kwargs):
     raise KeyError(i)
-tasks.register(mytask_raising, name="cu.mytask-raising")
 
 
+@task_dec()
 def get_db_connection(i, **kwargs):
     from django.db import connection
     return id(connection)
 get_db_connection.ignore_result = True
 
 
+class TestRetryTaskError(unittest.TestCase):
+
+    def test_retry_task_error(self):
+        try:
+            raise Exception("foo")
+        except Exception, exc:
+            ret = RetryTaskError("Retrying task", exc)
+
+        self.assertEquals(ret.exc, exc)
+
+
 class TestJail(unittest.TestCase):
 
     def test_execute_jail_success(self):
-        ret = jail(gen_unique_id(), gen_unique_id(), mytask, [2], {})
+        ret = jail(gen_unique_id(), mytask.name, [2], {})
         self.assertEquals(ret, 4)
 
     def test_execute_jail_failure(self):
-        ret = jail(gen_unique_id(), gen_unique_id(), mytask_raising, [4], {})
+        ret = jail(gen_unique_id(), mytask_raising.name,
+                   [4], {})
         self.assertTrue(isinstance(ret, ExceptionInfo))
         self.assertEquals(ret.exception.args, (4, ))
+
+    def test_execute_ignore_result(self):
+        task_id = gen_unique_id()
+        ret = jail(id, MyTaskIgnoreResult.name,
+                   [4], {})
+        self.assertTrue(ret, 8)
+        self.assertFalse(AsyncResult(task_id).ready())
 
     def test_django_db_connection_is_closed(self):
         from django.db import connection
@@ -75,12 +108,11 @@ class TestJail(unittest.TestCase):
             return old_connection_close(*args, **kwargs)
 
         connection.close = monkeypatched_connection_close
-
-        ret = jail(gen_unique_id(), gen_unique_id(),
-                   get_db_connection, [2], {})
-        self.assertTrue(connection._was_closed)
-
-        connection.close = old_connection_close
+        try:
+            jail(gen_unique_id(), get_db_connection.name, [2], {})
+            self.assertTrue(connection._was_closed)
+        finally:
+            connection.close = old_connection_close
 
     def test_django_cache_connection_is_closed(self):
         old_cache_close = getattr(cache.cache, "close", None)
@@ -96,7 +128,7 @@ class TestJail(unittest.TestCase):
 
         cache.cache.close = monkeypatched_cache_close
 
-        jail(gen_unique_id(), gen_unique_id(), mytask, [4], {})
+        jail(gen_unique_id(), mytask.name, [4], {})
         self.assertTrue(cache._was_closed)
         cache.cache.close = old_cache_close
         cache.settings.CACHE_BACKEND = old_backend
@@ -116,7 +148,7 @@ class TestJail(unittest.TestCase):
 
         cache.cache.close = monkeypatched_cache_close
 
-        jail(gen_unique_id(), gen_unique_id(), mytask, [4], {})
+        jail(gen_unique_id(), mytask.name, [4], {})
         self.assertTrue(cache._was_closed)
         cache.cache.close = old_cache_close
         cache.settings.CACHE_BACKEND = old_backend
@@ -126,21 +158,125 @@ class TestJail(unittest.TestCase):
             del(cache.parse_backend_uri)
 
 
+class MockEventDispatcher(object):
+
+    def __init__(self):
+        self.sent = []
+
+    def send(self, event):
+        self.sent.append(event)
+
+
 class TestTaskWrapper(unittest.TestCase):
 
-    def test_task_wrapper_attrs(self):
-        tw = TaskWrapper(gen_unique_id(), gen_unique_id(),
-                         mytask, [1], {"f": "x"})
-        for attr in ("task_name", "task_id", "args", "kwargs", "logger"):
-            self.assertTrue(getattr(tw, attr, None))
-
     def test_task_wrapper_repr(self):
-        tw = TaskWrapper(gen_unique_id(), gen_unique_id(),
-                         mytask, [1], {"f": "x"})
+        tw = TaskWrapper(mytask.name, gen_unique_id(), [1], {"f": "x"})
         self.assertTrue(repr(tw))
 
+    def test_send_event(self):
+        tw = TaskWrapper(mytask.name, gen_unique_id(), [1], {"f": "x"})
+        tw.eventer = MockEventDispatcher()
+        tw.send_event("task-frobulated")
+        self.assertTrue("task-frobulated" in tw.eventer.sent)
+
+    def test_send_email(self):
+        from celery import conf
+        from celery.worker import job
+        old_mail_admins = job.mail_admins
+        old_enable_mails = conf.CELERY_SEND_TASK_ERROR_EMAILS
+        mail_sent = [False]
+
+        def mock_mail_admins(*args, **kwargs):
+            mail_sent[0] = True
+
+        job.mail_admins = mock_mail_admins
+        conf.CELERY_SEND_TASK_ERROR_EMAILS = True
+        try:
+            tw = TaskWrapper(mytask.name, gen_unique_id(), [1], {"f": "x"})
+            try:
+                raise KeyError("foo")
+            except KeyError, exc:
+                einfo = ExceptionInfo(sys.exc_info())
+
+            tw.on_failure(einfo)
+            self.assertTrue(mail_sent[0])
+
+            mail_sent[0] = False
+            conf.CELERY_SEND_TASK_ERROR_EMAILS = False
+            tw.on_failure(einfo)
+            self.assertFalse(mail_sent[0])
+
+        finally:
+            job.mail_admins = old_mail_admins
+            conf.CELERY_SEND_TASK_ERROR_EMAILS = old_enable_mails
+
+    def test_execute_and_trace(self):
+        from celery.worker.job import execute_and_trace
+        res = execute_and_trace(mytask.name, gen_unique_id(), [4], {})
+        self.assertEquals(res, 4 ** 4)
+
+    def test_execute_safe_catches_exception(self):
+        from celery.worker.job import execute_and_trace, WorkerTaskTrace
+        old_exec = WorkerTaskTrace.execute
+
+        def _error_exec(self, *args, **kwargs):
+            raise KeyError("baz")
+
+        WorkerTaskTrace.execute = _error_exec
+        try:
+            import warnings
+            with warnings.catch_warnings(record=True) as log:
+                res = execute_and_trace(mytask.name, gen_unique_id(),
+                                        [4], {})
+                self.assertTrue(isinstance(res, ExceptionInfo))
+                self.assertTrue(log)
+                self.assertTrue("Exception outside" in log[0].message.args[0])
+                self.assertTrue("KeyError" in log[0].message.args[0])
+        finally:
+            WorkerTaskTrace.execute = old_exec
+
+    def create_exception(self, exc):
+        try:
+            raise exc
+        except exc.__class__, thrown:
+            return sys.exc_info()
+
+    def test_worker_task_trace_handle_retry(self):
+        from celery.exceptions import RetryTaskError
+        uuid = gen_unique_id()
+        w = WorkerTaskTrace(mytask.name, uuid, [4], {})
+        type_, value_, tb_ = self.create_exception(ValueError("foo"))
+        type_, value_, tb_ = self.create_exception(RetryTaskError(str(value_),
+                                                                  exc=value_))
+        w._store_errors = False
+        w.handle_retry(value_, type_, tb_, "")
+        self.assertEquals(mytask.backend.get_status(uuid), "PENDING")
+        w._store_errors = True
+        w.handle_retry(value_, type_, tb_, "")
+        self.assertEquals(mytask.backend.get_status(uuid), "RETRY")
+
+    def test_worker_task_trace_handle_failure(self):
+        from celery.worker.job import WorkerTaskTrace
+        uuid = gen_unique_id()
+        w = WorkerTaskTrace(mytask.name, uuid, [4], {})
+        type_, value_, tb_ = self.create_exception(ValueError("foo"))
+        w._store_errors = False
+        w.handle_failure(value_, type_, tb_, "")
+        self.assertEquals(mytask.backend.get_status(uuid), "PENDING")
+        w._store_errors = True
+        w.handle_failure(value_, type_, tb_, "")
+        self.assertEquals(mytask.backend.get_status(uuid), "FAILURE")
+
+    def test_executed_bit(self):
+        from celery.worker.job import AlreadyExecutedError
+        tw = TaskWrapper(mytask.name, gen_unique_id(), [], {})
+        self.assertFalse(tw.executed)
+        tw._set_executed_bit()
+        self.assertTrue(tw.executed)
+        self.assertRaises(AlreadyExecutedError, tw._set_executed_bit)
+
     def test_task_wrapper_mail_attrs(self):
-        tw = TaskWrapper(gen_unique_id(), gen_unique_id(), mytask, [], {})
+        tw = TaskWrapper(mytask.name, gen_unique_id(), [], {})
         x = tw.success_msg % {"name": tw.task_name,
                               "id": tw.task_id,
                               "return_value": 10}
@@ -157,7 +293,7 @@ class TestTaskWrapper(unittest.TestCase):
         self.assertTrue(x)
 
     def test_from_message(self):
-        body = {"task": "cu.mytask", "id": gen_unique_id(),
+        body = {"task": mytask.name, "id": gen_unique_id(),
                 "args": [2], "kwargs": {u"æØåveéðƒeæ": "bar"}}
         m = BaseMessage(body=simplejson.dumps(body), backend="foo",
                         content_type="application/json",
@@ -170,7 +306,6 @@ class TestTaskWrapper(unittest.TestCase):
         self.assertEquals(tw.kwargs.keys()[0],
                           u"æØåveéðƒeæ".encode("utf-8"))
         self.assertFalse(isinstance(tw.kwargs.keys()[0], unicode))
-        self.assertEquals(id(mytask), id(tw.task_func))
         self.assertTrue(tw.logger)
 
     def test_from_message_nonexistant_task(self):
@@ -184,45 +319,42 @@ class TestTaskWrapper(unittest.TestCase):
 
     def test_execute(self):
         tid = gen_unique_id()
-        tw = TaskWrapper("cu.mytask", tid, mytask, [4], {"f": "x"})
+        tw = TaskWrapper(mytask.name, tid, [4], {"f": "x"})
         self.assertEquals(tw.execute(), 256)
         meta = TaskMeta.objects.get(task_id=tid)
         self.assertEquals(meta.result, 256)
-        self.assertEquals(meta.status, "DONE")
+        self.assertEquals(meta.status, "SUCCESS")
 
     def test_execute_success_no_kwargs(self):
         tid = gen_unique_id()
-        tw = TaskWrapper("cu.mytask_no_kwargs", tid, mytask_no_kwargs,
-                         [4], {})
+        tw = TaskWrapper(mytask_no_kwargs.name, tid, [4], {})
         self.assertEquals(tw.execute(), 256)
         meta = TaskMeta.objects.get(task_id=tid)
         self.assertEquals(meta.result, 256)
-        self.assertEquals(meta.status, "DONE")
+        self.assertEquals(meta.status, "SUCCESS")
 
     def test_execute_success_some_kwargs(self):
         tid = gen_unique_id()
-        tw = TaskWrapper("cu.mytask_some_kwargs", tid, mytask_some_kwargs,
-                         [4], {})
+        tw = TaskWrapper(mytask_some_kwargs.name, tid, [4], {})
         self.assertEquals(tw.execute(logfile="foobaz.log"), 256)
         meta = TaskMeta.objects.get(task_id=tid)
         self.assertEquals(some_kwargs_scratchpad.get("logfile"), "foobaz.log")
         self.assertEquals(meta.result, 256)
-        self.assertEquals(meta.status, "DONE")
+        self.assertEquals(meta.status, "SUCCESS")
 
     def test_execute_ack(self):
         tid = gen_unique_id()
-        tw = TaskWrapper("cu.mytask", tid, mytask, [4], {"f": "x"},
+        tw = TaskWrapper(mytask.name, tid, [4], {"f": "x"},
                         on_ack=on_ack)
         self.assertEquals(tw.execute(), 256)
         meta = TaskMeta.objects.get(task_id=tid)
         self.assertTrue(scratch["ACK"])
         self.assertEquals(meta.result, 256)
-        self.assertEquals(meta.status, "DONE")
+        self.assertEquals(meta.status, "SUCCESS")
 
     def test_execute_fail(self):
         tid = gen_unique_id()
-        tw = TaskWrapper("cu.mytask-raising", tid, mytask_raising, [4],
-                         {"f": "x"})
+        tw = TaskWrapper(mytask_raising.name, tid, [4], {"f": "x"})
         self.assertTrue(isinstance(tw.execute(), ExceptionInfo))
         meta = TaskMeta.objects.get(task_id=tid)
         self.assertEquals(meta.status, "FAILURE")
@@ -230,7 +362,7 @@ class TestTaskWrapper(unittest.TestCase):
 
     def test_execute_using_pool(self):
         tid = gen_unique_id()
-        tw = TaskWrapper("cu.mytask", tid, mytask, [4], {"f": "x"})
+        tw = TaskWrapper(mytask.name, tid, [4], {"f": "x"})
         p = TaskPool(2)
         p.start()
         asyncres = tw.execute_using_pool(p)
@@ -239,7 +371,7 @@ class TestTaskWrapper(unittest.TestCase):
 
     def test_default_kwargs(self):
         tid = gen_unique_id()
-        tw = TaskWrapper("cu.mytask", tid, mytask, [4], {"f": "x"})
+        tw = TaskWrapper(mytask.name, tid, [4], {"f": "x"})
         self.assertEquals(tw.extend_with_default_kwargs(10, "some_logfile"), {
             "f": "x",
             "logfile": "some_logfile",
@@ -250,7 +382,7 @@ class TestTaskWrapper(unittest.TestCase):
 
     def test_on_failure(self):
         tid = gen_unique_id()
-        tw = TaskWrapper("cu.mytask", tid, mytask, [4], {"f": "x"})
+        tw = TaskWrapper(mytask.name, tid, [4], {"f": "x"})
         try:
             raise Exception("Inside unit tests")
         except Exception:
@@ -261,12 +393,12 @@ class TestTaskWrapper(unittest.TestCase):
         tw.logger = setup_logger(logfile=logfh, loglevel=logging.INFO)
 
         from celery import conf
-        conf.SEND_CELERY_TASK_ERROR_EMAILS = True
+        conf.CELERY_SEND_TASK_ERROR_EMAILS = True
 
         tw.on_failure(exc_info)
         logvalue = logfh.getvalue()
-        self.assertTrue("cu.mytask" in logvalue)
+        self.assertTrue(mytask.name in logvalue)
         self.assertTrue(tid in logvalue)
         self.assertTrue("ERROR" in logvalue)
 
-        conf.SEND_CELERY_TASK_ERROR_EMAILS = False
+        conf.CELERY_SEND_TASK_ERROR_EMAILS = False

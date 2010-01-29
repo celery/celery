@@ -11,7 +11,7 @@ You can accomplish this by using a lock.
 In this example we'll be using the cache framework to set a lock that is
 accessible for all workers.
 
-It's part of an imaginary RSS Feed application called ``djangofeeds``.
+It's part of an imaginary RSS feed importer called ``djangofeeds``.
 The task takes a feed URL as a single argument, and imports that feed into
 a Django model called ``Feed``. We ensure that it's not possible for two or
 more workers to import the same feed at the same time by setting a cache key
@@ -23,7 +23,6 @@ The cache key expires after some time in case something unexpected happens
 .. code-block:: python
 
     from celery.task import Task
-    from celery.registry import tasks
     from django.core.cache import cache
     from django.utils.hashcompat import md5_constructor as md5
     from djangofeeds.models import Feed
@@ -56,9 +55,8 @@ The cache key expires after some time in case something unexpected happens
 
             acquire_lock()
             try:
-                feed = Feed.objects.import(feed_url)
+                feed = Feed.objects.import_feed(feed_url)
             finally:
                 release_lock()
 
             return feed.url
-    tasks.register(FeedImporter)

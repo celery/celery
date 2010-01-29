@@ -12,7 +12,7 @@ except ImportError:
     use_setuptools()
     from setuptools import setup, find_packages, Command
 
-import celery
+import celery as distmeta
 
 
 class RunTests(Command):
@@ -27,6 +27,9 @@ class RunTests(Command):
         pass
 
     def run(self):
+        self.run_tests()
+
+    def run_tests(self):
         this_dir = os.getcwd()
         testproj_dir = os.path.join(this_dir, "testproj")
         os.chdir(testproj_dir)
@@ -41,25 +44,46 @@ class RunTests(Command):
         os.chdir(this_dir)
 
 
-install_requires = ["django-unittest-depth",
-                    "anyjson",
-                    "carrot>=0.6.0"]
+class QuickRunTests(RunTests):
 
-# python-daemon doesn't run on windows, so check current platform
-if platform.system() == "Windows":
-    print("""
-    ***WARNING***
-    I see you are using windows. You will not be able to run celery
-    in daemon mode with the --detach parameter.""")
-else:
-    install_requires.append("python-daemon>=1.4.8")
+    quicktest_envs = dict(SKIP_RLIMITS=1, QUICKTEST=1)
+
+    def run(self):
+        for env_name, env_value in self.quicktest_envs.items():
+            os.environ[env_name] = str(env_value)
+        self.run_tests()
+
+
+install_requires = []
+
+try:
+    import django
+except ImportError:
+    install_requires.append("django")
+
+
+try:
+    import importlib
+except ImportError:
+    install_requires.append("importlib")
+
+
+install_requires.extend([
+    "python-dateutil",
+    "anyjson",
+    "carrot>=0.10.0",
+    "django-picklefield",
+    "billiard>=0.2.1"])
 
 py_version_info = sys.version_info
 py_major_version = py_version_info[0]
 py_minor_version = py_version_info[1]
 
-if (py_major_version == 2 and py_minor_version <=5) or py_major_version < 2:
-    install_requires.append("multiprocessing")
+if (py_major_version == 2 and py_minor_version <=5):
+    install_requires.append("multiprocessing==2.6.2.1")
+
+if (py_major_version == 2 and py_minor_version <= 4):
+    install_requires.append("uuid")
 
 if os.path.exists("README.rst"):
     long_description = codecs.open("README.rst", "r", "utf-8").read()
@@ -69,21 +93,21 @@ else:
 
 setup(
     name='celery',
-    version=celery.__version__,
-    description=celery.__doc__,
-    author=celery.__author__,
-    author_email=celery.__contact__,
-    url=celery.__homepage__,
+    version=distmeta.__version__,
+    description=distmeta.__doc__,
+    author=distmeta.__author__,
+    author_email=distmeta.__contact__,
+    url=distmeta.__homepage__,
     platforms=["any"],
     license="BSD",
     packages=find_packages(exclude=['ez_setup']),
-    scripts=["bin/celeryd", "bin/celeryinit"],
+    scripts=["bin/celeryd", "bin/celeryinit", "bin/celerybeat"],
     zip_safe=False,
     install_requires=install_requires,
     extra_requires={
         "Tyrant": ["pytyrant"],
     },
-    cmdclass = {"test": RunTests},
+    cmdclass = {"test": RunTests, "quicktest": QuickRunTests},
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Framework :: Django",
@@ -97,5 +121,12 @@ setup(
         "Topic :: System :: Distributed Computing",
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
+    entry_points={
+        'console_scripts': [
+            'celeryd = celery.bin.celeryd:main',
+            'celeryinit = celery.bin.celeryinit:main',
+            'celerybeat = celery.bin.celerybeat:main'
+            ]
+    },
     long_description=long_description,
 )

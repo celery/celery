@@ -26,6 +26,13 @@ class BaseLoader(object):
         """This method is called when the worker (``celeryd``) starts."""
         pass
 
+    def import_task_module(self, module):
+        return __import__(module, [], [], [''])
+
+    def import_default_modules(self):
+        imports = getattr(self.conf, "CELERY_IMPORTS", None) or []
+        return map(self.import_task_module, imports)
+
     @property
     def conf(self):
         """Loader configuration."""

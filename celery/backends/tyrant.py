@@ -1,15 +1,15 @@
 """celery.backends.tyrant"""
 from django.core.exceptions import ImproperlyConfigured
-from celery.backends.base import KeyValueStoreBackend
-from celery.loaders import settings
-
 try:
     import pytyrant
 except ImportError:
     pytyrant = None
 
+from celery.backends.base import KeyValueStoreBackend
+from celery.loaders import load_settings
 
-class Backend(KeyValueStoreBackend):
+
+class TyrantBackend(KeyValueStoreBackend):
     """Tokyo Cabinet based task backend store.
 
     .. attribute:: tyrant_host
@@ -36,6 +36,7 @@ class Backend(KeyValueStoreBackend):
             raise ImproperlyConfigured(
                     "You need to install the pytyrant library to use the "
                   + "Tokyo Tyrant backend.")
+        settings = load_settings()
         self.tyrant_host = tyrant_host or \
                             getattr(settings, "TT_HOST", self.tyrant_host)
         self.tyrant_port = tyrant_port or \
@@ -46,7 +47,7 @@ class Backend(KeyValueStoreBackend):
             raise ImproperlyConfigured(
                 "To use the Tokyo Tyrant backend, you have to "
                 "set the TT_HOST and TT_PORT settings in your settings.py")
-        super(Backend, self).__init__()
+        super(TyrantBackend, self).__init__()
         self._connection = None
 
     def open(self):
