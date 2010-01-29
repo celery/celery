@@ -102,7 +102,7 @@ help command::
     $  celeryd --help
 
 For info on how to run celery as standalone daemon, see 
-:doc:`daemon mode reference<../cookbook>`
+:doc:`daemon mode reference<../cookbook/daemonizing>`
 
 
 

@@ -49,7 +49,7 @@ see what's going on without consulting the logfile::
 
 However, in production you probably want to run the worker in the
 background as a daemon. To do this you need to use to tools provided by your
-platform. See :doc:`daemon mode reference<../cookbook>`.
+platform. See :doc:`daemon mode reference<../cookbook/daemonizing>`.
 
 For a complete listing of the command line options available, use the help command::
 
