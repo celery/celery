@@ -551,3 +551,15 @@ However the usual way to prioritize work in celery, is to route high priority ta
 to different servers. In the real world this may actually work better than per. message
 priorities. You can use this in combination with rate limting to achieve a
 highly performant system.
+
+Can I schedule tasks to execute at a specific time?
+---------------------------------------------------
+
+.. module:: celery.task.base
+
+**Answer**: Yes. You can use the ``eta`` argument of :meth:`Task.apply_async`.
+
+However, you can't schedule a periodic task at a specific time yet.
+The good news is, if anyone is willing
+to implement it, it shouldn't be that hard, some pointers to achieve this has
+been written here: http://bit.ly/99UQNO
