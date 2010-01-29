@@ -340,7 +340,6 @@ class TestTaskSet(unittest.TestCase):
         taskset_id = taskset_res.taskset_id
         for subtask in subtasks:
             m = consumer.fetch().payload
-            print("M: %s" % m)
             self.assertEquals(m.get("taskset"), taskset_id)
             self.assertEquals(m.get("task"), IncrementCounterTask.name)
             self.assertEquals(m.get("id"), subtask.task_id)

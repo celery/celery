@@ -32,7 +32,6 @@ def task_view(task):
     return _applier
 
 
-
 def apply(request, task_name):
     """View applying a task.
 
@@ -71,7 +70,6 @@ def task_status(request, task_id):
 
     return HttpResponse(JSON_dump({"task": response_data}),
             mimetype="application/json")
-
 
 
 def task_webhook(fun):
