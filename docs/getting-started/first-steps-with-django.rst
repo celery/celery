@@ -25,13 +25,15 @@ You only need three simple steps to use celery with your Django project.
 
 That's it.
 
-There are more options available, like how many processes you want to process
-work in parallel (the ``CELERY_CONCURRENCY`` setting), and the backend used
-for storing task statuses. But for now, this should do. For all of the options
-available, please see the :doc:`configuration directive
+There are more options available, like how many processes you want to
+work in parallel (the ``CELERY_CONCURRENCY`` setting). You can also
+configure the backend used for storing task statuses. For now though, 
+this should do. For all of the options available, please see the 
+:doc:`configuration directive
+
 reference<../configuration>`.
 
-**Note**: If you're using SQLite as the Django database back-end,
+**Note:** If you're using SQLite as the Django database back-end,
 ``celeryd`` will only be able to process one task at a time, this is
 because SQLite doesn't allow concurrent writes.
 
@@ -47,13 +49,7 @@ see what's going on without consulting the logfile::
 
 However, in production you probably want to run the worker in the
 background as a daemon. To do this you need to use to tools provided by your
-platform, or something like `supervisord`_.
-
-For example start-up scripts see ``contrib/debian/init.d`` for using
-``start-stop-daemon`` on Debian/Ubuntu, or ``contrib/mac/org.celeryq.*`` for using
-``launchd`` on Mac OS X.
-
-.. _`supervisord`: http://supervisord.org/
+platform, or something like `supervisord`_. FIXME: See solutions for deamonizing.
 
 For a complete listing of the command line arguments available, with a short
 description, you can use the help command::
@@ -64,12 +60,12 @@ description, you can use the help command::
 Defining and executing tasks
 ============================
 
-**Please note** All of these tasks has to be stored in a real module, they can't
+**Please note:** All the tasks have to be stored in a real module, they can't
 be defined in the python shell or ipython/bpython. This is because the celery
 worker server needs access to the task function to be able to run it.
-Put them in the ``tasks`` module of your
-Django application. The worker server will automatically load any ``tasks.py``
-file for all of the applications listed in ``settings.INSTALLED_APPS``.
+Put them in the ``tasks`` module of your Django application. The
+worker server  will automatically load any ``tasks.py`` file for all
+of the applications listed in ``settings.INSTALLED_APPS``.
 Executing tasks using ``delay`` and ``apply_async`` can be done from the
 python shell, but keep in mind that since arguments are pickled, you can't
 use custom classes defined in the shell session.
@@ -84,8 +80,7 @@ This is a task that adds two numbers:
     def add(x, y):
         return x + y
 
-Now if we want to execute this task, we can use the
-``delay`` method of the task class.
+To execute this task, we can use the ``delay`` method of the task class.
 This is a handy shortcut to the ``apply_async`` method which gives
 greater control of the task execution.
 See :doc:`Executing Tasks<../userguide/executing>` for more information.
@@ -97,7 +92,7 @@ At this point, the task has been sent to the message broker. The message
 broker will hold on to the task until a celery worker server has successfully
 picked it up.
 
-*Note* If everything is just hanging when you execute ``delay``, please check
+*Note:* If everything is just hanging when you execute ``delay``, please check
 that RabbitMQ is running, and that the user/password has access to the virtual
 host you configured earlier.
 
