@@ -1,4 +1,3 @@
-"""celery.views"""
 from django.http import HttpResponse, Http404
 
 from anyjson import serialize as JSON_dump
@@ -11,8 +10,8 @@ from celery.backends import default_backend
 
 
 def task_view(task):
-    """Decorator turning a task into a view that applies the task
-    asynchronusly.
+    """Decorator turning any task into a view that applies the task
+    asynchronously.
 
     :returns: a JSON dictionary containing the keys ``ok``, and
         ``task_id``.
