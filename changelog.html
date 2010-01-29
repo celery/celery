@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Change history &mdash; Celery v0.9.5 (unstable) documentation</title>
+    <title>Change history &mdash; Celery v0.9.6 (unstable) documentation</title>
     <link rel="stylesheet" href="static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '#',
-        VERSION:     '0.9.5 (unstable)',
+        VERSION:     '0.9.6 (unstable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,13 +19,13 @@
     </script>
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v0.9.5 (unstable) documentation" href="index.html" />
+    <link rel="top" title="Celery v0.9.6 (unstable) documentation" href="index.html" />
     <link rel="next" title="Interesting Links" href="links.html" />
     <link rel="prev" title="Django Models - celery.models" href="internals/reference/celery.models.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v0.9.5 (unstable) documentation</p>
+	<p>Celery v0.9.6 (unstable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Change history</h1></div>
@@ -223,6 +223,25 @@ so the <tt class="docutils literal"><span class="pre">-S</span></tt> and <tt cla
 <li><p class="first"><tt class="docutils literal"><span class="pre">celery.discovery</span></tt> has been removed, and it&#8217;s <tt class="docutils literal"><span class="pre">autodiscover</span></tt> function is
 now in <tt class="docutils literal"><span class="pre">celery.loaders.djangoapp</span></tt>. Reason: Internal API.</p>
 </li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">CELERY_LOADER</span></tt> now needs loader class name in addition to module name,
+e.g. where you previously had: <tt class="docutils literal"><span class="pre">&quot;celery.loaders.default&quot;</span></tt>, you now need
+<tt class="docutils literal"><span class="pre">&quot;celery.loaders.default.Loader&quot;</span></tt>, using the previous syntax will result
+in a DeprecationWarning.</p>
+</li>
+<li><p class="first">Detecting the loader is now lazy, and so is not done when importing
+<tt class="docutils literal"><span class="pre">celery.loaders</span></tt>. To make this happen <tt class="docutils literal"><span class="pre">celery.loaders.settings</span></tt> has
+been renamed to <tt class="docutils literal"><span class="pre">load_settings</span></tt> and is now a function returning the
+settings object. <tt class="docutils literal"><span class="pre">celery.loaders.current_loader</span></tt> is now also
+a function, returning the current loader.</p>
+<p>So:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">loader</span> <span class="o">=</span> <span class="n">current_loader</span>
+</pre></div>
+</div>
+<p>needs to be changed to:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">loader</span> <span class="o">=</span> <span class="n">current_loader</span><span class="p">()</span>
+</pre></div>
+</div>
+</li>
 </ul>
 </div>
 <div class="section" id="deprecations">
@@ -269,6 +288,11 @@ worker-online, worker-offline.</p>
 </li>
 <li><p class="first">You can now delete (revoke) tasks that has already been applied.</p>
 </li>
+<li><p class="first">You can now set the hostname celeryd identifies as using the <tt class="docutils literal"><span class="pre">--hostname</span></tt>
+argument.</p>
+</li>
+<li><p class="first">Cache backend now respects <tt class="docutils literal"><span class="pre">CELERY_TASK_RESULT_EXPIRES</span></tt>.</p>
+</li>
 <li><p class="first">Message format has been standardized and now uses ISO-8601 format
 for dates instead of datetime.</p>
 </li>
@@ -287,6 +311,11 @@ To revert to the previous behaviour you can set
 </pre></div>
 </div>
 </li>
+<li><p class="first">Got a 3x performance gain by setting the prefetch count to four times the
+concurrency, (from an average task round-trip of 0.1s to 0.03s!). A new
+setting has been added: <tt class="docutils literal"><span class="pre">CELERYD_PREFETCH_MULTIPLIER</span></tt>, which is set
+to <tt class="docutils literal"><span class="pre">4</span></tt> by default.</p>
+</li>
 </ul>
 </div>
 <div class="section" id="changes">
@@ -301,6 +330,7 @@ the <tt class="docutils literal"><span class="pre">CELERY_LOADER</span></tt> env
 fork emulation is used.</li>
 <li>ETA no longer sends datetime objects, but uses ISO 8601 date format in a
 string for better compatibility with other platforms.</li>
+<li>No longer sends error mails for retried tasks.</li>
 <li>Task can now override the backend used to store results.</li>
 <li>Refactored the ExecuteWrapper, <tt class="docutils literal"><span class="pre">apply</span></tt> and <tt class="docutils literal"><span class="pre">CELERY_ALWAYS_EAGER</span></tt> now
 also executes the task callbacks and signals.</li>
@@ -1212,7 +1242,7 @@ the name change request is in <tt class="docutils literal"><span class="pre">doc
       <div class="clearer"></div>
     </div>
 	<div id="breadcrumbs">
-		<a href="index.html">Celery v0.9.5 (unstable) documentation</a>
+		<a href="index.html">Celery v0.9.6 (unstable) documentation</a>
 		</ul>
 	</div>
   </body>

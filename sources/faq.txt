@@ -539,3 +539,38 @@ Can I change the interval of a periodic task at runtime?
         @property
         def run_every(self):
             return get_interval_from_database(...)
+
+
+Does celery support task priorities?
+------------------------------------
+
+**Answer**: No, or theoretically as AMQP supports priorities but
+RabbitMQ doesn't implement them yet.
+
+However the usual way to prioritize work in celery, is to route high priority tasks
+to different servers. In the real world this may actually work better than per. message
+priorities. You can use this in combination with rate limting to achieve a
+highly performant system.
+
+Can I schedule tasks to execute at a specific time?
+---------------------------------------------------
+
+.. module:: celery.task.base
+
+**Answer**: Yes. You can use the ``eta`` argument of :meth:`Task.apply_async`.
+
+However, you can't schedule a periodic task at a specific time yet.
+The good news is, if anyone is willing
+to implement it, it shouldn't be that hard, some pointers to achieve this has
+been written here: http://bit.ly/99UQNO
+
+
+How do I shut down ``celeryd`` safely?
+--------------------------------------
+
+**Answer**: Use the ``TERM`` signal, and celery will finish all currently
+executing jobs and shut down as soon as possible. No tasks should be lost.
+
+You should never stop ``celeryd`` with the ``KILL`` signal (``-9``),
+unless you've tried ``TERM`` a few times and waited a few minutes to let it
+get a chance to shut down.

@@ -118,6 +118,24 @@ BACKWARD INCOMPATIBLE CHANGES
 * ``celery.discovery`` has been removed, and it's ``autodiscover`` function is
   now in ``celery.loaders.djangoapp``. Reason: Internal API.
 
+* ``CELERY_LOADER`` now needs loader class name in addition to module name,
+  e.g. where you previously had: ``"celery.loaders.default"``, you now need
+  ``"celery.loaders.default.Loader"``, using the previous syntax will result
+  in a DeprecationWarning.
+
+* Detecting the loader is now lazy, and so is not done when importing
+  ``celery.loaders``. To make this happen ``celery.loaders.settings`` has
+  been renamed to ``load_settings`` and is now a function returning the
+  settings object. ``celery.loaders.current_loader`` is now also
+  a function, returning the current loader.
+
+  So::
+
+    	loader = current_loader
+
+  needs to be changed to::
+
+    	loader = current_loader()
 
 DEPRECATIONS
 ------------
@@ -166,6 +184,11 @@ NEWS
 
 * You can now delete (revoke) tasks that has already been applied.
 
+* You can now set the hostname celeryd identifies as using the ``--hostname``
+  argument.
+
+* Cache backend now respects ``CELERY_TASK_RESULT_EXPIRES``.
+
 * Message format has been standardized and now uses ISO-8601 format
   for dates instead of datetime.
 
@@ -183,6 +206,10 @@ NEWS
     ...                   ([8, 8], {}, {"countdown": 3})])
     >>> ts.run()
 
+* Got a 3x performance gain by setting the prefetch count to four times the 
+  concurrency, (from an average task round-trip of 0.1s to 0.03s!). A new
+  setting has been added: ``CELERYD_PREFETCH_MULTIPLIER``, which is set
+  to ``4`` by default.
 
 CHANGES
 -------
@@ -201,6 +228,8 @@ CHANGES
 
 * ETA no longer sends datetime objects, but uses ISO 8601 date format in a
   string for better compatibility with other platforms.
+
+* No longer sends error mails for retried tasks.
 
 * Task can now override the backend used to store results.
 

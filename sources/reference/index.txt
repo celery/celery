@@ -15,9 +15,9 @@
     celery.task
     celery.conf
     celery.task.control
+    celery.task.http
     celery.signals
     celery.exceptions
-    celery.task.rest
     celery.task.builtins
     celery.loaders
     celery.loaders.base

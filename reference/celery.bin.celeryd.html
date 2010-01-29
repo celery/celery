@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Celery Worker Daemon - celery.bin.celeryd &mdash; Celery v0.9.5 (unstable) documentation</title>
+    <title>Celery Worker Daemon - celery.bin.celeryd &mdash; Celery v0.9.6 (unstable) documentation</title>
     <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.9.5 (unstable)',
+        VERSION:     '0.9.6 (unstable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,14 +19,14 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.9.5 (unstable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.9.6 (unstable) documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="Celery Periodic Task Server - celery.bin.celerybeat" href="celery.bin.celerybeat.html" />
     <link rel="prev" title="Events - celery.events" href="celery.events.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v0.9.5 (unstable) documentation</p>
+	<p>Celery v0.9.6 (unstable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Celery Worker Daemon - celery.bin.celeryd</h1></div>
@@ -59,9 +59,9 @@
 <li class="toctree-l2"><a class="reference external" href="celery.task.html">Task Information and Utilities - celery.task</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.conf.html">Configuration - celery.conf</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.task.control.html">Remote Management of Workers - celery.task.control</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.task.http.html">HTTP Callback Tasks - celery.task.http</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.signals.html">Signals - celery.signals</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.exceptions.html">Exceptions - celery.exceptions</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.rest.html">Remote HTTP Tasks - celery.task.rest</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.task.builtins.html">Built-in Task Classes - celery.task.builtins</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.loaders.html">Loaders - celery.loaders</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.loaders.base.html">Loader Base Classes - celery.loaders.base</a></li>
@@ -135,6 +135,11 @@ is the number of CPUs available on your system.</dd></dl>
 <tt class="docutils literal"><span class="pre">ERROR</span></tt>, <tt class="docutils literal"><span class="pre">CRITICAL</span></tt>, or <tt class="docutils literal"><span class="pre">FATAL</span></tt>.</dd></dl>
 
 <dl class="cmdoption">
+<dt id="cmdoption-celeryd-n">
+<tt class="descname">-n</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">--hostname</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd-n" title="Permalink to this definition">¶</a></dt>
+<dd>Set custom hostname.</dd></dl>
+
+<dl class="cmdoption">
 <dt id="cmdoption-celeryd-B">
 <tt class="descname">-B</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">--beat</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd-B" title="Permalink to this definition">¶</a></dt>
 <dd>Also run the <tt class="docutils literal"><span class="pre">celerybeat</span></tt> periodic task scheduler. Please note that
@@ -159,7 +164,7 @@ deleted from the messaging server.</dd></dl>
 
 <dl class="function">
 <dt id="celery.bin.celeryd.run_worker">
-<tt class="descclassname">celery.bin.celeryd.</tt><tt class="descname">run_worker</tt><big>(</big><em>concurrency=0</em>, <em>loglevel=30</em>, <em>logfile=None</em>, <em>discard=False</em>, <em>run_clockservice=False</em>, <em>events=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.run_worker" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.bin.celeryd.</tt><tt class="descname">run_worker</tt><big>(</big><em>concurrency=0</em>, <em>loglevel=30</em>, <em>logfile=None</em>, <em>hostname=None</em>, <em>discard=False</em>, <em>run_clockservice=False</em>, <em>events=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.run_worker" title="Permalink to this definition">¶</a></dt>
 <dd>Starts the celery worker server.</dd></dl>
 
 </div>
@@ -178,7 +183,7 @@ deleted from the messaging server.</dd></dl>
     </div>
 	<div id="breadcrumbs">
 		<a href="index.html" accesskey="U">API Reference</a><img src="triangle_closed.png" alt="Right arrow">
-		<a href="../index.html">Celery v0.9.5 (unstable) documentation</a>
+		<a href="../index.html">Celery v0.9.6 (unstable) documentation</a>
 		</ul>
 	</div>
   </body>

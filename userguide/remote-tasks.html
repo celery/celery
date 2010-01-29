@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Remote Tasks &mdash; Celery v0.9.5 (unstable) documentation</title>
+    <title>HTTP Callback Tasks (Webhooks) &mdash; Celery v0.9.6 (unstable) documentation</title>
     <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.9.5 (unstable)',
+        VERSION:     '0.9.6 (unstable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,17 +19,17 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.9.5 (unstable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.9.6 (unstable) documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
     <link rel="next" title="Configuration and defaults" href="../configuration.html" />
     <link rel="prev" title="Executing Tasks" href="executing.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v0.9.5 (unstable) documentation</p>
+	<p>Celery v0.9.6 (unstable) documentation</p>
 </div>
 <div id="header">
-	<div id="title"><h1>Remote Tasks</h1></div>
+	<div id="title"><h1>HTTP Callback Tasks (Webhooks)</h1></div>
 	<ul id="headerButtons">
 		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
 		<li id="page_buttons">
@@ -49,7 +49,7 @@
 <li class="toctree-l1 current"><a class="reference external" href="index.html">User Guide</a><ul class="current">
 <li class="toctree-l2"><a class="reference external" href="tasks.html">Tasks</a></li>
 <li class="toctree-l2"><a class="reference external" href="executing.html">Executing Tasks</a></li>
-<li class="toctree-l2 current"><a class="current reference external" href="">Remote Tasks</a></li>
+<li class="toctree-l2 current"><a class="current reference external" href="">HTTP Callback Tasks (Webhooks)</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference external" href="../configuration.html">Configuration and defaults</a></li>
@@ -94,24 +94,28 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="module-celery.task.rest">
-<h1>Remote Tasks<a class="headerlink" href="#module-celery.task.rest" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="executing-tasks-on-a-remote-web-server">
-<h2>Executing tasks on a remote web server<a class="headerlink" href="#executing-tasks-on-a-remote-web-server" title="Permalink to this headline">¶</a></h2>
+  <div class="section" id="module-celery.task.http">
+<h1>HTTP Callback Tasks (Webhooks)<a class="headerlink" href="#module-celery.task.http" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="executing-tasks-on-a-web-server">
+<h2>Executing tasks on a web server<a class="headerlink" href="#executing-tasks-on-a-web-server" title="Permalink to this headline">¶</a></h2>
 <p>If you need to call into another language, framework or similar, you can
-do so by using HTTP tasks.</p>
-<p>The HTTP tasks (or REST task) uses a simple REST+JSON scheme to take arguments
-and return results, the scheme to call a task is:</p>
-<div class="highlight-python"><pre>GET http://example.com/mytask/?arg1=a,arg2=b,arg3=c</pre>
+do so by using HTTP callback tasks.</p>
+<p>The HTTP callback tasks uses GET/POST arguments and uses a simple JSON response
+to return results. The scheme to call a task is:</p>
+<div class="highlight-python"><pre>GET http://example.com/mytask/?arg1=a&amp;arg2=b&amp;arg3=c</pre>
 </div>
+<p>or using POST:</p>
+<div class="highlight-python"><pre>POST http://example.com/mytask</pre>
+</div>
+<p>Whether to use GET or POST is up to you and your requirements.</p>
 <p>The web page should then return a response in the following format
 if the execution was successful:</p>
 <div class="highlight-python"><pre>{"status": "success", "retval": ....}</pre>
 </div>
-<p>or in the following format if there was an error:</p>
+<p>or if there was an error:</p>
 <div class="highlight-python"><pre>{"status": "failure": "reason": "Invalid moon alignment."}</pre>
 </div>
-<p>With this information we can define a simple task in Django:</p>
+<p>With this information you could define a simple task in Django:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">django.http</span> <span class="kn">import</span> <span class="n">HttpResponse</span>
 <span class="kn">from</span> <span class="nn">anyjson</span> <span class="kn">import</span> <span class="n">serialize</span>
 
@@ -124,22 +128,40 @@ if the execution was successful:</p>
     <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="n">serialize</span><span class="p">(</span><span class="n">response</span><span class="p">),</span> <span class="n">mimetype</span><span class="o">=</span><span class="s">&quot;application/json&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>I&#8217;m sure you&#8217;ll be able to port this scheme to any language/framework.
-New examples and libraries are very welcome!</p>
-<p>To execute the task you use <tt class="xref docutils literal"><span class="pre">RESTProxyTask</span></tt>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">RESTProxyTask</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">res</span> <span class="o">=</span> <span class="n">RESTProxyTask</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="s">&quot;http://example.com/multiply&quot;</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<p>or in Ruby on Rails:</p>
+<div class="highlight-ruby"><div class="highlight"><pre><span class="k">def</span> <span class="nf">multiply</span>
+    <span class="vi">@x</span> <span class="o">=</span> <span class="n">params</span><span class="o">[</span><span class="ss">:x</span><span class="o">].</span><span class="n">to_i</span>
+    <span class="vi">@y</span> <span class="o">=</span> <span class="n">params</span><span class="o">[</span><span class="ss">:y</span><span class="o">].</span><span class="n">to_i</span>
+
+    <span class="vi">@status</span> <span class="o">=</span> <span class="p">{</span><span class="ss">:status</span> <span class="o">=&gt;</span> <span class="s2">&quot;success&quot;</span><span class="p">,</span> <span class="ss">:retval</span> <span class="o">=&gt;</span> <span class="vi">@x</span> <span class="o">*</span> <span class="vi">@y</span><span class="p">}</span>
+
+    <span class="n">render</span> <span class="ss">:json</span> <span class="o">=&gt;</span> <span class="vi">@status</span>
+<span class="k">end</span>
+</pre></div>
+</div>
+<p>You can easily port this scheme to any language/framework;
+New examples and libraries are very welcome.</p>
+<p>To execute the task you use the <a title="celery.task.http.URL" class="reference external" href="../reference/celery.task.http.html#celery.task.http.URL"><tt class="xref docutils literal"><span class="pre">URL</span></tt></a> class:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task.http</span> <span class="kn">import</span> <span class="n">URL</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">res</span> <span class="o">=</span> <span class="n">URL</span><span class="p">(</span><span class="s">&quot;http://example.com/multiply&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">get_async</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><a title="celery.task.http.URL" class="reference external" href="../reference/celery.task.http.html#celery.task.http.URL"><tt class="xref docutils literal"><span class="pre">URL</span></tt></a> is a shortcut to the <a title="celery.task.http.HttpDispatchTask" class="reference external" href="../reference/celery.task.http.html#celery.task.http.HttpDispatchTask"><tt class="xref docutils literal"><span class="pre">HttpDispatchTask</span></tt></a>. You can subclass this to extend the
+functionality.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task.http</span> <span class="kn">import</span> <span class="n">HttpDispatchTask</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">res</span> <span class="o">=</span> <span class="n">HttpDispatchTask</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s">&quot;http://example.com/multiply&quot;</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s">&quot;GET&quot;</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">res</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
 <span class="go">100</span>
 </pre></div>
 </div>
-<p>In your <tt class="docutils literal"><span class="pre">celeryd.log</span></tt> file you should see the task being processed:</p>
-<div class="highlight-python"><pre>[INFO/MainProcess] Task celery.task.rest.RESTProxyTask
-    [f2cc8efc-2a14-40cd-85ad-f1c77c94beeb] processed: 100</pre>
+<p>The output of celeryd (or the logfile if you&#8217;ve enabled it) should show the task being processed:</p>
+<div class="highlight-python"><pre>[INFO/MainProcess] Task celery.task.http.HttpDispatchTask
+        [f2cc8efc-2a14-40cd-85ad-f1c77c94beeb] processed: 100</pre>
 </div>
-<p>Since applying tasks can also simply be done via the web and the
-<tt class="docutils literal"><span class="pre">celery.views.apply</span></tt> view, executing tasks from other languages should be a
-no-brainer.</p>
+<p>Since applying tasks can be done via HTTP using the
+<tt class="docutils literal"><span class="pre">celery.views.apply</span></tt> view, executing tasks from other languages is easy.
+For an example service exposing tasks via HTTP you should have a look at
+<tt class="docutils literal"><span class="pre">examples/celery_http_gateway</span></tt>.</p>
 </div>
 </div>
 
@@ -157,7 +179,7 @@ no-brainer.</p>
     </div>
 	<div id="breadcrumbs">
 		<a href="index.html" accesskey="U">User Guide</a><img src="triangle_closed.png" alt="Right arrow">
-		<a href="../index.html">Celery v0.9.5 (unstable) documentation</a>
+		<a href="../index.html">Celery v0.9.6 (unstable) documentation</a>
 		</ul>
 	</div>
   </body>
