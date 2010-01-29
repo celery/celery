@@ -58,8 +58,8 @@ class TestTaskApply(ViewTestCase):
     def test_apply(self):
         conf.ALWAYS_EAGER = True
         try:
-            ret = self.client.get(task_apply(kwargs={"task_name": mytask.name,
-                                                     "args": "4/4"}))
+            ret = self.client.get(task_apply(kwargs={"task_name":
+                mytask.name}) + "?x=4&y=4")
             self.assertEquals(scratch["result"], 16)
         finally:
             conf.ALWAYS_EAGER = False
@@ -69,8 +69,7 @@ class TestTaskApply(ViewTestCase):
         try:
             name = "xxx.does.not.exist"
             action = curry(self.client.get, task_apply(kwargs={
-                                                        "task_name": name,
-                                                        "args": "4/4"}))
+                        "task_name": name}) + "?x=4&y=4")
             self.assertRaises(TemplateDoesNotExist, action)
         finally:
             conf.ALWAYS_EAGER = False

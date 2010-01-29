@@ -56,7 +56,7 @@ class TestDatabaseBackend(unittest.TestCase):
         self.assertTrue(isinstance(b.get_result(tid3), KeyError))
 
     def test_taskset_store(self):
-        b = Backend()
+        b = DatabaseBackend()
         tid = gen_unique_id()
 
         self.assertTrue(b.get_taskset(tid) is None)

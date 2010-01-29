@@ -273,9 +273,9 @@ class TestCeleryTasks(unittest.TestCase):
                 name="George Constanza", test_eta=True)
 
         # Discarding all tasks.
-        task.discard_all()
+        consumer.discard_all()
         task.apply_async(t1)
-        self.assertEquals(task.discard_all(), 1)
+        self.assertEquals(consumer.discard_all(), 1)
         self.assertTrue(consumer.fetch() is None)
 
         self.assertFalse(presult.successful())
@@ -340,6 +340,7 @@ class TestTaskSet(unittest.TestCase):
         taskset_id = taskset_res.taskset_id
         for subtask in subtasks:
             m = consumer.fetch().payload
+            print("M: %s" % m)
             self.assertEquals(m.get("taskset"), taskset_id)
             self.assertEquals(m.get("task"), IncrementCounterTask.name)
             self.assertEquals(m.get("id"), subtask.task_id)

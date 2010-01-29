@@ -43,8 +43,9 @@ def apply(request, task_name):
     without ensuring your code is safe!
 
     """
-    task = tasks[task_name]
-    if task_name not in tasks:
+    try:
+        task = tasks[task_name]
+    except KeyError:
         raise Http404("apply: no such task")
     return task_view(task)(request)
 
