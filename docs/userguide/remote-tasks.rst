@@ -1,11 +1,11 @@
-==============
- Remote Tasks
-==============
+================================
+ HTTP Callback Tasks (Webhooks)
+================================
 
 .. module:: celery.task.http
 
-Executing tasks on a remote web server
---------------------------------------
+Executing tasks on a web server
+-------------------------------
 
 If you need to call into another language, framework or similar, you can
 do so by using HTTP callback tasks.
