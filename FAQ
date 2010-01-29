@@ -563,3 +563,14 @@ However, you can't schedule a periodic task at a specific time yet.
 The good news is, if anyone is willing
 to implement it, it shouldn't be that hard, some pointers to achieve this has
 been written here: http://bit.ly/99UQNO
+
+
+How do I shut down ``celeryd`` safely?
+--------------------------------------
+
+**Answer**: Use the ``TERM`` signal, and celery will finish all currently
+executing jobs and shut down as soon as possible. No tasks should be lost.
+
+You should never stop ``celeryd`` with the ``KILL`` signal (``-9``),
+unless you've tried ``TERM`` a few times and waited a few minutes to let it
+get a chance to shut down.
