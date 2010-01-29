@@ -1,3 +1,7 @@
+=======================
+ Webhook Task Example
+=======================
+
 This example is a simple Django HTTP service exposing a single task
 multiplying two numbers:
 
