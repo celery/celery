@@ -68,9 +68,9 @@ using time in seconds is not very readable.
 Serializers
 -----------
 
-Data passed between celery and worker daemons are serialized FIXME
-
-The default serializer is :mod:`pickle`, but you can change this for each
+Data passed between celery and workers has to be serialized to be
+transferred. The default serializer is :mod:`pickle`, but you can 
+change this for each
 task. There is built-in support for using ``pickle``, ``JSON`` and ``YAML``,
 and you can add your own custom serializers by registering them into the
 carrot serializer registry.
