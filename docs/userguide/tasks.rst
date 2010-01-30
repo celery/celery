@@ -110,7 +110,7 @@ setting decides whether or not they will be written to the log file.
 Retrying a task if something fails
 ==================================
 
-Simply use :meth:`Task.retry` to re-sent the task. It will
+Simply use :meth:`Task.retry` to re-send the task. It will
 do the right thing, and respect the :attr:`Task.max_retries`
 attribute:
 
