@@ -136,8 +136,8 @@ Using a custom retry delay
 
 When a task is to be retried, it will wait for a given amount of time
 before doing so. The default delay is in the :attr:`Task.default_retry_delay` 
-attribute on the task. By default this is set to 3 minutes. Note that
-unit for setting the delay is seconds. FIXME: is it int or float? I guess retrying in 0.5 is allowed?
+attribute on the task. By default this is set to 3 minutes. Note that the
+unit for setting the delay is in seconds (int or float).
 
 You can also provide the ``countdown`` argument to
 :meth:`Task.retry` to override this default.
