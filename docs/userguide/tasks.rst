@@ -181,7 +181,8 @@ Task options
 * default_retry_delay
 
     Default time in seconds before a retry of the task should be
-    executed. Default is a 1 minute delay. FIXME: unit not here or above. see other fixme
+    executed. Can be either an ``int`` or a ``float``.
+    Default is a 1 minute delay (``60 seconds``).
 
 * rate_limit
 
@@ -207,7 +208,9 @@ Task options
 
 * disable_error_emails
 
-    Disable all error e-mails for this task. FIXME: default?
+    Disable error e-mails for this task. Default is ``False``.
+    *Note:* You can also turn off error e-mails globally using the
+    ``CELERY_SEND_TASK_ERROR_EMAILS`` setting.
 
 * serializer
 
@@ -245,7 +248,8 @@ Message and routing options
     The message priority. A number from ``0`` to ``9``, where ``0`` is the
     highest. **Note:** RabbitMQ does not support priorities yet.
 
-See :doc:`executing` for descriptions of these options. FIXME: which options, the ones just described?
+See :doc:`executing` for more information about the messaging options
+available.
 
 Example
 =======
