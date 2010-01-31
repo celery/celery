@@ -32,7 +32,7 @@ def maybe_utf8(value):
     return value
 
 
-def utf8dict(self, tup):
+def utf8dict(tup):
     """With a dict's items() tuple return a new dict with any utf-8
     keys/values encoded."""
     return dict((key.encode("utf-8"), maybe_utf8(value))
