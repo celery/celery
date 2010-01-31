@@ -127,10 +127,11 @@ class HttpDispatch(object):
         warnings.warn(DeprecationWarning(
             "execute() has been deprecated and is scheduled for removal in \
             celery v1.2, please use dispatch() instead."))
+        return self.dispatch()
 
     def dispatch(self):
         """Dispatch callback and return result."""
-        response = self._dispatch()
+        response = self._dispatch_raw()
         if not response:
             raise InvalidResponseError("Empty response")
         try:
@@ -182,7 +183,7 @@ class HttpDispatchTask(BaseTask):
         url = url or self.url
         method = method or self.method
         logger = self.get_logger(**kwargs)
-        return HttpDispatch(url, method, kwargs, logger).execute()
+        return HttpDispatch(url, method, kwargs, logger).dispatch()
 
 
 class URL(MutableURL):
