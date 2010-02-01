@@ -83,7 +83,6 @@ class MutableURL(object):
     def _set_query(self, query):
         self._query = query
 
-
     query = property(_get_query, _set_query)
 
 
