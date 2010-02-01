@@ -10,7 +10,7 @@
 
     introduction
     broker-installation
-    first-steps-with-python
+    first-steps-with-only-celery
     first-steps-with-django
     periodic-tasks
     resources

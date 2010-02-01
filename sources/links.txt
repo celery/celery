@@ -12,9 +12,13 @@ celery
 AMQP
 ----
 
-* `Shovel`_: An AMQP Relay
+* `RabbitMQ-shovel`: Message Relocation Equipment (as a plug-in to RabbitMQ)
 
-.. _`Shovel`: http://botland.oebfare.com/logger/celery/
+* `Shovel`_: An AMQP Relay (generic AMQP shovel)
+
+.. _`RabbitMQ-shovel`: http://bit.ly/b1hVW2
+
+.. _`Shovel`: http://bit.ly/xFEde
 
 RabbitMQ
 --------

@@ -99,6 +99,7 @@ celery.worker.job.WorkerTaskTrace.execute_safe method internals/reference/celery
 celery.beat.Scheduler.registry attribute internals/reference/celery.beat.html
 celery.task.execute_remote function reference/celery.task.html
 celery.task.http.HttpDispatchTask.url attribute reference/celery.task.http.html
+celery.task.base.Task.execute method reference/celery.task.base.html
 celery.worker.buckets.TokenBucketQueue.get method internals/reference/celery.worker.buckets.html
 celery.backends.tyrant.TyrantBackend.tyrant_port attribute internals/reference/celery.backends.tyrant.html
 celery.task.base.TaskSet.total attribute reference/celery.task.base.html
@@ -483,6 +484,7 @@ CELERY_CACHE_BACKEND data reference/celery.conf.html
 celery.worker.listener.CarrotListener.consume_messages method internals/reference/celery.worker.listener.html
 celery.log.LoggingProxy.isatty method internals/reference/celery.log.html
 celery.worker.buckets.partition attribute internals/reference/celery.worker.buckets.html
+celery.task.Task.execute method reference/celery.task.html
 celery.views.task_status function reference/celery.views.html
 celery.task.builtins.DeleteExpiredTaskMetaTask.run method reference/celery.task.builtins.html
 celery.worker.listener.CarrotListener class internals/reference/celery.worker.listener.html

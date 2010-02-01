@@ -22,7 +22,7 @@
     <link rel="top" title="Celery v0.9.6 (unstable) documentation" href="../index.html" />
     <link rel="up" title="Getting Started" href="index.html" />
     <link rel="next" title="Periodic Tasks" href="periodic-tasks.html" />
-    <link rel="prev" title="First steps with Python" href="first-steps-with-python.html" /> 
+    <link rel="prev" title="First steps with Celery" href="first-steps-with-only-celery.html" /> 
   </head>
   <body>
 <div id="docstitle">
@@ -36,7 +36,7 @@
 			<div class="headerButton"><a href="../genindex.html" title="General Index" accesskey="I">index</a></div>
 			<div class="headerButton"><a href="../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
 			<div class="headerButton"><a href="periodic-tasks.html" title="Periodic Tasks" accesskey="N">next</a></div>
-			<div class="headerButton"><a href="first-steps-with-python.html" title="First steps with Python" accesskey="P">previous</a></div>
+			<div class="headerButton"><a href="first-steps-with-only-celery.html" title="First steps with Celery" accesskey="P">previous</a></div>
 		</li>
 	</ul>
 </div>
@@ -48,7 +48,7 @@
 <li class="toctree-l1 current"><a class="reference external" href="index.html">Getting Started</a><ul class="current">
 <li class="toctree-l2"><a class="reference external" href="introduction.html">Introduction</a></li>
 <li class="toctree-l2"><a class="reference external" href="broker-installation.html">Broker Installation</a></li>
-<li class="toctree-l2"><a class="reference external" href="first-steps-with-python.html">First steps with Python</a></li>
+<li class="toctree-l2"><a class="reference external" href="first-steps-with-only-celery.html">First steps with Celery</a></li>
 <li class="toctree-l2 current"><a class="current reference external" href="">First steps with Django</a></li>
 <li class="toctree-l2"><a class="reference external" href="periodic-tasks.html">Periodic Tasks</a></li>
 <li class="toctree-l2"><a class="reference external" href="resources.html">Resources</a></li>
@@ -124,12 +124,13 @@
 </li>
 </ol>
 <p>That&#8217;s it.</p>
-<p>There are more options available, like how many processes you want to process
-work in parallel (the <tt class="docutils literal"><span class="pre">CELERY_CONCURRENCY</span></tt> setting), and the backend used
-for storing task statuses. But for now, this should do. For all of the options
-available, please see the <a class="reference external" href="../configuration.html"><em>configuration directive
-reference</em></a>.</p>
-<p><strong>Note</strong>: If you&#8217;re using SQLite as the Django database back-end,
+<p>There are more options available, like how many processes you want to
+work in parallel (the <tt class="docutils literal"><span class="pre">CELERY_CONCURRENCY</span></tt> setting). You can also
+configure the backend used for storing task statuses. For now though,
+this should do. For all of the options available, please see the
+:doc:<a href="#id1"><span class="problematic" id="id2">`</span></a>configuration directive</p>
+<p>reference&lt;../configuration&gt;`.</p>
+<p><strong>Note:</strong> If you&#8217;re using SQLite as the Django database back-end,
 <tt class="docutils literal"><span class="pre">celeryd</span></tt> will only be able to process one task at a time, this is
 because SQLite doesn&#8217;t allow concurrent writes.</p>
 </div>
@@ -141,23 +142,19 @@ see what&#8217;s going on without consulting the logfile:</p>
 </div>
 <p>However, in production you probably want to run the worker in the
 background as a daemon. To do this you need to use to tools provided by your
-platform, or something like <a class="reference external" href="http://supervisord.org/">supervisord</a>.</p>
-<p>For example start-up scripts see <tt class="docutils literal"><span class="pre">contrib/debian/init.d</span></tt> for using
-<tt class="docutils literal"><span class="pre">start-stop-daemon</span></tt> on Debian/Ubuntu, or <tt class="docutils literal"><span class="pre">contrib/mac/org.celeryq.*</span></tt> for using
-<tt class="docutils literal"><span class="pre">launchd</span></tt> on Mac OS X.</p>
-<p>For a complete listing of the command line arguments available, with a short
-description, you can use the help command:</p>
+platform. See <a class="reference external" href="../cookbook/daemonizing.html"><em>daemon mode reference</em></a>.</p>
+<p>For a complete listing of the command line options available, use the help command:</p>
 <div class="highlight-python"><pre>$ python manage.py help celeryd</pre>
 </div>
 </div>
 <div class="section" id="defining-and-executing-tasks">
 <h2>Defining and executing tasks<a class="headerlink" href="#defining-and-executing-tasks" title="Permalink to this headline">¶</a></h2>
-<p><strong>Please note</strong> All of these tasks has to be stored in a real module, they can&#8217;t
+<p><strong>Please note:</strong> All the tasks have to be stored in a real module, they can&#8217;t
 be defined in the python shell or ipython/bpython. This is because the celery
 worker server needs access to the task function to be able to run it.
-Put them in the <tt class="docutils literal"><span class="pre">tasks</span></tt> module of your
-Django application. The worker server will automatically load any <tt class="docutils literal"><span class="pre">tasks.py</span></tt>
-file for all of the applications listed in <tt class="docutils literal"><span class="pre">settings.INSTALLED_APPS</span></tt>.
+Put them in the <tt class="docutils literal"><span class="pre">tasks</span></tt> module of your Django application. The
+worker server  will automatically load any <tt class="docutils literal"><span class="pre">tasks.py</span></tt> file for all
+of the applications listed in <tt class="docutils literal"><span class="pre">settings.INSTALLED_APPS</span></tt>.
 Executing tasks using <tt class="docutils literal"><span class="pre">delay</span></tt> and <tt class="docutils literal"><span class="pre">apply_async</span></tt> can be done from the
 python shell, but keep in mind that since arguments are pickled, you can&#8217;t
 use custom classes defined in the shell session.</p>
@@ -169,8 +166,7 @@ use custom classes defined in the shell session.</p>
     <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
 </pre></div>
 </div>
-<p>Now if we want to execute this task, we can use the
-<tt class="docutils literal"><span class="pre">delay</span></tt> method of the task class.
+<p>To execute this task, we can use the <tt class="docutils literal"><span class="pre">delay</span></tt> method of the task class.
 This is a handy shortcut to the <tt class="docutils literal"><span class="pre">apply_async</span></tt> method which gives
 greater control of the task execution.
 See <a class="reference external" href="../userguide/executing.html"><em>Executing Tasks</em></a> for more information.</p>
@@ -181,7 +177,7 @@ See <a class="reference external" href="../userguide/executing.html"><em>Executi
 <p>At this point, the task has been sent to the message broker. The message
 broker will hold on to the task until a celery worker server has successfully
 picked it up.</p>
-<p><em>Note</em> If everything is just hanging when you execute <tt class="docutils literal"><span class="pre">delay</span></tt>, please check
+<p><em>Note:</em> If everything is just hanging when you execute <tt class="docutils literal"><span class="pre">delay</span></tt>, please check
 that RabbitMQ is running, and that the user/password has access to the virtual
 host you configured earlier.</p>
 <p>Right now we have to check the celery worker log files to know what happened

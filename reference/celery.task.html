@@ -319,6 +319,26 @@ but doesn&#8217;t support the extra options.</p>
 <em class="property">classmethod </em><tt class="descclassname">Task.</tt><tt class="descname">establish_connection</tt><big>(</big><em>connect_timeout=4</em><big>)</big><a class="headerlink" href="#celery.task.Task.establish_connection" title="Permalink to this definition">¶</a></dt>
 <dd>Establish a connection to the message broker.</dd></dl>
 
+<dl class="method">
+<dt id="celery.task.Task.execute">
+<tt class="descclassname">Task.</tt><tt class="descname">execute</tt><big>(</big><em>wrapper</em>, <em>pool</em>, <em>loglevel</em>, <em>logfile</em><big>)</big><a class="headerlink" href="#celery.task.Task.execute" title="Permalink to this definition">¶</a></dt>
+<dd><p>The method the worker calls to execute the task.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><em>wrapper</em> &#8211; A <a title="celery.worker.job.TaskWrapper" class="reference external" href="../internals/reference/celery.worker.job.html#celery.worker.job.TaskWrapper"><tt class="xref docutils literal"><span class="pre">celery.worker.job.TaskWrapper</span></tt></a>.</li>
+<li><em>pool</em> &#8211; A <a title="celery.worker.pool.TaskPool" class="reference external" href="../internals/reference/celery.worker.pool.html#celery.worker.pool.TaskPool"><tt class="xref docutils literal"><span class="pre">celery.worker.pool.TaskPool</span></tt></a> object.</li>
+<li><em>loglevel</em> &#8211; Current loglevel.</li>
+<li><em>logfile</em> &#8211; Name of the currently used logfile.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 <dl class="classmethod">
 <dt id="celery.task.Task.get_consumer">
 <em class="property">classmethod </em><tt class="descclassname">Task.</tt><tt class="descname">get_consumer</tt><big>(</big><em>connection=None</em>, <em>connect_timeout=4</em><big>)</big><a class="headerlink" href="#celery.task.Task.get_consumer" title="Permalink to this definition">¶</a></dt>

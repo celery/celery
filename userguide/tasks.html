@@ -97,7 +97,7 @@
   <div class="section" id="module-celery.task.base">
 <h1>Tasks<a class="headerlink" href="#module-celery.task.base" title="Permalink to this headline">¶</a></h1>
 <p>A task is a class that encapsulates a function and its execution options.
-With a function <tt class="docutils literal"><span class="pre">create_user</span></tt>, that takes two arguments: <tt class="docutils literal"><span class="pre">username</span></tt> and
+Given a function <tt class="docutils literal"><span class="pre">create_user</span></tt>, that takes two arguments: <tt class="docutils literal"><span class="pre">username</span></tt> and
 <tt class="docutils literal"><span class="pre">password</span></tt>, you can create a task like this:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">Task</span>
 
@@ -132,19 +132,19 @@ attribute, so pickle is able to find it in reverse:</p>
 <div class="section" id="default-keyword-arguments">
 <h2>Default keyword arguments<a class="headerlink" href="#default-keyword-arguments" title="Permalink to this headline">¶</a></h2>
 <p>Celery supports a set of default arguments that can be forwarded to any task.
-task can choose not to take these, or only list the ones it want
-(the worker will do the right thing).</p>
+Tasks can choose not to take these, or list the ones they want.
+The worker will do the right thing.</p>
 <p>The current default keyword arguments are:</p>
 <ul>
 <li><p class="first">logfile</p>
 <blockquote>
-<p>The currently used log file, can be passed on to <tt class="docutils literal"><span class="pre">self.get_logger</span></tt>
+<p>The log file, can be passed on to <tt class="docutils literal"><span class="pre">self.get_logger</span></tt>
 to gain access to the workers log file. See <a class="reference internal" href="#logging">Logging</a>.</p>
 </blockquote>
 </li>
 <li><p class="first">loglevel</p>
 <blockquote>
-<p>The current loglevel used.</p>
+<p>The loglevel used.</p>
 </blockquote>
 </li>
 <li><p class="first">task_id</p>
@@ -160,14 +160,14 @@ to gain access to the workers log file. See <a class="reference internal" href="
 <li><p class="first">task_retries</p>
 <blockquote>
 <p>How many times the current task has been retried.
-(an integer starting a <tt class="docutils literal"><span class="pre">0</span></tt>).</p>
+An integer starting at <tt class="docutils literal"><span class="pre">0</span></tt>.</p>
 </blockquote>
 </li>
 </ul>
 </div>
 <div class="section" id="logging">
 <h2>Logging<a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h2>
-<p>You can use the workers logger to add some diagnostic output to
+<p>You can use the workers logger to add diagnostic output to
 the worker log:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">AddTask</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -185,11 +185,11 @@ the worker log:</p>
 </pre></div>
 </div>
 <p>There are several logging levels available, and the workers <tt class="docutils literal"><span class="pre">loglevel</span></tt>
-setting decides whether they will be sent to the log file or not.</p>
+setting decides whether or not they will be written to the log file.</p>
 </div>
 <div class="section" id="retrying-a-task-if-something-fails">
 <h2>Retrying a task if something fails<a class="headerlink" href="#retrying-a-task-if-something-fails" title="Permalink to this headline">¶</a></h2>
-<p>Simply use <a title="celery.task.base.Task.retry" class="reference external" href="../reference/celery.task.base.html#celery.task.base.Task.retry"><tt class="xref docutils literal"><span class="pre">Task.retry()</span></tt></a> to re-sent the task, it will
+<p>Simply use <a title="celery.task.base.Task.retry" class="reference external" href="../reference/celery.task.base.html#celery.task.base.Task.retry"><tt class="xref docutils literal"><span class="pre">Task.retry()</span></tt></a> to re-send the task. It will
 do the right thing, and respect the <a title="celery.task.base.Task.max_retries" class="reference external" href="../reference/celery.task.base.html#celery.task.base.Task.max_retries"><tt class="xref docutils literal"><span class="pre">Task.max_retries</span></tt></a>
 attribute:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="nd">@task</span><span class="p">()</span>
@@ -203,15 +203,16 @@ attribute:</p>
 </div>
 <p>Here we used the <tt class="docutils literal"><span class="pre">exc</span></tt> argument to pass the current exception to
 <a title="celery.task.base.Task.retry" class="reference external" href="../reference/celery.task.base.html#celery.task.base.Task.retry"><tt class="xref docutils literal"><span class="pre">Task.retry()</span></tt></a>. At each step of the retry this exception
-is available as the tombstone (result) of the task, when
+is available as the tombstone (result) of the task. When
 <a title="celery.task.base.Task.max_retries" class="reference external" href="../reference/celery.task.base.html#celery.task.base.Task.max_retries"><tt class="xref docutils literal"><span class="pre">Task.max_retries</span></tt></a> has been exceeded this is the exception
 raised. However, if an <tt class="docutils literal"><span class="pre">exc</span></tt> argument is not provided the
 <tt class="xref docutils literal"><span class="pre">RetryTaskError</span></tt> exception is raised instead.</p>
 <div class="section" id="using-a-custom-retry-delay">
 <h3>Using a custom retry delay<a class="headerlink" href="#using-a-custom-retry-delay" title="Permalink to this headline">¶</a></h3>
-<p>The default countdown is in the tasks
-<a title="celery.task.base.Task.default_retry_delay" class="reference external" href="../reference/celery.task.base.html#celery.task.base.Task.default_retry_delay"><tt class="xref docutils literal"><span class="pre">Task.default_retry_delay</span></tt></a> attribute, which by
-default is set to 3 minutes.</p>
+<p>When a task is to be retried, it will wait for a given amount of time
+before doing so. The default delay is in the <a title="celery.task.base.Task.default_retry_delay" class="reference external" href="../reference/celery.task.base.html#celery.task.base.Task.default_retry_delay"><tt class="xref docutils literal"><span class="pre">Task.default_retry_delay</span></tt></a>
+attribute on the task. By default this is set to 3 minutes. Note that the
+unit for setting the delay is in seconds (int or float).</p>
 <p>You can also provide the <tt class="docutils literal"><span class="pre">countdown</span></tt> argument to
 <a title="celery.task.base.Task.retry" class="reference external" href="../reference/celery.task.base.html#celery.task.base.Task.retry"><tt class="xref docutils literal"><span class="pre">Task.retry()</span></tt></a> to override this default.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MyTask</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
@@ -233,15 +234,15 @@ default is set to 3 minutes.</p>
 <ul>
 <li><p class="first">name</p>
 <blockquote>
-<p>This is the name the task is registered as.
+<p>The name the task is registered as.
 You can set this name manually, or just use the default which is
 automatically generated using the module and class name.</p>
 </blockquote>
 </li>
 <li><p class="first">abstract</p>
 <blockquote>
-<p>Abstract classes are not registered, so they&#8217;re
-only used for making new task types by sub classing.</p>
+<p>Abstract classes are not registered, but are used as the superclass
+when making new task types by subclassing.</p>
 </blockquote>
 </li>
 <li><p class="first">max_retries</p>
@@ -255,15 +256,18 @@ not something that happens automatically.</p>
 <li><p class="first">default_retry_delay</p>
 <blockquote>
 <p>Default time in seconds before a retry of the task should be
-executed. Default is a 1 minute delay.</p>
+executed. Can be either an <tt class="docutils literal"><span class="pre">int</span></tt> or a <tt class="docutils literal"><span class="pre">float</span></tt>.
+Default is a 1 minute delay (<tt class="docutils literal"><span class="pre">60</span> <span class="pre">seconds</span></tt>).</p>
 </blockquote>
 </li>
 <li><p class="first">rate_limit</p>
-<p>Set the rate limit for this task type,
-if this is <tt class="xref docutils literal"><span class="pre">None</span></tt> no rate limit is in effect.
-The rate limits can be specified in seconds, minutes or hours
-by appending <tt class="docutils literal"><span class="pre">&quot;/s&quot;</span></tt>, <tt class="docutils literal"><span class="pre">&quot;/m&quot;</span></tt> or &#8220;<tt class="docutils literal"><span class="pre">/h&quot;</span></tt>&#8220;. If this is an integer
-it is interpreted as seconds. Example: <tt class="docutils literal"><span class="pre">&quot;100/m&quot;</span> <span class="pre">(hundred</span> <span class="pre">tasks</span> <span class="pre">a</span>
+<p>Set the rate limit for this task type, that is, how many times in a given
+period of time is the task allowed to run.</p>
+<p>If this is <tt class="xref docutils literal"><span class="pre">None</span></tt> no rate limit is in effect.
+If it is an integer, it is interpreted as &#8220;tasks per second&#8221;.</p>
+<p>The rate limits can be specified in seconds, minutes or hours
+by appending <tt class="docutils literal"><span class="pre">&quot;/s&quot;</span></tt>, <tt class="docutils literal"><span class="pre">&quot;/m&quot;</span></tt> or &#8220;<tt class="docutils literal"><span class="pre">/h&quot;</span></tt>&#8221; to the value.
+Example: <tt class="docutils literal"><span class="pre">&quot;100/m&quot;</span> <span class="pre">(hundred</span> <span class="pre">tasks</span> <span class="pre">a</span>
 <span class="pre">minute).</span> <span class="pre">Default</span> <span class="pre">is</span> <span class="pre">the</span> <span class="pre">``CELERY_DEFAULT_RATE_LIMIT</span></tt> setting (which
 is off if not specified).</p>
 </li>
@@ -279,7 +283,9 @@ store the return value/status as usual.</p>
 </li>
 <li><p class="first">disable_error_emails</p>
 <blockquote>
-<p>Disable all error e-mails for this task.</p>
+<p>Disable error e-mails for this task. Default is <tt class="xref docutils literal"><span class="pre">False</span></tt>.
+<em>Note:</em> You can also turn off error e-mails globally using the
+<tt class="docutils literal"><span class="pre">CELERY_SEND_TASK_ERROR_EMAILS</span></tt> setting.</p>
 </blockquote>
 </li>
 <li><p class="first">serializer</p>
@@ -330,18 +336,19 @@ be executed.</p>
 <li><dl class="first docutils">
 <dt>priority</dt>
 <dd><p class="first last">The message priority. A number from <tt class="docutils literal"><span class="pre">0</span></tt> to <tt class="docutils literal"><span class="pre">9</span></tt>, where <tt class="docutils literal"><span class="pre">0</span></tt> is the
-highest. Note that RabbitMQ doesn&#8217;t support priorities yet.</p>
+highest. <strong>Note:</strong> RabbitMQ does not support priorities yet.</p>
 </dd>
 </dl>
 </li>
 </ul>
-<p>Please see <a class="reference external" href="executing.html"><em>Executing Tasks</em></a> for descriptions of these options.</p>
+<p>See <a class="reference external" href="executing.html"><em>Executing Tasks</em></a> for more information about the messaging options
+available.</p>
 </div>
 </div>
 <div class="section" id="example">
 <h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
 <p>Let&#8217;s take a real wold example; A blog where comments posted needs to be
-filtered for spam. When the comment is created, we run the spam filter in the
+filtered for spam. When the comment is created, the spam filter runs in the
 background, so the user doesn&#8217;t have to wait for it to finish.</p>
 <p>We have a Django blog application allowing comments
 on blog posts. We&#8217;ll describe parts of the models/views and tasks for this
@@ -452,10 +459,10 @@ Michael Foord.</p>
 <div class="section" id="how-it-works">
 <h2>How it works<a class="headerlink" href="#how-it-works" title="Permalink to this headline">¶</a></h2>
 <p>Here comes the technical details, this part isn&#8217;t something you need to know,
-but you may be interested, so here goes.</p>
+but you may be interested.</p>
 <p>All defined tasks are listed in a registry. The registry contains
 a list of task names and their task classes. You can investigate this registry
-by yourself:</p>
+yourself:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">registry</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery</span> <span class="kn">import</span> <span class="n">task</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">registry</span><span class="o">.</span><span class="n">tasks</span>
@@ -473,44 +480,43 @@ by yourself:</p>
 </div>
 <p>This is the list of tasks built-in to celery. Note that we had to import
 <tt class="docutils literal"><span class="pre">celery.task</span></tt> first for these to show up. This is because the tasks will
-only be registered when the module it is defined in is imported.</p>
-<p>When using the default loader the loader imports any modules listed in the
+only be registered when the module they are defined in is imported.</p>
+<p>The default loader imports any modules listed in the
 <tt class="docutils literal"><span class="pre">CELERY_IMPORTS</span></tt> setting. If using Django it loads all <tt class="docutils literal"><span class="pre">tasks.py</span></tt> modules
 for the applications listed in <tt class="docutils literal"><span class="pre">INSTALLED_APPS</span></tt>. If you want to do something
 special you can create your own loader to do what you want.</p>
 <p>The entity responsible for registering your task in the registry is a
-meta class, <a title="celery.task.base.TaskType" class="reference external" href="../reference/celery.task.base.html#celery.task.base.TaskType"><tt class="xref docutils literal"><span class="pre">TaskType</span></tt></a>, this is the default meta class for
+meta class, <a title="celery.task.base.TaskType" class="reference external" href="../reference/celery.task.base.html#celery.task.base.TaskType"><tt class="xref docutils literal"><span class="pre">TaskType</span></tt></a>. This is the default meta class for
 <tt class="docutils literal"><span class="pre">Task</span></tt>. If you want to register your task manually you can set the
 <tt class="docutils literal"><span class="pre">abstract</span></tt> attribute:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MyTask</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
     <span class="n">abstract</span> <span class="o">=</span> <span class="bp">True</span>
 </pre></div>
 </div>
-<p>This way the task won&#8217;t be registered, but any task sub classing it will.</p>
-<p>So when we send a task, we don&#8217;t send the function code, we just send the name
-of the task, so when the worker receives the message it can just look it up in
+<p>This way the task won&#8217;t be registered, but any task subclassing it will.</p>
+<p>When tasks are sent, we don&#8217;t send the function code, just the name
+of the task. When the worker receives the message it can just look it up in
 the task registry to find the execution code.</p>
-<p>This means that your workers must optimally be updated with the same software
-as the client, this is a drawback, but the alternative is a technical
+<p>This means that your workers should always be updated with the same software
+as the client. This is a drawback, but the alternative is a technical
 challenge that has yet to be solved.</p>
 </div>
 <div class="section" id="performance-and-strategies">
 <h2>Performance and Strategies<a class="headerlink" href="#performance-and-strategies" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="granularity">
 <h3>Granularity<a class="headerlink" href="#granularity" title="Permalink to this headline">¶</a></h3>
-<p>The tasks granularity is the degree of parallelization your task have.
-It&#8217;s better to have a lot of small tasks, than just a few long running
-ones.</p>
+<p>The task&#8217;s granularity is the degree of parallelization your task have.
+It&#8217;s better to have many small tasks, than a few long running ones.</p>
 <p>With smaller tasks, you can process more tasks in parallel and the tasks
 won&#8217;t run long enough to block the worker from processing other waiting tasks.</p>
-<p>But there&#8217;s a limit, sending messages takes processing power and bandwidth. If
+<p>However, there&#8217;s a limit. Sending messages takes processing power and bandwidth. If
 your tasks are so short the overhead of passing them around is worse than
 just executing them in-line, you should reconsider your strategy. There is no
 universal answer here.</p>
 </div>
 <div class="section" id="data-locality">
 <h3>Data locality<a class="headerlink" href="#data-locality" title="Permalink to this headline">¶</a></h3>
-<p>The worker processing the task should optimally be as close to the data as
+<p>The worker processing the task should be as close to the data as
 possible. The best would be to have a copy in memory, the worst being a
 full transfer from another continent.</p>
 <p>If the data is far away, you could try to run another worker at location, or
@@ -524,12 +530,12 @@ system, like <a class="reference external" href="http://memcached.org/">memcache
 <div class="section" id="state">
 <h3>State<a class="headerlink" href="#state" title="Permalink to this headline">¶</a></h3>
 <p>Since celery is a distributed system, you can&#8217;t know in which process, or even
-on what machine the task will run, also you can&#8217;t even know if the task will
+on what machine the task will run. Indeed you can&#8217;t even know if the task will
 run in a timely manner, so please be wary of the state you pass on to tasks.</p>
-<p>One gotcha is Django model objects, they shouldn&#8217;t be passed on as arguments
+<p>One gotcha is Django model objects. They shouldn&#8217;t be passed on as arguments
 to task classes, it&#8217;s almost always better to re-fetch the object from the
 database instead, as there are possible race conditions involved.</p>
-<p>Imagine the following scenario where you have an article, and a task
+<p>Imagine the following scenario where you have an article and a task
 that automatically expands some abbreviations in it.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Article</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
     <span class="n">title</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">()</span>

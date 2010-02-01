@@ -96,7 +96,7 @@
             
   <div class="section" id="executing-tasks">
 <h1>Executing Tasks<a class="headerlink" href="#executing-tasks" title="Permalink to this headline">¶</a></h1>
-<p>Executing tasks is done with <tt class="docutils literal"><span class="pre">apply_async</span></tt>, and it&#8217;s shortcut <tt class="docutils literal"><span class="pre">delay</span></tt>.</p>
+<p>Executing tasks is done with <tt class="docutils literal"><span class="pre">apply_async</span></tt>, and its shortcut: <tt class="docutils literal"><span class="pre">delay</span></tt>.</p>
 <p><tt class="docutils literal"><span class="pre">delay</span></tt> is simple and convenient, as it looks like calling a regular
 function:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">Task</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">,</span> <span class="n">kwarg1</span><span class="o">=</span><span class="s">&quot;x&quot;</span><span class="p">,</span> <span class="n">kwarg2</span><span class="o">=</span><span class="s">&quot;y&quot;</span><span class="p">)</span>
@@ -111,8 +111,8 @@ With <tt class="docutils literal"><span class="pre">apply_async</span></tt> you 
 the <tt class="docutils literal"><span class="pre">Task</span></tt> class: <tt class="docutils literal"><span class="pre">routing_key</span></tt>, <tt class="docutils literal"><span class="pre">exchange</span></tt>, <tt class="docutils literal"><span class="pre">immediate</span></tt>, <tt class="docutils literal"><span class="pre">mandatory</span></tt>,
 <tt class="docutils literal"><span class="pre">priority</span></tt>, and <tt class="docutils literal"><span class="pre">serializer</span></tt>.  In addition you can set a countdown/eta, or provide
 a custom broker connection.</p>
-<p>Let&#8217;s go over these in more detail. The following examples uses this simple
-task, used to add two numbers:</p>
+<p>Let&#8217;s go over these in more detail. The following examples use this simple
+task, which adds together two numbers:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="nd">@task</span>
 <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
@@ -120,9 +120,9 @@ task, used to add two numbers:</p>
 </div>
 <div class="section" id="eta-and-countdown">
 <h2>ETA and countdown<a class="headerlink" href="#eta-and-countdown" title="Permalink to this headline">¶</a></h2>
-<p>The ETA (estimated time of arrival) lets you set a specific date and time for
-when after, your task should execute. <tt class="docutils literal"><span class="pre">countdown</span></tt> is a shortcut to set this
-by seconds into the future.</p>
+<p>The ETA (estimated time of arrival) lets you set a specific date and time that
+is the earliest time at which your task will execute. <tt class="docutils literal"><span class="pre">countdown</span></tt> is
+a shortcut to set this by seconds in the future.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">add</span><span class="o">.</span><span class="n">apply_async</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span> <span class="n">countdown</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>    <span class="c"># this takes at least 3 seconds to return</span>
 <span class="go">20</span>
@@ -144,12 +144,19 @@ using time in seconds is not very readable.</p>
 </pre></div>
 </div>
 </div>
-<div class="section" id="serializer">
-<h2>Serializer<a class="headerlink" href="#serializer" title="Permalink to this headline">¶</a></h2>
-<p>The default serializer used is <tt class="xref docutils literal"><span class="pre">pickle</span></tt>, but you can change this for each
+<div class="section" id="serializers">
+<h2>Serializers<a class="headerlink" href="#serializers" title="Permalink to this headline">¶</a></h2>
+<p>Data passed between celery and workers has to be serialized to be
+transferred. The default serializer is <tt class="xref docutils literal"><span class="pre">pickle</span></tt>, but you can
+change this for each
 task. There is built-in support for using <tt class="docutils literal"><span class="pre">pickle</span></tt>, <tt class="docutils literal"><span class="pre">JSON</span></tt> and <tt class="docutils literal"><span class="pre">YAML</span></tt>,
 and you can add your own custom serializers by registering them into the
 carrot serializer registry.</p>
+<p>The default serializer (pickle) supports Python objects, like <tt class="docutils literal"><span class="pre">datetime</span></tt> and
+any custom datatypes you define yourself. But since pickle has poor support
+outside of the Python language, you need to choose another serializer if you
+need to communicate with other languages. In that case, <tt class="docutils literal"><span class="pre">JSON</span></tt> is a very
+popular choice.</p>
 <p>The serialization method is sent with the message, so the worker knows how to
 deserialize any task. Of course, if you use a custom serializer, this must
 also be registered in the worker.</p>
@@ -201,12 +208,12 @@ establish the connection yourself and pass it to <tt class="docutils literal"><s
 </pre></div>
 </div>
 <p>The connection timeout is the number of seconds to wait before we give up
-establishing the connection, you can set this with the <tt class="docutils literal"><span class="pre">connect_timeout</span></tt>
+establishing the connection. You can set this with the <tt class="docutils literal"><span class="pre">connect_timeout</span></tt>
 argument to <tt class="docutils literal"><span class="pre">apply_async</span></tt>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">add</span><span class="o">.</span><span class="n">apply_async</span><span class="p">([</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span> <span class="n">connect_timeout</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>or if you handle the connection manually:</p>
+<p>Or if you handle the connection manually:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">connection</span> <span class="o">=</span> <span class="n">establish_connection</span><span class="p">(</span><span class="n">connect_timeout</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -218,10 +225,10 @@ You can route tasks using the following entities: exchange, queue and routing ke
 <p>Messages (tasks) are sent to exchanges, a queue binds to an exchange with a
 routing key. Let&#8217;s look at an example:</p>
 <p>Our application has a lot of tasks, some process video, others process images,
-and some gathers collective intelligence about users. Some of these have
+and some gather collective intelligence about users. Some of these have
 higher priority than others so we want to make sure the high priority tasks
 get sent to powerful machines, while low priority tasks are sent to dedicated
-machines that can handle these at their own pace, uninterrupted.</p>
+machines that can handle these at their own pace.</p>
 <p>For the sake of example we have only one exchange called <tt class="docutils literal"><span class="pre">tasks</span></tt>.
 There are different types of exchanges that matches the routing key in
 different ways, the exchange types are:</p>
@@ -242,8 +249,8 @@ exact word, and <tt class="docutils literal"><span class="pre">#</span></tt> mat
 </li>
 </ul>
 <p>(there are also other exchange types, but these are not used by celery)</p>
-<p>So, we create three queues, <tt class="docutils literal"><span class="pre">video</span></tt>, <tt class="docutils literal"><span class="pre">image</span></tt> and <tt class="docutils literal"><span class="pre">lowpri</span></tt> that binds to
-our <tt class="docutils literal"><span class="pre">tasks</span></tt> exchange, for the queues we use the following binding keys:</p>
+<p>So, we create three queues, <tt class="docutils literal"><span class="pre">video</span></tt>, <tt class="docutils literal"><span class="pre">image</span></tt> and <tt class="docutils literal"><span class="pre">lowpri</span></tt> that bind to
+our <tt class="docutils literal"><span class="pre">tasks</span></tt> exchange. For the queues we use the following binding keys:</p>
 <div class="highlight-python"><pre>video: video.#
 image: image.#
 lowpri: misc.#</pre>
@@ -261,7 +268,7 @@ listen to different queues:</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">UpdateReccomendationsTask</span><span class="o">.</span><span class="n">apply_async</span><span class="p">(</span><span class="n">routing_key</span><span class="o">=</span><span class="s">&quot;misc.recommend&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Later, if suddenly the image crop task is consuming a lot of resources,
+<p>Later, if the crop task is consuming a lot of resources,
 we can bind some new workers to handle just the <tt class="docutils literal"><span class="pre">&quot;image.crop&quot;</span></tt> task,
 by creating a new queue that binds to <tt class="docutils literal"><span class="pre">&quot;image.crop</span></tt>&#8220;.</p>
 </div>
@@ -282,7 +289,7 @@ if the task cannot be routed to a worker immediately.</p>
 </ul>
 <p>A number between <tt class="docutils literal"><span class="pre">0</span></tt> and <tt class="docutils literal"><span class="pre">9</span></tt>, where <tt class="docutils literal"><span class="pre">0</span></tt> is the highest priority.
 Note that RabbitMQ does not implement AMQP priorities, and maybe your broker
-does not either, please consult your brokers documentation for more
+does not either, consult your broker&#8217;s documentation for more
 information.</p>
 </div>
 </div>

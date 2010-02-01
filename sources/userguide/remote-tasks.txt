@@ -10,7 +10,7 @@ Executing tasks on a web server
 If you need to call into another language, framework or similar, you can
 do so by using HTTP callback tasks.
 
-The HTTP callback tasks uses GET/POST arguments and uses a simple JSON response
+The HTTP callback tasks use GET/POST arguments and a simple JSON response
 to return results. The scheme to call a task is::
 
     GET http://example.com/mytask/?arg1=a&arg2=b&arg3=c
@@ -19,6 +19,7 @@ or using POST::
 
     POST http://example.com/mytask
 
+**Note:** POST data has to be form encoded.
 Whether to use GET or POST is up to you and your requirements.
 
 The web page should then return a response in the following format
@@ -61,7 +62,7 @@ or in Ruby on Rails:
     end
 
 You can easily port this scheme to any language/framework;
-New examples and libraries are very welcome.
+new examples and libraries are very welcome.
 
 To execute the task you use the :class:`URL` class:
 

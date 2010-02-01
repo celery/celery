@@ -100,14 +100,15 @@
 <h2>Executing tasks on a web server<a class="headerlink" href="#executing-tasks-on-a-web-server" title="Permalink to this headline">¶</a></h2>
 <p>If you need to call into another language, framework or similar, you can
 do so by using HTTP callback tasks.</p>
-<p>The HTTP callback tasks uses GET/POST arguments and uses a simple JSON response
+<p>The HTTP callback tasks use GET/POST arguments and a simple JSON response
 to return results. The scheme to call a task is:</p>
 <div class="highlight-python"><pre>GET http://example.com/mytask/?arg1=a&amp;arg2=b&amp;arg3=c</pre>
 </div>
 <p>or using POST:</p>
 <div class="highlight-python"><pre>POST http://example.com/mytask</pre>
 </div>
-<p>Whether to use GET or POST is up to you and your requirements.</p>
+<p><strong>Note:</strong> POST data has to be form encoded.
+Whether to use GET or POST is up to you and your requirements.</p>
 <p>The web page should then return a response in the following format
 if the execution was successful:</p>
 <div class="highlight-python"><pre>{"status": "success", "retval": ....}</pre>
@@ -140,7 +141,7 @@ if the execution was successful:</p>
 </pre></div>
 </div>
 <p>You can easily port this scheme to any language/framework;
-New examples and libraries are very welcome.</p>
+new examples and libraries are very welcome.</p>
 <p>To execute the task you use the <a title="celery.task.http.URL" class="reference external" href="../reference/celery.task.http.html#celery.task.http.URL"><tt class="xref docutils literal"><span class="pre">URL</span></tt></a> class:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task.http</span> <span class="kn">import</span> <span class="n">URL</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">res</span> <span class="o">=</span> <span class="n">URL</span><span class="p">(</span><span class="s">&quot;http://example.com/multiply&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">get_async</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
