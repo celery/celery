@@ -168,12 +168,12 @@ class WorkController(object):
         finally:
             self.stop()
 
-    def process_task(self, task):
+    def process_task(self, wrapper):
         """Process task by sending it to the pool of workers."""
         try:
             try:
-                task.execute_using_pool(self.pool, self.loglevel,
-                                        self.logfile)
+                wrapper.task.execute(wrapper, self.pool,
+                                     self.loglevel, self.logfile)
             except Exception, exc:
                 self.logger.critical("Internal error %s: %s\n%s" % (
                                 exc.__class__, exc, traceback.format_exc()))

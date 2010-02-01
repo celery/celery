@@ -175,6 +175,8 @@ class TaskWrapper(object):
         [celery@%(hostname)s] Error: Task %(name)s (%(id)s): %(exc)s
     """
     fail_email_body = TASK_FAIL_EMAIL_BODY
+    executed = False
+    time_start = None
 
     def __init__(self, task_name, task_id, args, kwargs,
             on_ack=noop, retries=0, **opts):
@@ -183,17 +185,14 @@ class TaskWrapper(object):
         self.retries = retries
         self.args = args
         self.kwargs = kwargs
-        self.logger = opts.get("logger")
-        self.eventer = opts.get("eventer")
         self.on_ack = on_ack
-        self.executed = False
-        self.time_start = None
+        self.task = tasks[self.task_name]
+
         for opt in ("success_msg", "fail_msg", "fail_email_subject",
-                "fail_email_body"):
+                "fail_email_body", "logger", "eventer"):
             setattr(self, opt, opts.get(opt, getattr(self, opt, None)))
         if not self.logger:
             self.logger = get_default_logger()
-        self.task = tasks[self.task_name]
 
     def __repr__(self):
         return '<%s: {name:"%s", id:"%s", args:"%s", kwargs:"%s"}>' % (

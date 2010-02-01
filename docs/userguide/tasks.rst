@@ -5,7 +5,7 @@
 .. module:: celery.task.base
 
 A task is a class that encapsulates a function and its execution options.
-With a function ``create_user``, that takes two arguments: ``username`` and
+Given a function ``create_user``, that takes two arguments: ``username`` and
 ``password``, you can create a task like this:
 
 .. code-block:: python
@@ -51,19 +51,19 @@ Default keyword arguments
 =========================
 
 Celery supports a set of default arguments that can be forwarded to any task.
-task can choose not to take these, or only list the ones it want
-(the worker will do the right thing).
+Tasks can choose not to take these, or list the ones they want.
+The worker will do the right thing.
 
 The current default keyword arguments are:
 
 * logfile
 
-    The currently used log file, can be passed on to ``self.get_logger``
+    The log file, can be passed on to ``self.get_logger``
     to gain access to the workers log file. See `Logging`_.
 
 * loglevel
 
-    The current loglevel used.
+    The loglevel used.
 
 * task_id
 
@@ -76,12 +76,13 @@ The current default keyword arguments are:
 * task_retries
 
     How many times the current task has been retried.
-    (an integer starting a ``0``).
+    An integer starting at ``0``.
+
 
 Logging
 =======
 
-You can use the workers logger to add some diagnostic output to
+You can use the workers logger to add diagnostic output to
 the worker log:
 
 .. code-block:: python
@@ -103,12 +104,13 @@ or using the decorator syntax:
         return x + y
 
 There are several logging levels available, and the workers ``loglevel``
-setting decides whether they will be sent to the log file or not.
+setting decides whether or not they will be written to the log file.
+
 
 Retrying a task if something fails
 ==================================
 
-Simply use :meth:`Task.retry` to re-sent the task, it will
+Simply use :meth:`Task.retry` to re-send the task. It will
 do the right thing, and respect the :attr:`Task.max_retries`
 attribute:
 
@@ -124,7 +126,7 @@ attribute:
 
 Here we used the ``exc`` argument to pass the current exception to
 :meth:`Task.retry`. At each step of the retry this exception
-is available as the tombstone (result) of the task, when
+is available as the tombstone (result) of the task. When
 :attr:`Task.max_retries` has been exceeded this is the exception
 raised. However, if an ``exc`` argument is not provided the
 :exc:`RetryTaskError` exception is raised instead.
@@ -132,9 +134,10 @@ raised. However, if an ``exc`` argument is not provided the
 Using a custom retry delay
 --------------------------
 
-The default countdown is in the tasks
-:attr:`Task.default_retry_delay` attribute, which by
-default is set to 3 minutes.
+When a task is to be retried, it will wait for a given amount of time
+before doing so. The default delay is in the :attr:`Task.default_retry_delay` 
+attribute on the task. By default this is set to 3 minutes. Note that the
+unit for setting the delay is in seconds (int or float).
 
 You can also provide the ``countdown`` argument to
 :meth:`Task.retry` to override this default.
@@ -159,14 +162,14 @@ Task options
 
 * name
 
-    This is the name the task is registered as.
+    The name the task is registered as.
     You can set this name manually, or just use the default which is
     automatically generated using the module and class name.
 
 * abstract
 
-    Abstract classes are not registered, so they're
-    only used for making new task types by sub classing.
+    Abstract classes are not registered, but are used as the superclass
+    when making new task types by subclassing.
 
 * max_retries
 
@@ -178,15 +181,20 @@ Task options
 * default_retry_delay
 
     Default time in seconds before a retry of the task should be
-    executed. Default is a 1 minute delay.
+    executed. Can be either an ``int`` or a ``float``.
+    Default is a 1 minute delay (``60 seconds``).
 
 * rate_limit
 
-  Set the rate limit for this task type,
-  if this is ``None`` no rate limit is in effect.
+  Set the rate limit for this task type, that is, how many times in a given
+  period of time is the task allowed to run.
+
+  If this is ``None`` no rate limit is in effect.
+  If it is an integer, it is interpreted as "tasks per second". 
+
   The rate limits can be specified in seconds, minutes or hours
-  by appending ``"/s"``, ``"/m"`` or "``/h"``". If this is an integer
-  it is interpreted as seconds. Example: ``"100/m" (hundred tasks a
+  by appending ``"/s"``, ``"/m"`` or "``/h"``" to the value.
+  Example: ``"100/m" (hundred tasks a
   minute). Default is the ``CELERY_DEFAULT_RATE_LIMIT`` setting (which
   is off if not specified).
 
@@ -200,7 +208,9 @@ Task options
 
 * disable_error_emails
 
-    Disable all error e-mails for this task.
+    Disable error e-mails for this task. Default is ``False``.
+    *Note:* You can also turn off error e-mails globally using the
+    ``CELERY_SEND_TASK_ERROR_EMAILS`` setting.
 
 * serializer
 
@@ -236,15 +246,16 @@ Message and routing options
 
 * priority
     The message priority. A number from ``0`` to ``9``, where ``0`` is the
-    highest. Note that RabbitMQ doesn't support priorities yet.
+    highest. **Note:** RabbitMQ does not support priorities yet.
 
-Please see :doc:`executing` for descriptions of these options.
+See :doc:`executing` for more information about the messaging options
+available.
 
 Example
 =======
 
 Let's take a real wold example; A blog where comments posted needs to be
-filtered for spam. When the comment is created, we run the spam filter in the
+filtered for spam. When the comment is created, the spam filter runs in the
 background, so the user doesn't have to wait for it to finish.
 
 We have a Django blog application allowing comments
@@ -370,11 +381,11 @@ How it works
 ============
 
 Here comes the technical details, this part isn't something you need to know,
-but you may be interested, so here goes.
+but you may be interested.
 
 All defined tasks are listed in a registry. The registry contains
 a list of task names and their task classes. You can investigate this registry
-by yourself:
+yourself:
 
 .. code-block:: python
 
@@ -394,15 +405,15 @@ by yourself:
 
 This is the list of tasks built-in to celery. Note that we had to import
 ``celery.task`` first for these to show up. This is because the tasks will
-only be registered when the module it is defined in is imported.
+only be registered when the module they are defined in is imported.
 
-When using the default loader the loader imports any modules listed in the
+The default loader imports any modules listed in the
 ``CELERY_IMPORTS`` setting. If using Django it loads all ``tasks.py`` modules
 for the applications listed in ``INSTALLED_APPS``. If you want to do something
 special you can create your own loader to do what you want.
 
 The entity responsible for registering your task in the registry is a
-meta class, :class:`TaskType`, this is the default meta class for
+meta class, :class:`TaskType`. This is the default meta class for
 ``Task``. If you want to register your task manually you can set the
 ``abstract`` attribute:
 
@@ -411,14 +422,14 @@ meta class, :class:`TaskType`, this is the default meta class for
     class MyTask(Task):
         abstract = True
 
-This way the task won't be registered, but any task sub classing it will.
+This way the task won't be registered, but any task subclassing it will.
 
-So when we send a task, we don't send the function code, we just send the name
-of the task, so when the worker receives the message it can just look it up in
+When tasks are sent, we don't send the function code, just the name
+of the task. When the worker receives the message it can just look it up in
 the task registry to find the execution code.
 
-This means that your workers must optimally be updated with the same software
-as the client, this is a drawback, but the alternative is a technical
+This means that your workers should always be updated with the same software
+as the client. This is a drawback, but the alternative is a technical
 challenge that has yet to be solved.
 
 Performance and Strategies
@@ -427,14 +438,13 @@ Performance and Strategies
 Granularity
 -----------
 
-The tasks granularity is the degree of parallelization your task have.
-It's better to have a lot of small tasks, than just a few long running
-ones.
+The task's granularity is the degree of parallelization your task have.
+It's better to have many small tasks, than a few long running ones.
 
 With smaller tasks, you can process more tasks in parallel and the tasks
 won't run long enough to block the worker from processing other waiting tasks.
 
-But there's a limit, sending messages takes processing power and bandwidth. If
+However, there's a limit. Sending messages takes processing power and bandwidth. If
 your tasks are so short the overhead of passing them around is worse than
 just executing them in-line, you should reconsider your strategy. There is no
 universal answer here.
@@ -442,7 +452,7 @@ universal answer here.
 Data locality
 -------------
 
-The worker processing the task should optimally be as close to the data as
+The worker processing the task should be as close to the data as
 possible. The best would be to have a copy in memory, the worst being a
 full transfer from another continent.
 
@@ -463,14 +473,14 @@ State
 -----
 
 Since celery is a distributed system, you can't know in which process, or even
-on what machine the task will run, also you can't even know if the task will
+on what machine the task will run. Indeed you can't even know if the task will
 run in a timely manner, so please be wary of the state you pass on to tasks.
 
-One gotcha is Django model objects, they shouldn't be passed on as arguments
+One gotcha is Django model objects. They shouldn't be passed on as arguments
 to task classes, it's almost always better to re-fetch the object from the
 database instead, as there are possible race conditions involved.
 
-Imagine the following scenario where you have an article, and a task
+Imagine the following scenario where you have an article and a task
 that automatically expands some abbreviations in it.
 
 .. code-block:: python

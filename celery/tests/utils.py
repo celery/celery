@@ -10,6 +10,18 @@ from contextlib import contextmanager
 from celery.utils import noop
 
 
+@contextmanager
+def eager_tasks():
+
+    from celery import conf
+    prev = conf.ALWAYS_EAGER
+    conf.ALWAYS_EAGER = True
+
+    yield
+
+    conf.ALWAYS_EAGER = prev
+
+
 def with_environ(env_name, env_value):
 
     def _envpatched(fun):

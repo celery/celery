@@ -32,7 +32,7 @@ def maybe_utf8(value):
     return value
 
 
-def utf8dict(self, tup):
+def utf8dict(tup):
     """With a dict's items() tuple return a new dict with any utf-8
     keys/values encoded."""
     return dict((key.encode("utf-8"), maybe_utf8(value))
@@ -83,7 +83,6 @@ class MutableURL(object):
     def _set_query(self, query):
         self._query = query
 
-
     query = property(_get_query, _set_query)
 
 
@@ -127,10 +126,11 @@ class HttpDispatch(object):
         warnings.warn(DeprecationWarning(
             "execute() has been deprecated and is scheduled for removal in \
             celery v1.2, please use dispatch() instead."))
+        return self.dispatch()
 
     def dispatch(self):
         """Dispatch callback and return result."""
-        response = self._dispatch()
+        response = self._dispatch_raw()
         if not response:
             raise InvalidResponseError("Empty response")
         try:
@@ -182,7 +182,7 @@ class HttpDispatchTask(BaseTask):
         url = url or self.url
         method = method or self.method
         logger = self.get_logger(**kwargs)
-        return HttpDispatch(url, method, kwargs, logger).execute()
+        return HttpDispatch(url, method, kwargs, logger).dispatch()
 
 
 class URL(MutableURL):

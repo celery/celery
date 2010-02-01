@@ -2,7 +2,7 @@
  Executing Tasks
 =================
 
-Executing tasks is done with ``apply_async``, and it's shortcut ``delay``.
+Executing tasks is done with ``apply_async``, and its shortcut: ``delay``.
 
 ``delay`` is simple and convenient, as it looks like calling a regular
 function:
@@ -23,8 +23,8 @@ the ``Task`` class: ``routing_key``, ``exchange``, ``immediate``, ``mandatory``,
 ``priority``, and ``serializer``.  In addition you can set a countdown/eta, or provide
 a custom broker connection.
 
-Let's go over these in more detail. The following examples uses this simple
-task, used to add two numbers:
+Let's go over these in more detail. The following examples use this simple
+task, which adds together two numbers:
 
 .. code-block:: python
 
@@ -36,9 +36,9 @@ task, used to add two numbers:
 ETA and countdown
 -----------------
 
-The ETA (estimated time of arrival) lets you set a specific date and time for
-when after, your task should execute. ``countdown`` is a shortcut to set this
-by seconds into the future.
+The ETA (estimated time of arrival) lets you set a specific date and time that
+is the earliest time at which your task will execute. ``countdown`` is
+a shortcut to set this by seconds in the future.
 
 .. code-block:: python
 
@@ -65,13 +65,21 @@ using time in seconds is not very readable.
         UnbanTask.apply_async(args=[username], eta=tomorrow)
 
 
-Serializer
-----------
+Serializers
+-----------
 
-The default serializer used is :mod:`pickle`, but you can change this for each
+Data passed between celery and workers has to be serialized to be
+transferred. The default serializer is :mod:`pickle`, but you can 
+change this for each
 task. There is built-in support for using ``pickle``, ``JSON`` and ``YAML``,
 and you can add your own custom serializers by registering them into the
 carrot serializer registry.
+
+The default serializer (pickle) supports Python objects, like ``datetime`` and
+any custom datatypes you define yourself. But since pickle has poor support
+outside of the Python language, you need to choose another serializer if you
+need to communicate with other languages. In that case, ``JSON`` is a very
+popular choice.
 
 The serialization method is sent with the message, so the worker knows how to
 deserialize any task. Of course, if you use a custom serializer, this must
@@ -133,14 +141,14 @@ In Python 2.5 and above, you can use the ``with`` statement:
     print([res.get() for res in results])
 
 The connection timeout is the number of seconds to wait before we give up
-establishing the connection, you can set this with the ``connect_timeout``
+establishing the connection. You can set this with the ``connect_timeout``
 argument to ``apply_async``:
 
 .. code-block:: python
 
     add.apply_async([10, 10], connect_timeout=3)
 
-or if you handle the connection manually:
+Or if you handle the connection manually:
 
 .. code-block:: python
 
@@ -157,10 +165,10 @@ Messages (tasks) are sent to exchanges, a queue binds to an exchange with a
 routing key. Let's look at an example:
 
 Our application has a lot of tasks, some process video, others process images,
-and some gathers collective intelligence about users. Some of these have
+and some gather collective intelligence about users. Some of these have
 higher priority than others so we want to make sure the high priority tasks
 get sent to powerful machines, while low priority tasks are sent to dedicated
-machines that can handle these at their own pace, uninterrupted.
+machines that can handle these at their own pace.
 
 For the sake of example we have only one exchange called ``tasks``.
 There are different types of exchanges that matches the routing key in
@@ -181,8 +189,8 @@ different ways, the exchange types are:
 
 (there are also other exchange types, but these are not used by celery)
 
-So, we create three queues, ``video``, ``image`` and ``lowpri`` that binds to
-our ``tasks`` exchange, for the queues we use the following binding keys::
+So, we create three queues, ``video``, ``image`` and ``lowpri`` that bind to
+our ``tasks`` exchange. For the queues we use the following binding keys::
 
     video: video.#
     image: image.#
@@ -204,7 +212,7 @@ listen to different queues:
     >>> UpdateReccomendationsTask.apply_async(routing_key="misc.recommend")
 
 
-Later, if suddenly the image crop task is consuming a lot of resources,
+Later, if the crop task is consuming a lot of resources,
 we can bind some new workers to handle just the ``"image.crop"`` task,
 by creating a new queue that binds to ``"image.crop``".
 
@@ -226,5 +234,5 @@ if the task cannot be routed to a worker immediately.
 
 A number between ``0`` and ``9``, where ``0`` is the highest priority.
 Note that RabbitMQ does not implement AMQP priorities, and maybe your broker
-does not either, please consult your brokers documentation for more
+does not either, consult your broker's documentation for more
 information.
