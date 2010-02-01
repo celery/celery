@@ -175,7 +175,6 @@ class TaskWrapper(object):
         [celery@%(hostname)s] Error: Task %(name)s (%(id)s): %(exc)s
     """
     fail_email_body = TASK_FAIL_EMAIL_BODY
-    _type = None # set by property: type
     executed = False
     time_start = None
 
@@ -187,6 +186,7 @@ class TaskWrapper(object):
         self.args = args
         self.kwargs = kwargs
         self.on_ack = on_ack
+        self.task = tasks[self.task_name]
 
         for opt in ("success_msg", "fail_msg", "fail_email_subject",
                 "fail_email_body", "logger", "eventer"):
@@ -346,9 +346,3 @@ class TaskWrapper(object):
             subject = self.fail_email_subject.strip() % context
             body = self.fail_email_body.strip() % context
             mail_admins(subject, body, fail_silently=True)
-
-    @property
-    def task(self):
-        if self._type is None:
-            self._type = tasks[self.task_name]
-        return self._type
