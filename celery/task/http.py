@@ -1,9 +1,4 @@
 import urllib2
-import warnings
-try:
-    from urlparse import parse_qsl
-except ImportError:
-    from cgi import parse_qsl
 from urllib import urlencode
 from urlparse import urlparse
 
@@ -11,6 +6,9 @@ from anyjson import deserialize
 
 from celery import __version__ as celery_version
 from celery.task.base import Task as BaseTask
+from celery.utils.compat import parse_qsl
+
+GET_METHODS = frozenset(["GET", "HEAD"])
 
 
 class InvalidResponseError(Exception):
@@ -75,7 +73,7 @@ class MutableURL(object):
         return "".join(filter(None, components))
 
     def __repr__(self):
-        return "<%s %s>" % (self.__class__.__name__, str(self))
+        return "<%s: %s>" % (self.__class__.__name__, str(self))
 
     def _get_query(self):
         return self._query
@@ -116,17 +114,11 @@ class HttpDispatch(object):
         """Dispatches the callback and returns the raw response text."""
         url = MutableURL(self.url)
         params = None
-        if self.method == "GET":
+        if self.method in GET_METHODS:
             url.query.update(self.task_kwargs)
-        elif self.method == "POST":
+        else:
             params = urlencode(utf8dict(self.task_kwargs.items()))
         return self.make_request(str(url), self.method, params)
-
-    def execute(self):
-        warnings.warn(DeprecationWarning(
-            "execute() has been deprecated and is scheduled for removal in \
-            celery v1.2, please use dispatch() instead."))
-        return self.dispatch()
 
     def dispatch(self):
         """Dispatch callback and return result."""

@@ -1,4 +1,9 @@
 try:
+    from urlparse import parse_qsl
+except ImportError:
+    from cgi import parse_qsl
+
+try:
     from collections import defaultdict
 except ImportError:
     # Written by Jason Kirtland, taken from Python Cookbook:

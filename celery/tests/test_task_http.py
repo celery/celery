@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import with_statement
 
+import sys
 import logging
 import unittest
 from urllib import addinfourl
@@ -54,8 +55,8 @@ def unknown_response():
 class TestEncodings(unittest.TestCase):
 
     def test_utf8dict(self):
-        d = {u"følelser ær langé": "ærbadægzaååÆØÅ",
-              "foobar": "xuzzybaz"}
+        d = {u"følelser ær langé": u"ærbadægzaååÆØÅ",
+              "foobar".encode("utf-8"): "xuzzybaz".encode("utf-8")}
 
         for key, value in http.utf8dict(d.items()).items():
             self.assertTrue(isinstance(key, str))
@@ -82,6 +83,16 @@ class TestMutableURL(unittest.TestCase):
 
         self.assertEquals(str(url).split("?")[0],
             "https://e.com:808/foo/bar#zeta")
+
+    def test___repr__(self):
+        url = http.MutableURL("http://e.com/foo/bar")
+        self.assertTrue(repr(url).startswith("<MutableURL: http://e.com"))
+
+    def test_set_query(self):
+        url = http.MutableURL("http://e.com/foo/bar/?x=10")
+        url.query = {"zzz": "xxx"}
+        url = http.MutableURL(str(url))
+        self.assertEquals(url.query, {"zzz": "xxx"})
 
 
 class TestHttpDispatch(unittest.TestCase):
