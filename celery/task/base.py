@@ -401,6 +401,19 @@ class Task(object):
         """
         pass
 
+    def execute(self, wrapper, pool, loglevel, logfile):
+        """The method the worker calls to execute the task.
+
+        :param wrapper: A :class:`celery.worker.job.TaskWrapper`.
+        :param pool: A :class:`celery.worker.pool.TaskPool` object.
+        :param loglevel: Current loglevel.
+        :param logfile: Name of the currently used logfile.
+
+        """
+        wrapper.execute_using_pool(pool, loglevel, logfile)
+
+
+
 
 class ExecuteRemoteTask(Task):
     """Execute an arbitrary function or object.
