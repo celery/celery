@@ -5,7 +5,7 @@ Signals - celery.signals
 .. data:: task_sent
 
     Triggered when a task has been sent to the broker.
-    Please note that this is executed in the client, the process sending
+    Note that this is executed in the client process, the one sending
     the task, not in the worker.
 
     Provides arguments:
