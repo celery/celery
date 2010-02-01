@@ -1,0 +1,243 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>First steps with Celery &mdash; Celery v0.9.6 (unstable) documentation</title>
+    <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.9.6 (unstable)',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v0.9.6 (unstable) documentation" href="../index.html" />
+    <link rel="up" title="Getting Started" href="index.html" />
+    <link rel="next" title="First steps with Django" href="first-steps-with-django.html" />
+    <link rel="prev" title="Broker Installation" href="broker-installation.html" /> 
+  </head>
+  <body>
+<div id="docstitle">
+	<p>Celery v0.9.6 (unstable) documentation</p>
+</div>
+<div id="header">
+	<div id="title"><h1>First steps with Celery</h1></div>
+	<ul id="headerButtons">
+		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
+		<li id="page_buttons">
+			<div class="headerButton"><a href="../genindex.html" title="General Index" accesskey="I">index</a></div>
+			<div class="headerButton"><a href="../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="first-steps-with-django.html" title="First steps with Django" accesskey="N">next</a></div>
+			<div class="headerButton"><a href="broker-installation.html" title="Broker Installation" accesskey="P">previous</a></div>
+		</li>
+	</ul>
+</div>
+
+<div id="sphinxsidebar">
+  <div class="sphinxsidebarwrapper">
+	<ul><li class="toctree-l1"><a href="../index.html">Main Page</a></li></ul>
+	<ul class="current">
+<li class="toctree-l1 current"><a class="reference external" href="index.html">Getting Started</a><ul class="current">
+<li class="toctree-l2"><a class="reference external" href="introduction.html">Introduction</a></li>
+<li class="toctree-l2"><a class="reference external" href="broker-installation.html">Broker Installation</a></li>
+<li class="toctree-l2 current"><a class="current reference external" href="">First steps with Celery</a></li>
+<li class="toctree-l2"><a class="reference external" href="first-steps-with-django.html">First steps with Django</a></li>
+<li class="toctree-l2"><a class="reference external" href="periodic-tasks.html">Periodic Tasks</a></li>
+<li class="toctree-l2"><a class="reference external" href="resources.html">Resources</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference external" href="../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference external" href="../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference external" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference external" href="../reference/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference external" href="../internals/index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference external" href="../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference external" href="../links.html">Interesting Links</a></li>
+</ul>
+
+      <h3>This Page</h3>
+      <ul class="this-page-menu">
+        <li><a href="../sources/getting-started/first-steps-with-celery.txt"
+               rel="nofollow">Show Source</a></li>
+      </ul>
+    <div id="searchbox" style="display: none">
+      
+        <form class="search" action="../search.html" method="get">
+			<div class="search-wrapper">
+			<span class="search-left"></span>
+			<input class="prettysearch" type="text" name="q" size="18" />
+			<span class="search-right">&nbsp;</span>
+			</div>
+          <input type="submit" value="Search" class="searchbutton" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </form>
+        <p class="searchtip" style="font-size: 90%">
+        Enter search terms or a module, class or function name.
+        </p>
+    </div>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+  </div>
+</div>
+
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="first-steps-with-celery">
+<h1>First steps with Celery<a class="headerlink" href="#first-steps-with-celery" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="creating-a-simple-task">
+<h2>Creating a simple task<a class="headerlink" href="#creating-a-simple-task" title="Permalink to this headline">¶</a></h2>
+<p>In this example we are creating a simple task that adds two
+numbers. Tasks are defined in a normal python module. The module can
+be named whatever you like, but the convention is to call it
+<tt class="docutils literal"><span class="pre">tasks.py</span></tt>.</p>
+<p>Our addition task looks like this:</p>
+<p><tt class="docutils literal"><span class="pre">tasks.py</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.decorators</span> <span class="kn">import</span> <span class="n">task</span>
+
+<span class="nd">@task</span>
+<span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
+</pre></div>
+</div>
+<p>All celery tasks are classes that inherit from the <tt class="docutils literal"><span class="pre">Task</span></tt>
+class. In this case we&#8217;re using a decorator that wraps the add
+function in an appropriate class for us automatically. The full
+documentation on how to create tasks and task classes are in
+<a class="reference external" href="../userguide/tasks.html"><em>Executing Tasks</em></a>.</p>
+</div>
+<div class="section" id="configuration">
+<h2>Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h2>
+<p>Celery is configured by using a configuration module. By convention,
+this module is called <tt class="docutils literal"><span class="pre">celeryconfig.py</span></tt>. This module must be in the
+Python path so it can be imported.</p>
+<p>You can set a custom name for the configuration module with the
+<tt class="docutils literal"><span class="pre">CELERY_CONFIG_MODULE</span></tt> variable. In these examples we use the
+default name.</p>
+<p>Let&#8217;s create our <tt class="docutils literal"><span class="pre">celeryconfig.py</span></tt>.</p>
+<ol class="arabic">
+<li><p class="first">Configure how we communicate with the broker:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">BROKER_HOST</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>
+<span class="n">BROKER_PORT</span> <span class="o">=</span> <span class="mi">5672</span>
+<span class="n">BROKER_USER</span> <span class="o">=</span> <span class="s">&quot;myuser&quot;</span>
+<span class="n">BROKER_PASSWORD</span> <span class="o">=</span> <span class="s">&quot;mypassword&quot;</span>
+<span class="n">BROKER_VHOST</span> <span class="o">=</span> <span class="s">&quot;myvhost&quot;</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">In this example we don&#8217;t want to store the results of the tasks, so
+we&#8217;ll use the simplest backend available; the AMQP backend:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_BACKEND</span> <span class="o">=</span> <span class="s">&quot;amqp&quot;</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">Finally, we list the modules to import, that is, all the modules
+that contain tasks. This is so celery knows about what tasks it can
+be asked to perform. We only have a single task module,
+<tt class="docutils literal"><span class="pre">tasks.py</span></tt>, which we added earlier:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_IMPORTS</span> <span class="o">=</span> <span class="p">(</span><span class="s">&quot;tasks&quot;</span><span class="p">,</span> <span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ol>
+<p>That&#8217;s it.</p>
+<p>There are more options available, like how many processes you want to
+process work in parallel (the <tt class="docutils literal"><span class="pre">CELERY_CONCURRENCY</span></tt> setting), and we
+could use a persistent result store backend, but for now, this should
+do. For all of the options available, see the
+<a class="reference external" href="../configuration.html"><em>configuration directive reference</em></a>.</p>
+</div>
+<div class="section" id="running-the-celery-worker-server">
+<h2>Running the celery worker server<a class="headerlink" href="#running-the-celery-worker-server" title="Permalink to this headline">¶</a></h2>
+<p>To test we will run the worker server in the foreground, so we can
+see what&#8217;s going on in the terminal:</p>
+<div class="highlight-python"><pre>$ celeryd --loglevel=INFO</pre>
+</div>
+<p>However, in production you probably want to run the worker in the
+background as a daemon. To do this you need to use to tools provided
+by your platform, or something like <a href="#id1"><span class="problematic" id="id2">`supervisord`_</span></a>.</p>
+<p>For a complete listing of the command line options available, use the
+help command:</p>
+<div class="highlight-python"><pre>$  celeryd --help</pre>
+</div>
+<p>For info on how to run celery as standalone daemon, see
+<a class="reference external" href="../cookbook/daemonizing.html"><em>daemon mode reference</em></a></p>
+</div>
+<div class="section" id="executing-the-task">
+<h2>Executing the task<a class="headerlink" href="#executing-the-task" title="Permalink to this headline">¶</a></h2>
+<p>Whenever we want to execute our task, we can use the <tt class="docutils literal"><span class="pre">delay</span></tt> method
+of the task class.</p>
+<p>This is a handy shortcut to the <tt class="docutils literal"><span class="pre">apply_async</span></tt> method which gives
+greater control of the task execution.
+See <a class="reference external" href="../userguide/executing.html"><em>Executing Tasks</em></a> for more information.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">tasks</span> <span class="kn">import</span> <span class="n">add</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">add</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="go">&lt;AsyncResult: 889143a6-39a2-4e52-837b-d80d33efb22d&gt;</span>
+</pre></div>
+</div>
+<p>At this point, the task has been sent to the message broker. The message
+broker will hold on to the task until a celery worker server has successfully
+picked it up.</p>
+<p><em>Note:</em> If everything is just hanging when you execute <tt class="docutils literal"><span class="pre">delay</span></tt>, please check
+that RabbitMQ is running, and that the user/password has access to the virtual
+host you configured earlier.</p>
+<p>Right now we have to check the celery worker log files to know what happened
+with the task. This is because we didn&#8217;t keep the <tt class="docutils literal"><span class="pre">AsyncResult</span></tt> object
+returned by <tt class="docutils literal"><span class="pre">delay</span></tt>.</p>
+<p>The <tt class="docutils literal"><span class="pre">AsyncResult</span></tt> lets us find the state of the task, wait for the task to
+finish and get its return value (or exception if the task failed).</p>
+<p>So, let&#8217;s execute the task again, but this time we&#8217;ll keep track of the task:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">add</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">ready</span><span class="p">()</span> <span class="c"># returns True if the task has finished processing.</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">result</span> <span class="c"># task is not ready, so no return value yet.</span>
+<span class="go">None</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>   <span class="c"># Waits until the task is done and returns the retval.</span>
+<span class="go">8</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">result</span> <span class="c"># direct access to result, doesn&#39;t re-raise errors.</span>
+<span class="go">8</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">successful</span><span class="p">()</span> <span class="c"># returns True if the task didn&#39;t end in failure.</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>If the task raises an exception, the return value of <tt class="docutils literal"><span class="pre">result.successful()</span></tt>
+will be <tt class="xref docutils literal"><span class="pre">False</span></tt>, and <tt class="docutils literal"><span class="pre">result.result</span></tt> will contain the exception instance
+raised by the task.</p>
+<p>That&#8217;s all for now! After this you should probably read the <a class="reference external" href="../userguide/index.html"><em>User
+Guide</em></a>.</p>
+</div>
+</div>
+
+
+          </div> 
+        </div>
+      </div>
+    <div class="footer">
+    <p>
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+	</p>
+    </div>
+      <div class="clearer"></div>
+    </div>
+	<div id="breadcrumbs">
+		<a href="index.html" accesskey="U">Getting Started</a><img src="triangle_closed.png" alt="Right arrow">
+		<a href="../index.html">Celery v0.9.6 (unstable) documentation</a>
+		</ul>
+	</div>
+  </body>
+</html>
