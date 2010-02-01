@@ -3,6 +3,7 @@ import unittest
 
 from billiard.serialization import pickle
 
+from celery import states
 from celery.utils import gen_unique_id
 from celery.backends.cache import CacheBackend
 from celery.datastructures import ExceptionInfo
@@ -22,12 +23,12 @@ class TestCacheBackend(unittest.TestCase):
         tid = gen_unique_id()
 
         self.assertFalse(cb.is_successful(tid))
-        self.assertEquals(cb.get_status(tid), "PENDING")
+        self.assertEquals(cb.get_status(tid), states.PENDING)
         self.assertEquals(cb.get_result(tid), None)
 
         cb.mark_as_done(tid, 42)
         self.assertTrue(cb.is_successful(tid))
-        self.assertEquals(cb.get_status(tid), "SUCCESS")
+        self.assertEquals(cb.get_status(tid), states.SUCCESS)
         self.assertEquals(cb.get_result(tid), 42)
         self.assertTrue(cb._cache.get(tid))
         self.assertTrue(cb.get_result(tid), 42)
@@ -55,7 +56,7 @@ class TestCacheBackend(unittest.TestCase):
             pass
         cb.mark_as_failure(tid3, exception, traceback=einfo.traceback)
         self.assertFalse(cb.is_successful(tid3))
-        self.assertEquals(cb.get_status(tid3), "FAILURE")
+        self.assertEquals(cb.get_status(tid3), states.FAILURE)
         self.assertTrue(isinstance(cb.get_result(tid3), KeyError))
         self.assertEquals(cb.get_traceback(tid3), einfo.traceback)
 

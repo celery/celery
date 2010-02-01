@@ -1,13 +1,14 @@
 from __future__ import with_statement
 
 import sys
-import unittest
 import errno
+import unittest
 
 from django.core.exceptions import ImproperlyConfigured
 
-from celery.backends.amqp import AMQPBackend
+from celery import states
 from celery.utils import gen_unique_id
+from celery.backends.amqp import AMQPBackend
 from celery.datastructures import ExceptionInfo
 
 
@@ -29,7 +30,7 @@ class TestRedisBackend(unittest.TestCase):
 
         tb.mark_as_done(tid, 42)
         self.assertTrue(tb.is_successful(tid))
-        self.assertEquals(tb.get_status(tid), "SUCCESS")
+        self.assertEquals(tb.get_status(tid), states.SUCCESS)
         self.assertEquals(tb.get_result(tid), 42)
         self.assertTrue(tb._cache.get(tid))
         self.assertTrue(tb.get_result(tid), 42)
@@ -55,7 +56,7 @@ class TestRedisBackend(unittest.TestCase):
             einfo = ExceptionInfo(sys.exc_info())
         tb.mark_as_failure(tid3, exception, traceback=einfo.traceback)
         self.assertFalse(tb.is_successful(tid3))
-        self.assertEquals(tb.get_status(tid3), "FAILURE")
+        self.assertEquals(tb.get_status(tid3), states.FAILURE)
         self.assertTrue(isinstance(tb.get_result(tid3), KeyError))
         self.assertEquals(tb.get_traceback(tid3), einfo.traceback)
 

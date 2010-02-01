@@ -6,6 +6,7 @@ from billiard.serialization import find_nearest_pickleable_exception as fnpe
 from billiard.serialization import UnpickleableExceptionWrapper
 from billiard.serialization import get_pickleable_exception as gpe
 
+from celery import states
 from celery.backends.base import BaseBackend, KeyValueStoreBackend
 
 
@@ -30,7 +31,7 @@ class TestBaseBackendInterface(unittest.TestCase):
 
     def test_store_result(self):
         self.assertRaises(NotImplementedError,
-                b.store_result, "SOMExx-N0nex1stant-IDxx-", 42, "SUCCESS")
+                b.store_result, "SOMExx-N0nex1stant-IDxx-", 42, states.SUCCESS)
 
     def test_get_result(self):
         self.assertRaises(NotImplementedError,

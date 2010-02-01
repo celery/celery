@@ -1,6 +1,7 @@
 import unittest
 from datetime import timedelta
 
+from celery import states
 from celery.task import PeriodicTask
 from celery.utils import gen_unique_id
 from celery.backends.database import DatabaseBackend
@@ -27,12 +28,12 @@ class TestDatabaseBackend(unittest.TestCase):
         tid = gen_unique_id()
 
         self.assertFalse(b.is_successful(tid))
-        self.assertEquals(b.get_status(tid), "PENDING")
+        self.assertEquals(b.get_status(tid), states.PENDING)
         self.assertTrue(b.get_result(tid) is None)
 
         b.mark_as_done(tid, 42)
         self.assertTrue(b.is_successful(tid))
-        self.assertEquals(b.get_status(tid), "SUCCESS")
+        self.assertEquals(b.get_status(tid), states.SUCCESS)
         self.assertEquals(b.get_result(tid), 42)
         self.assertTrue(b._cache.get(tid))
         self.assertTrue(b.get_result(tid), 42)
@@ -52,7 +53,7 @@ class TestDatabaseBackend(unittest.TestCase):
             pass
         b.mark_as_failure(tid3, exception)
         self.assertFalse(b.is_successful(tid3))
-        self.assertEquals(b.get_status(tid3), "FAILURE")
+        self.assertEquals(b.get_status(tid3), states.FAILURE)
         self.assertTrue(isinstance(b.get_result(tid3), KeyError))
 
     def test_taskset_store(self):

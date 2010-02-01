@@ -11,6 +11,7 @@ from anyjson import deserialize as JSON_load
 from billiard.utils.functional import curry
 
 from celery import conf
+from celery import states
 from celery.utils import gen_unique_id, get_full_cls_name
 from celery.backends import default_backend
 from celery.exceptions import RetryTaskError
@@ -93,16 +94,16 @@ class TestTaskStatus(ViewTestCase):
         self.assertJSONEquals(json, dict(task=expect))
 
     def test_task_status_success(self):
-        self.assertStatusForIs("SUCCESS", "The quick brown fox")
+        self.assertStatusForIs(states.SUCCESS, "The quick brown fox")
 
     def test_task_status_failure(self):
         exc, tb = catch_exception(KeyError("foo"))
-        self.assertStatusForIs("FAILURE", exc, tb)
+        self.assertStatusForIs(states.FAILURE, exc, tb)
 
     def test_task_status_retry(self):
         oexc, _ = catch_exception(KeyError("Resource not available"))
         exc, tb = catch_exception(RetryTaskError(str(oexc), oexc))
-        self.assertStatusForIs("RETRY", exc, tb)
+        self.assertStatusForIs(states.RETRY, exc, tb)
 
 
 class TestTaskIsSuccessful(ViewTestCase):
@@ -116,13 +117,13 @@ class TestTaskIsSuccessful(ViewTestCase):
                                               "executed": outcome}})
 
     def test_is_successful_success(self):
-        self.assertStatusForIs("SUCCESS", True)
+        self.assertStatusForIs(states.SUCCESS, True)
 
     def test_is_successful_pending(self):
-        self.assertStatusForIs("PENDING", False)
+        self.assertStatusForIs(states.PENDING, False)
 
     def test_is_successful_failure(self):
-        self.assertStatusForIs("FAILURE", False)
+        self.assertStatusForIs(states.FAILURE, False)
 
     def test_is_successful_retry(self):
-        self.assertStatusForIs("RETRY", False)
+        self.assertStatusForIs(states.RETRY, False)

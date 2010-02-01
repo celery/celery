@@ -6,9 +6,10 @@ import errno
 
 from django.core.exceptions import ImproperlyConfigured
 
+from celery import states
+from celery.utils import gen_unique_id
 from celery.backends import pyredis
 from celery.backends.pyredis import RedisBackend
-from celery.utils import gen_unique_id
 
 _no_redis_msg = "* Redis %s. Will not execute related tests."
 _no_redis_msg_emitted = False
@@ -64,12 +65,12 @@ class TestRedisBackend(unittest.TestCase):
         tid = gen_unique_id()
 
         self.assertFalse(tb.is_successful(tid))
-        self.assertEquals(tb.get_status(tid), "PENDING")
+        self.assertEquals(tb.get_status(tid), states.PENDING)
         self.assertEquals(tb.get_result(tid), None)
 
         tb.mark_as_done(tid, 42)
         self.assertTrue(tb.is_successful(tid))
-        self.assertEquals(tb.get_status(tid), "SUCCESS")
+        self.assertEquals(tb.get_status(tid), states.SUCCESS)
         self.assertEquals(tb.get_result(tid), 42)
         self.assertTrue(tb._cache.get(tid))
         self.assertTrue(tb.get_result(tid), 42)
@@ -99,7 +100,7 @@ class TestRedisBackend(unittest.TestCase):
             pass
         tb.mark_as_failure(tid3, exception)
         self.assertFalse(tb.is_successful(tid3))
-        self.assertEquals(tb.get_status(tid3), "FAILURE")
+        self.assertEquals(tb.get_status(tid3), states.FAILURE)
         self.assertTrue(isinstance(tb.get_result(tid3), KeyError))
 
     def test_process_cleanup(self):

@@ -1,6 +1,7 @@
 import unittest
 from datetime import datetime, timedelta
 
+from celery import states
 from celery.utils import gen_unique_id
 from celery.models import TaskMeta, TaskSetMeta
 
@@ -28,13 +29,13 @@ class TestModels(unittest.TestCase):
         self.assertEquals(TaskMeta.objects.get_task(m1.task_id).task_id,
                 m1.task_id)
         self.assertFalse(
-                TaskMeta.objects.get_task(m1.task_id).status == "SUCCESS")
-        TaskMeta.objects.store_result(m1.task_id, True, status="SUCCESS")
-        TaskMeta.objects.store_result(m2.task_id, True, status="SUCCESS")
+                TaskMeta.objects.get_task(m1.task_id).status == states.SUCCESS)
+        TaskMeta.objects.store_result(m1.task_id, True, status=states.SUCCESS)
+        TaskMeta.objects.store_result(m2.task_id, True, status=states.SUCCESS)
         self.assertTrue(
-                TaskMeta.objects.get_task(m1.task_id).status == "SUCCESS")
+                TaskMeta.objects.get_task(m1.task_id).status == states.SUCCESS)
         self.assertTrue(
-                TaskMeta.objects.get_task(m2.task_id).status == "SUCCESS")
+                TaskMeta.objects.get_task(m2.task_id).status == states.SUCCESS)
 
         # Have to avoid save() because it applies the auto_now=True.
         TaskMeta.objects.filter(task_id=m1.task_id).update(

@@ -1,5 +1,6 @@
 import unittest
 
+from celery import states
 from celery.utils import gen_unique_id
 from celery.tests.utils import skip_if_quick
 from celery.result import AsyncResult, TaskSetResult
@@ -14,9 +15,9 @@ def mock_task(name, status, result):
 
 def save_result(task):
     traceback = "Some traceback"
-    if task["status"] == "SUCCESS":
+    if task["status"] == states.SUCCESS:
         default_backend.mark_as_done(task["id"], task["result"])
-    elif task["status"] == "RETRY":
+    elif task["status"] == states.RETRY:
         default_backend.mark_as_retry(task["id"], task["result"],
                 traceback=traceback)
     else:
@@ -25,7 +26,7 @@ def save_result(task):
 
 
 def make_mock_taskset(size=10):
-    tasks = [mock_task("ts%d" % i, "SUCCESS", i) for i in xrange(size)]
+    tasks = [mock_task("ts%d" % i, states.SUCCESS, i) for i in xrange(size)]
     [save_result(task) for task in tasks]
     return [AsyncResult(task["id"]) for task in tasks]
 
@@ -33,10 +34,10 @@ def make_mock_taskset(size=10):
 class TestAsyncResult(unittest.TestCase):
 
     def setUp(self):
-        self.task1 = mock_task("task1", "SUCCESS", "the")
-        self.task2 = mock_task("task2", "SUCCESS", "quick")
-        self.task3 = mock_task("task3", "FAILURE", KeyError("brown"))
-        self.task4 = mock_task("task3", "RETRY", KeyError("red"))
+        self.task1 = mock_task("task1", states.SUCCESS, "the")
+        self.task2 = mock_task("task2", states.SUCCESS, "quick")
+        self.task3 = mock_task("task3", states.FAILURE, KeyError("brown"))
+        self.task4 = mock_task("task3", states.RETRY, KeyError("red"))
 
         for task in (self.task1, self.task2, self.task3, self.task4):
             save_result(task)
@@ -113,7 +114,7 @@ class MockAsyncResultFailure(AsyncResult):
 
     @property
     def status(self):
-        return "FAILURE"
+        return states.FAILURE
 
 
 class MockAsyncResultSuccess(AsyncResult):
@@ -124,7 +125,7 @@ class MockAsyncResultSuccess(AsyncResult):
 
     @property
     def status(self):
-        return "SUCCESS"
+        return states.SUCCESS
 
 
 class TestTaskSetResult(unittest.TestCase):
@@ -205,7 +206,7 @@ class TestFailedTaskSetResult(TestTaskSetResult):
     def setUp(self):
         self.size = 11
         subtasks = make_mock_taskset(10)
-        failed = mock_task("ts11", "FAILED", KeyError("Baz"))
+        failed = mock_task("ts11", states.FAILURE, KeyError("Baz"))
         save_result(failed)
         failed_res = AsyncResult(failed["id"])
         self.ts = TaskSetResult(gen_unique_id(), subtasks + [failed_res])

@@ -1,11 +1,14 @@
 import sys
-import unittest
 import errno
 import socket
+import unittest
+
+from django.core.exceptions import ImproperlyConfigured
+
+from celery import states
+from celery.utils import gen_unique_id
 from celery.backends import tyrant
 from celery.backends.tyrant import TyrantBackend
-from celery.utils import gen_unique_id
-from django.core.exceptions import ImproperlyConfigured
 
 _no_tyrant_msg = "* Tokyo Tyrant %s. Will not execute related tests."
 _no_tyrant_msg_emitted = False
@@ -64,12 +67,12 @@ class TestTyrantBackend(unittest.TestCase):
         tid = gen_unique_id()
 
         self.assertFalse(tb.is_successful(tid))
-        self.assertEquals(tb.get_status(tid), "PENDING")
+        self.assertEquals(tb.get_status(tid), states.PENDING)
         self.assertEquals(tb.get_result(tid), None)
 
         tb.mark_as_done(tid, 42)
         self.assertTrue(tb.is_successful(tid))
-        self.assertEquals(tb.get_status(tid), "SUCCESS")
+        self.assertEquals(tb.get_status(tid), states.SUCCESS)
         self.assertEquals(tb.get_result(tid), 42)
         self.assertTrue(tb._cache.get(tid))
         self.assertTrue(tb.get_result(tid), 42)
@@ -99,7 +102,7 @@ class TestTyrantBackend(unittest.TestCase):
             pass
         tb.mark_as_failure(tid3, exception)
         self.assertFalse(tb.is_successful(tid3))
-        self.assertEquals(tb.get_status(tid3), "FAILURE")
+        self.assertEquals(tb.get_status(tid3), states.FAILURE)
         self.assertTrue(isinstance(tb.get_result(tid3), KeyError))
 
     def test_process_cleanup(self):
