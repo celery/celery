@@ -45,18 +45,7 @@ default name.
 
 Let's create our ``celeryconfig.py``.
 
-FIXME: Is the invocation below something people are expected to do,
-appending cwd to sys.path? It seems like something that would usually
-be handled elsewhere?
-
-1. Start by making sure Python is able to import modules from the current
-   directory::
-
-        import os
-        import sys
-        sys.path.insert(0, os.getcwd())
-
-2. Configure how we communicate with the broker::
+1. Configure how we communicate with the broker::
 
         BROKER_HOST = "localhost"
         BROKER_PORT = 5672
@@ -64,12 +53,12 @@ be handled elsewhere?
         BROKER_PASSWORD = "mypassword"
         BROKER_VHOST = "myvhost"
 
-3. In this example we don't want to store the results of the tasks, so
+2. In this example we don't want to store the results of the tasks, so
    we'll use the simplest backend available; the AMQP backend::
 
         CELERY_BACKEND = "amqp"
 
-4. Finally, we list the modules to import, that is, all the modules
+3. Finally, we list the modules to import, that is, all the modules
    that contain tasks. This is so celery knows about what tasks it can
    be asked to perform. We only have a single task module,
    ``tasks.py``, which we added earlier::

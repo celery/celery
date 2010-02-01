@@ -75,6 +75,12 @@ task. There is built-in support for using ``pickle``, ``JSON`` and ``YAML``,
 and you can add your own custom serializers by registering them into the
 carrot serializer registry.
 
+The default serializer (pickle) supports Python objects, like ``datetime`` and
+any custom datatypes you define yourself. But since pickle has poor support
+outside of the Python language, you need to choose another serializer if you
+need to communicate with other languages. In that case, ``JSON`` is a very
+popular choice.
+
 The serialization method is sent with the message, so the worker knows how to
 deserialize any task. Of course, if you use a custom serializer, this must
 also be registered in the worker.
@@ -87,10 +93,6 @@ configuration directive.
 .. code-block:: python
 
     >>> add.apply_async(args=[10, 10], serializer="json")
-
-FIXME: in what cases does it make sense to use a different
-serializers? Same something about when you need to care about this.
-
 
 Connections and connection timeouts.
 ------------------------------------

@@ -19,9 +19,7 @@ or using POST::
 
     POST http://example.com/mytask
 
-FIXME: what is the content type? post as formencoded or as text/plain
-with json ? support both?
-
+**Note:** POST data has to be form encoded.
 Whether to use GET or POST is up to you and your requirements.
 
 The web page should then return a response in the following format
