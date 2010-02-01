@@ -20,6 +20,9 @@ class BaseBackend(object):
 
     capabilities = []
 
+    def __init__(self, *args, **kwargs):
+        pass
+
     def encode_result(self, result, status):
         if status == states.SUCCESS:
             return self.prepare_value(result)
@@ -118,40 +121,32 @@ class BaseBackend(object):
         raise NotImplementedError(
                 "store_taskset is not supported by this backend.")
 
-    def get_taskset(self, task_id):
+    def get_taskset(self, taskset_id):
         """Get the result of a taskset."""
         raise NotImplementedError(
                 "get_taskset is not supported by this backend.")
 
 
-class KeyValueStoreBackend(BaseBackend):
+class BaseDictBackend(BaseBackend):
 
     capabilities = ["ResultStore"]
 
     def __init__(self, *args, **kwargs):
-        super(KeyValueStoreBackend, self).__init__()
+        super(BaseDictBackend, self).__init__(*args, **kwargs)
         self._cache = {}
-
-    def get_cache_key_for_task(self, task_id):
-        """Get the cache key for a task by id."""
-        return "celery-task-meta-%s" % task_id
-
-    def get(self, key):
-        raise NotImplementedError("Must implement the get method.")
-
-    def set(self, key, value):
-        raise NotImplementedError("Must implement the set method.")
 
     def store_result(self, task_id, result, status, traceback=None):
         """Store task result and status."""
         result = self.encode_result(result, status)
-        meta = {"status": status, "result": result, "traceback": traceback}
-        self.set(self.get_cache_key_for_task(task_id), pickle.dumps(meta))
-        return result
+        return self._store_result(task_id, result, status, traceback)
 
     def get_status(self, task_id):
         """Get the status of a task."""
         return self._get_task_meta_for(task_id)["status"]
+
+    def get_traceback(self, task_id):
+        """Get the traceback for a failed task."""
+        return self._get_task_meta_for(task_id)["traceback"]
 
     def get_result(self, task_id):
         """Get the result of a task."""
@@ -161,19 +156,61 @@ class KeyValueStoreBackend(BaseBackend):
         else:
             return meta["result"]
 
-    def get_traceback(self, task_id):
-        """Get the traceback for a failed task."""
-        meta = self._get_task_meta_for(task_id)
-        return meta["traceback"]
+    def get_taskset(self, taskset_id):
+        """Get the result for a taskset."""
+        meta = self._get_taskset_meta_for(taskset_id)
+        if meta:
+            return meta["result"]
+
+    def store_taskset(self, taskset_id, result):
+        """Store the result of an executed taskset."""
+        return self._store_taskset(taskset_id, result)
+
+
+class KeyValueStoreBackend(BaseDictBackend):
+
+    def get(self, key):
+        raise NotImplementedError("Must implement the get method.")
+
+    def set(self, key, value):
+        raise NotImplementedError("Must implement the set method.")
+
+    def get_key_for_task(self, task_id):
+        """Get the cache key for a task by id."""
+        return "celery-task-meta-%s" % task_id
+
+    def get_key_for_taskset(self, task_id):
+        """Get the cache key for a task by id."""
+        return "celery-taskset-meta-%s" % task_id
+
+    def _store_result(self, task_id, result, status, traceback=None):
+        meta = {"status": status, "result": result, "traceback": traceback}
+        self.set(self.get_key_for_task(task_id), pickle.dumps(meta))
+        return result
+
+    def _store_taskset(self, taskset_id, result):
+        meta = {"result": result}
+        self.set(self.get_key_for_taskset(task_id), pickle.dumps(meta))
+        return result
 
     def _get_task_meta_for(self, task_id):
         """Get task metadata for a task by id."""
         if task_id in self._cache:
             return self._cache[task_id]
-        meta = self.get(self.get_cache_key_for_task(task_id))
+        meta = self.get(self.get_key_for_task(task_id))
         if not meta:
             return {"status": states.PENDING, "result": None}
         meta = pickle.loads(str(meta))
         if meta.get("status") == states.SUCCESS:
             self._cache[task_id] = meta
         return meta
+
+    def _get_taskset_meta_for(self, taskset_id):
+        """Get task metadata for a task by id."""
+        if taskset_id in self._cache:
+            return self._cache[taskset_id]
+        meta = self.get(self.get_key_for_taskset(taskset_id))
+        if meta:
+            meta = pickle.loads(str(meta))
+            self._cache[taskset_id] = meta
+            return meta

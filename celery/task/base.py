@@ -413,8 +413,6 @@ class Task(object):
         wrapper.execute_using_pool(pool, loglevel, logfile)
 
 
-
-
 class ExecuteRemoteTask(Task):
     """Execute an arbitrary function or object.
 

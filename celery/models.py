@@ -1,5 +1,6 @@
 import django
 from django.db import models
+from django.forms.models import model_to_dict
 from django.utils.translation import ugettext_lazy as _
 
 from picklefield.fields import PickledObjectField
@@ -27,6 +28,13 @@ class TaskMeta(models.Model):
         verbose_name = _(u"task meta")
         verbose_name_plural = _(u"task meta")
 
+    def to_dict(self):
+        return {"task_id": self.task_id,
+                "status": self.status,
+                "result": self.result,
+                "date_done": self.date_done,
+                "traceback": self.traceback}
+
     def __unicode__(self):
         return u"<Task: %s successful: %s>" % (self.task_id, self.status)
 
@@ -43,6 +51,11 @@ class TaskSetMeta(models.Model):
         """Model meta-data."""
         verbose_name = _(u"taskset meta")
         verbose_name_plural = _(u"taskset meta")
+
+    def to_dict(self):
+        return {"taskset_id": self.taskset_id,
+                "result": self.result,
+                "date_done": self.date_done}
 
     def __unicode__(self):
         return u"<TaskSet: %s>" % (self.taskset_id)

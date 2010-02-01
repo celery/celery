@@ -76,7 +76,6 @@ class TestMutableURL(unittest.TestCase):
         self.assertEquals(url.query.get("z"), "Foo")
         self.assertEquals(url.query.get("name"), "George")
 
-
     def test_url_keeps_everything(self):
         url = "https://e.com:808/foo/bar#zeta?x=10&y=20"
         url = http.MutableURL(url)

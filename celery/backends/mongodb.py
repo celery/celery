@@ -10,7 +10,7 @@ except ImportError:
 
 from celery import conf
 from celery import states
-from celery.backends.base import BaseBackend
+from celery.backends.base import BaseDictBackend
 from celery.loaders import load_settings
 
 
@@ -20,7 +20,7 @@ class Bunch:
         self.__dict__.update(kw)
 
 
-class MongoBackend(BaseBackend):
+class MongoBackend(BaseDictBackend):
 
     capabilities = ["ResultStore"]
 
@@ -97,11 +97,9 @@ class MongoBackend(BaseBackend):
             # goes out of scope
             self._connection = None
 
-    def store_result(self, task_id, result, status, traceback=None):
+    def _store_result(self, task_id, result, status, traceback=None):
         """Store return value and status of an executed task."""
         from pymongo.binary import Binary
-
-        result = self.encode_result(result, status)
 
         meta = {"_id": task_id,
                 "status": status,
@@ -111,25 +109,7 @@ class MongoBackend(BaseBackend):
 
         db = self._get_database()
         taskmeta_collection = db[self.mongodb_taskmeta_collection]
-
         taskmeta_collection.save(meta, safe=True)
-
-    def get_status(self, task_id):
-        """Get status of a task."""
-        return self._get_task_meta_for(task_id)["status"]
-
-    def get_traceback(self, task_id):
-        """Get the traceback of a failed task."""
-        meta = self._get_task_meta_for(task_id)
-        return meta["traceback"]
-
-    def get_result(self, task_id):
-        """Get the result for a task."""
-        meta = self._get_task_meta_for(task_id)
-        if meta["status"] in states.EXCEPTION_STATES:
-            return self.exception_to_python(meta["result"])
-        else:
-            return meta["result"]
 
     def _get_task_meta_for(self, task_id):
         """Get task metadata for a task by id."""

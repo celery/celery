@@ -43,7 +43,6 @@ class Counter(Task):
         raise NotImplementedError("Counters must implement 'flush'")
 
 
-
 class ClickCounter(Task):
     flush_every = 1000
 
