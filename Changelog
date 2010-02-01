@@ -211,6 +211,14 @@ NEWS
   setting has been added: ``CELERYD_PREFETCH_MULTIPLIER``, which is set
   to ``4`` by default.
 
+* Improved support for webhook tasks. 
+  ``celery.task.rest`` is now deprecated, replaced with the new and shiny
+  :mod:`celery.task.http`. With more reflective names, sensible interface, and
+  it's possible to override the methods used to perform HTTP requests.
+
+* The results of tasksets are now cached by storing it in the result
+  backend. FIXME: Only database backend supports this yet!
+
 CHANGES
 -------
 
@@ -271,6 +279,9 @@ CHANGES
 
 * You can now set ``CELERY_IGNORE_RESULT`` to ignore task results by default
   (if enabled, tasks doesn't save results or errors to the backend used).
+
+* celeryd now correctly handles malformed messages by throwing away and
+  acknowledging the message, instead of crashing.
 
 BUGS
 ----
