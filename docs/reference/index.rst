@@ -24,6 +24,7 @@
     celery.loaders.default
     celery.loaders.djangoapp
     celery.registry
+    celery.states
     celery.messaging
     celery.contrib.test_runner
     celery.views
