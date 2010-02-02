@@ -13,7 +13,7 @@ from celery import registry
 from celery import platform
 from celery import signals
 from celery.log import setup_logger, _hijack_multiprocessing_logger
-from celery.beat import ClockServiceThread
+from celery.beat import EmbeddedClockService
 
 from celery.worker.pool import TaskPool
 from celery.worker.buckets import TaskBucket
@@ -133,11 +133,9 @@ class WorkController(object):
         self.scheduler = ScheduleController(self.eta_schedule,
                                             logger=self.logger)
 
-        # Need a tight loop interval when embedded so the program
-        # can be stopped in a sensible short time.
-        self.clockservice = self.embed_clockservice and ClockServiceThread(
-                                logger=self.logger,
-                                max_interval=1) or None
+        self.clockservice = None
+        if self.embed_clockservice:
+            self.clockservice = EmbeddedClockService(logger=self.logger)
 
         prefetch_count = concurrency * conf.CELERYD_PREFETCH_MULTIPLIER
         self.listener = CarrotListener(self.ready_queue,

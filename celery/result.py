@@ -142,7 +142,6 @@ class BaseAsyncResult(object):
         return self.backend.get_status(self.task_id)
 
 
-
 class AsyncResult(BaseAsyncResult):
     """Pending task result using the default backend.
 

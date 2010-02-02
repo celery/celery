@@ -199,10 +199,25 @@ class TestClockService(unittest.TestCase):
         self.assertTrue(s._shutdown.isSet())
 
 
-class TestClockServiceThread(unittest.TestCase):
+class TestEmbeddedClockService(unittest.TestCase):
 
-    def test_start_stop(self):
-        s = beat.ClockServiceThread()
+    def test_start_stop_process(self):
+        s = beat.EmbeddedClockService()
+        from multiprocessing import Process
+        self.assertTrue(isinstance(s, Process))
+        self.assertTrue(isinstance(s.clockservice, beat.ClockService))
+        s.clockservice = MockClockService()
+
+        s.run()
+        self.assertTrue(s.clockservice.started)
+
+        s.stop()
+        self.assertTrue(s.clockservice.stopped)
+
+    def test_start_stop_threaded(self):
+        s = beat.EmbeddedClockService(thread=True)
+        from threading import Thread
+        self.assertTrue(isinstance(s, Thread))
         self.assertTrue(isinstance(s.clockservice, beat.ClockService))
         s.clockservice = MockClockService()
 

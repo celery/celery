@@ -1,6 +1,7 @@
 import time
 import shelve
 import threading
+import multiprocessing
 from datetime import datetime
 from UserDict import UserDict
 
@@ -198,6 +199,7 @@ class ClockService(object):
             self._stopped.set()
 
     def stop(self, wait=False):
+        self.logger.info("ClockService: Shutting down...")
         self._shutdown.set()
         wait and self._stopped.wait() # block until shutdown done.
 
@@ -218,15 +220,46 @@ class ClockService(object):
         return self._scheduler
 
 
-class ClockServiceThread(threading.Thread):
+def EmbeddedClockService(*args, **kwargs):
+    """Return embedded clock service.
 
-    def __init__(self, *args, **kwargs):
-        self.clockservice = ClockService(*args, **kwargs)
-        threading.Thread.__init__(self)
-        self.setDaemon(True)
+    :keyword thread: Run threaded instead of as a separate process.
+        Default is ``False``.
 
-    def run(self):
-        self.clockservice.start()
+    """
 
-    def stop(self):
-        self.clockservice.stop(wait=True)
+    class _Threaded(threading.Thread):
+        """Embedded clock service using threading."""
+
+        def __init__(self, *args, **kwargs):
+            super(_Threaded, self).__init__()
+            self.clockservice = ClockService(*args, **kwargs)
+            self.setDaemon(True)
+
+        def run(self):
+            self.clockservice.start()
+
+        def stop(self):
+            self.clockservice.stop(wait=True)
+
+    class _Process(multiprocessing.Process):
+        """Embedded clock service using multiprocessing."""
+
+        def __init__(self, *args, **kwargs):
+            super(_Process, self).__init__()
+            self.clockservice = ClockService(*args, **kwargs)
+            self.daemon = True
+
+        def run(self):
+            self.clockservice.start()
+
+        def stop(self):
+            self.clockservice.stop()
+
+    if kwargs.pop("thread", False):
+        # Need short max interval to be able to stop thread
+        # in reasonable time.
+        kwargs.setdefault("max_interval", 1)
+        return _Threaded(*args, **kwargs)
+
+    return _Process(*args, **kwargs)
