@@ -1,3 +1,8 @@
+"""
+
+Decorators
+
+"""
 from inspect import getargspec
 
 from billiard.utils.functional import wraps
@@ -45,6 +50,10 @@ def task(*args, **options):
             @wraps(fun)
             def run(self, *args, **kwargs):
                 return fun(*args, **kwargs)
+
+            # Save the argspec for this task so we can recognize
+            # which default task kwargs we're going to pass to it later.
+            # (this happens in celery.utils.fun_takes_kwargs)
             run.argspec = getargspec(fun)
 
             cls_dict = dict(options, run=run, __module__=fun.__module__)
@@ -60,7 +69,7 @@ def task(*args, **options):
 def periodic_task(**options):
     """Task decorator to create a periodic task.
 
-    Run a task once every day:
+    Example task, scheduling a task once every day:
 
     .. code-block:: python
 
@@ -72,5 +81,5 @@ def periodic_task(**options):
             logger.warn("Task running...")
 
     """
-    options.setdefault("base", PeriodicTask)
-    return task(**options)
+    return task(**dict({"base": PeriodicTask}, **options))
+

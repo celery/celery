@@ -412,6 +412,13 @@ class Task(object):
         """
         wrapper.execute_using_pool(pool, loglevel, logfile)
 
+    def __repr__(self):
+        try:
+            kind = self.__class__.mro()[1].__name__
+        except (AttributeError, IndexError):
+            kind = "%s(Task)" % self.__class__.__name__
+        return "<%s: %s (%s)>" % (kind, self.name, self.type)
+
 
 class ExecuteRemoteTask(Task):
     """Execute an arbitrary function or object.

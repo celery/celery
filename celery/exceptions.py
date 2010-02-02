@@ -1,20 +1,12 @@
-"""celery.exceptions"""
+"""
+
+Common Exceptions
+
+"""
 
 UNREGISTERED_FMT = """
 Task of kind %s is not registered, please make sure it's imported.
 """.strip()
-
-
-class MaxRetriesExceededError(Exception):
-    """The tasks max restart limit has been exceeded."""
-
-
-class RetryTaskError(Exception):
-    """The task is to be retried later."""
-
-    def __init__(self, message, exc, *args, **kwargs):
-        self.exc = exc
-        super(RetryTaskError, self).__init__(message, exc, *args, **kwargs)
 
 
 class NotRegistered(KeyError):
@@ -31,3 +23,15 @@ class AlreadyRegistered(Exception):
 
 class TimeoutError(Exception):
     """The operation timed out."""
+
+
+class MaxRetriesExceededError(Exception):
+    """The tasks max restart limit has been exceeded."""
+
+
+class RetryTaskError(Exception):
+    """The task is to be retried later."""
+
+    def __init__(self, message, exc, *args, **kwargs):
+        self.exc = exc
+        super(RetryTaskError, self).__init__(message, exc, *args, **kwargs)

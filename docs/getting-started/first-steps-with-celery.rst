@@ -79,7 +79,7 @@ Running the celery worker server
 To test we will run the worker server in the foreground, so we can
 see what's going on in the terminal::
 
-    $ celeryd --loglevel=INFO
+    $ PYTHONPATH="." celeryd --loglevel=INFO
 
 However, in production you probably want to run the worker in the
 background as a daemon. To do this you need to use to tools provided
@@ -88,12 +88,10 @@ by your platform, or something like `supervisord`_.
 For a complete listing of the command line options available, use the
 help command::
 
-    $  celeryd --help
+    $  PYTHONPATH="." celeryd --help
 
 For info on how to run celery as standalone daemon, see 
 :doc:`daemon mode reference<../cookbook/daemonizing>`
-
-
 
 Executing the task
 ==================

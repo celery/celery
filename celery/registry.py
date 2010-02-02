@@ -28,7 +28,6 @@ class TaskRegistry(UserDict):
         instance.
 
         """
-
         task = inspect.isclass(task) and task() or task
         name = task.name
         self.data[name] = task
@@ -43,8 +42,12 @@ class TaskRegistry(UserDict):
             been registered.
 
         """
-        if hasattr(name, "run"):
+        try:
+            # Might be a task class
             name = name.name
+        except AttributeError:
+            pass
+
         self.pop(name)
 
     def filter_types(self, type):

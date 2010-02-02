@@ -52,11 +52,10 @@ class EventDispatcher(object):
         """
         if not self.enabled:
             return
+
         self._lock.acquire()
         try:
-            fields["timestamp"] = time.time()
-            fields["hostname"] = self.hostname
-            self.publisher.send(Event(type, **fields))
+            self.publisher.send(Event(type, hostname=self.hostname))
         finally:
             self._lock.release()
 
@@ -87,13 +86,16 @@ class EventReceiver(object):
     def process(self, type, event):
         """Process the received event by dispatching it to the appropriate
         handler."""
-        print("Received event: %s" % event)
         handler = self.handlers.get(type) or self.handlers.get("*")
         handler and handler(event)
 
     def capture(self, limit=None):
-        """Open up a consumer capturing events. This has to be running
-        in the main process, and it will never stop unless forced"""
+        """Open up a consumer capturing events.
+
+        This has to run in the main process, and it will never
+        stop unless forced via :exc:`KeyboardInterrupt` or :exc:`SystemExit`.
+
+        """
         consumer = EventConsumer(self.connection)
         consumer.register_callback(self._receive)
         it = consumer.iterconsume(limit=limit)

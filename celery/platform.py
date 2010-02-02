@@ -12,8 +12,11 @@ def reset_signal(signal_name):
     or the specified signal in particular.
 
     """
-    if hasattr(signal, signal_name):
-        signal.signal(getattr(signal, signal_name), signal.SIG_DFL)
+    try:
+        signum = getattr(signal, signal_name)
+        signal.signal(signum, signal.SIG_DFL)
+    except AttributeError:
+        pass
 
 
 def install_signal_handler(signal_name, handler):
@@ -23,16 +26,19 @@ def install_signal_handler(signal_name, handler):
     or the specified signal in particular.
 
     """
-    if not hasattr(signal, signal_name):
-        return
-
-    signum = getattr(signal, signal_name)
-    signal.signal(signum, handler)
+    try:
+        signum = getattr(signal, signal_name)
+        signal.signal(signum, handler)
+    except AttributeError:
+        pass
 
 
 def set_process_title(progname, info=None):
-    """Set the ps name for the currently running process
-    if :mod`setproctitle` is installed."""
+    """Set the ps name for the currently running process.
+
+    Only works if :mod`setproctitle` is installed.
+
+    """
     if _setproctitle:
         proctitle = "[%s]" % progname
         proctitle = info and "%s %s" % (proctitle, info) or proctitle

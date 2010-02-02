@@ -1,10 +1,9 @@
-import unittest
 import sys
+import unittest
 from Queue import Queue
 
 from celery.datastructures import PositionQueue, ExceptionInfo
-from celery.datastructures import LimitedSet, consume_queue
-from celery.datastructures import SharedCounter
+from celery.datastructures import LimitedSet, SharedCounter, consume_queue
 
 
 class TestPositionQueue(unittest.TestCase):
