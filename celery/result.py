@@ -88,8 +88,16 @@ class BaseAsyncResult(object):
         """``str(self)`` -> ``self.task_id``"""
         return self.task_id
 
+    def __hash__(self):
+        return hash(self.task_id)
+
     def __repr__(self):
         return "<AsyncResult: %s>" % self.task_id
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.task_id == other.task_id
+        return self == other
 
     @property
     def result(self):
@@ -132,6 +140,7 @@ class BaseAsyncResult(object):
 
         """
         return self.backend.get_status(self.task_id)
+
 
 
 class AsyncResult(BaseAsyncResult):
@@ -312,7 +321,7 @@ class TaskSetResult(object):
             >>> result = TaskSetResult.restore(task_id)
 
         """
-        backend.store_taskset(taskset_id, result)
+        backend.store_taskset(self.taskset_id, self)
 
     @classmethod
     def restore(self, taskset_id, backend=default_backend):

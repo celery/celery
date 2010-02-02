@@ -3,6 +3,7 @@ import unittest
 
 from billiard.serialization import pickle
 
+from celery import result
 from celery import states
 from celery.utils import gen_unique_id
 from celery.backends.cache import CacheBackend
@@ -32,6 +33,17 @@ class TestCacheBackend(unittest.TestCase):
         self.assertEquals(cb.get_result(tid), 42)
         self.assertTrue(cb._cache.get(tid))
         self.assertTrue(cb.get_result(tid), 42)
+
+    def test_save_restore_taskset(self):
+        backend = CacheBackend()
+        taskset_id = gen_unique_id()
+        subtask_ids = [gen_unique_id() for i in range(10)]
+        subtasks = map(result.AsyncResult, subtask_ids)
+        res = result.TaskSetResult(taskset_id, subtasks)
+        res.save(backend=backend)
+        saved = result.TaskSetResult.restore(taskset_id, backend=backend)
+        self.assertEquals(saved.subtasks, subtasks)
+        self.assertEquals(saved.taskset_id, taskset_id)
 
     def test_is_pickled(self):
         cb = CacheBackend()

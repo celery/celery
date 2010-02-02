@@ -190,7 +190,7 @@ class KeyValueStoreBackend(BaseDictBackend):
 
     def _store_taskset(self, taskset_id, result):
         meta = {"result": result}
-        self.set(self.get_key_for_taskset(task_id), pickle.dumps(meta))
+        self.set(self.get_key_for_taskset(taskset_id), pickle.dumps(meta))
         return result
 
     def _get_task_meta_for(self, task_id):
