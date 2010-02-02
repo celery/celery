@@ -303,6 +303,22 @@ class TaskSetResult(object):
                         time.time() >= time_start + timeout:
                     on_timeout()
 
+    def save(self, backend=default_backend):
+        """Save taskset result for later retrieval using :meth:`restore`.
+
+        Example:
+
+            >>> result.save()
+            >>> result = TaskSetResult.restore(task_id)
+
+        """
+        backend.store_taskset(taskset_id, result)
+
+    @classmethod
+    def restore(self, taskset_id, backend=default_backend):
+        """Restore previously saved taskset result."""
+        return backend.get_taskset(taskset_id)
+
     @property
     def total(self):
         """The total number of tasks in the :class:`celery.task.TaskSet`."""

@@ -548,7 +548,6 @@ class TaskSet(object):
             publisher.close()
             conn.close()
         result = TaskSetResult(taskset_id, subtasks)
-        self.task.backend.store_taskset(taskset_id, result)
 
         return result
 
