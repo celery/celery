@@ -131,7 +131,7 @@ class TaskSetManager(ResultManager):
 
 
     @transaction_retry(max_retries=1)
-    def get_taskset(self, taskset_id):
+    def restore_taskset(self, taskset_id):
         """Get taskset meta for task by ``taskset_id``."""
         try:
             return self.get(taskset_id=taskset_id)

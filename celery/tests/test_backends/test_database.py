@@ -60,11 +60,11 @@ class TestDatabaseBackend(unittest.TestCase):
         b = DatabaseBackend()
         tid = gen_unique_id()
 
-        self.assertTrue(b.get_taskset(tid) is None)
+        self.assertTrue(b.restore_taskset(tid) is None)
 
         result = {"foo": "baz", "bar": SomeClass(12345)}
-        b.store_taskset(tid, result)
-        rindb = b.get_taskset(tid)
+        b.save_taskset(tid, result)
+        rindb = b.restore_taskset(tid)
         self.assertTrue(rindb is not None)
         self.assertEquals(rindb.get("foo"), "baz")
         self.assertEquals(rindb.get("bar").data, 12345)

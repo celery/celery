@@ -320,12 +320,12 @@ class TaskSetResult(object):
             >>> result = TaskSetResult.restore(task_id)
 
         """
-        backend.store_taskset(self.taskset_id, self)
+        backend.save_taskset(self.taskset_id, self)
 
     @classmethod
     def restore(self, taskset_id, backend=default_backend):
         """Restore previously saved taskset result."""
-        return backend.get_taskset(taskset_id)
+        return backend.restore_taskset(taskset_id)
 
     @property
     def total(self):

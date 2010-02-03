@@ -12,7 +12,7 @@ class DatabaseBackend(BaseDictBackend):
                                       traceback=traceback)
         return result
 
-    def _store_taskset(self, taskset_id, result):
+    def _save_taskset(self, taskset_id, result):
         """Store the result of an executed taskset."""
         TaskSetMeta.objects.store_result(taskset_id, result)
         return result
@@ -28,11 +28,11 @@ class DatabaseBackend(BaseDictBackend):
                 self._cache[task_id] = meta
             return meta
 
-    def _get_taskset_meta_for(self, taskset_id):
+    def _restore_taskset(self, taskset_id):
         """Get taskset metadata for a taskset by id."""
         if taskset_id in self._cache:
             return self._cache[taskset_id]
-        meta = TaskSetMeta.objects.get_taskset(taskset_id)
+        meta = TaskSetMeta.objects.restore_taskset(taskset_id)
         if meta:
             meta = self._cache[taskset_id] = meta.to_dict()
             return meta

@@ -37,13 +37,13 @@ class TestBaseBackendInterface(unittest.TestCase):
         self.assertRaises(NotImplementedError,
                 b.get_result, "SOMExx-N0nex1stant-IDxx-")
 
-    def test_get_taskset(self):
+    def test_restore_taskset(self):
         self.assertRaises(NotImplementedError,
-                b.get_taskset, "SOMExx-N0nex1stant-IDxx-")
+                b.restore_taskset, "SOMExx-N0nex1stant-IDxx-")
 
-    def test_store_taskset(self):
+    def test_save_taskset(self):
         self.assertRaises(NotImplementedError,
-                b.store_taskset, "SOMExx-N0nex1stant-IDxx-", "blergh")
+                b.save_taskset, "SOMExx-N0nex1stant-IDxx-", "blergh")
 
     def test_get_traceback(self):
         self.assertRaises(NotImplementedError,
