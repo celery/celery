@@ -51,12 +51,12 @@ def upload_docs(options):
 
 @task
 def autodoc(options):
-    sh("contrib/doc4allmods/celery")
+    sh("contrib/release/doc4allmods/celery")
 
 
 @task
 def verifyindex(options):
-    sh("contrib/verify-reference-index.sh")
+    sh("contrib/release/verify-reference-index.sh")
 
 
 @task
@@ -73,14 +73,14 @@ def clean_readme(options):
 @task
 @needs("clean_readme")
 def readme(options):
-    sh("python contrib/sphinx-to-rst.py docs/templates/readme.txt \
+    sh("python contrib/release/sphinx-to-rst.py docs/templates/readme.txt \
             > README.txt")
     sh("ln -s README.rst README")
 
 
 @task
 def bump(options):
-    sh("contrib/bump -c celery")
+    sh("bump -c celery")
 
 
 @task
