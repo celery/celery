@@ -7,17 +7,10 @@ import traceback
 
 from celery import conf
 from celery.utils import noop
+from celery.utils.patch import ensure_process_aware_logger
 
 _hijacked = False
 _monkeypatched = False
-
-def _ensure_process_aware_logger():
-    global _monkeypatched
-
-    if not _monkeypatched:
-        from celery.utils.patch import monkeypatch
-        monkeypatch()
-        _monkeypatched = True
 
 
 def _hijack_multiprocessing_logger():
@@ -27,7 +20,7 @@ def _hijack_multiprocessing_logger():
     if _hijacked:
         return mputil.get_logger()
 
-    _ensure_process_aware_logger()
+    ensure_process_aware_logger()
 
     logging.Logger.manager.loggerDict.clear()
 
@@ -62,9 +55,9 @@ def setup_logger(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
     """
 
     logger = get_default_logger(loglevel=loglevel)
-    if logger.handlers:
-        # Logger already configured
+    if logger.handlers: # Logger already configured
         return logger
+
     if logfile:
         handler = logging.FileHandler
         if hasattr(logfile, "write"):

@@ -1,7 +1,9 @@
 import logging
 
+_process_aware = False
 
-def _check_logger_class():
+
+def _patch_logger_class():
     """Make sure process name is recorded when loggers are used."""
 
     from multiprocessing.process import current_process
@@ -22,5 +24,9 @@ def _check_logger_class():
         logging._releaseLock()
 
 
-def monkeypatch():
-    _check_logger_class()
+def ensure_process_aware_logger():
+    global _process_aware
+
+    if not _process_aware:
+        _patch_logger_class()
+        _process_aware = True

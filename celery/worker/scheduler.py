@@ -19,7 +19,7 @@ class Scheduler(object):
         :param item: Item to enter.
         :param eta: Scheduled time as a :class:`datetime.datetime` object.
         :param priority: Unused.
-        :param callback: Callback called when the item is scheduled.
+        :param callback: Callback to call when the item is scheduled.
             This callback takes no arguments.
 
         """
@@ -30,27 +30,27 @@ class Scheduler(object):
         """The iterator yields the time to sleep for between runs."""
 
         # localize variable access
-        q = self._queue
+        heap = self._queue
         nowfun = time.time
         pop = heapq.heappop
         ready_queue = self.ready_queue
 
-        while True:
-            if q:
-                eta, priority, item, callback = verify = q[0]
+        while 1:
+            if heap:
+                eta, priority, item, callback = verify = heap[0]
                 now = nowfun()
 
                 if now < eta:
                     yield eta - now
                 else:
-                    event = pop(q)
+                    event = pop(heap)
 
                     if event is verify: # pragma: no cover
                         ready_queue.put(item)
                         callback and callback()
                         yield 0
                     else:
-                        heapq.heappush(q, event)
+                        heapq.heappush(heap, event)
             yield None
 
     def empty(self):

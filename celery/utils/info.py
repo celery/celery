@@ -43,16 +43,20 @@ def format_routing_table(table=None, indent=0):
 def format_broker_info():
     """Get message broker connection info string for log dumps."""
     broker_connection = establish_connection()
+
     carrot_backend = broker_connection.backend_cls
     if carrot_backend and not isinstance(carrot_backend, str):
         carrot_backend = carrot_backend.__name__
     carrot_backend = carrot_backend or "amqp"
+
     port = broker_connection.port or \
                 broker_connection.get_backend_cls().default_port
     port = port and ":%s" % port or ""
+
     vhost = broker_connection.virtual_host
     if not vhost.startswith("/"):
         vhost = "/" + vhost
+
     return BROKER_FORMAT % {"carrot_backend": carrot_backend,
                             "userid": broker_connection.userid,
                             "host": broker_connection.hostname,

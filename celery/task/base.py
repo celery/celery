@@ -7,7 +7,7 @@ from billiard.serialization import pickle
 
 from celery import conf
 from celery.log import setup_logger
-from celery.utils import gen_unique_id, mexpand, timedelta_seconds
+from celery.utils import gen_unique_id, padlist, timedelta_seconds
 from celery.result import BaseAsyncResult, TaskSetResult, EagerResult
 from celery.execute import apply_async, apply
 from celery.registry import tasks
@@ -559,7 +559,7 @@ class TaskSet(object):
         return result
 
     def apply_part(self, arglist, taskset_id, publisher):
-        args, kwargs, opts = mexpand(arglist, 3, default={})
+        args, kwargs, opts = padlist(arglist, 3, default={})
         return apply_async(self.task, args, kwargs,
                            taskset_id=taskset_id, publisher=publisher, **opts)
 

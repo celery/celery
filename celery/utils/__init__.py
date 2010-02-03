@@ -61,7 +61,20 @@ def gen_unique_id():
     return str(uuid4())
 
 
-def mexpand(container, size, default=None):
+def padlist(container, size, default=None):
+    """Pad list with default elements.
+
+    Examples:
+
+        >>> first, last, city = padlist(["George", "Constanza", "NYC"], 3)
+        ("George", "Constanza", "NYC")
+        >>> first, last, city = padlist(["George", "Constanza"], 3)
+        ("George", "Constanza", None)
+        >>> first, last, city, planet = padlist(["George", "Constanza",
+                                                 "NYC"], 4, default="Earth")
+        ("George", "Constanza", "NYC", "Earth")
+
+    """
     return container[:size] + [default] * (size - len(container))
 
 
@@ -89,7 +102,7 @@ def repeatlast(it):
     yield the last value infinitely."""
     for item in it:
         yield item
-    for item in repeat(item): # pragma: no cover
+    while 1: # pragma: no cover
         yield item
 
 
