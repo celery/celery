@@ -82,4 +82,3 @@ def periodic_task(**options):
 
     """
     return task(**dict({"base": PeriodicTask}, **options))
-

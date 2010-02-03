@@ -13,7 +13,7 @@ def task_view(task):
     """Decorator turning any task into a view that applies the task
     asynchronously.
 
-    :returns: a JSON dictionary containing the keys ``ok``, and
+    Returns a JSON dictionary containing the keys ``ok``, and
         ``task_id``.
 
     """
@@ -35,11 +35,8 @@ def task_view(task):
 def apply(request, task_name):
     """View applying a task.
 
-    Example:
-        http://e.com/celery/apply/task_name/arg1/arg2//?kwarg1=a&kwarg2=b
-
-    **NOTE** Use with caution, preferably not make this publicly accessible
-    without ensuring your code is safe!
+    **Note:** Please use this with caution. Preferably you shouldn't make this
+        publicly accessible without ensuring your code is safe!
 
     """
     try:
@@ -54,7 +51,6 @@ def is_task_successful(request, task_id):
     response_data = {"task": {"id": task_id,
                               "executed": AsyncResult(task_id).successful()}}
     return HttpResponse(JSON_dump(response_data), mimetype="application/json")
-is_task_done = is_task_successful # Backward compatible
 
 
 def task_status(request, task_id):
@@ -81,6 +77,8 @@ def task_webhook(fun):
 
 
     Example:
+
+    .. code-block:: python
 
         @task_webhook
         def add(request):

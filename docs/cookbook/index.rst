@@ -6,6 +6,7 @@
     :maxdepth: 2
 
     tasks
+    daemonizing
     unit-testing
 
 This page contains common recipes and techniques.

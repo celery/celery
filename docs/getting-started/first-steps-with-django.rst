@@ -27,11 +27,9 @@ That's it.
 
 There are more options available, like how many processes you want to
 work in parallel (the ``CELERY_CONCURRENCY`` setting). You can also
-configure the backend used for storing task statuses. For now though, 
+configure the backend used for storing task statuses. For now though,
 this should do. For all of the options available, please see the 
-:doc:`configuration directive
-
-reference<../configuration>`.
+:doc:`configuration directive reference<../configuration>`.
 
 **Note:** If you're using SQLite as the Django database back-end,
 ``celeryd`` will only be able to process one task at a time, this is

@@ -93,6 +93,8 @@ help command::
 For info on how to run celery as standalone daemon, see 
 :doc:`daemon mode reference<../cookbook/daemonizing>`
 
+.. _`supervisord`: http://supervisord.org
+
 Executing the task
 ==================
 

@@ -51,7 +51,7 @@ def upload_docs(options):
 
 @task
 def autodoc(options):
-    sh("contrib/release/doc4allmods/celery")
+    sh("contrib/release/doc4allmods celery")
 
 
 @task
