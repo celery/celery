@@ -14,6 +14,7 @@ from celery import platform
 from celery import signals
 from celery.log import setup_logger, _hijack_multiprocessing_logger
 from celery.beat import EmbeddedClockService
+from celery.utils import noop
 
 from celery.worker.pool import TaskPool
 from celery.worker.buckets import TaskBucket
@@ -103,7 +104,7 @@ class WorkController(object):
 
     def __init__(self, concurrency=None, logfile=None, loglevel=None,
             send_events=conf.SEND_EVENTS, hostname=None,
-            embed_clockservice=False):
+            ready_callback=noop, embed_clockservice=False):
 
         # Options
         self.loglevel = loglevel or self.loglevel
@@ -112,6 +113,7 @@ class WorkController(object):
         self.logger = setup_logger(loglevel, logfile)
         self.hostname = hostname or socket.gethostname()
         self.embed_clockservice = embed_clockservice
+        self.ready_callback = ready_callback
         self.send_events = send_events
 
         # Queues
@@ -137,12 +139,13 @@ class WorkController(object):
         if self.embed_clockservice:
             self.clockservice = EmbeddedClockService(logger=self.logger)
 
-        prefetch_count = concurrency * conf.CELERYD_PREFETCH_MULTIPLIER
+        prefetch_count = self.concurrency * conf.CELERYD_PREFETCH_MULTIPLIER
         self.listener = CarrotListener(self.ready_queue,
                                        self.eta_schedule,
                                        logger=self.logger,
                                        hostname=self.hostname,
-                                       send_events=send_events,
+                                       send_events=self.send_events,
+                                       init_callback=self.ready_callback,
                                        initial_prefetch_count=prefetch_count)
 
         # The order is important here;

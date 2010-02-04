@@ -7,7 +7,7 @@ from carrot.connection import AMQPConnectionException
 
 from celery import conf
 from celery import signals
-from celery.utils import retry_over_time
+from celery.utils import noop, retry_over_time
 from celery.worker.job import TaskWrapper, InvalidTaskError
 from celery.worker.revoke import revoked
 from celery.worker.control import ControlDispatch
@@ -45,12 +45,14 @@ class CarrotListener(object):
     """
 
     def __init__(self, ready_queue, eta_schedule, logger,
-            send_events=False, hostname=None, initial_prefetch_count=2):
+            init_callback=noop, send_events=False, hostname=None,
+            initial_prefetch_count=2):
         self.connection = None
         self.task_consumer = None
         self.ready_queue = ready_queue
         self.eta_schedule = eta_schedule
         self.send_events = send_events
+        self.init_callback = init_callback
         self.logger = logger
         self.hostname = hostname or socket.gethostname()
         self.control_dispatch = ControlDispatch(logger=logger,
@@ -68,7 +70,7 @@ class CarrotListener(object):
 
         """
 
-        signals.worker_ready.send(sender=self)
+        self.init_callback(self)
 
         while 1:
             self.reset_connection()
