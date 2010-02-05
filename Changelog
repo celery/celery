@@ -2,6 +2,18 @@
 Change history
 ==============
 
+0.8.4 [2010-02-05 01:52 P.M CEST]
+---------------------------------
+
+* Now emits a warning if the --detach argument is used.
+  --detach should not be used anymore, as it has several not easily fixed
+  bugs related to it. Instead, use something like start-stop-daemon,
+  supervisord or launchd (os x).
+
+* Make sure logger class is process aware, even if running Python >= 2.6.
+
+* Error e-mails are not sent anymore when the task is retried.
+
 0.8.3 [2009-12-22 09:43 A.M CEST]
 ---------------------------------
 
