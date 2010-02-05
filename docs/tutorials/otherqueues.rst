@@ -36,7 +36,7 @@ Configuration
 Configuration is easy, set the carrot backend, and configure the location of
 your Redis database::
 
-    CARROT_BACKEND = "ghettoq.toproot.Redis"
+    CARROT_BACKEND = "ghettoq.taproot.Redis"
 
     BROKER_HOST = "localhost"  # Maps to redis host.
     BROKER_PORT = 6379         # Maps to redis port.
