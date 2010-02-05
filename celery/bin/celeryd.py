@@ -63,6 +63,7 @@
 """
 import os
 import sys
+import warnings
 from carrot.connection import DjangoBrokerConnection
 from celery.loaders import current_loader
 from celery.loaders import settings
@@ -144,6 +145,19 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
         statistics=None, **kwargs):
     """Starts the celery worker server."""
 
+    if detach:
+        warnings.warn("""
+
+WARNING: celery's support for --detach is severely broken!
+
+Please use start-stop-daemon, supervisord or similar
+daemonization services instead.
+
+For more information and instructions, please read
+http://ask.github.com/celery/cookbook/daemonizing.html
+
+""", UserWarning)
+
     print("Celery %s is starting." % __version__)
 
     # set SIGCLD back to the default SIG_DFL (before python-daemon overrode
@@ -160,7 +174,6 @@ def run_worker(concurrency=DAEMON_CONCURRENCY, detach=False,
     if conf.CELERY_BACKEND == "database" \
             and settings.DATABASE_ENGINE == "sqlite3" and \
             concurrency > 1:
-        import warnings
         warnings.warn("The sqlite3 database engine doesn't support "
                 "concurrency. We'll be using a single process only.",
                 UserWarning)
