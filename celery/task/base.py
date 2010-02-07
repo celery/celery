@@ -278,7 +278,7 @@ class Task(object):
         return apply_async(self, args, kwargs, **options)
 
     @classmethod
-    def retry(self, args, kwargs, exc=None, throw=True, **options):
+    def retry(self, args=None, kwargs=None, exc=None, throw=True, **options):
         """Retry the task.
 
         :param args: Positional arguments to retry with.

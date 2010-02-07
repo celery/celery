@@ -64,6 +64,20 @@ class RetryTask(task.Task):
             return self.retry(args=[arg1, arg2], kwargs=kwargs, countdown=0)
 
 
+class RetryTaskNoArgs(task.Task):
+    max_retries = 3
+    iterations = 0
+
+    def run(self, **kwargs):
+        self.__class__.iterations += 1
+
+        retries = kwargs["task_retries"]
+        if retries >= 3:
+            return 42
+        else:
+            return self.retry(kwargs=kwargs, countdown=0)
+
+
 class RetryTaskMockApply(task.Task):
     max_retries = 3
     iterations = 0
@@ -115,6 +129,13 @@ class TestTaskRetries(unittest.TestCase):
         result = RetryTask.apply([0xFF, 0xFFFF])
         self.assertEquals(result.get(), 0xFF)
         self.assertEquals(RetryTask.iterations, 4)
+
+    def test_retry_no_args(self):
+        RetryTaskNoArgs.max_retries = 3
+        RetryTaskNoArgs.iterations = 0
+        result = RetryTaskNoArgs.apply()
+        self.assertEquals(result.get(), 42)
+        self.assertEquals(RetryTaskNoArgs.iterations, 4)
 
     def test_retry_not_eager(self):
         exc = Exception("baz")
