@@ -34,6 +34,14 @@ def _hijack_multiprocessing_logger():
     return mputil.get_logger()
 
 
+def _detect_handler(logfile=None):
+    """Create log handler with either a filename, an open stream
+    or ``None`` (stderr)."""
+    if not logfile or hasattr(logfile, "write"):
+        return logging.StreamHandler(logfile)
+    return logging.FileHandler(logfile)
+
+
 def get_default_logger(loglevel=None):
     """Get default logger instance.
 
@@ -52,23 +60,16 @@ def setup_logger(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
     ``stderr`` is used.
 
     Returns logger object.
-    """
 
+    """
     logger = get_default_logger(loglevel=loglevel)
     if logger.handlers: # Logger already configured
         return logger
 
-    if logfile:
-        handler = logging.FileHandler
-        if hasattr(logfile, "write"):
-            handler = logging.StreamHandler
-        loghandler = handler(logfile)
-        formatter = logging.Formatter(format)
-        loghandler.setFormatter(formatter)
-        logger.addHandler(loghandler)
-    else:
-        from multiprocessing.util import log_to_stderr
-        log_to_stderr()
+    handler = _detect_handler(logfile)
+    formatter = logging.Formatter(format)
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
     return logger
 
 
