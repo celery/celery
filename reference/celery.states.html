@@ -5,7 +5,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Messaging - celery.messaging &mdash; Celery v0.9.8 (unstable) documentation</title>
+    <title>Task States - celery.states &mdash; Celery v0.9.8 (unstable) documentation</title>
     <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
@@ -21,22 +21,22 @@
     <script type="text/javascript" src="../static/doctools.js"></script>
     <link rel="top" title="Celery v0.9.8 (unstable) documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
-    <link rel="next" title="Contrib: Test runner - celery.contrib.test_runner" href="celery.contrib.test_runner.html" />
-    <link rel="prev" title="Task States - celery.states" href="celery.states.html" /> 
+    <link rel="next" title="Messaging - celery.messaging" href="celery.messaging.html" />
+    <link rel="prev" title="Task Registry - celery.registry" href="celery.registry.html" /> 
   </head>
   <body>
 <div id="docstitle">
 	<p>Celery v0.9.8 (unstable) documentation</p>
 </div>
 <div id="header">
-	<div id="title"><h1>Messaging - celery.messaging</h1></div>
+	<div id="title"><h1>Task States - celery.states</h1></div>
 	<ul id="headerButtons">
 		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
 		<li id="page_buttons">
 			<div class="headerButton"><a href="../genindex.html" title="General Index" accesskey="I">index</a></div>
 			<div class="headerButton"><a href="../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
-			<div class="headerButton"><a href="celery.contrib.test_runner.html" title="Contrib: Test runner - celery.contrib.test_runner" accesskey="N">next</a></div>
-			<div class="headerButton"><a href="celery.states.html" title="Task States - celery.states" accesskey="P">previous</a></div>
+			<div class="headerButton"><a href="celery.messaging.html" title="Messaging - celery.messaging" accesskey="N">next</a></div>
+			<div class="headerButton"><a href="celery.registry.html" title="Task Registry - celery.registry" accesskey="P">previous</a></div>
 		</li>
 	</ul>
 </div>
@@ -68,8 +68,8 @@
 <li class="toctree-l2"><a class="reference external" href="celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.loaders.djangoapp.html">Django Loader - celery.loaders.djangoapp</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.registry.html">Task Registry - celery.registry</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.states.html">Task States - celery.states</a></li>
-<li class="toctree-l2 current"><a class="current reference external" href="">Messaging - celery.messaging</a></li>
+<li class="toctree-l2 current"><a class="current reference external" href="">Task States - celery.states</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.messaging.html">Messaging - celery.messaging</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.contrib.test_runner.html">Contrib: Test runner - celery.contrib.test_runner</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.views.html">Django Views - celery.views</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.events.html">Events - celery.events</a></li>
@@ -85,7 +85,7 @@
 
       <h3>This Page</h3>
       <ul class="this-page-menu">
-        <li><a href="../sources/reference/celery.messaging.txt"
+        <li><a href="../sources/reference/celery.states.txt"
                rel="nofollow">Show Source</a></li>
       </ul>
     <div id="searchbox" style="display: none">
@@ -115,70 +115,53 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="module-celery.messaging">
-<h1>Messaging - celery.messaging<a class="headerlink" href="#module-celery.messaging" title="Permalink to this headline">¶</a></h1>
-<p>Sending and Receiving Messages</p>
-<dl class="class">
-<dt id="celery.messaging.BroadcastConsumer">
-<em class="property">class </em><tt class="descclassname">celery.messaging.</tt><tt class="descname">BroadcastConsumer</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.messaging.BroadcastConsumer" title="Permalink to this definition">¶</a></dt>
-<dd>Consume broadcast commands</dd></dl>
+  <div class="section" id="module-celery.states">
+<h1>Task States - celery.states<a class="headerlink" href="#module-celery.states" title="Permalink to this headline">¶</a></h1>
+<p>Task States</p>
+<dl class="data">
+<dt id="celery.states.PENDING">
+<tt class="descclassname">celery.states.</tt><tt class="descname">PENDING</tt><a class="headerlink" href="#celery.states.PENDING" title="Permalink to this definition">¶</a></dt>
+<dd>Task is waiting for execution or unknown.</dd></dl>
 
-<dl class="class">
-<dt id="celery.messaging.BroadcastPublisher">
-<em class="property">class </em><tt class="descclassname">celery.messaging.</tt><tt class="descname">BroadcastPublisher</tt><big>(</big><em>connection</em>, <em>exchange=None</em>, <em>routing_key=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.messaging.BroadcastPublisher" title="Permalink to this definition">¶</a></dt>
-<dd><p>Publish broadcast commands</p>
-<dl class="method">
-<dt id="celery.messaging.BroadcastPublisher.send">
-<tt class="descname">send</tt><big>(</big><em>type</em>, <em>arguments</em>, <em>destination=None</em><big>)</big><a class="headerlink" href="#celery.messaging.BroadcastPublisher.send" title="Permalink to this definition">¶</a></dt>
-<dd>Send broadcast command.</dd></dl>
+<dl class="data">
+<dt id="celery.states.SUCCESS">
+<tt class="descclassname">celery.states.</tt><tt class="descname">SUCCESS</tt><a class="headerlink" href="#celery.states.SUCCESS" title="Permalink to this definition">¶</a></dt>
+<dd>Task has been successfully executed.</dd></dl>
+
+<dl class="data">
+<dt id="celery.states.FAILURE">
+<tt class="descclassname">celery.states.</tt><tt class="descname">FAILURE</tt><a class="headerlink" href="#celery.states.FAILURE" title="Permalink to this definition">¶</a></dt>
+<dd>Task execution resulted in failure.</dd></dl>
+
+<dl class="data">
+<dt id="celery.states.RETRY">
+<tt class="descclassname">celery.states.</tt><tt class="descname">RETRY</tt><a class="headerlink" href="#celery.states.RETRY" title="Permalink to this definition">¶</a></dt>
+<dd>Task is being retried.</dd></dl>
+
+<dl class="data">
+<dt>
+<tt class="descclassname">celery.states.</tt><tt class="descname">RETRY</tt></dt>
+<dd><dl class="data">
+<dt id="celery.states.READY_STATES">
+<tt class="descclassname">celery.states.</tt><tt class="descname">READY_STATES</tt><a class="headerlink" href="#celery.states.READY_STATES" title="Permalink to this definition">¶</a></dt>
+<dd>Set of states meaning the task result is ready (has been executed).</dd></dl>
+
+<dl class="data">
+<dt id="celery.states.UNREADY_STATES">
+<tt class="descclassname">celery.states.</tt><tt class="descname">UNREADY_STATES</tt><a class="headerlink" href="#celery.states.UNREADY_STATES" title="Permalink to this definition">¶</a></dt>
+<dd>Set of states meaning the task result is not ready (has not been executed).</dd></dl>
+
+<dl class="data">
+<dt id="celery.states.EXCEPTION_STATES">
+<tt class="descclassname">celery.states.</tt><tt class="descname">EXCEPTION_STATES</tt><a class="headerlink" href="#celery.states.EXCEPTION_STATES" title="Permalink to this definition">¶</a></dt>
+<dd>Set of states meaning the task returned an exception.</dd></dl>
+
+<dl class="data">
+<dt id="celery.states.ALL_STATES">
+<tt class="descclassname">celery.states.</tt><tt class="descname">ALL_STATES</tt><a class="headerlink" href="#celery.states.ALL_STATES" title="Permalink to this definition">¶</a></dt>
+<dd>Set of all possible states.</dd></dl>
 
 </dd></dl>
-
-<dl class="class">
-<dt id="celery.messaging.EventConsumer">
-<em class="property">class </em><tt class="descclassname">celery.messaging.</tt><tt class="descname">EventConsumer</tt><big>(</big><em>connection</em>, <em>queue=None</em>, <em>exchange=None</em>, <em>routing_key=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.messaging.EventConsumer" title="Permalink to this definition">¶</a></dt>
-<dd>Consume events</dd></dl>
-
-<dl class="class">
-<dt id="celery.messaging.EventPublisher">
-<em class="property">class </em><tt class="descclassname">celery.messaging.</tt><tt class="descname">EventPublisher</tt><big>(</big><em>connection</em>, <em>exchange=None</em>, <em>routing_key=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.messaging.EventPublisher" title="Permalink to this definition">¶</a></dt>
-<dd>Publish events</dd></dl>
-
-<dl class="class">
-<dt id="celery.messaging.TaskConsumer">
-<em class="property">class </em><tt class="descclassname">celery.messaging.</tt><tt class="descname">TaskConsumer</tt><big>(</big><em>connection</em>, <em>queue=None</em>, <em>exchange=None</em>, <em>routing_key=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.messaging.TaskConsumer" title="Permalink to this definition">¶</a></dt>
-<dd>Consume tasks</dd></dl>
-
-<dl class="class">
-<dt id="celery.messaging.TaskPublisher">
-<em class="property">class </em><tt class="descclassname">celery.messaging.</tt><tt class="descname">TaskPublisher</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.messaging.TaskPublisher" title="Permalink to this definition">¶</a></dt>
-<dd><p>Publish tasks.</p>
-<dl class="method">
-<dt id="celery.messaging.TaskPublisher.delay_task">
-<tt class="descname">delay_task</tt><big>(</big><em>task_name</em>, <em>task_args=None</em>, <em>task_kwargs=None</em>, <em>task_id=None</em>, <em>taskset_id=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.messaging.TaskPublisher.delay_task" title="Permalink to this definition">¶</a></dt>
-<dd>Delay task for execution by the celery nodes.</dd></dl>
-
-</dd></dl>
-
-<dl class="function">
-<dt id="celery.messaging.establish_connection">
-<tt class="descclassname">celery.messaging.</tt><tt class="descname">establish_connection</tt><big>(</big><em>connect_timeout=4</em><big>)</big><a class="headerlink" href="#celery.messaging.establish_connection" title="Permalink to this definition">¶</a></dt>
-<dd>Establish a connection to the message broker.</dd></dl>
-
-<dl class="function">
-<dt id="celery.messaging.get_consumer_set">
-<tt class="descclassname">celery.messaging.</tt><tt class="descname">get_consumer_set</tt><big>(</big><em>connection</em>, <em>queues=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.messaging.get_consumer_set" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get the <tt class="xref docutils literal"><span class="pre">carrot.messaging.ConsumerSet`</span></tt> for a queue
-configuration.</p>
-<p>Defaults to the queues in <tt class="docutils literal"><span class="pre">CELERY_QUEUES</span></tt>.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="celery.messaging.with_connection">
-<tt class="descclassname">celery.messaging.</tt><tt class="descname">with_connection</tt><big>(</big><em>fun</em><big>)</big><a class="headerlink" href="#celery.messaging.with_connection" title="Permalink to this definition">¶</a></dt>
-<dd>Decorator for providing default message broker connection for functions
-supporting the <tt class="docutils literal"><span class="pre">connection</span></tt> and <tt class="docutils literal"><span class="pre">connect_timeout</span></tt> keyword
-arguments.</dd></dl>
 
 </div>
 

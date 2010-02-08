@@ -74,7 +74,7 @@ Task result backend settings
     * mongodb
         Use `MongoDB`_ to store the results.
 
-    * pyredis
+    * redis
         Use `Redis`_ to store the results.
 
     * tyrant
@@ -222,7 +222,7 @@ Example configuration
 
 .. code-block:: python
 
-    CELERY_BACKEND = "pyredis"
+    CELERY_BACKEND = "redis"
     REDIS_HOST = "localhost"
     REDIS_PORT = 6739
     REDIS_DATABASE = "celery_results"

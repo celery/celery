@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Django Views - celery.views &mdash; Celery v0.9.6 (unstable) documentation</title>
+    <title>Django Views - celery.views &mdash; Celery v0.9.8 (unstable) documentation</title>
     <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '0.9.6 (unstable)',
+        VERSION:     '0.9.8 (unstable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,14 +19,14 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.9.6 (unstable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v0.9.8 (unstable) documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="Events - celery.events" href="celery.events.html" />
     <link rel="prev" title="Contrib: Test runner - celery.contrib.test_runner" href="celery.contrib.test_runner.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v0.9.6 (unstable) documentation</p>
+	<p>Celery v0.9.8 (unstable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Django Views - celery.views</h1></div>
@@ -68,6 +68,7 @@
 <li class="toctree-l2"><a class="reference external" href="celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.loaders.djangoapp.html">Django Loader - celery.loaders.djangoapp</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.registry.html">Task Registry - celery.registry</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.states.html">Task States - celery.states</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.messaging.html">Messaging - celery.messaging</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.contrib.test_runner.html">Contrib: Test runner - celery.contrib.test_runner</a></li>
 <li class="toctree-l2 current"><a class="current reference external" href="">Django Views - celery.views</a></li>
@@ -121,17 +122,10 @@
 <tt class="descclassname">celery.views.</tt><tt class="descname">apply</tt><big>(</big><em>request</em>, <em>task_name</em><big>)</big><a class="headerlink" href="#celery.views.apply" title="Permalink to this definition">¶</a></dt>
 <dd><p>View applying a task.</p>
 <dl class="docutils">
-<dt>Example:</dt>
-<dd><a class="reference external" href="http://e.com/celery/apply/task_name/arg1/arg2//?kwarg1=a&amp;kwarg2=b">http://e.com/celery/apply/task_name/arg1/arg2//?kwarg1=a&amp;kwarg2=b</a></dd>
+<dt><strong>Note:</strong> Please use this with caution. Preferably you shouldn&#8217;t make this</dt>
+<dd>publicly accessible without ensuring your code is safe!</dd>
 </dl>
-<p><strong>NOTE</strong> Use with caution, preferably not make this publicly accessible
-without ensuring your code is safe!</p>
 </dd></dl>
-
-<dl class="function">
-<dt id="celery.views.is_task_done">
-<tt class="descclassname">celery.views.</tt><tt class="descname">is_task_done</tt><big>(</big><em>request</em>, <em>task_id</em><big>)</big><a class="headerlink" href="#celery.views.is_task_done" title="Permalink to this definition">¶</a></dt>
-<dd>Returns task execute status in JSON format.</dd></dl>
 
 <dl class="function">
 <dt id="celery.views.is_task_successful">
@@ -148,15 +142,10 @@ without ensuring your code is safe!</p>
 <tt class="descclassname">celery.views.</tt><tt class="descname">task_view</tt><big>(</big><em>task</em><big>)</big><a class="headerlink" href="#celery.views.task_view" title="Permalink to this definition">¶</a></dt>
 <dd><p>Decorator turning any task into a view that applies the task
 asynchronously.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body">a JSON dictionary containing the keys <tt class="docutils literal"><span class="pre">ok</span></tt>, and
-<tt class="docutils literal"><span class="pre">task_id</span></tt>.</td>
-</tr>
-</tbody>
-</table>
+<dl class="docutils">
+<dt>Returns a JSON dictionary containing the keys <tt class="docutils literal"><span class="pre">ok</span></tt>, and</dt>
+<dd><tt class="docutils literal"><span class="pre">task_id</span></tt>.</dd>
+</dl>
 </dd></dl>
 
 <dl class="function">
@@ -167,19 +156,16 @@ asynchronously.</p>
 function catches this and returns an error JSON response, otherwise
 it returns the result as a JSON response.</p>
 <p>Example:</p>
-<blockquote>
-<p>&#64;task_webhook
-def add(request):</p>
-<blockquote>
-x = int(request.GET[&#8220;x&#8221;])
-y = int(request.GET[&#8220;y&#8221;])
-return x + y</blockquote>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">response</span> <span class="o">=</span> <span class="n">add</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">response</span><span class="o">.</span><span class="n">content</span>
-<span class="go">&#39;{&quot;status&quot;: &quot;success&quot;, &quot;retval&quot;: 100}&#39;</span>
-</pre></div>
+<div class="highlight-python"><pre>@task_webhook
+def add(request):
+    x = int(request.GET["x"])
+    y = int(request.GET["y"])
+    return x + y
+
+&gt;&gt;&gt; response = add(request)
+&gt;&gt;&gt; response.content
+'{"status": "success", "retval": 100}'</pre>
 </div>
-</blockquote>
 </dd></dl>
 
 </div>
@@ -198,7 +184,7 @@ return x + y</blockquote>
     </div>
 	<div id="breadcrumbs">
 		<a href="index.html" accesskey="U">API Reference</a><img src="triangle_closed.png" alt="Right arrow">
-		<a href="../index.html">Celery v0.9.6 (unstable) documentation</a>
+		<a href="../index.html">Celery v0.9.8 (unstable) documentation</a>
 		</ul>
 	</div>
   </body>
