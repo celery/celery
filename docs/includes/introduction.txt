@@ -1,6 +1,6 @@
 .. image:: http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png
 
-:Version: 1.0.0-pre3
+:Version: 1.0.0-pre4
 :Keywords: task queue, job queue, asynchronous, rabbitmq, amqp, redis,
   django, python, webhooks, queue, distributed
 
