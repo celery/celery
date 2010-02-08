@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="keywords" content="task queue, job queue, asynchronous, rabbitmq, amqp,
+redis, django, python, webhooks, queue, distributed">
+<meta name="description" content="open source distributed task queue" >
+<link rel="icon" type="image/png" href="favicon.png">
+<meta name="viewport" content="width=320, user-scalable=no">
+<link rel="apple-touch-icon" href="favicon_64.png"/>
+<title>Celery - The Distributed Task Queue</title>
+<link rel="stylesheet" href="main.css"/>
+<link rel="stylesheet" href="trac.css"/>
+</head>
+
+<body>
+<div id="navbar">
+  <div class="iStretch">
+    <div class="link" id="current"><a href="#">Home</a></div>
+    <div class="link"><a href="http://github.com/ask/celery">Code</a></div>
+    <div class="link"><a href="docs/">Documentation</a></div>
+    <div class="link"><a href="http://ask.github.com/celery/getting-started/">Tutorials</a></div>
+    <div class="link"><a href="http://pypi.python.org/pypi/celery">Download</a></div>
+  </div>
+</div>
+
+<div class="iStretch">
+
+  <div id="topcontainer">
+  <ul>
+    <li>Background Processing
+    <li>Distributed
+    <li>Asynchronous/Synchronous
+    <li>Concurrency
+    <li>Periodic Tasks
+    <li>Retries
+  </ul>
+  </div>
+
+  <div id="contentcontainer">
+
+    <div class="column">
+        <h2>Distributed Task Queue</h2>
+        <p>
+        Celery is a task queue/job queue based on distributed message passing.
+        It is focused on real-time operation, but has support for scheduling
+        as well.</p>
+
+        <p>The execution units, called tasks, are executed concurrently on one
+        or more worker servers, asynchronously (in the background) or
+        synchronously (wait until ready).</p>
+
+        <p>Celery is already used in production to process millions of tasks
+        a day.</p>
+
+        <p>It was first created for Django, but is now also usable from Python.
+        It can also <a href="http://ask.github.com/celery/userguide/remote-tasks.html">operate with other languages</a> via HTTP+JSON.</p>
+        <h3>Example</h3>
+        <p>This is a simple task adding two numbers:</p>
+<div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.decorators</span> <span class="kn">import</span> <span class="n">task</span>
+
+<span class="nd">@task</span>
+<span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
+</pre></div>
+
+        <p>You can execute the task in the background, or wait for it to
+        finish:</p>
+
+<div class="highlight"><pre><span class="o">&gt;&gt;&gt;</span> <span class="n">result</span> <span class="o">=</span> <span class="n">add</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">result</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span> <span class="c"># wait for and return the result</span>
+<span class="mi">16</span>
+</pre></div>
+
+    <h3>Getting Started</h3>
+
+
+    <ol>
+        <li>Install celery by download or <code>pip install -U celery</code></li>
+        <li>Set up <a href="http://ask.github.com/celery/getting-started/broker-installation.html">RabbitMQ</a>
+        or one of the <a href="http://ask.github.com/celery/tutorials/otherqueues.html">ghetto queue</a>
+        solutions.
+        <li>Select one of the following guides:
+        <ul>
+            <li><a href="http://ask.github.com/celery/getting-started/first-steps-with-python.html">First steps with Python</a></li>
+            <li><a href="http://ask.github.com/celery/getting-started/first-steps-with-django.html">First steps with Django</a></li>
+        </ul>
+    </ol>
+
+    <h3>Community</h3>
+
+    <p>There is a <a href="http://groups.google.com/group/celery-users">mailing-list</a>
+    available for general discussion.</p>
+
+    <p>For those craving real, human interaction, there is also an IRC channel
+    (<code>#celery</code> on <code>irc.freenode.net</code>).</p>
+
+    <p>Finally, if you find a bug or would like to request a feature,
+    please <a href="http://github.com/ask/celery/issues">submit an
+        issue</a>.</p>
+
+    <div class="hidden">
+        <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        </p>
+        <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        </p>
+        <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        </p>
+    </div>
+    </div>
+
+    <div class="column">
+
+      <span class="newsitem">
+      <h2>1.0 is in beta.</h2>
+      <h4>By Ask on 08.02.2010</h4>
+      <p>1.0 is scheduled to be released this week! Please help us test the latest
+      <a href="http://github.com/ask/celery/tarball/v1.0.0-pre4">release
+          candiate</a> to make this happen. To upgrade from an earlier
+      version, please read the <a href="http://ask.github.com/celery/changelog.html">changelog</a>.
+      <hr>
+      </span>
+
+      <span class="newsitem">
+      <h2>New website.</h2>
+      <h4>By Ask on 08.02.2010</h4>
+      <p>We finally got a home page. Big thanks to <a href="http://helmersworks.com">Jan Henrik Helmers</a>
+      <hr>
+      </span>
+
+    </div>
+
+  </div>
+
+ <div id="credits">
+     <div class="iStretch">Copyright (c) 2009-2010, <a href="http://twitter.com/asksol">Ask Solem</a> and
+         <a href="http://github.com/ask/celery/blob/master/AUTHORS">contributors</a>.<br>
+ Page design by <a href="http://www.helmersworks.com/">Jan Henrik Helmers</a>
+   </div>
+ </div>
+
+
+</div>
+</body>
+</html>

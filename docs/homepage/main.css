@@ -1,0 +1,197 @@
+body {
+  background: #e1edc1 url(bg.png) 0 0 repeat;
+  color: #000;
+  font-family: "Helvetica Neue", arial, sans-serif;
+  line-height: 1.75em;
+  font-size: 1em;
+  margin: 0;
+}
+
+.iStretch {
+  margin: 0 auto;
+  min-width: 600px;
+  max-width: 850px;
+  width: 80%;
+}
+
+.highlight {
+    background: #222;
+    border: 5px solid #222;
+    border-radius: 3px;
+}
+
+.column {
+    line-height: 1.50em;
+}
+
+#navbar {
+  line-height: 1.9em;
+  position: fixed;
+  background: transparent url(bg_top.png) 0 100% repeat-x;
+  height: 40px;
+  top: 0;
+  left: 0;
+  right: 0;
+  color: #e1edc1;
+  text-shadow: 0 1px 1px #000;
+}
+
+#navbar a, #credits a {
+  color: #fff;
+  text-decoration: none;
+}
+
+#navbar .iStretch div {
+  float: right;
+  padding: 0 15px;
+  margin: 0 1px;
+  height: 32px;
+  text-align: center;
+}
+
+#navbar div:hover {
+  background: #314016;
+}
+
+#navbar .iStretch div#current {
+  float: left;
+  background-color: #314016;
+}
+
+#topcontainer {
+  padding-top: 25px;
+  padding-bottom: 20px;
+  height: 165px;
+  border-left: 1px solid #fff;
+  border-right: 1px solid #fff;
+  background: #466807 url(logo.jpg) 50% 70% repeat-x;
+  box-shadow: 0 0 25px #618224;
+  -webkit-box-shadow: 0 0 25px #618224;
+  -moz-box-shadow: 0 0 25px #618224;
+  text-align: right;
+}
+
+#topcontainer ul{
+  padding: 5px 20px;
+  font-size: 0.9em;
+  line-height: 1.75em;  
+  color: #fff;
+  list-style: none;
+  text-shadow: 0 1px 1px #000;
+}
+
+#contentcontainer {
+  border: 1px solid #fff;
+  background: #e1edc1 url(bg_content.png) 0 0 repeat;
+  box-shadow: 0 0 25px #618224;
+  -webkit-box-shadow: 0 0 25px #618224;
+  -moz-box-shadow: 0 0 25px #618224;
+}
+
+.column {
+  display: inline-block;
+  width: 60%;
+  padding-right: 2.9%;
+  padding-left: 2%;
+  font-size: 0.9em;
+  vertical-align: top;
+}
+
+.newsitem h2 {
+    font-size: 1.1em;
+}
+
+.column:last-child {
+  border-left: 1px solid #fff;
+  width: 28%;
+}
+
+#credits {
+  bottom: 0;
+  left: 0;
+  right: 0;
+  position: fixed;
+  /*background: transparent url(bg_grass.png) 50% 0 repeat-x;*/
+  height: 35px;
+  padding-top: 45px;
+  line-height: 1.2em;
+  color: #e1edc1;
+  text-shadow: 0 1px 1px #000;
+  font-size: 0.7em;
+}
+
+/* Restyling default elements */
+
+.column a {
+  background-color: #c1d29a;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  padding: 0px 4px;
+  line-height: 0;
+  text-decoration: none;
+  color: #000;
+}
+
+.column a:hover {
+  background-color: #acbc85;
+}
+
+h2 {
+  margin-bottom: 0;
+  font-size: 1.8em;
+  letter-spacing: -0.03em;
+  text-shadow: 0 1px #fff;
+}
+
+h3 {
+  margin-bottom: 0;
+  font-size: 1.2em;
+  text-shadow: 0 1px #fff;
+}
+
+.newsitem h2 {
+  font-size: 1.2em;
+  background-color: #314016;
+  background-color: rgba(49,64,22,0.25);
+  border-bottom: 2px solid #314016;
+  line-height: 1em;
+  letter-spacing: 0;
+  text-shadow: none;
+}
+
+.newsitem h4 {
+  font-size: 0.8em;
+  margin: 0;
+  line-height: 2em;
+  margin-bottom: -0.5em;
+  font-weight: normal;
+}
+
+p.introduction {
+  line-height: 1.6em;
+  font-weight: bold;
+}
+
+hr {
+  border-top: 1px solid #547a1a;
+  border-bottom: 1px solid #f1f5dd;
+
+}
+
+.hidden {
+    color: #e1edc1;
+}
+
+
+/* Hacking it up for the iPod */
+@media handheld, only screen and (max-device-width: 480px) {
+  body {}
+  #navbar {background: transparent}
+  #navbar a {background: transparent}
+  #topcontainer ul {display: none}
+  #credits {position: static; background: transparent}
+  .iStretch {margin: auto 20px !important}
+}
+
