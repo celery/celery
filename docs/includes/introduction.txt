@@ -19,7 +19,8 @@ Celery is already used in production to process millions of tasks a day.
 It was first created for Django, but is now usable from Python as well.
 It can also `operate with other languages via HTTP+JSON`_.
 
-.. _`operate with other languages via HTTP+JSON`: http://bit.ly/CgXSc
+.. _`operate with other languages via HTTP+JSON`:
+    http://ask.github.com/celery/userguide/remote-tasks.html
 
 Overview
 ========
