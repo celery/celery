@@ -507,7 +507,7 @@ class TaskSet(object):
 
     def run(self, *args, **kwargs):
         """Deprecated alias to :meth:`apply_async`"""
-        warnings.warn(PendingDeprecationWarning(
+        warnings.warn(DeprecationWarning(
             "TaskSet.run will be deprecated in favor of TaskSet.apply_async "
             "in celery v1.2.0"))
         return self.apply_async(*args, **kwargs)
