@@ -64,7 +64,7 @@ body {
   height: 165px;
   border-left: 1px solid #fff;
   border-right: 1px solid #fff;
-  background: #466807 url(logo.jpg) 50% 70% repeat-x;
+  background: #466807 url(logo.png) 50% 100% repeat-x;
   box-shadow: 0 0 25px #618224;
   -webkit-box-shadow: 0 0 25px #618224;
   -moz-box-shadow: 0 0 25px #618224;
@@ -111,8 +111,8 @@ body {
   left: 0;
   right: 0;
   position: fixed;
-  /*background: transparent url(bg_grass.png) 50% 0 repeat-x;*/
-  height: 35px;
+  background: transparent url(bg_grass.png) 50% 0 repeat-x;
+  height: 30px;
   padding-top: 45px;
   line-height: 1.2em;
   color: #e1edc1;
