@@ -4,19 +4,36 @@
 
 We're happy to announce the release of Celery 1.0.
 
+What is it?
+===========
+
+Celery is a task queue/job queue based on distributed message passing.
+It is focused on real-time operation, but has support for scheduling as well.
+
+The execution units, called tasks, are executed concurrently on one or
+more worker servers, asynchronously (in the background) or synchronously
+(wait until ready).
+
+Celery is already used in production to process millions of tasks a day.
+
+It was first created for Django, but is now also usable from Python. It can
+also operate with other languages via webhooks.
+
 Stable API
 ==========
 
-From this version on the API will be considered stable. This means there won't be any backwards
-incompatible changes to new minor versions. Changes to the API needs to be
-deprecated; so, for example, if we decided to remove a function that existed in Celery 1.0:
+From this version on the API will be considered stable. This means there won't
+be any backwards incompatible changes to new minor versions. Changes to the
+API needs to be deprecated; so, for example, if we decided to remove a function
+that existed in Celery 1.0:
 
 * Celery 1.2 will contain a backwards-compatible replica of the function which
   will raise a ``PendingDeprecationWarning``.
-  This warning is silent by default; you need to explicitly turn on display of these warnings.
-* Celery 1.4 will contain the backwards-compatible replica, but the warning will be promoted to
-  a full-fledged ``DeprecationWarning``. This warning is loud by default, and will likely be
-  quite annoying.
+  This warning is silent by default; you need to explicitly turn on display
+  of these warnings.
+* Celery 1.4 will contain the backwards-compatible replica, but the warning
+  will be promoted to a full-fledged ``DeprecationWarning``. This warning
+  is loud by default, and will likely be quite annoying.
 * Celery 1.6 will remove the feature outright.
 
 See the `Celery Deprecation Timeline`_ for a list of pending removals.
@@ -29,13 +46,12 @@ What's new?
 
 * New periodic task service.
 
-  Periodic tasks are no longer dispatched by ``celeryd``, but by a separate
-  service called ``celerybeat``. This is an optimized, centralized service
-  dedicated to your periodic tasks, which means you don't have to
+  Periodic tasks are no longer dispatched by ``celeryd``, but instead by a
+  separate service called ``celerybeat``. This is an optimized, centralized
+  service dedicated to your periodic tasks, which means you don't have to
   worry about deadlocks or race conditions any more. But, also it means you
-  have to make sure only one instance of the service is running at any one
+  have to make sure only one instance of this service is running at any one
   time.
-
 
   **TIP:** If you're only running a single ``celeryd`` server, you can embed
   ``celerybeat`` inside it. Just add the ``--beat`` argument.
@@ -44,7 +60,9 @@ What's new?
 
     Registering the tasks manually was getting tedious, so now you don't have
     to anymore. However -- You can still do it manually if you need to, just
-    disable :attr:`Task.autoregister`.
+    disable :attr:`Task.autoregister`. The concept of abstract task classes
+    has also been introduced, this is like django models, where only the
+    subclasses of an abstract task is registered.
 
 * Awesome new task decorators
 
@@ -60,23 +78,27 @@ What's new?
 * Rate limiting
 
     Global and per task rate limits. 10 tasks a second? or one an hour? You
-    got it. It's using the awesome bucket queue algorithm, which is commonly
-    used for network traffic shaping. It accounts for bursts of activity, so
-    your workers won't be bored by having nothing to do.
+    got it. It's using the awesome `token bucket algorithm`_, which is
+    commonly used for network traffic shaping. It accounts for bursts of
+    activity, so your workers won't be bored by having nothing to do.
+
+.. _`token bucket algorithm`: http://en.wikipedia.org/wiki/Token_bucket
 
 * Broadcast commands
 
-    You can now revoke tasks if you suddenly change your mind and don't want to run
-    the task anyway, or you can rate limit tasks or shut down the worker remotely.
+    You can now revoke tasks if you suddenly change your mind and don't want
+    to run the task anyway, or you can rate limit tasks or even shut down the
+    worker remotely.
 
-    It doesn't have many commands yet, but we're waiting for broadcast commands to
-    reach its full potential. Maybe you have some ideas of your own?
+    It doesn't have many commands yet, but we're waiting for broadcast
+    commands to reach its full potential. There's a lot of potential here,
+    so please share your ideas if you have any.
 
 * Multiple queues
 
     The worker is now able to receive tasks on multiple queues at once. This
-    means you can route tasks to arbitrary workers. Read about the insane
-    routing powers of AMQP, and you will surely end up being mighty impressed.
+    means you can route tasks to arbitrary workers. Read about the wicked
+    routing powers of AMQP, and you will surely end up mighty impressed.
 
 * Platform agnostic message format.
 
@@ -93,12 +115,30 @@ What's new?
 
 * Plus a lot more
 
-To read more about these and other changes in detail, please refer to the `changelog`_.
-This document contains crucial information, so if you're upgrading from a previous version of Celery,
-be sure to read the entire change set before you continue.
+To read more about these and other changes in detail, please refer to
+the `changelog`_. This document contains crucial information, so if you're
+upgrading from a previous version of Celery, be sure to read the entire
+change set before you continue.
 
 .. _`changelog`: http://ask.github.com/celery/changelog.html
 
-**TIP:** If you install the :mod:`setproctitle` module you can see which task each
-worker process is currently executing in ``ps`` listings. Just install it
-using pip: ``pip install setproctitle``.
+**TIP:** If you install the :mod:`setproctitle` module you can see which
+task each worker process is currently executing in ``ps`` listings.
+Just install it using pip: ``pip install setproctitle``.
+
+Resources
+=========
+
+* Homepage: http://celeryproject.org
+
+* Download: http://pypi.python.org/pypi/celery
+
+* Documentation: http://celeryproject.org/docs/
+
+* Changelog: http://celeryproject.org/docs/changelog.html
+
+* Code: http://github.com/ask/celery/
+
+* Mailing-list: http://groups.google.com/celery-users
+
+* IRC: #celery on irc.freenode.net.
