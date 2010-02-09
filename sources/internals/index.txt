@@ -8,6 +8,7 @@
 .. toctree::
     :maxdepth: 2
 
+    deprecation
     worker
     protocol
     events

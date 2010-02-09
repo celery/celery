@@ -5,7 +5,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>List of Worker Events &mdash; Celery v0.9.8 (unstable) documentation</title>
+    <title>Celery Deprecation Timeline &mdash; Celery v0.9.8 (unstable) documentation</title>
     <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
@@ -21,22 +21,22 @@
     <script type="text/javascript" src="../static/doctools.js"></script>
     <link rel="top" title="Celery v0.9.8 (unstable) documentation" href="../index.html" />
     <link rel="up" title="Internals" href="index.html" />
-    <link rel="next" title="Internal Module Reference" href="reference/index.html" />
-    <link rel="prev" title="Task Message Protocol" href="protocol.html" /> 
+    <link rel="next" title="Internals: The worker" href="worker.html" />
+    <link rel="prev" title="Internals" href="index.html" /> 
   </head>
   <body>
 <div id="docstitle">
 	<p>Celery v0.9.8 (unstable) documentation</p>
 </div>
 <div id="header">
-	<div id="title"><h1>List of Worker Events</h1></div>
+	<div id="title"><h1>Celery Deprecation Timeline</h1></div>
 	<ul id="headerButtons">
 		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
 		<li id="page_buttons">
 			<div class="headerButton"><a href="../genindex.html" title="General Index" accesskey="I">index</a></div>
 			<div class="headerButton"><a href="../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
-			<div class="headerButton"><a href="reference/index.html" title="Internal Module Reference" accesskey="N">next</a></div>
-			<div class="headerButton"><a href="protocol.html" title="Task Message Protocol" accesskey="P">previous</a></div>
+			<div class="headerButton"><a href="worker.html" title="Internals: The worker" accesskey="N">next</a></div>
+			<div class="headerButton"><a href="index.html" title="Internals" accesskey="P">previous</a></div>
 		</li>
 	</ul>
 </div>
@@ -53,10 +53,10 @@
 <li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
 <li class="toctree-l1"><a class="reference external" href="../reference/index.html">API Reference</a></li>
 <li class="toctree-l1 current"><a class="reference external" href="index.html">Internals</a><ul class="current">
-<li class="toctree-l2"><a class="reference external" href="deprecation.html">Celery Deprecation Timeline</a></li>
+<li class="toctree-l2 current"><a class="current reference external" href="">Celery Deprecation Timeline</a></li>
 <li class="toctree-l2"><a class="reference external" href="worker.html">Internals: The worker</a></li>
 <li class="toctree-l2"><a class="reference external" href="protocol.html">Task Message Protocol</a></li>
-<li class="toctree-l2 current"><a class="current reference external" href="">List of Worker Events</a></li>
+<li class="toctree-l2"><a class="reference external" href="events.html">List of Worker Events</a></li>
 <li class="toctree-l2"><a class="reference external" href="reference/index.html">Internal Module Reference</a></li>
 </ul>
 </li>
@@ -66,7 +66,7 @@
 
       <h3>This Page</h3>
       <ul class="this-page-menu">
-        <li><a href="../sources/internals/events.txt"
+        <li><a href="../sources/internals/deprecation.txt"
                rel="nofollow">Show Source</a></li>
       </ul>
     <div id="searchbox" style="display: none">
@@ -96,65 +96,70 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="list-of-worker-events">
-<h1>List of Worker Events<a class="headerlink" href="#list-of-worker-events" title="Permalink to this headline">¶</a></h1>
-<p>This is the list of events sent by the worker.
-The monitor uses these to visualize the state of the cluster.</p>
-<div class="section" id="task-events">
-<h2>Task Events<a class="headerlink" href="#task-events" title="Permalink to this headline">¶</a></h2>
+  <div class="section" id="celery-deprecation-timeline">
+<h1>Celery Deprecation Timeline<a class="headerlink" href="#celery-deprecation-timeline" title="Permalink to this headline">¶</a></h1>
 <ul>
-<li><p class="first">task-received(uuid, name, args, kwargs, retries, eta, hostname, timestamp)</p>
-<blockquote>
-<p>Sent when the worker receives a task.</p>
-</blockquote>
+<li><p class="first">1.2</p>
+<ul>
+<li><p class="first">The following settings will be removed:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head"><p class="first last"><strong>Setting name</strong></p>
+</th>
+<th class="head"><p class="first last"><strong>Replace with</strong></p>
+</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><p class="first last"><tt class="docutils literal"><span class="pre">CELERY_AMQP_CONSUMER_QUEUES</span></tt></p>
+</td>
+<td><p class="first last"><tt class="docutils literal"><span class="pre">CELERY_QUEUES</span></tt></p>
+</td>
+</tr>
+<tr><td><p class="first last"><tt class="docutils literal"><span class="pre">CELERY_AMQP_CONSUMER_QUEUES</span></tt></p>
+</td>
+<td><p class="first last"><tt class="docutils literal"><span class="pre">CELERY_QUEUES</span></tt></p>
+</td>
+</tr>
+<tr><td><p class="first last"><tt class="docutils literal"><span class="pre">CELERY_AMQP_EXCHANGE</span></tt></p>
+</td>
+<td><p class="first last"><tt class="docutils literal"><span class="pre">CELERY_DEFAULT_EXCHANGE</span></tt></p>
+</td>
+</tr>
+<tr><td><p class="first last"><tt class="docutils literal"><span class="pre">CELERY_AMQP_EXCHANGE_TYPE</span></tt></p>
+</td>
+<td><p class="first last"><tt class="docutils literal"><span class="pre">CELERY_DEFAULT_AMQP_EXCHANGE_TYPE</span></tt></p>
+</td>
+</tr>
+<tr><td><p class="first last"><tt class="docutils literal"><span class="pre">CELERY_AMQP_CONSUMER_ROUTING_KEY</span></tt></p>
+</td>
+<td><p class="first last"><tt class="docutils literal"><span class="pre">CELERY_QUEUES</span></tt></p>
+</td>
+</tr>
+<tr><td><p class="first last"><tt class="docutils literal"><span class="pre">CELERY_AMQP_PUBLISHER_ROUTING_KEY</span></tt></p>
+</td>
+<td><p class="first last"><tt class="docutils literal"><span class="pre">CELERY_DEFAULT_ROUTING_KEY</span></tt></p>
+</td>
+</tr>
+</tbody>
+</table>
 </li>
-<li><p class="first">task-accepted(uuid, hostname, timestamp)</p>
-<blockquote>
-<p>Sent just before the worker executes the task.</p>
-</blockquote>
+<li><p class="first"><tt class="docutils literal"><span class="pre">CELERY_LOADER</span></tt> definitions without class name.</p>
+<p>E.g. <tt class="docutils literal"><span class="pre">celery.loaders.default</span></tt>, needs to include the class name:
+<tt class="docutils literal"><span class="pre">celery.loaders.default.Loader</span></tt>.</p>
 </li>
-<li><p class="first">task-succeeded(uuid, result, runtime, hostname, timestamp)</p>
-<blockquote>
-<p>Sent if the task executed successfully.
-Runtime is the time it took to execute the task using the pool.
-(Time starting from the task is sent to the pool, and ending when the
-pool result handlers callback is called).</p>
-</blockquote>
+<li><p class="first"><tt class="xref docutils literal"><span class="pre">TaskSet.run()</span></tt>. Use <a title="celery.task.base.TaskSet.apply_async" class="reference external" href="../reference/celery.task.base.html#celery.task.base.TaskSet.apply_async"><tt class="xref docutils literal"><span class="pre">celery.task.base.TaskSet.apply_async()</span></tt></a>
+instead.</p>
 </li>
-<li><p class="first">task-failed(uuid, exception, traceback, hostname, timestamp)</p>
-<blockquote>
-<p>Sent if the execution of the task failed.</p>
-</blockquote>
-</li>
-<li><p class="first">task-retried(uuid, exception, traceback, hostname, delay, timestamp)</p>
-<blockquote>
-<p>Sent if the task failed, but will be retried in the future.
-(<strong>NOT IMPLEMENTED</strong>)</p>
-</blockquote>
+<li><p class="first">The module <tt class="xref docutils literal"><span class="pre">celery.task.rest</span></tt>; use <a title="" class="reference external" href="../userguide/remote-tasks.html#module-celery.task.http"><tt class="xref docutils literal"><span class="pre">celery.task.http</span></tt></a> instead.</p>
 </li>
 </ul>
-</div>
-<div class="section" id="worker-events">
-<h2>Worker Events<a class="headerlink" href="#worker-events" title="Permalink to this headline">¶</a></h2>
-<ul>
-<li><p class="first">worker-online(hostname, timestamp)</p>
-<blockquote>
-<p>The worker has connected to the broker and is online.</p>
-</blockquote>
-</li>
-<li><p class="first">worker-heartbeat(hostname, timestamp)</p>
-<blockquote>
-<p>Sent every minute, if the worker has not sent a heartbeat in 2 minutes,
-it&#8217;s considered to be offline.</p>
-</blockquote>
-</li>
-<li><p class="first">worker-offline(hostname, timestamp)</p>
-<blockquote>
-<p>The worker has disconnected from the broker.</p>
-</blockquote>
 </li>
 </ul>
-</div>
 </div>
 
 

@@ -1,0 +1,234 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Celery 1.0 has been released! &mdash; Celery v0.9.8 (unstable) documentation</title>
+    <link rel="stylesheet" href="../../static/adctheme.css" type="text/css" />
+    <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.9.8 (unstable)',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../static/jquery.js"></script>
+    <script type="text/javascript" src="../../static/doctools.js"></script>
+    <link rel="top" title="Celery v0.9.8 (unstable) documentation" href="../../index.html" /> 
+  </head>
+  <body>
+<div id="docstitle">
+	<p>Celery v0.9.8 (unstable) documentation</p>
+</div>
+<div id="header">
+	<div id="title"><h1>Celery 1.0 has been released!</h1></div>
+	<ul id="headerButtons">
+		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
+		<li id="page_buttons">
+			<div class="headerButton"><a href="../../genindex.html" title="General Index" accesskey="I">index</a></div>
+			<div class="headerButton"><a href="../../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+		</li>
+	</ul>
+</div>
+
+<div id="sphinxsidebar">
+  <div class="sphinxsidebarwrapper">
+	<ul><li class="toctree-l1"><a href="../../index.html">Main Page</a></li></ul>
+	<ul>
+<li class="toctree-l1"><a class="reference external" href="../../getting-started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference external" href="../../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference external" href="../../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference external" href="../../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference external" href="../../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference external" href="../../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference external" href="../../reference/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference external" href="../../internals/index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference external" href="../../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference external" href="../../links.html">Interesting Links</a></li>
+</ul>
+
+      <h3>This Page</h3>
+      <ul class="this-page-menu">
+        <li><a href="../../sources/releases/1.0/announcement.txt"
+               rel="nofollow">Show Source</a></li>
+      </ul>
+    <div id="searchbox" style="display: none">
+      
+        <form class="search" action="../../search.html" method="get">
+			<div class="search-wrapper">
+			<span class="search-left"></span>
+			<input class="prettysearch" type="text" name="q" size="18" />
+			<span class="search-right">&nbsp;</span>
+			</div>
+          <input type="submit" value="Search" class="searchbutton" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </form>
+        <p class="searchtip" style="font-size: 90%">
+        Enter search terms or a module, class or function name.
+        </p>
+    </div>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+  </div>
+</div>
+
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="celery-1-0-has-been-released">
+<h1>Celery 1.0 has been released!<a class="headerlink" href="#celery-1-0-has-been-released" title="Permalink to this headline">¶</a></h1>
+<p>We&#8217;re happy to announce the release of Celery 1.0.</p>
+<div class="section" id="what-is-it">
+<h2>What is it?<a class="headerlink" href="#what-is-it" title="Permalink to this headline">¶</a></h2>
+<p>Celery is a task queue/job queue based on distributed message passing.
+It is focused on real-time operation, but has support for scheduling as well.</p>
+<p>The execution units, called tasks, are executed concurrently on one or
+more worker servers, asynchronously (in the background) or synchronously
+(wait until ready).</p>
+<p>Celery is already used in production to process millions of tasks a day.</p>
+<p>It was first created for Django, but is now also usable from Python. It can
+also operate with other languages via webhooks.</p>
+</div>
+<div class="section" id="stable-api">
+<h2>Stable API<a class="headerlink" href="#stable-api" title="Permalink to this headline">¶</a></h2>
+<p>From this version on the API will be considered stable. This means there won&#8217;t
+be any backwards incompatible changes to new minor versions. Changes to the
+API needs to be deprecated; so, for example, if we decided to remove a function
+that existed in Celery 1.0:</p>
+<ul class="simple">
+<li>Celery 1.2 will contain a backwards-compatible replica of the function which
+will raise a <tt class="docutils literal"><span class="pre">PendingDeprecationWarning</span></tt>.
+This warning is silent by default; you need to explicitly turn on display
+of these warnings.</li>
+<li>Celery 1.4 will contain the backwards-compatible replica, but the warning
+will be promoted to a full-fledged <tt class="docutils literal"><span class="pre">DeprecationWarning</span></tt>. This warning
+is loud by default, and will likely be quite annoying.</li>
+<li>Celery 1.6 will remove the feature outright.</li>
+</ul>
+<p>See the <a class="reference external" href="http://ask.github.com/celery/internals/deprecation.html">Celery Deprecation Timeline</a> for a list of pending removals.</p>
+</div>
+<div class="section" id="what-s-new">
+<h2>What&#8217;s new?<a class="headerlink" href="#what-s-new" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><p class="first">New periodic task service.</p>
+<p>Periodic tasks are no longer dispatched by <tt class="docutils literal"><span class="pre">celeryd</span></tt>, but instead by a
+separate service called <tt class="docutils literal"><span class="pre">celerybeat</span></tt>. This is an optimized, centralized
+service dedicated to your periodic tasks, which means you don&#8217;t have to
+worry about deadlocks or race conditions any more. But, also it means you
+have to make sure only one instance of this service is running at any one
+time.</p>
+<p><strong>TIP:</strong> If you&#8217;re only running a single <tt class="docutils literal"><span class="pre">celeryd</span></tt> server, you can embed
+<tt class="docutils literal"><span class="pre">celerybeat</span></tt> inside it. Just add the <tt class="docutils literal"><span class="pre">--beat</span></tt> argument.</p>
+</li>
+<li><p class="first">Tasks are automatically registered</p>
+<blockquote>
+<p>Registering the tasks manually was getting tedious, so now you don&#8217;t have
+to anymore. However &#8211; You can still do it manually if you need to, just
+disable <tt class="xref docutils literal"><span class="pre">Task.autoregister</span></tt>. The concept of abstract task classes
+has also been introduced, this is like django models, where only the
+subclasses of an abstract task is registered.</p>
+</blockquote>
+</li>
+<li><p class="first">Awesome new task decorators</p>
+<blockquote>
+<p>Write your tasks as regular functions and decorate them.
+There&#8217;s both <tt class="xref docutils literal"><span class="pre">task()</span></tt>, and <tt class="xref docutils literal"><span class="pre">periodic_task()</span></tt> decorators.</p>
+</blockquote>
+</li>
+<li><p class="first">Events</p>
+<blockquote>
+<p>If enabled, the worker is now sending events, telling you what it&#8217;s
+doing, and wether it&#8217;s alive or not. This is the basis for the new
+real-time web monitor we&#8217;re working on.</p>
+</blockquote>
+</li>
+<li><p class="first">Rate limiting</p>
+<blockquote>
+<p>Global and per task rate limits. 10 tasks a second? or one an hour? You
+got it. It&#8217;s using the awesome <a class="reference external" href="http://en.wikipedia.org/wiki/Token_bucket">token bucket algorithm</a>, which is
+commonly used for network traffic shaping. It accounts for bursts of
+activity, so your workers won&#8217;t be bored by having nothing to do.</p>
+</blockquote>
+</li>
+</ul>
+<ul>
+<li><p class="first">Broadcast commands</p>
+<blockquote>
+<p>You can now revoke tasks if you suddenly change your mind and don&#8217;t want
+to run the task anyway, or you can rate limit tasks or even shut down the
+worker remotely.</p>
+<p>It doesn&#8217;t have many commands yet, but we&#8217;re waiting for broadcast
+commands to reach its full potential. There&#8217;s a lot of potential here,
+so please share your ideas if you have any.</p>
+</blockquote>
+</li>
+<li><p class="first">Multiple queues</p>
+<blockquote>
+<p>The worker is now able to receive tasks on multiple queues at once. This
+means you can route tasks to arbitrary workers. Read about the wicked
+routing powers of AMQP, and you will surely end up mighty impressed.</p>
+</blockquote>
+</li>
+<li><p class="first">Platform agnostic message format.</p>
+<p>The message format has been standardized and now uses the ISO-8601 format
+for dates instead of Python datetime objects. This means you can write task
+consumers in other languages than Python (<tt class="docutils literal"><span class="pre">eceleryd</span></tt> anyone?)</p>
+</li>
+<li><p class="first">Timely</p>
+<p>Periodic tasks are now scheduled on the clock, i.e. <tt class="docutils literal"><span class="pre">timedelta(hours=1)</span></tt>
+means every hour at :00 minutes, not every hour from the server starts.
+To revert to the previous behaviour you can enable
+<tt class="xref docutils literal"><span class="pre">PeriodicTask.relative</span></tt>.</p>
+</li>
+<li><p class="first">Plus a lot more</p>
+</li>
+</ul>
+<p>To read more about these and other changes in detail, please refer to
+the <a class="reference external" href="http://ask.github.com/celery/changelog.html">changelog</a>. This document contains crucial information, so if you&#8217;re
+upgrading from a previous version of Celery, be sure to read the entire
+change set before you continue.</p>
+<p><strong>TIP:</strong> If you install the <tt class="xref docutils literal"><span class="pre">setproctitle</span></tt> module you can see which
+task each worker process is currently executing in <tt class="docutils literal"><span class="pre">ps</span></tt> listings.
+Just install it using pip: <tt class="docutils literal"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">setproctitle</span></tt>.</p>
+</div>
+<div class="section" id="resources">
+<h2>Resources<a class="headerlink" href="#resources" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Homepage: <a class="reference external" href="http://celeryproject.org">http://celeryproject.org</a></li>
+<li>Download: <a class="reference external" href="http://pypi.python.org/pypi/celery">http://pypi.python.org/pypi/celery</a></li>
+<li>Documentation: <a class="reference external" href="http://celeryproject.org/docs/">http://celeryproject.org/docs/</a></li>
+<li>Changelog: <a class="reference external" href="http://celeryproject.org/docs/changelog.html">http://celeryproject.org/docs/changelog.html</a></li>
+<li>Code: <a class="reference external" href="http://github.com/ask/celery/">http://github.com/ask/celery/</a></li>
+<li>Mailing-list: <a class="reference external" href="http://groups.google.com/celery-users">http://groups.google.com/celery-users</a></li>
+<li>IRC: #celery on irc.freenode.net.</li>
+</ul>
+</div>
+</div>
+
+
+          </div> 
+        </div>
+      </div>
+    <div class="footer">
+    <p>
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+	</p>
+    </div>
+      <div class="clearer"></div>
+    </div>
+	<div id="breadcrumbs">
+		<a href="../../index.html">Celery v0.9.8 (unstable) documentation</a>
+		</ul>
+	</div>
+  </body>
+</html>
