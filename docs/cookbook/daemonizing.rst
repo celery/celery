@@ -27,7 +27,7 @@ start-stop-daemon
 launchd (OS X)
 ==============
 
-* `contrib/mac`_
+* `contrib/mac/`_
 
 .. _`contrib/mac/`:
     http://github.com/ask/celery/tree/master/contrib/mac/
