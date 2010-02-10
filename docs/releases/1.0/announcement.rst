@@ -46,12 +46,12 @@ What's new?
 
 * New periodic task service.
 
-  Periodic tasks are no longer dispatched by ``celeryd``, but instead by a
-  separate service called ``celerybeat``. This is an optimized, centralized
-  service dedicated to your periodic tasks, which means you don't have to
-  worry about deadlocks or race conditions any more. But, also it means you
-  have to make sure only one instance of this service is running at any one
-  time.
+    Periodic tasks are no longer dispatched by ``celeryd``, but instead by a
+    separate service called ``celerybeat``. This is an optimized, centralized
+    service dedicated to your periodic tasks, which means you don't have to
+    worry about deadlocks or race conditions any more. But, also it means you
+    have to make sure only one instance of this service is running at any one
+    time.
 
   **TIP:** If you're only running a single ``celeryd`` server, you can embed
   ``celerybeat`` inside it. Just add the ``--beat`` argument.
@@ -86,19 +86,20 @@ What's new?
 
 * Broadcast commands
 
-    You can now revoke tasks if you suddenly change your mind and don't want
-    to run the task anyway, or you can rate limit tasks or even shut down the
-    worker remotely.
+    If you change your mind and don't want to run a task after all, you
+    now have the option to revoke it.
+
+    Also, you can rate limit tasks or even shut down the worker remotely.
 
     It doesn't have many commands yet, but we're waiting for broadcast
-    commands to reach its full potential. There's a lot of potential here,
-    so please share your ideas if you have any.
+    commands to reach its full potential, so please share your ideas
+    if you have any.
 
 * Multiple queues
 
     The worker is now able to receive tasks on multiple queues at once. This
     means you can route tasks to arbitrary workers. Read about the wicked
-    routing powers of AMQP, and you will surely end up mighty impressed.
+    routing powers of AMQP, and you will surely end up impressed.
 
 * Platform agnostic message format.
 
