@@ -8,15 +8,16 @@ What is it?
 ===========
 
 Celery is a task queue/job queue based on distributed message passing.
-It is focused on real-time operation, but has support for scheduling as well.
+It is focused on real-time operation, but supports scheduling as well.
 
 The execution units, called tasks, are executed concurrently on one or
-more worker servers, asynchronously (in the background) or synchronously
+more worker servers. Tasks can execute asynchronously (in the background) or synchronously
 (wait until ready).
 
 Celery is already used in production to process millions of tasks a day.
 
-It was first created for Django, but is now usable from Python. It can
+Celery was originally created for use with Django, but is now usable
+from any Python project. It can
 also operate with other languages via webhooks.
 
 The recommended message broker is `RabbitMQ`_, but support for Redis or
@@ -32,9 +33,9 @@ See http://ask.github.com/celery/getting-started/introduction.html#features
 Stable API
 ==========
 
-From this version on the API will be considered stable. This means there won't
-be any backwards incompatible changes to new minor versions. Changes to the
-API needs to be deprecated; so, for example, if we decided to remove a function
+From this version on the public API is considered stable. This means there won't
+be any backwards incompatible changes in new minor versions. Changes to the
+API will be deprecated; so, for example, if we decided to remove a function
 that existed in Celery 1.0:
 
 * Celery 1.2 will contain a backwards-compatible replica of the function which
@@ -54,29 +55,33 @@ See the `Celery Deprecation Timeline`_ for a list of pending removals.
 What's new?
 ===========
 
-* Awesome new task decorators
+* Task decorators
 
-    Write your tasks as regular functions and decorate them.
-    There's both :func:`task`, and :func:`periodic_task` decorators.
+    Write tasks as regular functions and decorate them.
+    There are both :func:`task`, and :func:`periodic_task` decorators.
 
 * Tasks are automatically registered
 
     Registering the tasks manually was getting tedious, so now you don't have
-    to anymore. However -- You can still do it manually if you need to, just
+    to anymore. You can still do it manually if you need to, just
     disable :attr:`Task.autoregister`. The concept of abstract task classes
     has also been introduced, this is like django models, where only the
     subclasses of an abstract task is registered.
 
 * Events
 
-    If enabled, the worker is now sending events, telling you what it's
-    doing, and whether it's alive or not. This is the basis for the new
-    real-time web monitor we're working on.
+    If enabled, the worker will send events, telling you what tasks it
+    executes, their results, and how long it took to execute them. It also
+    sends out heartbeats, so listeners are able to detect nonfunctional
+    workers. This is the basis for the new real-time web monitor we're working on
+    (`celerymon`_)
+
+.. _`celerymon`: http://github.com/ask/celerymon/
 
 * Rate limiting
 
     Global and per task rate limits. 10 tasks a second? or one an hour? You
-    got it. It's using the awesome `token bucket algorithm`_, which is
+    decide. It's using the awesome `token bucket algorithm`_, which is
     commonly used for network traffic shaping. It accounts for bursts of
     activity, so your workers won't be bored by having nothing to do.
 
@@ -87,7 +92,7 @@ What's new?
     Periodic tasks are no longer dispatched by ``celeryd``, but instead by a
     separate service called ``celerybeat``. This is an optimized, centralized
     service dedicated to your periodic tasks, which means you don't have to
-    worry about deadlocks or race conditions any more. But, also it means you
+    worry about deadlocks or race conditions any more. But that does mean you
     have to make sure only one instance of this service is running at any one
     time.
 
@@ -108,7 +113,7 @@ What's new?
 
 * Multiple queues
 
-    The worker is now able to receive tasks on multiple queues at once.
+    The worker is able to receive tasks on multiple queues at once.
     This opens up a lot of new possibilities when combined with the impressive
     routing support in AMQP.
 
@@ -127,8 +132,8 @@ What's new?
 
 * ... and a lot more!
 
-To read more about these and other changes in detail, please refer to
-the `changelog`_. This document contains crucial information relevant to those
+To read about these and other changes in detail, please refer to
+the `changelog`_. This document contains crucial information for those
 upgrading from a previous version of Celery, so be sure to read the entire
 change set before you continue.
 
