@@ -5,9 +5,9 @@
 This document describes the configuration options available.
 
 If you're using celery in a Django project these settings should be defined
-in your projects ``settings.py`` file.
+in the project's ``settings.py`` file.
 
-In a regular Python environment using the default loader you must create
+In a regular Python environment, that is using the default loader, you must create
 the ``celeryconfig.py`` module and make sure it is available on the
 Python path.
 
@@ -15,8 +15,8 @@ Python path.
 Example configuration file
 ==========================
 
-This is an example configuration file to get you started,
-it should contain all you need to run a basic celery set-up.
+This is an example configuration file to get you started.
+It should contain all you need to run a basic celery set-up.
 
 .. code-block:: python
 
@@ -51,10 +51,10 @@ Concurrency settings
 * CELERYD_PREFETCH_MULTIPLIER
     How many messages to prefetch at a time multiplied by the number of
     concurrent processes. The default is 4 (four messages for each
-    process). The default setting seems pretty good here, but if you have
+    process). The default setting seems pretty good here. However, if you have
     very long running tasks waiting in the queue and you have to start the
-    workers, make note that the first worker to start will receive four times the
-    number of messages initially, which might not be fairly balanced among the
+    workers, note that the first worker to start will receive four times the
+    number of messages initially. Thus the tasks may not be fairly balanced among the
     workers.
 
 
@@ -83,7 +83,7 @@ Task result backend settings
     * amqp
         Send results back as AMQP messages
         (**WARNING** While very fast, you must make sure you only
-        try to receive the result once).
+        try to receive the result once). fixme: How? where is this documented?
 
 
 .. _`memcached`: http://memcached.org
@@ -97,7 +97,7 @@ Database backend settings
 Please see the Django ORM database settings documentation:
 http://docs.djangoproject.com/en/dev/ref/settings/#database-engine
 
-If you use this backend make sure to initialize the database tables
+If you use this backend, make sure to initialize the database tables
 after configuration. When using celery with a Django project this
 means executing::
 
