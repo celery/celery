@@ -13,11 +13,11 @@ Quick rundown of the tutorial::
 
     $ celeryinit
 
-2. Open up two terminals, in the first you run:
+2. Open up two terminals. In the first, run:
 
     $ celeryd --loglevel=INFO
 
-  In the other you run the test program:
+  In the second you run the test program:
 
     $ python ./test.py
 
@@ -27,15 +27,15 @@ Instructions
 ============
 
 This example uses the database as a message queue (commonly called a "ghetto
-queue"). Excellent for testing, but not very useful for production
+queue"). Excellent for testing, but not suitable for production
 installations.
 
 To try it out you have to install the `GhettoQ`_ package first::
 
     $ pip install ghettoq
 
-This package is an add on to `Carrot`_; the messaging abstraction celery
-uses, that enables the use of databases as message queues. Currently it
+This package is an add-on to `Carrot`_; the messaging abstraction celery
+uses. The add-on enables the use of databases as message queues. Currently it
 supports `Redis`_ and relational databases via the Django ORM.
 
 .. _`ghettoq`: http://pypi.python.org/pypi/ghettoq
@@ -52,8 +52,8 @@ command::
 
 We're using SQLite3, so this creates a database file (``celery.db`` as
 specified in the config file). SQLite is great, but when used in combination
-with Django it doesn't handle concurrency well, to protect your program from
-lock problems, celeryd will only spawn one worker process. However -- with
+with Django it doesn't handle concurrency well. To protect your program from
+lock problems, celeryd will only spawn one worker process. With
 other database drivers you can specify as many worker processes as you want.
 
 
@@ -79,7 +79,7 @@ numbers. You can also run the task manually if you want::
 Using Redis instead
 ===================
 
-To use redis instead you have to configure the following directives in 
+To use redis instead, you have to configure the following directives in 
 ``celeryconfig.py``::
 
     CARROT_BACKEND = "ghettoq.taproot.Redis"
