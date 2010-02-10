@@ -523,7 +523,7 @@ class TaskSet(object):
             ...         (["http://foo.com/rss"], {}),
             ...         (["http://bar.com/rss"], {}),
             ... ])
-            >>> result = ts.run()
+            >>> result = ts.apply_async()
             >>> result.taskset_id
             "d2c9b261-8eff-4bfb-8459-1e1b72063514"
             >>> result.subtask_ids
@@ -581,7 +581,7 @@ class TaskSet(object):
     def map(cls, func, args, timeout=None):
         """Distribute processing of the arguments and collect the results."""
         remote_task = cls.remote_execute(func, args)
-        return remote_task.run().join(timeout=timeout)
+        return remote_task.apply_async().join(timeout=timeout)
 
     @classmethod
     def map_async(cls, func, args, timeout=None):
