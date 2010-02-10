@@ -2,6 +2,17 @@
  Frequently Asked Questions
 ============================
 
+General
+=======
+
+What kinds of things should I use celery for
+--------------------------------------------
+
+**Answer:** Anything asynchronous.
+
+fixme: long answer with some examples of sensible uses goes here
+
+
 Misconceptions
 ==============
 
