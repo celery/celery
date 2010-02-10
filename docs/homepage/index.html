@@ -43,18 +43,19 @@ redis, django, python, webhooks, queue, distributed">
         <h2>Distributed Task Queue</h2>
         <p>
         Celery is a task queue/job queue based on distributed message passing.
-        It is focused on real-time operation, but has support for scheduling
-        as well.</p>
+        It is focused on real-time operation, but support scheduling as well.</p>
 
         <p>The execution units, called tasks, are executed concurrently on one
-        or more worker servers, asynchronously (in the background) or
+        or more worker servers. Tasks can execute asynchronously (in the background) or
         synchronously (wait until ready).</p>
 
         <p>Celery is already used in production to process millions of tasks
         a day.</p>
 
-        <p>It was first created for Django, but is now also usable from Python.
-        It can also <a href="http://ask.github.com/celery/userguide/remote-tasks.html">operate with other languages</a> via HTTP+JSON.</p>
+        <p>Celery was originally created for use with Django, but is now
+        usable from any Python project.
+        It can also <a href="http://ask.github.com/celery/userguide/remote-tasks.html">operate with other languages</a> via webhooks.</p>
+
         <h3>Example</h3>
         <p>This is a simple task adding two numbers:</p>
 <div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.decorators</span> <span class="kn">import</span> <span class="n">task</span>

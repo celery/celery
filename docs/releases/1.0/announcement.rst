@@ -20,8 +20,8 @@ Celery was originally created for use with Django, but is now usable
 from any Python project. It can
 also operate with other languages via webhooks.
 
-The recommended message broker is `RabbitMQ`_, but support for Redis or
-database is also available.
+The recommended message broker is `RabbitMQ`_, but support for Redis and
+databases is also available.
 
 .. _`RabbitMQ`: http://rabbitmq.org
 
@@ -74,7 +74,7 @@ What's new?
     executes, their results, and how long it took to execute them. It also
     sends out heartbeats, so listeners are able to detect nonfunctional
     workers. This is the basis for the new real-time web monitor we're working on
-    (`celerymon`_)
+    (`celerymon`_).
 
 .. _`celerymon`: http://github.com/ask/celerymon/
 

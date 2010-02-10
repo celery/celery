@@ -10,20 +10,23 @@
 
 --
 
-
 Celery is a task queue/job queue based on distributed message passing.
-It is focused on real-time operation, but has support for scheduling as well.
+It is focused on real-time operation, but supports scheduling as well.
 
-The execution units, called tasks, are executed concurrently on one or more
-worker servers, asynchronously (in the background) or synchronously
+The execution units, called tasks, are executed concurrently on one or
+more worker servers. Tasks can execute asynchronously (in the background) or synchronously
 (wait until ready).
 
 Celery is already used in production to process millions of tasks a day.
 
-It was first created for Django, but is now usable from Python as well.
-It can also `operate with other languages via HTTP+JSON`_.
+Celery was originally created for use with Django, but is now usable
+from any Python project. It can
+also `operate with other languages via webhooks`_.
 
-.. _`operate with other languages via HTTP+JSON`:
+The recommended message broker is `RabbitMQ`_, but support for Redis and
+databases is also available.
+
+.. _`operate with other languages via webhooks`:
     http://ask.github.com/celery/userguide/remote-tasks.html
 
 Overview

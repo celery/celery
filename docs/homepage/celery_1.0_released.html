@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="keywords" content="task queue, job queue, asynchronous, rabbitmq, amqp,
+redis, django, python, webhooks, queue, distributed">
+<meta name="description" content="open source distributed task queue" >
+<link rel="icon" type="image/png" href="favicon.png">
+<meta name="viewport" content="width=320, user-scalable=no">
+<link rel="apple-touch-icon" href="favicon_64.png"/>
+<title>Celery - The Distributed Task Queue</title>
+<link rel="stylesheet" href="main.css"/>
+<link rel="stylesheet" href="trac.css"/>
+</head>
+
+<body>
+<div id="navbar">
+  <div class="iStretch">
+    <div class="link" id="current"><a href="/">Home</a></div>
+    <div class="link"><a href="http://github.com/ask/celery">Code</a></div>
+    <div class="link"><a href="docs/">Documentation</a></div>
+    <div class="link"><a href="http://ask.github.com/celery/getting-started/">Tutorials</a></div>
+    <div class="link"><a href="http://pypi.python.org/pypi/celery">Download</a></div>
+  </div>
+</div>
+
+<div class="iStretch">
+
+  <div id="topcontainer">
+  <ul>
+    <li>Background Processing
+    <li>Distributed
+    <li>Asynchronous/Synchronous
+    <li>Concurrency
+    <li>Periodic Tasks
+    <li>Retries
+  </ul>
+  </div>
+
+  <div id="contentcontainer">
+
+    <div class="column">
+<h1>Celery 1.0 has been released!</a></h1>
+<p>We&#8217;re happy to announce the release of Celery 1.0.</p>
+<div class="section" id="what-is-it">
+<h2>What is it?</h2>
+<p>Celery is a task queue/job queue based on distributed message passing.
+It is focused on real-time operation, but supports scheduling as well.</p>
+<p>The execution units, called tasks, are executed concurrently on one or
+more worker servers. Tasks can execute asynchronously (in the background) or synchronously
+(wait until ready).</p>
+<p>Celery is already used in production to process millions of tasks a day.</p>
+<p>Celery was originally created for use with Django, but is now usable
+from any Python project. It can
+also operate with other languages via webhooks.</p>
+<p>The recommended message broker is <a class="reference external" href="http://rabbitmq.org">RabbitMQ</a>, but support for Redis or
+database is also available.</p>
+<div class="section" id="features">
+<h3>Features</h3>
+<p>See <a class="reference external" href="http://ask.github.com/celery/getting-started/introduction.html#features">http://ask.github.com/celery/getting-started/introduction.html#features</a></p>
+</div>
+</div>
+<div class="section" id="stable-api">
+<h2>Stable API</a></h2>
+<p>From this version on the public API is considered stable. This means there won&#8217;t
+be any backwards incompatible changes in new minor versions. Changes to the
+API will be deprecated; so, for example, if we decided to remove a function
+that existed in Celery 1.0:</p>
+<ul class="simple">
+<li>Celery 1.2 will contain a backwards-compatible replica of the function which
+will raise a <tt class="docutils literal"><span class="pre">PendingDeprecationWarning</span></tt>.
+This warning is silent by default; you need to explicitly turn on display
+of these warnings.</li>
+<li>Celery 1.4 will contain the backwards-compatible replica, but the warning
+will be promoted to a full-fledged <tt class="docutils literal"><span class="pre">DeprecationWarning</span></tt>. This warning
+is loud by default, and will likely be quite annoying.</li>
+<li>Celery 1.6 will remove the feature outright.</li>
+</ul>
+<p>See the <a class="reference external" href="http://ask.github.com/celery/internals/deprecation.html">Celery Deprecation Timeline</a> for a list of pending removals.</p>
+</div>
+<div class="section" id="what-s-new">
+<h2>What&#8217;s new?</h2>
+<ul>
+<li><p class="first">Task decorators</p>
+<blockquote>
+<p>Write tasks as regular functions and decorate them.
+There are both <tt class="xref docutils literal"><span class="pre">task()</span></tt>, and <tt class="xref docutils literal"><span class="pre">periodic_task()</span></tt> decorators.</p>
+</blockquote>
+</li>
+<li><p class="first">Tasks are automatically registered</p>
+<blockquote>
+<p>Registering the tasks manually was getting tedious, so now you don&#8217;t have
+to anymore. You can still do it manually if you need to, just
+disable <tt class="xref docutils literal"><span class="pre">Task.autoregister</span></tt>. The concept of abstract task classes
+has also been introduced, this is like django models, where only the
+subclasses of an abstract task is registered.</p>
+</blockquote>
+</li>
+<li><p class="first">Events</p>
+<blockquote>
+<p>If enabled, the worker will send events, telling you what tasks it
+executes, their results, and how long it took to execute them. It also
+sends out heartbeats, so listeners are able to detect nonfunctional
+workers. This is the basis for the new real-time web monitor we&#8217;re working on
+(<a class="reference external" href="http://github.com/ask/celerymon/">celerymon</a>)</p>
+</blockquote>
+</li>
+</ul>
+<ul>
+<li><p class="first">Rate limiting</p>
+<blockquote>
+<p>Global and per task rate limits. 10 tasks a second? or one an hour? You
+decide. It&#8217;s using the awesome <a class="reference external" href="http://en.wikipedia.org/wiki/Token_bucket">token bucket algorithm</a>, which is
+commonly used for network traffic shaping. It accounts for bursts of
+activity, so your workers won&#8217;t be bored by having nothing to do.</p>
+</blockquote>
+</li>
+</ul>
+<ul>
+<li><p class="first">New periodic task service.</p>
+<blockquote>
+<p>Periodic tasks are no longer dispatched by <tt class="docutils literal"><span class="pre">celeryd</span></tt>, but instead by a
+separate service called <tt class="docutils literal"><span class="pre">celerybeat</span></tt>. This is an optimized, centralized
+service dedicated to your periodic tasks, which means you don&#8217;t have to
+worry about deadlocks or race conditions any more. But that does mean you
+have to make sure only one instance of this service is running at any one
+time.</p>
+</blockquote>
+<p><strong>TIP:</strong> If you&#8217;re only running a single <tt class="docutils literal"><span class="pre">celeryd</span></tt> server, you can embed
+<tt class="docutils literal"><span class="pre">celerybeat</span></tt> inside it. Just add the <tt class="docutils literal"><span class="pre">--beat</span></tt> argument.</p>
+</li>
+<li><p class="first">Broadcast commands</p>
+<blockquote>
+<p>If you change your mind and don&#8217;t want to run a task after all, you
+now have the option to revoke it.</p>
+<p>Also, you can rate limit tasks or even shut down the worker remotely.</p>
+<p>It doesn&#8217;t have many commands yet, but we&#8217;re waiting for broadcast
+commands to reach its full potential, so please share your ideas
+if you have any.</p>
+</blockquote>
+</li>
+<li><p class="first">Multiple queues</p>
+<blockquote>
+<p>The worker is able to receive tasks on multiple queues at once.
+This opens up a lot of new possibilities when combined with the impressive
+routing support in AMQP.</p>
+</blockquote>
+</li>
+<li><p class="first">Platform agnostic message format.</p>
+<p>The message format has been standardized and is now using the ISO-8601 format
+for dates instead of Python <tt class="docutils literal"><span class="pre">datetime</span></tt> objects. This means you can write task
+consumers in other languages than Python (<tt class="docutils literal"><span class="pre">eceleryd</span></tt> anyone?)</p>
+</li>
+<li><p class="first">Timely</p>
+<p>Periodic tasks are now scheduled on the clock, i.e. <tt class="docutils literal"><span class="pre">timedelta(hours=1)</span></tt>
+means every hour at :00 minutes, not every hour from the server starts.
+To revert to the previous behavior you have the option to enable
+<tt class="xref docutils literal"><span class="pre">PeriodicTask.relative</span></tt>.</p>
+</li>
+<li><p class="first">... and a lot more!</p>
+</li>
+</ul>
+<p>To read about these and other changes in detail, please refer to
+the <a class="reference external" href="http://ask.github.com/celery/changelog.html">changelog</a>. This document contains crucial information for those
+upgrading from a previous version of Celery, so be sure to read the entire
+change set before you continue.</p>
+<p><strong>TIP:</strong> If you install the <tt class="xref docutils literal"><span class="pre">setproctitle</span></tt> module you can see which
+task each worker process is currently executing in <tt class="docutils literal"><span class="pre">ps</span></tt> listings.
+Just install it using pip: <tt class="docutils literal"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">setproctitle</span></tt>.</p>
+</div>
+<div class="section" id="resources">
+<h2>Resources</h2>
+<ul class="simple">
+<li>Homepage: <a class="reference external" href="http://celeryproject.org">http://celeryproject.org</a></li>
+<li>Download: <a class="reference external" href="http://pypi.python.org/pypi/celery">http://pypi.python.org/pypi/celery</a></li>
+<li>Documentation: <a class="reference external" href="http://celeryproject.org/docs/">http://celeryproject.org/docs/</a></li>
+<li>Changelog: <a class="reference external" href="http://celeryproject.org/docs/changelog.html">http://celeryproject.org/docs/changelog.html</a></li>
+<li>Code: <a class="reference external" href="http://github.com/ask/celery/">http://github.com/ask/celery/</a></li>
+<li>FAQ: <a class="reference external" href="http://ask.github.com/celery/faq.html">http://ask.github.com/celery/faq.html</a></li>
+<li>Mailing-list: <a class="reference external" href="http://groups.google.com/group/celery-users">http://groups.google.com/group/celery-users</a></li>
+<li>IRC: #celery on irc.freenode.net.</li>
+</ul>
+</div>
+
+
+    <div class="hidden">
+        <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        </p>
+        <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        </p>
+        <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        </p>
+    </div>
+    </div>
+
+    <div class="column">
+
+      <span class="newsitem">
+      <h2>1.0 is in beta.</h2>
+      <h4>By Ask on 08.02.2010</h4>
+      <p>1.0 is scheduled to be released this week! Please help us test the latest
+      <a href="http://github.com/ask/celery/tarball/v1.0.0-pre4">release
+          candiate</a> to make this happen. To upgrade from an earlier
+      version, please read the <a href="http://ask.github.com/celery/changelog.html">changelog</a>.
+      <hr>
+      </span>
+
+      <span class="newsitem">
+      <h2>New website.</h2>
+      <h4>By Ask on 08.02.2010</h4>
+      <p>We finally got a home page. Big thanks to <a href="http://helmersworks.com">Jan Henrik Helmers</a>
+      <hr>
+      </span>
+
+    </div>
+
+  </div>
+
+ <div id="credits">
+     <div class="iStretch">Copyright (c) 2009-2010, <a href="http://twitter.com/asksol">Ask Solem</a> and
+         <a href="http://github.com/ask/celery/blob/master/AUTHORS">contributors</a>.<br>
+ Page design by <a href="http://www.helmersworks.com/">Jan Henrik Helmers</a>
+   </div>
+ </div>
+
+
+</div>
+</body>
+</html>
