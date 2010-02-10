@@ -1,6 +1,6 @@
 # Sphinx inventory version 1
 # Project: Celery
-# Version: 0.9
+# Version: 1.0
 celery.backends.base mod internals/reference/celery.backends.base.html
 celery.loaders.default mod reference/celery.loaders.default.html
 celery.loaders.base mod reference/celery.loaders.base.html
