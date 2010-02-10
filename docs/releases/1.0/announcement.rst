@@ -153,6 +153,6 @@ Resources
 
 * FAQ: http://ask.github.com/celery/faq.html
 
-* Mailing-list: http://groups.google.com/celery-users
+* Mailing-list: http://groups.google.com/group/celery-users
 
 * IRC: #celery on irc.freenode.net.
