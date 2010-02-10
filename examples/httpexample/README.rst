@@ -1,14 +1,14 @@
-=======================
+======================
  Webhook Task Example
-=======================
+======================
 
 This example is a simple Django HTTP service exposing a single task
 multiplying two numbers:
 
-The multiply http callback task is in ``views.py``, mapped to an url using
+The multiply http callback task is in ``views.py``, mapped to a URL using
 ``urls.py``.
 
-There's no models, so to start it do::
+There are no models, so to start it do::
 
     $ python manage.py runserver
 
