@@ -82,69 +82,55 @@ is loud by default, and will likely be quite annoying.</li>
 <h2>What&#8217;s new?</h2>
 <ul>
 <li><p class="first">Task decorators</p>
-<blockquote>
 <p>Write tasks as regular functions and decorate them.
 There are both <tt class="xref docutils literal"><span class="pre">task()</span></tt>, and <tt class="xref docutils literal"><span class="pre">periodic_task()</span></tt> decorators.</p>
-</blockquote>
 </li>
 <li><p class="first">Tasks are automatically registered</p>
-<blockquote>
 <p>Registering the tasks manually was getting tedious, so now you don&#8217;t have
 to anymore. You can still do it manually if you need to, just
 disable <tt class="xref docutils literal"><span class="pre">Task.autoregister</span></tt>. The concept of abstract task classes
 has also been introduced, this is like django models, where only the
 subclasses of an abstract task is registered.</p>
-</blockquote>
 </li>
 <li><p class="first">Events</p>
-<blockquote>
 <p>If enabled, the worker will send events, telling you what tasks it
 executes, their results, and how long it took to execute them. It also
 sends out heartbeats, so listeners are able to detect nonfunctional
 workers. This is the basis for the new real-time web monitor we&#8217;re working on
 (<a class="reference external" href="http://github.com/ask/celerymon/">celerymon</a>)</p>
-</blockquote>
 </li>
 </ul>
 <ul>
 <li><p class="first">Rate limiting</p>
-<blockquote>
 <p>Global and per task rate limits. 10 tasks a second? or one an hour? You
 decide. It&#8217;s using the awesome <a class="reference external" href="http://en.wikipedia.org/wiki/Token_bucket">token bucket algorithm</a>, which is
 commonly used for network traffic shaping. It accounts for bursts of
 activity, so your workers won&#8217;t be bored by having nothing to do.</p>
-</blockquote>
 </li>
 </ul>
 <ul>
 <li><p class="first">New periodic task service.</p>
-<blockquote>
 <p>Periodic tasks are no longer dispatched by <tt class="docutils literal"><span class="pre">celeryd</span></tt>, but instead by a
 separate service called <tt class="docutils literal"><span class="pre">celerybeat</span></tt>. This is an optimized, centralized
 service dedicated to your periodic tasks, which means you don&#8217;t have to
 worry about deadlocks or race conditions any more. But that does mean you
 have to make sure only one instance of this service is running at any one
 time.</p>
-</blockquote>
 <p><strong>TIP:</strong> If you&#8217;re only running a single <tt class="docutils literal"><span class="pre">celeryd</span></tt> server, you can embed
 <tt class="docutils literal"><span class="pre">celerybeat</span></tt> inside it. Just add the <tt class="docutils literal"><span class="pre">--beat</span></tt> argument.</p>
 </li>
 <li><p class="first">Broadcast commands</p>
-<blockquote>
 <p>If you change your mind and don&#8217;t want to run a task after all, you
 now have the option to revoke it.</p>
 <p>Also, you can rate limit tasks or even shut down the worker remotely.</p>
 <p>It doesn&#8217;t have many commands yet, but we&#8217;re waiting for broadcast
 commands to reach its full potential, so please share your ideas
 if you have any.</p>
-</blockquote>
 </li>
 <li><p class="first">Multiple queues</p>
-<blockquote>
 <p>The worker is able to receive tasks on multiple queues at once.
 This opens up a lot of new possibilities when combined with the impressive
 routing support in AMQP.</p>
-</blockquote>
 </li>
 <li><p class="first">Platform agnostic message format.</p>
 <p>The message format has been standardized and is now using the ISO-8601 format
