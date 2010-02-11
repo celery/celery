@@ -31,9 +31,10 @@ Then you can use the resulting task-id to get the return value::
     {"task": {"status": "SUCCESS", "result": "pong", "id": "e3a95109-afcd-4e54-a341-16c18fddf64b"}}
 
 
-If you don't want to expose all tasks, you can extend the apply view to only
-accept an whitelist for example, or just make views for every task you want to
-expose, we made on such view for ping in ``views.ping``::
+If you don't want to expose all tasks there are a few possible
+approaches. For instance you can extend the ``apply`` view to only
+accept a whitelist. Another possibility is to just make views for every task you want to
+expose. We made on such view for ping in ``views.ping``::
 
     $ curl http://localhost:8000/ping/
     {"ok": "true", "task_id": "383c902c-ba07-436b-b0f3-ea09cc22107c"}

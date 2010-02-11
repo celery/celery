@@ -2,6 +2,17 @@
  Frequently Asked Questions
 ============================
 
+General
+=======
+
+What kinds of things should I use celery for
+--------------------------------------------
+
+**Answer:** Anything asynchronous.
+
+fixme: long answer with some examples of sensible uses goes here
+
+
 Misconceptions
 ==============
 
@@ -17,7 +28,7 @@ content-type. The default serialization scheme is pickle because it's the most
 used, and it has support for sending complex objects as task arguments.
 
 You can set a global default serializer, the default serializer for a
-particular Task, and even what serializer to use when sending a single task
+particular Task, or even what serializer to use when sending a single task
 instance.
 
 Is celery for Django only?
@@ -25,28 +36,31 @@ Is celery for Django only?
 
 **Answer:** No.
 
-While django itself is a dependency, you can still use all of celerys features
-outside of a django project.
+While django itself is a dependency, you can still use all of celery's features
+outside of a django project. fixme: question about removing the dependency
+
+
 
 Do I have to use AMQP/RabbitMQ?
 -------------------------------
 
 **Answer**: No.
 
-You can also use Redis or an SQL database, for instructions see `Using other
+You can also use Redis or an SQL database, see `Using other
 queues`_.
 
 .. _`Using other queues`:
     http://ask.github.com/celery/tutorials/otherqueues.html
 
-Redis or a database won't meet up to the standards
-of an AMQP broker. If you have strict reliability requirements you are
-encouraged to use RabbitMQ or another AMQP broker. Redis/database also uses
-pulling, so they are likely to consume more resources. However, if you for
-some reason is not able to use AMQP, feel free to use these alternatives.
+Redis or a database won't perform as well as
+an AMQP broker. If you have strict reliability requirements you are
+encouraged to use RabbitMQ or another AMQP broker. Redis/database also use
+polling, so they are likely to consume more resources. However, if you for
+some reason are not able to use AMQP, feel free to use these alternatives.
 They will probably work fine for most use cases, and note that the above
 points are not specific to celery; If using Redis/database as a queue worked
-fine for you before, it probably will now. And you can always upgrade later.
+fine for you before, it probably will now. You can always upgrade later
+if you need to.
 
 Is celery multi-lingual?
 ------------------------
@@ -61,7 +75,7 @@ messages. There's no other communication involved.
 Also, there's another way to be language indepedent, and that is to use REST
 tasks, instead of your tasks being functions, they're URLs. With this
 information you can even create simple web servers that enable preloading of
-code. For more information about REST tasks see: `User Guide: Remote Tasks`_.
+code. See: `User Guide: Remote Tasks`_.
 
 .. _`User Guide: Remote Tasks`:
     http://ask.github.com/celery/userguide/remote-tasks.html
@@ -119,7 +133,7 @@ I'm having ``IntegrityError: Duplicate Key`` errors. Why?
 **Answer:** See `MySQL is throwing deadlock errors, what can I do?`_.
 Thanks to howsthedotcom.
 
-Why isn't my tasks processed?
+Why aren't my tasks processed?
 -----------------------------
 **Answer:** With RabbitMQ you can see how many consumers are currently
 receiving tasks by running the following command::
@@ -137,7 +151,7 @@ wasn't properly shut down.
 
 When a message is recieved by a worker the broker waits for it to be
 acknowledged before marking the message as processed. The broker will not
-re-send that message to another consumer until the consumer is shutdown
+re-send that message to another consumer until the consumer is shut down
 properly.
 
 If you hit this problem you have to kill all workers manually and restart
@@ -145,11 +159,14 @@ them::
 
     ps auxww | grep celeryd | awk '{print $2}' | xargs kill
 
-You might have to wait a while until all workers has finished the work they're
-doing, if it's still hanging after a long time you can kill them by force
+You might have to wait a while until all workers have finished the work they're
+doing. If it's still hanging after a long time you can kill them by force
 with::
 
     ps auxww | grep celeryd | awk '{print $2}' | xargs kill -9
+
+fixme: killall wont work?
+
 
 Why won't my Task run?
 ----------------------
@@ -206,9 +223,9 @@ Brokers
 Can I use celery with ActiveMQ/STOMP?
 -------------------------------------
 
-**Answer**: Yes. But this is somewhat experimental for now.
-It is certainly working ok for me in a test configuration, but it has not
-been tested in production like RabbitMQ. If you have any problems with
+**Answer**: Yes, but this is somewhat experimental for now.
+It is working ok in a test configuration, but it has not
+been tested in production like RabbitMQ has. If you have any problems with
 using STOMP and celery, please report the bugs to the issue tracker:
 
     http://github.com/ask/celery/issues/
@@ -270,7 +287,7 @@ Use the following specific settings in your ``settings.py``:
 Now you can go on reading the tutorial in the README, ignoring any AMQP
 specific options. 
 
-Which features are not supported when using STOMP?
+What features are not supported when using STOMP?
 --------------------------------------------------
 
 This is a (possible incomplete) list of features not available when
@@ -400,7 +417,7 @@ just specify a custom exchange and exchange type:
 Easy? No? If you're confused about these terms, you should read up on
 AMQP and RabbitMQ. It might be hard to grok the concepts of
 queues, exchanges and routing/binding keys at first, but it's all very simple,
-I assure you.
+I assure you. fixme: too colloquial perhaps? Maybe add links to docs
 
 Can I use celery without Django?
 --------------------------------
@@ -408,7 +425,7 @@ Can I use celery without Django?
 **Answer:** Yes.
 
 Celery uses something called loaders to read/setup configuration, import
-modules that registers tasks and to decide what happens when a task is
+modules that register tasks and to decide what happens when a task is
 executed. Currently there are two loaders, the default loader and the Django
 loader. If you want to use celery without a Django project, you either have to
 use the default loader, or write a loader of your own.
@@ -416,7 +433,7 @@ use the default loader, or write a loader of your own.
 The rest of this answer describes how to use the default loader.
 
 First of all, installation. You need to get the development version of
-celery from github::
+celery from github:: fixme: even in 1.0?
 
     $ git clone git://github.com/ask/celery.git
     $ cd celery
@@ -434,7 +451,7 @@ whatever::
 You need a configuration file named ``celeryconfig.py``, either in the
 directory you run ``celeryd`` in, or in a Python library path where it is
 able to find it. The configuration file can contain any of the settings
-described in :mod:`celery.conf`, and in additional if you're using the
+described in :mod:`celery.conf`. In addition; if you're using the
 database backend you have to configure the database. Here is an example
 configuration using the database backend with MySQL:
 
@@ -464,12 +481,12 @@ configuration using the database backend with MySQL:
     # is able to find and run them.
     CELERY_IMPORTS = ("mytaskmodule1", "mytaskmodule2")
     
-Now with this configuration file in the current directory you have to
+With this configuration file in the current directory you have to
 run ``celeryinit`` to create the database tables::
 
     $ celeryinit
 
-Then you should be able to successfully run ``celeryd``::
+At this point you should be able to successfully run ``celeryd``::
 
     $ celeryd --loglevel=INFO
 
@@ -484,19 +501,19 @@ and send a task from a python shell (note that it must be able to import
 The celery test-suite is failing
 --------------------------------
 
-**Answer**: You're running tests from your own Django applicaiton, and celerys
-tests are failing and celerys tests are failing in that context?
+**Answer**: You're running tests from your own Django applicaiton, and celery's
+tests are failing and celery's tests are failing in that context? fixme: I don't get the preceding sentence
 If so, read on for a trick, if not please report the test failure to our issue
-tracker at GitHub.
+tracker on GitHub.
 
     http://github.com/ask/celery/issues/
 
 That Django is running tests for all applications in ``INSTALLED_APPS``
 is a pet peeve of mine. You should use a test runner that either
 
-    1) Explicitly lists the apps you want to run tests for, or
+    1) Explicitly lists the apps you want to run tests for, or:
 
-    2) make a test runner that skips tests for apps you don't want to run.
+    2) Make a test runner that skips tests for apps you don't want to run.
 
 For example this test runner that celery is using:
 
@@ -544,12 +561,12 @@ Can I change the interval of a periodic task at runtime?
 Does celery support task priorities?
 ------------------------------------
 
-**Answer**: No, or theoretically as AMQP supports priorities but
+**Answer**: No. In theory, yes, as AMQP supports priorities. However
 RabbitMQ doesn't implement them yet.
 
-However the usual way to prioritize work in celery, is to route high priority tasks
-to different servers. In the real world this may actually work better than per. message
-priorities. You can use this in combination with rate limting to achieve a
+The usual way to prioritize work in celery, is to route high priority tasks
+to different servers. In the real world this may actually work better than per message
+priorities. You can use this in combination with rate limiting to achieve a
 highly performant system.
 
 Can I schedule tasks to execute at a specific time?
@@ -561,7 +578,7 @@ Can I schedule tasks to execute at a specific time?
 
 However, you can't schedule a periodic task at a specific time yet.
 The good news is, if anyone is willing
-to implement it, it shouldn't be that hard, some pointers to achieve this has
+to implement it, it shouldn't be that hard. Some pointers to achieve this has
 been written here: http://bit.ly/99UQNO
 
 
