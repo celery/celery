@@ -295,6 +295,36 @@ DOCUMENTATION
 * Reference now split into two sections; API reference and internal module
   reference.
 
+0.8.4 [2010-02-05 01:52 P.M CEST]
+---------------------------------
+
+* Now emits a warning if the --detach argument is used.
+  --detach should not be used anymore, as it has several not easily fixed
+  bugs related to it. Instead, use something like start-stop-daemon,
+  supervisord or launchd (os x).
+
+
+* Make sure logger class is process aware, even if running Python >= 2.6.
+
+
+* Error e-mails are not sent anymore when the task is retried.
+
+
+0.8.3 [2009-12-22 09:43 A.M CEST]
+---------------------------------
+
+* Fixed a possible race condition that could happen when storing/querying
+  task results using the the database backend.
+
+* Now has console script entry points in the setup.py file, so tools like
+  buildout will correctly install the programs celerybin and celeryinit.
+
+0.8.2 [2009-11-20 03:40 P.M CEST]
+---------------------------------
+
+* QOS Prefetch count was not applied properly, as it was set for every message
+  received (which apparently behaves like, "receive one more"), instead of only 
+  set when our wanted value cahnged.
 
 0.8.1 [2009-11-16 05:21 P.M CEST]
 =================================
@@ -322,7 +352,7 @@ IMPORTANT CHANGES
 		AMQP_PASSWORD = "mypassword"
 		AMQP_VHOST = "celery"
 
-You need to change that to::
+  You need to change that to::
 
 		BROKER_HOST = "localhost"
 		BROKER_PORT = 5678
@@ -335,12 +365,12 @@ You need to change that to::
 
 		CARROT_BACKEND = "mycustom.backend.module"
 
-you need to change it to::
+  you need to change it to::
 
 		CARROT_BACKEND = "mycustom.backend.module.Backend"
 
-where ``Backend`` is the class name. This is probably ``"Backend"``, as
-that was the previously implied name.
+  where ``Backend`` is the class name. This is probably ``"Backend"``, as
+  that was the previously implied name.
 
 * New version requirement for carrot: 0.8.0
 
