@@ -1,5 +1,6 @@
 from celery import conf
-from celery.messaging import TaskConsumer, BroadcastPublisher, with_connection
+from celery.messaging import BroadcastPublisher
+from celery.messaging import with_connection, get_consumer_set
 
 
 @with_connection
@@ -13,11 +14,11 @@ def discard_all(connection=None,
     :returns: the number of tasks discarded.
 
     """
-    consumer = TaskConsumer(connection=connection)
+    consumers = get_consumer_set(connection=connection)
     try:
-        return consumer.discard_all()
+        return consumers.discard_all()
     finally:
-        consumer.close()
+        consumers.close()
 
 
 def revoke(task_id, destination=None, connection=None,
