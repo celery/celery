@@ -195,16 +195,16 @@ CELERYMON_LOG_LEVEL = _get("CELERYMON_LOG_LEVEL")
 CELERYMON_LOG_FILE = _get("CELERYMON_LOG_FILE")
 
 
-def _init_routing_table():
+def _init_routing_table(queues):
     """Convert configuration mapping to a table of queues digestible
     by a :class:`carrot.messaging.ConsumerSet`."""
 
     def _defaults(opts):
         opts.setdefault("exchange", DEFAULT_EXCHANGE),
         opts.setdefault("exchange_type", DEFAULT_EXCHANGE_TYPE)
-        opts.setdefault("binding_key", "")
+        opts.setdefault("binding_key", DEFAULT_EXCHANGE)
         return opts
 
-    return dict((queue, _defaults(opts)) for queue, opts in QUEUES.items())
+    return dict((queue, _defaults(opts)) for queue, opts in queues.items())
 
-routing_table = _init_routing_table()
+routing_table = _init_routing_table(QUEUES)
