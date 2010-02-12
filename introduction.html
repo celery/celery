@@ -5,78 +5,74 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Introduction &mdash; Celery v0.9.5 (unstable) documentation</title>
-    <link rel="stylesheet" href="static/adctheme.css" type="text/css" />
-    <link rel="stylesheet" href="static/pygments.css" type="text/css" />
+    <title>Introduction &mdash; Celery v1.0.0 (stable) documentation</title>
+    <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '#',
-        VERSION:     '0.9.5 (unstable)',
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0 (stable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
-    <script type="text/javascript" src="static/jquery.js"></script>
-    <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v0.9.5 (unstable) documentation" href="index.html" />
-    <link rel="next" title="Getting Started" href="getting-started/index.html" />
-    <link rel="prev" title="Celery - Distributed Task Queue" href="index.html" /> 
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v1.0.0 (stable) documentation" href="../index.html" />
+    <link rel="up" title="Getting Started" href="index.html" />
+    <link rel="next" title="Broker Installation" href="broker-installation.html" />
+    <link rel="prev" title="Getting Started" href="index.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v0.9.5 (unstable) documentation</p>
+	<p>Celery v1.0.0 (stable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Introduction</h1></div>
 	<ul id="headerButtons">
 		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
 		<li id="page_buttons">
-			<div class="headerButton"><a href="genindex.html" title="General Index" accesskey="I">index</a></div>
-			<div class="headerButton"><a href="modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
-			<div class="headerButton"><a href="getting-started/index.html" title="Getting Started" accesskey="N">next</a></div>
-			<div class="headerButton"><a href="index.html" title="Celery - Distributed Task Queue" accesskey="P">previous</a></div>
+			<div class="headerButton"><a href="../genindex.html" title="General Index" accesskey="I">index</a></div>
+			<div class="headerButton"><a href="../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="broker-installation.html" title="Broker Installation" accesskey="N">next</a></div>
+			<div class="headerButton"><a href="index.html" title="Getting Started" accesskey="P">previous</a></div>
 		</li>
 	</ul>
 </div>
 
 <div id="sphinxsidebar">
   <div class="sphinxsidebarwrapper">
-	<ul><li class="toctree-l1"><a href="index.html">Main Page</a></li></ul>
+	<ul><li class="toctree-l1"><a href="../index.html">Main Page</a></li></ul>
 	<ul class="current">
-<li class="toctree-l1 current"><a class="current reference external" href="">Introduction</a><ul>
-<li class="toctree-l2"><a class="reference external" href="#overview">Overview</a></li>
-<li class="toctree-l2"><a class="reference external" href="#example">Example</a></li>
-<li class="toctree-l2"><a class="reference external" href="#features">Features</a></li>
-<li class="toctree-l2"><a class="reference external" href="#documentation">Documentation</a></li>
-<li class="toctree-l2"><a class="reference external" href="#installation">Installation</a></li>
-<li class="toctree-l2"><a class="reference external" href="#a-look-inside-the-components">A look inside the components</a></li>
-<li class="toctree-l2"><a class="reference external" href="#getting-help">Getting Help</a></li>
-<li class="toctree-l2"><a class="reference external" href="#bug-tracker">Bug tracker</a></li>
-<li class="toctree-l2"><a class="reference external" href="#contributing">Contributing</a></li>
-<li class="toctree-l2"><a class="reference external" href="#license">License</a></li>
+<li class="toctree-l1 current"><a class="reference external" href="index.html">Getting Started</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference external" href="">Introduction</a></li>
+<li class="toctree-l2"><a class="reference external" href="broker-installation.html">Broker Installation</a></li>
+<li class="toctree-l2"><a class="reference external" href="first-steps-with-celery.html">First steps with Celery</a></li>
+<li class="toctree-l2"><a class="reference external" href="first-steps-with-django.html">First steps with Django</a></li>
+<li class="toctree-l2"><a class="reference external" href="periodic-tasks.html">Periodic Tasks</a></li>
+<li class="toctree-l2"><a class="reference external" href="resources.html">Resources</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference external" href="getting-started/index.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference external" href="configuration.html">Configuration and defaults</a></li>
-<li class="toctree-l1"><a class="reference external" href="userguide/index.html">User Guide</a></li>
-<li class="toctree-l1"><a class="reference external" href="cookbook/index.html">Cookbook</a></li>
-<li class="toctree-l1"><a class="reference external" href="tutorials/index.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference external" href="faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1"><a class="reference external" href="reference/index.html">API Reference</a></li>
-<li class="toctree-l1"><a class="reference external" href="internals/index.html">Internals</a></li>
-<li class="toctree-l1"><a class="reference external" href="changelog.html">Change history</a></li>
-<li class="toctree-l1"><a class="reference external" href="links.html">Interesting Links</a></li>
+<li class="toctree-l1"><a class="reference external" href="../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference external" href="../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference external" href="../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference external" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference external" href="../reference/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference external" href="../internals/index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference external" href="../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference external" href="../links.html">Interesting Links</a></li>
 </ul>
 
       <h3>This Page</h3>
       <ul class="this-page-menu">
-        <li><a href="sources/introduction.txt"
+        <li><a href="../sources/getting-started/introduction.txt"
                rel="nofollow">Show Source</a></li>
       </ul>
     <div id="searchbox" style="display: none">
       
-        <form class="search" action="search.html" method="get">
+        <form class="search" action="../search.html" method="get">
 			<div class="search-wrapper">
 			<span class="search-left"></span>
 			<input class="prettysearch" type="text" name="q" size="18" />
@@ -103,25 +99,30 @@
             
   <div class="section" id="introduction">
 <h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
+<img alt="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" />
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Version:</th><td class="field-body">1.0.0-pre1</td>
+<tr class="field"><th class="field-name">Version:</th><td class="field-body">1.0.0</td>
 </tr>
-<tr class="field"><th class="field-name">Keywords:</th><td class="field-body">task queue, job queue, asynchronous, rabbitmq, amqp, redis.</td>
+<tr class="field"><th class="field-name">Keywords:</th><td class="field-body">task queue, job queue, asynchronous, rabbitmq, amqp, redis,
+django, python, webhooks, queue, distributed</td>
 </tr>
 </tbody>
 </table>
 <p>&#8211;</p>
 <p>Celery is a task queue/job queue based on distributed message passing.
-It is focused on real-time operation, but has support for scheduling as well.</p>
-<p>The execution units, called tasks, are executed concurrently on one or more
-worker servers, asynchronously (in the background) or synchronously
+It is focused on real-time operation, but supports scheduling as well.</p>
+<p>The execution units, called tasks, are executed concurrently on one or
+more worker servers. Tasks can execute asynchronously (in the background) or synchronously
 (wait until ready).</p>
 <p>Celery is already used in production to process millions of tasks a day.</p>
-<p>It was first created for Django, but is now usable from Python as well.
-It can also <a class="reference external" href="http://bit.ly/CgXSc">operate with other languages via HTTP+JSON</a>.</p>
+<p>Celery was originally created for use with Django, but is now usable
+from any Python project. It can
+also <a class="reference external" href="http://ask.github.com/celery/userguide/remote-tasks.html">operate with other languages via webhooks</a>.</p>
+<p>The recommended message broker is <a class="reference external" href="http://www.rabbitmq.com/">RabbitMQ</a>, but support for Redis and
+databases is also available.</p>
 <div class="section" id="overview">
 <h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
 <p>This is a high level overview of the architecture.</p>
@@ -153,67 +154,112 @@ adding two numbers:</p>
 </div>
 <div class="section" id="features">
 <h2>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
-<ul>
-<li><p class="first">Uses messaging (AMQP: RabbitMQ, ZeroMQ, Qpid) to route tasks to the
-worker servers. Experimental support for STOMP (ActiveMQ) is also
-available. For simple setups it&#8217;s also possible to use Redis or an
-SQL database as the message queue.</p>
-</li>
-<li><p class="first">You can run as many worker servers as you want, and still
-be <em>guaranteed that the task is only executed once.</em></p>
-</li>
-<li><p class="first">Tasks are executed <em>concurrently</em> using the Python 2.6
-<tt class="xref docutils literal"><span class="pre">multiprocessing</span></tt> module (also available as a back-port
-to older python versions)</p>
-</li>
-<li><p class="first">Supports <em>periodic tasks</em>, which makes it a (better) replacement
-for cronjobs.</p>
-</li>
-<li><p class="first">When a task has been executed, the return value can be stored using
-either a MySQL/Oracle/PostgreSQL/SQLite database, Memcached,
-<a class="reference external" href="http://www.mongodb.org/">MongoDB</a>, <a class="reference external" href="http://code.google.com/p/redis/">Redis</a> or <a class="reference external" href="http://tokyocabinet.sourceforge.net/">Tokyo Tyrant</a> back-end. For high-performance
-you can also use AMQP messages to publish results.</p>
-</li>
-<li><p class="first">Supports calling tasks over HTTP to support multiple programming
-languages and systems.</p>
-</li>
-<li><p class="first">Supports several serialization schemes, like pickle, json, yaml and
-supports registering custom encodings .</p>
-</li>
-<li><p class="first">If the task raises an exception, the exception instance is stored,
-instead of the return value, and it&#8217;s possible to inspect the traceback
-after the fact.</p>
-</li>
-<li><p class="first">All tasks has a Universally Unique Identifier (UUID), which is the
-task id, used for querying task status and return values.</p>
-</li>
-<li><p class="first">Tasks can be retried if they fail, with a configurable maximum number
-of retries.</p>
-</li>
-<li><p class="first">Tasks can be configured to run at a specific time and date in the
-future (ETA) or you can set a countdown in seconds for when the
-task should be executed.</p>
-</li>
-<li><p class="first">Supports <em>task-sets</em>, which is a task consisting of several sub-tasks.
-You can find out how many, or if all of the sub-tasks has been executed.
-Excellent for progress-bar like functionality.</p>
-</li>
-<li><p class="first">However, you rarely want to wait for these results in a web-environment.
-You&#8217;d rather want to use Ajax to poll the task status, which is
-available from a URL like <tt class="docutils literal"><span class="pre">celery/&lt;task_id&gt;/status/</span></tt>. This view
-returns a JSON-serialized data structure containing the task status,
-and the return value if completed, or exception on failure.</p>
-</li>
-<li><dl class="first docutils">
-<dt>Pool workers are supervised, so if for some reason a worker crashes</dt>
-<dd><p class="first last">it is automatically replaced by a new worker.</p>
-</dd>
-</dl>
-</li>
-<li><p class="first">Can be configured to send e-mails to the administrators when a task
-fails.</p>
-</li>
-</ul>
+<table border="1" class="docutils">
+<colgroup>
+<col width="25%" />
+<col width="75%" />
+</colgroup>
+<tbody valign="top">
+<tr><td>Messaging</td>
+<td>Supported brokers include <a class="reference external" href="http://www.rabbitmq.com/">RabbitMQ</a>, <a class="reference external" href="http://stomp.codehaus.org/">Stomp</a>,
+<a class="reference external" href="http://code.google.com/p/redis/">Redis</a>, and the most common SQL databases.</td>
+</tr>
+<tr><td>Robust</td>
+<td>Using <cite>RabbitMQ</cite>, celery survives most error
+scenarios, and your tasks will never be lost.</td>
+</tr>
+<tr><td>Distributed</td>
+<td>Runs on one or more machines. Supports
+<a class="reference external" href="http://www.rabbitmq.com/clustering.html">clustering</a> when used in combination with
+<a class="reference external" href="http://www.rabbitmq.com/">RabbitMQ</a>. You can set up new workers without
+central configuration (e.g. use your dads laptop
+while the queue is temporarily overloaded).</td>
+</tr>
+<tr><td>Concurrency</td>
+<td>Tasks are executed in parallel using the
+<tt class="docutils literal"><span class="pre">multiprocessing</span></tt> module.</td>
+</tr>
+<tr><td>Scheduling</td>
+<td>Supports recurring tasks like cron, or specifying
+an exact date or countdown for when after the task
+should be executed.</td>
+</tr>
+<tr><td>Performance</td>
+<td>Able to execute tasks while the user waits.</td>
+</tr>
+<tr><td>Return Values</td>
+<td>Task return values can be saved to the selected
+result store backend. You can wait for the result,
+retrieve it later, or ignore it.</td>
+</tr>
+<tr><td>Result Stores</td>
+<td>Database, <a class="reference external" href="http://www.mongodb.org/">MongoDB</a>, <a class="reference external" href="http://code.google.com/p/redis/">Redis</a>, <cite>Tokyo Tyrant</cite>,
+<a class="reference external" href="http://www.amqp.org/">AMQP</a> (high performance).</td>
+</tr>
+<tr><td>Webhooks</td>
+<td>Your tasks can also be HTTP callbacks, enabling
+cross-language communication.</td>
+</tr>
+<tr><td>Rate limiting</td>
+<td>Supports rate limiting by using the token bucket
+algorithm, which accounts for bursts of traffic.
+Rate limits can be set for each task type, or
+globally for all.</td>
+</tr>
+<tr><td>Routing</td>
+<td>Using AMQP you can route tasks arbitrarily to
+different workers.</td>
+</tr>
+<tr><td>Remote-control</td>
+<td>You can rate limit and delete (revoke) tasks
+remotely.</td>
+</tr>
+<tr><td>Monitoring</td>
+<td>You can capture everything happening with the
+workers in real-time by subscribing to events.
+A real-time web monitor is in development.</td>
+</tr>
+<tr><td>Serialization</td>
+<td>Supports Pickle, JSON, YAML, or easily defined
+custom schemes. One task invocation can have a
+different scheme than another.</td>
+</tr>
+<tr><td>Tracebacks</td>
+<td>Errors and tracebacks are stored and can be
+investigated after the fact.</td>
+</tr>
+<tr><td>UUID</td>
+<td>Every task has an UUID (Universally Unique
+Identifier), which is the task id used to query
+task status and return value.</td>
+</tr>
+<tr><td>Retries</td>
+<td>Tasks can be retried if they fail, with
+configurable maximum number of retries, and delays
+between each retry.</td>
+</tr>
+<tr><td>Task Sets</td>
+<td>A Task set is a task consisting of several
+sub-tasks. You can find out how many, or if all
+of the sub-tasks has been executed, and even
+retrieve the results in order. Progress bars,
+anyone?</td>
+</tr>
+<tr><td>Made for Web</td>
+<td>You can query status and results via URLs,
+enabling the ability to poll task status using
+Ajax.</td>
+</tr>
+<tr><td>Error e-mails</td>
+<td>Can be configured to send e-mails to the
+administrators when tasks fails.</td>
+</tr>
+<tr><td>Supervised</td>
+<td>Pool workers are supervised and automatically
+replaced if they crash.</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="section" id="documentation">
 <h2>Documentation<a class="headerlink" href="#documentation" title="Permalink to this headline">¶</a></h2>
@@ -248,40 +294,6 @@ $ python setup.py build
 </div>
 </div>
 </div>
-<div class="section" id="a-look-inside-the-components">
-<h2>A look inside the components<a class="headerlink" href="#a-look-inside-the-components" title="Permalink to this headline">¶</a></h2>
-<img alt="http://cloud.github.com/downloads/ask/celery/Celery1.0-inside-worker.jpg" src="http://cloud.github.com/downloads/ask/celery/Celery1.0-inside-worker.jpg" />
-</div>
-<div class="section" id="getting-help">
-<h2>Getting Help<a class="headerlink" href="#getting-help" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="mailing-list">
-<h3>Mailing list<a class="headerlink" href="#mailing-list" title="Permalink to this headline">¶</a></h3>
-<p>For discussions about the usage, development, and future of celery,
-please join the <a class="reference external" href="http://groups.google.com/group/celery-users/">celery-users</a> mailing list.</p>
-</div>
-<div class="section" id="irc">
-<h3>IRC<a class="headerlink" href="#irc" title="Permalink to this headline">¶</a></h3>
-<p>Come chat with us on IRC. The <a class="reference external" href="irc://irc.freenode.net/celery">#celery</a> channel is located at the <a class="reference external" href="http://freenode.net">Freenode</a>
-network.</p>
-</div>
-</div>
-<div class="section" id="bug-tracker">
-<h2>Bug tracker<a class="headerlink" href="#bug-tracker" title="Permalink to this headline">¶</a></h2>
-<p>If you have any suggestions, bug reports or annoyances please report them
-to our issue tracker at <a class="reference external" href="http://github.com/ask/celery/issues/">http://github.com/ask/celery/issues/</a></p>
-</div>
-<div class="section" id="contributing">
-<h2>Contributing<a class="headerlink" href="#contributing" title="Permalink to this headline">¶</a></h2>
-<p>Development of <tt class="docutils literal"><span class="pre">celery</span></tt> happens at Github: <a class="reference external" href="http://github.com/ask/celery">http://github.com/ask/celery</a></p>
-<p>You are highly encouraged to participate in the development
-of <tt class="docutils literal"><span class="pre">celery</span></tt>. If you don&#8217;t like Github (for some reason) you&#8217;re welcome
-to send regular patches.</p>
-</div>
-<div class="section" id="license">
-<h2>License<a class="headerlink" href="#license" title="Permalink to this headline">¶</a></h2>
-<p>This software is licensed under the <tt class="docutils literal"><span class="pre">New</span> <span class="pre">BSD</span> <span class="pre">License</span></tt>. See the <tt class="docutils literal"><span class="pre">LICENSE</span></tt>
-file in the top distribution directory for the full license text.</p>
-</div>
 </div>
 
 
@@ -297,7 +309,8 @@ file in the top distribution directory for the full license text.</p>
       <div class="clearer"></div>
     </div>
 	<div id="breadcrumbs">
-		<a href="index.html">Celery v0.9.5 (unstable) documentation</a>
+		<a href="index.html" accesskey="U">Getting Started</a><img src="triangle_closed.png" alt="Right arrow">
+		<a href="../index.html">Celery v1.0.0 (stable) documentation</a>
 		</ul>
 	</div>
   </body>
