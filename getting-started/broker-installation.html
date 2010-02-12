@@ -102,9 +102,10 @@
 <div class="section" id="installing-rabbitmq">
 <h2>Installing RabbitMQ<a class="headerlink" href="#installing-rabbitmq" title="Permalink to this headline">¶</a></h2>
 <p>See <a class="reference external" href="http://www.rabbitmq.com/install.html">Installing RabbitMQ</a> over at RabbitMQ&#8217;s website. For Mac OS X
-see <a class="reference external" href="http://playtype.net/past/2008/10/9/installing_rabbitmq_on_osx/">Installing RabbitMQ on OS X</a>.</p>
+see <a class="reference internal" href="#installing-rabbitmq-on-os-x">Installing RabbitMQ on OS X</a>.</p>
+</div>
 <div class="section" id="setting-up-rabbitmq">
-<h3>Setting up RabbitMQ<a class="headerlink" href="#setting-up-rabbitmq" title="Permalink to this headline">¶</a></h3>
+<h2>Setting up RabbitMQ<a class="headerlink" href="#setting-up-rabbitmq" title="Permalink to this headline">¶</a></h2>
 <p>To use celery we need to create a RabbitMQ user, a virtual host and
 allow that user access to that virtual host:</p>
 <div class="highlight-python"><pre>$ rabbitmqctl add_user myuser mypassword
@@ -114,6 +115,77 @@ $ rabbitmqctl add_vhost myvhost
 $ rabbitmqctl set_permissions -p myvhost myuser "" ".*" ".*"</pre>
 </div>
 <p>See the RabbitMQ <a class="reference external" href="http://www.rabbitmq.com/admin-guide.html">Admin Guide</a> for more information about <a class="reference external" href="http://www.rabbitmq.com/admin-guide.html#access-control">access control</a>.</p>
+</div>
+<div class="section" id="installing-rabbitmq-on-os-x">
+<h2>Installing RabbitMQ on OS X<a class="headerlink" href="#installing-rabbitmq-on-os-x" title="Permalink to this headline">¶</a></h2>
+<p>The easiest way to install RabbitMQ on Snow Leopard is using <a class="reference external" href="http://github.com/mxcl/homebrew/">Homebrew</a>; the new
+and shiny package management system for OS X.</p>
+<p>In this example we&#8217;ll but the homebrew installation into <tt class="docutils literal"><span class="pre">/lol</span></tt>, but you can
+choose whatever destination you want, even in your home directory, as one of
+the strengths of homebrew is that it&#8217;s relocateable.</p>
+<p>Homebrew is actually a <a class="reference external" href="http://git-scm.org">git</a> repository, so to install homebrew, you first need to
+install git. Download and install from the disk image at
+<a class="reference external" href="http://code.google.com/p/git-osx-installer/downloads/list?can=3">http://code.google.com/p/git-osx-installer/downloads/list?can=3</a></p>
+<p>When git is installed you can finally clone the repo, storing it at the
+<tt class="docutils literal"><span class="pre">/lol</span></tt> location:</p>
+<div class="highlight-python"><pre>$ git clone git://github.com/mxcl/homebrew /lol</pre>
+</div>
+<p>Brew comes with a simple utility called <tt class="docutils literal"><span class="pre">brew</span></tt>, used to install, remove and
+query packages, but to use it you first have to add it to <tt class="docutils literal"><span class="pre">PATH</span></tt>, so add the
+following line at the end of your <tt class="docutils literal"><span class="pre">~/.profile</span></tt>:</p>
+<div class="highlight-python"><pre>export PATH="/lol/bin:/lol/sbin:$PATH"</pre>
+</div>
+<p>Save your profile and reload it:</p>
+<div class="highlight-python"><pre>$ source ~/.profile</pre>
+</div>
+<p>Finally, we can install rabbitmq using <tt class="docutils literal"><span class="pre">brew</span></tt>:</p>
+<div class="highlight-python"><pre>$ brew install rabbitmq</pre>
+</div>
+<div class="section" id="configuring-the-system-hostname">
+<h3>Configuring the system hostname<a class="headerlink" href="#configuring-the-system-hostname" title="Permalink to this headline">¶</a></h3>
+<p>If you&#8217;re using a DHCP server that is giving you a random hostname, you need
+to permanently configure your hostname so it doesn&#8217;t change anymore. This is
+because Erlang/OTP (the language Rabbitmq is written in) uses the hostname
+to communicate with nodes.</p>
+<p>Use the <tt class="docutils literal"><span class="pre">scutil</span></tt> command to permanently change your hostname:</p>
+<div class="highlight-python"><pre>sudo scutil --set HostName myhost.local</pre>
+</div>
+<p>Then add that hostname to <tt class="docutils literal"><span class="pre">/etc/hosts/</span></tt> so it&#8217;s able to resolve it
+back into an IP address:</p>
+<div class="highlight-python"><pre>127.0.0.1       localhost myhost myhost.local</pre>
+</div>
+<p>Your rabbit node should now be <tt class="docutils literal"><span class="pre">rabbit&#64;myhost</span></tt>, as verified by
+<tt class="docutils literal"><span class="pre">rabbitmqctl</span></tt>:</p>
+<div class="highlight-python"><pre>$ sudo rabbitmqctl status
+Status of node rabbit@myhost ...
+[{running_applications,[{rabbit,"RabbitMQ","1.7.1"},
+                    {mnesia,"MNESIA  CXC 138 12","4.4.12"},
+                    {os_mon,"CPO  CXC 138 46","2.2.4"},
+                    {sasl,"SASL  CXC 138 11","2.1.8"},
+                    {stdlib,"ERTS  CXC 138 10","1.16.4"},
+                    {kernel,"ERTS  CXC 138 10","2.13.4"}]},
+{nodes,[rabbit@myhost]},
+{running_nodes,[rabbit@myhost]}]
+...done.</pre>
+</div>
+<p>This is especially important if your DHCP server gives you a hostname
+starting with an IP address, (e.g. <tt class="docutils literal"><span class="pre">23.10.112.31.comcast.net</span></tt>), because
+then RabbitMQ will try to use <tt class="docutils literal"><span class="pre">rabbit&#64;23</span></tt> as your hostname, as you probably
+now it&#8217;s not possible to resolve the hostname <tt class="docutils literal"><span class="pre">23</span></tt>.</p>
+</div>
+<div class="section" id="starting-stopping-the-rabbitmq-server">
+<h3>Starting/Stopping the RabbitMQ server<a class="headerlink" href="#starting-stopping-the-rabbitmq-server" title="Permalink to this headline">¶</a></h3>
+<p>To start the server:</p>
+<div class="highlight-python"><pre>$ sudo rabbitmq-server</pre>
+</div>
+<p>you can also run it in the background by adding the <tt class="docutils literal"><span class="pre">-detached</span></tt> option:</p>
+<blockquote>
+$ sudo rabbitmq-server -detached</blockquote>
+<p>Never use <tt class="docutils literal"><span class="pre">kill</span></tt> to stop the RabbitMQ server, but rather use the
+<tt class="docutils literal"><span class="pre">rabbitmqctl</span></tt> command:</p>
+<div class="highlight-python"><pre>$ sudo rabbitmqctl stop</pre>
+</div>
+<p>When the server is running, you can continue reading <a class="reference internal" href="#setting-up-rabbitmq">Setting up RabbitMQ</a>.</p>
 </div>
 </div>
 </div>
