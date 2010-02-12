@@ -128,13 +128,14 @@ Celery on FreeBSD here:
 http://www.playingwithwire.com/2009/10/how-to-get-celeryd-to-work-on-freebsd/
 
 I'm having ``IntegrityError: Duplicate Key`` errors. Why?
-----------------------------------------------------------
+---------------------------------------------------------
 
 **Answer:** See `MySQL is throwing deadlock errors, what can I do?`_.
 Thanks to howsthedotcom.
 
 Why aren't my tasks processed?
------------------------------
+------------------------------
+
 **Answer:** With RabbitMQ you can see how many consumers are currently
 receiving tasks by running the following command::
 
