@@ -21,9 +21,8 @@ class Loader(BaseLoader):
         multiprocessing environment.
 
         """
-        # See: http://groups.google.com/group/django-users/browse_thread/
-        #       thread/78200863d0c07c6d/38402e76cf3233e8?hl=en&lnk=gst&
-        #       q=multiprocessing#38402e76cf3233e8
+
+        # See http://groups.google.com/group/django-users/browse_thread/thread/78200863d0c07c6d/
         from django.db import connection
         connection.close()
 
