@@ -13,6 +13,7 @@ from UserDict import UserDict
 from celery import log
 from celery import conf
 from celery import registry as _registry
+from celery import platform
 from celery.utils.info import humanize_seconds
 
 
@@ -175,12 +176,15 @@ class ClockService(object):
         self.debug = log.SilenceRepeated(self.logger.debug,
                                          max_iterations=silence)
 
-    def start(self):
+    def start(self, embedded_process=False):
         self.logger.info("ClockService: Starting...")
         self.logger.debug("ClockService: "
             "Ticking with max interval->%s, schedule->%s" % (
                     humanize_seconds(self.max_interval),
                     self.schedule_filename))
+
+        if embedded_process:
+            platform.set_process_title("celerybeat")
 
         try:
             while True:
@@ -253,13 +257,13 @@ def EmbeddedClockService(*args, **kwargs):
         def __init__(self, *args, **kwargs):
             super(_Process, self).__init__()
             self.clockservice = ClockService(*args, **kwargs)
-            self.daemon = True
 
         def run(self):
-            self.clockservice.start()
+            self.clockservice.start(embedded_process=True)
 
         def stop(self):
             self.clockservice.stop()
+            self.terminate()
 
     if kwargs.pop("thread", False):
         # Need short max interval to be able to stop thread

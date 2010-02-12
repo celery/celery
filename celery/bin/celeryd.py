@@ -199,6 +199,7 @@ class Worker(object):
 
         # Install signal handler so SIGHUP restarts the worker.
         install_worker_restart_handler(worker)
+        install_worker_term_handler(worker)
 
         signals.worker_init.send(sender=worker)
         try:
@@ -208,6 +209,12 @@ class Worker(object):
                     "celeryd raised exception %s: %s\n%s" % (
                         exc.__class__, exc, traceback.format_exc()))
 
+
+def install_worker_term_handler(worker):
+
+    def _stop(signum, frame):
+        raise SystemExit()
+    platform.install_signal_handler("SIGTERM", _stop)
 
 def install_worker_restart_handler(worker):
 

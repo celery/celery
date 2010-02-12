@@ -46,6 +46,7 @@ class TaskPool(object):
     def stop(self):
         """Terminate the pool."""
         self._pool.terminate()
+        self._pool.join()
         self._pool = None
 
     def replace_dead_workers(self):
