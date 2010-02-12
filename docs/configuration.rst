@@ -224,7 +224,7 @@ Example configuration
 
     CELERY_BACKEND = "redis"
     REDIS_HOST = "localhost"
-    REDIS_PORT = 6739
+    REDIS_PORT = 6379
     REDIS_DATABASE = "celery_results"
     REDIS_CONNECT_RETRY=True
 
