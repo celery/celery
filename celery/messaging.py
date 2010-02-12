@@ -153,6 +153,7 @@ def get_consumer_set(connection, queues=None, **options):
     queues = queues or conf.routing_table
     cset = ConsumerSet(connection)
     for queue_name, queue_options in queues.items():
+        queue_options = dict(queue_options)
         queue_options["routing_key"] = queue_options.pop("binding_key", None)
         consumer = Consumer(connection, queue=queue_name,
                             backend=cset.backend, **queue_options)
