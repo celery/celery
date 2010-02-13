@@ -45,6 +45,9 @@ import optparse
 import traceback
 import multiprocessing
 
+from multiprocessing.process import current_process
+
+
 import celery
 from celery import conf
 from celery import signals
@@ -200,6 +203,7 @@ class Worker(object):
         # Install signal handler so SIGHUP restarts the worker.
         install_worker_restart_handler(worker)
         install_worker_term_handler(worker)
+        install_worker_int_handler(worker)
 
         signals.worker_init.send(sender=worker)
         try:
@@ -210,10 +214,26 @@ class Worker(object):
                         exc.__class__, exc, traceback.format_exc()))
 
 
+def install_worker_int_handler(worker):
+
+    def _stop(signum, frame):
+        if current_process().name == 'MainProcess':
+            worker.logger.warn("Hard stopping celeryd (%s)" % \
+                               (current_process().name))
+            worker.terminate()
+        raise SystemExit()
+
+    platform.install_signal_handler("SIGINT", _stop)
+
 def install_worker_term_handler(worker):
 
     def _stop(signum, frame):
+        if current_process().name == 'MainProcess':
+            worker.logger.warn("Stopping celeryd (%s)" % \
+                               (current_process().name))
+            worker.stop()
         raise SystemExit()
+
     platform.install_signal_handler("SIGTERM", _stop)
 
 def install_worker_restart_handler(worker):

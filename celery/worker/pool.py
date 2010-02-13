@@ -45,9 +45,9 @@ class TaskPool(object):
 
     def stop(self):
         """Terminate the pool."""
-        self._pool.terminate()
+        self._pool.close()
         self._pool.join()
-        self._pool = None
+        # self._pool = None
 
     def replace_dead_workers(self):
         self.logger.debug("TaskPool: Finding dead pool processes...")

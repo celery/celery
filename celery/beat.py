@@ -263,7 +263,7 @@ def EmbeddedClockService(*args, **kwargs):
 
         def stop(self):
             self.clockservice.stop()
-            self.terminate()
+            self.close()
 
     if kwargs.pop("thread", False):
         # Need short max interval to be able to stop thread

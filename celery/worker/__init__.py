@@ -187,6 +187,25 @@ class WorkController(object):
             return
 
         signals.worker_shutdown.send(sender=self)
-        [component.stop() for component in reversed(self.components)]
+        for component in reversed(self.components):
+            self.logger.debug("Stopping thread %s..." % \
+                              component.__class__.__name__)
+            component.stop()
 
         self._state = "STOP"
+
+    def terminate(self):
+        """Not so gracefully shutdown the worker server."""
+        if self._state != "RUN":
+            return
+
+        signals.worker_shutdown.send(sender=self)
+        for component in reversed(self.components):
+            self.logger.debug("Terminating thread %s..." % \
+                              component.__class__.__name__)
+            if hasattr(component,'terminate'):
+                component.terminate()
+            else:
+                component.stop()
+
+            self._state = "STOP"
