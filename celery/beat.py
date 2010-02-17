@@ -259,6 +259,7 @@ def EmbeddedClockService(*args, **kwargs):
             self.clockservice = ClockService(*args, **kwargs)
 
         def run(self):
+            platform.reset_signal("SIGTERM")
             self.clockservice.start(embedded_process=True)
 
         def stop(self):
