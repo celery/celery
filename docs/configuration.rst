@@ -83,7 +83,7 @@ Task result backend settings
     * amqp
         Send results back as AMQP messages
         (**WARNING** While very fast, you must make sure you only
-        try to receive the result once). fixme: How? where is this documented?
+        receive the result once. See :doc:`user-guide/executing`).
 
 
 .. _`memcached`: http://memcached.org

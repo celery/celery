@@ -217,7 +217,7 @@ NEWS
   it's possible to override the methods used to perform HTTP requests.
 
 * The results of tasksets are now cached by storing it in the result
-  backend. FIXME: Only database backend supports this yet!
+  backend.
 
 CHANGES
 -------

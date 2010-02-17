@@ -5,12 +5,34 @@
 General
 =======
 
-What kinds of things should I use celery for
---------------------------------------------
+What kinds of things should I use celery for?
+---------------------------------------------
 
-**Answer:** Anything asynchronous.
+**Answer:** `Queue everything and delight everyone`_ is a good article
+describing why you would use a queue in a web context.
 
-fixme: long answer with some examples of sensible uses goes here
+.. `Queue everything and delight everyone`:
+    http://decafbad.com/blog/2008/07/04/queue-everything-and-delight-everyone
+
+These are some common use cases:
+
+* Running something in the background. For example, to finish the web request
+  as soon as possible, then update the users page incrementally.
+  This gives the user the impression of good performane and "snappiness", even
+  though the real work might actually take some time.
+
+* Running something after the web request has finished.
+
+* Making sure something is done, by executing it asynchronously and using
+  retries.
+
+* Scheduling periodic work.
+
+And to some degree:
+
+* Distributed computing.
+
+* Parallel execution.
 
 
 Misconceptions
@@ -36,9 +58,40 @@ Is celery for Django only?
 
 **Answer:** No.
 
-While django itself is a dependency, you can still use all of celery's features
-outside of a django project. fixme: question about removing the dependency
+You can use all of the features without using Django.
 
+
+Why is Django a dependency?
+---------------------------
+
+Celery uses the Django ORM for database access when using the database result
+backend, the Django cache framework when using the cache result backend, and the Django signal
+dispatch mechanisms for signaling.
+
+This doesn't mean you need to have a Django project to use celery, it
+just means that sometimes we use internal Django components.
+
+The long term plan is to replace these with other solutions, (e.g. `SQLAlchemy`_ as the ORM,
+and `louie`_, for signaling). The celery distribution will be split into two:
+
+    * celery
+
+        The core. Using SQLAlchemy for the database backend.
+
+    * django-celery
+
+        Celery integration for Django, using the Django ORM for the database
+        backend.
+
+We're currently seeking people with `SQLAlchemy`_ experience, so please
+contact the project if you want this done sooner.
+
+The reason for the split is for purity only. It shouldn't affect you much as a
+user, so please don't worry about the Django dependency, just have a good time
+using celery.
+
+.. _`SQLAlchemy`: http://www.sqlalchemy.org/
+.. _`louie`: http://pypi.python.org/pypi/Louie/
 
 
 Do I have to use AMQP/RabbitMQ?
@@ -165,9 +218,6 @@ doing. If it's still hanging after a long time you can kill them by force
 with::
 
     ps auxww | grep celeryd | awk '{print $2}' | xargs kill -9
-
-fixme: killall wont work?
-
 
 Why won't my Task run?
 ----------------------
@@ -415,10 +465,16 @@ just specify a custom exchange and exchange type:
             },
         }
 
-Easy? No? If you're confused about these terms, you should read up on
-AMQP and RabbitMQ. It might be hard to grok the concepts of
-queues, exchanges and routing/binding keys at first, but it's all very simple,
-I assure you. fixme: too colloquial perhaps? Maybe add links to docs
+If you're confused about these terms, you should read up on AMQP and RabbitMQ.
+`Rabbits and Warrens`_ is an excellent blog post describing queues and
+exchanges. There's also AMQP in 10 minutes*: `Flexible Routing Model`_,
+and `Standard Exchange Types`_. For users of RabbitMQ the `RabbitMQ FAQ`_
+could also be useful as a source of information.
+
+.. _`Rabbits and Warrens`: http://blogs.digitar.com/jjww/2009/01/rabbits-and-warrens/
+.. _`Flexible Routing Model`: http://bit.ly/95XFO1
+.. _`Standard Exchange Types`: http://bit.ly/EEWca
+.. _`RabbitMQ FAQ`: http://www.rabbitmq.com/faq.html
 
 Can I use celery without Django?
 --------------------------------
@@ -433,17 +489,11 @@ use the default loader, or write a loader of your own.
 
 The rest of this answer describes how to use the default loader.
 
-First of all, installation. You need to get the development version of
-celery from github:: fixme: even in 1.0?
-
-    $ git clone git://github.com/ask/celery.git
-    $ cd celery
-    # python setup.py install # as root
-
-While it is possible to use celery from outside of Django, we still need
-Django itself to run, this is to use the ORM and cache-framework, etc.
+While it is possible to use Celery from outside of Django, we still need
+Django itself to run, this is to use the ORM and cache-framework.
 Duplicating these features would be time consuming and mostly pointless, so
-we decided that having a dependency on Django itself was a good thing.
+while me might rewrite these in the future, this is a good solution in the
+mean time.
 Install Django using your favorite install tool, ``easy_install``, ``pip``, or
 whatever::
 
@@ -502,25 +552,25 @@ and send a task from a python shell (note that it must be able to import
 The celery test-suite is failing
 --------------------------------
 
-**Answer**: You're running tests from your own Django applicaiton, and celery's
-tests are failing and celery's tests are failing in that context? fixme: I don't get the preceding sentence
-If so, read on for a trick, if not please report the test failure to our issue
-tracker on GitHub.
+**Answer**: If you're running tests from your Django project, and the celery
+test suite is failing in that context, then follow the steps below. If the
+celery tests are failing in another context, please report an issue to our
+issue tracker at GitHub:
 
     http://github.com/ask/celery/issues/
 
 That Django is running tests for all applications in ``INSTALLED_APPS``
-is a pet peeve of mine. You should use a test runner that either
+by default is a pet peeve for many. You should use a test runner that either
 
-    1) Explicitly lists the apps you want to run tests for, or:
+    1) Explicitly lists the apps you want to run tests for, or
 
     2) Make a test runner that skips tests for apps you don't want to run.
 
-For example this test runner that celery is using:
+For example the test runner that celery is using:
 
     http://bit.ly/NVKep
 
-To use this add the following to your settings.py:
+To use this test runner, add the following to your ``settings.py``:
 
 .. code-block:: python
 
@@ -532,7 +582,7 @@ To use this add the following to your settings.py:
         "app4",
     )
 
-If you just want to skip celery you could use:
+Or, if you just want to skip the celery tests:
 
 .. code-block:: python
 
