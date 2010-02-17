@@ -108,14 +108,14 @@
 <h1>Configuration and defaults<a class="headerlink" href="#configuration-and-defaults" title="Permalink to this headline">¶</a></h1>
 <p>This document describes the configuration options available.</p>
 <p>If you&#8217;re using celery in a Django project these settings should be defined
-in your projects <tt class="docutils literal"><span class="pre">settings.py</span></tt> file.</p>
-<p>In a regular Python environment using the default loader you must create
+in the project&#8217;s <tt class="docutils literal"><span class="pre">settings.py</span></tt> file.</p>
+<p>In a regular Python environment, that is using the default loader, you must create
 the <tt class="docutils literal"><span class="pre">celeryconfig.py</span></tt> module and make sure it is available on the
 Python path.</p>
 <div class="section" id="example-configuration-file">
 <h2>Example configuration file<a class="headerlink" href="#example-configuration-file" title="Permalink to this headline">¶</a></h2>
-<p>This is an example configuration file to get you started,
-it should contain all you need to run a basic celery set-up.</p>
+<p>This is an example configuration file to get you started.
+It should contain all you need to run a basic celery set-up.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_BACKEND</span> <span class="o">=</span> <span class="s">&quot;database&quot;</span>
 <span class="n">DATABASE_ENGINE</span> <span class="o">=</span> <span class="s">&quot;sqlite3&quot;</span>
 <span class="n">DATABASE_NAME</span> <span class="o">=</span> <span class="s">&quot;mydatabase.db&quot;</span>
@@ -151,10 +151,10 @@ it should contain all you need to run a basic celery set-up.</p>
 <dt>CELERYD_PREFETCH_MULTIPLIER</dt>
 <dd><p class="first last">How many messages to prefetch at a time multiplied by the number of
 concurrent processes. The default is 4 (four messages for each
-process). The default setting seems pretty good here, but if you have
+process). The default setting seems pretty good here. However, if you have
 very long running tasks waiting in the queue and you have to start the
-workers, make note that the first worker to start will receive four times the
-number of messages initially, which might not be fairly balanced among the
+workers, note that the first worker to start will receive four times the
+number of messages initially. Thus the tasks may not be fairly balanced among the
 workers.</p>
 </dd>
 </dl>
@@ -203,7 +203,7 @@ Can be one of the following:</p>
 <dt>amqp</dt>
 <dd><p class="first last">Send results back as AMQP messages
 (<strong>WARNING</strong> While very fast, you must make sure you only
-try to receive the result once).</p>
+receive the result once. See <tt class="xref docutils literal"><span class="pre">user-guide/executing</span></tt>).</p>
 </dd>
 </dl>
 </li>
@@ -217,7 +217,7 @@ try to receive the result once).</p>
 <h2>Database backend settings<a class="headerlink" href="#database-backend-settings" title="Permalink to this headline">¶</a></h2>
 <p>Please see the Django ORM database settings documentation:
 <a class="reference external" href="http://docs.djangoproject.com/en/dev/ref/settings/#database-engine">http://docs.djangoproject.com/en/dev/ref/settings/#database-engine</a></p>
-<p>If you use this backend make sure to initialize the database tables
+<p>If you use this backend, make sure to initialize the database tables
 after configuration. When using celery with a Django project this
 means executing:</p>
 <div class="highlight-python"><pre>$ python manage.py syncdb</pre>
@@ -342,7 +342,7 @@ false.</p>
 <h3>Example configuration<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_BACKEND</span> <span class="o">=</span> <span class="s">&quot;redis&quot;</span>
 <span class="n">REDIS_HOST</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>
-<span class="n">REDIS_PORT</span> <span class="o">=</span> <span class="mi">6739</span>
+<span class="n">REDIS_PORT</span> <span class="o">=</span> <span class="mi">6379</span>
 <span class="n">REDIS_DATABASE</span> <span class="o">=</span> <span class="s">&quot;celery_results&quot;</span>
 <span class="n">REDIS_CONNECT_RETRY</span><span class="o">=</span><span class="bp">True</span>
 </pre></div>

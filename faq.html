@@ -50,6 +50,7 @@
 <li class="toctree-l1"><a class="reference external" href="cookbook/index.html">Cookbook</a></li>
 <li class="toctree-l1"><a class="reference external" href="tutorials/index.html">Tutorials</a></li>
 <li class="toctree-l1 current"><a class="current reference external" href="">Frequently Asked Questions</a><ul>
+<li class="toctree-l2"><a class="reference external" href="#general">General</a></li>
 <li class="toctree-l2"><a class="reference external" href="#misconceptions">Misconceptions</a></li>
 <li class="toctree-l2"><a class="reference external" href="#troubleshooting">Troubleshooting</a></li>
 <li class="toctree-l2"><a class="reference external" href="#brokers">Brokers</a></li>
@@ -96,6 +97,30 @@
             
   <div class="section" id="frequently-asked-questions">
 <h1>Frequently Asked Questions<a class="headerlink" href="#frequently-asked-questions" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="general">
+<h2>General<a class="headerlink" href="#general" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="what-kinds-of-things-should-i-use-celery-for">
+<h3>What kinds of things should I use celery for?<a class="headerlink" href="#what-kinds-of-things-should-i-use-celery-for" title="Permalink to this headline">¶</a></h3>
+<p><strong>Answer:</strong> <a href="#id1"><span class="problematic" id="id2">`Queue everything and delight everyone`_</span></a> is a good article
+describing why you would use a queue in a web context.</p>
+<p>These are some common use cases:</p>
+<ul class="simple">
+<li>Running something in the background. For example, to finish the web request
+as soon as possible, then update the users page incrementally.
+This gives the user the impression of good performane and &#8220;snappiness&#8221;, even
+though the real work might actually take some time.</li>
+<li>Running something after the web request has finished.</li>
+<li>Making sure something is done, by executing it asynchronously and using
+retries.</li>
+<li>Scheduling periodic work.</li>
+</ul>
+<p>And to some degree:</p>
+<ul class="simple">
+<li>Distributed computing.</li>
+<li>Parallel execution.</li>
+</ul>
+</div>
+</div>
 <div class="section" id="misconceptions">
 <h2>Misconceptions<a class="headerlink" href="#misconceptions" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="is-celery-dependent-on-pickle">
@@ -107,28 +132,56 @@ with JSON seamlessly, this is because every task is associated with a
 content-type. The default serialization scheme is pickle because it&#8217;s the most
 used, and it has support for sending complex objects as task arguments.</p>
 <p>You can set a global default serializer, the default serializer for a
-particular Task, and even what serializer to use when sending a single task
+particular Task, or even what serializer to use when sending a single task
 instance.</p>
 </div>
 <div class="section" id="is-celery-for-django-only">
 <h3>Is celery for Django only?<a class="headerlink" href="#is-celery-for-django-only" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> No.</p>
-<p>While django itself is a dependency, you can still use all of celerys features
-outside of a django project.</p>
+<p>You can use all of the features without using Django.</p>
+</div>
+<div class="section" id="why-is-django-a-dependency">
+<h3>Why is Django a dependency?<a class="headerlink" href="#why-is-django-a-dependency" title="Permalink to this headline">¶</a></h3>
+<p>Celery uses the Django ORM for database access when using the database result
+backend, the Django cache framework when using the cache result backend, and the Django signal
+dispatch mechanisms for signaling.</p>
+<p>This doesn&#8217;t mean you need to have a Django project to use celery, it
+just means that sometimes we use internal Django components.</p>
+<p>The long term plan is to replace these with other solutions, (e.g. <a class="reference external" href="http://www.sqlalchemy.org/">SQLAlchemy</a> as the ORM,
+and <a class="reference external" href="http://pypi.python.org/pypi/Louie/">louie</a>, for signaling). The celery distribution will be split into two:</p>
+<ul>
+<li><p class="first">celery</p>
+<blockquote>
+<p>The core. Using SQLAlchemy for the database backend.</p>
+</blockquote>
+</li>
+<li><p class="first">django-celery</p>
+<blockquote>
+<p>Celery integration for Django, using the Django ORM for the database
+backend.</p>
+</blockquote>
+</li>
+</ul>
+<p>We&#8217;re currently seeking people with <a class="reference external" href="http://www.sqlalchemy.org/">SQLAlchemy</a> experience, so please
+contact the project if you want this done sooner.</p>
+<p>The reason for the split is for purity only. It shouldn&#8217;t affect you much as a
+user, so please don&#8217;t worry about the Django dependency, just have a good time
+using celery.</p>
 </div>
 <div class="section" id="do-i-have-to-use-amqp-rabbitmq">
 <h3>Do I have to use AMQP/RabbitMQ?<a class="headerlink" href="#do-i-have-to-use-amqp-rabbitmq" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer</strong>: No.</p>
-<p>You can also use Redis or an SQL database, for instructions see <a class="reference external" href="http://ask.github.com/celery/tutorials/otherqueues.html">Using other
+<p>You can also use Redis or an SQL database, see <a class="reference external" href="http://ask.github.com/celery/tutorials/otherqueues.html">Using other
 queues</a>.</p>
-<p>Redis or a database won&#8217;t meet up to the standards
-of an AMQP broker. If you have strict reliability requirements you are
-encouraged to use RabbitMQ or another AMQP broker. Redis/database also uses
-pulling, so they are likely to consume more resources. However, if you for
-some reason is not able to use AMQP, feel free to use these alternatives.
+<p>Redis or a database won&#8217;t perform as well as
+an AMQP broker. If you have strict reliability requirements you are
+encouraged to use RabbitMQ or another AMQP broker. Redis/database also use
+polling, so they are likely to consume more resources. However, if you for
+some reason are not able to use AMQP, feel free to use these alternatives.
 They will probably work fine for most use cases, and note that the above
 points are not specific to celery; If using Redis/database as a queue worked
-fine for you before, it probably will now. And you can always upgrade later.</p>
+fine for you before, it probably will now. You can always upgrade later
+if you need to.</p>
 </div>
 <div class="section" id="is-celery-multi-lingual">
 <h3>Is celery multi-lingual?<a class="headerlink" href="#is-celery-multi-lingual" title="Permalink to this headline">¶</a></h3>
@@ -140,7 +193,7 @@ messages. There&#8217;s no other communication involved.</p>
 <p>Also, there&#8217;s another way to be language indepedent, and that is to use REST
 tasks, instead of your tasks being functions, they&#8217;re URLs. With this
 information you can even create simple web servers that enable preloading of
-code. For more information about REST tasks see: <a class="reference external" href="http://ask.github.com/celery/userguide/remote-tasks.html">User Guide: Remote Tasks</a>.</p>
+code. See: <a class="reference external" href="http://ask.github.com/celery/userguide/remote-tasks.html">User Guide: Remote Tasks</a>.</p>
 </div>
 </div>
 <div class="section" id="troubleshooting">
@@ -187,8 +240,8 @@ Celery on FreeBSD here:
 <p><strong>Answer:</strong> See <a class="reference internal" href="#mysql-is-throwing-deadlock-errors-what-can-i-do">MySQL is throwing deadlock errors, what can I do?</a>.
 Thanks to howsthedotcom.</p>
 </div>
-<div class="section" id="why-isn-t-my-tasks-processed">
-<h3>Why isn&#8217;t my tasks processed?<a class="headerlink" href="#why-isn-t-my-tasks-processed" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="why-aren-t-my-tasks-processed">
+<h3>Why aren&#8217;t my tasks processed?<a class="headerlink" href="#why-aren-t-my-tasks-processed" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> With RabbitMQ you can see how many consumers are currently
 receiving tasks by running the following command:</p>
 <div class="highlight-python"><pre>$ rabbitmqctl list_queues -p &lt;myvhost&gt; name messages consumers
@@ -202,14 +255,14 @@ celery process taking the messages hostage. This could happen if celeryd
 wasn&#8217;t properly shut down.</p>
 <p>When a message is recieved by a worker the broker waits for it to be
 acknowledged before marking the message as processed. The broker will not
-re-send that message to another consumer until the consumer is shutdown
+re-send that message to another consumer until the consumer is shut down
 properly.</p>
 <p>If you hit this problem you have to kill all workers manually and restart
 them:</p>
 <div class="highlight-python"><pre>ps auxww | grep celeryd | awk '{print $2}' | xargs kill</pre>
 </div>
-<p>You might have to wait a while until all workers has finished the work they&#8217;re
-doing, if it&#8217;s still hanging after a long time you can kill them by force
+<p>You might have to wait a while until all workers have finished the work they&#8217;re
+doing. If it&#8217;s still hanging after a long time you can kill them by force
 with:</p>
 <div class="highlight-python"><pre>ps auxww | grep celeryd | awk '{print $2}' | xargs kill -9</pre>
 </div>
@@ -262,9 +315,9 @@ using <tt class="docutils literal"><span class="pre">discard_all</span></tt>.</p
 <h2>Brokers<a class="headerlink" href="#brokers" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="can-i-use-celery-with-activemq-stomp">
 <h3>Can I use celery with ActiveMQ/STOMP?<a class="headerlink" href="#can-i-use-celery-with-activemq-stomp" title="Permalink to this headline">¶</a></h3>
-<p><strong>Answer</strong>: Yes. But this is somewhat experimental for now.
-It is certainly working ok for me in a test configuration, but it has not
-been tested in production like RabbitMQ. If you have any problems with
+<p><strong>Answer</strong>: Yes, but this is somewhat experimental for now.
+It is working ok in a test configuration, but it has not
+been tested in production like RabbitMQ has. If you have any problems with
 using STOMP and celery, please report the bugs to the issue tracker:</p>
 <blockquote>
 <a class="reference external" href="http://github.com/ask/celery/issues/">http://github.com/ask/celery/issues/</a></blockquote>
@@ -317,8 +370,8 @@ the one with the most capabilities won).</p>
 <p>Now you can go on reading the tutorial in the README, ignoring any AMQP
 specific options.</p>
 </div>
-<div class="section" id="which-features-are-not-supported-when-using-stomp">
-<h3>Which features are not supported when using STOMP?<a class="headerlink" href="#which-features-are-not-supported-when-using-stomp" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="what-features-are-not-supported-when-using-stomp">
+<h3>What features are not supported when using STOMP?<a class="headerlink" href="#what-features-are-not-supported-when-using-stomp" title="Permalink to this headline">¶</a></h3>
 <p>This is a (possible incomplete) list of features not available when
 using the STOMP backend:</p>
 <ul class="simple">
@@ -427,30 +480,26 @@ just specify a custom exchange and exchange type:</p>
         },
     }</pre>
 </div>
-<p>Easy? No? If you&#8217;re confused about these terms, you should read up on
-AMQP and RabbitMQ. It might be hard to grok the concepts of
-queues, exchanges and routing/binding keys at first, but it&#8217;s all very simple,
-I assure you.</p>
+<p>If you&#8217;re confused about these terms, you should read up on AMQP and RabbitMQ.
+<a class="reference external" href="http://blogs.digitar.com/jjww/2009/01/rabbits-and-warrens/">Rabbits and Warrens</a> is an excellent blog post describing queues and
+exchanges. There&#8217;s also AMQP in 10 minutes*: <a class="reference external" href="http://bit.ly/95XFO1">Flexible Routing Model</a>,
+and <a class="reference external" href="http://bit.ly/EEWca">Standard Exchange Types</a>. For users of RabbitMQ the <a class="reference external" href="http://www.rabbitmq.com/faq.html">RabbitMQ FAQ</a>
+could also be useful as a source of information.</p>
 </div>
 <div class="section" id="can-i-use-celery-without-django">
 <h3>Can I use celery without Django?<a class="headerlink" href="#can-i-use-celery-without-django" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> Yes.</p>
 <p>Celery uses something called loaders to read/setup configuration, import
-modules that registers tasks and to decide what happens when a task is
+modules that register tasks and to decide what happens when a task is
 executed. Currently there are two loaders, the default loader and the Django
 loader. If you want to use celery without a Django project, you either have to
 use the default loader, or write a loader of your own.</p>
 <p>The rest of this answer describes how to use the default loader.</p>
-<p>First of all, installation. You need to get the development version of
-celery from github:</p>
-<div class="highlight-python"><pre>$ git clone git://github.com/ask/celery.git
-$ cd celery
-# python setup.py install # as root</pre>
-</div>
-<p>While it is possible to use celery from outside of Django, we still need
-Django itself to run, this is to use the ORM and cache-framework, etc.
+<p>While it is possible to use Celery from outside of Django, we still need
+Django itself to run, this is to use the ORM and cache-framework.
 Duplicating these features would be time consuming and mostly pointless, so
-we decided that having a dependency on Django itself was a good thing.
+while me might rewrite these in the future, this is a good solution in the
+mean time.
 Install Django using your favorite install tool, <tt class="docutils literal"><span class="pre">easy_install</span></tt>, <tt class="docutils literal"><span class="pre">pip</span></tt>, or
 whatever:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># easy_install django # as root</span>
@@ -459,7 +508,7 @@ whatever:</p>
 <p>You need a configuration file named <tt class="docutils literal"><span class="pre">celeryconfig.py</span></tt>, either in the
 directory you run <tt class="docutils literal"><span class="pre">celeryd</span></tt> in, or in a Python library path where it is
 able to find it. The configuration file can contain any of the settings
-described in <tt class="xref docutils literal"><span class="pre">celery.conf</span></tt>, and in additional if you&#8217;re using the
+described in <tt class="xref docutils literal"><span class="pre">celery.conf</span></tt>. In addition; if you&#8217;re using the
 database backend you have to configure the database. Here is an example
 configuration using the database backend with MySQL:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># Broker configuration</span>
@@ -487,11 +536,11 @@ configuration using the database backend with MySQL:</p>
 <span class="n">CELERY_IMPORTS</span> <span class="o">=</span> <span class="p">(</span><span class="s">&quot;mytaskmodule1&quot;</span><span class="p">,</span> <span class="s">&quot;mytaskmodule2&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Now with this configuration file in the current directory you have to
+<p>With this configuration file in the current directory you have to
 run <tt class="docutils literal"><span class="pre">celeryinit</span></tt> to create the database tables:</p>
 <div class="highlight-python"><pre>$ celeryinit</pre>
 </div>
-<p>Then you should be able to successfully run <tt class="docutils literal"><span class="pre">celeryd</span></tt>:</p>
+<p>At this point you should be able to successfully run <tt class="docutils literal"><span class="pre">celeryd</span></tt>:</p>
 <div class="highlight-python"><pre>$ celeryd --loglevel=INFO</pre>
 </div>
 <p>and send a task from a python shell (note that it must be able to import
@@ -505,22 +554,22 @@ run <tt class="docutils literal"><span class="pre">celeryinit</span></tt> to cre
 </div>
 <div class="section" id="the-celery-test-suite-is-failing">
 <h3>The celery test-suite is failing<a class="headerlink" href="#the-celery-test-suite-is-failing" title="Permalink to this headline">¶</a></h3>
-<p><strong>Answer</strong>: You&#8217;re running tests from your own Django applicaiton, and celerys
-tests are failing and celerys tests are failing in that context?
-If so, read on for a trick, if not please report the test failure to our issue
-tracker at GitHub.</p>
+<p><strong>Answer</strong>: If you&#8217;re running tests from your Django project, and the celery
+test suite is failing in that context, then follow the steps below. If the
+celery tests are failing in another context, please report an issue to our
+issue tracker at GitHub:</p>
 <blockquote>
 <a class="reference external" href="http://github.com/ask/celery/issues/">http://github.com/ask/celery/issues/</a></blockquote>
 <p>That Django is running tests for all applications in <tt class="docutils literal"><span class="pre">INSTALLED_APPS</span></tt>
-is a pet peeve of mine. You should use a test runner that either</p>
+by default is a pet peeve for many. You should use a test runner that either</p>
 <ol class="arabic simple">
 <li>Explicitly lists the apps you want to run tests for, or</li>
-<li>make a test runner that skips tests for apps you don&#8217;t want to run.</li>
+<li>Make a test runner that skips tests for apps you don&#8217;t want to run.</li>
 </ol>
-<p>For example this test runner that celery is using:</p>
+<p>For example the test runner that celery is using:</p>
 <blockquote>
 <a class="reference external" href="http://bit.ly/NVKep">http://bit.ly/NVKep</a></blockquote>
-<p>To use this add the following to your settings.py:</p>
+<p>To use this test runner, add the following to your <tt class="docutils literal"><span class="pre">settings.py</span></tt>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">TEST_RUNNER</span> <span class="o">=</span> <span class="s">&quot;celery.tests.runners.run_tests&quot;</span>
 <span class="n">TEST_APPS</span> <span class="o">=</span> <span class="p">(</span>
     <span class="s">&quot;app1&quot;</span><span class="p">,</span>
@@ -530,7 +579,7 @@ is a pet peeve of mine. You should use a test runner that either</p>
 <span class="p">)</span>
 </pre></div>
 </div>
-<p>If you just want to skip celery you could use:</p>
+<p>Or, if you just want to skip the celery tests:</p>
 <div class="highlight-python"><pre>INSTALLED_APPS = (.....)
 TEST_RUNNER = "celery.tests.runners.run_tests"
 TEST_APPS = filter(lambda k: k != "celery", INSTALLED_APPS)</pre>
@@ -552,11 +601,11 @@ TEST_APPS = filter(lambda k: k != "celery", INSTALLED_APPS)</pre>
 </div>
 <div class="section" id="does-celery-support-task-priorities">
 <h3>Does celery support task priorities?<a class="headerlink" href="#does-celery-support-task-priorities" title="Permalink to this headline">¶</a></h3>
-<p><strong>Answer</strong>: No, or theoretically as AMQP supports priorities but
+<p><strong>Answer</strong>: No. In theory, yes, as AMQP supports priorities. However
 RabbitMQ doesn&#8217;t implement them yet.</p>
-<p>However the usual way to prioritize work in celery, is to route high priority tasks
-to different servers. In the real world this may actually work better than per. message
-priorities. You can use this in combination with rate limting to achieve a
+<p>The usual way to prioritize work in celery, is to route high priority tasks
+to different servers. In the real world this may actually work better than per message
+priorities. You can use this in combination with rate limiting to achieve a
 highly performant system.</p>
 </div>
 <div class="section" id="module-celery.task.base">
@@ -564,7 +613,7 @@ highly performant system.</p>
 <p><strong>Answer</strong>: Yes. You can use the <tt class="docutils literal"><span class="pre">eta</span></tt> argument of <a title="celery.task.base.Task.apply_async" class="reference external" href="reference/celery.task.base.html#celery.task.base.Task.apply_async"><tt class="xref docutils literal"><span class="pre">Task.apply_async()</span></tt></a>.</p>
 <p>However, you can&#8217;t schedule a periodic task at a specific time yet.
 The good news is, if anyone is willing
-to implement it, it shouldn&#8217;t be that hard, some pointers to achieve this has
+to implement it, it shouldn&#8217;t be that hard. Some pointers to achieve this has
 been written here: <a class="reference external" href="http://bit.ly/99UQNO">http://bit.ly/99UQNO</a></p>
 </div>
 <div class="section" id="how-do-i-shut-down-celeryd-safely">

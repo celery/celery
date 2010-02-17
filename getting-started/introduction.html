@@ -106,6 +106,12 @@
 <tbody valign="top">
 <tr class="field"><th class="field-name">Version:</th><td class="field-body">1.0.0</td>
 </tr>
+<tr class="field"><th class="field-name">Web:</th><td class="field-body"><a class="reference external" href="http://celeryproject.org/">http://celeryproject.org/</a></td>
+</tr>
+<tr class="field"><th class="field-name">Download:</th><td class="field-body"><a class="reference external" href="http://pypi.python.org/pypi/celery/">http://pypi.python.org/pypi/celery/</a></td>
+</tr>
+<tr class="field"><th class="field-name">Source:</th><td class="field-body"><a class="reference external" href="http://github.com/ask/celery/">http://github.com/ask/celery/</a></td>
+</tr>
 <tr class="field"><th class="field-name">Keywords:</th><td class="field-body">task queue, job queue, asynchronous, rabbitmq, amqp, redis,
 django, python, webhooks, queue, distributed</td>
 </tr>
@@ -114,7 +120,7 @@ django, python, webhooks, queue, distributed</td>
 <p>&#8211;</p>
 <p>Celery is a task queue/job queue based on distributed message passing.
 It is focused on real-time operation, but supports scheduling as well.</p>
-<p>The execution units, called tasks, are executed concurrently on one or
+<p>The execution units, called tasks, are executed concurrently on a single or
 more worker servers. Tasks can execute asynchronously (in the background) or synchronously
 (wait until ready).</p>
 <p>Celery is already used in production to process millions of tasks a day.</p>
@@ -135,7 +141,7 @@ more machines, depending on the workload.</p>
 </div>
 <div class="section" id="example">
 <h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
-<p>You probably want to see some code by now, so I&#8217;ll give you an example task
+<p>You probably want to see some code by now, so here&#8217;s an example task
 adding two numbers:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.decorators</span> <span class="kn">import</span> <span class="n">task</span>
 
@@ -162,7 +168,7 @@ adding two numbers:</p>
 <tbody valign="top">
 <tr><td>Messaging</td>
 <td>Supported brokers include <a class="reference external" href="http://www.rabbitmq.com/">RabbitMQ</a>, <a class="reference external" href="http://stomp.codehaus.org/">Stomp</a>,
-<a class="reference external" href="http://code.google.com/p/redis/">Redis</a>, and the most common SQL databases.</td>
+<a class="reference external" href="http://code.google.com/p/redis/">Redis</a>, and most common SQL databases.</td>
 </tr>
 <tr><td>Robust</td>
 <td>Using <cite>RabbitMQ</cite>, celery survives most error

@@ -451,12 +451,12 @@ executed.</td>
 
 <dl class="classmethod">
 <dt id="celery.result.TaskSetResult.restore">
-<em class="property">classmethod </em><tt class="descname">restore</tt><big>(</big><em>taskset_id</em>, <em>backend=&lt;celery.backends.database.DatabaseBackend object at 0x10366e9d0&gt;</em><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult.restore" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><tt class="descname">restore</tt><big>(</big><em>taskset_id</em>, <em>backend=&lt;celery.backends.database.DatabaseBackend object at 0x1037f0d90&gt;</em><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult.restore" title="Permalink to this definition">¶</a></dt>
 <dd>Restore previously saved taskset result.</dd></dl>
 
 <dl class="method">
 <dt id="celery.result.TaskSetResult.save">
-<tt class="descname">save</tt><big>(</big><em>backend=&lt;celery.backends.database.DatabaseBackend object at 0x10366e9d0&gt;</em><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult.save" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">save</tt><big>(</big><em>backend=&lt;celery.backends.database.DatabaseBackend object at 0x1037f0d90&gt;</em><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult.save" title="Permalink to this definition">¶</a></dt>
 <dd><p>Save taskset result for later retrieval using <a title="celery.result.TaskSetResult.restore" class="reference internal" href="#celery.result.TaskSetResult.restore"><tt class="xref docutils literal"><span class="pre">restore()</span></tt></a>.</p>
 <p>Example:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
