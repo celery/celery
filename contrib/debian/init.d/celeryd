@@ -52,6 +52,15 @@ if [ -n "$2" ]; then
     CELERYD_OPTS="$CELERYD_OPTS $2"
 fi
 
+# Extra start-stop-daemon options, like user/group.
+if [ -n "$CELERYD_USER" ]; then
+    DAEMON_OPTS="$DAEMON_OPTS --chuid $CELERYD_USER"
+fi
+if [ -n "$CELERYD_GROUP" ]; then
+    DAEMON_OPTS="$DAEMON_OPTS --group $CELERYD_GROUP"
+fi
+
+
 # Are we running from init?
 run_by_init() {
     ([ "$previous" ] && [ "$runlevel" ]) || [ "$runlevel" = S ]
@@ -82,7 +91,7 @@ case "$1" in
   start)
     check_dev_null
     log_daemon_msg "Starting celery task worker server" "celeryd"
-    if start-stop-daemon --start --quiet --oknodo --background --chdir $DJANGO_PROJECT_DIR --make-pidfile --pidfile $CELERYD_PID_FILE --exec $CELERYD -- $CELERYD_OPTS; then
+    if start-stop-daemon --start $DAEMON_OPTS --quiet --oknodo --background --chdir $DJANGO_PROJECT_DIR --make-pidfile --pidfile $CELERYD_PID_FILE --exec $CELERYD -- $CELERYD_OPTS; then
         log_end_msg 0
     else
         log_end_msg 1
@@ -104,7 +113,7 @@ case "$1" in
     log_daemon_msg "Restarting celery task worker server" "celeryd"
     start-stop-daemon --stop --quiet --oknodo --retry 30 --pidfile $CELERYD_PID_FILE
     check_dev_null log_end_msg
-    if start-stop-daemon --start --quiet --oknodo --background --chdir $DJANGO_PROJECT_DIR --make-pidfile --pidfile $CELERYD_PID_FILE --exec $CELERYD -- $CELERYD_OPTS; then log_end_msg 0
+    if start-stop-daemon --start $DAEMON_OPTS --quiet --oknodo --background --chdir $DJANGO_PROJECT_DIR --make-pidfile --pidfile $CELERYD_PID_FILE --exec $CELERYD -- $CELERYD_OPTS; then log_end_msg 0
     else
         log_end_msg 1
     fi
@@ -120,7 +129,7 @@ case "$1" in
         0)
 		# old daemon stopped
 		check_dev_null log_end_msg
-		if start-stop-daemon --start --quiet --oknodo --background --make-pidfile --chdir $DJANGO_PROJECT_DIR --pidfile $CELERYD_PID_FILE --exec $CELERYD -- $CELERYD_OPTS; then
+		if start-stop-daemon --start $DAEMON_OPTS --quiet --oknodo --background --make-pidfile --chdir $DJANGO_PROJECT_DIR --pidfile $CELERYD_PID_FILE --exec $CELERYD -- $CELERYD_OPTS; then
 		    log_end_msg 0
 		else
 		    log_end_msg 1
