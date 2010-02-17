@@ -332,6 +332,18 @@ dl.glossary dt {
     background-color: #ffa
 }
 
+.line-block {
+    display: block;
+    margin-top: 1em;
+    margin-bottom: 1em;
+}
+
+.line-block .line-block {
+    margin-top: 0;
+    margin-bottom: 0;
+    margin-left: 1.5em;
+}
+
 /* -- code displays --------------------------------------------------------- */
 
 pre {
@@ -392,7 +404,7 @@ span.eqno {
     div.document,
     div.documentwrapper,
     div.bodywrapper {
-        margin: 0;
+        margin: 0 !important;
         width: 100%;
     }
 
