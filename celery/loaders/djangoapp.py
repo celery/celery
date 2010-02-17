@@ -22,7 +22,8 @@ class Loader(BaseLoader):
 
         """
 
-        # See http://groups.google.com/group/django-users/browse_thread/thread/78200863d0c07c6d/
+        # See http://groups.google.com/group/django-users/
+        #            browse_thread/thread/78200863d0c07c6d/
         from django.db import connection
         connection.close()
 

@@ -11,7 +11,7 @@ What kinds of things should I use celery for?
 **Answer:** `Queue everything and delight everyone`_ is a good article
 describing why you would use a queue in a web context.
 
-.. `Queue everything and delight everyone`:
+.. _`Queue everything and delight everyone`:
     http://decafbad.com/blog/2008/07/04/queue-everything-and-delight-everyone
 
 These are some common use cases:

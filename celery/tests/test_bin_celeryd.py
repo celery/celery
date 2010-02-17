@@ -11,4 +11,3 @@ class TestWorker(unittest.TestCase):
         w.init_loader()
         self.assertTrue(w.loader)
         self.assertTrue(w.settings)
-

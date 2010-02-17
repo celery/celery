@@ -10,39 +10,6 @@ from celery.exceptions import TimeoutError
 from celery import states
 
 
-class Cache(object):
-
-    def __init__(self, expire=None):
-        self.expire = expire
-        self.timestamps = {}
-        self.data = {}
-
-    def __getitem__(self, key):
-        timestamp = self.timestamps[key]
-        if self.expire and timestamp + time.time() > self.expire:
-            self.data.pop(key, None)
-        else:
-            return self.data[key]
-        raise KeyError(key)
-
-    def __setitem__(self, key, value):
-        self.timestamps[key] = time.time()
-        self.data[key] = value
-
-    def __contains__(self, key):
-        if key not in self.data:
-            return False
-        try:
-            self[key]
-        except KeyError:
-            return False
-        else:
-            return True
-
-
-
-
-
 class BaseBackend(object):
     """The base backend class. All backends should inherit from this."""
 
