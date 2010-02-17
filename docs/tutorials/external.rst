@@ -38,6 +38,14 @@ http://robertpogorzelski.com/blog/2009/09/10/rabbitmq-celery-and-django/
 
 .. _`Robert Pogorzelski`: http://robertpogorzelski.com/
 
+Message Queues, Django and Celery Quick Start
+=============================================
+
+Celery tutorial by `Rich Leland`, the installation section is Mac OS X specific:
+http://mathematism.com/2010/feb/16/message-queues-django-and-celery-quick-start/
+
+.. _`Rich Leland`: http://twitter.com/richleland
+
 RabbitMQ with Python and Ruby
 =============================
 
