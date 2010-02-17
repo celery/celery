@@ -174,6 +174,10 @@ class TaskBucket(object):
     def empty(self):
         return all(bucket.empty() for bucket in self.buckets.values())
 
+    def clear(self):
+        for bucket in self.buckets.values():
+            bucket.queue.clear()
+
 
 class TokenBucketQueue(object):
     """Queue with rate limited get operations.
@@ -269,6 +273,9 @@ class TokenBucketQueue(object):
 
     def empty(self):
         return self.queue.empty()
+
+    def clear(self):
+        return self.queue.queue.clear()
 
     def wait(self, block=False):
         """Wait until a token can be retrieved from the bucket and return

@@ -57,6 +57,9 @@ class Scheduler(object):
         """Is the schedule empty?"""
         return not self._queue
 
+    def clear(self):
+        self._queue = []
+
     @property
     def queue(self):
         events = list(self._queue)
