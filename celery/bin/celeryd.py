@@ -213,8 +213,11 @@ class Worker(object):
 def install_worker_term_handler(worker):
 
     def _stop(signum, frame):
+        worker.stop()
         raise SystemExit()
+
     platform.install_signal_handler("SIGTERM", _stop)
+
 
 def install_worker_restart_handler(worker):
 
