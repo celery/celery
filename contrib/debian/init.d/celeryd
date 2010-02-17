@@ -82,7 +82,7 @@ case "$1" in
   start)
     check_dev_null
     log_daemon_msg "Starting celery task worker server" "celeryd"
-    if start-stop-daemon --start --quiet --oknodo --background --make-pidfile --pidfile $CELERYD_PID_FILE --exec $CELERYD -- $CELERYD_OPTS; then
+    if start-stop-daemon --start --quiet --oknodo --background --chdir $DJANGO_PROJECT_DIR --make-pidfile --pidfile $CELERYD_PID_FILE --exec $CELERYD -- $CELERYD_OPTS; then
         log_end_msg 0
     else
         log_end_msg 1
@@ -104,8 +104,7 @@ case "$1" in
     log_daemon_msg "Restarting celery task worker server" "celeryd"
     start-stop-daemon --stop --quiet --oknodo --retry 30 --pidfile $CELERYD_PID_FILE
     check_dev_null log_end_msg
-    if start-stop-daemon --start --quiet --oknodo --background --make-pidfile --pidfile $CELERYD_PID_FILE --exec $CELERYD -- $CELERYD_OPTS; then
-        log_end_msg 0
+    if start-stop-daemon --start --quiet --oknodo --background --chdir $DJANGO_PROJECT_DIR --make-pidfile --pidfile $CELERYD_PID_FILE --exec $CELERYD -- $CELERYD_OPTS; then log_end_msg 0
     else
         log_end_msg 1
     fi
@@ -121,7 +120,7 @@ case "$1" in
         0)
 		# old daemon stopped
 		check_dev_null log_end_msg
-		if start-stop-daemon --start --quiet --oknodo --background --make-pidfile --pidfile $CELERYD_PID_FILE --exec $CELERYD -- $CELERYD_OPTS; then
+		if start-stop-daemon --start --quiet --oknodo --background --make-pidfile --chdir $DJANGO_PROJECT_DIR --pidfile $CELERYD_PID_FILE --exec $CELERYD -- $CELERYD_OPTS; then
 		    log_end_msg 0
 		else
 		    log_end_msg 1

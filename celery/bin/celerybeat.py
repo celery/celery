@@ -5,7 +5,7 @@
 
 .. cmdoption:: -s, --schedule
 
-    Path to the schedule database. Defaults to celerybeat-schedule.
+    Path to the schedule database. Defaults to ``celerybeat-schedule``.
     The extension ".db" will be appended to the filename.
 
 .. cmdoption:: -f, --logfile

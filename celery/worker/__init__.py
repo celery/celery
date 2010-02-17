@@ -104,7 +104,8 @@ class WorkController(object):
 
     def __init__(self, concurrency=None, logfile=None, loglevel=None,
             send_events=conf.SEND_EVENTS, hostname=None,
-            ready_callback=noop, embed_clockservice=False):
+            ready_callback=noop, embed_clockservice=False,
+            schedule_filename=conf.CELERYBEAT_SCHEDULE_FILENAME):
 
         # Options
         self.loglevel = loglevel or self.loglevel
@@ -137,7 +138,8 @@ class WorkController(object):
 
         self.clockservice = None
         if self.embed_clockservice:
-            self.clockservice = EmbeddedClockService(logger=self.logger)
+            self.clockservice = EmbeddedClockService(logger=self.logger,
+                                    schedule_filename=schedule_filename)
 
         prefetch_count = self.concurrency * conf.CELERYD_PREFETCH_MULTIPLIER
         self.listener = CarrotListener(self.ready_queue,

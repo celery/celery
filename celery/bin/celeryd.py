@@ -26,6 +26,12 @@
     Also run the ``celerybeat`` periodic task scheduler. Please note that
     there must only be one instance of this service.
 
+.. cmdoption:: -s, --schedule
+
+    Path to the schedule database if running with the ``-B`` option.
+    Defaults to ``celerybeat-schedule``. The extension ".db" will be
+    appended to the filename.
+
 .. cmdoption:: -E, --events
 
     Send events that can be captured by monitors like ``celerymon``.
@@ -93,6 +99,13 @@ OPTION_LIST = (
             action="store_true", dest="run_clockservice",
             help="Also run the celerybeat periodic task scheduler. \
                   Please note that only one instance must be running."),
+    optparse.make_option('-s', '--schedule',
+            default=conf.CELERYBEAT_SCHEDULE_FILENAME,
+            action="store", dest="schedule",
+            help="Path to the schedule database if running with the -B \
+                    option. The extension '.db' will be appended to the \
+                    filename. Default: %s" % (
+                    conf.CELERYBEAT_SCHEDULE_FILENAME)),
     optparse.make_option('-E', '--events', default=conf.SEND_EVENTS,
             action="store_true", dest="events",
             help="Send events so celery can be monitored by e.g. celerymon."),
@@ -104,6 +117,7 @@ class Worker(object):
     def __init__(self, concurrency=conf.CELERYD_CONCURRENCY,
             loglevel=conf.CELERYD_LOG_LEVEL, logfile=conf.CELERYD_LOG_FILE,
             hostname=None, discard=False, run_clockservice=False,
+            schedule=conf.CELERYBEAT_SCHEDULE_FILENAME,
             events=False, **kwargs):
         self.concurrency = concurrency or multiprocessing.cpu_count()
         self.loglevel = loglevel
@@ -111,6 +125,7 @@ class Worker(object):
         self.hostname = hostname or socket.gethostname()
         self.discard = discard
         self.run_clockservice = run_clockservice
+        self.schedule = schedule
         self.events = events
         if not isinstance(self.loglevel, int):
             self.loglevel = conf.LOG_LEVELS[self.loglevel.upper()]
@@ -195,6 +210,7 @@ class Worker(object):
                                 hostname=self.hostname,
                                 ready_callback=self.on_listener_ready,
                                 embed_clockservice=self.run_clockservice,
+                                schedule_filename=self.schedule,
                                 send_events=self.events)
 
         # Install signal handler so SIGHUP restarts the worker.
