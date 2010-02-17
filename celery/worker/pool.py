@@ -45,7 +45,7 @@ class TaskPool(object):
 
     def stop(self):
         """Terminate the pool."""
-        self._pool.terminate()
+        self._pool.close()
         self._pool.join()
         self._pool = None
 
@@ -58,7 +58,7 @@ class TaskPool(object):
                     dead_count))
 
     def apply_async(self, target, args=None, kwargs=None, callbacks=None,
-            errbacks=None, on_ack=noop):
+            errbacks=None, **compat):
         """Equivalent of the :func:``apply`` built-in function.
 
         All ``callbacks`` and ``errbacks`` should complete immediately since
@@ -70,7 +70,7 @@ class TaskPool(object):
         callbacks = callbacks or []
         errbacks = errbacks or []
 
-        on_ready = curry(self.on_ready, callbacks, errbacks, on_ack)
+        on_ready = curry(self.on_ready, callbacks, errbacks)
 
         self.logger.debug("TaskPool: Apply %s (args:%s kwargs:%s)" % (
             target, args, kwargs))
@@ -80,11 +80,9 @@ class TaskPool(object):
         return self._pool.apply_async(target, args, kwargs,
                                         callback=on_ready)
 
-    def on_ready(self, callbacks, errbacks, on_ack, ret_value):
+    def on_ready(self, callbacks, errbacks, ret_value):
         """What to do when a worker task is ready and its return value has
         been collected."""
-        # Acknowledge the task as being processed.
-        on_ack()
 
         if isinstance(ret_value, ExceptionInfo):
             if isinstance(ret_value.exception, (

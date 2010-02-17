@@ -7,6 +7,7 @@ import socket
 import logging
 import traceback
 from Queue import Queue
+from multiprocessing.util import Finalize
 
 from celery import conf
 from celery import registry
@@ -27,6 +28,7 @@ def process_initializer():
     # There seems to a bug in multiprocessing (backport?)
     # when detached, where the worker gets EOFErrors from time to time
     # and the logger is left from the parent process causing a crash.
+    platform.reset_signal("SIGTERM")
     _hijack_multiprocessing_logger()
     platform.set_mp_process_title("celeryd")
 
@@ -116,6 +118,7 @@ class WorkController(object):
         self.embed_clockservice = embed_clockservice
         self.ready_callback = ready_callback
         self.send_events = send_events
+        self._finalize = Finalize(self, self.stop, exitpriority=20)
 
         # Queues
         if conf.DISABLE_RATE_LIMITS:
@@ -190,5 +193,5 @@ class WorkController(object):
 
         signals.worker_shutdown.send(sender=self)
         [component.stop() for component in reversed(self.components)]
-
+        self.listener.close_connection()
         self._state = "STOP"

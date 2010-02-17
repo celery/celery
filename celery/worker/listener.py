@@ -160,6 +160,11 @@ class CarrotListener(object):
         message.ack()
 
     def close_connection(self):
+        self.logger.debug("CarrotListener: "
+                          "Closing connection to broker...")
+        self.connection = self.connection and self.connection.close()
+
+    def stop_consumers(self, close=True):
         if not self._state == RUN:
             return
         self._state = CLOSE
@@ -175,14 +180,13 @@ class CarrotListener(object):
             self.logger.debug("EventDispatcher: Shutting down...")
             self.event_dispatcher = self.event_dispatcher.close()
 
-        self.logger.debug("CarrotListener: "
-                          "Closing connection to broker...")
-        self.connection = self.connection and self.connection.close()
+        if close:
+            self.close_connection()
 
     def reset_connection(self):
         self.logger.debug(
                 "CarrotListener: Re-establishing connection to the broker...")
-        self.close_connection()
+        self.stop_consumers()
         self.connection = self._open_connection()
         self.logger.debug("CarrotListener: Connection Established.")
         self.task_consumer = get_consumer_set(connection=self.connection)
@@ -219,11 +223,11 @@ class CarrotListener(object):
 
         def _connection_error_handler(exc, interval):
             """Callback handler for connection errors."""
-            self.logger.error("AMQP Listener: Connection Error: %s. " % exc
+            self.logger.error("CarrotListener: Connection Error: %s. " % exc
                      + "Trying again in %d seconds..." % interval)
 
         def _establish_connection():
-            """Establish a connection to the AMQP broker."""
+            """Establish a connection to the broker."""
             conn = establish_connection()
             conn.connect() # Connection is established lazily, so connect.
             return conn
@@ -237,4 +241,5 @@ class CarrotListener(object):
         return conn
 
     def stop(self):
-        self.close_connection()
+        self.logger.debug("CarrotListener: Stopping consumers...")
+        self.stop_consumers(close=False)

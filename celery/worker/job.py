@@ -303,9 +303,10 @@ class TaskWrapper(object):
 
         args = self._get_tracer_args(loglevel, logfile)
         self.time_start = time.time()
-        return pool.apply_async(execute_and_trace, args=args,
-                callbacks=[self.on_success], errbacks=[self.on_failure],
-                on_ack=self.on_ack)
+        result = pool.apply_async(execute_and_trace, args=args,
+                    callbacks=[self.on_success], errbacks=[self.on_failure])
+        self.on_ack()
+        return result
 
     def on_success(self, ret_value):
         """The handler used if the task was successfully processed (

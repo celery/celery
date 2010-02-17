@@ -177,7 +177,7 @@ class TestCarrotListener(unittest.TestCase):
         l.reset_connection()
         self.assertTrue(isinstance(l.connection, BrokerConnection))
 
-        l.close_connection()
+        l.stop_consumers()
         self.assertTrue(l.connection is None)
         self.assertTrue(l.task_consumer is None)
 
@@ -185,6 +185,7 @@ class TestCarrotListener(unittest.TestCase):
         self.assertTrue(isinstance(l.connection, BrokerConnection))
 
         l.stop()
+        l.close_connection()
         self.assertTrue(l.connection is None)
         self.assertTrue(l.task_consumer is None)
 
@@ -209,7 +210,7 @@ class TestCarrotListener(unittest.TestCase):
         eventer = l.event_dispatcher = MockEventDispatcher()
         heart = l.heart = MockHeart()
         l._state = RUN
-        l.close_connection()
+        l.stop_consumers()
         self.assertTrue(eventer.closed)
         self.assertTrue(heart.closed)
 
