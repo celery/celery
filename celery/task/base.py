@@ -289,16 +289,19 @@ class Task(object):
         :keyword countdown: Time in seconds to delay the retry for.
         :keyword eta: Explicit time and date to run the retry at (must be a
             :class:`datetime.datetime` instance).
-        :keyword throw: If this is ``False``, do not raise the
-            :exc:`celery.exceptions.RetryTaskError` exception,
-            that tells the worker that the task is to be retried.
         :keyword \*\*options: Any extra options to pass on to
             meth:`apply_async`. See :func:`celery.execute.apply_async`.
+        :keyword throw: If this is ``False``, do not raise the
+            :exc:`celery.exceptions.RetryTaskError` exception,
+            that tells the worker to mark the task as being retried.
+            Note that this means the task will be marked as failed
+            if the task raises an exception, or successful if it
+            returns.
 
         :raises celery.exceptions.RetryTaskError: To tell the worker that the
-            task has been re-sent for retry. This always happens except if
+            task has been re-sent for retry. This always happens, unless
             the ``throw`` keyword argument has been explicitly set
-            to ``False``.
+            to ``False``, and is considered normal operation.
 
         Example
 
