@@ -5,6 +5,12 @@ from datetime import datetime, timedelta
 from celery.worker.scheduler import Scheduler
 
 
+class MockItem(object):
+
+    def __init__(self, value):
+        self.task_id = value
+
+
 class TestScheduler(unittest.TestCase):
 
     def test_sched_and_run_now(self):
@@ -16,12 +22,12 @@ class TestScheduler(unittest.TestCase):
         def callback():
             callback_called[0] = True
 
-        sched.enter("foo", eta=now, callback=callback)
+        sched.enter(MockItem("foo"), eta=now, callback=callback)
 
         remaining = iter(sched).next()
         self.assertEquals(remaining, 0)
         self.assertTrue(callback_called[0])
-        self.assertEquals(ready_queue.get_nowait(), "foo")
+        self.assertEquals(ready_queue.get_nowait().task_id, "foo")
 
     def test_sched_run_later(self):
         ready_queue = Queue()
@@ -33,7 +39,7 @@ class TestScheduler(unittest.TestCase):
             callback_called[0] = True
 
         eta = now + timedelta(seconds=10)
-        sched.enter("foo", eta=eta, callback=callback)
+        sched.enter(MockItem("foo"), eta=eta, callback=callback)
 
         remaining = iter(sched).next()
         self.assertTrue(remaining > 7)
