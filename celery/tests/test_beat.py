@@ -208,11 +208,19 @@ class TestEmbeddedClockService(unittest.TestCase):
         self.assertTrue(isinstance(s.clockservice, beat.ClockService))
         s.clockservice = MockClockService()
 
+        class _Popen(object):
+            terminated = False
+
+            def terminate(self):
+                self.terminated = True
+
         s.run()
         self.assertTrue(s.clockservice.started)
 
+        s._popen = _Popen()
         s.stop()
         self.assertTrue(s.clockservice.stopped)
+        self.assertTrue(s._popen.terminated)
 
     def test_start_stop_threaded(self):
         s = beat.EmbeddedClockService(thread=True)

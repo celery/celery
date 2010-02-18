@@ -42,7 +42,7 @@ class TestScheduler(unittest.TestCase):
         sched.enter(MockItem("foo"), eta=eta, callback=callback)
 
         remaining = iter(sched).next()
-        self.assertTrue(remaining > 7)
+        self.assertTrue(remaining > 7 or remaining == sched.max_interval)
         self.assertFalse(callback_called[0])
         self.assertRaises(Empty, ready_queue.get_nowait)
 

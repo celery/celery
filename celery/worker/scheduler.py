@@ -16,7 +16,7 @@ class Scheduler(object):
     """
 
     def __init__(self, ready_queue, max_interval=DEFAULT_MAX_INTERVAL):
-        self.max_interval = max_interval
+        self.max_interval = float(max_interval)
         self.ready_queue = ready_queue
         self._queue = []
 
@@ -58,7 +58,7 @@ class Scheduler(object):
                         heapq.heappush(heap, event)
 
                 if now < eta:
-                    yield min(eta - now, float(self.max_interval))
+                    yield min(eta - now, self.max_interval)
                 else:
                     event = pop(heap)
 
