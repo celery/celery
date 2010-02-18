@@ -67,7 +67,7 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
 
     """
     if conf.ALWAYS_EAGER:
-        return apply(task, args, kwargs)
+        return apply(task, args, kwargs, task_id=task_id)
     return _apply_async(task, args=args, kwargs=kwargs, countdown=countdown,
                         eta=eta, task_id=task_id, publisher=publisher,
                         connection=connection,
@@ -131,7 +131,7 @@ def apply(task, args, kwargs, **options):
     """
     args = args or []
     kwargs = kwargs or {}
-    task_id = gen_unique_id()
+    task_id = options.get("task_id", gen_unique_id())
     retries = options.get("retries", 0)
 
     task = tasks[task.name] # Make sure we get the instance, not class.
