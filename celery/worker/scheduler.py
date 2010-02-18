@@ -1,6 +1,8 @@
 import time
 import heapq
 
+from celery.worker.revoke import revoked
+
 
 class Scheduler(object):
     """ETA scheduler.
@@ -40,12 +42,22 @@ class Scheduler(object):
                 eta, priority, item, callback = verify = heap[0]
                 now = nowfun()
 
+                # FIXME: Need a generic hook for this
+                if item.task_id in revoked:
+                    event = pop(heap)
+                    if event is verify:
+                        item.on_ack()
+                        self.logger.warn("Mediator: Skipping revoked task: %s[%s]" % (
+                            item.task_name, item.task_id))
+                    else:
+                        heapq.heappush(heap, event)
+
                 if now < eta:
                     yield eta - now
                 else:
                     event = pop(heap)
 
-                    if event is verify: # pragma: no cover
+                    if event is verify:
                         ready_queue.put(item)
                         callback and callback()
                         yield 0
