@@ -48,6 +48,7 @@ import sys
 import socket
 import logging
 import optparse
+import warnings
 import traceback
 import multiprocessing
 
@@ -139,11 +140,14 @@ class Worker(object):
         if conf.CELERY_BACKEND == "database" \
                 and self.settings.DATABASE_ENGINE == "sqlite3" and \
                 self.concurrency > 1:
-            import warnings
             warnings.warn("The sqlite3 database engine doesn't handle "
                           "concurrency well. Will use a single process only.",
                           UserWarning)
             self.concurrency = 1
+
+        if getattr(self.settings, "DEBUG", False):
+            warnings.warn("Using settings.DEBUG leads to a memory leak, "
+                    "never use this setting in a production environment!")
 
         if self.discard:
             self.purge_messages()
