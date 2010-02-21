@@ -206,15 +206,10 @@ Also, the following optional configuration directives are available:
 
     Name of the database to use. Default is ``celery_results``.
 
-* REDIS_TIMEOUT
+* REDIS_PASSWORD
 
-    Timeout in seconds before we give up establishing a connection
-    to the Redis server.
+    Password used to connect to the database.
 
-* REDIS_CONNECT_RETRY
-
-    Retry connecting if an connection could not be established. Default is
-    false.
 
 
 Example configuration

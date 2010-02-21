@@ -1,3 +1,5 @@
+import warnings
+
 from django.core.exceptions import ImproperlyConfigured
 
 from celery.backends.base import KeyValueStoreBackend
@@ -31,8 +33,12 @@ class RedisBackend(KeyValueStoreBackend):
     redis_timeout = None
     redis_connect_retry = None
 
+    deprecated_settings = frozenset(["REDIS_TIMEOUT",
+                                     "REDIS_CONNECT_RETRY"])
+
     def __init__(self, redis_host=None, redis_port=None, redis_db=None,
             redis_timeout=None,
+            redis_password=None,
             redis_connect_retry=None,
             redis_connect_timeout=None):
         if redis is None:
@@ -50,12 +56,14 @@ class RedisBackend(KeyValueStoreBackend):
         self.redis_password = redis_password or \
                             getattr(settings, "REDIS_PASSWORD",
                                     self.redis_password)
-        self.redis_timeout = redis_timeout or \
-                            getattr(settings, "REDIS_TIMEOUT",
-                                    self.redis_timeout)
-        self.redis_connect_retry = redis_connect_retry or \
-                            getattr(settings, "REDIS_CONNECT_RETRY",
-                                    self.redis_connect_retry)
+
+        for setting_name in self.deprecated_settings:
+            if getattr(settings, setting_name, None) is not None:
+                warnings.warn(
+                    "The setting '%s' is no longer supported by the "
+                    "python Redis client!" % setting_name.upper(),
+                    DeprecationWarning)
+
         if self.redis_port:
             self.redis_port = int(self.redis_port)
         if not self.redis_host or not self.redis_port:
@@ -79,7 +87,6 @@ class RedisBackend(KeyValueStoreBackend):
                                     port=self.redis_port,
                                     db=self.redis_db,
                                     password=self.redis_password)
-            self._connection.connect()
         return self._connection
 
     def close(self):
