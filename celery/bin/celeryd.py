@@ -234,9 +234,10 @@ class Worker(object):
 def install_worker_int_handler(worker):
 
     def _stop(signum, frame):
-        if multiprocessing.current_process().name == 'MainProcess':
-            worker.logger.warn("celeryd: Cold shutdown (%s)" % \
-                               (current_process().name))
+        process_name = multiprocessing.current_process().name
+        if process_name == "MainProcess":
+            worker.logger.warn("celeryd: Cold shutdown (%s)" % (
+                                    process_name))
             worker.terminate()
         raise SystemExit()
 
