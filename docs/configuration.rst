@@ -358,6 +358,14 @@ Task execution settings
 
     Default is ``pickle``.
 
+* CELERY_DEFAULT_RATE_LIMIT
+
+  The global default rate limit for tasks.
+
+  This value is used for tasks that does not have a custom rate limit
+  The default is no rate limit.
+
+
 Worker: celeryd
 ===============
 

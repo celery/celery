@@ -195,8 +195,8 @@ Task options
   The rate limits can be specified in seconds, minutes or hours
   by appending ``"/s"``, ``"/m"`` or "``/h"``" to the value.
   Example: ``"100/m" (hundred tasks a
-  minute). Default is the ``CELERY_DEFAULT_RATE_LIMIT`` setting (which
-  is off if not specified).
+  minute). Default is the ``CELERY_DEFAULT_RATE_LIMIT`` setting, which if not
+  specified means rate limiting for tasks is turned off by default.
 
 * ignore_result
 
