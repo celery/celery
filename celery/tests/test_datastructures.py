@@ -2,7 +2,7 @@ import sys
 import unittest
 from Queue import Queue
 
-from celery.datastructures import PositionQueue, ExceptionInfo
+from celery.datastructures import PositionQueue, ExceptionInfo, LocalCache
 from celery.datastructures import LimitedSet, SharedCounter, consume_queue
 
 
@@ -127,3 +127,22 @@ class TestLimitedSet(unittest.TestCase):
         items = "foo", "bar"
         map(s.add, items)
         self.assertTrue(repr(s).startswith("LimitedSet("))
+
+
+class TestLocalCache(unittest.TestCase):
+
+    def test_expires(self):
+        limit = 100
+        x = LocalCache(limit=limit)
+        slots = list(range(limit * 2))
+        for i in slots:
+            x[i] = i
+        self.assertEquals(x.keys(), slots[limit:])
+        self.assertEquals(len(x.keys()), len(x.timestamps),
+                "timestamps deleted, does not grow.")
+
+    def test_delete_not_implemented(self):
+        self.assertRaises(NotImplementedError, LocalCache(10).__delitem__,
+                "foo")
+
+
