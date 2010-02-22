@@ -3,8 +3,9 @@ from carrot.messaging import Consumer, Publisher
 
 from celery import conf
 from celery import states
-from celery.messaging import establish_connection
 from celery.backends.base import BaseBackend
+from celery.messaging import establish_connection
+from celery.datastructures import LocalCache
 
 
 class AMQPBackend(BaseBackend):
@@ -23,7 +24,7 @@ class AMQPBackend(BaseBackend):
 
     def __init__(self, *args, **kwargs):
         super(AMQPBackend, self).__init__(*args, **kwargs)
-        self._cache = {}
+        self._cache = LocalCache(limit=1000)
 
     @property
     def connection(self):
