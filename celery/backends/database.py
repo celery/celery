@@ -21,15 +21,13 @@ class DatabaseBackend(BaseDictBackend):
         """Get task metadata for a task by id."""
         meta = TaskMeta.objects.get_task(task_id)
         if meta:
-            meta = meta.to_dict()
-            return meta
+            return meta.to_dict()
 
     def _restore_taskset(self, taskset_id):
         """Get taskset metadata for a taskset by id."""
         meta = TaskSetMeta.objects.restore_taskset(taskset_id)
         if meta:
-            meta = meta.to_dict()
-            return meta
+            return meta.to_dict()
 
     def cleanup(self):
         """Delete expired metadata."""

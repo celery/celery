@@ -22,6 +22,7 @@ class TestRedisBackend(unittest.TestCase):
 
     def setUp(self):
         self.backend = AMQPBackend()
+        self.backend._use_debug_tracking = True
 
     def test_mark_as_done(self):
         tb = self.backend

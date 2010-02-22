@@ -6,8 +6,10 @@ from billiard.serialization import pickle
 from billiard.serialization import get_pickled_exception
 from billiard.serialization import get_pickleable_exception
 
-from celery.exceptions import TimeoutError
+from celery import conf
 from celery import states
+from celery.exceptions import TimeoutError
+from celery.datastructures import LocalCache
 
 
 class BaseBackend(object):
@@ -122,11 +124,20 @@ class BaseBackend(object):
         raise NotImplementedError(
                 "save_taskset is not supported by this backend.")
 
-    def restore_taskset(self, taskset_id):
+    def restore_taskset(self, taskset_id, cache=True):
         """Get the result of a taskset."""
         raise NotImplementedError(
                 "restore_taskset is not supported by this backend.")
 
+    def reload_task_result(self, task_id):
+        """Reload task result, even if it has been previously fetched."""
+        raise NotImplementedError(
+                "reload_task_result is not supported by this backend.")
+
+    def reload_taskset_result(self, task_id):
+        """Reload taskset result, even if it has been previously fetched."""
+        raise NotImplementedError(
+                "reload_taskset_result is not supported by this backend.")
 
 class BaseDictBackend(BaseBackend):
 
@@ -134,6 +145,7 @@ class BaseDictBackend(BaseBackend):
 
     def __init__(self, *args, **kwargs):
         super(BaseDictBackend, self).__init__(*args, **kwargs)
+        self._cache = LocalCache(limit=conf.MAX_CACHED_RESULTS)
 
     def store_result(self, task_id, result, status, traceback=None):
         """Store task result and status."""
@@ -142,23 +154,47 @@ class BaseDictBackend(BaseBackend):
 
     def get_status(self, task_id):
         """Get the status of a task."""
-        return self._get_task_meta_for(task_id)["status"]
+        return self.get_task_meta(task_id)["status"]
 
     def get_traceback(self, task_id):
         """Get the traceback for a failed task."""
-        return self._get_task_meta_for(task_id)["traceback"]
+        return self.get_task_meta(task_id)["traceback"]
 
     def get_result(self, task_id):
         """Get the result of a task."""
-        meta = self._get_task_meta_for(task_id)
+        meta = self.get_task_meta(task_id)
         if meta["status"] in self.EXCEPTION_STATES:
             return self.exception_to_python(meta["result"])
         else:
             return meta["result"]
 
-    def restore_taskset(self, taskset_id):
-        """Get the result for a taskset."""
+    def get_task_meta(self, task_id, cache=True):
+        if cache and task_id in self._cache:
+            return self._cache[task_id]
+
+        meta = self._get_task_meta_for(task_id)
+        if cache and meta.get("status") == states.SUCCESS:
+            self._cache[task_id] = meta
+        return meta
+
+    def reload_task_result(self, task_id):
+        self._cache[task_id] = self.get_task_meta(task_id, cache=False)
+
+    def reload_taskset_result(self, taskset_id):
+        self._cache[taskset_id] = self.get_taskset_meta(task_id, cache=False)
+
+    def get_taskset_meta(self, taskset_id, cache=True):
+        if cache and taskset_id in self._cache:
+            return self._cache[taskset_id]
+
         meta = self._restore_taskset(taskset_id)
+        if cache and meta is not None:
+            self._cache[taskset_id] = meta
+        return meta
+
+    def restore_taskset(self, taskset_id, cache=True):
+        """Get the result for a taskset."""
+        meta = self.get_taskset_meta(taskset_id, cache=cache)
         if meta:
             return meta["result"]
 
@@ -198,8 +234,7 @@ class KeyValueStoreBackend(BaseDictBackend):
         meta = self.get(self.get_key_for_task(task_id))
         if not meta:
             return {"status": states.PENDING, "result": None}
-        meta = pickle.loads(str(meta))
-        return meta
+        return pickle.loads(str(meta))
 
     def _restore_taskset(self, taskset_id):
         """Get task metadata for a task by id."""

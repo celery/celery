@@ -3,12 +3,12 @@ from carrot.messaging import Consumer, Publisher
 
 from celery import conf
 from celery import states
-from celery.backends.base import BaseBackend
+from celery.backends.base import BaseDictBackend
 from celery.messaging import establish_connection
 from celery.datastructures import LocalCache
 
 
-class AMQPBackend(BaseBackend):
+class AMQPBackend(BaseDictBackend):
     """AMQP backend. Publish results by sending messages to the broker
     using the task id as routing key.
 
@@ -21,10 +21,11 @@ class AMQPBackend(BaseBackend):
     exchange = conf.RESULT_EXCHANGE
     capabilities = ["ResultStore"]
     _connection = None
+    _use_debug_tracking = False
+    _seen = set()
 
     def __init__(self, *args, **kwargs):
         super(AMQPBackend, self).__init__(*args, **kwargs)
-        self._cache = LocalCache(limit=1000)
 
     @property
     def connection(self):
@@ -79,22 +80,9 @@ class AMQPBackend(BaseBackend):
 
         return result
 
-    def is_successful(self, task_id):
-        """Returns ``True`` if task with ``task_id`` has been executed."""
-        return self.get_status(task_id) == states.SUCCESS
-
-    def get_status(self, task_id):
-        """Get the status of a task."""
-        return self._get_task_meta_for(task_id)["status"]
-
-    def get_traceback(self, task_id):
-        """Get the traceback for a failed task."""
-        return self._get_task_meta_for(task_id)["traceback"]
-
     def _get_task_meta_for(self, task_id):
-
-        if task_id in self._cache:
-            return self._cache[task_id]
+        assert task_id not in self._seen
+        self._use_debug_tracking and self._seen.add(task_id)
 
         results = []
 
@@ -117,10 +105,21 @@ class AMQPBackend(BaseBackend):
         self._cache[task_id] = results[0]
         return results[0]
 
-    def get_result(self, task_id):
-        """Get the result for a task."""
-        result = self._get_task_meta_for(task_id)
-        if result["status"] in states.EXCEPTION_STATES:
-            return self.exception_to_python(result["result"])
-        else:
-            return result["result"]
+    def reload_task_result(self, task_id):
+        raise NotImplementedError(
+                "reload_task_result is not supported by this backend.")
+
+    def reload_taskset_result(self, task_id):
+        """Reload taskset result, even if it has been previously fetched."""
+        raise NotImplementedError(
+                "reload_taskset_result is not supported by this backend.")
+
+    def save_taskset(self, taskset_id, result):
+        """Store the result and status of a task."""
+        raise NotImplementedError(
+                "save_taskset is not supported by this backend.")
+
+    def restore_taskset(self, taskset_id, cache=True):
+        """Get the result of a taskset."""
+        raise NotImplementedError(
+                "restore_taskset is not supported by this backend.")

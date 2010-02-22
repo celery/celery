@@ -49,6 +49,7 @@ _DEFAULTS = {
     "CELERY_EVENT_EXCHANGE_TYPE": "direct",
     "CELERY_EVENT_ROUTING_KEY": "celeryevent",
     "CELERY_RESULT_EXCHANGE": "celeryresults",
+    "CELERY_MAX_CACHED_RESULTS": 5000,
 }
 
 _DEPRECATION_FMT = """
@@ -70,7 +71,7 @@ def _get(name, default=None, compat=None):
             pass
     return default
 
-# <--- Task options                                <-   --   --- - ----- -- #
+# <--- Task                                        <-   --   --- - ----- -- #
 ALWAYS_EAGER = _get("CELERY_ALWAYS_EAGER")
 CELERY_BACKEND = _get("CELERY_BACKEND")
 CELERY_CACHE_BACKEND = _get("CELERY_CACHE_BACKEND")
@@ -80,6 +81,10 @@ IGNORE_RESULT = _get("CELERY_IGNORE_RESULT")
 # Make sure TASK_RESULT_EXPIRES is a timedelta.
 if isinstance(TASK_RESULT_EXPIRES, int):
     TASK_RESULT_EXPIRES = timedelta(seconds=TASK_RESULT_EXPIRES)
+
+# <--- Client                                      <-   --   --- - ----- -- #
+
+MAX_CACHED_RESULTS = _get("CELERY_MAX_CACHED_RESULTS")
 
 # <--- Worker                                      <-   --   --- - ----- -- #
 
