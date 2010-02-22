@@ -2,16 +2,18 @@ from datetime import datetime, timedelta
 
 from celery import conf
 from celery.utils import gen_unique_id, fun_takes_kwargs, mattrgetter
-from celery.result import EagerResult
+from celery.result import AsyncResult, EagerResult
 from celery.execute.trace import TaskTrace
 from celery.registry import tasks
 from celery.messaging import with_connection
+from celery.messaging import TaskPublisher
 
 extract_exec_options = mattrgetter("routing_key", "exchange",
                                    "immediate", "mandatory",
                                    "priority", "serializer")
 
 
+@with_connection
 def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
         task_id=None, publisher=None, connection=None, connect_timeout=None,
         **options):
@@ -68,34 +70,36 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
     """
     if conf.ALWAYS_EAGER:
         return apply(task, args, kwargs, task_id=task_id)
-    return _apply_async(task, args=args, kwargs=kwargs, countdown=countdown,
-                        eta=eta, task_id=task_id, publisher=publisher,
-                        connection=connection,
-                        connect_timeout=connect_timeout, **options)
 
-
-@with_connection
-def _apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
-        task_id=None, publisher=None, connection=None, connect_timeout=None,
-        **options):
-
-    task = tasks[task.name] # Get instance.
-    exchange = options.get("exchange")
+    task = tasks[task.name] # get instance from registry
     options = dict(extract_exec_options(task), **options)
-
-    if countdown: # Convert countdown to ETA.
-        eta = datetime.now() + timedelta(seconds=countdown)
+    exchange = options.get("exchange")
 
     publish = publisher or task.get_publisher(connection, exchange=exchange)
     try:
-        task_id = publish.delay_task(task.name, args or [], kwargs or {},
-                                     task_id=task_id,
-                                     eta=eta,
-                                     **options)
+        task_id = publish.delay_task(task.name, args, kwargs, task_id=task_id,
+                                     countdown=countdown, eta=eta, **options)
     finally:
         publisher or publish.close()
 
     return task.AsyncResult(task_id)
+
+
+
+@with_connection
+def send_task(name, args=None, kwargs=None, countdown=None, eta=None,
+        task_id=None, publisher=None, connection=None, connect_timeout=None,
+        result_cls=AsyncResult, **options):
+
+    exchange = options.get("exchange")
+    publish = publisher or TaskPublisher(connection, exchange=exchange)
+    try:
+        task_id = publish.delay_task(name, args, kwargs, task_id=task_id,
+                                     countdown=countdown, eta=eta, **options)
+    finally:
+        publisher or publish.close()
+
+    return result_cls(task_id)
 
 
 def delay_task(task_name, *args, **kwargs):

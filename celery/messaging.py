@@ -4,6 +4,7 @@ Sending and Receiving Messages
 
 """
 import socket
+from datetime import datetime, timedelta
 
 from carrot.connection import DjangoBrokerConnection
 from carrot.messaging import Publisher, Consumer, ConsumerSet
@@ -43,12 +44,13 @@ class TaskPublisher(Publisher):
             _queues_declared = True
 
     def delay_task(self, task_name, task_args=None, task_kwargs=None,
-            task_id=None, taskset_id=None, **kwargs):
+            countdown=None, eta=None, task_id=None, taskset_id=None, **kwargs):
         """Delay task for execution by the celery nodes."""
 
         task_id = task_id or gen_unique_id()
-        eta = kwargs.get("eta")
-        eta = eta and eta.isoformat()
+
+        if countdown: # Convert countdown to ETA.
+            eta = datetime.now() + timedelta(seconds=countdown)
 
         message_data = {
             "task": task_name,
@@ -56,7 +58,7 @@ class TaskPublisher(Publisher):
             "args": task_args or [],
             "kwargs": task_kwargs or {},
             "retries": kwargs.get("retries", 0),
-            "eta": eta,
+            "eta": eta and eta.isoformat(),
         }
 
         if taskset_id:
