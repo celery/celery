@@ -246,6 +246,11 @@ def install_worker_int_handler(worker):
 def install_worker_term_handler(worker):
 
     def _stop(signum, frame):
+        process_name = multiprocessing.current_process().name
+        if process_name == "MainProcess":
+            worker.logger.warn("celeryd: Warm shutdown (%s)" % (
+                process_name))
+            worker.stop()
         raise SystemExit()
 
     platform.install_signal_handler("SIGTERM", _stop)
