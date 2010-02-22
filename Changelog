@@ -2,8 +2,98 @@
  Change history
 ================
 
-1.0.0 [2010-02-10 04:00 P.M CEST]
-=================================
+1.0.1 [2010-02-24 xx:xx x.x CET]
+================================
+
+* Tasks are now acknowledged early instead of late.
+
+  This is done because messages can only be acked within the same
+  connection channel, so if the connection is lost we would have to refetch
+  the message again to acknowledge it.
+
+  This might or might not affect you, but mostly those running tasks with a
+  really long execution time are affected, as all tasks that has made it
+  all the way into the pool needs to be executed before the worker can
+  safely terminate (this is at most the number of pool workers, multiplied
+  by the ``CELERYD_PREFETCH_MULTIPLIER`` setting.)
+
+  We multiply the prefetch count by default to increase the performance at
+  times with bursts of tasks with a short execution time. If this doesn't
+  apply to your use case, you should be able to set the prefetch multiplier
+  to zero, without sacrificing performance.
+
+  Please note that a patch to :mod:`multiprocessing` is currently being
+  worked on, this patch would enable us to use a better solution, and is
+  scheduled for inclusion in the ``1.2.0`` release.
+
+* celeryd now shutdowns cleanly when receving the ``TERM`` signal.
+
+* celeryd now does a cold shutdown if the ``INT`` signal is received (Ctrl+C),
+  this means it tries to terminate as soon as possible.
+
+
+* Caching of results now moved to the base backend classes, so no need
+  to implement this functionality in the base classes.
+
+  Caches are now also limited in size, so their memory usage doesn't grow
+  uncontrollably. You can set the maximum number of results the cache
+  can hold using the ``CELERY_MAX_CACHED_RESULTS`` setting (the default
+  is five thousand results). In addition, you can refetch already retrieved
+  results using ``backend.reload_task_result`` +
+  ``backend.reload_taskset_result`` (that's for those who want to send
+  results incrementally).
+
+* Execution: ``.messaging.TaskPublisher.send_task`` now
+  incorporates all the functionality apply_async previously did (like
+  converting countdowns to eta), so :func:`celery.execute.apply_async` is
+  now simply a convenient front-end to
+  :meth:`celery.messaging.TaskPublisher.send_task`, using
+  the task classes default options.
+
+  Also :func:`celery.execute.send_task` has been
+  introduced, which can apply tasks using just the task name (useful
+  if the client does not have the destination task in its task registry).
+
+  Example:
+
+		>>> from celery.execute import send_task
+		>>> result = send_task("celery.ping", args=[], kwargs={})
+		>>> result.get()
+		'pong'
+
+* Redis result backend: To conform to recent Redis API changes, the following
+  settings has been deprecated:
+  
+		* ``REDIS_TIMEOUT``
+		* ``REDIS_CONNECT_RETRY``
+
+  These will emit a ``DeprecationWarning`` if used.
+
+  As something dies, new stuff is born, and so we have added the
+  ``REDIS_PASSWORD`` setting, so you can use the new simple authentication
+  mechanism in Redis.
+
+* If ``settings.DEBUG`` is on, celeryd now warns about the possible
+  memory leak it can result in.
+
+* The ETA scheduler now sleeps at most two seconds between iterations.
+
+* The ETA scheduler now deletes any revoked tasks it might encounter.
+  As revokes are not yet persistent, this is done to make sure the task
+  is revoked even though it's currently being hold because its eta is e.g.
+  a week into the future.
+
+* The ``task_id`` argument is now respected even if the task is executed 
+  eagerly (either using apply, or ``CELERY_ALWAYS_EAGER``).
+
+* The internal queues are now cleared if the connection is reset.
+
+* Added ``--schedule``/``-s`` option to celeryd, so it is possible to
+  specify a custom schedule filename when using an embedded celerybeat
+  server (the ``-B``/``--beat``) option.
+
+1.0.0 [2010-02-10 04:00 P.M CET]
+================================
 
 BACKWARD INCOMPATIBLE CHANGES
 -----------------------------
