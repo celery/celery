@@ -74,7 +74,6 @@ class TestTyrantBackend(unittest.TestCase):
         self.assertTrue(tb.is_successful(tid))
         self.assertEquals(tb.get_status(tid), states.SUCCESS)
         self.assertEquals(tb.get_result(tid), 42)
-        self.assertTrue(tb._cache.get(tid))
         self.assertTrue(tb.get_result(tid), 42)
 
     def test_is_pickled(self):

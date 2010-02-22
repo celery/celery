@@ -19,22 +19,16 @@ class DatabaseBackend(BaseDictBackend):
 
     def _get_task_meta_for(self, task_id):
         """Get task metadata for a task by id."""
-        if task_id in self._cache:
-            return self._cache[task_id]
         meta = TaskMeta.objects.get_task(task_id)
         if meta:
             meta = meta.to_dict()
-            if meta["status"] == states.SUCCESS:
-                self._cache[task_id] = meta
             return meta
 
     def _restore_taskset(self, taskset_id):
         """Get taskset metadata for a taskset by id."""
-        if taskset_id in self._cache:
-            return self._cache[taskset_id]
         meta = TaskSetMeta.objects.restore_taskset(taskset_id)
         if meta:
-            meta = self._cache[taskset_id] = meta.to_dict()
+            meta = meta.to_dict()
             return meta
 
     def cleanup(self):

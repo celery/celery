@@ -134,7 +134,6 @@ class BaseDictBackend(BaseBackend):
 
     def __init__(self, *args, **kwargs):
         super(BaseDictBackend, self).__init__(*args, **kwargs)
-        self._cache = {}
 
     def store_result(self, task_id, result, status, traceback=None):
         """Store task result and status."""
@@ -196,22 +195,15 @@ class KeyValueStoreBackend(BaseDictBackend):
 
     def _get_task_meta_for(self, task_id):
         """Get task metadata for a task by id."""
-        if task_id in self._cache:
-            return self._cache[task_id]
         meta = self.get(self.get_key_for_task(task_id))
         if not meta:
             return {"status": states.PENDING, "result": None}
         meta = pickle.loads(str(meta))
-        if meta.get("status") == states.SUCCESS:
-            self._cache[task_id] = meta
         return meta
 
     def _restore_taskset(self, taskset_id):
         """Get task metadata for a task by id."""
-        if taskset_id in self._cache:
-            return self._cache[taskset_id]
         meta = self.get(self.get_key_for_taskset(taskset_id))
         if meta:
             meta = pickle.loads(str(meta))
-            self._cache[taskset_id] = meta
             return meta

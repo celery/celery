@@ -35,7 +35,6 @@ class TestDatabaseBackend(unittest.TestCase):
         self.assertTrue(b.is_successful(tid))
         self.assertEquals(b.get_status(tid), states.SUCCESS)
         self.assertEquals(b.get_result(tid), 42)
-        self.assertTrue(b._cache.get(tid))
         self.assertTrue(b.get_result(tid), 42)
 
         tid2 = gen_unique_id()
@@ -68,4 +67,3 @@ class TestDatabaseBackend(unittest.TestCase):
         self.assertTrue(rindb is not None)
         self.assertEquals(rindb.get("foo"), "baz")
         self.assertEquals(rindb.get("bar").data, 12345)
-        self.assertTrue(b._cache.get(tid))

@@ -63,7 +63,6 @@ class MongoBackend(BaseDictBackend):
                 'taskmeta_collection', self.mongodb_taskmeta_collection)
 
         super(MongoBackend, self).__init__(*args, **kwargs)
-        self._cache = {}
         self._connection = None
         self._database = None
 
@@ -113,8 +112,6 @@ class MongoBackend(BaseDictBackend):
 
     def _get_task_meta_for(self, task_id):
         """Get task metadata for a task by id."""
-        if task_id in self._cache:
-            return self._cache[task_id]
 
         db = self._get_database()
         taskmeta_collection = db[self.mongodb_taskmeta_collection]
@@ -129,8 +126,6 @@ class MongoBackend(BaseDictBackend):
             "date_done": obj["date_done"],
             "traceback": pickle.loads(str(obj["traceback"])),
         }
-        if meta["status"] == states.SUCCESS:
-            self._cache[task_id] = meta
 
         return meta
 

@@ -31,7 +31,6 @@ class TestCacheBackend(unittest.TestCase):
         self.assertTrue(cb.is_successful(tid))
         self.assertEquals(cb.get_status(tid), states.SUCCESS)
         self.assertEquals(cb.get_result(tid), 42)
-        self.assertTrue(cb._cache.get(tid))
         self.assertTrue(cb.get_result(tid), 42)
 
     def test_save_restore_taskset(self):
