@@ -7,8 +7,10 @@ from celery.loaders import load_settings
 
 try:
     import redis
+    from redis.exceptions import ConnectionError
 except ImportError:
     redis = None
+    ConnectionError = None
 
 
 class RedisBackend(KeyValueStoreBackend):

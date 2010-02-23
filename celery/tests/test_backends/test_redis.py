@@ -1,8 +1,9 @@
 from __future__ import with_statement
 
 import sys
-import unittest
 import errno
+import socket
+import unittest
 
 from django.core.exceptions import ImproperlyConfigured
 
@@ -13,6 +14,12 @@ from celery.backends.pyredis import RedisBackend
 
 _no_redis_msg = "* Redis %s. Will not execute related tests."
 _no_redis_msg_emitted = False
+
+try:
+    from redis.exceptions import ConnectionError
+except ImportError:
+    class ConnectionError(socket.error):
+        pass
 
 
 class SomeClass(object):
@@ -35,7 +42,9 @@ def get_redis_or_None():
         tb = RedisBackend(redis_db="celery_unittest")
         try:
             tb.open()
-        except pyredis.redis.ConnectionError, exc:
+            # Evaluate lazy connection
+            tb._connection.connection.connect(tb._connection)
+        except ConnectionError, exc:
             return emit_no_redis_msg("not running")
         return tb
     except ImproperlyConfigured, exc:
