@@ -87,6 +87,15 @@ if [ ! -z "$VIRTUALENV" ]; then
 fi
 
 
+if [ -f "$CELERYD" && ! -x "$CELERYD" ]; then
+    echo "ERROR: $CELERYD is not executable."
+    echo "Please make it executable by doing: chmod +x '$CELERYD'"
+
+    echo "celeryd is disabled"
+    exit
+fi
+
+
 case "$1" in
   start)
     check_dev_null
