@@ -36,6 +36,7 @@ try:
 except ImportError:
     from UserDict import DictMixin as MutableMapping
 
+
 class _Link(object):
     """Doubly linked list."""
     __slots__ = 'prev', 'next', 'key', '__weakref__'
@@ -46,14 +47,18 @@ class OrderedDict(dict, MutableMapping):
     # An inherited dict maps keys to values.
     # The inherited dict provides __getitem__, __len__, __contains__, and get.
     # The remaining methods are order-aware.
-    # Big-O running times for all methods are the same as for regular dictionaries.
+    # Big-O running times for all methods are the same as for regular
+    # dictionaries.
 
-    # The internal self.__map dictionary maps keys to links in a doubly linked list.
+    # The internal self.__map dictionary maps keys to links in a doubly
+    # linked list.
     # The circular doubly linked list starts and ends with a sentinel element.
     # The sentinel element never gets deleted (this simplifies the algorithm).
-    # The prev/next links are weakref proxies (to prevent circular references).
+    # The prev/next links are weakref proxies (to prevent circular
+    # references).
     # Individual links are kept alive by the hard reference in self.__map.
-    # Those hard references disappear when a key is deleted from an OrderedDict.
+    # Those hard references disappear when a key is deleted from
+    # an OrderedDict.
 
     def __init__(self, *args, **kwds):
         """Initialize an ordered dictionary.
@@ -97,8 +102,9 @@ class OrderedDict(dict, MutableMapping):
 
     def __delitem__(self, key):
         """od.__delitem__(y) <==> del od[y]"""
-        # Deleting an existing item uses self.__map to find the link which is
-        # then removed by updating the links in the predecessor and successor nodes.
+        # Deleting an existing item uses self.__map to find the
+        # link which is then removed by updating the links in the
+        # predecessor and successor nodes.
         dict.__delitem__(self, key)
         link = self.__map.pop(key)
         link.prev.next = link.next
@@ -148,7 +154,8 @@ class OrderedDict(dict, MutableMapping):
         """od.popitem() -> (k, v)
 
         Return and remove a (key, value) pair.
-        Pairs are returned in LIFO order if last is true or FIFO order if false.
+        Pairs are returned in LIFO order if last is true or FIFO
+        order if false.
 
         """
         if not self:
@@ -177,8 +184,9 @@ class OrderedDict(dict, MutableMapping):
         return d
 
     def __eq__(self, other):
-        """od.__eq__(y) <==> od==y.  Comparison to another OD is order-sensitive
-        while comparison to a regular mapping is order-insensitive."""
+        """od.__eq__(y) <==> od==y.  Comparison to another OD is
+        order-sensitive while comparison to a regular mapping
+        is order-insensitive."""
         if isinstance(other, OrderedDict):
             return len(self) == len(other) and \
                    all(_imap(_eq, self.iteritems(), other.iteritems()))

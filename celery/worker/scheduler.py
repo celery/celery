@@ -52,8 +52,9 @@ class Scheduler(object):
                     event = pop(heap)
                     if event is verify:
                         item.on_ack()
-                        self.logger.warn("Mediator: Skipping revoked task: %s[%s]" % (
-                            item.task_name, item.task_id))
+                        self.logger.warn(
+                                "Mediator: Skipping revoked task: %s[%s]" % (
+                                    item.task_name, item.task_id))
                     else:
                         heapq.heappush(heap, event)
 

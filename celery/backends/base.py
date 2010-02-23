@@ -139,6 +139,7 @@ class BaseBackend(object):
         raise NotImplementedError(
                 "reload_taskset_result is not supported by this backend.")
 
+
 class BaseDictBackend(BaseBackend):
 
     capabilities = ["ResultStore"]

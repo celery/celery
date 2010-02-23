@@ -85,7 +85,6 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
     return task.AsyncResult(task_id)
 
 
-
 @with_connection
 def send_task(name, args=None, kwargs=None, countdown=None, eta=None,
         task_id=None, publisher=None, connection=None, connect_timeout=None,
