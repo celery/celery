@@ -138,11 +138,3 @@ class TestLocalCache(unittest.TestCase):
         for i in slots:
             x[i] = i
         self.assertEquals(x.keys(), slots[limit:])
-        self.assertEquals(len(x.keys()), len(x.timestamps),
-                "timestamps deleted, does not grow.")
-
-    def test_delete_not_implemented(self):
-        self.assertRaises(NotImplementedError, LocalCache(10).__delitem__,
-                "foo")
-
-

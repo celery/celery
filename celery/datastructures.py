@@ -9,6 +9,8 @@ import traceback
 from UserList import UserList
 from Queue import Queue, Empty as QueueEmpty
 
+from celery.utils.compat import OrderedDict
+
 
 class PositionQueue(UserList):
     """A positional queue of a specific length, with slots that are either
@@ -226,32 +228,18 @@ class LimitedSet(object):
         return self.chronologically[0]
 
 
-class LocalCache(dict):
+class LocalCache(OrderedDict):
     """Dictionary with a finite number of keys.
 
-    Older keys are expired first, but note that the timestamp
-    is not updated if a key is inserted twice, so it's not that great
-    for anything but unique keys.
+    Older items expires first.
 
     """
 
-    def __init__(self, limit=None, initial=None):
+    def __init__(self, limit=None):
         super(LocalCache, self).__init__()
         self.limit = limit
-        self.timestamps = []
-        initial = initial or {}
-        for key, value in initial.items():
-            self[key] = value
 
     def __setitem__(self, key, value):
-        baseproxy = super(LocalCache, self)
-        item = time.time(), key
-        if len(self) >= self.limit:
-            timestamp, expired_key = heapq.heapreplace(self.timestamps, item)
-            baseproxy.pop(expired_key, None)
-        else:
-            heapq.heappush(self.timestamps, item)
-        baseproxy.__setitem__(key, value)
-
-    def __delitem__(self, key):
-        raise NotImplementedError("LocalCache doesn't support deletion.")
+        while len(self) >= self.limit:
+            self.popitem(last=False)
+        super(LocalCache, self).__setitem__(key, value)
