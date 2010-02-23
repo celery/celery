@@ -12,23 +12,16 @@ an extension to `carrot`_.
 Installation
 ============
 
-You need to install the latest development versions of `carrot`_ and
-`ghettoq`_::
+You need to install the `ghettoq`_ library::
 
-    $ git clone git://github.com/ask/carrot.git
-    $ cd carrot
-    $ python setup.py install
-
-    $ git clone git://github.com/ask/ghettoq.git
-    $ cd ghettoq
-    $ python setup.py install
+    $ pip install -U ghettoq
 
 Redis
 =====
 
 For the Redis support you have to install the Python redis client::
 
-    $ pip install redis
+    $ pip install -U redis
 
 Configuration
 -------------
@@ -51,24 +44,38 @@ Configuration
 The database backend uses the Django ``DATABASE_*`` settings for database
 configuration values.
 
-* Set your carrot backend::
+#. Set your carrot backend::
 
     CARROT_BACKEND = "ghettoq.taproot.Database"
 
 
-* Add ``ghettoq`` to ``INSTALLED_APPS``::
+#. Add ``ghettoq`` to ``INSTALLED_APPS``::
 
     INSTALLED_APPS = ("ghettoq", )
 
 
-* Sync your database schema.
+#. Verify you database settings::
 
-    $ python manage.py syncdb
+    DATABASE_ENGINE = "mysql"
+    DATABASE_NAME = "mydb"
+    DATABASE_USER = "myuser"
+    DATABASE_PASSWORD = "secret"
 
-* Or if you're not using django, but the default loader instead run
+  The above is just an example, if you haven't configured your database before
+  you should read the Django database settings reference:
+  http://docs.djangoproject.com/en/1.1/ref/settings/#database-engine
+
+
+#. Sync your database schema.
+
+    When using Django::
+
+        $ python manage.py syncdb
+
+  Or if you're not using django, but the default loader instead run
   ``celeryinit``::
 
-    $ celeryinit
+        $ celeryinit
 
 Important notes
 ---------------
