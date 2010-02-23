@@ -91,6 +91,13 @@ if [ ! -z "$VIRTUALENV" ]; then
     CELERYBEAT="$VIRTUALENV/bin/$CELERYBEAT"
 fi
 
+if [ -f "$CELERYBEAT" && ! -x "$CELERYBEAT" ]; then
+    echo "ERROR: $CELERYBEAT is not executable."
+    echo "Please make it executable by doing: chmod +x '$CELERYBEAT'"
+
+    echo "celerybeat is disabled"
+    exit
+fi
 
 case "$1" in
   start)
