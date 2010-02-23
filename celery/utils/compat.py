@@ -60,6 +60,8 @@ class OrderedDict(dict, MutableMapping):
     # Those hard references disappear when a key is deleted from
     # an OrderedDict.
 
+    __marker = object()
+
     def __init__(self, *args, **kwds):
         """Initialize an ordered dictionary.
 
@@ -132,23 +134,63 @@ class OrderedDict(dict, MutableMapping):
         """Return state information for pickling"""
         items = [[k, self[k]] for k in self]
         tmp = self.__map, self.__root
-        del self.__map, self.__root
+        del(self.__map, self.__root)
         inst_dict = vars(self).copy()
         self.__map, self.__root = tmp
         if inst_dict:
             return (self.__class__, (items,), inst_dict)
         return self.__class__, (items,)
 
-    setdefault = MutableMapping.setdefault
-    update = MutableMapping.update
-    pop = MutableMapping.pop
-    keys = MutableMapping.keys
-    values = MutableMapping.values
-    items = MutableMapping.items
-    iterkeys = MutableMapping.iterkeys
-    itervalues = MutableMapping.itervalues
-    iteritems = MutableMapping.iteritems
-    __ne__ = MutableMapping.__ne__
+    def setdefault(self, key, default=None):
+        try:
+            return self[key]
+        except KeyError:
+            self[key] = default
+        return default
+
+    def update(self, other=(), **kwds):
+        if isinstance(other, dict):
+            for key in other:
+                self[key] = other[key]
+        elif hasattr(other, "keys"):
+            for key in other.keys():
+                self[key] = other[key]
+        else:
+            for key, value in other:
+                self[key] = value
+        for key, value in kwds.items():
+            self[key] = value
+
+    def pop(self, key, default=__marker):
+        try:
+            value = self[key]
+        except KeyError:
+            if default is self.__marker:
+                raise
+            return default
+        else:
+            del self[key]
+            return value
+
+    def values(self):
+        return [self[key] for key in self]
+
+    def items(self):
+        return [(key, self[key]) for key in self]
+
+    def itervalues(self):
+        for key in self:
+            yield self[key]
+
+    def iteritems(self):
+        for key in self:
+            yield (key, self[key])
+
+    def iterkeys(self):
+        return iter(self)
+
+    def keys(self):
+        return list(self)
 
     def popitem(self, last=True):
         """od.popitem() -> (k, v)
@@ -160,7 +202,7 @@ class OrderedDict(dict, MutableMapping):
         """
         if not self:
             raise KeyError('dictionary is empty')
-        key = next(reversed(self) if last else iter(self))
+        key = (last and reversed(self) or iter(self)).next()
         value = self.pop(key)
         return key, value
 
@@ -191,6 +233,9 @@ class OrderedDict(dict, MutableMapping):
             return len(self) == len(other) and \
                    all(_imap(_eq, self.iteritems(), other.iteritems()))
         return dict.__eq__(self, other)
+
+    def __ne__(self, other):
+        return not (self == other)
 
 ############## defaultdict ##################################################
 
