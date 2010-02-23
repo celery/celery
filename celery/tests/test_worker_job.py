@@ -14,6 +14,7 @@ from celery import states
 from celery.log import setup_logger
 from celery.task.base import Task
 from celery.utils import gen_unique_id
+from celery.tests.compat import catch_warnings
 from celery.models import TaskMeta
 from celery.result import AsyncResult
 from celery.worker.job import WorkerTaskTrace, TaskWrapper
@@ -225,8 +226,7 @@ class TestTaskWrapper(unittest.TestCase):
 
         WorkerTaskTrace.execute = _error_exec
         try:
-            import warnings
-            with warnings.catch_warnings(record=True) as log:
+            with catch_warnings(record=True) as log:
                 res = execute_and_trace(mytask.name, gen_unique_id(),
                                         [4], {})
                 self.assertTrue(isinstance(res, ExceptionInfo))

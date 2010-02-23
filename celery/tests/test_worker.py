@@ -11,6 +11,7 @@ from billiard.serialization import pickle
 
 from celery import conf
 from celery.utils import gen_unique_id, noop
+from celery.tests.compat import catch_warnings
 from celery.worker import WorkController
 from celery.worker.listener import CarrotListener, RUN, CLOSE
 from celery.worker.job import TaskWrapper
@@ -221,8 +222,7 @@ class TestCarrotListener(unittest.TestCase):
         m = create_message(backend, unknown={"baz": "!!!"})
         l.event_dispatcher = MockEventDispatcher()
         l.control_dispatch = MockControlDispatch()
-        import warnings
-        with warnings.catch_warnings(record=True) as log:
+        with catch_warnings(record=True) as log:
                 l.receive_message(m.decode(), m)
                 self.assertTrue(log)
                 self.assertTrue("unknown message" in log[0].message.args[0])

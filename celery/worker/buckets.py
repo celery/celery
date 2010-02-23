@@ -8,7 +8,6 @@ from celery.utils import all
 RATE_MODIFIER_MAP = {"s": lambda n: n,
                      "m": lambda n: n / 60.0,
                      "h": lambda n: n / 60.0 / 60.0}
-BASE_IDENTIFIERS = {"0x": 16, "0o": 8, "0b": 2}
 
 
 class RateLimitExceeded(Exception):
@@ -25,12 +24,8 @@ def parse_ratelimit_string(rate_limit):
 
     if rate_limit:
         if isinstance(rate_limit, basestring):
-            base = BASE_IDENTIFIERS.get(rate_limit[:2], 10)
-            try:
-                return int(rate_limit, base)
-            except ValueError:
-                ops, _, modifier = partition(rate_limit, "/")
-                return RATE_MODIFIER_MAP[modifier](int(ops, base)) or 0
+            ops, _, modifier = partition(rate_limit, "/")
+            return RATE_MODIFIER_MAP[modifier or "s"](int(ops)) or 0
         return rate_limit or 0
     return 0
 

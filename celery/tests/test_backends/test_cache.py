@@ -2,6 +2,7 @@ import sys
 import unittest
 
 from billiard.serialization import pickle
+from django.core.cache.backends.base import InvalidCacheBackendError
 
 from celery import result
 from celery import states
@@ -100,8 +101,13 @@ class TestMemcacheWrapper(unittest.TestCase):
 
     def test_memcache_wrapper(self):
 
-        from django.core.cache.backends import memcached
-        from django.core.cache.backends import locmem
+        try:
+            from django.core.cache.backends import memcached
+            from django.core.cache.backends import locmem
+        except InvalidCacheBackendError:
+            sys.stderr.write(
+                "\n* Memcache library is not installed. Skipping test.\n")
+            return
         prev_cache_cls = memcached.CacheClass
         memcached.CacheClass = locmem.CacheClass
         prev_backend_module = sys.modules.pop("celery.backends.cache")

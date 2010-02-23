@@ -101,13 +101,8 @@ class TestRateLimitString(unittest.TestCase):
                           100 / 60.0)
         self.assertEquals(buckets.parse_ratelimit_string("10/h"),
                           10 / 60.0 / 60.0)
-        self.assertEquals(buckets.parse_ratelimit_string("0xffec/s"), 0xffec)
-        self.assertEquals(buckets.parse_ratelimit_string("0xcda/m"),
-                          0xcda / 60.0)
-        self.assertEquals(buckets.parse_ratelimit_string("0xF/h"),
-                          0xf / 60.0 / 60.0)
 
-        for zero in ("0x0", "0b0", "0o0", 0, None, "0/m", "0/h", "0/s"):
+        for zero in (0, None, "0", "0/m", "0/h", "0/s"):
             self.assertEquals(buckets.parse_ratelimit_string(zero), 0)
 
 
