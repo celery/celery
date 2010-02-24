@@ -1,3 +1,4 @@
+from __future__ import generators
 ############## parse_qsl ####################################################
 try:
     from urlparse import parse_qsl
