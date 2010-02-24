@@ -32,6 +32,8 @@ class GeneratorContextManager(object):
                 raise RuntimeError("generator didn't stop after throw()")
             except StopIteration:
                 return True
+            except AttributeError:
+                raise value
             except:
                 if sys.exc_info()[1] is not value:
                     raise

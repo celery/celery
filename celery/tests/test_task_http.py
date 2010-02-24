@@ -5,7 +5,10 @@ import sys
 import logging
 import unittest
 from urllib import addinfourl
-from contextlib import contextmanager
+try:
+    from contextlib import contextmanager
+except ImportError:
+    from celery.tests.utils import fallback_contextmanager as contextmanager
 try:
     from cStringIO import StringIO
 except ImportError:
@@ -100,7 +103,7 @@ class TestHttpDispatch(unittest.TestCase):
     def test_dispatch_success(self):
         logger = logging.getLogger("celery.unittest")
 
-        def with_mock_urlopen():
+        def with_mock_urlopen(_val):
             d = http.HttpDispatch("http://example.com/mul", "GET", {
                                     "x": 10, "y": 10}, logger)
             self.assertEquals(d.dispatch(), 100)
@@ -111,7 +114,7 @@ class TestHttpDispatch(unittest.TestCase):
     def test_dispatch_failure(self):
         logger = logging.getLogger("celery.unittest")
 
-        def with_mock_urlopen():
+        def with_mock_urlopen(_val):
             d = http.HttpDispatch("http://example.com/mul", "GET", {
                                     "x": 10, "y": 10}, logger)
             self.assertRaises(http.RemoteExecuteError, d.dispatch)
@@ -122,7 +125,7 @@ class TestHttpDispatch(unittest.TestCase):
     def test_dispatch_empty_response(self):
         logger = logging.getLogger("celery.unittest")
 
-        def with_mock_urlopen():
+        def with_mock_urlopen(_val):
             d = http.HttpDispatch("http://example.com/mul", "GET", {
                                     "x": 10, "y": 10}, logger)
             self.assertRaises(http.InvalidResponseError, d.dispatch)
@@ -133,7 +136,7 @@ class TestHttpDispatch(unittest.TestCase):
     def test_dispatch_non_json(self):
         logger = logging.getLogger("celery.unittest")
 
-        def with_mock_urlopen():
+        def with_mock_urlopen(_val):
             d = http.HttpDispatch("http://example.com/mul", "GET", {
                                     "x": 10, "y": 10}, logger)
             self.assertRaises(http.InvalidResponseError, d.dispatch)
@@ -144,7 +147,7 @@ class TestHttpDispatch(unittest.TestCase):
     def test_dispatch_unknown_status(self):
         logger = logging.getLogger("celery.unittest")
 
-        def with_mock_urlopen():
+        def with_mock_urlopen(_val):
             d = http.HttpDispatch("http://example.com/mul", "GET", {
                                     "x": 10, "y": 10}, logger)
             self.assertRaises(http.UnknownStatusError, d.dispatch)
@@ -155,7 +158,7 @@ class TestHttpDispatch(unittest.TestCase):
     def test_dispatch_POST(self):
         logger = logging.getLogger("celery.unittest")
 
-        def with_mock_urlopen():
+        def with_mock_urlopen(_val):
             d = http.HttpDispatch("http://example.com/mul", "POST", {
                                     "x": 10, "y": 10}, logger)
             self.assertEquals(d.dispatch(), 100)
@@ -167,9 +170,9 @@ class TestHttpDispatch(unittest.TestCase):
 class TestURL(unittest.TestCase):
 
     def test_URL_get_async(self):
-        def with_eager_tasks():
+        def with_eager_tasks(_val):
 
-            def with_mock_urlopen():
+            def with_mock_urlopen(_val):
                 d = http.URL("http://example.com/mul").get_async(x=10, y=10)
                 self.assertEquals(d.get(), 100)
 
@@ -179,9 +182,9 @@ class TestURL(unittest.TestCase):
         execute_context(eager_tasks(), with_eager_tasks)
 
     def test_URL_post_async(self):
-        def with_eager_tasks():
+        def with_eager_tasks(_val):
 
-            def with_mock_urlopen():
+            def with_mock_urlopen(_val):
                 d = http.URL("http://example.com/mul").post_async(x=10, y=10)
                 self.assertEquals(d.get(), 100)
 

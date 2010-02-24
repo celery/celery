@@ -11,7 +11,7 @@ class ArgOverrideException(Exception):
 
     def __init__(self, message, status_code=10):
         self.status_code = status_code
-        super(ArgOverrideException, self).__init__(message, status_code)
+        Exception.__init__(self, message, status_code)
 
 
 class TestPickle(unittest.TestCase):

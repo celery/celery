@@ -10,7 +10,7 @@ class TestAAPickle(unittest.TestCase):
         from celery.tests.utils import mask_modules
         prev = sys.modules.pop("billiard.serialization")
         try:
-            def with_cPickle_masked():
+            def with_cPickle_masked(_val):
                 from billiard.serialization import pickle
                 import pickle as orig_pickle
                 self.assertTrue(pickle.dumps is orig_pickle.dumps)

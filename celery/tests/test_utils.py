@@ -34,7 +34,7 @@ class TestGenUniqueId(unittest.TestCase):
         from celery.tests.utils import mask_modules
         old_utils = sys.modules.pop("celery.utils")
 
-        def with_ctypes_masked():
+        def with_ctypes_masked(_val):
             from celery.utils import ctypes, gen_unique_id
 
             self.assertTrue(ctypes is None)

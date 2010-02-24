@@ -58,18 +58,18 @@ class MutableURL(object):
 
     """
     def __init__(self, url):
-        self.url = urlparse(url)
-        self._query = dict(parse_qsl(self.url.query))
+        self.parts = urlparse(url)
+        self._query = dict(parse_qsl(self.parts[4]))
 
     def __str__(self):
-        u = self.url
+        scheme, netloc, path, params, query, fragment = self.parts
         query = urlencode(utf8dict(self.query.items()))
-        components = ["%s://" % u.scheme,
-                      "%s" % u.netloc,
-                      u.path and "%s" % u.path or "/",
-                      u.params and ";%s" % u.params or None,
+        components = ["%s://" % scheme,
+                      "%s" % netloc,
+                      path and "%s" % path or "/",
+                      params and ";%s" % params or None,
                       query and "?%s" % query or None,
-                      u.fragment and "#%s" % u.fragment or None]
+                      fragment and "#%s" % fragment or None]
         return "".join(filter(None, components))
 
     def __repr__(self):

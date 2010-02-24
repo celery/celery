@@ -138,7 +138,7 @@ class TestTyrantBackendNoTyrant(unittest.TestCase):
         from celery.tests.utils import mask_modules
         prev = sys.modules.pop("celery.backends.pyredis")
         try:
-            def with_redis_masked():
+            def with_redis_masked(_val):
                 from celery.backends.pyredis import redis
                 self.assertTrue(redis is None)
             context = mask_modules("redis")

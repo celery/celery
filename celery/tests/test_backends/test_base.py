@@ -1,5 +1,6 @@
-import unittest
+import sys
 import types
+import unittest
 
 from django.db.models.base import subclass_exception
 from billiard.serialization import find_nearest_pickleable_exception as fnpe
@@ -80,7 +81,10 @@ class TestPrepareException(unittest.TestCase):
         self.assertTrue(isinstance(x, UnpickleableExceptionWrapper))
         y = b.exception_to_python(x)
         self.assertEquals(y.__class__.__name__, "Impossible")
-        self.assertEquals(y.__class__.__module__, "foo.module")
+        if sys.version_info < (2, 5):
+            self.assertTrue(y.__class__.__module__)
+        else:
+            self.assertEquals(y.__class__.__module__, "foo.module")
 
     def test_regular(self):
         x = b.prepare_exception(KeyError("baz"))

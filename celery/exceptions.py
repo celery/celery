@@ -14,7 +14,7 @@ class NotRegistered(KeyError):
 
     def __init__(self, message, *args, **kwargs):
         message = UNREGISTERED_FMT % str(message)
-        super(NotRegistered, self).__init__(message, *args, **kwargs)
+        KeyError.__init__(self, message, *args, **kwargs)
 
 
 class AlreadyRegistered(Exception):
@@ -34,4 +34,4 @@ class RetryTaskError(Exception):
 
     def __init__(self, message, exc, *args, **kwargs):
         self.exc = exc
-        super(RetryTaskError, self).__init__(message, exc, *args, **kwargs)
+        Exception.__init__(self, message, exc, *args, **kwargs)
