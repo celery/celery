@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import with_statement
-
 import sys
 import logging
 import unittest
@@ -14,6 +12,7 @@ from celery import states
 from celery.log import setup_logger
 from celery.task.base import Task
 from celery.utils import gen_unique_id
+from celery.tests.utils import execute_context
 from celery.tests.compat import catch_warnings
 from celery.models import TaskMeta
 from celery.result import AsyncResult
@@ -226,13 +225,16 @@ class TestTaskWrapper(unittest.TestCase):
 
         WorkerTaskTrace.execute = _error_exec
         try:
-            log = catch_warnings(record=True)
-            res = execute_and_trace(mytask.name, gen_unique_id(),
-                                    [4], {})
-            self.assertTrue(isinstance(res, ExceptionInfo))
-            self.assertTrue(log)
-            self.assertTrue("Exception outside" in log[0].message.args[0])
-            self.assertTrue("KeyError" in log[0].message.args[0])
+            def with_catch_warnings(log):
+                res = execute_and_trace(mytask.name, gen_unique_id(),
+                                        [4], {})
+                self.assertTrue(isinstance(res, ExceptionInfo))
+                self.assertTrue(log)
+                self.assertTrue("Exception outside" in log[0].message.args[0])
+                self.assertTrue("KeyError" in log[0].message.args[0])
+
+            context = catch_warnings(record=True)
+            execute_context(context, with_catch_warnings)
         finally:
             WorkerTaskTrace.execute = old_exec
 

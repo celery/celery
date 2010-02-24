@@ -1,5 +1,3 @@
-from __future__ import with_statement
-
 import unittest
 from Queue import Queue, Empty
 from datetime import datetime, timedelta
@@ -11,6 +9,7 @@ from billiard.serialization import pickle
 
 from celery import conf
 from celery.utils import gen_unique_id, noop
+from celery.tests.utils import execute_context
 from celery.tests.compat import catch_warnings
 from celery.worker import WorkController
 from celery.worker.listener import CarrotListener, RUN, CLOSE
@@ -222,10 +221,14 @@ class TestCarrotListener(unittest.TestCase):
         m = create_message(backend, unknown={"baz": "!!!"})
         l.event_dispatcher = MockEventDispatcher()
         l.control_dispatch = MockControlDispatch()
-        log = catch_warnings(record=True)
-        l.receive_message(m.decode(), m)
-        self.assertTrue(log)
-        self.assertTrue("unknown message" in log[0].message.args[0])
+
+        def with_catch_warnings(log):
+            l.receive_message(m.decode(), m)
+            self.assertTrue(log)
+            self.assertTrue("unknown message" in log[0].message.args[0])
+
+        context = catch_warnings(record=True)
+        execute_context(context, with_catch_warnings)
 
     def test_receieve_message(self):
         l = CarrotListener(self.ready_queue, self.eta_schedule, self.logger,

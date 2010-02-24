@@ -1,4 +1,4 @@
-from __future__ import with_statement, generators
+from __future__ import generators
 
 import os
 import sys
@@ -16,7 +16,7 @@ from carrot.utils import rpartition
 
 from celery.log import (setup_logger, emergency_error,
                         redirect_stdouts_to_logger, LoggingProxy)
-from celery.tests.utils import override_stdouts
+from celery.tests.utils import override_stdouts, execute_context
 
 
 @contextmanager
@@ -35,10 +35,12 @@ class TestLog(unittest.TestCase):
 
     def _assertLog(self, logger, logmsg, loglevel=logging.ERROR):
 
-        sio = wrap_logger(logger, loglevel=loglevel)
-        logger.log(loglevel, logmsg)
-        
-        return sio.getvalue().strip()
+        def with_wrap_logger(sio):
+            logger.log(loglevel, logmsg)
+            return sio.getvalue().strip()
+
+        context = wrap_logger(logger, loglevel=loglevel)
+        execute_context(context, with_wrap_logger)
 
     def assertDidLogTrue(self, logger, logmsg, reason, loglevel=None):
         val = self._assertLog(logger, logmsg, loglevel=loglevel)
@@ -73,11 +75,16 @@ class TestLog(unittest.TestCase):
         from multiprocessing import get_logger
         l = get_logger()
         l.handlers = []
-        outs = override_stdouts()
-        stdout, stderr = outs
-        l = setup_logger(logfile=stderr, loglevel=logging.INFO)
-        l.info("The quick brown fox...")
-        self.assertTrue("The quick brown fox..." in stderr.getvalue())
+
+        def with_override_stdouts(outs):
+            stdout, stderr = outs
+            l = setup_logger(logfile=stderr, loglevel=logging.INFO)
+            l.info("The quick brown fox...")
+            self.assertTrue("The quick brown fox..." in stderr.getvalue())
+
+        context = override_stdouts()
+        execute_context(context, with_override_stdouts)
+
 
     def test_setup_logger_no_handlers_file(self):
         from multiprocessing import get_logger
@@ -89,50 +96,59 @@ class TestLog(unittest.TestCase):
 
     def test_emergency_error_stderr(self):
         outs = override_stdouts()
-        stdout, stderr = outs
-        emergency_error(None, "The lazy dog crawls under the fast fox")
-        self.assertTrue("The lazy dog crawls under the fast fox" in \
-                            stderr.getvalue())
+
+        def with_override_stdouts(outs):
+            stdout, stderr = outs
+            emergency_error(None, "The lazy dog crawls under the fast fox")
+            self.assertTrue("The lazy dog crawls under the fast fox" in
+                                stderr.getvalue())
+
+        context = override_stdouts()
+        execute_context(context, with_override_stdouts)
 
     def test_emergency_error_file(self):
         tempfile = mktemp(suffix="unittest", prefix="celery")
         emergency_error(tempfile, "Vandelay Industries")
         tempfilefh = open(tempfile, "r")
-        self.assertTrue("Vandelay Industries" in "".join(tempfilefh))
-        tempfilefh.close()
-        os.unlink(tempfile)
+        try:
+            self.assertTrue("Vandelay Industries" in "".join(tempfilefh))
+        finally:
+            tempfilefh.close()
+            os.unlink(tempfile)
 
     def test_redirect_stdouts(self):
         logger = setup_logger(loglevel=logging.ERROR, logfile=None)
-        did_exc = None
         try:
-            sio = wrap_logger(logger)
-            redirect_stdouts_to_logger(logger, loglevel=logging.ERROR)
-            logger.error("foo")
-            self.assertTrue("foo" in sio.getvalue())
-        except Exception, e:
-            did_exc = e
+            def with_wrap_logger(sio):
+                redirect_stdouts_to_logger(logger, loglevel=logging.ERROR)
+                logger.error("foo")
+                self.assertTrue("foo" in sio.getvalue())
 
-        sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
-        
-        if did_exc:
-            raise did_exc
+            context = wrap_logger(logger)
+            execute_context(context, with_wrap_logger)
+        finally:
+            sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
+
 
     def test_logging_proxy(self):
         logger = setup_logger(loglevel=logging.ERROR, logfile=None)
-        sio = wrap_logger(logger)
-        p = LoggingProxy(logger)
-        p.close()
-        p.write("foo")
-        self.assertTrue("foo" not in sio.getvalue())
-        p.closed = False
-        p.write("foo")
-        self.assertTrue("foo" in sio.getvalue())
-        lines = ["baz", "xuzzy"]
-        p.writelines(lines)
-        for line in lines:
-            self.assertTrue(line in sio.getvalue())
-        p.flush()
-        p.close()
-        self.assertFalse(p.isatty())
-        self.assertTrue(p.fileno() is None)
+
+        def with_wrap_logger(sio):
+            p = LoggingProxy(logger)
+            p.close()
+            p.write("foo")
+            self.assertTrue("foo" not in sio.getvalue())
+            p.closed = False
+            p.write("foo")
+            self.assertTrue("foo" in sio.getvalue())
+            lines = ["baz", "xuzzy"]
+            p.writelines(lines)
+            for line in lines:
+                self.assertTrue(line in sio.getvalue())
+            p.flush()
+            p.close()
+            self.assertFalse(p.isatty())
+            self.assertTrue(p.fileno() is None)
+
+        context = wrap_logger(logger)
+        execute_context(context, with_wrap_logger)

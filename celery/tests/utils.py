@@ -34,10 +34,23 @@ class GeneratorContextManager(object):
                 if sys.exc_info()[1] is not value:
                     raise
 
-def fallback_contextmanager(func):
+def fallback_contextmanager(fun):
     def helper(*args, **kwds):
-        return GeneratorContextManager(func(*args, **kwds))
+        return GeneratorContextManager(fun(*args, **kwds))
     return helper
+
+
+def execute_context(context, fun):
+    val = context.__enter__()
+    exc_info = (None, None, None)
+    retval = None
+    try:
+        retval = fun(val)
+    except:
+        exc_info = sys.exc_info()
+    context.__exit__(*exc_info)
+    return retval
+
 
 try:
     from contextlib import contextmanager
