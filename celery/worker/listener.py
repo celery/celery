@@ -214,8 +214,6 @@ class CarrotListener(object):
         while 1:
             yield self.connection.connection.drain_events()
 
-        return self._mainloop(**kwargs)
-
     def _detect_wait_method(self):
         if hasattr(self.connection.connection, "drain_events"):
             self.broadcast_consumer.register_callback(self.receive_message)
