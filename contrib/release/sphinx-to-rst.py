@@ -1,6 +1,4 @@
 #!/usr/bin/even/python
-from __future__ import with_statement
-
 import os
 import re
 import sys
@@ -16,13 +14,16 @@ def include_file(lines, pos, match):
     global dirname
     orig_filename = match.groups()[0]
     filename = os.path.join(dirname, orig_filename)
-    with file(filename) as fh:
+    fh = open(filename)
+    try:
         old_dirname = dirname
         dirname = os.path.dirname(orig_filename)
         try:
             lines[pos] = sphinx_to_rst(fh)
         finally:
             dirname = old_dirname
+    finally:
+        fh.close()
 
 
 def replace_code_block(lines, pos, match):
@@ -67,5 +68,8 @@ def sphinx_to_rst(fh):
 if __name__ == "__main__":
     global dirname
     dirname = os.path.dirname(sys.argv[1])
-    with open(sys.argv[1]) as fh:
+    fh = open(sys.argv[1])
+    try:
         print(sphinx_to_rst(fh))
+    finally:
+        fh.close()

@@ -1,5 +1,3 @@
-from __future__ import with_statement
-
 import sys
 import socket
 import unittest
@@ -7,7 +5,7 @@ import unittest
 from billiard.utils.functional import wraps
 
 from celery import utils
-from celery.tests.utils import sleepdeprived
+from celery.tests.utils import sleepdeprived, execute_context
 
 
 class TestChunks(unittest.TestCase):
@@ -36,12 +34,16 @@ class TestGenUniqueId(unittest.TestCase):
         from celery.tests.utils import mask_modules
         old_utils = sys.modules.pop("celery.utils")
         try:
-            mask_modules("ctypes")
-            from celery.utils import ctypes, gen_unique_id
-            self.assertTrue(ctypes is None)
-            uuid = gen_unique_id()
-            self.assertTrue(uuid)
-            self.assertTrue(isinstance(uuid, basestring))
+            def with_ctypes_masked():
+                from celery.utils import ctypes, gen_unique_id
+                self.assertTrue(ctypes is None)
+                uuid = gen_unique_id()
+                self.assertTrue(uuid)
+                self.assertTrue(isinstance(uuid, basestring))
+
+            context = mask_modules("ctypes")
+            execute_context(context, with_ctypes_masked)
+
         finally:
             sys.modules["celery.utils"] = old_utils
 

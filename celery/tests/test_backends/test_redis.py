@@ -1,5 +1,3 @@
-from __future__ import with_statement
-
 import sys
 import errno
 import socket
@@ -9,6 +7,7 @@ from django.core.exceptions import ImproperlyConfigured
 
 from celery import states
 from celery.utils import gen_unique_id
+from celery.tests.utils import execute_context
 from celery.backends import pyredis
 from celery.backends.pyredis import RedisBackend
 
@@ -138,10 +137,14 @@ class TestTyrantBackendNoTyrant(unittest.TestCase):
     def test_tyrant_None_if_tyrant_not_installed(self):
         from celery.tests.utils import mask_modules
         prev = sys.modules.pop("celery.backends.pyredis")
-        with mask_modules("redis"):
-            from celery.backends.pyredis import redis
-            self.assertTrue(redis is None)
-        sys.modules["celery.backends.pyredis"] = prev
+        try:
+            def with_redis_masked():
+                from celery.backends.pyredis import redis
+                self.assertTrue(redis is None)
+            context = mask_modules("redis")
+            execute_context(context, with_redis_masked)
+        finally:
+            sys.modules["celery.backends.pyredis"] = prev
 
     def test_constructor_raises_if_tyrant_not_installed(self):
         from celery.backends import pyredis

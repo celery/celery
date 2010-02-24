@@ -1,4 +1,4 @@
-from __future__ import with_statement, generators
+from __future__ import generators
 
 import os
 import sys
