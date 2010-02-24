@@ -222,7 +222,7 @@ class TestCarrotListener(unittest.TestCase):
         m = create_message(backend, unknown={"baz": "!!!"})
         l.event_dispatcher = MockEventDispatcher()
         l.control_dispatch = MockControlDispatch()
-        log catch_warnings(record=True)
+        log = catch_warnings(record=True)
         l.receive_message(m.decode(), m)
         self.assertTrue(log)
         self.assertTrue("unknown message" in log[0].message.args[0])

@@ -31,7 +31,7 @@ def mock_urlopen(response_method):
 
     urllib2.urlopen = _mocked
 
-    yield
+    yield True
 
     urllib2.urlopen = urlopen
 

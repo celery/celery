@@ -54,7 +54,7 @@ def eager_tasks():
     prev = conf.ALWAYS_EAGER
     conf.ALWAYS_EAGER = True
 
-    yield
+    yield True
 
     conf.ALWAYS_EAGER = prev
 

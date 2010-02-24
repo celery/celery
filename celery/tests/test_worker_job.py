@@ -226,7 +226,7 @@ class TestTaskWrapper(unittest.TestCase):
 
         WorkerTaskTrace.execute = _error_exec
         try:
-            log catch_warnings(record=True)
+            log = catch_warnings(record=True)
             res = execute_and_trace(mytask.name, gen_unique_id(),
                                     [4], {})
             self.assertTrue(isinstance(res, ExceptionInfo))
