@@ -8,6 +8,7 @@ def _patch_logger_class():
 
     from multiprocessing.process import current_process
     logging._acquireLock()
+    did_exc = None
     try:
         OldLoggerClass = logging.getLoggerClass()
         if not getattr(OldLoggerClass, '_process_aware', False):
@@ -20,9 +21,14 @@ def _patch_logger_class():
                     record.processName = current_process()._name
                     return record
             logging.setLoggerClass(ProcessAwareLogger)
-    finally:
-        logging._releaseLock()
+    except Exception, e:
+        did_exc = e
 
+    logging._releaseLock()
+
+    if did_exc:
+        raise did_exc
+        
 
 def ensure_process_aware_logger():
     global _process_aware

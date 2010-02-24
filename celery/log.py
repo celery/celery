@@ -79,6 +79,7 @@ def emergency_error(logfile, message):
     some other reason."""
     closefh = noop
     logfile = logfile or sys.__stderr__
+    did_exc = None
     if hasattr(logfile, "write"):
         logfh = logfile
     else:
@@ -89,9 +90,14 @@ def emergency_error(logfile, message):
                         "asctime": time.asctime(),
                         "pid": os.getpid(),
                         "message": message})
-    finally:
-        closefh()
+    except Exception, e:
+        did_exc = e
 
+    closefh()
+
+    if did_exc:
+        raise did_exc
+        
 
 def redirect_stdouts_to_logger(logger, loglevel=None):
     """Redirect :class:`sys.stdout` and :class:`sys.stderr` to a
@@ -134,14 +140,20 @@ class LoggingProxy(object):
 
                 def handleError(self, record):
                     exc_info = sys.exc_info()
+                    did_exc = None
                     try:
                         traceback.print_exception(exc_info[0], exc_info[1],
                                                   exc_info[2], None,
                                                   sys.__stderr__)
                     except IOError:
                         pass    # see python issue 5971
-                    finally:
-                        del(exc_info)
+                    except Exception, e:
+                        did_exc = e
+
+                    del(exc_info)
+                    
+                    if did_exc:
+                        raise did_exc
 
             handler.handleError = WithSafeHandleError().handleError
 

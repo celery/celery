@@ -76,11 +76,17 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
     exchange = options.get("exchange")
 
     publish = publisher or task.get_publisher(connection, exchange=exchange)
+    did_exc = None
     try:
         task_id = publish.delay_task(task.name, args, kwargs, task_id=task_id,
                                      countdown=countdown, eta=eta, **options)
-    finally:
-        publisher or publish.close()
+    except Exception, e:
+        did_exc = e
+
+    publisher or publish.close()
+
+    if did_exc:
+        raise did_exc
 
     return task.AsyncResult(task_id)
 
@@ -92,11 +98,17 @@ def send_task(name, args=None, kwargs=None, countdown=None, eta=None,
 
     exchange = options.get("exchange")
     publish = publisher or TaskPublisher(connection, exchange=exchange)
+    did_exc = None
     try:
         task_id = publish.delay_task(name, args, kwargs, task_id=task_id,
                                      countdown=countdown, eta=eta, **options)
-    finally:
-        publisher or publish.close()
+    except Exception, e:
+        did_exc = e
+
+    publisher or publish.close()
+    
+    if did_exc:
+        raise did_exc
 
     return result_cls(task_id)
 

@@ -46,10 +46,17 @@ class Heart(threading.Thread):
                 break
             sleep(1)
 
+        did_exc = None
+
         try:
             dispatch("worker-offline")
-        finally:
-            self._stopped.set()
+        except Exception, e:
+            did_exc = e
+
+        self._stopped.set()
+
+        if did_exc:
+            raise did_exc
 
     def stop(self):
         """Gracefully shutdown the thread."""

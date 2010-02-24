@@ -186,6 +186,8 @@ class ClockService(object):
         if embedded_process:
             platform.set_process_title("celerybeat")
 
+        did_exc = None
+
         try:
             while True:
                 if self._shutdown.isSet():
@@ -196,8 +198,13 @@ class ClockService(object):
                 time.sleep(interval)
         except (KeyboardInterrupt, SystemExit):
             self.sync()
-        finally:
-            self.sync()
+        except Exception, e:
+            did_exc = e
+
+        self.sync()
+        
+        if did_exc:
+            raise did_exc
 
     def sync(self):
         if self._schedule is not None and not self._in_sync:

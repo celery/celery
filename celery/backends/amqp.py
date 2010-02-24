@@ -96,11 +96,18 @@ class AMQPBackend(BaseDictBackend):
         consumer = self._consumer_for_task_id(task_id, connection)
         consumer.register_callback(callback)
 
+        did_exc = None
+
         try:
             consumer.iterconsume().next()
-        finally:
-            consumer.backend.channel.queue_delete(routing_key)
-            consumer.close()
+        except Exception, e:
+            did_exc = e
+
+        consumer.backend.channel.queue_delete(routing_key)
+        consumer.close()
+
+        if did_exc:
+            raise did_exc
 
         self._cache[task_id] = results[0]
         return results[0]

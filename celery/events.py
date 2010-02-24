@@ -54,10 +54,16 @@ class EventDispatcher(object):
             return
 
         self._lock.acquire()
+        did_exc = None
         try:
             self.publisher.send(Event(type, hostname=self.hostname))
-        finally:
-            self._lock.release()
+        except Exception, e:
+            did_exc = e
+
+        self._lock.release()
+        
+        if did_exc:
+            raise did_exc
 
     def close(self):
         """Close the event dispatcher."""

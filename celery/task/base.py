@@ -551,12 +551,19 @@ class TaskSet(object):
         taskset_id = gen_unique_id()
         conn = self.task.establish_connection(connect_timeout=connect_timeout)
         publisher = self.task.get_publisher(connection=conn)
+        did_exc = None
         try:
             subtasks = [self.apply_part(arglist, taskset_id, publisher)
                             for arglist in self.arguments]
-        finally:
-            publisher.close()
-            conn.close()
+        except Exception, e:
+            did_exc = e
+
+        publisher.close()
+        conn.close()
+
+        if did_exc:
+            raise did_exc
+
         result = TaskSetResult(taskset_id, subtasks)
 
         return result

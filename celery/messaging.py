@@ -136,11 +136,17 @@ def with_connection(fun):
         kwargs["connection"] = conn = connection or \
                 establish_connection(connect_timeout=timeout)
         close_connection = not connection and conn.close or noop
+        did_exc = None
 
         try:
             return fun(*args, **kwargs)
-        finally:
-            close_connection()
+        except Exception, e:
+            did_exc = e
+
+        close_connection()
+
+        if did_exc:
+            raise did_exc
 
     return _inner
 
