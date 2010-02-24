@@ -1,3 +1,4 @@
+from __future__ import generators
 import unittest
 from Queue import Queue, Empty
 from datetime import datetime, timedelta

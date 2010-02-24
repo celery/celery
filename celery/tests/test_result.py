@@ -1,3 +1,4 @@
+from __future__ import generators
 import unittest
 
 from celery import states
