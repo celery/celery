@@ -62,17 +62,12 @@ def autodiscover():
     if _RACE_PROTECTION:
         return
     _RACE_PROTECTION = True
-    did_exc = None
     try:
         return filter(None, [find_related_module(app, "tasks")
                                 for app in settings.INSTALLED_APPS])
-    except Exception, e:
-        did_exc = e
+    finally:
+        _RACE_PROTECTION = False
 
-    _RACE_PROTECTION = False
-
-    if did_exc:
-        raise did_exc
 
 def find_related_module(app, related_name):
     """Given an application name and a module name, tries to find that

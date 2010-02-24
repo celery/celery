@@ -123,16 +123,10 @@ class WorkerTaskTrace(TaskTrace):
 
 def execute_and_trace(task_name, *args, **kwargs):
     platform.set_mp_process_title("celeryd", info=task_name)
-    did_exc = None
     try:
         return WorkerTaskTrace(task_name, *args, **kwargs).execute_safe()
-    except Exception, e:
-        did_exc = e
-
-    platform.set_mp_process_title("celeryd")
-    
-    if did_exc:
-        raise did_exc
+    finally:
+        platform.set_mp_process_title("celeryd")
 
 
 class TaskWrapper(object):

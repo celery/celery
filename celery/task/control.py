@@ -15,16 +15,10 @@ def discard_all(connection=None,
 
     """
     consumers = get_consumer_set(connection=connection)
-    did_exc = None
     try:
         return consumers.discard_all()
-    except Exception, e:
-        did_exc = e
-
-    consumers.close()
-
-    if did_exc:
-        raise did_exc
+    finally:
+        consumers.close()
 
 
 def revoke(task_id, destination=None, connection=None,
@@ -86,14 +80,7 @@ def broadcast(command, arguments=None, destination=None, connection=None,
     arguments = arguments or {}
 
     broadcast = BroadcastPublisher(connection)
-    did_exc = None
     try:
         broadcast.send(command, arguments, destination=destination)
-    except Exception, e:
-        did_exc = e
-
-    broadcast.close()
-    
-    if did_exc:
-        raise did_exc
-
+    finally:
+        broadcast.close()

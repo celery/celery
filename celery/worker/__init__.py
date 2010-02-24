@@ -165,20 +165,14 @@ class WorkController(object):
     def start(self):
         """Starts the workers main loop."""
         self._state = "RUN"
-        did_exc = None
 
         try:
             for component in self.components:
                 self.logger.debug("Starting thread %s..." % \
                         component.__class__.__name__)
                 component.start()
-        except Exception, e:
-            did_exc = e
-
-        self.stop()
-
-        if did_exc:
-            raise did_exc
+        finally:
+            self.stop()
 
     def process_task(self, wrapper):
         """Process task by sending it to the pool of workers."""
