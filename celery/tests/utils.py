@@ -179,7 +179,7 @@ def mask_modules(*modnames):
             return realimport(name, *args, **kwargs)
 
     __builtin__.__import__ = myimp
-    yield
+    yield True
     __builtin__.__import__ = realimport
 
 
