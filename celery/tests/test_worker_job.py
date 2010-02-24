@@ -226,13 +226,13 @@ class TestTaskWrapper(unittest.TestCase):
 
         WorkerTaskTrace.execute = _error_exec
         try:
-            with catch_warnings(record=True) as log:
-                res = execute_and_trace(mytask.name, gen_unique_id(),
-                                        [4], {})
-                self.assertTrue(isinstance(res, ExceptionInfo))
-                self.assertTrue(log)
-                self.assertTrue("Exception outside" in log[0].message.args[0])
-                self.assertTrue("KeyError" in log[0].message.args[0])
+            log catch_warnings(record=True)
+            res = execute_and_trace(mytask.name, gen_unique_id(),
+                                    [4], {})
+            self.assertTrue(isinstance(res, ExceptionInfo))
+            self.assertTrue(log)
+            self.assertTrue("Exception outside" in log[0].message.args[0])
+            self.assertTrue("KeyError" in log[0].message.args[0])
         finally:
             WorkerTaskTrace.execute = old_exec
 

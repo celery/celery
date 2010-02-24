@@ -5,7 +5,44 @@ import sys
 import __builtin__
 from StringIO import StringIO
 from functools import wraps
-from contextlib import contextmanager
+
+class GeneratorContextManager(object):
+    def __init__(self, gen):
+        self.gen = gen
+
+    def __enter__(self):
+        try:
+            return self.gen.next()
+        except StopIteration:
+            raise RuntimeError("generator didn't yield")
+
+    def __exit__(self, type, value, traceback):
+        if type is None:
+            try:
+                self.gen.next()
+            except StopIteration:
+                return
+            else:
+                raise RuntimeError("generator didn't stop")
+        else:
+            try:
+                self.gen.throw(type, value, traceback)
+                raise RuntimeError("generator didn't stop after throw()")
+            except StopIteration:
+                return True
+            except:
+                if sys.exc_info()[1] is not value:
+                    raise
+
+def fallback_contextmanager(func):
+    def helper(*args, **kwds):
+        return GeneratorContextManager(func(*args, **kwds))
+    return helper
+
+try:
+    from contextlib import contextmanager
+except ImportError:
+    contextmanager = fallback_contextmanager
 
 from celery.utils import noop
 
