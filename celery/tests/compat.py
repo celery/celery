@@ -13,11 +13,8 @@ class WarningMessage(object):
         local_values = locals()
         for attr in self._WARNING_DETAILS:
             setattr(self, attr, local_values[attr])
-        
-        if category:
-            self._category_name = category.__name__
-        else:
-            self._category_name = None
+
+        self._category_name = category and category.__name__ or None
 
     def __str__(self):
         return ("{message : %r, category : %r, filename : %r, lineno : %s, "

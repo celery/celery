@@ -163,6 +163,7 @@ class TestHttpDispatch(unittest.TestCase):
         context = mock_urlopen(success_response(100))
         execute_context(context, with_mock_urlopen)
 
+
 class TestURL(unittest.TestCase):
 
     def test_URL_get_async(self):

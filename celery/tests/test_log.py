@@ -85,7 +85,6 @@ class TestLog(unittest.TestCase):
         context = override_stdouts()
         execute_context(context, with_override_stdouts)
 
-
     def test_setup_logger_no_handlers_file(self):
         from multiprocessing import get_logger
         l = get_logger()
@@ -126,7 +125,6 @@ class TestLog(unittest.TestCase):
             execute_context(context, with_wrap_logger)
         finally:
             sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
-
 
     def test_logging_proxy(self):
         logger = setup_logger(loglevel=logging.ERROR, logfile=None)

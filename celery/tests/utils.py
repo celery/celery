@@ -4,7 +4,9 @@ import os
 import sys
 import __builtin__
 from StringIO import StringIO
-from functools import wraps
+
+from billiard.utils.functional import wraps
+
 
 class GeneratorContextManager(object):
     def __init__(self, gen):
@@ -33,6 +35,7 @@ class GeneratorContextManager(object):
             except:
                 if sys.exc_info()[1] is not value:
                     raise
+
 
 def fallback_contextmanager(fun):
     def helper(*args, **kwds):
