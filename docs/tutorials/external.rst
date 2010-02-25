@@ -41,10 +41,37 @@ http://robertpogorzelski.com/blog/2009/09/10/rabbitmq-celery-and-django/
 Message Queues, Django and Celery Quick Start
 =============================================
 
-Celery tutorial by `Rich Leland`, the installation section is Mac OS X specific:
+Celery tutorial by `Rich Leland`_, the installation section is Mac OS X specific:
 http://mathematism.com/2010/feb/16/message-queues-django-and-celery-quick-start/
 
 .. _`Rich Leland`: http://twitter.com/richleland
+
+
+Background task processing and deferred execution in Django
+===========================================================
+
+`Alon Swartz`_ writes about celery and RabbitMQ on his blog:
+    http://www.turnkeylinux.org/blog/django-celery-rabbitmq
+
+.. _`Alon Swartz`: http://twitter.com/alonswartz
+
+How to get celeryd to work on FreeBSD
+=====================================
+
+Installing multiprocessing on FreeBSD isn't that easy, but thanks to `Viktor Petersson`_
+we now have a step-to-step guide:
+http://www.playingwithwire.com/2009/10/how-to-get-celeryd-to-work-on-freebsd/
+
+
+Web-based 3D animation software
+===============================
+
+Indy Chang Liu at `ThinkingCactus`_ uses Celery to render animations
+asynchronously (PDF):
+http://ojs.pythonpapers.org/index.php/tppm/article/viewFile/105/122
+
+.. _`ThinkingCactus`: http://thinkingcactus.com/
+
 
 RabbitMQ with Python and Ruby
 =============================
