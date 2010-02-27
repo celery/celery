@@ -389,7 +389,7 @@ yourself:
 
 .. code-block:: python
 
-    >>> from celery.task import registry
+    >>> from celery import registry
     >>> from celery import task
     >>> registry.tasks
     {'celery.delete_expired_task_meta':
