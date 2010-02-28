@@ -7,8 +7,6 @@ from django.db import models
 from django.db import transaction
 from django.db.models.query import QuerySet
 
-from celery import states
-
 
 def transaction_retry(max_retries=1):
     """Decorator for methods doing database operations.

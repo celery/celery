@@ -12,7 +12,7 @@ except ImportError:
     ctypes = None
 from uuid import UUID, uuid4, _uuid_generate_random
 from inspect import getargspec
-from itertools import repeat, islice
+from itertools import islice
 
 from billiard.utils.functional import curry
 

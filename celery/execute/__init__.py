@@ -1,5 +1,3 @@
-from datetime import datetime, timedelta
-
 from celery import conf
 from celery.utils import gen_unique_id, fun_takes_kwargs, mattrgetter
 from celery.result import AsyncResult, EagerResult

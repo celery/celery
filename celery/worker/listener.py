@@ -7,7 +7,6 @@ from dateutil.parser import parse as parse_iso8601
 from carrot.connection import AMQPConnectionException
 
 from celery import conf
-from celery import signals
 from celery.utils import noop, retry_over_time
 from celery.worker.job import TaskWrapper, InvalidTaskError
 from celery.worker.revoke import revoked

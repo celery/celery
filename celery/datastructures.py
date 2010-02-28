@@ -5,7 +5,6 @@ Custom Datastructures
 
 """
 import time
-import heapq
 import traceback
 from UserList import UserList
 from Queue import Queue, Empty as QueueEmpty

@@ -2,10 +2,8 @@
 from carrot.messaging import Consumer, Publisher
 
 from celery import conf
-from celery import states
 from celery.backends.base import BaseDictBackend
 from celery.messaging import establish_connection
-from celery.datastructures import LocalCache
 
 
 class AMQPBackend(BaseDictBackend):

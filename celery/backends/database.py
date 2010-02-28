@@ -1,4 +1,3 @@
-from celery import states
 from celery.models import TaskMeta, TaskSetMeta
 from celery.backends.base import BaseDictBackend
 

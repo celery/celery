@@ -1,6 +1,5 @@
 """celery.backends.base"""
 import time
-from UserDict import UserDict
 
 from billiard.serialization import pickle
 from billiard.serialization import get_pickled_exception
@@ -182,7 +181,7 @@ class BaseDictBackend(BaseBackend):
         self._cache[task_id] = self.get_task_meta(task_id, cache=False)
 
     def reload_taskset_result(self, taskset_id):
-        self._cache[taskset_id] = self.get_taskset_meta(task_id, cache=False)
+        self._cache[taskset_id] = self.get_taskset_meta(taskset_id, cache=False)
 
     def get_taskset_meta(self, taskset_id, cache=True):
         if cache and taskset_id in self._cache:

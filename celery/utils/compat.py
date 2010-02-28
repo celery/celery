@@ -36,6 +36,8 @@ try:
     from collections import MutableMapping
 except ImportError:
     from UserDict import DictMixin as MutableMapping
+from itertools import imap as _imap
+from operator import eq as _eq
 
 
 class _Link(object):

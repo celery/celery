@@ -7,7 +7,6 @@ from billiard.pool import DynamicPool
 from billiard.utils.functional import curry
 
 from celery import log
-from celery.utils import noop
 from celery.datastructures import ExceptionInfo
 
 

@@ -46,20 +46,20 @@ class MongoBackend(BaseDictBackend):
 
         settings = load_settings()
 
-        conf = getattr(settings, "CELERY_MONGODB_BACKEND_SETTINGS", None)
-        if conf is not None:
-            if not isinstance(conf, dict):
+        config = getattr(settings, "CELERY_MONGODB_BACKEND_SETTINGS", None)
+        if config is not None:
+            if not isinstance(config, dict):
                 raise ImproperlyConfigured(
                     "MongoDB backend settings should be grouped in a dict")
 
-            self.mongodb_host = conf.get('host', self.mongodb_host)
-            self.mongodb_port = int(conf.get('port', self.mongodb_port))
-            self.mongodb_user = conf.get('user', self.mongodb_user)
-            self.mongodb_password = conf.get(
+            self.mongodb_host = config.get('host', self.mongodb_host)
+            self.mongodb_port = int(config.get('port', self.mongodb_port))
+            self.mongodb_user = config.get('user', self.mongodb_user)
+            self.mongodb_password = config.get(
                     'password', self.mongodb_password)
-            self.mongodb_database = conf.get(
+            self.mongodb_database = config.get(
                     'database', self.mongodb_database)
-            self.mongodb_taskmeta_collection = conf.get(
+            self.mongodb_taskmeta_collection = config.get(
                 'taskmeta_collection', self.mongodb_taskmeta_collection)
 
         super(MongoBackend, self).__init__(*args, **kwargs)
