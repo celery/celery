@@ -40,6 +40,10 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
     :keyword exchange: The named exchange to send the task to. Defaults to
         :attr:`celery.task.base.Task.exchange`.
 
+    :keyword exchange_type: The exchange type to initalize the exchange as
+        if not already declared.
+        Defaults to :attr:`celery.task.base.Task.exchange_type`.
+
     :keyword immediate: Request immediate delivery. Will raise an exception
         if the task cannot be routed to a worker immediately.
         (Do not confuse this parameter with the ``countdown`` and ``eta``
@@ -72,8 +76,10 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
     task = tasks[task.name] # get instance from registry
     options = dict(extract_exec_options(task), **options)
     exchange = options.get("exchange")
+    exchange_type = options.get("exchange_type")
 
-    publish = publisher or task.get_publisher(connection, exchange=exchange)
+    publish = publisher or task.get_publisher(connection, exchange=exchange,
+                                              exchange_type=exchange_type)
     try:
         task_id = publish.delay_task(task.name, args, kwargs, task_id=task_id,
                                      countdown=countdown, eta=eta, **options)
@@ -89,7 +95,10 @@ def send_task(name, args=None, kwargs=None, countdown=None, eta=None,
         result_cls=AsyncResult, **options):
 
     exchange = options.get("exchange")
-    publish = publisher or TaskPublisher(connection, exchange=exchange)
+    exchange_type = options.get("exchange_type")
+
+    publish = publisher or TaskPublisher(connection, exchange=exchange,
+                                         exchange_type=exchange_type)
     try:
         task_id = publish.delay_task(name, args, kwargs, task_id=task_id,
                                      countdown=countdown, eta=eta, **options)

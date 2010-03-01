@@ -165,6 +165,7 @@ class Task(object):
     rate_limit = conf.DEFAULT_RATE_LIMIT
     rate_limit_queue_type = Queue
     backend = default_backend
+    exchange_type = conf.DEFAULT_EXCHANGE_TYPE
 
     MaxRetriesExceededError = MaxRetriesExceededError
 
@@ -208,7 +209,7 @@ class Task(object):
 
     @classmethod
     def get_publisher(self, connection=None, exchange=None,
-            connect_timeout=conf.BROKER_CONNECTION_TIMEOUT):
+            connect_timeout=conf.BROKER_CONNECTION_TIMEOUT,exchange_type=None):
         """Get a celery task message publisher.
 
         :rtype: :class:`celery.messaging.TaskPublisher`.
@@ -223,9 +224,12 @@ class Task(object):
         """
         if exchange is None:
             exchange = self.exchange
+        if exchange_type is None:
+            exchange_type = self.exchange_type
         connection = connection or self.establish_connection(connect_timeout)
         return TaskPublisher(connection=connection,
                              exchange=exchange,
+                             exchange_type=exchange_type,
                              routing_key=self.routing_key)
 
     @classmethod
