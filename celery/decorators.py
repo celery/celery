@@ -56,7 +56,9 @@ def task(*args, **options):
             # (this happens in celery.utils.fun_takes_kwargs)
             run.argspec = getargspec(fun)
 
-            cls_dict = dict(options, run=run, __module__=fun.__module__)
+            cls_dict = dict(options, run=run,
+                            __module__=fun.__module__,
+                            __doc__=fun.__doc__)
             return type(fun.__name__, (base, ), cls_dict)()
 
         return _create_task_cls
