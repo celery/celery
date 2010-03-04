@@ -34,6 +34,7 @@ COVERAGE_EXCLUDE_MODULES = ("celery.__init__",
 )
 
 NOSE_ARGS = [os.path.join(here, os.pardir, "celery", "tests"),
+            "--cover3-package=celery",
             "--cover3-branch",
             "--cover3-exclude=%s" % ",".join(COVERAGE_EXCLUDE_MODULES)]
 TEST_DATABASE_NAME=":memory"
