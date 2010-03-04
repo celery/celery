@@ -16,10 +16,8 @@ ADMINS = (
     # ('Your Name', 'your_email@domain.com'),
 )
 
-TEST_RUNNER = "celery.tests.runners.run_tests"
-TEST_APPS = (
-    "celery",
-)
+TEST_RUNNER = "django_nose.run_tests"
+here = os.path.abspath(os.path.dirname(__file__))
 COVERAGE_EXCLUDE_MODULES = ("celery.__init__",
                             "celery.conf",
                             "celery.tests.*",
@@ -33,9 +31,12 @@ COVERAGE_EXCLUDE_MODULES = ("celery.__init__",
                             "celery.platform", # FIXME
                             "celery.backends.mongodb", # FIXME
                             "celery.backends.tyrant", # FIXME
-                            )
-COVERAGE_HTML_REPORT = True
-COVERAGE_BRANCH_COVERAGE = True
+)
+
+NOSE_ARGS = [os.path.join(here, os.pardir, "celery", "tests"),
+            "--cover3-branch",
+            "--cover3-exclude=%s" % ",".join(COVERAGE_EXCLUDE_MODULES)]
+TEST_DATABASE_NAME=":memory"
 
 BROKER_HOST = "localhost"
 BROKER_PORT = 5672
@@ -70,13 +71,5 @@ INSTALLED_APPS = (
     'someapp',
     'someappwotask',
 )
-
-try:
-    import test_extensions
-except ImportError:
-    pass
-else:
-    pass
-    INSTALLED_APPS += ("test_extensions", )
 
 CELERY_SEND_TASK_ERROR_EMAILS = False
