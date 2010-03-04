@@ -34,11 +34,8 @@ def get_tyrant_or_None():
         tb = TyrantBackend()
         try:
             tb.open()
-        except socket.error, exc:
-            if exc.errno == errno.ECONNREFUSED:
-                return emit_no_tyrant_msg("not running")
-            else:
-                raise
+        except socket.error:
+            return emit_no_tyrant_msg("not running")
         return tb
     except ImproperlyConfigured, exc:
         if "need to install" in str(exc):

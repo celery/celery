@@ -1,4 +1,4 @@
-django-unittest-depth
+simplejson
 nose
 nose-cover3
 nosexunit
