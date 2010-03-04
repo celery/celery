@@ -1,0 +1,6 @@
+django
+python-dateutil
+anyjson
+carrot>=0.10.0
+django-picklefield
+billiard>=0.2.1
