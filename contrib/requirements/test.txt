@@ -1,3 +1,4 @@
+django-unittest-depth
 nose
 nose-cover3
 nosexunit
@@ -5,4 +6,3 @@ django-nose
 pytyrant
 redis
 pymongo
-

@@ -1,5 +1,6 @@
-from djangox.test.depth import alltests
+from django.db import connection
 
+from celery.utils import noop
 
-def suite():
-    return alltests(__file__, __name__)
+# FIXME This breaks the test-suite for some reason.
+connection.creation.destroy_test_db = noop

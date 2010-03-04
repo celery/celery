@@ -37,7 +37,6 @@ NOSE_ARGS = [os.path.join(here, os.pardir, "celery", "tests"),
             "--cover3-package=celery",
             "--cover3-branch",
             "--cover3-exclude=%s" % ",".join(COVERAGE_EXCLUDE_MODULES)]
-TEST_DATABASE_NAME=":memory"
 
 BROKER_HOST = "localhost"
 BROKER_PORT = 5672
@@ -57,7 +56,7 @@ CELERY_QUEUES = {"testcelery": {"binding_key": "testcelery"}}
 MANAGERS = ADMINS
 
 DATABASE_ENGINE = 'sqlite3'
-DATABASE_NAME = 'testdb.sqlite'
+DATABASE_NAME = ':memory'
 DATABASE_USER = ''
 DATABASE_PASSWORD = ''
 DATABASE_HOST = ''
