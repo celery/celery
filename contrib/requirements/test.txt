@@ -1,8 +1,8 @@
 simplejson
 nose
 nose-cover3
-nosexunit
 django-nose
+coverage>=3.0
 pytyrant
 redis
 pymongo
