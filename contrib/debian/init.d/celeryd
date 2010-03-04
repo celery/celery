@@ -83,7 +83,9 @@ check_dev_null() {
 export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
 if [ ! -z "$VIRTUALENV" ]; then
     export PATH="$VIRTUALENV/bin:$PATH"
-    CELERYD="$VIRTUALENV/bin/$CELERYD"
+    if [ -z "$DJANGO_PROJECT_DIR" ]; then
+    	CELERYD="$VIRTUALENV/bin/$CELERYD"
+    fi
 fi
 
 
