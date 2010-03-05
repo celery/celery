@@ -88,7 +88,9 @@ check_dev_null() {
 export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
 if [ ! -z "$VIRTUALENV" ]; then
     export PATH="$VIRTUALENV/bin:$PATH"
-    CELERYBEAT="$VIRTUALENV/bin/$CELERYBEAT"
+    if [ -z "$DJANGO_PROJECT_DIR" ]; then
+        CELERYBEAT="$VIRTUALENV/bin/$CELERYBEAT"
+    fi
 fi
 
 if [ -f "$CELERYBEAT" && ! -x "$CELERYBEAT" ]; then
