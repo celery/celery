@@ -181,8 +181,10 @@ class Task(object):
             * task_id
             * task_name
             * task_retries
+            * task_is_eager
             * logfile
             * loglevel
+            * delivery_info
 
         Additional standard keyword arguments may be added in the future.
         To take these default arguments, the task can either list the ones
@@ -321,6 +323,10 @@ class Task(object):
             ...                        countdown=60 * 5, exc=exc)
 
         """
+        delivery_info = kwargs.pop("delivery_info", {})
+        options.setdefault("exchange", delivery_info.get("exchange"))
+        options.setdefault("routing_key", delivery_info.get("routing_key"))
+
         options["retries"] = kwargs.pop("task_retries", 0) + 1
         options["task_id"] = kwargs.pop("task_id", None)
         options["countdown"] = options.get("countdown",

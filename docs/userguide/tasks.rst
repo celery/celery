@@ -78,6 +78,20 @@ The current default keyword arguments are:
     How many times the current task has been retried.
     An integer starting at ``0``.
 
+* task_is_eager
+
+    Set to ``True`` if the task is executed locally in the client,
+    and not by a worker.
+
+* delivery_info
+
+  Additional message delivery information. This is a mapping containing
+  the exchange and routing key used to deliver this task. It's used
+  by e.g. :meth:`retry` to resend the task to the same destination queue.
+
+  **NOTE** As some messaging backends doesn't have advanced routing
+  capabilities, you can't trust the availability of keys in this mapping.
+
 
 Logging
 =======

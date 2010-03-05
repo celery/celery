@@ -151,6 +151,7 @@ def apply(task, args, kwargs, **options):
                       "task_retries": retries,
                       "task_is_eager": True,
                       "logfile": None,
+                      "delivery_info": {"is_eager": True},
                       "loglevel": 0}
     supported_keys = fun_takes_kwargs(task.run, default_kwargs)
     extend_with = dict((key, val) for key, val in default_kwargs.items()

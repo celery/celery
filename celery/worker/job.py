@@ -38,6 +38,9 @@ celeryd at %%(hostname)s.
 """ % {"EMAIL_SIGNATURE_SEP": EMAIL_SIGNATURE_SEP}
 
 
+WANTED_DELIVERY_INFO = ("exchange", "routing_key", "consumer_tag", )
+
+
 class InvalidTaskError(Exception):
     """The task has invalid data or is not properly constructed."""
 
@@ -179,13 +182,14 @@ class TaskWrapper(object):
     time_start = None
 
     def __init__(self, task_name, task_id, args, kwargs,
-            on_ack=noop, retries=0, **opts):
+            on_ack=noop, retries=0, delivery_info=None, **opts):
         self.task_name = task_name
         self.task_id = task_id
         self.retries = retries
         self.args = args
         self.kwargs = kwargs
         self.on_ack = on_ack
+        self.delivery_info = delivery_info or {}
         self.task = tasks[self.task_name]
 
         for opt in ("success_msg", "fail_msg", "fail_email_subject",
@@ -217,6 +221,11 @@ class TaskWrapper(object):
         kwargs = message_data["kwargs"]
         retries = message_data.get("retries", 0)
 
+        _delivery_info = getattr(message, "delivery_info", {})
+        delivery_info = dict((key, _delivery_info.get(key))
+                                for key in WANTED_DELIVERY_INFO)
+
+
         if not hasattr(kwargs, "items"):
             raise InvalidTaskError("Task kwargs must be a dictionary.")
 
@@ -226,23 +235,26 @@ class TaskWrapper(object):
 
         return cls(task_name, task_id, args, kwargs,
                     retries=retries, on_ack=message.ack,
+                    delivery_info=delivery_info,
                     logger=logger, eventer=eventer)
 
     def extend_with_default_kwargs(self, loglevel, logfile):
         """Extend the tasks keyword arguments with standard task arguments.
 
         Currently these are ``logfile``, ``loglevel``, ``task_id``,
-        ``task_name`` and ``task_retries``.
+        ``task_name``, ``task_retries``, and ``delivery_info``.
 
         See :meth:`celery.task.base.Task.run` for more information.
 
         """
         kwargs = dict(self.kwargs)
         default_kwargs = {"logfile": logfile,
-                            "loglevel": loglevel,
-                            "task_id": self.task_id,
-                            "task_name": self.task_name,
-                            "task_retries": self.retries}
+                          "loglevel": loglevel,
+                          "task_id": self.task_id,
+                          "task_name": self.task_name,
+                          "task_retries": self.retries,
+                          "task_is_eager": False,
+                          "delivery_info": self.delivery_info}
         fun = self.task.run
         supported_keys = fun_takes_kwargs(fun, default_kwargs)
         extend_with = dict((key, val) for key, val in default_kwargs.items()

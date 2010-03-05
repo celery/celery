@@ -381,6 +381,8 @@ class TestTaskWrapper(unittest.TestCase):
             "loglevel": 10,
             "task_id": tw.task_id,
             "task_retries": 0,
+            "task_is_eager": False,
+            "delivery_info": {},
             "task_name": tw.task_name})
 
     def test_on_failure(self):
