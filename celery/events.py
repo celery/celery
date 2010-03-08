@@ -55,7 +55,7 @@ class EventDispatcher(object):
 
         self._lock.acquire()
         try:
-            self.publisher.send(Event(type, hostname=self.hostname))
+            self.publisher.send(Event(type, hostname=self.hostname, **fields))
         finally:
             self._lock.release()
 
