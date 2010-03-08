@@ -7,7 +7,7 @@ import os
 # is relative to the documentation root, use os.path.abspath to make it
 # absolute, like shown here.
 sys.path.append("../celery")
-sys.path.append("../testproj")
+sys.path.append("../tests")
 import settings
 from django.core.management import setup_environ
 from django.conf import settings as dsettings

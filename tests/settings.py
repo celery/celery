@@ -3,6 +3,7 @@
 import os
 import sys
 # import source code dir
+sys.path.insert(0, os.getcwd())
 sys.path.insert(0, os.path.join(os.getcwd(), os.pardir))
 
 SITE_ID = 300

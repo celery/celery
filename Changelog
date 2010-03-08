@@ -1093,7 +1093,7 @@ arguments, so be sure to flush your task queue before you upgrade.
   been executed or not). Set ``settings.CELERY_TASK_META``
 
 * Can now run ``python setup.py test`` to run the unittests from
-  within the ``testproj`` project.
+  within the ``tests`` project.
 
 * Can set the AMQP exchange/routing key/queue using
   ``settings.CELERY_AMQP_EXCHANGE``, ``settings.CELERY_AMQP_ROUTING_KEY``,

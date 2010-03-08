@@ -97,7 +97,7 @@ def test(options):
         cmd = "env QUICKTEST=1 SKIP_RLIMITS=1 %s" % cmd
     if getattr(options, "verbose", False):
         cmd += " --verbosity=2"
-    sh(cmd, cwd="testproj")
+    sh(cmd, cwd="tests")
 
 
 @task
