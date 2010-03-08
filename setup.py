@@ -71,7 +71,7 @@ except ImportError:
 install_requires.extend([
     "python-dateutil",
     "anyjson",
-    "carrot>=0.10.0",
+    "carrot>=0.10.3",
     "django-picklefield",
     "billiard>=0.2.1"])
 
