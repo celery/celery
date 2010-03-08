@@ -5,10 +5,11 @@ from datetime import datetime, timedelta
 from celery import task
 from celery import messaging
 from celery.result import EagerResult
+from celery.execute import send_task
 from celery.backends import default_backend
 from celery.decorators import task as task_dec
-from celery.worker.listener import parse_iso8601
 from celery.exceptions import RetryTaskError
+from celery.worker.listener import parse_iso8601
 
 def return_True(*args, **kwargs):
     # Task run functions can't be closures/lambdas, as they're pickled.
@@ -280,6 +281,11 @@ class TestCeleryTasks(unittest.TestCase):
         presult2 = t1.apply_async(kwargs=dict(name="George Constanza"))
         self.assertNextTaskDataEquals(consumer, presult2, t1.name,
                 name="George Constanza")
+
+        # send_task
+        sresult = send_task(t1.name, kwargs=dict(name="Elaine M. Benes"))
+        self.assertNextTaskDataEquals(consumer, sresult, t1.name,
+                name="Elaine M. Benes")
 
         # With eta.
         presult2 = task.apply_async(t1, kwargs=dict(name="George Constanza"),

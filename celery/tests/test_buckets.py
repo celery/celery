@@ -13,7 +13,7 @@ from celery.utils import gen_unique_id
 from celery.worker import buckets
 from celery.registry import TaskRegistry
 
-from testunits.utils import skip_if_environ
+from celery.tests.utils import skip_if_environ
 
 skip_if_disabled = curry(skip_if_environ("SKIP_RLIMITS"))
 

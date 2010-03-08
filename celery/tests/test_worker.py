@@ -16,8 +16,8 @@ from celery.worker.scheduler import Scheduler
 from celery.decorators import task as task_dec
 from celery.decorators import periodic_task as periodic_task_dec
 
-from testunits.utils import execute_context
-from testunits.compat import catch_warnings
+from celery.tests.utils import execute_context
+from celery.tests.compat import catch_warnings
 
 
 class PlaceHolder(object):

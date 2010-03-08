@@ -25,7 +25,7 @@ COVERAGE_EXCLUDE_MODULES = ("celery.__init__",
                             "celery.management.*",
                             "celery.contrib.*",
                             "celery.bin.celeryinit",
-                            "celery.bin.celerybeat"
+                            "celery.bin.celerybeat",
                             "celery.utils.patch",
                             "celery.utils.compat",
                             "celery.task.rest",
@@ -34,7 +34,7 @@ COVERAGE_EXCLUDE_MODULES = ("celery.__init__",
                             "celery.backends.tyrant", # FIXME
 )
 
-NOSE_ARGS = [here,
+NOSE_ARGS = [os.path.join(here, os.pardir, "celery", "tests"),
             "--cover3-package=celery",
             "--cover3-branch",
             "--cover3-exclude=%s" % ",".join(COVERAGE_EXCLUDE_MODULES)]

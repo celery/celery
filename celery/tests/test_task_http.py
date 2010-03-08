@@ -8,7 +8,7 @@ from urllib import addinfourl
 try:
     from contextlib import contextmanager
 except ImportError:
-    from testunits.utils import fallback_contextmanager as contextmanager
+    from celery.tests.utils import fallback_contextmanager as contextmanager
 try:
     from cStringIO import StringIO
 except ImportError:
@@ -19,7 +19,7 @@ from anyjson import serialize
 
 from celery.task import http
 
-from testunits.utils import eager_tasks, execute_context
+from celery.tests.utils import eager_tasks, execute_context
 
 
 @contextmanager

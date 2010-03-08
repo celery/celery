@@ -6,8 +6,8 @@ from billiard.utils.functional import wraps
 
 from celery import utils
 
-from testunits.utils import sleepdeprived, execute_context
-from testunits.utils import mask_modules
+from celery.tests.utils import sleepdeprived, execute_context
+from celery.tests.utils import mask_modules
 
 class TestChunks(unittest.TestCase):
 

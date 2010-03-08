@@ -9,7 +9,7 @@ from celery.loaders import base
 from celery.loaders import djangoapp
 from celery.loaders import default
 
-from testunits.utils import with_environ
+from celery.tests.utils import with_environ
 
 
 class TestLoaders(unittest.TestCase):

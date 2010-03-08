@@ -1,7 +1,7 @@
 import sys
 import unittest
 
-from testunits.utils import execute_context, mask_modules
+from celery.tests.utils import execute_context, mask_modules
 
 
 class TestAAPickle(unittest.TestCase):

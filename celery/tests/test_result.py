@@ -9,7 +9,7 @@ from celery.backends import default_backend
 from celery.exceptions import TimeoutError
 from celery.task.base import Task
 
-from testunits.utils import skip_if_quick
+from celery.tests.utils import skip_if_quick
 
 
 def mock_task(name, status, result):

@@ -10,7 +10,7 @@ from celery.utils import gen_unique_id
 from celery.backends import pyredis
 from celery.backends.pyredis import RedisBackend
 
-from testunits.utils import execute_context, mask_modules
+from celery.tests.utils import execute_context, mask_modules
 
 _no_redis_msg = "* Redis %s. Will not execute related tests."
 _no_redis_msg_emitted = False

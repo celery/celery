@@ -20,8 +20,8 @@ from celery.exceptions import RetryTaskError, NotRegistered
 from celery.decorators import task as task_dec
 from celery.datastructures import ExceptionInfo
 
-from testunits.utils import execute_context
-from testunits.compat import catch_warnings
+from celery.tests.utils import execute_context
+from celery.tests.compat import catch_warnings
 
 scratch = {"ACK": False}
 some_kwargs_scratchpad = {}

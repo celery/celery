@@ -10,13 +10,13 @@ from StringIO import StringIO
 try:
     from contextlib import contextmanager
 except ImportError:
-    from testunits.utils import fallback_contextmanager as contextmanager
+    from celery.tests.utils import fallback_contextmanager as contextmanager
 
 from carrot.utils import rpartition
 
 from celery.log import (setup_logger, emergency_error,
                         redirect_stdouts_to_logger, LoggingProxy)
-from testunits.utils import override_stdouts, execute_context
+from celery.tests.utils import override_stdouts, execute_context
 
 
 @contextmanager
