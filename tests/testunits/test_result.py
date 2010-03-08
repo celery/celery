@@ -1,13 +1,15 @@
 from __future__ import generators
+
 import unittest
 
 from celery import states
 from celery.utils import gen_unique_id
-from celery.tests.utils import skip_if_quick
 from celery.result import AsyncResult, TaskSetResult
 from celery.backends import default_backend
 from celery.exceptions import TimeoutError
 from celery.task.base import Task
+
+from testunits.utils import skip_if_quick
 
 
 def mock_task(name, status, result):

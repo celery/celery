@@ -7,9 +7,10 @@ from django.core.exceptions import ImproperlyConfigured
 
 from celery import states
 from celery.utils import gen_unique_id
-from celery.tests.utils import execute_context
 from celery.backends import pyredis
 from celery.backends.pyredis import RedisBackend
+
+from testunits.utils import execute_context, mask_modules
 
 _no_redis_msg = "* Redis %s. Will not execute related tests."
 _no_redis_msg_emitted = False
@@ -135,7 +136,6 @@ class TestRedisBackend(unittest.TestCase):
 class TestTyrantBackendNoTyrant(unittest.TestCase):
 
     def test_tyrant_None_if_tyrant_not_installed(self):
-        from celery.tests.utils import mask_modules
         prev = sys.modules.pop("celery.backends.pyredis")
         try:
             def with_redis_masked(_val):

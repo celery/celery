@@ -33,7 +33,7 @@ COVERAGE_EXCLUDE_MODULES = ("celery.__init__",
                             "celery.backends.tyrant", # FIXME
 )
 
-NOSE_ARGS = [os.path.join(here, os.pardir, "celery", "tests"),
+NOSE_ARGS = [here,
             "--cover3-package=celery",
             "--cover3-branch",
             "--cover3-exclude=%s" % ",".join(COVERAGE_EXCLUDE_MODULES)]

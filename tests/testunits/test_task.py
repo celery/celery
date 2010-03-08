@@ -264,7 +264,7 @@ class TestCeleryTasks(unittest.TestCase):
 
         # task name generated out of class module + name.
         T2 = self.createTaskCls("T2")
-        self.assertEquals(T2().name, "celery.tests.test_task.T2")
+        self.assertTrue(T2().name.endswith("test_task.T2"))
 
         t1 = T1()
         consumer = t1.get_consumer()

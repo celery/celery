@@ -8,7 +8,7 @@ from urllib import addinfourl
 try:
     from contextlib import contextmanager
 except ImportError:
-    from celery.tests.utils import fallback_contextmanager as contextmanager
+    from testunits.utils import fallback_contextmanager as contextmanager
 try:
     from cStringIO import StringIO
 except ImportError:
@@ -18,7 +18,8 @@ from billiard.utils.functional import wraps
 from anyjson import serialize
 
 from celery.task import http
-from celery.tests.utils import eager_tasks, execute_context
+
+from testunits.utils import eager_tasks, execute_context
 
 
 @contextmanager

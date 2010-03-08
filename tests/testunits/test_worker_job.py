@@ -12,8 +12,6 @@ from celery import states
 from celery.log import setup_logger
 from celery.task.base import Task
 from celery.utils import gen_unique_id
-from celery.tests.utils import execute_context
-from celery.tests.compat import catch_warnings
 from celery.models import TaskMeta
 from celery.result import AsyncResult
 from celery.worker.job import WorkerTaskTrace, TaskWrapper
@@ -21,6 +19,9 @@ from celery.worker.pool import TaskPool
 from celery.exceptions import RetryTaskError, NotRegistered
 from celery.decorators import task as task_dec
 from celery.datastructures import ExceptionInfo
+
+from testunits.utils import execute_context
+from testunits.compat import catch_warnings
 
 scratch = {"ACK": False}
 some_kwargs_scratchpad = {}

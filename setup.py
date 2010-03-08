@@ -100,7 +100,7 @@ setup(
     url=distmeta.__homepage__,
     platforms=["any"],
     license="BSD",
-    packages=find_packages(exclude=['ez_setup', 'testproj', 'testproj.*']),
+    packages=find_packages(exclude=['ez_setup', 'tests', 'tests.*']),
     scripts=["bin/celeryd", "bin/celeryinit", "bin/celerybeat"],
     zip_safe=False,
     install_requires=install_requires,

@@ -1,13 +1,12 @@
 import sys
 import unittest
 
-from celery.tests.utils import execute_context
+from testunits.utils import execute_context, mask_modules
 
 
 class TestAAPickle(unittest.TestCase):
 
     def test_no_cpickle(self):
-        from celery.tests.utils import mask_modules
         prev = sys.modules.pop("billiard.serialization")
         try:
             def with_cPickle_masked(_val):

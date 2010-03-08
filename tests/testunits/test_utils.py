@@ -5,8 +5,9 @@ import unittest
 from billiard.utils.functional import wraps
 
 from celery import utils
-from celery.tests.utils import sleepdeprived, execute_context
 
+from testunits.utils import sleepdeprived, execute_context
+from testunits.utils import mask_modules
 
 class TestChunks(unittest.TestCase):
 
@@ -31,7 +32,6 @@ class TestChunks(unittest.TestCase):
 class TestGenUniqueId(unittest.TestCase):
 
     def test_gen_unique_id_without_ctypes(self):
-        from celery.tests.utils import mask_modules
         old_utils = sys.modules.pop("celery.utils")
 
         def with_ctypes_masked(_val):
