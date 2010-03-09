@@ -86,21 +86,21 @@ class TestScheduleEntry(unittest.TestCase):
 
     def test_constructor(self):
         s = beat.ScheduleEntry(DuePeriodicTask.name)
-        self.assertEquals(s.name, DuePeriodicTask.name)
+        self.assertEqual(s.name, DuePeriodicTask.name)
         self.assertTrue(isinstance(s.last_run_at, datetime))
-        self.assertEquals(s.total_run_count, 0)
+        self.assertEqual(s.total_run_count, 0)
 
         now = datetime.now()
         s = beat.ScheduleEntry(DuePeriodicTask.name, now, 300)
-        self.assertEquals(s.name, DuePeriodicTask.name)
-        self.assertEquals(s.last_run_at, now)
-        self.assertEquals(s.total_run_count, 300)
+        self.assertEqual(s.name, DuePeriodicTask.name)
+        self.assertEqual(s.last_run_at, now)
+        self.assertEqual(s.total_run_count, 300)
 
     def test_next(self):
         s = beat.ScheduleEntry(DuePeriodicTask.name, None, 300)
         n = s.next()
-        self.assertEquals(n.name, s.name)
-        self.assertEquals(n.total_run_count, 301)
+        self.assertEqual(n.name, s.name)
+        self.assertEqual(n.total_run_count, 301)
         self.assertTrue(n.last_run_at > s.last_run_at)
 
     def test_is_due(self):
@@ -126,7 +126,7 @@ class TestScheduler(unittest.TestCase):
         self.assertTrue(isinstance(s.registry, TaskRegistry))
         self.assertTrue(isinstance(s.schedule, dict))
         self.assertTrue(isinstance(s.logger, logging.Logger))
-        self.assertEquals(s.max_interval, conf.CELERYBEAT_MAX_LOOP_INTERVAL)
+        self.assertEqual(s.max_interval, conf.CELERYBEAT_MAX_LOOP_INTERVAL)
 
     def test_cleanup(self):
         self.scheduler.schedule["fbz"] = beat.ScheduleEntry("fbz")
@@ -161,13 +161,13 @@ class TestScheduler(unittest.TestCase):
     def test_tick(self):
         self.scheduler.schedule.pop(DuePeriodicTaskRaising.name, None)
         self.registry.pop(DuePeriodicTaskRaising.name, None)
-        self.assertEquals(self.scheduler.tick(),
+        self.assertEqual(self.scheduler.tick(),
                             self.scheduler.max_interval)
 
     def test_quick_schedulingerror(self):
         self.registry.register(DuePeriodicTaskRaising)
         self.scheduler.schedule_registry()
-        self.assertEquals(self.scheduler.tick(),
+        self.assertEqual(self.scheduler.tick(),
                             self.scheduler.max_interval)
 
 

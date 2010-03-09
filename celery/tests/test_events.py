@@ -25,7 +25,7 @@ class TestEvent(unittest.TestCase):
 
     def test_constructor(self):
         event = events.Event("world war II")
-        self.assertEquals(event["type"], "world war II")
+        self.assertEqual(event["type"], "world war II")
         self.assertTrue(event["timestamp"])
 
 

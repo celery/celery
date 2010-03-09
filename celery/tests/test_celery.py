@@ -6,10 +6,10 @@ class TestInitFile(unittest.TestCase):
 
     def test_version(self):
         self.assertTrue(celery.VERSION)
-        self.assertEquals(len(celery.VERSION), 3)
+        self.assertEqual(len(celery.VERSION), 3)
         celery.VERSION = (0, 3, 0)
         self.assertFalse(celery.is_stable_release())
-        self.assertEquals(celery.__version__.count("."), 2)
+        self.assertEqual(celery.__version__.count("."), 2)
         self.assertTrue("(unstable)" in celery.version_with_meta())
         celery.VERSION = (0, 4, 0)
         self.assertTrue(celery.is_stable_release())

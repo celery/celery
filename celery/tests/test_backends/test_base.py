@@ -61,11 +61,11 @@ class TestPickleException(unittest.TestCase):
 
     def test_get_pickleable_exception(self):
         exc = Exception("foo")
-        self.assertEquals(gpe(exc), exc)
+        self.assertEqual(gpe(exc), exc)
 
     def test_unpickleable(self):
         self.assertTrue(isinstance(fnpe(Unpickleable()), KeyError))
-        self.assertEquals(fnpe(Impossible()), None)
+        self.assertEqual(fnpe(Impossible()), None)
 
 
 class TestPrepareException(unittest.TestCase):
@@ -80,11 +80,11 @@ class TestPrepareException(unittest.TestCase):
         x = b.prepare_exception(Impossible())
         self.assertTrue(isinstance(x, UnpickleableExceptionWrapper))
         y = b.exception_to_python(x)
-        self.assertEquals(y.__class__.__name__, "Impossible")
+        self.assertEqual(y.__class__.__name__, "Impossible")
         if sys.version_info < (2, 5):
             self.assertTrue(y.__class__.__module__)
         else:
-            self.assertEquals(y.__class__.__module__, "foo.module")
+            self.assertEqual(y.__class__.__module__, "foo.module")
 
     def test_regular(self):
         x = b.prepare_exception(KeyError("baz"))

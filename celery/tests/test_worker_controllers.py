@@ -72,7 +72,7 @@ class TestMediator(unittest.TestCase):
 
         m.on_iteration()
 
-        self.assertEquals(got["value"], "George Constanza")
+        self.assertEqual(got["value"], "George Constanza")
 
     def test_mediator_on_iteration_revoked(self):
         ready_queue = Queue()
@@ -112,6 +112,6 @@ class TestScheduleController(unittest.TestCase):
             for i in times:
                 c.on_iteration()
                 res = i is None and 1 or i
-                self.assertEquals(slept[0], res)
+                self.assertEqual(slept[0], res)
         finally:
             time.sleep = old_sleep

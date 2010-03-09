@@ -16,19 +16,19 @@ class TestLoaders(unittest.TestCase):
 
     def test_get_loader_cls(self):
 
-        self.assertEquals(loaders.get_loader_cls("django"),
+        self.assertEqual(loaders.get_loader_cls("django"),
                           loaders.DjangoLoader)
-        self.assertEquals(loaders.get_loader_cls("default"),
+        self.assertEqual(loaders.get_loader_cls("default"),
                           loaders.DefaultLoader)
         # Execute cached branch.
-        self.assertEquals(loaders.get_loader_cls("django"),
+        self.assertEqual(loaders.get_loader_cls("django"),
                           loaders.DjangoLoader)
-        self.assertEquals(loaders.get_loader_cls("default"),
+        self.assertEqual(loaders.get_loader_cls("default"),
                           loaders.DefaultLoader)
 
     @with_environ("CELERY_LOADER", "default")
     def test_detect_loader_CELERY_LOADER(self):
-        self.assertEquals(loaders.detect_loader(), loaders.DefaultLoader)
+        self.assertEqual(loaders.detect_loader(), loaders.DefaultLoader)
 
 
 class DummyLoader(base.BaseLoader):
@@ -54,17 +54,17 @@ class TestLoaderBase(unittest.TestCase):
 
     def test_import_task_module(self):
         import sys
-        self.assertEquals(sys, self.loader.import_task_module("sys"))
+        self.assertEqual(sys, self.loader.import_task_module("sys"))
 
     def test_conf_property(self):
-        self.assertEquals(self.loader.conf.foo, "bar")
-        self.assertEquals(self.loader._conf_cache.foo, "bar")
-        self.assertEquals(self.loader.conf.foo, "bar")
+        self.assertEqual(self.loader.conf.foo, "bar")
+        self.assertEqual(self.loader._conf_cache.foo, "bar")
+        self.assertEqual(self.loader.conf.foo, "bar")
 
     def test_import_default_modules(self):
         import os
         import sys
-        self.assertEquals(self.loader.import_default_modules(), [os, sys])
+        self.assertEqual(self.loader.import_default_modules(), [os, sys])
 
 
 class TestDjangoLoader(unittest.TestCase):
@@ -117,11 +117,11 @@ class TestDefaultLoader(unittest.TestCase):
         try:
             l = default.Loader()
             settings = l.read_configuration()
-            self.assertEquals(settings.CELERY_IMPORTS, ("os", "sys"))
+            self.assertEqual(settings.CELERY_IMPORTS, ("os", "sys"))
             from django.conf import settings
             settings.configured = False
             settings = l.read_configuration()
-            self.assertEquals(settings.CELERY_IMPORTS, ("os", "sys"))
+            self.assertEqual(settings.CELERY_IMPORTS, ("os", "sys"))
             self.assertTrue(settings.configured)
             l.on_worker_init()
         finally:

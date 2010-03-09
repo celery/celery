@@ -29,8 +29,8 @@ class TestRedisBackend(unittest.TestCase):
 
         tb.mark_as_done(tid, 42)
         self.assertTrue(tb.is_successful(tid))
-        self.assertEquals(tb.get_status(tid), states.SUCCESS)
-        self.assertEquals(tb.get_result(tid), 42)
+        self.assertEqual(tb.get_status(tid), states.SUCCESS)
+        self.assertEqual(tb.get_result(tid), 42)
         self.assertTrue(tb._cache.get(tid))
         self.assertTrue(tb.get_result(tid), 42)
 
@@ -42,8 +42,8 @@ class TestRedisBackend(unittest.TestCase):
         tb.mark_as_done(tid2, result)
         # is serialized properly.
         rindb = tb.get_result(tid2)
-        self.assertEquals(rindb.get("foo"), "baz")
-        self.assertEquals(rindb.get("bar").data, 12345)
+        self.assertEqual(rindb.get("foo"), "baz")
+        self.assertEqual(rindb.get("bar").data, 12345)
 
     def test_mark_as_failure(self):
         tb = self.backend
@@ -55,9 +55,9 @@ class TestRedisBackend(unittest.TestCase):
             einfo = ExceptionInfo(sys.exc_info())
         tb.mark_as_failure(tid3, exception, traceback=einfo.traceback)
         self.assertFalse(tb.is_successful(tid3))
-        self.assertEquals(tb.get_status(tid3), states.FAILURE)
+        self.assertEqual(tb.get_status(tid3), states.FAILURE)
         self.assertTrue(isinstance(tb.get_result(tid3), KeyError))
-        self.assertEquals(tb.get_traceback(tid3), einfo.traceback)
+        self.assertEqual(tb.get_traceback(tid3), einfo.traceback)
 
     def test_process_cleanup(self):
         self.backend.process_cleanup()

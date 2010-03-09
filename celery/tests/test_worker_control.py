@@ -27,11 +27,11 @@ class TestControlPanel(unittest.TestCase):
             self.panel.execute("rate_limit", kwargs=dict(
                                                 task_name=task.name,
                                                 rate_limit="100/m"))
-            self.assertEquals(task.rate_limit, "100/m")
+            self.assertEqual(task.rate_limit, "100/m")
             self.panel.execute("rate_limit", kwargs=dict(
                                                 task_name=task.name,
                                                 rate_limit=0))
-            self.assertEquals(task.rate_limit, 0)
+            self.assertEqual(task.rate_limit, 0)
         finally:
             task.rate_limit = old_rate_limit
 

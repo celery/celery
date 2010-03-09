@@ -15,17 +15,17 @@ class TestChunks(unittest.TestCase):
 
         # n == 2
         x = utils.chunks(iter([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]), 2)
-        self.assertEquals(list(x),
+        self.assertEqual(list(x),
             [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9], [10]])
 
         # n == 3
         x = utils.chunks(iter([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]), 3)
-        self.assertEquals(list(x),
+        self.assertEqual(list(x),
             [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10]])
 
         # n == 2 (exact)
         x = utils.chunks(iter([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]), 2)
-        self.assertEquals(list(x),
+        self.assertEqual(list(x),
             [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9]])
 
 
@@ -55,9 +55,9 @@ class TestDivUtils(unittest.TestCase):
         items = range(6)
         it = utils.repeatlast(items)
         for i in items:
-            self.assertEquals(it.next(), i)
+            self.assertEqual(it.next(), i)
         for j in items:
-            self.assertEquals(it.next(), i)
+            self.assertEqual(it.next(), i)
 
 
 class TestRetryOverTime(unittest.TestCase):
@@ -70,7 +70,7 @@ class TestRetryOverTime(unittest.TestCase):
         ret = utils.retry_over_time(_fun, (socket.error, ), args=[16, 16],
                                     max_retries=3)
 
-        self.assertEquals(ret, 256)
+        self.assertEqual(ret, 256)
 
     @sleepdeprived
     def test_raises_on_unlisted_exception(self):
@@ -95,8 +95,8 @@ class TestRetryOverTime(unittest.TestCase):
         ret = utils.retry_over_time(_fun, (socket.error, ), args=[32, 32],
                                     max_retries=None)
 
-        self.assertEquals(iterations[0], 3)
-        self.assertEquals(ret, 1024)
+        self.assertEqual(iterations[0], 3)
+        self.assertEqual(ret, 1024)
 
         self.assertRaises(socket.error, utils.retry_over_time,
                         _fun, (socket.error, ), args=[32, 32], max_retries=1)

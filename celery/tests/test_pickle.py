@@ -28,7 +28,7 @@ class TestPickle(unittest.TestCase):
         exception = unpickled.get("exception")
         self.assertTrue(exception)
         self.assertTrue(isinstance(exception, RegularException))
-        self.assertEquals(exception.args, ("RegularException raised", ))
+        self.assertEqual(exception.args, ("RegularException raised", ))
 
     def test_pickle_arg_override_exception(self):
 
@@ -44,6 +44,6 @@ class TestPickle(unittest.TestCase):
         exception = unpickled.get("exception")
         self.assertTrue(exception)
         self.assertTrue(isinstance(exception, ArgOverrideException))
-        self.assertEquals(exception.args, ("ArgOverrideException raised",
+        self.assertEqual(exception.args, ("ArgOverrideException raised",
                                           100))
-        self.assertEquals(exception.status_code, 100)
+        self.assertEqual(exception.status_code, 100)

@@ -18,7 +18,7 @@ class TestConf(unittest.TestCase):
 
     def assertDefaultSetting(self, setting_name, result_var):
         if hasattr(settings, setting_name):
-            self.assertEquals(getattr(conf, result_var),
+            self.assertEqual(getattr(conf, result_var),
                               getattr(settings, setting_name),
                               "Overwritten setting %s is written to %s" % (
                                   setting_name, result_var))

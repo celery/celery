@@ -68,7 +68,7 @@ class TestLog(unittest.TestCase):
     def test_emergency_error(self):
         sio = StringIO()
         emergency_error(sio, "Testing emergency error facility")
-        self.assertEquals(rpartition(sio.getvalue(), ":")[2].strip(),
+        self.assertEqual(rpartition(sio.getvalue(), ":")[2].strip(),
                              "Testing emergency error facility")
 
     def test_setup_logger_no_handlers_stream(self):

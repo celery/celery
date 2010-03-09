@@ -74,13 +74,13 @@ class TestRedisBackend(unittest.TestCase):
         tid = gen_unique_id()
 
         self.assertFalse(tb.is_successful(tid))
-        self.assertEquals(tb.get_status(tid), states.PENDING)
-        self.assertEquals(tb.get_result(tid), None)
+        self.assertEqual(tb.get_status(tid), states.PENDING)
+        self.assertEqual(tb.get_result(tid), None)
 
         tb.mark_as_done(tid, 42)
         self.assertTrue(tb.is_successful(tid))
-        self.assertEquals(tb.get_status(tid), states.SUCCESS)
-        self.assertEquals(tb.get_result(tid), 42)
+        self.assertEqual(tb.get_status(tid), states.SUCCESS)
+        self.assertEqual(tb.get_result(tid), 42)
         self.assertTrue(tb.get_result(tid), 42)
 
     def test_is_pickled(self):
@@ -93,8 +93,8 @@ class TestRedisBackend(unittest.TestCase):
         tb.mark_as_done(tid2, result)
         # is serialized properly.
         rindb = tb.get_result(tid2)
-        self.assertEquals(rindb.get("foo"), "baz")
-        self.assertEquals(rindb.get("bar").data, 12345)
+        self.assertEqual(rindb.get("foo"), "baz")
+        self.assertEqual(rindb.get("bar").data, 12345)
 
     def test_mark_as_failure(self):
         tb = get_redis_or_None()
@@ -108,7 +108,7 @@ class TestRedisBackend(unittest.TestCase):
             pass
         tb.mark_as_failure(tid3, exception)
         self.assertFalse(tb.is_successful(tid3))
-        self.assertEquals(tb.get_status(tid3), states.FAILURE)
+        self.assertEqual(tb.get_status(tid3), states.FAILURE)
         self.assertTrue(isinstance(tb.get_result(tid3), KeyError))
 
     def test_process_cleanup(self):

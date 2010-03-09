@@ -49,7 +49,7 @@ class ViewTestCase(DjangoTestCase):
     def assertJSONEquals(self, json, py):
         json = isinstance(json, HttpResponse) and json.content or json
         try:
-            self.assertEquals(JSON_load(json), py)
+            self.assertEqual(JSON_load(json), py)
         except TypeError, exc:
             raise TypeError("%s: %s" % (exc, json))
 
@@ -61,7 +61,7 @@ class TestTaskApply(ViewTestCase):
         try:
             ret = self.client.get(task_apply(kwargs={"task_name":
                 mytask.name}) + "?x=4&y=4")
-            self.assertEquals(scratch["result"], 16)
+            self.assertEqual(scratch["result"], 16)
         finally:
             conf.ALWAYS_EAGER = False
 
@@ -86,7 +86,7 @@ class TestTaskStatus(ViewTestCase):
         expect = dict(id=uuid, status=status, result=res)
         if status in default_backend.EXCEPTION_STATES:
             instore = default_backend.get_result(uuid)
-            self.assertEquals(str(instore.args), str(res.args))
+            self.assertEqual(str(instore.args), str(res.args))
             expect["result"] = str(res.args[0])
             expect["exc"] = get_full_cls_name(res.__class__)
             expect["traceback"] = traceback

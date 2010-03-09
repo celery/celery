@@ -161,7 +161,7 @@ class TestCarrotListener(unittest.TestCase):
         l.task_consumer.add_consumer = create_recorder("consumer_add")
 
         records.clear()
-        self.assertEquals(l._detect_wait_method(), l._mainloop)
+        self.assertEqual(l._detect_wait_method(), l._mainloop)
         self.assertTrue(records.get("broadcast_callback"))
         self.assertTrue(records.get("consume_broadcast"))
         self.assertTrue(records.get("consume_tasks"))
@@ -243,8 +243,8 @@ class TestCarrotListener(unittest.TestCase):
 
         in_bucket = self.ready_queue.get_nowait()
         self.assertTrue(isinstance(in_bucket, TaskWrapper))
-        self.assertEquals(in_bucket.task_name, foo_task.name)
-        self.assertEquals(in_bucket.execute(), 2 * 4 * 8)
+        self.assertEqual(in_bucket.task_name, foo_task.name)
+        self.assertEqual(in_bucket.execute(), 2 * 4 * 8)
         self.assertTrue(self.eta_schedule.empty())
 
     def test_receieve_message_eta_isoformat(self):
@@ -312,12 +312,12 @@ class TestCarrotListener(unittest.TestCase):
         l.receive_message(m.decode(), m)
 
         in_hold = self.eta_schedule.queue[0]
-        self.assertEquals(len(in_hold), 4)
+        self.assertEqual(len(in_hold), 4)
         eta, priority, task, on_accept = in_hold
         self.assertTrue(isinstance(task, TaskWrapper))
         self.assertTrue(callable(on_accept))
-        self.assertEquals(task.task_name, foo_task.name)
-        self.assertEquals(task.execute(), 2 * 4 * 8)
+        self.assertEqual(task.task_name, foo_task.name)
+        self.assertEqual(task.execute(), 2 * 4 * 8)
         self.assertRaises(Empty, self.ready_queue.get_nowait)
 
 

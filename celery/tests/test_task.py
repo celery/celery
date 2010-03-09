@@ -128,15 +128,15 @@ class TestTaskRetries(unittest.TestCase):
         RetryTask.max_retries = 3
         RetryTask.iterations = 0
         result = RetryTask.apply([0xFF, 0xFFFF])
-        self.assertEquals(result.get(), 0xFF)
-        self.assertEquals(RetryTask.iterations, 4)
+        self.assertEqual(result.get(), 0xFF)
+        self.assertEqual(RetryTask.iterations, 4)
 
     def test_retry_no_args(self):
         RetryTaskNoArgs.max_retries = 3
         RetryTaskNoArgs.iterations = 0
         result = RetryTaskNoArgs.apply()
-        self.assertEquals(result.get(), 42)
-        self.assertEquals(RetryTaskNoArgs.iterations, 4)
+        self.assertEqual(result.get(), 42)
+        self.assertEqual(RetryTaskNoArgs.iterations, 4)
 
     def test_retry_not_eager(self):
         exc = Exception("baz")
@@ -158,8 +158,8 @@ class TestTaskRetries(unittest.TestCase):
         RetryTaskCustomExc.max_retries = 3
         RetryTaskCustomExc.iterations = 0
         result = RetryTaskCustomExc.apply([0xFF, 0xFFFF], {"kwarg": 0xF})
-        self.assertEquals(result.get(), 0xFF + 0xF)
-        self.assertEquals(RetryTaskCustomExc.iterations, 4)
+        self.assertEqual(result.get(), 0xFF + 0xF)
+        self.assertEqual(RetryTaskCustomExc.iterations, 4)
 
     def test_retry_with_custom_exception(self):
         RetryTaskCustomExc.max_retries = 2
@@ -167,7 +167,7 @@ class TestTaskRetries(unittest.TestCase):
         result = RetryTaskCustomExc.apply([0xFF, 0xFFFF], {"kwarg": 0xF})
         self.assertRaises(MyCustomException,
                           result.get)
-        self.assertEquals(RetryTaskCustomExc.iterations, 3)
+        self.assertEqual(RetryTaskCustomExc.iterations, 3)
 
     def test_max_retries_exceeded(self):
         RetryTask.max_retries = 2
@@ -175,14 +175,14 @@ class TestTaskRetries(unittest.TestCase):
         result = RetryTask.apply([0xFF, 0xFFFF])
         self.assertRaises(RetryTask.MaxRetriesExceededError,
                           result.get)
-        self.assertEquals(RetryTask.iterations, 3)
+        self.assertEqual(RetryTask.iterations, 3)
 
         RetryTask.max_retries = 1
         RetryTask.iterations = 0
         result = RetryTask.apply([0xFF, 0xFFFF])
         self.assertRaises(RetryTask.MaxRetriesExceededError,
                           result.get)
-        self.assertEquals(RetryTask.iterations, 2)
+        self.assertEqual(RetryTask.iterations, 2)
 
 
 class MockPublisher(object):
@@ -205,13 +205,13 @@ class TestCeleryTasks(unittest.TestCase):
     def test_ping(self):
         from celery import conf
         conf.ALWAYS_EAGER = True
-        self.assertEquals(task.ping(), 'pong')
+        self.assertEqual(task.ping(), 'pong')
         conf.ALWAYS_EAGER = False
 
     def test_execute_remote(self):
         from celery import conf
         conf.ALWAYS_EAGER = True
-        self.assertEquals(task.execute_remote(return_True, ["foo"]).get(),
+        self.assertEqual(task.execute_remote(return_True, ["foo"]).get(),
                           True)
         conf.ALWAYS_EAGER = False
 
@@ -237,15 +237,15 @@ class TestCeleryTasks(unittest.TestCase):
             test_eta=False, **kwargs):
         next_task = consumer.fetch()
         task_data = next_task.decode()
-        self.assertEquals(task_data["id"], presult.task_id)
-        self.assertEquals(task_data["task"], task_name)
+        self.assertEqual(task_data["id"], presult.task_id)
+        self.assertEqual(task_data["task"], task_name)
         task_kwargs = task_data.get("kwargs", {})
         if test_eta:
             self.assertTrue(isinstance(task_data.get("eta"), basestring))
             to_datetime = parse_iso8601(task_data.get("eta"))
             self.assertTrue(isinstance(to_datetime, datetime))
         for arg_name, arg_value in kwargs.items():
-            self.assertEquals(task_kwargs.get(arg_name), arg_value)
+            self.assertEqual(task_kwargs.get(arg_name), arg_value)
 
     def test_incomplete_task_cls(self):
 
@@ -302,7 +302,7 @@ class TestCeleryTasks(unittest.TestCase):
         # Discarding all tasks.
         consumer.discard_all()
         task.apply_async(t1)
-        self.assertEquals(consumer.discard_all(), 1)
+        self.assertEqual(consumer.discard_all(), 1)
         self.assertTrue(consumer.fetch() is None)
 
         self.assertFalse(presult.successful())
@@ -319,7 +319,7 @@ class TestCeleryTasks(unittest.TestCase):
         try:
             p = IncrementCounterTask.get_publisher(exchange="foo",
                                                    connection="bar")
-            self.assertEquals(p.kwargs["exchange"], "foo")
+            self.assertEqual(p.kwargs["exchange"], "foo")
         finally:
             base.TaskPublisher = old_pub
 
@@ -339,7 +339,7 @@ class TestTaskSet(unittest.TestCase):
         ts = task.TaskSet(return_True_task.name, [
             [[1], {}], [[2], {}], [[3], {}], [[4], {}], [[5], {}]])
         res = ts.apply_async()
-        self.assertEquals(res.join(), [True, True, True, True, True])
+        self.assertEqual(res.join(), [True, True, True, True, True])
 
         conf.ALWAYS_EAGER = False
 
@@ -356,8 +356,8 @@ class TestTaskSet(unittest.TestCase):
             [[], {"increment_by": 8}],
             [[], {"increment_by": 9}],
         ])
-        self.assertEquals(ts.task_name, IncrementCounterTask.name)
-        self.assertEquals(ts.total, 9)
+        self.assertEqual(ts.task_name, IncrementCounterTask.name)
+        self.assertEqual(ts.total, 9)
 
 
         consumer = IncrementCounterTask().get_consumer()
@@ -367,12 +367,12 @@ class TestTaskSet(unittest.TestCase):
         taskset_id = taskset_res.taskset_id
         for subtask in subtasks:
             m = consumer.fetch().payload
-            self.assertEquals(m.get("taskset"), taskset_id)
-            self.assertEquals(m.get("task"), IncrementCounterTask.name)
-            self.assertEquals(m.get("id"), subtask.task_id)
+            self.assertEqual(m.get("taskset"), taskset_id)
+            self.assertEqual(m.get("task"), IncrementCounterTask.name)
+            self.assertEqual(m.get("id"), subtask.task_id)
             IncrementCounterTask().run(
                     increment_by=m.get("kwargs", {}).get("increment_by"))
-        self.assertEquals(IncrementCounterTask.count, sum(xrange(1, 10)))
+        self.assertEqual(IncrementCounterTask.count, sum(xrange(1, 10)))
 
 
 class TestTaskApply(unittest.TestCase):
@@ -382,13 +382,13 @@ class TestTaskApply(unittest.TestCase):
 
         e = IncrementCounterTask.apply()
         self.assertTrue(isinstance(e, EagerResult))
-        self.assertEquals(e.get(), 1)
+        self.assertEqual(e.get(), 1)
 
         e = IncrementCounterTask.apply(args=[1])
-        self.assertEquals(e.get(), 2)
+        self.assertEqual(e.get(), 2)
 
         e = IncrementCounterTask.apply(kwargs={"increment_by": 4})
-        self.assertEquals(e.get(), 6)
+        self.assertEqual(e.get(), 6)
 
         self.assertTrue(e.successful())
         self.assertTrue(e.ready())
@@ -418,7 +418,7 @@ class TestPeriodicTask(unittest.TestCase):
 
     def test_timedelta_seconds_returns_0_on_negative_time(self):
         delta = timedelta(days=-2)
-        self.assertEquals(MyPeriodic().timedelta_seconds(delta), 0)
+        self.assertEqual(MyPeriodic().timedelta_seconds(delta), 0)
 
     def test_timedelta_seconds(self):
         deltamap = ((timedelta(seconds=1), 1),
@@ -427,7 +427,7 @@ class TestPeriodicTask(unittest.TestCase):
                     (timedelta(hours=4), 4 * 60 * 60),
                     (timedelta(days=3), 3 * 86400))
         for delta, seconds in deltamap:
-            self.assertEquals(MyPeriodic().timedelta_seconds(delta), seconds)
+            self.assertEqual(MyPeriodic().timedelta_seconds(delta), seconds)
 
     def test_is_due_not_due(self):
         due, remaining = MyPeriodic().is_due(datetime.now())
@@ -438,4 +438,4 @@ class TestPeriodicTask(unittest.TestCase):
         p = MyPeriodic()
         due, remaining = p.is_due(datetime.now() - p.run_every)
         self.assertTrue(due)
-        self.assertEquals(remaining, p.timedelta_seconds(p.run_every))
+        self.assertEqual(remaining, p.timedelta_seconds(p.run_every))

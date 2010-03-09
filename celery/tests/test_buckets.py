@@ -51,11 +51,11 @@ class TestTokenBucketQueue(unittest.TestCase):
     def test_bucket__put_get(self):
         x = buckets.TokenBucketQueue(fill_rate=10)
         x.put("The quick brown fox")
-        self.assertEquals(x.get(), "The quick brown fox")
+        self.assertEqual(x.get(), "The quick brown fox")
 
         x.put_nowait("The lazy dog")
         time.sleep(0.2)
-        self.assertEquals(x.get_nowait(), "The lazy dog")
+        self.assertEqual(x.get_nowait(), "The lazy dog")
 
     @skip_if_disabled
     def test_fill_rate(self):
@@ -97,15 +97,15 @@ class TestRateLimitString(unittest.TestCase):
 
     @skip_if_disabled
     def test_conversion(self):
-        self.assertEquals(buckets.parse_ratelimit_string(999), 999)
-        self.assertEquals(buckets.parse_ratelimit_string("1456/s"), 1456)
-        self.assertEquals(buckets.parse_ratelimit_string("100/m"),
+        self.assertEqual(buckets.parse_ratelimit_string(999), 999)
+        self.assertEqual(buckets.parse_ratelimit_string("1456/s"), 1456)
+        self.assertEqual(buckets.parse_ratelimit_string("100/m"),
                           100 / 60.0)
-        self.assertEquals(buckets.parse_ratelimit_string("10/h"),
+        self.assertEqual(buckets.parse_ratelimit_string("10/h"),
                           10 / 60.0 / 60.0)
 
         for zero in (0, None, "0", "0/m", "0/h", "0/s"):
-            self.assertEquals(buckets.parse_ratelimit_string(zero), 0)
+            self.assertEqual(buckets.parse_ratelimit_string(zero), 0)
 
 
 class TaskA(Task):
@@ -166,7 +166,7 @@ class TestTaskBuckets(unittest.TestCase):
         b = buckets.TaskBucket(task_registry=self.registry)
         job = MockJob(gen_unique_id(), TaskA.name, ["theqbf"], {"foo": "bar"})
         b.put(job)
-        self.assertEquals(b.get(), job)
+        self.assertEqual(b.get(), job)
 
     @skip_if_disabled
     def test_fill_rate(self):

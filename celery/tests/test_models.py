@@ -26,7 +26,7 @@ class TestModels(unittest.TestCase):
         self.assertTrue(m1.task_id)
         self.assertTrue(isinstance(m1.date_done, datetime))
 
-        self.assertEquals(TaskMeta.objects.get_task(m1.task_id).task_id,
+        self.assertEqual(TaskMeta.objects.get_task(m1.task_id).task_id,
                 m1.task_id)
         self.assertFalse(
                 TaskMeta.objects.get_task(m1.task_id).status == states.SUCCESS)
@@ -57,7 +57,7 @@ class TestModels(unittest.TestCase):
         self.assertTrue(m1.taskset_id)
         self.assertTrue(isinstance(m1.date_done, datetime))
 
-        self.assertEquals(
+        self.assertEqual(
                 TaskSetMeta.objects.restore_taskset(m1.taskset_id).taskset_id,
                 m1.taskset_id)
 

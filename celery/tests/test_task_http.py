@@ -71,21 +71,21 @@ class TestMutableURL(unittest.TestCase):
 
     def test_url_query(self):
         url = http.MutableURL("http://example.com?x=10&y=20&z=Foo")
-        self.assertEquals(url.query.get("x"), "10")
-        self.assertEquals(url.query.get("y"), "20")
-        self.assertEquals(url.query.get("z"), "Foo")
+        self.assertEqual(url.query.get("x"), "10")
+        self.assertEqual(url.query.get("y"), "20")
+        self.assertEqual(url.query.get("z"), "Foo")
         url.query["name"] = "George"
         url = http.MutableURL(str(url))
-        self.assertEquals(url.query.get("x"), "10")
-        self.assertEquals(url.query.get("y"), "20")
-        self.assertEquals(url.query.get("z"), "Foo")
-        self.assertEquals(url.query.get("name"), "George")
+        self.assertEqual(url.query.get("x"), "10")
+        self.assertEqual(url.query.get("y"), "20")
+        self.assertEqual(url.query.get("z"), "Foo")
+        self.assertEqual(url.query.get("name"), "George")
 
     def test_url_keeps_everything(self):
         url = "https://e.com:808/foo/bar#zeta?x=10&y=20"
         url = http.MutableURL(url)
 
-        self.assertEquals(str(url).split("?")[0],
+        self.assertEqual(str(url).split("?")[0],
             "https://e.com:808/foo/bar#zeta")
 
     def test___repr__(self):
@@ -96,7 +96,7 @@ class TestMutableURL(unittest.TestCase):
         url = http.MutableURL("http://e.com/foo/bar/?x=10")
         url.query = {"zzz": "xxx"}
         url = http.MutableURL(str(url))
-        self.assertEquals(url.query, {"zzz": "xxx"})
+        self.assertEqual(url.query, {"zzz": "xxx"})
 
 
 class TestHttpDispatch(unittest.TestCase):
@@ -107,7 +107,7 @@ class TestHttpDispatch(unittest.TestCase):
         def with_mock_urlopen(_val):
             d = http.HttpDispatch("http://example.com/mul", "GET", {
                                     "x": 10, "y": 10}, logger)
-            self.assertEquals(d.dispatch(), 100)
+            self.assertEqual(d.dispatch(), 100)
 
         context = mock_urlopen(success_response(100))
         execute_context(context, with_mock_urlopen)
@@ -162,7 +162,7 @@ class TestHttpDispatch(unittest.TestCase):
         def with_mock_urlopen(_val):
             d = http.HttpDispatch("http://example.com/mul", "POST", {
                                     "x": 10, "y": 10}, logger)
-            self.assertEquals(d.dispatch(), 100)
+            self.assertEqual(d.dispatch(), 100)
 
         context = mock_urlopen(success_response(100))
         execute_context(context, with_mock_urlopen)
@@ -175,7 +175,7 @@ class TestURL(unittest.TestCase):
 
             def with_mock_urlopen(_val):
                 d = http.URL("http://example.com/mul").get_async(x=10, y=10)
-                self.assertEquals(d.get(), 100)
+                self.assertEqual(d.get(), 100)
 
             context = mock_urlopen(success_response(100))
             execute_context(context, with_mock_urlopen)
@@ -187,7 +187,7 @@ class TestURL(unittest.TestCase):
 
             def with_mock_urlopen(_val):
                 d = http.URL("http://example.com/mul").post_async(x=10, y=10)
-                self.assertEquals(d.get(), 100)
+                self.assertEqual(d.get(), 100)
 
             context = mock_urlopen(success_response(100))
             execute_context(context, with_mock_urlopen)

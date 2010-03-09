@@ -10,7 +10,7 @@ class TestDiscovery(unittest.TestCase):
         apps = autodiscover()
         self.assertTrue(apps)
         self.assertTrue("c.unittest.SomeAppTask" in tasks)
-        self.assertEquals(tasks["c.unittest.SomeAppTask"].run(), 42)
+        self.assertEqual(tasks["c.unittest.SomeAppTask"].run(), 42)
 
     def test_discovery(self):
         if "someapp" in settings.INSTALLED_APPS:

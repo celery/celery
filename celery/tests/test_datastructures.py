@@ -13,8 +13,8 @@ class TestPositionQueue(unittest.TestCase):
         for position in q.data:
             self.assertTrue(isinstance(position, q.UnfilledPosition))
 
-        self.assertEquals(q.filled, [])
-        self.assertEquals(len(q), 0)
+        self.assertEqual(q.filled, [])
+        self.assertEqual(len(q), 0)
         self.assertFalse(q.full())
 
     def test_position_queue_almost(self):
@@ -23,16 +23,16 @@ class TestPositionQueue(unittest.TestCase):
         q[6] = 6
         q[9] = 9
 
-        self.assertEquals(q.filled, [3, 6, 9])
-        self.assertEquals(len(q), 3)
+        self.assertEqual(q.filled, [3, 6, 9])
+        self.assertEqual(len(q), 3)
         self.assertFalse(q.full())
 
     def test_position_queue_full(self):
         q = PositionQueue(length=10)
         for i in xrange(10):
             q[i] = i
-        self.assertEquals(q.filled, list(xrange(10)))
-        self.assertEquals(len(q), 10)
+        self.assertEqual(q.filled, list(xrange(10)))
+        self.assertEqual(len(q), 10)
         self.assertTrue(q.full())
 
 
@@ -46,9 +46,9 @@ class TestExceptionInfo(unittest.TestCase):
             exc_info = sys.exc_info()
 
         einfo = ExceptionInfo(exc_info)
-        self.assertEquals(str(einfo), einfo.traceback)
+        self.assertEqual(str(einfo), einfo.traceback)
         self.assertTrue(isinstance(einfo.exception, LookupError))
-        self.assertEquals(einfo.exception.args,
+        self.assertEqual(einfo.exception.args,
                 ("The quick brown fox jumps...", ))
         self.assertTrue(einfo.traceback)
 
@@ -64,38 +64,38 @@ class TestUtilities(unittest.TestCase):
         self.assertRaises(StopIteration, it.next)
         x.put("foo")
         it = consume_queue(x)
-        self.assertEquals(it.next(), "foo")
+        self.assertEqual(it.next(), "foo")
         self.assertRaises(StopIteration, it.next)
 
 
 class TestSharedCounter(unittest.TestCase):
 
     def test_initial_value(self):
-        self.assertEquals(int(SharedCounter(10)), 10)
+        self.assertEqual(int(SharedCounter(10)), 10)
 
     def test_increment(self):
         c = SharedCounter(10)
         c.increment()
-        self.assertEquals(int(c), 11)
+        self.assertEqual(int(c), 11)
         c.increment(2)
-        self.assertEquals(int(c), 13)
+        self.assertEqual(int(c), 13)
 
     def test_decrement(self):
         c = SharedCounter(10)
         c.decrement()
-        self.assertEquals(int(c), 9)
+        self.assertEqual(int(c), 9)
         c.decrement(2)
-        self.assertEquals(int(c), 7)
+        self.assertEqual(int(c), 7)
 
     def test_iadd(self):
         c = SharedCounter(10)
         c += 10
-        self.assertEquals(int(c), 20)
+        self.assertEqual(int(c), 20)
 
     def test_isub(self):
         c = SharedCounter(10)
         c -= 20
-        self.assertEquals(int(c), -10)
+        self.assertEqual(int(c), -10)
 
     def test_repr(self):
         self.assertTrue(repr(SharedCounter(10)).startswith("<SharedCounter:"))
@@ -137,4 +137,4 @@ class TestLocalCache(unittest.TestCase):
         slots = list(range(limit * 2))
         for i in slots:
             x[i] = i
-        self.assertEquals(x.keys(), slots[limit:])
+        self.assertEqual(x.keys(), slots[limit:])

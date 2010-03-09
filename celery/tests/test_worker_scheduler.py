@@ -26,9 +26,9 @@ class TestScheduler(unittest.TestCase):
         sched.enter(MockItem("foo"), eta=now, callback=callback)
 
         remaining = iter(sched).next()
-        self.assertEquals(remaining, 0)
+        self.assertEqual(remaining, 0)
         self.assertTrue(callback_called[0])
-        self.assertEquals(ready_queue.get_nowait().task_id, "foo")
+        self.assertEqual(ready_queue.get_nowait().task_id, "foo")
 
     def test_sched_run_later(self):
         ready_queue = Queue()

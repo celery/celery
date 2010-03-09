@@ -47,16 +47,16 @@ class TestInfo(unittest.TestCase):
              (0, "now"))
 
         for seconds, human in t:
-            self.assertEquals(info.humanize_seconds(seconds), human)
+            self.assertEqual(info.humanize_seconds(seconds), human)
 
-        self.assertEquals(info.humanize_seconds(4, prefix="about "),
+        self.assertEqual(info.humanize_seconds(4, prefix="about "),
                           "about 4.00 seconds")
 
     def test_textindent(self):
-        self.assertEquals(info.textindent(RANDTEXT, 4), RANDTEXT_RES)
+        self.assertEqual(info.textindent(RANDTEXT, 4), RANDTEXT_RES)
 
     def test_format_routing_table(self):
-        self.assertEquals(info.format_routing_table(ROUTE), ROUTE_FORMAT)
+        self.assertEqual(info.format_routing_table(ROUTE), ROUTE_FORMAT)
 
     def test_broker_info(self):
         info.format_broker_info()
