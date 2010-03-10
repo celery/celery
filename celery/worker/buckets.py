@@ -171,7 +171,12 @@ class TaskBucket(object):
 
     def clear(self):
         for bucket in self.buckets.values():
-            bucket.queue.clear()
+            try:
+                bucket.clear()
+            except AttributeError:
+                # Probably a Queue, not a TokenBucketQueue. Clear the underlying
+                # deque instead.
+                bucket.queue.clear()
 
 
 class TokenBucketQueue(object):
