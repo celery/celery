@@ -101,7 +101,7 @@ setup(
     platforms=["any"],
     license="BSD",
     packages=find_packages(exclude=['ez_setup', 'tests', 'tests.*']),
-    scripts=["bin/celeryd", "bin/celeryinit", "bin/celerybeat"],
+    scripts=["bin/celeryd", "bin/celeryinit", "bin/celerybeat", "bin/camqadm"],
     zip_safe=False,
     install_requires=install_requires,
     extra_requires={
@@ -125,7 +125,8 @@ setup(
         'console_scripts': [
             'celeryd = celery.bin.celeryd:main',
             'celeryinit = celery.bin.celeryinit:main',
-            'celerybeat = celery.bin.celerybeat:main'
+            'celerybeat = celery.bin.celerybeat:main',
+            'camqadm = celery.bin.camqadm:main',
             ]
     },
     long_description=long_description,
