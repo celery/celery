@@ -16,7 +16,6 @@ import shlex
 import pprint
 import readline
 import optparse
-from itertools import starmap
 
 from celery.utils import info
 from celery.messaging import establish_connection
@@ -91,7 +90,8 @@ class Spec(object):
             ("pobox", True)
 
         """
-        return tuple(starmap(self.coerce, enumerate(arglist)))
+        return tuple(self.coerce(index, value)
+                for index, value in enumerate(arglist))
 
 
 class AMQShell(cmd.Cmd):
