@@ -39,9 +39,7 @@ def format_routing_table(table=None, indent=0):
                             for name, route in table.items())
     return textindent(routes, indent=indent)
 
-
-def format_broker_info():
-    """Get message broker connection info string for log dumps."""
+def get_broker_info():
     broker_connection = establish_connection()
 
     carrot_backend = broker_connection.backend_cls
@@ -57,8 +55,12 @@ def format_broker_info():
     if not vhost.startswith("/"):
         vhost = "/" + vhost
 
-    return BROKER_FORMAT % {"carrot_backend": carrot_backend,
-                            "userid": broker_connection.userid,
-                            "host": broker_connection.hostname,
-                            "port": port,
-                            "vhost": vhost}
+    return {"carrot_backend": carrot_backend,
+            "userid": broker_connection.userid,
+            "host": broker_connection.hostname,
+            "port": port,
+            "vhost": vhost}
+
+def format_broker_info(info=None):
+    """Get message broker connection info string for log dumps."""
+    return BROKER_FORMAT % get_broker_info()

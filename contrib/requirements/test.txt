@@ -1,3 +1,4 @@
+unittest2
 simplejson
 nose
 nose-cover3

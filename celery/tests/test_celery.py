@@ -1,4 +1,5 @@
-import unittest
+import unittest2 as unittest
+
 import celery
 
 
@@ -6,14 +7,14 @@ class TestInitFile(unittest.TestCase):
 
     def test_version(self):
         self.assertTrue(celery.VERSION)
-        self.assertTrue(len(celery.VERSION) >= 3)
+        self.assertGreater(len(celery.VERSION), 3)
         celery.VERSION = (0, 3, 0)
         self.assertFalse(celery.is_stable_release())
-        self.assertEqual(celery.__version__.count("."), 2)
-        self.assertTrue("(unstable)" in celery.version_with_meta())
+        self.assertGreater(celery.__version__.count("."), 2)
+        self.assertIn("(unstable)", celery.version_with_meta())
         celery.VERSION = (0, 4, 0)
         self.assertTrue(celery.is_stable_release())
-        self.assertTrue("(stable)" in celery.version_with_meta())
+        self.assertIn("(stable)", celery.version_with_meta())
 
     def test_meta(self):
         for m in ("__author__", "__contact__", "__homepage__",
