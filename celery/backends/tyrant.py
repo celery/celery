@@ -1,12 +1,12 @@
 """celery.backends.tyrant"""
-from django.core.exceptions import ImproperlyConfigured
 try:
     import pytyrant
 except ImportError:
     pytyrant = None
 
-from celery.backends.base import KeyValueStoreBackend
 from celery.loaders import load_settings
+from celery.backends.base import KeyValueStoreBackend
+from celery.exceptions import ImproperlyConfigured
 
 
 class TyrantBackend(KeyValueStoreBackend):
@@ -27,7 +27,7 @@ class TyrantBackend(KeyValueStoreBackend):
     def __init__(self, tyrant_host=None, tyrant_port=None):
         """Initialize Tokyo Tyrant backend instance.
 
-        Raises :class:`django.core.exceptions.ImproperlyConfigured` if
+        Raises :class:`celery.exceptions.ImproperlyConfigured` if
         :setting:`TT_HOST` or :setting:`TT_PORT` is not set.
 
         """

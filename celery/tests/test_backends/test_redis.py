@@ -3,7 +3,7 @@ import errno
 import socket
 import unittest
 
-from django.core.exceptions import ImproperlyConfigured
+from celery.exceptions import ImproperlyConfigured
 
 from celery import states
 from celery.utils import gen_unique_id

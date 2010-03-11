@@ -1,7 +1,6 @@
 """MongoDB backend for celery."""
 from datetime import datetime
 
-from django.core.exceptions import ImproperlyConfigured
 from billiard.serialization import pickle
 try:
     import pymongo
@@ -10,8 +9,9 @@ except ImportError:
 
 from celery import conf
 from celery import states
-from celery.backends.base import BaseDictBackend
 from celery.loaders import load_settings
+from celery.backends.base import BaseDictBackend
+from celery.exceptions import ImproperlyConfigured
 
 
 class Bunch:
@@ -34,7 +34,7 @@ class MongoBackend(BaseDictBackend):
     def __init__(self, *args, **kwargs):
         """Initialize MongoDB backend instance.
 
-        :raises django.core.exceptions.ImproperlyConfigured: if
+        :raises celery.exceptions.ImproperlyConfigured: if
             module :mod:`pymongo` is not available.
 
         """

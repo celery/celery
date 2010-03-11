@@ -9,6 +9,10 @@ Task of kind %s is not registered, please make sure it's imported.
 """.strip()
 
 
+class ImproperlyConfigured(Exception):
+    """Celery is somehow improperly configured."""
+
+
 class NotRegistered(KeyError):
     """The task is not registered."""
 
@@ -19,6 +23,7 @@ class NotRegistered(KeyError):
 
 class AlreadyRegistered(Exception):
     """The task is already registered."""
+    pass
 
 
 class TimeoutError(Exception):

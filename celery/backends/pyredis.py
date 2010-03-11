@@ -1,9 +1,9 @@
 import warnings
 
-from django.core.exceptions import ImproperlyConfigured
 
-from celery.backends.base import KeyValueStoreBackend
 from celery.loaders import load_settings
+from celery.backends.base import KeyValueStoreBackend
+from celery.exceptions import ImproperlyConfigured
 
 try:
     import redis
@@ -24,7 +24,7 @@ class RedisBackend(KeyValueStoreBackend):
 
         The port to the Redis server.
 
-        Raises :class:`django.core.exceptions.ImproperlyConfigured` if
+        Raises :class:`celery.exceptions.ImproperlyConfigured` if
         :setting:`REDIS_HOST` or :setting:`REDIS_PORT` is not set.
 
     """
