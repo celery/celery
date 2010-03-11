@@ -1,4 +1,4 @@
-import unittest
+import unittest2 as unittest
 
 from celery.task import control
 from celery.task.builtins import PingTask
@@ -36,23 +36,23 @@ class TestBroadcast(unittest.TestCase):
     @with_mock_broadcast
     def test_broadcast(self):
         control.broadcast("foobarbaz", arguments=[])
-        self.assertTrue("foobarbaz" in MockBroadcastPublisher.sent)
+        self.assertIn("foobarbaz", MockBroadcastPublisher.sent)
 
     @with_mock_broadcast
     def test_rate_limit(self):
         control.rate_limit(PingTask.name, "100/m")
-        self.assertTrue("rate_limit" in MockBroadcastPublisher.sent)
+        self.assertIn("rate_limit", MockBroadcastPublisher.sent)
 
     @with_mock_broadcast
     def test_revoke(self):
         control.revoke("foozbaaz")
-        self.assertTrue("revoke" in MockBroadcastPublisher.sent)
+        self.assertIn("revoke", MockBroadcastPublisher.sent)
 
     @with_mock_broadcast
     def test_revoke_from_result(self):
         from celery.result import AsyncResult
         AsyncResult("foozbazzbar").revoke()
-        self.assertTrue("revoke" in MockBroadcastPublisher.sent)
+        self.assertIn("revoke", MockBroadcastPublisher.sent)
 
     @with_mock_broadcast
     def test_revoke_from_resultset(self):
@@ -60,4 +60,4 @@ class TestBroadcast(unittest.TestCase):
         r = TaskSetResult(gen_unique_id(), map(AsyncResult, [gen_unique_id()
                                                         for i in range(10)]))
         r.revoke()
-        self.assertTrue("revoke" in MockBroadcastPublisher.sent)
+        self.assertIn("revoke", MockBroadcastPublisher.sent)

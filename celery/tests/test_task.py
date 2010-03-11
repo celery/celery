@@ -1,4 +1,4 @@
-import unittest
+import unittest2 as unittest
 from StringIO import StringIO
 from datetime import datetime, timedelta
 
@@ -220,8 +220,8 @@ class TestCeleryTasks(unittest.TestCase):
         import operator
         conf.ALWAYS_EAGER = True
         res = task.dmap(operator.add, zip(xrange(10), xrange(10)))
-        self.assertTrue(res, sum([operator.add(x, x)
-                                    for x in xrange(10)]))
+        self.assertEqual(sum(res), sum(operator.add(x, x)
+                                        for x in xrange(10)))
         conf.ALWAYS_EAGER = False
 
     def test_dmap_async(self):
@@ -229,8 +229,8 @@ class TestCeleryTasks(unittest.TestCase):
         import operator
         conf.ALWAYS_EAGER = True
         res = task.dmap_async(operator.add, zip(xrange(10), xrange(10)))
-        self.assertTrue(res.get(), sum([operator.add(x, x)
-                                            for x in xrange(10)]))
+        self.assertEqual(sum(res.get()), sum(operator.add(x, x)
+                                                for x in xrange(10)))
         conf.ALWAYS_EAGER = False
 
     def assertNextTaskDataEquals(self, consumer, presult, task_name,
@@ -241,9 +241,9 @@ class TestCeleryTasks(unittest.TestCase):
         self.assertEqual(task_data["task"], task_name)
         task_kwargs = task_data.get("kwargs", {})
         if test_eta:
-            self.assertTrue(isinstance(task_data.get("eta"), basestring))
+            self.assertIsInstance(task_data.get("eta"), basestring)
             to_datetime = parse_iso8601(task_data.get("eta"))
-            self.assertTrue(isinstance(to_datetime, datetime))
+            self.assertIsInstance(to_datetime, datetime)
         for arg_name, arg_value in kwargs.items():
             self.assertEqual(task_kwargs.get(arg_name), arg_value)
 
@@ -256,7 +256,7 @@ class TestCeleryTasks(unittest.TestCase):
 
     def test_regular_task(self):
         T1 = self.createTaskCls("T1", "c.unittest.t.t1")
-        self.assertTrue(isinstance(T1(), T1))
+        self.assertIsInstance(T1(), T1)
         self.assertTrue(T1().run())
         self.assertTrue(callable(T1()),
                 "Task class is callable()")
@@ -271,7 +271,7 @@ class TestCeleryTasks(unittest.TestCase):
         consumer = t1.get_consumer()
         self.assertRaises(NotImplementedError, consumer.receive, "foo", "foo")
         consumer.discard_all()
-        self.assertTrue(consumer.fetch() is None)
+        self.assertIsNone(consumer.fetch())
 
         # Without arguments.
         presult = t1.delay()
@@ -303,14 +303,14 @@ class TestCeleryTasks(unittest.TestCase):
         consumer.discard_all()
         task.apply_async(t1)
         self.assertEqual(consumer.discard_all(), 1)
-        self.assertTrue(consumer.fetch() is None)
+        self.assertIsNone(consumer.fetch())
 
         self.assertFalse(presult.successful())
         default_backend.mark_as_done(presult.task_id, result=None)
         self.assertTrue(presult.successful())
 
         publisher = t1.get_publisher()
-        self.assertTrue(isinstance(publisher, messaging.TaskPublisher))
+        self.assertIsInstance(publisher, messaging.TaskPublisher)
 
     def test_get_publisher(self):
         from celery.task import base
@@ -339,7 +339,7 @@ class TestTaskSet(unittest.TestCase):
         ts = task.TaskSet(return_True_task.name, [
             [[1], {}], [[2], {}], [[3], {}], [[4], {}], [[5], {}]])
         res = ts.apply_async()
-        self.assertEqual(res.join(), [True, True, True, True, True])
+        self.assertListEqual(res.join(), [True, True, True, True, True])
 
         conf.ALWAYS_EAGER = False
 
@@ -367,9 +367,9 @@ class TestTaskSet(unittest.TestCase):
         taskset_id = taskset_res.taskset_id
         for subtask in subtasks:
             m = consumer.fetch().payload
-            self.assertEqual(m.get("taskset"), taskset_id)
-            self.assertEqual(m.get("task"), IncrementCounterTask.name)
-            self.assertEqual(m.get("id"), subtask.task_id)
+            self.assertDictContainsSubset({"taskset": taskset_id,
+                                           "task": IncrementCounterTask.name,
+                                           "id": subtask.task_id}, m)
             IncrementCounterTask().run(
                     increment_by=m.get("kwargs", {}).get("increment_by"))
         self.assertEqual(IncrementCounterTask.count, sum(xrange(1, 10)))
@@ -381,7 +381,7 @@ class TestTaskApply(unittest.TestCase):
         IncrementCounterTask.count = 0
 
         e = IncrementCounterTask.apply()
-        self.assertTrue(isinstance(e, EagerResult))
+        self.assertIsInstance(e, EagerResult)
         self.assertEqual(e.get(), 1)
 
         e = IncrementCounterTask.apply(args=[1])
@@ -412,9 +412,9 @@ class TestPeriodicTask(unittest.TestCase):
             (task.PeriodicTask, ), {"__module__": __name__})
 
     def test_remaining_estimate(self):
-        self.assertTrue(isinstance(
+        self.assertIsInstance(
             MyPeriodic().remaining_estimate(datetime.now()),
-            timedelta))
+            timedelta)
 
     def test_timedelta_seconds_returns_0_on_negative_time(self):
         delta = timedelta(days=-2)
@@ -432,7 +432,7 @@ class TestPeriodicTask(unittest.TestCase):
     def test_is_due_not_due(self):
         due, remaining = MyPeriodic().is_due(datetime.now())
         self.assertFalse(due)
-        self.assertTrue(remaining > 60)
+        self.assertGreater(remaining, 60)
 
     def test_is_due(self):
         p = MyPeriodic()

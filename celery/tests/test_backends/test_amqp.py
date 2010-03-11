@@ -1,6 +1,6 @@
 import sys
 import errno
-import unittest
+import unittest2 as unittest
 
 from celery.exceptions import ImproperlyConfigured
 
@@ -56,7 +56,7 @@ class TestRedisBackend(unittest.TestCase):
         tb.mark_as_failure(tid3, exception, traceback=einfo.traceback)
         self.assertFalse(tb.is_successful(tid3))
         self.assertEqual(tb.get_status(tid3), states.FAILURE)
-        self.assertTrue(isinstance(tb.get_result(tid3), KeyError))
+        self.assertIsInstance(tb.get_result(tid3), KeyError)
         self.assertEqual(tb.get_traceback(tid3), einfo.traceback)
 
     def test_process_cleanup(self):

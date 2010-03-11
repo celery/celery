@@ -1,7 +1,7 @@
 import sys
 import errno
 import socket
-import unittest
+import unittest2 as unittest
 
 from celery.exceptions import ImproperlyConfigured
 
@@ -50,11 +50,11 @@ class TestTyrantBackend(unittest.TestCase):
         if not tb:
             return # Skip test
 
-        self.assertTrue(tb._connection is not None)
+        self.assertIsNotNone(tb._connection)
         tb.close()
-        self.assertTrue(tb._connection is None)
+        self.assertIsNone(tb._connection)
         tb.open()
-        self.assertTrue(tb._connection is not None)
+        self.assertIsNone(tb._connection)
 
     def test_mark_as_done(self):
         tb = get_tyrant_or_None()
@@ -65,13 +65,12 @@ class TestTyrantBackend(unittest.TestCase):
 
         self.assertFalse(tb.is_successful(tid))
         self.assertEqual(tb.get_status(tid), states.PENDING)
-        self.assertEqual(tb.get_result(tid), None)
+        self.assertIsNone(tb.get_result(tid), None)
 
         tb.mark_as_done(tid, 42)
         self.assertTrue(tb.is_successful(tid))
         self.assertEqual(tb.get_status(tid), states.SUCCESS)
         self.assertEqual(tb.get_result(tid), 42)
-        self.assertTrue(tb.get_result(tid), 42)
 
     def test_is_pickled(self):
         tb = get_tyrant_or_None()
@@ -99,7 +98,7 @@ class TestTyrantBackend(unittest.TestCase):
         tb.mark_as_failure(tid3, exception)
         self.assertFalse(tb.is_successful(tid3))
         self.assertEqual(tb.get_status(tid3), states.FAILURE)
-        self.assertTrue(isinstance(tb.get_result(tid3), KeyError))
+        self.assertIsInstance(tb.get_result(tid3), KeyError)
 
     def test_process_cleanup(self):
         tb = get_tyrant_or_None()
@@ -108,4 +107,4 @@ class TestTyrantBackend(unittest.TestCase):
 
         tb.process_cleanup()
 
-        self.assertTrue(tb._connection is None)
+        self.assertIsNone(tb._connection)

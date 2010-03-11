@@ -1,5 +1,5 @@
 import time
-import unittest
+import unittest2 as unittest
 from Queue import Queue
 
 from celery.utils import gen_unique_id
@@ -90,7 +90,7 @@ class TestMediator(unittest.TestCase):
 
         m.on_iteration()
 
-        self.assertTrue("value" not in got)
+        self.assertNotIn("value", got)
         self.assertTrue(t.acked)
 
 

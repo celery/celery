@@ -3,7 +3,7 @@ from __future__ import generators
 import os
 import sys
 import logging
-import unittest
+import unittest2 as unittest
 from tempfile import mktemp
 from StringIO import StringIO
 
@@ -54,13 +54,8 @@ class TestLog(unittest.TestCase):
         logger = setup_logger(loglevel=logging.ERROR, logfile=None)
         logger.handlers = [] # Reset previously set logger.
         logger = setup_logger(loglevel=logging.ERROR, logfile=None)
-        self.assertTrue(logger.handlers[0].stream is sys.__stderr__,
+        self.assertIs(logger.handlers[0].stream, sys.__stderr__,
                 "setup_logger logs to stderr without logfile argument.")
-        #self.assertTrue(logger._process_aware,
-        #        "setup_logger() returns process aware logger.")
-        #self.assertDidLogTrue(logger, "Logging something",
-        #        "Logger logs error when loglevel is ERROR",
-        #        loglevel=logging.ERROR)
         self.assertDidLogFalse(logger, "Logging something",
                 "Logger doesn't info when loglevel is ERROR",
                 loglevel=logging.INFO)
@@ -80,7 +75,7 @@ class TestLog(unittest.TestCase):
             stdout, stderr = outs
             l = setup_logger(logfile=stderr, loglevel=logging.INFO)
             l.info("The quick brown fox...")
-            self.assertTrue("The quick brown fox..." in stderr.getvalue())
+            self.assertIn("The quick brown fox...", stderr.getvalue())
 
         context = override_stdouts()
         execute_context(context, with_override_stdouts)
@@ -91,14 +86,14 @@ class TestLog(unittest.TestCase):
         l.handlers = []
         tempfile = mktemp(suffix="unittest", prefix="celery")
         l = setup_logger(logfile=tempfile, loglevel=0)
-        self.assertTrue(isinstance(l.handlers[0], logging.FileHandler))
+        self.assertIsInstance(l.handlers[0], logging.FileHandler)
 
     def test_emergency_error_stderr(self):
         def with_override_stdouts(outs):
             stdout, stderr = outs
             emergency_error(None, "The lazy dog crawls under the fast fox")
-            self.assertTrue("The lazy dog crawls under the fast fox" in
-                                stderr.getvalue())
+            self.assertIn("The lazy dog crawls under the fast fox",
+                          stderr.getvalue())
 
         context = override_stdouts()
         execute_context(context, with_override_stdouts)
@@ -108,7 +103,7 @@ class TestLog(unittest.TestCase):
         emergency_error(tempfile, "Vandelay Industries")
         tempfilefh = open(tempfile, "r")
         try:
-            self.assertTrue("Vandelay Industries" in "".join(tempfilefh))
+            self.assertIn("Vandelay Industries", "".join(tempfilefh))
         finally:
             tempfilefh.close()
             os.unlink(tempfile)
@@ -119,7 +114,7 @@ class TestLog(unittest.TestCase):
             def with_wrap_logger(sio):
                 redirect_stdouts_to_logger(logger, loglevel=logging.ERROR)
                 logger.error("foo")
-                self.assertTrue("foo" in sio.getvalue())
+                self.assertIn("foo", sio.getvalue())
 
             context = wrap_logger(logger)
             execute_context(context, with_wrap_logger)
@@ -133,18 +128,18 @@ class TestLog(unittest.TestCase):
             p = LoggingProxy(logger)
             p.close()
             p.write("foo")
-            self.assertTrue("foo" not in sio.getvalue())
+            self.assertNotIn("foo", sio.getvalue())
             p.closed = False
             p.write("foo")
-            self.assertTrue("foo" in sio.getvalue())
+            self.assertIn("foo", sio.getvalue())
             lines = ["baz", "xuzzy"]
             p.writelines(lines)
             for line in lines:
-                self.assertTrue(line in sio.getvalue())
+                self.assertIn(line, sio.getvalue())
             p.flush()
             p.close()
             self.assertFalse(p.isatty())
-            self.assertTrue(p.fileno() is None)
+            self.assertIsNone(p.fileno())
 
         context = wrap_logger(logger)
         execute_context(context, with_wrap_logger)

@@ -1,4 +1,4 @@
-import unittest
+import unittest2 as unittest
 from Queue import Queue, Empty
 from datetime import datetime, timedelta
 from multiprocessing import get_logger
@@ -162,13 +162,13 @@ class TestCarrotListener(unittest.TestCase):
 
         records.clear()
         self.assertEqual(l._detect_wait_method(), l._mainloop)
-        self.assertTrue(records.get("broadcast_callback"))
-        self.assertTrue(records.get("consume_broadcast"))
-        self.assertTrue(records.get("consume_tasks"))
+        for record in ("broadcast_callback", "consume_broadcast",
+                "consume_tasks"):
+            self.assertTrue(records.get(record))
 
         records.clear()
         l.connection.connection = PlaceHolder()
-        self.assertTrue(l._detect_wait_method() is l.task_consumer.iterconsume)
+        self.assertIs(l._detect_wait_method(), l.task_consumer.iterconsume)
         self.assertTrue(records.get("consumer_add"))
 
     def test_connection(self):
@@ -176,19 +176,19 @@ class TestCarrotListener(unittest.TestCase):
                            send_events=False)
 
         l.reset_connection()
-        self.assertTrue(isinstance(l.connection, BrokerConnection))
+        self.assertIsInstance(l.connection, BrokerConnection)
 
         l.stop_consumers()
-        self.assertTrue(l.connection is None)
-        self.assertTrue(l.task_consumer is None)
+        self.assertIsNone(l.connection)
+        self.assertIsNone(l.task_consumer)
 
         l.reset_connection()
-        self.assertTrue(isinstance(l.connection, BrokerConnection))
+        self.assertIsInstance(l.connection, BrokerConnection)
 
         l.stop()
         l.close_connection()
-        self.assertTrue(l.connection is None)
-        self.assertTrue(l.task_consumer is None)
+        self.assertIsNone(l.connection)
+        self.assertIsNone(l.task_consumer)
 
     def test_receive_message_control_command(self):
         l = CarrotListener(self.ready_queue, self.eta_schedule, self.logger,
@@ -198,7 +198,7 @@ class TestCarrotListener(unittest.TestCase):
         l.event_dispatcher = MockEventDispatcher()
         l.control_dispatch = MockControlDispatch()
         l.receive_message(m.decode(), m)
-        self.assertTrue("shutdown" in l.control_dispatch.commands)
+        self.assertIn("shutdown", l.control_dispatch.commands)
 
     def test_close_connection(self):
         l = CarrotListener(self.ready_queue, self.eta_schedule, self.logger,
@@ -226,7 +226,7 @@ class TestCarrotListener(unittest.TestCase):
         def with_catch_warnings(log):
             l.receive_message(m.decode(), m)
             self.assertTrue(log)
-            self.assertTrue("unknown message" in log[0].message.args[0])
+            self.assertIn("unknown message", log[0].message.args[0])
 
         context = catch_warnings(record=True)
         execute_context(context, with_catch_warnings)
@@ -242,7 +242,7 @@ class TestCarrotListener(unittest.TestCase):
         l.receive_message(m.decode(), m)
 
         in_bucket = self.ready_queue.get_nowait()
-        self.assertTrue(isinstance(in_bucket, TaskWrapper))
+        self.assertIsInstance(in_bucket, TaskWrapper)
         self.assertEqual(in_bucket.task_name, foo_task.name)
         self.assertEqual(in_bucket.execute(), 2 * 4 * 8)
         self.assertTrue(self.eta_schedule.empty())
@@ -278,7 +278,7 @@ class TestCarrotListener(unittest.TestCase):
         l.event_dispatcher = MockEventDispatcher()
         l.receive_message(c.decode(), c)
         from celery.worker.revoke import revoked
-        self.assertTrue(id in revoked)
+        self.assertIn(id, revoked)
 
         l.receive_message(t.decode(), t)
         self.assertTrue(ready_queue.empty())
@@ -314,7 +314,7 @@ class TestCarrotListener(unittest.TestCase):
         in_hold = self.eta_schedule.queue[0]
         self.assertEqual(len(in_hold), 4)
         eta, priority, task, on_accept = in_hold
-        self.assertTrue(isinstance(task, TaskWrapper))
+        self.assertIsInstance(task, TaskWrapper)
         self.assertTrue(callable(on_accept))
         self.assertEqual(task.task_name, foo_task.name)
         self.assertEqual(task.execute(), 2 * 4 * 8)
@@ -329,7 +329,7 @@ class TestWorkController(unittest.TestCase):
 
     def test_attrs(self):
         worker = self.worker
-        self.assertTrue(isinstance(worker.eta_schedule, Scheduler))
+        self.assertIsInstance(worker.eta_schedule, Scheduler)
         self.assertTrue(worker.scheduler)
         self.assertTrue(worker.pool)
         self.assertTrue(worker.listener)

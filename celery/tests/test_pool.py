@@ -1,4 +1,4 @@
-import unittest
+import unittest2 as unittest
 import logging
 import itertools
 import time
@@ -27,15 +27,15 @@ class TestTaskPool(unittest.TestCase):
     def test_attrs(self):
         p = TaskPool(limit=2)
         self.assertEqual(p.limit, 2)
-        self.assertTrue(isinstance(p.logger, logging.Logger))
-        self.assertTrue(p._pool is None)
+        self.assertIsInstance(p.logger, logging.Logger)
+        self.assertIsNone(p._pool)
 
-    def x_start_stop(self):
+    def test_start_stop(self):
         p = TaskPool(limit=2)
         p.start()
-        self.assertTrue(p._pool)
+        self.assertIsNotNone(p._pool)
         p.stop()
-        self.assertTrue(p._pool is None)
+        self.assertIsNone(p._pool)
 
     def x_apply(self):
         p = TaskPool(limit=2)
@@ -43,50 +43,39 @@ class TestTaskPool(unittest.TestCase):
         scratchpad = {}
         proc_counter = itertools.count().next
 
-        def mycallback(ret_value, meta):
+        def mycallback(ret_value):
             process = proc_counter()
             scratchpad[process] = {}
             scratchpad[process]["ret_value"] = ret_value
-            scratchpad[process]["meta"] = meta
 
         myerrback = mycallback
 
-        res = p.apply_async(do_something, args=[10], callbacks=[mycallback],
-                            meta={"foo": "bar"})
-        res2 = p.apply_async(raise_something, args=[10], errbacks=[myerrback],
-                            meta={"foo2": "bar2"})
-        res3 = p.apply_async(do_something, args=[20], callbacks=[mycallback],
-                            meta={"foo3": "bar3"})
+        res = p.apply_async(do_something, args=[10], callbacks=[mycallback])
+        res2 = p.apply_async(raise_something, args=[10], errbacks=[myerrback])
+        res3 = p.apply_async(do_something, args=[20], callbacks=[mycallback])
 
         self.assertEqual(res.get(), 100)
         time.sleep(0.5)
-        self.assertTrue(scratchpad.get(0))
-        self.assertEqual(scratchpad[0]["ret_value"], 100)
-        self.assertEqual(scratchpad[0]["meta"], {"foo": "bar"})
+        self.assertDictContainsSubset({"ret_value": 100},
+                                       scratchpad.get(0))
 
-        self.assertTrue(isinstance(res2.get(), ExceptionInfo))
+        self.assertIsInstance(res2.get(), ExceptionInfo)
         self.assertTrue(scratchpad.get(1))
         time.sleep(1)
-        #self.assertEqual(scratchpad[1]["ret_value"], "FOO")
-        self.assertTrue(isinstance(scratchpad[1]["ret_value"],
-                          ExceptionInfo))
+        self.assertIsInstance(scratchpad[1]["ret_value"],
+                              ExceptionInfo)
         self.assertEqual(scratchpad[1]["ret_value"].exception.args,
                           ("FOO EXCEPTION", ))
-        self.assertEqual(scratchpad[1]["meta"], {"foo2": "bar2"})
 
         self.assertEqual(res3.get(), 400)
         time.sleep(0.5)
-        self.assertTrue(scratchpad.get(2))
-        self.assertEqual(scratchpad[2]["ret_value"], 400)
-        self.assertEqual(scratchpad[2]["meta"], {"foo3": "bar3"})
+        self.assertDictContainsSubset({"ret_value": 400},
+                                       scratchpad.get(2))
 
-        res3 = p.apply_async(do_something, args=[30], callbacks=[mycallback],
-                            meta={"foo4": "bar4"})
+        res3 = p.apply_async(do_something, args=[30], callbacks=[mycallback])
 
         self.assertEqual(res3.get(), 900)
         time.sleep(0.5)
-        self.assertTrue(scratchpad.get(3))
-        self.assertEqual(scratchpad[3]["ret_value"], 900)
-        self.assertEqual(scratchpad[3]["meta"], {"foo4": "bar4"})
-
+        self.assertDictContainsSubset({"ret_value": 900},
+                                       scratchpad.get(3))
         p.stop()

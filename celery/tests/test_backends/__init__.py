@@ -1,27 +1,25 @@
-import unittest
+import unittest2 as unittest
 
-
+from celery import backends
 from celery.backends.database import DatabaseBackend
 from celery.backends.amqp import AMQPBackend
 from celery.backends.pyredis import RedisBackend
-from celery import backends
 
 
 class TestBackends(unittest.TestCase):
 
     def test_get_backend_aliases(self):
-        self.assertTrue(issubclass(
-            backends.get_backend_cls("amqp"), AMQPBackend))
-        self.assertTrue(issubclass(
-            backends.get_backend_cls("database"), DatabaseBackend))
-        self.assertTrue(issubclass(
-            backends.get_backend_cls("db"), DatabaseBackend))
-        self.assertTrue(issubclass(
-            backends.get_backend_cls("redis"), RedisBackend))
+        expects = [("amqp", AMQPBackend),
+                   ("database", DatabaseBackend),
+                   ("db", DatabaseBackend),
+                   ("redis", RedisBackend)]
+        for expect_name, expect_cls in expects:
+            self.assertIsInstance(backends.get_backend_cls(expect_name)(),
+                                  expect_cls)
 
     def test_get_backend_cahe(self):
         backends._backend_cache = {}
         backends.get_backend_cls("amqp")
-        self.assertTrue("amqp" in backends._backend_cache)
+        self.assertIn("amqp", backends._backend_cache)
         amqp_backend = backends.get_backend_cls("amqp")
-        self.assertTrue(amqp_backend is backends._backend_cache["amqp"])
+        self.assertIs(amqp_backend, backends._backend_cache["amqp"])

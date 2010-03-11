@@ -1,4 +1,4 @@
-import unittest
+import unittest2 as unittest
 
 from celery.worker.heartbeat import Heart
 
@@ -27,16 +27,16 @@ class TestHeart(unittest.TestCase):
         heart = Heart(eventer, interval=1)
         heart._shutdown.set()
         heart.run()
-        self.assertTrue(heart._state == "RUN")
-        self.assertTrue("worker-online" in eventer.sent)
-        self.assertTrue("worker-heartbeat" in eventer.sent)
-        self.assertTrue("worker-offline" in eventer.sent)
+        self.assertEqual(heart._state, "RUN")
+        self.assertIn("worker-online", eventer.sent)
+        self.assertIn("worker-heartbeat", eventer.sent)
+        self.assertIn("worker-offline", eventer.sent)
 
         self.assertTrue(heart._stopped.isSet())
 
         heart.stop()
         heart.stop()
-        self.assertTrue(heart._state == "CLOSE")
+        self.assertEqual(heart._state, "CLOSE")
 
         heart = Heart(eventer, interval=0.00001)
         heart._shutdown.set()

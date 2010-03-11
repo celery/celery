@@ -1,5 +1,7 @@
-import unittest
+import unittest2 as unittest
+
 from django.conf import settings
+
 from celery.loaders.djangoapp import autodiscover
 from celery.task import tasks
 
@@ -9,7 +11,7 @@ class TestDiscovery(unittest.TestCase):
     def assertDiscovery(self):
         apps = autodiscover()
         self.assertTrue(apps)
-        self.assertTrue("c.unittest.SomeAppTask" in tasks)
+        self.assertIn("c.unittest.SomeAppTask", tasks)
         self.assertEqual(tasks["c.unittest.SomeAppTask"].run(), 42)
 
     def test_discovery(self):

@@ -1,6 +1,6 @@
 from __future__ import generators
 
-import unittest
+import unittest2 as unittest
 
 from celery import states
 from celery.utils import gen_unique_id
@@ -90,7 +90,7 @@ class TestAsyncResult(unittest.TestCase):
         self.assertEqual(ok_res.get(), "the")
         self.assertEqual(ok2_res.get(), "quick")
         self.assertRaises(KeyError, nok_res.get)
-        self.assertTrue(isinstance(nok2_res.result, KeyError))
+        self.assertIsInstance(nok2_res.result, KeyError)
 
     def test_get_timeout(self):
         res = AsyncResult(self.task4["id"]) # has RETRY status
@@ -105,7 +105,7 @@ class TestAsyncResult(unittest.TestCase):
         oks = (AsyncResult(self.task1["id"]),
                AsyncResult(self.task2["id"]),
                AsyncResult(self.task3["id"]))
-        [self.assertTrue(ok.ready()) for ok in oks]
+        self.assertTrue(all(result.ready() for result in oks))
         self.assertFalse(AsyncResult(self.task4["id"]).ready())
 
 
@@ -173,11 +173,11 @@ class TestTaskSetResult(unittest.TestCase):
         it = iter(self.ts)
 
         results = sorted(list(it))
-        self.assertEqual(results, list(xrange(self.size)))
+        self.assertListEqual(results, list(xrange(self.size)))
 
     def test_join(self):
         joined = self.ts.join()
-        self.assertEqual(joined, list(xrange(self.size)))
+        self.assertListEqual(joined, list(xrange(self.size)))
 
     def test_successful(self):
         self.assertTrue(self.ts.successful())
@@ -201,7 +201,7 @@ class TestPendingAsyncResult(unittest.TestCase):
         self.task = AsyncResult(gen_unique_id())
 
     def test_result(self):
-        self.assertTrue(self.task.result is None)
+        self.assertIsNone(self.task.result)
 
 
 class TestFailedTaskSetResult(TestTaskSetResult):

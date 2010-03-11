@@ -3,7 +3,7 @@ from __future__ import generators
 
 import sys
 import logging
-import unittest
+import unittest2 as unittest
 from urllib import addinfourl
 try:
     from contextlib import contextmanager
@@ -63,23 +63,23 @@ class TestEncodings(unittest.TestCase):
               "foobar".encode("utf-8"): "xuzzybaz".encode("utf-8")}
 
         for key, value in http.utf8dict(d.items()).items():
-            self.assertTrue(isinstance(key, str))
-            self.assertTrue(isinstance(value, str))
+            self.assertIsInstance(key, str)
+            self.assertIsInstance(value, str)
 
 
 class TestMutableURL(unittest.TestCase):
 
     def test_url_query(self):
         url = http.MutableURL("http://example.com?x=10&y=20&z=Foo")
-        self.assertEqual(url.query.get("x"), "10")
-        self.assertEqual(url.query.get("y"), "20")
-        self.assertEqual(url.query.get("z"), "Foo")
+        self.assertDictContainsSubset({"x": "10",
+                                       "y": "20",
+                                       "z": "Foo"}, url.query)
         url.query["name"] = "George"
         url = http.MutableURL(str(url))
-        self.assertEqual(url.query.get("x"), "10")
-        self.assertEqual(url.query.get("y"), "20")
-        self.assertEqual(url.query.get("z"), "Foo")
-        self.assertEqual(url.query.get("name"), "George")
+        self.assertDictContainsSubset({"x": "10",
+                                       "y": "20",
+                                       "z": "Foo",
+                                       "name": "George"}, url.query)
 
     def test_url_keeps_everything(self):
         url = "https://e.com:808/foo/bar#zeta?x=10&y=20"

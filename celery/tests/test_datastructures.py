@@ -1,5 +1,5 @@
 import sys
-import unittest
+import unittest2 as unittest
 from Queue import Queue
 
 from celery.datastructures import PositionQueue, ExceptionInfo, LocalCache
@@ -11,9 +11,9 @@ class TestPositionQueue(unittest.TestCase):
     def test_position_queue_unfilled(self):
         q = PositionQueue(length=10)
         for position in q.data:
-            self.assertTrue(isinstance(position, q.UnfilledPosition))
+            self.assertIsInstance(position, q.UnfilledPosition)
 
-        self.assertEqual(q.filled, [])
+        self.assertListEqual(q.filled, [])
         self.assertEqual(len(q), 0)
         self.assertFalse(q.full())
 
@@ -23,7 +23,7 @@ class TestPositionQueue(unittest.TestCase):
         q[6] = 6
         q[9] = 9
 
-        self.assertEqual(q.filled, [3, 6, 9])
+        self.assertListEqual(q.filled, [3, 6, 9])
         self.assertEqual(len(q), 3)
         self.assertFalse(q.full())
 
@@ -31,7 +31,7 @@ class TestPositionQueue(unittest.TestCase):
         q = PositionQueue(length=10)
         for i in xrange(10):
             q[i] = i
-        self.assertEqual(q.filled, list(xrange(10)))
+        self.assertListEqual(q.filled, list(xrange(10)))
         self.assertEqual(len(q), 10)
         self.assertTrue(q.full())
 
@@ -47,8 +47,8 @@ class TestExceptionInfo(unittest.TestCase):
 
         einfo = ExceptionInfo(exc_info)
         self.assertEqual(str(einfo), einfo.traceback)
-        self.assertTrue(isinstance(einfo.exception, LookupError))
-        self.assertEqual(einfo.exception.args,
+        self.assertIsInstance(einfo.exception, LookupError)
+        self.assertTupleEqual(einfo.exception.args,
                 ("The quick brown fox jumps...", ))
         self.assertTrue(einfo.traceback)
 
@@ -98,7 +98,7 @@ class TestSharedCounter(unittest.TestCase):
         self.assertEqual(int(c), -10)
 
     def test_repr(self):
-        self.assertTrue(repr(SharedCounter(10)).startswith("<SharedCounter:"))
+        self.assertIn("<SharedCounter:", repr(SharedCounter(10)))
 
 
 class TestLimitedSet(unittest.TestCase):
@@ -108,11 +108,11 @@ class TestLimitedSet(unittest.TestCase):
         s.add("foo")
         s.add("bar")
         for n in "foo", "bar":
-            self.assertTrue(n in s)
+            self.assertIn(n, s)
         s.add("baz")
         for n in "bar", "baz":
-            self.assertTrue(n in s)
-        self.assertTrue("foo" not in s)
+            self.assertIn(n, s)
+        self.assertNotIn("foo", s)
 
     def test_iter(self):
         s = LimitedSet(maxlen=2)
@@ -120,13 +120,13 @@ class TestLimitedSet(unittest.TestCase):
         map(s.add, items)
         l = list(iter(items))
         for item in items:
-            self.assertTrue(item in l)
+            self.assertIn(item, l)
 
     def test_repr(self):
         s = LimitedSet(maxlen=2)
         items = "foo", "bar"
         map(s.add, items)
-        self.assertTrue(repr(s).startswith("LimitedSet("))
+        self.assertIn("LimitedSet(", repr(s))
 
 
 class TestLocalCache(unittest.TestCase):
@@ -137,4 +137,4 @@ class TestLocalCache(unittest.TestCase):
         slots = list(range(limit * 2))
         for i in slots:
             x[i] = i
-        self.assertEqual(x.keys(), slots[limit:])
+        self.assertListEqual(x.keys(), slots[limit:])

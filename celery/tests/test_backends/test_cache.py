@@ -1,5 +1,5 @@
 import sys
-import unittest
+import unittest2 as unittest
 
 from billiard.serialization import pickle
 from django.core.cache.backends.base import InvalidCacheBackendError
@@ -26,7 +26,7 @@ class TestCacheBackend(unittest.TestCase):
 
         self.assertFalse(cb.is_successful(tid))
         self.assertEqual(cb.get_status(tid), states.PENDING)
-        self.assertEqual(cb.get_result(tid), None)
+        self.assertIsNone(cb.get_result(tid))
 
         cb.mark_as_done(tid, 42)
         self.assertTrue(cb.is_successful(tid))
@@ -42,7 +42,7 @@ class TestCacheBackend(unittest.TestCase):
         res = result.TaskSetResult(taskset_id, subtasks)
         res.save(backend=backend)
         saved = result.TaskSetResult.restore(taskset_id, backend=backend)
-        self.assertEqual(saved.subtasks, subtasks)
+        self.assertListEqual(saved.subtasks, subtasks)
         self.assertEqual(saved.taskset_id, taskset_id)
 
     def test_is_pickled(self):
@@ -69,12 +69,11 @@ class TestCacheBackend(unittest.TestCase):
         cb.mark_as_failure(tid3, exception, traceback=einfo.traceback)
         self.assertFalse(cb.is_successful(tid3))
         self.assertEqual(cb.get_status(tid3), states.FAILURE)
-        self.assertTrue(isinstance(cb.get_result(tid3), KeyError))
+        self.assertIsInstance(cb.get_result(tid3), KeyError)
         self.assertEqual(cb.get_traceback(tid3), einfo.traceback)
 
     def test_process_cleanup(self):
         cb = CacheBackend()
-
         cb.process_cleanup()
 
 
@@ -91,7 +90,7 @@ class TestCustomCacheBackend(unittest.TestCase):
             from django.core.cache import cache as django_cache
             self.assertEqual(cache.__class__.__module__,
                               "django.core.cache.backends.dummy")
-            self.assertTrue(cache is not django_cache)
+            self.assertIsNot(cache, django_cache)
         finally:
             conf.CELERY_CACHE_BACKEND = prev_backend
             sys.modules["celery.backends.cache"] = prev_module
@@ -113,7 +112,7 @@ class TestMemcacheWrapper(unittest.TestCase):
         prev_backend_module = sys.modules.pop("celery.backends.cache")
         try:
             from celery.backends.cache import cache, DjangoMemcacheWrapper
-            self.assertTrue(isinstance(cache, DjangoMemcacheWrapper))
+            self.assertIsInstance(cache, DjangoMemcacheWrapper)
 
             key = "cu.test_memcache_wrapper"
             val = "The quick brown fox."

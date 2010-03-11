@@ -1,5 +1,6 @@
 from __future__ import generators
-import unittest
+
+import unittest2 as unittest
 from Queue import Queue, Empty
 from datetime import datetime, timedelta
 
@@ -50,5 +51,4 @@ class TestScheduler(unittest.TestCase):
     def test_empty_queue_yields_None(self):
         ready_queue = Queue()
         sched = Scheduler(ready_queue)
-
-        self.assertTrue(iter(sched).next() is None)
+        self.assertIsNone(iter(sched).next())

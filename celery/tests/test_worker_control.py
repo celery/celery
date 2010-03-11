@@ -1,5 +1,5 @@
 import socket
-import unittest
+import unittest2 as unittest
 
 from celery.task.builtins import PingTask
 from celery.utils import gen_unique_id
@@ -49,10 +49,10 @@ class TestControlPanel(unittest.TestCase):
              "destination": hostname,
              "task_id": uuid}
         self.panel.dispatch_from_message(m)
-        self.assertTrue(uuid in revoked)
+        self.assertIn(uuid, revoked)
 
         m = {"command": "revoke",
              "destination": "does.not.exist",
              "task_id": uuid + "xxx"}
         self.panel.dispatch_from_message(m)
-        self.assertTrue(uuid + "xxx" not in revoked)
+        self.assertNotIn(uuid + "xxx", revoked)

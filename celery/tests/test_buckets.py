@@ -3,7 +3,7 @@ import os
 import sys
 sys.path.insert(0, os.getcwd())
 import time
-import unittest
+import unittest2 as unittest
 from itertools import chain, izip
 
 from billiard.utils.functional import curry
@@ -66,7 +66,7 @@ class TestTokenBucketQueue(unittest.TestCase):
         for i in xrange(20):
             sys.stderr.write("x")
             x.wait()
-        self.assertTrue(time.time() - time_start > 1.5)
+        self.assertGreater(time.time() - time_start, 1.5)
 
     @skip_if_disabled
     def test_can_consume(self):
@@ -90,7 +90,7 @@ class TestTokenBucketQueue(unittest.TestCase):
         x = buckets.TokenBucketQueue(fill_rate=1)
         x.put("The quick brown fox")
         self.assertEqual(x.qsize(), 1)
-        self.assertTrue(x.get_nowait(), "The quick brown fox")
+        self.assertEqual(x.get_nowait(), "The quick brown fox")
 
 
 class TestRateLimitString(unittest.TestCase):
@@ -136,17 +136,17 @@ class TestTaskBuckets(unittest.TestCase):
     def test_auto_add_on_missing(self):
         b = buckets.TaskBucket(task_registry=self.registry)
         for task_cls in self.task_classes:
-            self.assertTrue(task_cls.name in b.buckets.keys())
+            self.assertIn(task_cls.name, b.buckets.keys())
         self.registry.register(TaskD)
         self.assertTrue(b.get_bucket_for_type(TaskD.name))
-        self.assertTrue(TaskD.name in b.buckets.keys())
+        self.assertIn(TaskD.name, b.buckets.keys())
         self.registry.unregister(TaskD)
 
     @skip_if_disabled
     def test_has_rate_limits(self):
         b = buckets.TaskBucket(task_registry=self.registry)
         self.assertEqual(b.buckets[TaskA.name].fill_rate, 10)
-        self.assertTrue(isinstance(b.buckets[TaskB.name], buckets.Queue))
+        self.assertIsInstance(b.buckets[TaskB.name], buckets.Queue)
         self.assertEqual(b.buckets[TaskC.name].fill_rate, 1)
         self.registry.register(TaskD)
         b.init_with_registry()
@@ -183,7 +183,7 @@ class TestTaskBuckets(unittest.TestCase):
         for i, job in enumerate(jobs):
             sys.stderr.write("i")
             self.assertEqual(b.get(), job)
-        self.assertTrue(time.time() - time_start > 1.5)
+        self.assertGreater(time.time() - time_start, 1.5)
 
     @skip_if_disabled
     def test__very_busy_queue_doesnt_block_others(self):
@@ -200,7 +200,7 @@ class TestTaskBuckets(unittest.TestCase):
             if job.task_name == TaskA.name:
                 got_ajobs += 1
 
-        self.assertTrue(got_ajobs > 2)
+        self.assertGreater(got_ajobs, 2)
 
     @skip_if_disabled
     def test_thorough__multiple_types(self):

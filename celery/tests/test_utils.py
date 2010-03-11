@@ -1,6 +1,6 @@
 import sys
 import socket
-import unittest
+import unittest2 as unittest
 
 from billiard.utils.functional import wraps
 
@@ -15,17 +15,17 @@ class TestChunks(unittest.TestCase):
 
         # n == 2
         x = utils.chunks(iter([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]), 2)
-        self.assertEqual(list(x),
+        self.assertListEqual(list(x),
             [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9], [10]])
 
         # n == 3
         x = utils.chunks(iter([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]), 3)
-        self.assertEqual(list(x),
+        self.assertListEqual(list(x),
             [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10]])
 
         # n == 2 (exact)
         x = utils.chunks(iter([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]), 2)
-        self.assertEqual(list(x),
+        self.assertListEqual(list(x),
             [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9]])
 
 
@@ -37,10 +37,10 @@ class TestGenUniqueId(unittest.TestCase):
         def with_ctypes_masked(_val):
             from celery.utils import ctypes, gen_unique_id
 
-            self.assertTrue(ctypes is None)
+            self.assertIsNone(ctypes)
             uuid = gen_unique_id()
             self.assertTrue(uuid)
-            self.assertTrue(isinstance(uuid, basestring))
+            self.assertIsInstance(uuid, basestring)
 
         try:
             context = mask_modules("ctypes")

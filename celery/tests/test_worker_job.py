@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
 import logging
-import unittest
+import unittest2 as unittest
 import simplejson
 from StringIO import StringIO
 
@@ -90,14 +90,14 @@ class TestJail(unittest.TestCase):
     def test_execute_jail_failure(self):
         ret = jail(gen_unique_id(), mytask_raising.name,
                    [4], {})
-        self.assertTrue(isinstance(ret, ExceptionInfo))
-        self.assertEqual(ret.exception.args, (4, ))
+        self.assertIsInstance(ret, ExceptionInfo)
+        self.assertTupleEqual(ret.exception.args, (4, ))
 
     def test_execute_ignore_result(self):
         task_id = gen_unique_id()
         ret = jail(id, MyTaskIgnoreResult.name,
                    [4], {})
-        self.assertTrue(ret, 8)
+        self.assertEquals(ret, 256)
         self.assertFalse(AsyncResult(task_id).ready())
 
     def test_django_db_connection_is_closed(self):
@@ -179,7 +179,7 @@ class TestTaskWrapper(unittest.TestCase):
         tw = TaskWrapper(mytask.name, gen_unique_id(), [1], {"f": "x"})
         tw.eventer = MockEventDispatcher()
         tw.send_event("task-frobulated")
-        self.assertTrue("task-frobulated" in tw.eventer.sent)
+        self.assertIn("task-frobulated", tw.eventer.sent)
 
     def test_send_email(self):
         from celery import conf
@@ -229,10 +229,10 @@ class TestTaskWrapper(unittest.TestCase):
             def with_catch_warnings(log):
                 res = execute_and_trace(mytask.name, gen_unique_id(),
                                         [4], {})
-                self.assertTrue(isinstance(res, ExceptionInfo))
+                self.assertIsInstance(res, ExceptionInfo)
                 self.assertTrue(log)
-                self.assertTrue("Exception outside" in log[0].message.args[0])
-                self.assertTrue("KeyError" in log[0].message.args[0])
+                self.assertIn("Exception outside", log[0].message.args[0])
+                self.assertIn("KeyError", log[0].message.args[0])
 
             context = catch_warnings(record=True)
             execute_context(context, with_catch_warnings)
@@ -303,13 +303,13 @@ class TestTaskWrapper(unittest.TestCase):
                         content_type="application/json",
                         content_encoding="utf-8")
         tw = TaskWrapper.from_message(m, m.decode())
-        self.assertTrue(isinstance(tw, TaskWrapper))
+        self.assertIsInstance(tw, TaskWrapper)
         self.assertEqual(tw.task_name, body["task"])
         self.assertEqual(tw.task_id, body["id"])
         self.assertEqual(tw.args, body["args"])
         self.assertEqual(tw.kwargs.keys()[0],
                           u"æØåveéðƒeæ".encode("utf-8"))
-        self.assertFalse(isinstance(tw.kwargs.keys()[0], unicode))
+        self.assertNotIsInstance(tw.kwargs.keys()[0], unicode)
         self.assertTrue(tw.logger)
 
     def test_from_message_nonexistant_task(self):
@@ -359,10 +359,10 @@ class TestTaskWrapper(unittest.TestCase):
     def test_execute_fail(self):
         tid = gen_unique_id()
         tw = TaskWrapper(mytask_raising.name, tid, [4], {"f": "x"})
-        self.assertTrue(isinstance(tw.execute(), ExceptionInfo))
+        self.assertIsInstance(tw.execute(), ExceptionInfo)
         meta = TaskMeta.objects.get(task_id=tid)
         self.assertEqual(meta.status, states.FAILURE)
-        self.assertTrue(isinstance(meta.result, KeyError))
+        self.assertIsInstance(meta.result, KeyError)
 
     def test_execute_using_pool(self):
         tid = gen_unique_id()
@@ -370,13 +370,13 @@ class TestTaskWrapper(unittest.TestCase):
         p = TaskPool(2)
         p.start()
         asyncres = tw.execute_using_pool(p)
-        self.assertTrue(asyncres.get(), 256)
+        self.assertEquals(asyncres.get(), 256)
         p.stop()
 
     def test_default_kwargs(self):
         tid = gen_unique_id()
         tw = TaskWrapper(mytask.name, tid, [4], {"f": "x"})
-        self.assertEqual(tw.extend_with_default_kwargs(10, "some_logfile"), {
+        self.assertDictEqual(tw.extend_with_default_kwargs(10, "some_logfile"), {
             "f": "x",
             "logfile": "some_logfile",
             "loglevel": 10,
@@ -403,8 +403,8 @@ class TestTaskWrapper(unittest.TestCase):
 
         tw.on_failure(exc_info)
         logvalue = logfh.getvalue()
-        self.assertTrue(mytask.name in logvalue)
-        self.assertTrue(tid in logvalue)
-        self.assertTrue("ERROR" in logvalue)
+        self.assertIn(mytask.name, logvalue)
+        self.assertIn(tid, logvalue)
+        self.assertIn("ERROR", logvalue)
 
         conf.CELERY_SEND_TASK_ERROR_EMAILS = False

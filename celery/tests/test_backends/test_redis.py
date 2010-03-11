@@ -1,7 +1,7 @@
 import sys
 import errno
 import socket
-import unittest
+import unittest2 as unittest
 
 from celery.exceptions import ImproperlyConfigured
 
@@ -60,11 +60,11 @@ class TestRedisBackend(unittest.TestCase):
         if not tb:
             return # Skip test
 
-        self.assertTrue(tb._connection is not None)
+        self.assertIsNotNone(tb._connection)
         tb.close()
-        self.assertTrue(tb._connection is None)
+        self.assertIsNone(tb._connection)
         tb.open()
-        self.assertTrue(tb._connection is not None)
+        self.assertIsNotNone(tb._connection)
 
     def test_mark_as_done(self):
         tb = get_redis_or_None()
@@ -75,13 +75,12 @@ class TestRedisBackend(unittest.TestCase):
 
         self.assertFalse(tb.is_successful(tid))
         self.assertEqual(tb.get_status(tid), states.PENDING)
-        self.assertEqual(tb.get_result(tid), None)
+        self.assertIsNone(tb.get_result(tid))
 
         tb.mark_as_done(tid, 42)
         self.assertTrue(tb.is_successful(tid))
         self.assertEqual(tb.get_status(tid), states.SUCCESS)
         self.assertEqual(tb.get_result(tid), 42)
-        self.assertTrue(tb.get_result(tid), 42)
 
     def test_is_pickled(self):
         tb = get_redis_or_None()
@@ -109,7 +108,7 @@ class TestRedisBackend(unittest.TestCase):
         tb.mark_as_failure(tid3, exception)
         self.assertFalse(tb.is_successful(tid3))
         self.assertEqual(tb.get_status(tid3), states.FAILURE)
-        self.assertTrue(isinstance(tb.get_result(tid3), KeyError))
+        self.assertIsInstance(tb.get_result(tid3), KeyError)
 
     def test_process_cleanup(self):
         tb = get_redis_or_None()
@@ -118,7 +117,7 @@ class TestRedisBackend(unittest.TestCase):
 
         tb.process_cleanup()
 
-        self.assertTrue(tb._connection is None)
+        self.assertIsNone(tb._connection)
 
     def test_connection_close_if_connected(self):
         tb = get_redis_or_None()
@@ -126,11 +125,11 @@ class TestRedisBackend(unittest.TestCase):
             return
 
         tb.open()
-        self.assertTrue(tb._connection is not None)
+        self.assertIsNotNone(tb._connection)
         tb.close()
-        self.assertTrue(tb._connection is None)
+        self.assertIsNone(tb._connection)
         tb.close()
-        self.assertTrue(tb._connection is None)
+        self.assertIsNone(tb._connection)
 
 
 class TestTyrantBackendNoTyrant(unittest.TestCase):
@@ -140,7 +139,7 @@ class TestTyrantBackendNoTyrant(unittest.TestCase):
         try:
             def with_redis_masked(_val):
                 from celery.backends.pyredis import redis
-                self.assertTrue(redis is None)
+                self.assertIsNone(redis)
             context = mask_modules("redis")
             execute_context(context, with_redis_masked)
         finally:

@@ -1,6 +1,6 @@
 import os
 import sys
-import unittest
+import unittest2 as unittest
 
 from billiard.utils.functional import wraps
 
@@ -64,7 +64,7 @@ class TestLoaderBase(unittest.TestCase):
     def test_import_default_modules(self):
         import os
         import sys
-        self.assertEqual(self.loader.import_default_modules(), [os, sys])
+        self.assertSameElements(self.loader.import_default_modules(), [os, sys])
 
 
 class TestDjangoLoader(unittest.TestCase):
@@ -117,11 +117,11 @@ class TestDefaultLoader(unittest.TestCase):
         try:
             l = default.Loader()
             settings = l.read_configuration()
-            self.assertEqual(settings.CELERY_IMPORTS, ("os", "sys"))
+            self.assertTupleEqual(settings.CELERY_IMPORTS, ("os", "sys"))
             from django.conf import settings
             settings.configured = False
             settings = l.read_configuration()
-            self.assertEqual(settings.CELERY_IMPORTS, ("os", "sys"))
+            self.assertTupleEqual(settings.CELERY_IMPORTS, ("os", "sys"))
             self.assertTrue(settings.configured)
             l.on_worker_init()
         finally:

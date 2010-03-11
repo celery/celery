@@ -1,4 +1,5 @@
-import unittest
+import unittest2 as unittest
+
 from celery.messaging import MSG_OPTIONS, extract_msg_options
 
 
