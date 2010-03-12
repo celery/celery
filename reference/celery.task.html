@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Task Information and Utilities - celery.task &mdash; Celery v1.0.0 (stable) documentation</title>
+    <title>Task Information and Utilities - celery.task &mdash; Celery v1.0.1.pre1 (stable) documentation</title>
     <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.0.0 (stable)',
+        VERSION:     '1.0.1.pre1 (stable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,14 +19,14 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v1.0.0 (stable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v1.0.1.pre1 (stable) documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="Configuration - celery.conf" href="celery.conf.html" />
     <link rel="prev" title="Task Result - celery.result" href="celery.result.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v1.0.0 (stable) documentation</p>
+	<p>Celery v1.0.1.pre1 (stable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Task Information and Utilities - celery.task</h1></div>
@@ -370,7 +370,7 @@ with this object. i.e.:</p>
 
 <dl class="classmethod">
 <dt id="celery.task.Task.get_publisher">
-<em class="property">classmethod </em><tt class="descclassname">Task.</tt><tt class="descname">get_publisher</tt><big>(</big><em>connection=None</em>, <em>exchange=None</em>, <em>connect_timeout=4</em><big>)</big><a class="headerlink" href="#celery.task.Task.get_publisher" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><tt class="descclassname">Task.</tt><tt class="descname">get_publisher</tt><big>(</big><em>connection=None</em>, <em>exchange=None</em>, <em>connect_timeout=4</em>, <em>exchange_type=None</em><big>)</big><a class="headerlink" href="#celery.task.Task.get_publisher" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a celery task message publisher.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -477,19 +477,22 @@ been exceeded.</li>
 <li><em>countdown</em> &#8211; Time in seconds to delay the retry for.</li>
 <li><em>eta</em> &#8211; Explicit time and date to run the retry at (must be a
 <tt class="xref docutils literal"><span class="pre">datetime.datetime</span></tt> instance).</li>
-<li><em>throw</em> &#8211; If this is <tt class="xref docutils literal"><span class="pre">False</span></tt>, do not raise the
-<a title="celery.exceptions.RetryTaskError" class="reference external" href="celery.exceptions.html#celery.exceptions.RetryTaskError"><tt class="xref docutils literal"><span class="pre">celery.exceptions.RetryTaskError</span></tt></a> exception,
-that tells the worker that the task is to be retried.</li>
 <li><em>**options</em> &#8211; Any extra options to pass on to
 meth:<cite>apply_async</cite>. See <a title="celery.execute.apply_async" class="reference external" href="celery.execute.html#celery.execute.apply_async"><tt class="xref docutils literal"><span class="pre">celery.execute.apply_async()</span></tt></a>.</li>
+<li><em>throw</em> &#8211; If this is <tt class="xref docutils literal"><span class="pre">False</span></tt>, do not raise the
+<a title="celery.exceptions.RetryTaskError" class="reference external" href="celery.exceptions.html#celery.exceptions.RetryTaskError"><tt class="xref docutils literal"><span class="pre">celery.exceptions.RetryTaskError</span></tt></a> exception,
+that tells the worker to mark the task as being retried.
+Note that this means the task will be marked as failed
+if the task raises an exception, or successful if it
+returns.</li>
 </ul>
 </td>
 </tr>
 <tr class="field"><th class="field-name" colspan="2">Raises <a title="celery.exceptions.RetryTaskError" class="reference external" href="celery.exceptions.html#celery.exceptions.RetryTaskError">celery.exceptions.RetryTaskError</a>:</th></tr>
 <tr><td>&nbsp;</td><td class="field-body"><p class="first last">To tell the worker that the
-task has been re-sent for retry. This always happens except if
+task has been re-sent for retry. This always happens, unless
 the <tt class="docutils literal"><span class="pre">throw</span></tt> keyword argument has been explicitly set
-to <tt class="xref docutils literal"><span class="pre">False</span></tt>.</p>
+to <tt class="xref docutils literal"><span class="pre">False</span></tt>, and is considered normal operation.</p>
 </td>
 </tr>
 </tbody>
@@ -519,8 +522,10 @@ by the worker if the function/method supports them:</p>
 <li>task_id</li>
 <li>task_name</li>
 <li>task_retries</li>
+<li>task_is_eager</li>
 <li>logfile</li>
 <li>loglevel</li>
+<li>delivery_info</li>
 </ul>
 <p>Additional standard keyword arguments may be added in the future.
 To take these default arguments, the task can either list the ones
@@ -877,7 +882,7 @@ argument, as this attribute is intended for subclasses.</dd></dl>
     </div>
 	<div id="breadcrumbs">
 		<a href="index.html" accesskey="U">API Reference</a><img src="triangle_closed.png" alt="Right arrow">
-		<a href="../index.html">Celery v1.0.0 (stable) documentation</a>
+		<a href="../index.html">Celery v1.0.1.pre1 (stable) documentation</a>
 		</ul>
 	</div>
   </body>

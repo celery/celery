@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Tasks &mdash; Celery v1.0.0 (stable) documentation</title>
+    <title>Tasks &mdash; Celery v1.0.1.pre1 (stable) documentation</title>
     <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.0.0 (stable)',
+        VERSION:     '1.0.1.pre1 (stable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,14 +19,14 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v1.0.0 (stable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v1.0.1.pre1 (stable) documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
     <link rel="next" title="Executing Tasks" href="executing.html" />
     <link rel="prev" title="User Guide" href="index.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v1.0.0 (stable) documentation</p>
+	<p>Celery v1.0.1.pre1 (stable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Tasks</h1></div>
@@ -163,6 +163,19 @@ to gain access to the workers log file. See <a class="reference internal" href="
 An integer starting at <tt class="docutils literal"><span class="pre">0</span></tt>.</p>
 </blockquote>
 </li>
+<li><p class="first">task_is_eager</p>
+<blockquote>
+<p>Set to <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task is executed locally in the client,
+and not by a worker.</p>
+</blockquote>
+</li>
+<li><p class="first">delivery_info</p>
+<p>Additional message delivery information. This is a mapping containing
+the exchange and routing key used to deliver this task. It&#8217;s used
+by e.g. <tt class="xref docutils literal"><span class="pre">retry()</span></tt> to resend the task to the same destination queue.</p>
+<p><strong>NOTE</strong> As some messaging backends doesn&#8217;t have advanced routing
+capabilities, you can&#8217;t trust the availability of keys in this mapping.</p>
+</li>
 </ul>
 </div>
 <div class="section" id="logging">
@@ -268,8 +281,8 @@ If it is an integer, it is interpreted as &#8220;tasks per second&#8221;.</p>
 <p>The rate limits can be specified in seconds, minutes or hours
 by appending <tt class="docutils literal"><span class="pre">&quot;/s&quot;</span></tt>, <tt class="docutils literal"><span class="pre">&quot;/m&quot;</span></tt> or &#8220;<tt class="docutils literal"><span class="pre">/h&quot;</span></tt>&#8221; to the value.
 Example: <tt class="docutils literal"><span class="pre">&quot;100/m&quot;</span> <span class="pre">(hundred</span> <span class="pre">tasks</span> <span class="pre">a</span>
-<span class="pre">minute).</span> <span class="pre">Default</span> <span class="pre">is</span> <span class="pre">the</span> <span class="pre">``CELERY_DEFAULT_RATE_LIMIT</span></tt> setting (which
-is off if not specified).</p>
+<span class="pre">minute).</span> <span class="pre">Default</span> <span class="pre">is</span> <span class="pre">the</span> <span class="pre">``CELERY_DEFAULT_RATE_LIMIT</span></tt> setting, which if not
+specified means rate limiting for tasks is turned off by default.</p>
 </li>
 <li><p class="first">ignore_result</p>
 <dl class="docutils">
@@ -463,7 +476,7 @@ but you may be interested.</p>
 <p>All defined tasks are listed in a registry. The registry contains
 a list of task names and their task classes. You can investigate this registry
 yourself:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">registry</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery</span> <span class="kn">import</span> <span class="n">registry</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery</span> <span class="kn">import</span> <span class="n">task</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">registry</span><span class="o">.</span><span class="n">tasks</span>
 <span class="go">{&#39;celery.delete_expired_task_meta&#39;:</span>
@@ -587,7 +600,7 @@ messages may be expensive.</p>
     </div>
 	<div id="breadcrumbs">
 		<a href="index.html" accesskey="U">User Guide</a><img src="triangle_closed.png" alt="Right arrow">
-		<a href="../index.html">Celery v1.0.0 (stable) documentation</a>
+		<a href="../index.html">Celery v1.0.1.pre1 (stable) documentation</a>
 		</ul>
 	</div>
   </body>

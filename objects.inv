@@ -50,6 +50,7 @@ celery.worker.controllers mod internals/reference/celery.worker.controllers.html
 celery.states mod reference/celery.states.html
 celery.backends.pyredis mod internals/reference/celery.backends.pyredis.html
 celery.utils.compat mod internals/reference/celery.utils.compat.html
+celery.backends.amqp.AMQPBackend.reload_taskset_result method internals/reference/celery.backends.amqp.html
 celery.backends.base.BaseBackend.mark_as_done method internals/reference/celery.backends.base.html
 celery.worker.controllers.BackgroundThread.on_stop method internals/reference/celery.worker.controllers.html
 celery.backends.amqp.AMQPBackend.store_result method internals/reference/celery.backends.amqp.html
@@ -69,6 +70,7 @@ celery.datastructures.ExceptionInfo.traceback attribute internals/reference/cele
 celery.states.PENDING data reference/celery.states.html
 celery.loaders.rpartition attribute reference/celery.loaders.html
 celery.task.http.InvalidResponseError exception reference/celery.task.http.html
+celery.worker.WorkController.terminate method internals/reference/celery.worker.html
 celery.log.LoggingProxy.flush method internals/reference/celery.log.html
 celery.views.is_task_successful function reference/celery.views.html
 celery.task.TaskSet class reference/celery.task.html
@@ -84,7 +86,6 @@ celery.datastructures.LimitedSet.first attribute internals/reference/celery.data
 celery.utils.gen_unique_id function internals/reference/celery.utils.html
 celery.worker.WorkController.start method internals/reference/celery.worker.html
 celery.worker.job.InvalidTaskError exception internals/reference/celery.worker.job.html
-celery.backends.amqp.AMQPBackend.get_result method internals/reference/celery.backends.amqp.html
 celery.worker.controllers.BackgroundThread.stop method internals/reference/celery.worker.controllers.html
 celery.backends.base.BaseBackend.cleanup method internals/reference/celery.backends.base.html
 celery.bin.celeryd.parse_options function reference/celery.bin.celeryd.html
@@ -106,6 +107,7 @@ celery.worker.buckets.TokenBucketQueue.get method internals/reference/celery.wor
 celery.backends.tyrant.TyrantBackend.tyrant_port attribute internals/reference/celery.backends.tyrant.html
 celery.task.base.TaskSet.total attribute reference/celery.task.base.html
 celery.task.base.PeriodicTask class reference/celery.task.base.html
+celery.backends.base.BaseBackend.reload_taskset_result method internals/reference/celery.backends.base.html
 celery.managers.TaskManager.get_task method internals/reference/celery.managers.html
 celery.loaders.djangoapp.Loader.read_configuration method reference/celery.loaders.djangoapp.html
 celery.utils.info.textindent function internals/reference/celery.utils.info.html
@@ -119,6 +121,7 @@ celery.states.UNREADY_STATES data reference/celery.states.html
 celery.result.TaskSetResult.restore classmethod reference/celery.result.html
 celery.beat.Scheduler.tick method internals/reference/celery.beat.html
 celery.log.LoggingProxy.writelines method internals/reference/celery.log.html
+celery.task.TaskSet.map classmethod reference/celery.task.html
 celery.task.PeriodicTask class reference/celery.task.html
 celery.worker.buckets.TokenBucketQueue.RateLimitExceeded exception internals/reference/celery.worker.buckets.html
 TASK_RESULT_EXPIRES data reference/celery.conf.html
@@ -136,9 +139,8 @@ celery.exceptions.MaxRetriesExceededError exception reference/celery.exceptions.
 celery.task.Task.routing_key attribute reference/celery.task.html
 celery.utils.noop function internals/reference/celery.utils.html
 CELERY_SEND_EVENTS data reference/celery.conf.html
-celery.backends.amqp.AMQPBackend.get_status method internals/reference/celery.backends.amqp.html
 celery.worker.job.TaskWrapper.kwargs attribute internals/reference/celery.worker.job.html
-celery.worker.listener.CarrotListener.logger attribute internals/reference/celery.worker.listener.html
+celery.backends.pyredis.RedisBackend.redis_host attribute internals/reference/celery.backends.pyredis.html
 BROKER_CONNECTION_MAX_RETRIES data reference/celery.conf.html
 celery.worker.buckets.TaskBucket class internals/reference/celery.worker.buckets.html
 celery.messaging.TaskPublisher.delay_task method reference/celery.messaging.html
@@ -157,7 +159,6 @@ celery.beat.ScheduleEntry.next method internals/reference/celery.beat.html
 celery.worker.WorkController.hold_queue attribute internals/reference/celery.worker.html
 celery.managers.transaction_retry function internals/reference/celery.managers.html
 celery.worker.job.TaskWrapper.from_message classmethod internals/reference/celery.worker.job.html
-celery.backends.amqp.AMQPBackend.get_traceback method internals/reference/celery.backends.amqp.html
 worker_ready data reference/celery.signals.html
 celery.worker.heartbeat.Heart.bpm attribute internals/reference/celery.worker.heartbeat.html
 celery.execute.delay_task function reference/celery.execute.html
@@ -175,11 +176,13 @@ celery.datastructures.LimitedSet.pop_value method internals/reference/celery.dat
 celery.worker.buckets.TaskBucket.add_bucket_for_type method internals/reference/celery.worker.buckets.html
 celery.backends.database.DatabaseBackend.cleanup method internals/reference/celery.backends.database.html
 celery.task.HttpDispatchTask.method attribute reference/celery.task.html
+celery.utils.compat.OrderedDict.clear method internals/reference/celery.utils.compat.html
 CELERYBEAT_LOG_LEVEL data reference/celery.conf.html
 celery.beat.EmbeddedClockService function internals/reference/celery.beat.html
 celery.datastructures.LimitedSet class internals/reference/celery.datastructures.html
-celery.task.TaskSet.arguments attribute reference/celery.task.html
+celery.exceptions.ImproperlyConfigured exception reference/celery.exceptions.html
 celery.task.TaskSet.task_name attribute reference/celery.task.html
+celery.utils.compat.OrderedDict.copy method internals/reference/celery.utils.compat.html
 DEFAULT_QUEUE data reference/celery.conf.html
 celery.execute.apply function reference/celery.execute.html
 celery.backends.base.BaseBackend.get_result method internals/reference/celery.backends.base.html
@@ -204,6 +207,7 @@ celery.result.EagerResult class reference/celery.result.html
 celery.worker.control.ControlDispatch.execute method internals/reference/celery.worker.control.html
 celery.worker.WorkController.send_events attribute internals/reference/celery.worker.html
 celery.worker.control.Control.rate_limit method internals/reference/celery.worker.control.html
+celery.backends.amqp.AMQPBackend.save_taskset method internals/reference/celery.backends.amqp.html
 celery.task.ping function reference/celery.task.html
 DEFAULT_EXCHANGE data reference/celery.conf.html
 celery.task.PeriodicTask.relative attribute reference/celery.task.html
@@ -234,15 +238,16 @@ celery.worker.job.TaskWrapper.task_id attribute internals/reference/celery.worke
 celery.worker.buckets.TaskBucket.init_with_registry method internals/reference/celery.worker.buckets.html
 celery.task.Task.max_retries attribute reference/celery.task.html
 celery.beat.Scheduler.logger attribute internals/reference/celery.beat.html
-celery.task.TaskSet.map classmethod reference/celery.task.html
+celery.backends.amqp.AMQPBackend.restore_taskset method internals/reference/celery.backends.amqp.html
 celery.utils.chunks function internals/reference/celery.utils.html
 celery.loaders.djangoapp.autodiscover function reference/celery.loaders.djangoapp.html
 celery.task.base.Task.autoregister attribute reference/celery.task.base.html
-celery.backends.pyredis.RedisBackend.redis_host attribute internals/reference/celery.backends.pyredis.html
+celery.worker.listener.CarrotListener.logger attribute internals/reference/celery.worker.listener.html
 celery.beat.ScheduleEntry.total_run_count attribute internals/reference/celery.beat.html
 celery.datastructures.ExceptionInfo.exception attribute internals/reference/celery.datastructures.html
 celery.events.EventDispatcher.close method reference/celery.events.html
 celery.worker.job.WorkerTaskTrace.handle_retry method internals/reference/celery.worker.job.html
+celery.datastructures.LocalCache class internals/reference/celery.datastructures.html
 celery.task.TaskSet.total attribute reference/celery.task.html
 celery.worker.controllers.BackgroundThread.on_start method internals/reference/celery.worker.controllers.html
 celery.task.base.Task.max_retries attribute reference/celery.task.base.html
@@ -275,6 +280,7 @@ celery.task.base.Task.type attribute reference/celery.task.base.html
 celery.worker.job.WorkerTaskTrace.handle_failure method internals/reference/celery.worker.job.html
 DEFAULT_ROUTING_KEY data reference/celery.conf.html
 celery.exceptions.RetryTaskError exception reference/celery.exceptions.html
+celery.utils.compat.OrderedDict.fromkeys classmethod internals/reference/celery.utils.compat.html
 celery.worker.buckets.TokenBucketQueue.wait method internals/reference/celery.worker.buckets.html
 celery.decorators.periodic_task function reference/celery.decorators.html
 celery.worker.pool.TaskPool.limit attribute internals/reference/celery.worker.pool.html
@@ -285,7 +291,7 @@ TaskMeta.status attribute internals/reference/celery.models.html
 BROKER_CONNECTION_RETRY data reference/celery.conf.html
 celery.worker.buckets.TokenBucketQueue.qsize method internals/reference/celery.worker.buckets.html
 celery.task.Task.MaxRetriesExceededError exception reference/celery.task.html
-celery.backends.base.BaseBackend.mark_as_retry method internals/reference/celery.backends.base.html
+LOG_FORMAT data reference/celery.conf.html
 CELERYD_LOG_LEVEL data reference/celery.conf.html
 celery.messaging.with_connection function reference/celery.messaging.html
 celery.datastructures.PositionQueue.filled attribute internals/reference/celery.datastructures.html
@@ -299,6 +305,7 @@ worker_init data reference/celery.signals.html
 celery.worker.listener.CarrotListener.start method internals/reference/celery.worker.listener.html
 celery.task.TaskSet.map_async classmethod reference/celery.task.html
 celery.worker.pool.TaskPool.stop method internals/reference/celery.worker.pool.html
+celery.backends.base.BaseBackend.reload_task_result method internals/reference/celery.backends.base.html
 task_postrun data reference/celery.signals.html
 celery.datastructures.SharedCounter.decrement method internals/reference/celery.datastructures.html
 celery.beat.ScheduleEntry class internals/reference/celery.beat.html
@@ -310,6 +317,7 @@ worker_shutdown data reference/celery.signals.html
 celery.worker.pool.TaskPool.on_ready method internals/reference/celery.worker.pool.html
 TaskMeta.result attribute internals/reference/celery.models.html
 celery.worker.job.AlreadyExecutedError exception internals/reference/celery.worker.job.html
+celery.task.TaskSet.arguments attribute reference/celery.task.html
 celery.events.EventReceiver.process method reference/celery.events.html
 celery.task.dmap function reference/celery.task.html
 celery.task.Task.mandatory attribute reference/celery.task.html
@@ -318,6 +326,7 @@ celery.task.control.discard_all function reference/celery.task.control.html
 celery.utils.timedelta_seconds function internals/reference/celery.utils.html
 celery.log.get_default_logger function internals/reference/celery.log.html
 celery.worker.buckets.TaskBucket.put method internals/reference/celery.worker.buckets.html
+celery.utils.compat.OrderedDict.popitem method internals/reference/celery.utils.compat.html
 celery.worker.job.TaskWrapper.execute_using_pool method internals/reference/celery.worker.job.html
 celery.datastructures.PositionQueue.full method internals/reference/celery.datastructures.html
 celery.worker.control.ControlDispatch.dispatch_from_message method internals/reference/celery.worker.control.html
@@ -341,7 +350,6 @@ PeriodicTaskMeta.task attribute internals/reference/celery.models.html
 celery.result.EagerResult.traceback attribute reference/celery.result.html
 celery.task.Task.name attribute reference/celery.task.html
 celery.result.TaskSetResult.successful method reference/celery.result.html
-celery.datastructures.SharedCounter class internals/reference/celery.datastructures.html
 celery.beat.Scheduler.schedule attribute internals/reference/celery.beat.html
 celery.utils.fun_takes_kwargs function internals/reference/celery.utils.html
 celery.log.LoggingProxy.write method internals/reference/celery.log.html
@@ -356,14 +364,14 @@ celery.utils.info.format_routing_table function internals/reference/celery.utils
 celery.task.base.Task.rate_limit attribute reference/celery.task.base.html
 celery.worker.job.TaskWrapper.extend_with_default_kwargs method internals/reference/celery.worker.job.html
 celery.result.AsyncResult class reference/celery.result.html
-celery.backends.amqp.AMQPBackend.is_successful method internals/reference/celery.backends.amqp.html
+celery.datastructures.SharedCounter class internals/reference/celery.datastructures.html
 celery.backends.base.BaseBackend.store_result method internals/reference/celery.backends.base.html
 celery.loaders.load_settings function reference/celery.loaders.html
 celery.worker.control.Control class internals/reference/celery.worker.control.html
 celery.result.TaskSetResult.waiting method reference/celery.result.html
 task_prerun data reference/celery.signals.html
 TASK_STATUSES data internals/reference/celery.models.html
-celery.task.PeriodicTask.is_due method reference/celery.task.html
+celery.utils.compat.OrderedDict class internals/reference/celery.utils.compat.html
 revoked data internals/reference/celery.worker.revoke.html
 celery.task.base.TaskSet class reference/celery.task.base.html
 celery.messaging.get_consumer_set function reference/celery.messaging.html
@@ -382,6 +390,7 @@ celery.worker.buckets.TokenBucketQueue.capacity attribute internals/reference/ce
 celery.datastructures.consume_queue function internals/reference/celery.datastructures.html
 celery.registry.TaskRegistry.periodic method reference/celery.registry.html
 celery.loaders.base.BaseLoader.on_worker_init method reference/celery.loaders.base.html
+celery.task.PeriodicTask.is_due method reference/celery.task.html
 celery.worker.buckets.TokenBucketQueue.fill_rate attribute internals/reference/celery.worker.buckets.html
 CELERYD_LOG_FILE data reference/celery.conf.html
 celery.task.http.URL.dispatcher attribute reference/celery.task.http.html
@@ -399,7 +408,7 @@ celery.result.BaseAsyncResult.result attribute reference/celery.result.html
 CELERY_BACKEND data reference/celery.conf.html
 celery.managers.TaskSetManager.restore_taskset method internals/reference/celery.managers.html
 celery.states.SUCCESS data reference/celery.states.html
-LOG_FORMAT data reference/celery.conf.html
+celery.backends.base.BaseBackend.mark_as_retry method internals/reference/celery.backends.base.html
 celery.result.EagerResult.status attribute reference/celery.result.html
 celery.worker.pool.TaskPool.start method internals/reference/celery.worker.pool.html
 celery.worker.controllers.Mediator.callback attribute internals/reference/celery.worker.controllers.html

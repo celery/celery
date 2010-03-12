@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Configuration and defaults &mdash; Celery v1.0.0 (stable) documentation</title>
+    <title>Configuration and defaults &mdash; Celery v1.0.1.pre1 (stable) documentation</title>
     <link rel="stylesheet" href="static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '#',
-        VERSION:     '1.0.0 (stable)',
+        VERSION:     '1.0.1.pre1 (stable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,13 +19,13 @@
     </script>
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v1.0.0 (stable) documentation" href="index.html" />
+    <link rel="top" title="Celery v1.0.1.pre1 (stable) documentation" href="index.html" />
     <link rel="next" title="Cookbook" href="cookbook/index.html" />
     <link rel="prev" title="HTTP Callback Tasks (Webhooks)" href="userguide/remote-tasks.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v1.0.0 (stable) documentation</p>
+	<p>Celery v1.0.1.pre1 (stable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Configuration and defaults</h1></div>
@@ -325,16 +325,9 @@ django <tt class="docutils literal"><span class="pre">CACHE_BACKEND</span></tt> 
 <p>Name of the database to use. Default is <tt class="docutils literal"><span class="pre">celery_results</span></tt>.</p>
 </blockquote>
 </li>
-<li><p class="first">REDIS_TIMEOUT</p>
+<li><p class="first">REDIS_PASSWORD</p>
 <blockquote>
-<p>Timeout in seconds before we give up establishing a connection
-to the Redis server.</p>
-</blockquote>
-</li>
-<li><p class="first">REDIS_CONNECT_RETRY</p>
-<blockquote>
-<p>Retry connecting if an connection could not be established. Default is
-false.</p>
+<p>Password used to connect to the database.</p>
 </blockquote>
 </li>
 </ul>
@@ -421,7 +414,7 @@ Defaults to &#8220;celery_taskmeta&#8221;.</p>
 <ul>
 <li><p class="first">CELERY_QUEUES
 The mapping of queues the worker consumes from. This is a dictionary
-of queue name/options. See <tt class="xref docutils literal"><span class="pre">userguide/routing</span></tt> for more information.</p>
+of queue name/options. See <a class="reference external" href="userguide/routing.html"><em>Routing Tasks</em></a> for more information.</p>
 <p>The default is a queue/exchange/binding key of <tt class="docutils literal"><span class="pre">&quot;celery&quot;</span></tt>, with
 exchange type <tt class="docutils literal"><span class="pre">direct</span></tt>.</p>
 <p>You don&#8217;t have to care about this unless you want custom routing facilities.</p>
@@ -530,6 +523,11 @@ been registered with <tt class="xref docutils literal"><span class="pre">carrot.
 <p class="last">Default is <tt class="docutils literal"><span class="pre">pickle</span></tt>.</p>
 </dd>
 </dl>
+</li>
+<li><p class="first">CELERY_DEFAULT_RATE_LIMIT</p>
+<p>The global default rate limit for tasks.</p>
+<p>This value is used for tasks that does not have a custom rate limit
+The default is no rate limit.</p>
 </li>
 </ul>
 </div>
@@ -673,7 +671,7 @@ Can also be set via the <tt class="docutils literal"><span class="pre">--logfile
       <div class="clearer"></div>
     </div>
 	<div id="breadcrumbs">
-		<a href="index.html">Celery v1.0.0 (stable) documentation</a>
+		<a href="index.html">Celery v1.0.1.pre1 (stable) documentation</a>
 		</ul>
 	</div>
   </body>

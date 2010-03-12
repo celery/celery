@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Executable Jobs - celery.worker.job &mdash; Celery v1.0.0 (stable) documentation</title>
+    <title>Executable Jobs - celery.worker.job &mdash; Celery v1.0.1.pre1 (stable) documentation</title>
     <link rel="stylesheet" href="../../static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.0.0 (stable)',
+        VERSION:     '1.0.1.pre1 (stable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,14 +19,14 @@
     </script>
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v1.0.0 (stable) documentation" href="../../index.html" />
+    <link rel="top" title="Celery v1.0.1.pre1 (stable) documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="Worker Controller Threads - celery.worker.controllers" href="celery.worker.controllers.html" />
     <link rel="prev" title="Worker Message Listener - celery.worker.listener" href="celery.worker.listener.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v1.0.0 (stable) documentation</p>
+	<p>Celery v1.0.1.pre1 (stable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Executable Jobs - celery.worker.job</h1></div>
@@ -105,7 +105,7 @@ world-wide state.</dd></dl>
 
 <dl class="class">
 <dt id="celery.worker.job.TaskWrapper">
-<em class="property">class </em><tt class="descclassname">celery.worker.job.</tt><tt class="descname">TaskWrapper</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>args</em>, <em>kwargs</em>, <em>on_ack=&lt;function noop at 0x1033a3ed8&gt;</em>, <em>retries=0</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskWrapper" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.worker.job.</tt><tt class="descname">TaskWrapper</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>args</em>, <em>kwargs</em>, <em>on_ack=&lt;function noop at 0x103ba0cf8&gt;</em>, <em>retries=0</em>, <em>delivery_info=None</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskWrapper" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class wrapping a task to be passed around and finally
 executed inside of the worker.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -192,7 +192,7 @@ once.</p>
 <tt class="descname">extend_with_default_kwargs</tt><big>(</big><em>loglevel</em>, <em>logfile</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskWrapper.extend_with_default_kwargs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Extend the tasks keyword arguments with standard task arguments.</p>
 <p>Currently these are <tt class="docutils literal"><span class="pre">logfile</span></tt>, <tt class="docutils literal"><span class="pre">loglevel</span></tt>, <tt class="docutils literal"><span class="pre">task_id</span></tt>,
-<tt class="docutils literal"><span class="pre">task_name</span></tt> and <tt class="docutils literal"><span class="pre">task_retries</span></tt>.</p>
+<tt class="docutils literal"><span class="pre">task_name</span></tt>, <tt class="docutils literal"><span class="pre">task_retries</span></tt>, and <tt class="docutils literal"><span class="pre">delivery_info</span></tt>.</p>
 <p>See <a title="celery.task.base.Task.run" class="reference external" href="../../reference/celery.task.base.html#celery.task.base.Task.run"><tt class="xref docutils literal"><span class="pre">celery.task.base.Task.run()</span></tt></a> for more information.</p>
 </dd></dl>
 
@@ -303,7 +303,7 @@ the exception instance on failure.</p>
 	<div id="breadcrumbs">
 		<a href="../index.html" accesskey="U">Internals</a><img src="triangle_closed.png" alt="Right arrow">
 		<a href="index.html" >Internal Module Reference</a><img src="triangle_closed.png" alt="Right arrow">
-		<a href="../../index.html">Celery v1.0.0 (stable) documentation</a>
+		<a href="../../index.html">Celery v1.0.1.pre1 (stable) documentation</a>
 		</ul>
 	</div>
   </body>

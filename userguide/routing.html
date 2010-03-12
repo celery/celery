@@ -1,0 +1,235 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Routing Tasks &mdash; Celery v1.0.1.pre1 (stable) documentation</title>
+    <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.1.pre1 (stable)',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v1.0.1.pre1 (stable) documentation" href="../index.html" /> 
+  </head>
+  <body>
+<div id="docstitle">
+	<p>Celery v1.0.1.pre1 (stable) documentation</p>
+</div>
+<div id="header">
+	<div id="title"><h1>Routing Tasks</h1></div>
+	<ul id="headerButtons">
+		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
+		<li id="page_buttons">
+			<div class="headerButton"><a href="../genindex.html" title="General Index" accesskey="I">index</a></div>
+			<div class="headerButton"><a href="../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+		</li>
+	</ul>
+</div>
+
+<div id="sphinxsidebar">
+  <div class="sphinxsidebarwrapper">
+	<ul><li class="toctree-l1"><a href="../index.html">Main Page</a></li></ul>
+	<ul>
+<li class="toctree-l1"><a class="reference external" href="../getting-started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference external" href="index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference external" href="../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference external" href="../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference external" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference external" href="../reference/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference external" href="../internals/index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference external" href="../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference external" href="../links.html">Interesting Links</a></li>
+</ul>
+
+      <h3>This Page</h3>
+      <ul class="this-page-menu">
+        <li><a href="../sources/userguide/routing.txt"
+               rel="nofollow">Show Source</a></li>
+      </ul>
+    <div id="searchbox" style="display: none">
+      
+        <form class="search" action="../search.html" method="get">
+			<div class="search-wrapper">
+			<span class="search-left"></span>
+			<input class="prettysearch" type="text" name="q" size="18" />
+			<span class="search-right">&nbsp;</span>
+			</div>
+          <input type="submit" value="Search" class="searchbutton" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </form>
+        <p class="searchtip" style="font-size: 90%">
+        Enter search terms or a module, class or function name.
+        </p>
+    </div>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+  </div>
+</div>
+
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="routing-tasks">
+<h1>Routing Tasks<a class="headerlink" href="#routing-tasks" title="Permalink to this headline">¶</a></h1>
+<p><strong>NOTE</strong> This document refers to functionality only available in brokers
+using AMQP. Other brokers may implement some functionality, see their
+respective documenation for more information, or contact the <a class="reference external" href="http://groups.google.com/group/celery-users">mailinglist</a>.</p>
+<div class="section" id="amqp-primer">
+<h2>AMQP Primer<a class="headerlink" href="#amqp-primer" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="exchanges-queues-and-routing-keys">
+<h3>Exchanges, queues and routing keys.<a class="headerlink" href="#exchanges-queues-and-routing-keys" title="Permalink to this headline">¶</a></h3>
+<p>TODO Mindblowing one-line simple explanation here. TODO</p>
+<p>The steps required to send and receive messages are:</p>
+<ol class="arabic simple">
+<li>Create an exchange</li>
+<li>Create a queue</li>
+<li>Bind the queue to the exchange.</li>
+</ol>
+</div>
+<div class="section" id="exchange-type">
+<h3>Exchange type<a class="headerlink" href="#exchange-type" title="Permalink to this headline">¶</a></h3>
+<p>The exchange type defines how the messages are routed through the exchange.
+The exchanges defined in the standard is <tt class="docutils literal"><span class="pre">direct</span></tt>, <tt class="docutils literal"><span class="pre">topic</span></tt>, <tt class="docutils literal"><span class="pre">fanout</span></tt> and
+<tt class="docutils literal"><span class="pre">headers</span></tt>. Also non-standard exchange types available as plugins to RabbitMQ, like
+the last value cache plug-in.</p>
+</div>
+<div class="section" id="consumers-and-producers">
+<h3>Consumers and Producers<a class="headerlink" href="#consumers-and-producers" title="Permalink to this headline">¶</a></h3>
+<p>TODO</p>
+</div>
+<div class="section" id="related-api-commands">
+<h3>Related API commands<a class="headerlink" href="#related-api-commands" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>exchange.declare(exchange_name, type, passive, durable, auto_delete, internal)</li>
+</ul>
+<p>Declares an exchange by name.</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">passive</span></tt> means the exchange won&#8217;t be created, but you can use this to
+check if the exchange already exists.</li>
+<li>Durable exchanges are persistent. I.e. they survive a broker restart.</li>
+<li><tt class="docutils literal"><span class="pre">auto_delete</span></tt> means the queue will be deleted by the broker when there
+are no more queues using it.</li>
+</ul>
+<ul class="simple">
+<li>queue.declare(queue_name, passive, durable, exclusive, auto_delete)</li>
+</ul>
+<p>Declares a queue by name.</p>
+<ul class="simple">
+<li>exclusive queues can only be consumed from by the current connection.
+implies <tt class="docutils literal"><span class="pre">auto_delete</span></tt>.</li>
+</ul>
+<ul class="simple">
+<li>queue.bind(queue_name, exchange_name, routing_key)</li>
+</ul>
+<p>Binds a queue to an exchange with a routing key.
+Unbound queues will not receive messages, so this is necessary.</p>
+<ul class="simple">
+<li>queue.delete(name, if_unused, if_empty)</li>
+</ul>
+<p>Deletes a queue and its binding.</p>
+<ul class="simple">
+<li>exchange.delete(name, if_unused)</li>
+</ul>
+<p>Deletes an exchange.</p>
+<p><strong>NOTE</strong>: Declaring does not necessarily mean &#8220;create&#8221;. When you declare you
+<em>assert</em> that the entity exists and it is operable. There is no rule as to
+whom should initially create the exchange/queue/binding, whether consumer
+or producer.  Usually the first one to need it will create it.</p>
+</div>
+<div class="section" id="hands-on-with-the-api">
+<h3>Hands-on with the API<a class="headerlink" href="#hands-on-with-the-api" title="Permalink to this headline">¶</a></h3>
+<p>Celery comes with a tool called <tt class="docutils literal"><span class="pre">camqadm</span></tt> (short for celery AMQP admin).
+It&#8217;s used for simple admnistration tasks like deleting queues/exchanges,
+purging queues and creating queue entities. In short it&#8217;s for simple command
+line access to the AMQP API.</p>
+<p>You can write commands directly in the arguments to <tt class="docutils literal"><span class="pre">camqadm</span></tt>, or just start
+with no arguments which makes it start in shell-mode:</p>
+<div class="highlight-python"><pre>$ camqadm
+-&gt; connecting to amqp://guest@localhost:5672/.
+-&gt; connected.
+--&gt;</pre>
+</div>
+<p>Here, <tt class="docutils literal"><span class="pre">--&gt;</span></tt> is the prompt. Type <tt class="docutils literal"><span class="pre">help</span></tt> for a list of commands, there&#8217;s
+also autocomplete so you can start typing a command then hit <tt class="docutils literal"><span class="pre">tab</span></tt> to show a
+list of possible matches.</p>
+<p>Now let&#8217;s create a queue we can send messages to:</p>
+<div class="highlight-python"><pre>--&gt; exchange.declare testexchange direct
+ok.
+--&gt; queue.declare testqueue
+ok. queue:testqueue messages:0 consumers:0.
+--&gt; queue.bind testqueue testexchange testkey
+ok.</pre>
+</div>
+<p>Messages are sent with a routing key, to an exchange. This is done using
+the <tt class="docutils literal"><span class="pre">basic.publish</span></tt> command:</p>
+<div class="highlight-python"><pre>--&gt; basic.publish "This is a message!" testexchange testkey
+ok.</pre>
+</div>
+<p>Now that the message is sent we can retrieve it again, we use the
+<tt class="docutils literal"><span class="pre">basic.get</span></tt> command here, which pops a single message off the queue,
+this command is not recommended for production as it implies polling, any
+real application would declare consumers instead:</p>
+<div class="highlight-python"><pre>--&gt; basic.get testqueue
+{'body': 'This is a message!',
+ 'delivery_info': {'delivery_tag': 1,
+                   'exchange': u'testexchange',
+                   'message_count': 0,
+                   'redelivered': False,
+                   'routing_key': u'testkey'},
+ 'properties': {}}</pre>
+</div>
+<p>AMQP uses acknowledgment to signify a message has been received and processed
+successfully. The message is sent to the next receiver if the client
+connection is closed, and it has not yet been acknowledged.</p>
+<p>Note the delivery tag listed in the structure above; Within a connection channel,
+every received message has a unique delivery tag,
+This tag is used to acknowledge the message. Note that
+delivery tags are not unique across connections, so in another client
+the delivery tag <tt class="docutils literal"><span class="pre">1</span></tt> might point to a different message than in our channel.</p>
+<p>You can acknowledge the message we received using <tt class="docutils literal"><span class="pre">basic.ack</span></tt>:</p>
+<div class="highlight-python"><pre>--&gt; basic.ack 1
+ok.</pre>
+</div>
+<p>To clean up after ourselves we should delete the entities we just created:</p>
+<div class="highlight-python"><pre>--&gt; queue.delete testqueue
+ok. 0 messages deleted.
+--&gt; exchange.delete testexchange
+ok.</pre>
+</div>
+</div>
+</div>
+</div>
+
+
+          </div> 
+        </div>
+      </div>
+    <div class="footer">
+    <p>
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+	</p>
+    </div>
+      <div class="clearer"></div>
+    </div>
+	<div id="breadcrumbs">
+		<a href="../index.html">Celery v1.0.1.pre1 (stable) documentation</a>
+		</ul>
+	</div>
+  </body>
+</html>

@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Backend: Base - celery.backends.base &mdash; Celery v1.0.0 (stable) documentation</title>
+    <title>Backend: Base - celery.backends.base &mdash; Celery v1.0.1.pre1 (stable) documentation</title>
     <link rel="stylesheet" href="../../static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.0.0 (stable)',
+        VERSION:     '1.0.1.pre1 (stable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,14 +19,14 @@
     </script>
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v1.0.0 (stable) documentation" href="../../index.html" />
+    <link rel="top" title="Celery v1.0.1.pre1 (stable) documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="Backend: AMQP - celery.backends.amqp" href="celery.backends.amqp.html" />
     <link rel="prev" title="Backends - celery.backends" href="celery.backends.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v1.0.0 (stable) documentation</p>
+	<p>Celery v1.0.1.pre1 (stable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Backend: Base - celery.backends.base</h1></div>
@@ -164,8 +164,18 @@ exception (if any).</dd></dl>
 <dd>Cleanup actions to do at the end of a task worker process.</dd></dl>
 
 <dl class="method">
+<dt id="celery.backends.base.BaseBackend.reload_task_result">
+<tt class="descclassname">BaseBackend.</tt><tt class="descname">reload_task_result</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.reload_task_result" title="Permalink to this definition">¶</a></dt>
+<dd>Reload task result, even if it has been previously fetched.</dd></dl>
+
+<dl class="method">
+<dt id="celery.backends.base.BaseBackend.reload_taskset_result">
+<tt class="descclassname">BaseBackend.</tt><tt class="descname">reload_taskset_result</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.reload_taskset_result" title="Permalink to this definition">¶</a></dt>
+<dd>Reload taskset result, even if it has been previously fetched.</dd></dl>
+
+<dl class="method">
 <dt id="celery.backends.base.BaseBackend.restore_taskset">
-<tt class="descclassname">BaseBackend.</tt><tt class="descname">restore_taskset</tt><big>(</big><em>taskset_id</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.restore_taskset" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseBackend.</tt><tt class="descname">restore_taskset</tt><big>(</big><em>taskset_id</em>, <em>cache=True</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.restore_taskset" title="Permalink to this definition">¶</a></dt>
 <dd>Get the result of a taskset.</dd></dl>
 
 <dl class="method">
@@ -208,7 +218,7 @@ takes longer than <tt class="docutils literal"><span class="pre">timeout</span><
 	<div id="breadcrumbs">
 		<a href="../index.html" accesskey="U">Internals</a><img src="triangle_closed.png" alt="Right arrow">
 		<a href="index.html" >Internal Module Reference</a><img src="triangle_closed.png" alt="Right arrow">
-		<a href="../../index.html">Celery v1.0.0 (stable) documentation</a>
+		<a href="../../index.html">Celery v1.0.1.pre1 (stable) documentation</a>
 		</ul>
 	</div>
   </body>
