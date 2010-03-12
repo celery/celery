@@ -16,6 +16,7 @@ import shlex
 import pprint
 import readline
 import optparse
+from itertools import count
 
 from amqplib import client_0_8 as amqp
 
@@ -157,10 +158,10 @@ class AMQShell(cmd.Cmd):
     """
     conn = None
     chan = None
-    prompt = "--> "
+    prompt_fmt = "%d> "
     identchars = cmd.IDENTCHARS = "."
     needs_reconnect = False
-
+    counter = count(1).next
 
     builtins = {"exit": "do_exit",
                 "EOF": "do_exit",
@@ -316,6 +317,10 @@ class AMQShell(cmd.Cmd):
         self.conn = self.connect(self.conn)
         self.chan = self.conn.create_backend().channel
         self.needs_reconnect = False
+
+    @property
+    def prompt(self):
+        return self.prompt_fmt % self.counter()
 
 
 class AMQPAdmin(object):
