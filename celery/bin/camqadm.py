@@ -132,6 +132,9 @@ def dump_message(message):
             "properties": message.properties,
             "delivery_info": message.delivery_info}
 
+def format_declare_queue(ret):
+    return "ok. queue:%s messages:%s consumers:%s." % ret
+
 
 class AMQShell(cmd.Cmd):
     """AMQP API Shell.
@@ -180,11 +183,13 @@ class AMQShell(cmd.Cmd):
                               ("durable", bool, "no"),
                               ("exclusive", bool, "no"),
                               ("auto_delete", bool, "no"),
-                              returns="%d messages deleted"),
+                              returns=format_declare_queue),
         "queue.delete": Spec(("queue", str),
                              ("if_unused", bool, "no"),
-                             ("if_empty", bool, "no")),
-        "queue.purge": Spec(("queue", str), returns="%d messages deleted"),
+                             ("if_empty", bool, "no"),
+                             returns="ok. %d messages deleted."),
+        "queue.purge": Spec(("queue", str),
+                            returns="ok. %d messages deleted."),
         "basic.get": Spec(("queue", str),
                           ("no_ack", bool, "off"),
                           returns=dump_message),
