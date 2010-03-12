@@ -79,7 +79,7 @@ Use the ``scutil`` command to permanently set your hostname::
 
     sudo scutil --set HostName myhost.local
 
-Then add that hostname to ``/etc/hosts/`` so it's possible to resolve it
+Then add that hostname to ``/etc/hosts`` so it's possible to resolve it
 back into an IP address::
 
     127.0.0.1       localhost myhost myhost.local
