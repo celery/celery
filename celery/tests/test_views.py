@@ -46,7 +46,7 @@ def catch_exception(exception):
 
 class ViewTestCase(DjangoTestCase):
 
-    def assertJSONEquals(self, json, py):
+    def assertJSONEqual(self, json, py):
         json = isinstance(json, HttpResponse) and json.content or json
         try:
             self.assertEqual(JSON_load(json), py)
@@ -91,7 +91,7 @@ class TestTaskStatus(ViewTestCase):
             expect["exc"] = get_full_cls_name(res.__class__)
             expect["traceback"] = traceback
 
-        self.assertJSONEquals(json, dict(task=expect))
+        self.assertJSONEqual(json, dict(task=expect))
 
     def test_task_status_success(self):
         self.assertStatusForIs(states.SUCCESS, "The quick brown fox")
@@ -113,8 +113,8 @@ class TestTaskIsSuccessful(ViewTestCase):
         result = gen_unique_id()
         default_backend.store_result(uuid, result, status)
         json = self.client.get(task_is_successful(task_id=uuid))
-        self.assertJSONEquals(json, {"task": {"id": uuid,
-                                              "executed": outcome}})
+        self.assertJSONEqual(json, {"task": {"id": uuid,
+                                             "executed": outcome}})
 
     def test_is_successful_success(self):
         self.assertStatusForIs(states.SUCCESS, True)

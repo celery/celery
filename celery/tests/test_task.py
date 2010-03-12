@@ -233,7 +233,7 @@ class TestCeleryTasks(unittest.TestCase):
                                                 for x in xrange(10)))
         conf.ALWAYS_EAGER = False
 
-    def assertNextTaskDataEquals(self, consumer, presult, task_name,
+    def assertNextTaskDataEqual(self, consumer, presult, task_name,
             test_eta=False, **kwargs):
         next_task = consumer.fetch()
         task_data = next_task.decode()
@@ -275,28 +275,28 @@ class TestCeleryTasks(unittest.TestCase):
 
         # Without arguments.
         presult = t1.delay()
-        self.assertNextTaskDataEquals(consumer, presult, t1.name)
+        self.assertNextTaskDataEqual(consumer, presult, t1.name)
 
         # With arguments.
         presult2 = t1.apply_async(kwargs=dict(name="George Constanza"))
-        self.assertNextTaskDataEquals(consumer, presult2, t1.name,
+        self.assertNextTaskDataEqual(consumer, presult2, t1.name,
                 name="George Constanza")
 
         # send_task
         sresult = send_task(t1.name, kwargs=dict(name="Elaine M. Benes"))
-        self.assertNextTaskDataEquals(consumer, sresult, t1.name,
+        self.assertNextTaskDataEqual(consumer, sresult, t1.name,
                 name="Elaine M. Benes")
 
         # With eta.
         presult2 = task.apply_async(t1, kwargs=dict(name="George Constanza"),
                                     eta=datetime.now() + timedelta(days=1))
-        self.assertNextTaskDataEquals(consumer, presult2, t1.name,
+        self.assertNextTaskDataEqual(consumer, presult2, t1.name,
                 name="George Constanza", test_eta=True)
 
         # With countdown.
         presult2 = task.apply_async(t1, kwargs=dict(name="George Constanza"),
                                     countdown=10)
-        self.assertNextTaskDataEquals(consumer, presult2, t1.name,
+        self.assertNextTaskDataEqual(consumer, presult2, t1.name,
                 name="George Constanza", test_eta=True)
 
         # Discarding all tasks.

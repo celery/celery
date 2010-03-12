@@ -97,7 +97,7 @@ class TestJail(unittest.TestCase):
         task_id = gen_unique_id()
         ret = jail(id, MyTaskIgnoreResult.name,
                    [4], {})
-        self.assertEquals(ret, 256)
+        self.assertEqual(ret, 256)
         self.assertFalse(AsyncResult(task_id).ready())
 
     def test_django_db_connection_is_closed(self):
@@ -370,7 +370,7 @@ class TestTaskWrapper(unittest.TestCase):
         p = TaskPool(2)
         p.start()
         asyncres = tw.execute_using_pool(p)
-        self.assertEquals(asyncres.get(), 256)
+        self.assertEqual(asyncres.get(), 256)
         p.stop()
 
     def test_default_kwargs(self):
