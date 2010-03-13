@@ -98,7 +98,7 @@ The exchange types defined in the standard are ``direct``, ``topic``,
 as plugins to RabbitMQ, like the `last-value-cache plug-in`_ by Michael
 Bridgen. 
 
-.. _`last-value-cache plug-in``:
+.. _`last-value-cache plug-in`:
     http://github.com/squaremo/rabbitmq-lvc-plugin
 
 Direct exchanges
@@ -135,8 +135,8 @@ Declares an exchange by name.
 * ``auto_delete`` means the queue will be deleted by the broker when there
   are no more queues using it.
 
-* queue.declare(queue_name, passive, durable, exclusive, auto_delete)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+queue.declare(queue_name, passive, durable, exclusive, auto_delete)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Declares a queue by name.
 
