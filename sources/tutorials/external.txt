@@ -62,6 +62,7 @@ Installing multiprocessing on FreeBSD isn't that easy, but thanks to `Viktor Pet
 we now have a step-to-step guide:
 http://www.playingwithwire.com/2009/10/how-to-get-celeryd-to-work-on-freebsd/
 
+.. _`Viktor Petersson`: http://twitter.com/vpetersson
 
 Web-based 3D animation software
 ===============================

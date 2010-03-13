@@ -91,27 +91,94 @@ using AMQP. Other brokers may implement some functionality, see their
 respective documenation for more information, or contact the <a class="reference external" href="http://groups.google.com/group/celery-users">mailinglist</a>.</p>
 <div class="section" id="amqp-primer">
 <h2>AMQP Primer<a class="headerlink" href="#amqp-primer" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="messages">
+<h3>Messages<a class="headerlink" href="#messages" title="Permalink to this headline">¶</a></h3>
+<p>A message consists of headers and a body. Celery uses headers to store
+the content type of the message and its content encoding. In Celery the
+content type is usually the serialization format used to serialize the
+message, and the body contains the name of the task to execute, the
+task id (UUID), the arguments to execute it with and some additional
+metadata - like the number of retries and its ETA if any.</p>
+<p>This is an example task message represented as a Python dictionary:</p>
+<div class="highlight-python"><pre>{"task": "myapp.tasks.add",
+ "id":
+ "args": [4, 4],
+ "kwargs": {}}</pre>
+</div>
+</div>
+<div class="section" id="producers-consumers-and-brokers">
+<h3>Producers, consumers and brokers<a class="headerlink" href="#producers-consumers-and-brokers" title="Permalink to this headline">¶</a></h3>
+<p>The client sending messages is typically called a <em>publisher</em>, or
+a <em>producer</em>, while the entity receiving messages is called
+a <em>consumer</em>.</p>
+<p>The <em>broker</em> is the message server, routing messages from producers
+to consumers.</p>
+<p>You are likely to see these terms used a lot in AMQP related material.</p>
+</div>
 <div class="section" id="exchanges-queues-and-routing-keys">
 <h3>Exchanges, queues and routing keys.<a class="headerlink" href="#exchanges-queues-and-routing-keys" title="Permalink to this headline">¶</a></h3>
 <p>TODO Mindblowing one-line simple explanation here. TODO</p>
+<ol class="arabic simple">
+<li>Messages are sent to exchanges.</li>
+<li>An exchange routes messages to one or more queues. Several exchange types
+exists, providing different ways to do routing.</li>
+<li>The message waits in the queue until someone consumes from it.</li>
+<li>The message is deleted from the queue when it has been acknowledged.</li>
+</ol>
 <p>The steps required to send and receive messages are:</p>
 <ol class="arabic simple">
 <li>Create an exchange</li>
 <li>Create a queue</li>
 <li>Bind the queue to the exchange.</li>
 </ol>
+<p>Celery automatically creates the entities necessary for the queues in
+<tt class="docutils literal"><span class="pre">CELERY_QUEUES</span></tt> to work (unless the queue&#8217;s <tt class="docutils literal"><span class="pre">auto_declare</span></tt> setting
+is set)</p>
+<p>Here&#8217;s an example queue configuration with three queues;
+One for video, one for images and one default queue for everything else:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_QUEUES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&quot;default&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">&quot;exchange&quot;</span><span class="p">:</span> <span class="s">&quot;default&quot;</span><span class="p">,</span>
+        <span class="s">&quot;binding_key&quot;</span><span class="p">:</span> <span class="s">&quot;default&quot;</span><span class="p">},</span>
+    <span class="s">&quot;videos&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">&quot;exchange&quot;</span><span class="p">:</span> <span class="s">&quot;media&quot;</span><span class="p">,</span>
+        <span class="s">&quot;binding_key&quot;</span><span class="p">:</span> <span class="s">&quot;media.video&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="s">&quot;images&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">&quot;exchange&quot;</span><span class="p">:</span> <span class="s">&quot;media&quot;</span><span class="p">,</span>
+        <span class="s">&quot;binding_key&quot;</span><span class="p">:</span> <span class="s">&quot;media.image&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+<span class="n">CELERY_DEFAULT_QUEUE</span> <span class="o">=</span> <span class="s">&quot;default&quot;</span>
+<span class="n">CELERY_DEFAULT_EXCHANGE_TYPE</span> <span class="o">=</span> <span class="s">&quot;direct&quot;</span>
+<span class="n">CELERY_DEFAULT_ROUTING_KEY</span> <span class="o">=</span> <span class="s">&quot;default&quot;</span>
+</pre></div>
 </div>
-<div class="section" id="exchange-type">
-<h3>Exchange type<a class="headerlink" href="#exchange-type" title="Permalink to this headline">¶</a></h3>
+<p><strong>NOTE</strong>: In Celery the <tt class="docutils literal"><span class="pre">routing_key</span></tt> is the key used to send the message,
+while <tt class="docutils literal"><span class="pre">binding_key</span></tt> is the key the queue is bound with. In the AMQP API
+they are both referred to as a routing key.</p>
+</div>
+<div class="section" id="exchange-types">
+<h3>Exchange types<a class="headerlink" href="#exchange-types" title="Permalink to this headline">¶</a></h3>
 <p>The exchange type defines how the messages are routed through the exchange.
 The exchange types defined in the standard are <tt class="docutils literal"><span class="pre">direct</span></tt>, <tt class="docutils literal"><span class="pre">topic</span></tt>,
 <tt class="docutils literal"><span class="pre">fanout</span></tt> and <tt class="docutils literal"><span class="pre">headers</span></tt>. Also non-standard exchange types are available
-as plugins to RabbitMQ, like the <tt class="docutils literal"><span class="pre">last-value-cache</span> <span class="pre">plug-in</span></tt> by Michael
+as plugins to RabbitMQ, like the <a class="reference external" href="http://github.com/squaremo/rabbitmq-lvc-plugin">last-value-cache plug-in</a> by Michael
 Bridgen.</p>
+<div class="section" id="direct-exchanges">
+<h4>Direct exchanges<a class="headerlink" href="#direct-exchanges" title="Permalink to this headline">¶</a></h4>
+<p>Direct exchanges match by exact routing keys, so a queue bound with
+the routing key <tt class="docutils literal"><span class="pre">video</span></tt> only receives messages with the same routing key.</p>
 </div>
-<div class="section" id="consumers-and-producers">
-<h3>Consumers and Producers<a class="headerlink" href="#consumers-and-producers" title="Permalink to this headline">¶</a></h3>
-<p>TODO</p>
+<div class="section" id="topic-exchanges">
+<h4>Topic exchanges<a class="headerlink" href="#topic-exchanges" title="Permalink to this headline">¶</a></h4>
+<p>Topic exchanges matches routing keys using dot-separated words, and can
+include wildcard characters: <tt class="docutils literal"><span class="pre">*</span></tt> matches a single word, <tt class="docutils literal"><span class="pre">#</span></tt> matches
+zero or more words.</p>
+<p>With routing keys like <tt class="docutils literal"><span class="pre">usa.news</span></tt>, <tt class="docutils literal"><span class="pre">usa.weather</span></tt>, <tt class="docutils literal"><span class="pre">norway.news</span></tt> and
+<tt class="docutils literal"><span class="pre">norway.weather</span></tt>, bindings could be <tt class="docutils literal"><span class="pre">*.news</span></tt> (all news), <tt class="docutils literal"><span class="pre">usa.#</span></tt> (all
+items in the USA) or <tt class="docutils literal"><span class="pre">usa.weather</span></tt> (all USA weather items).</p>
+</div>
 </div>
 <div class="section" id="related-api-commands">
 <h3>Related API commands<a class="headerlink" href="#related-api-commands" title="Permalink to this headline">¶</a></h3>
@@ -124,9 +191,10 @@ check if the exchange already exists.</li>
 <li>Durable exchanges are persistent. That is - they survive a broker restart.</li>
 <li><tt class="docutils literal"><span class="pre">auto_delete</span></tt> means the queue will be deleted by the broker when there
 are no more queues using it.</li>
-<li>queue.declare(queue_name, passive, durable, exclusive, auto_delete)</li>
 </ul>
-<hr class="docutils" />
+</div>
+<div class="section" id="queue-declare-queue-name-passive-durable-exclusive-auto-delete">
+<h4>queue.declare(queue_name, passive, durable, exclusive, auto_delete)<a class="headerlink" href="#queue-declare-queue-name-passive-durable-exclusive-auto-delete" title="Permalink to this headline">¶</a></h4>
 <p>Declares a queue by name.</p>
 <ul class="simple">
 <li>exclusive queues can only be consumed from by the current connection.
@@ -162,17 +230,18 @@ with no arguments to start it in shell-mode:</p>
 <div class="highlight-python"><pre>$ camqadm
 -&gt; connecting to amqp://guest@localhost:5672/.
 -&gt; connected.
---&gt;</pre>
+1&gt;</pre>
 </div>
-<p>Here <tt class="docutils literal"><span class="pre">--&gt;</span></tt> is the prompt. Type <tt class="docutils literal"><span class="pre">help</span></tt> for a list of commands, there&#8217;s
-also autocomplete so you can start typing a command then hit <tt class="docutils literal"><span class="pre">tab</span></tt> to show a
-list of possible matches.</p>
+<p>Here <tt class="docutils literal"><span class="pre">1&gt;</span></tt> is the prompt. The number is counting the number of commands you
+have executed. Type <tt class="docutils literal"><span class="pre">help</span></tt> for a list of commands. It also has
+autocompletion, so you can start typing a command and then hit the
+<tt class="docutils literal"><span class="pre">tab</span></tt> key to show a list of possible matches.</p>
 <p>Now let&#8217;s create a queue we can send messages to:</p>
-<div class="highlight-python"><pre>--&gt; exchange.declare testexchange direct
+<div class="highlight-python"><pre>1&gt; exchange.declare testexchange direct
 ok.
---&gt; queue.declare testqueue
+2&gt; queue.declare testqueue
 ok. queue:testqueue messages:0 consumers:0.
---&gt; queue.bind testqueue testexchange testkey
+3&gt; queue.bind testqueue testexchange testkey
 ok.</pre>
 </div>
 <p>This created the direct exchange <tt class="docutils literal"><span class="pre">testexchange</span></tt>, and a queue
@@ -181,7 +250,7 @@ the routing key <tt class="docutils literal"><span class="pre">testkey</span></t
 <p>From now on all messages sent to the exchange <tt class="docutils literal"><span class="pre">testexchange</span></tt> with routing
 key <tt class="docutils literal"><span class="pre">testkey</span></tt> will be moved to this queue. We can send a message by
 using the <tt class="docutils literal"><span class="pre">basic.publish</span></tt> command:</p>
-<div class="highlight-python"><pre>--&gt; basic.publish "This is a message!" testexchange testkey
+<div class="highlight-python"><pre>4&gt; basic.publish "This is a message!" testexchange testkey
 ok.</pre>
 </div>
 <p>Now that the message is sent we can retrieve it again. We use the
@@ -189,7 +258,7 @@ ok.</pre>
 this command is not recommended for production as it implies polling, any
 real application would declare consumers instead.</p>
 <p>Pop a message off the queue:</p>
-<div class="highlight-python"><pre>--&gt; basic.get testqueue
+<div class="highlight-python"><pre>5&gt; basic.get testqueue
 {'body': 'This is a message!',
  'delivery_info': {'delivery_tag': 1,
                    'exchange': u'testexchange',
@@ -207,13 +276,13 @@ This tag is used to acknowledge the message. Note that
 delivery tags are not unique across connections, so in another client
 the delivery tag <tt class="docutils literal"><span class="pre">1</span></tt> might point to a different message than in this channel.</p>
 <p>You can acknowledge the message we received using <tt class="docutils literal"><span class="pre">basic.ack</span></tt>:</p>
-<div class="highlight-python"><pre>--&gt; basic.ack 1
+<div class="highlight-python"><pre>6&gt; basic.ack 1
 ok.</pre>
 </div>
 <p>To clean up after our test session we should delete the entities we created:</p>
-<div class="highlight-python"><pre>--&gt; queue.delete testqueue
+<div class="highlight-python"><pre>7&gt; queue.delete testqueue
 ok. 0 messages deleted.
---&gt; exchange.delete testexchange
+8&gt; exchange.delete testexchange
 ok.</pre>
 </div>
 </div>
