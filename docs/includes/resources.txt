@@ -26,6 +26,11 @@ Bug tracker
 If you have any suggestions, bug reports or annoyances please report them
 to our issue tracker at http://github.com/ask/celery/issues/
 
+Wiki
+====
+
+http://wiki.github.com/ask/celery/
+
 Contributing
 ============
 
