@@ -162,7 +162,8 @@ class AMQShell(cmd.Cmd):
     prompt_fmt = "%d> "
     identchars = cmd.IDENTCHARS = "."
     needs_reconnect = False
-    counter = count(1).next
+    counter = 1
+    inc_counter = count(2).next
 
     builtins = {"exit": "do_exit",
                 "EOF": "do_exit",
@@ -295,7 +296,9 @@ class AMQShell(cmd.Cmd):
 
         """
         parts = line.split()
-        return parts[0], " ".join(parts[1:]), line
+        if parts:
+            return parts[0], " ".join(parts[1:]), line
+        return "", "", line
 
     def onecmd(self, line):
         """Parse line and execute command."""
@@ -308,6 +311,7 @@ class AMQShell(cmd.Cmd):
         if cmd == '':
             return self.default(line)
         else:
+            self.counter = self.inc_counter()
             try:
                 self.respond(self.dispatch(cmd, arg))
             except (AttributeError, KeyError), exc:
@@ -332,7 +336,7 @@ class AMQShell(cmd.Cmd):
 
     @property
     def prompt(self):
-        return self.prompt_fmt % self.counter()
+        return self.prompt_fmt % self.counter
 
 
 class AMQPAdmin(object):
