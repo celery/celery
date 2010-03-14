@@ -19,6 +19,7 @@ import optparse
 from itertools import count
 
 from amqplib import client_0_8 as amqp
+from carrot.utils import partition
 
 from celery.utils import info
 from celery.utils import padlist
@@ -253,10 +254,21 @@ class AMQShell(cmd.Cmd):
         else:
             self.display_command_help(args[0])
 
+    def default(self, line):
+        say("unknown syntax: '%s'. how about some 'help'?" % line)
+
+    def get_names(self):
+        return set(self.builtins.keys() + self.amqp.keys())
+
     def completenames(self, text, *ignored):
         """Return all commands starting with ``text``, for tab-completion."""
-        return [cmd for cmd in set(self.builtins.keys() + self.amqp.keys())
-                        if cmd.startswith(text.replace(".", "_"))]
+        names = self.get_names()
+        first = [cmd for cmd in names
+                        if cmd.startswith(text.replace("_", "."))]
+        if first:
+            return first
+        return [cmd for cmd in names
+                    if partition(cmd, ".")[2].startswith(text)]
 
     def dispatch(self, cmd, argline):
         """Dispatch and execute the command.
