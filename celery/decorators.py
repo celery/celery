@@ -47,7 +47,7 @@ def task(*args, **options):
         def _create_task_cls(fun):
             base = options.pop("base", Task)
 
-            @wraps(fun)
+            @wraps(fun, assigned=("__module__", "__name__"))
             def run(self, *args, **kwargs):
                 return fun(*args, **kwargs)
 
