@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import codecs
-import sys
 import os
+import sys
+import codecs
 import platform
 
 try:
@@ -17,19 +17,13 @@ import celery as distmeta
 
 class RunTests(Command):
     description = "Run the django test suite from the tests dir."
-
     user_options = []
-
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
+    extra_env = {}
 
     def run(self):
-        self.run_tests()
+        for env_name, env_value in self.extra_env.items():
+            os.environ[env_name] = str(env_value)
 
-    def run_tests(self):
         this_dir = os.getcwd()
         testproj_dir = os.path.join(this_dir, "tests")
         os.chdir(testproj_dir)
@@ -43,16 +37,15 @@ class RunTests(Command):
             __file__, "test"])
         os.chdir(this_dir)
 
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
 
 class QuickRunTests(RunTests):
-
-    quicktest_envs = dict(SKIP_RLIMITS=1, QUICKTEST=1)
-
-    def run(self):
-        for env_name, env_value in self.quicktest_envs.items():
-            os.environ[env_name] = str(env_value)
-        self.run_tests()
-
+    extra_env = dict(SKIP_RLIMITS=1, QUICKTEST=1)
 
 install_requires = []
 
@@ -60,7 +53,6 @@ try:
     import django
 except ImportError:
     install_requires.append("django")
-
 
 try:
     import importlib
@@ -75,14 +67,10 @@ install_requires.extend([
     "django-picklefield",
     "billiard>=0.2.1"])
 
-py_version_info = sys.version_info
-py_major_version = py_version_info[0]
-py_minor_version = py_version_info[1]
-
-if (py_major_version == 2 and py_minor_version <=5):
+py_version = sys.version_info
+if sys.version_info <= (2, 5):
     install_requires.append("multiprocessing==2.6.2.1")
-
-if (py_major_version == 2 and py_minor_version <= 4):
+if sys.version_info <= (2, 4):
     install_requires.append("uuid")
 
 if os.path.exists("README.rst"):
@@ -104,9 +92,6 @@ setup(
     scripts=["bin/celeryd", "bin/celeryinit", "bin/celerybeat", "bin/camqadm"],
     zip_safe=False,
     install_requires=install_requires,
-    extra_requires={
-        "Tyrant": ["pytyrant"],
-    },
     cmdclass = {"test": RunTests, "quicktest": QuickRunTests},
     classifiers=[
         "Development Status :: 5 - Production/Stable",
