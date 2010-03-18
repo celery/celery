@@ -10,11 +10,11 @@ __docformat__ = "restructuredtext"
 
 
 def is_stable_release():
-    return bool(not VERSION[1] % 2)
+    if len(VERSION) > 3 and isinstance(VERSION[3], basestring):
+        return False
+    return not VERSION[1] % 2
 
 
 def version_with_meta():
-    meta = "unstable"
-    if is_stable_release():
-        meta = "stable"
-    return "%s (%s)" % (__version__, meta)
+    return "%s (%s)" % (__version__,
+                        is_stable_release() and "stable" or "unstable")
