@@ -705,7 +705,7 @@ class PeriodicTask(Task):
                       5: lambda x: x / 60}
         args = dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second
         r = None
-        for res, calc in resolution.items():
-            if calc(self.timedelta_seconds(delta)):
+        for res, predicate in resolution.items():
+            if predicate(self.timedelta_seconds(delta)):
                 r = res
         return datetime(*args[:r])

@@ -19,7 +19,7 @@ the content type of the message and its content encoding. In Celery the
 content type is usually the serialization format used to serialize the
 message, and the body contains the name of the task to execute, the
 task id (UUID), the arguments to execute it with and some additional
-metadata - like the number of retries and its ETA if any.
+metadata - like the number of retries and its ETA (if any).
 
 This is an example task message represented as a Python dictionary:
 
@@ -136,7 +136,7 @@ Declares an exchange by name.
   are no more queues using it.
 
 queue.declare(queue_name, passive, durable, exclusive, auto_delete)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Declares a queue by name.
 
