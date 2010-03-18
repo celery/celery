@@ -8,9 +8,9 @@ from carrot.backends.base import BaseMessage
 from billiard.serialization import pickle
 
 from celery import conf
-from celery.utils import gen_unique_id, noop
+from celery.utils import gen_unique_id
 from celery.worker import WorkController
-from celery.worker.listener import CarrotListener, RUN, CLOSE
+from celery.worker.listener import CarrotListener, RUN
 from celery.worker.job import TaskWrapper
 from celery.worker.scheduler import Scheduler
 from celery.decorators import task as task_dec

@@ -211,7 +211,8 @@ class Task(object):
 
     @classmethod
     def get_publisher(self, connection=None, exchange=None,
-            connect_timeout=conf.BROKER_CONNECTION_TIMEOUT,exchange_type=None):
+            connect_timeout=conf.BROKER_CONNECTION_TIMEOUT,
+            exchange_type=None):
         """Get a celery task message publisher.
 
         :rtype: :class:`celery.messaging.TaskPublisher`.

@@ -39,6 +39,7 @@ def format_routing_table(table=None, indent=0):
                             for name, route in table.items())
     return textindent(routes, indent=indent)
 
+
 def get_broker_info():
     broker_connection = establish_connection()
 
@@ -60,6 +61,7 @@ def get_broker_info():
             "host": broker_connection.hostname,
             "port": port,
             "vhost": vhost}
+
 
 def format_broker_info(info=None):
     """Get message broker connection info string for log dumps."""

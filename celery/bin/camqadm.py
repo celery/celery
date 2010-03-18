@@ -3,18 +3,11 @@
 
 .. program:: camqadm
 
-.. cmdoption:: -X, --x
-
-    Description
-
-
 """
-import os
 import cmd
 import sys
 import shlex
 import pprint
-import readline
 import optparse
 from itertools import count
 
@@ -25,7 +18,6 @@ from celery.utils import info
 from celery.utils import padlist
 from celery.messaging import establish_connection
 
-
 # Valid string -> bool coercions.
 BOOLS = {"1": True, "0": False,
          "on": True, "off": False,
@@ -35,12 +27,7 @@ BOOLS = {"1": True, "0": False,
 # Map to coerce strings to other types.
 COERCE = {bool: lambda value: BOOLS[value.lower()]}
 
-OPTION_LIST = (
-    #optparse.make_option('-c', '--concurrency',
-    #    default=conf.CELERYD_CONCURRENCY,
-    #        action="store", dest="concurrency", type="int",
-    #        help="Number of child processes processing the queue."),
-)
+OPTION_LIST = ()
 
 HELP_HEADER = """
 Commands
@@ -134,6 +121,7 @@ def dump_message(message):
             "properties": message.properties,
             "delivery_info": message.delivery_info}
 
+
 def format_declare_queue(ret):
     return "ok. queue:%s messages:%s consumers:%s." % ret
 
@@ -165,9 +153,9 @@ class AMQShell(cmd.Cmd):
     counter = 1
     inc_counter = count(2).next
 
-    builtins = {"exit": "do_exit",
-                "EOF": "do_exit",
-                "help": "do_help",}
+    builtins = {"EOF": "do_exit",
+                "exit": "do_exit",
+                "help": "do_help"}
 
     amqp = {
         "exchange.declare": Spec(("exchange", str),
@@ -381,7 +369,7 @@ def camqadm(*args, **options):
 
 def main():
     options, values = parse_options(sys.argv[1:])
-    return run_worker(*values, **vars(options))
+    return camqadm(*values, **vars(options))
 
 if __name__ == "__main__":
     main()

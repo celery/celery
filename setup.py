@@ -112,7 +112,7 @@ setup(
             'celeryinit = celery.bin.celeryinit:main',
             'celerybeat = celery.bin.celerybeat:main',
             'camqadm = celery.bin.camqadm:main',
-            ]
+            ],
     },
     long_description=long_description,
 )

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import generators
 
-import sys
 import logging
 import unittest2 as unittest
 from urllib import addinfourl

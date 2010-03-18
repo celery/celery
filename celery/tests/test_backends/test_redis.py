@@ -1,5 +1,4 @@
 import sys
-import errno
 import socket
 import unittest2 as unittest
 

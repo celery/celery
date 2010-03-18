@@ -197,7 +197,7 @@ class TestTaskWrapper(unittest.TestCase):
             tw = TaskWrapper(mytask.name, gen_unique_id(), [1], {"f": "x"})
             try:
                 raise KeyError("foo")
-            except KeyError, exc:
+            except KeyError:
                 einfo = ExceptionInfo(sys.exc_info())
 
             tw.on_failure(einfo)
@@ -242,7 +242,7 @@ class TestTaskWrapper(unittest.TestCase):
     def create_exception(self, exc):
         try:
             raise exc
-        except exc.__class__, thrown:
+        except exc.__class__:
             return sys.exc_info()
 
     def test_worker_task_trace_handle_retry(self):
@@ -376,15 +376,16 @@ class TestTaskWrapper(unittest.TestCase):
     def test_default_kwargs(self):
         tid = gen_unique_id()
         tw = TaskWrapper(mytask.name, tid, [4], {"f": "x"})
-        self.assertDictEqual(tw.extend_with_default_kwargs(10, "some_logfile"), {
-            "f": "x",
-            "logfile": "some_logfile",
-            "loglevel": 10,
-            "task_id": tw.task_id,
-            "task_retries": 0,
-            "task_is_eager": False,
-            "delivery_info": {},
-            "task_name": tw.task_name})
+        self.assertDictEqual(
+                tw.extend_with_default_kwargs(10, "some_logfile"), {
+                    "f": "x",
+                    "logfile": "some_logfile",
+                    "loglevel": 10,
+                    "task_id": tw.task_id,
+                    "task_retries": 0,
+                    "task_is_eager": False,
+                    "delivery_info": {},
+                    "task_name": tw.task_name})
 
     def test_on_failure(self):
         tid = gen_unique_id()

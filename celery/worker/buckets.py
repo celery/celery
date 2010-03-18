@@ -174,8 +174,8 @@ class TaskBucket(object):
             try:
                 bucket.clear()
             except AttributeError:
-                # Probably a Queue, not a TokenBucketQueue. Clear the underlying
-                # deque instead.
+                # Probably a Queue, not a TokenBucketQueue, so clear the
+                # underlying deque instead.
                 bucket.queue.clear()
 
 

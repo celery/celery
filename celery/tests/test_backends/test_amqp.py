@@ -1,5 +1,4 @@
 import sys
-import errno
 import unittest2 as unittest
 
 from celery.exceptions import ImproperlyConfigured

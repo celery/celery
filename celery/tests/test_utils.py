@@ -2,8 +2,6 @@ import sys
 import socket
 import unittest2 as unittest
 
-from billiard.utils.functional import wraps
-
 from celery import utils
 
 from celery.tests.utils import sleepdeprived, execute_context

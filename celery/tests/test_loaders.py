@@ -2,8 +2,6 @@ import os
 import sys
 import unittest2 as unittest
 
-from billiard.utils.functional import wraps
-
 from celery import loaders
 from celery.loaders import base
 from celery.loaders import djangoapp
@@ -53,7 +51,6 @@ class TestLoaderBase(unittest.TestCase):
         self.loader.on_worker_init()
 
     def test_import_task_module(self):
-        import sys
         self.assertEqual(sys, self.loader.import_task_module("sys"))
 
     def test_conf_property(self):
@@ -62,9 +59,8 @@ class TestLoaderBase(unittest.TestCase):
         self.assertEqual(self.loader.conf.foo, "bar")
 
     def test_import_default_modules(self):
-        import os
-        import sys
-        self.assertSameElements(self.loader.import_default_modules(), [os, sys])
+        self.assertSameElements(self.loader.import_default_modules(),
+                                [os, sys])
 
 
 class TestDjangoLoader(unittest.TestCase):

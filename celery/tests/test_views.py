@@ -1,8 +1,6 @@
 import sys
-import unittest
 
 from django.http import HttpResponse
-from django.test.client import Client
 from django.test.testcases import TestCase as DjangoTestCase
 from django.core.urlresolvers import reverse
 from django.template import TemplateDoesNotExist
@@ -59,7 +57,7 @@ class TestTaskApply(ViewTestCase):
     def test_apply(self):
         conf.ALWAYS_EAGER = True
         try:
-            ret = self.client.get(task_apply(kwargs={"task_name":
+            self.client.get(task_apply(kwargs={"task_name":
                 mytask.name}) + "?x=4&y=4")
             self.assertEqual(scratch["result"], 16)
         finally:
