@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Change history &mdash; Celery v1.0.1.pre1 (stable) documentation</title>
+    <title>Change history &mdash; Celery v1.0.1.pre2 (unstable) documentation</title>
     <link rel="stylesheet" href="static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '#',
-        VERSION:     '1.0.1.pre1 (stable)',
+        VERSION:     '1.0.1.pre2 (unstable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,13 +19,13 @@
     </script>
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v1.0.1.pre1 (stable) documentation" href="index.html" />
+    <link rel="top" title="Celery v1.0.1.pre2 (unstable) documentation" href="index.html" />
     <link rel="next" title="Interesting Links" href="links.html" />
     <link rel="prev" title="Django Models - celery.models" href="internals/reference/celery.models.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v1.0.1.pre1 (stable) documentation</p>
+	<p>Celery v1.0.1.pre2 (unstable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Change history</h1></div>
@@ -145,8 +145,9 @@ this means it tries to terminate as soon as possible.</p>
 </li>
 <li><p class="first">Caching of results now moved to the base backend classes, so no need
 to implement this functionality in the base classes.</p>
-<p>Caches are now also limited in size, so their memory usage doesn&#8217;t grow
-uncontrollably. You can set the maximum number of results the cache
+</li>
+<li><p class="first">Caches are now also limited in size, so their memory usage doesn&#8217;t grow
+out of control. You can set the maximum number of results the cache
 can hold using the <tt class="docutils literal"><span class="pre">CELERY_MAX_CACHED_RESULTS</span></tt> setting (the default
 is five thousand results). In addition, you can refetch already retrieved
 results using <tt class="docutils literal"><span class="pre">backend.reload_task_result</span></tt> +
@@ -170,6 +171,18 @@ if the client does not have the destination task in its task registry).</p>
 </pre></div>
 </div>
 </li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">camqadm</span></tt>: This is a new utility for command line access to the AMQP API.
+Excellent for deleting queues/bindings/exchanges, experimentation and
+testing:</p>
+<div class="highlight-python"><pre>$ camqadm
+1&gt; help</pre>
+</div>
+<p>Gives an interactive shell, type <tt class="docutils literal"><span class="pre">help</span></tt> for a list of commands.</p>
+<p>When using Django, use the management command instead:</p>
+<div class="highlight-python"><pre>$ python manage.py camqadm
+1&gt; help</pre>
+</div>
+</li>
 <li><p class="first">Redis result backend: To conform to recent Redis API changes, the following
 settings has been deprecated:</p>
 <ul class="simple">
@@ -177,9 +190,8 @@ settings has been deprecated:</p>
 <li><tt class="docutils literal"><span class="pre">REDIS_CONNECT_RETRY</span></tt></li>
 </ul>
 <p>These will emit a <tt class="docutils literal"><span class="pre">DeprecationWarning</span></tt> if used.</p>
-<p>As something dies, new stuff is born, and so we have added the
-<tt class="docutils literal"><span class="pre">REDIS_PASSWORD</span></tt> setting, so you can use the new simple authentication
-mechanism in Redis.</p>
+<p>A <tt class="docutils literal"><span class="pre">REDIS_PASSWORD</span></tt> setting has been added, so you can use the new
+simple authentication mechanism in Redis.</p>
 </li>
 <li><p class="first">If <tt class="docutils literal"><span class="pre">settings.DEBUG</span></tt> is on, celeryd now warns about the possible
 memory leak it can result in.</p>
@@ -196,9 +208,42 @@ eagerly (either using apply, or <tt class="docutils literal"><span class="pre">C
 </li>
 <li><p class="first">The internal queues are now cleared if the connection is reset.</p>
 </li>
+<li><dl class="first docutils">
+<dt>New magic keyword argument: <tt class="docutils literal"><span class="pre">delivery_info</span></tt>.</dt>
+<dd><p class="first last">Used by retry() to resend the task to its original destination using the same
+exchange/routing_key.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Events: Fields was not passed by <tt class="docutils literal"><span class="pre">.send()</span></tt> (fixes the uuid keyerrors</dt>
+<dd><p class="first last">in celerymon)</p>
+</dd>
+</dl>
+</li>
 <li><p class="first">Added <tt class="docutils literal"><span class="pre">--schedule</span></tt>/<tt class="docutils literal"><span class="pre">-s</span></tt> option to celeryd, so it is possible to
 specify a custom schedule filename when using an embedded celerybeat
 server (the <tt class="docutils literal"><span class="pre">-B</span></tt>/<tt class="docutils literal"><span class="pre">--beat</span></tt>) option.</p>
+</li>
+<li><p class="first">Better Python 2.4 compatibility. The test suite now passes.</p>
+</li>
+<li><p class="first">task decorators: Now preserve docstring as <tt class="docutils literal"><span class="pre">cls.__doc__</span></tt>, (was previously
+copied to <tt class="docutils literal"><span class="pre">cls.run.__doc__</span></tt>)</p>
+</li>
+<li><p class="first">The <tt class="docutils literal"><span class="pre">testproj</span></tt> directory has been renamed to <tt class="docutils literal"><span class="pre">tests</span></tt> and we&#8217;re now using
+<tt class="docutils literal"><span class="pre">nose</span></tt> + <tt class="docutils literal"><span class="pre">django-nose</span></tt> for test discovery, and <tt class="docutils literal"><span class="pre">unittest2</span></tt> for test
+cases.</p>
+</li>
+<li><p class="first">New pip requirements files available in <tt class="docutils literal"><span class="pre">contrib/requirements</span></tt>.</p>
+</li>
+<li><p class="first">TaskPublisher: Declarations are now done once (per process).</p>
+</li>
+<li><p class="first">Now have our own <tt class="docutils literal"><span class="pre">ImproperlyConfigured</span></tt> exception, instead of using the
+Django one.</p>
+</li>
+<li><p class="first">Improvements to the debian init scripts: Shows an error if the program is
+not executeable. Does not modify <tt class="docutils literal"><span class="pre">CELERYD</span></tt> when using django with
+virtualenv.</p>
 </li>
 </ul>
 </div>
@@ -1362,7 +1407,7 @@ the name change request is in <tt class="docutils literal"><span class="pre">doc
       <div class="clearer"></div>
     </div>
 	<div id="breadcrumbs">
-		<a href="index.html">Celery v1.0.1.pre1 (stable) documentation</a>
+		<a href="index.html">Celery v1.0.1.pre2 (unstable) documentation</a>
 		</ul>
 	</div>
   </body>

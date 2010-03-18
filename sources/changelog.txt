@@ -31,12 +31,11 @@
 * celeryd now does a cold shutdown if the ``INT`` signal is received (Ctrl+C),
   this means it tries to terminate as soon as possible.
 
-
 * Caching of results now moved to the base backend classes, so no need
   to implement this functionality in the base classes.
 
-  Caches are now also limited in size, so their memory usage doesn't grow
-  uncontrollably. You can set the maximum number of results the cache
+* Caches are now also limited in size, so their memory usage doesn't grow
+  out of control. You can set the maximum number of results the cache
   can hold using the ``CELERY_MAX_CACHED_RESULTS`` setting (the default
   is five thousand results). In addition, you can refetch already retrieved
   results using ``backend.reload_task_result`` +
@@ -61,6 +60,20 @@
 		>>> result.get()
 		'pong'
 
+* ``camqadm``: This is a new utility for command line access to the AMQP API.
+  Excellent for deleting queues/bindings/exchanges, experimentation and
+  testing::
+
+	$ camqadm
+	1> help
+
+  Gives an interactive shell, type ``help`` for a list of commands.
+
+  When using Django, use the management command instead::
+
+  	$ python manage.py camqadm
+  	1> help
+
 * Redis result backend: To conform to recent Redis API changes, the following
   settings has been deprecated:
   
@@ -69,9 +82,8 @@
 
   These will emit a ``DeprecationWarning`` if used.
 
-  As something dies, new stuff is born, and so we have added the
-  ``REDIS_PASSWORD`` setting, so you can use the new simple authentication
-  mechanism in Redis.
+  A ``REDIS_PASSWORD`` setting has been added, so you can use the new
+  simple authentication mechanism in Redis.
 
 * If ``settings.DEBUG`` is on, celeryd now warns about the possible
   memory leak it can result in.
@@ -88,9 +100,36 @@
 
 * The internal queues are now cleared if the connection is reset.
 
+* New magic keyword argument: ``delivery_info``.
+	Used by retry() to resend the task to its original destination using the same
+	exchange/routing_key.
+
+* Events: Fields was not passed by ``.send()`` (fixes the uuid keyerrors
+	in celerymon)
+
 * Added ``--schedule``/``-s`` option to celeryd, so it is possible to
   specify a custom schedule filename when using an embedded celerybeat
   server (the ``-B``/``--beat``) option.
+
+* Better Python 2.4 compatibility. The test suite now passes.
+
+* task decorators: Now preserve docstring as ``cls.__doc__``, (was previously
+  copied to ``cls.run.__doc__``)
+
+* The ``testproj`` directory has been renamed to ``tests`` and we're now using
+  ``nose`` + ``django-nose`` for test discovery, and ``unittest2`` for test
+  cases.
+
+* New pip requirements files available in ``contrib/requirements``.
+
+* TaskPublisher: Declarations are now done once (per process).
+
+* Now have our own ``ImproperlyConfigured`` exception, instead of using the
+  Django one.
+
+* Improvements to the debian init scripts: Shows an error if the program is
+  not executeable. Does not modify ``CELERYD`` when using django with
+  virtualenv.
 
 1.0.0 [2010-02-10 04:00 P.M CET]
 ================================

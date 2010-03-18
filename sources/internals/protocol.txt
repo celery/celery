@@ -53,7 +53,7 @@ Serialization
 =============
 
 The protocol supports several serialization formats using the
-``content_encoding`` message header.
+``content_type`` message header.
 
 The MIME-types supported by default are shown in the following table.
 
