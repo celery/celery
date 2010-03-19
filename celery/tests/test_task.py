@@ -337,7 +337,7 @@ class TestTaskSet(unittest.TestCase):
         from celery import conf
         conf.ALWAYS_EAGER = True
         ts = task.TaskSet(return_True_task.name, [
-            [[1], {}], [[2], {}], [[3], {}], [[4], {}], [[5], {}]])
+            ([1], {}), [[2], {}], [[3], {}], [[4], {}], [[5], {}]])
         res = ts.apply_async()
         self.assertListEqual(res.join(), [True, True, True, True, True])
 
@@ -346,15 +346,15 @@ class TestTaskSet(unittest.TestCase):
     def test_counter_taskset(self):
         IncrementCounterTask.count = 0
         ts = task.TaskSet(IncrementCounterTask, [
-            [[], {}],
-            [[], {"increment_by": 2}],
-            [[], {"increment_by": 3}],
-            [[], {"increment_by": 4}],
-            [[], {"increment_by": 5}],
-            [[], {"increment_by": 6}],
-            [[], {"increment_by": 7}],
-            [[], {"increment_by": 8}],
-            [[], {"increment_by": 9}],
+            ([], {}),
+            ([], {"increment_by": 2}),
+            ([], {"increment_by": 3}),
+            ([], {"increment_by": 4}),
+            ([], {"increment_by": 5}),
+            ([], {"increment_by": 6}),
+            ([], {"increment_by": 7}),
+            ([], {"increment_by": 8}),
+            ([], {"increment_by": 9}),
         ])
         self.assertEqual(ts.task_name, IncrementCounterTask.name)
         self.assertEqual(ts.total, 9)

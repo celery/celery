@@ -76,7 +76,7 @@ def padlist(container, size, default=None):
         ("George", "Constanza", "NYC", "Earth")
 
     """
-    return container[:size] + [default] * (size - len(container))
+    return list(container)[:size] + [default] * (size - len(container))
 
 
 def mitemgetter(*items):
