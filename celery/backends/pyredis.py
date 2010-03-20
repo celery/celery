@@ -94,7 +94,6 @@ class RedisBackend(KeyValueStoreBackend):
     def close(self):
         """Close the connection to redis."""
         if self._connection is not None:
-            self._connection.save()
             self._connection.connection.disconnect()
             self._connection = None
 
