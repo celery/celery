@@ -17,7 +17,7 @@ from celery.utils import gen_unique_id, mitemgetter, noop
 
 MSG_OPTIONS = ("mandatory", "priority",
                "immediate", "routing_key",
-               "serializer")
+               "serializer", "delivery_mode")
 
 get_msg_options = mitemgetter(*MSG_OPTIONS)
 extract_msg_options = lambda d: dict(zip(MSG_OPTIONS, get_msg_options(d)))

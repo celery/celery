@@ -8,7 +8,8 @@ from celery.messaging import TaskPublisher
 
 extract_exec_options = mattrgetter("routing_key", "exchange",
                                    "immediate", "mandatory",
-                                   "priority", "serializer")
+                                   "priority", "serializer",
+                                   "delivery_mode")
 
 
 @with_connection

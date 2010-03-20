@@ -84,6 +84,17 @@ class Task(object):
 
         Override the global default ``exchange`` for this task.
 
+    .. attribute:: exchange_type
+
+        Override the global default exchange type for this task.
+
+    .. attribute:: delivery_mode
+
+        Override the global default delivery mode for this task.
+        By default this is set to ``2`` (persistent). You can change this
+        to ``1`` to get non-persistent behavior, which means the messages
+        are lost if the broker is restarted.
+
     .. attribute:: mandatory
 
         Mandatory message routing. An exception will be raised if the task
@@ -166,6 +177,7 @@ class Task(object):
     rate_limit_queue_type = Queue
     backend = default_backend
     exchange_type = conf.DEFAULT_EXCHANGE_TYPE
+    delivery_mode = conf.DEFAULT_DELIVERY_MODE
 
     MaxRetriesExceededError = MaxRetriesExceededError
 
