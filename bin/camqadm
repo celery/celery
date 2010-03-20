@@ -2,8 +2,8 @@
 import sys
 if '' not in sys.path:
     sys.path.insert(0, '')
-from celery.bin.camqadm import camqadm, parse_options
+from celery.bin import camqadm
 
 if __name__ == "__main__":
-    options, values = parse_options(sys.argv[1:])
-    sys.exit(not camqadm(*values, **vars(options)))
+    options, values = camqadm.parse_options(sys.argv[1:])
+    sys.exit(not camqadm.camqadm(*values, **vars(options)))
