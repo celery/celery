@@ -292,4 +292,5 @@ def main():
     return run_worker(**vars(options))
 
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
     main()

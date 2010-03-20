@@ -230,6 +230,37 @@ class ClockService(object):
         return self._scheduler
 
 
+class _Threaded(threading.Thread):
+    """Embedded clock service using threading."""
+
+    def __init__(self, *args, **kwargs):
+        super(_Threaded, self).__init__()
+        self.clockservice = ClockService(*args, **kwargs)
+        self.setDaemon(True)
+
+    def run(self):
+        self.clockservice.start()
+
+    def stop(self):
+        self.clockservice.stop(wait=True)
+
+
+class _Process(multiprocessing.Process):
+    """Embedded clock service using multiprocessing."""
+
+    def __init__(self, *args, **kwargs):
+        super(_Process, self).__init__()
+        self.clockservice = ClockService(*args, **kwargs)
+
+    def run(self):
+        platform.reset_signal("SIGTERM")
+        self.clockservice.start(embedded_process=True)
+
+    def stop(self):
+        self.clockservice.stop()
+        self.terminate()
+
+
 def EmbeddedClockService(*args, **kwargs):
     """Return embedded clock service.
 
@@ -237,36 +268,6 @@ def EmbeddedClockService(*args, **kwargs):
         Default is ``False``.
 
     """
-
-    class _Threaded(threading.Thread):
-        """Embedded clock service using threading."""
-
-        def __init__(self, *args, **kwargs):
-            super(_Threaded, self).__init__()
-            self.clockservice = ClockService(*args, **kwargs)
-            self.setDaemon(True)
-
-        def run(self):
-            self.clockservice.start()
-
-        def stop(self):
-            self.clockservice.stop(wait=True)
-
-    class _Process(multiprocessing.Process):
-        """Embedded clock service using multiprocessing."""
-
-        def __init__(self, *args, **kwargs):
-            super(_Process, self).__init__()
-            self.clockservice = ClockService(*args, **kwargs)
-
-        def run(self):
-            platform.reset_signal("SIGTERM")
-            self.clockservice.start(embedded_process=True)
-
-        def stop(self):
-            self.clockservice.stop()
-            self.terminate()
-
     if kwargs.pop("thread", False):
         # Need short max interval to be able to stop thread
         # in reasonable time.
