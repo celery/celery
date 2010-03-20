@@ -89,7 +89,7 @@ class HttpDispatch(object):
 
     :param url: The URL to request.
     :param method: HTTP method used. Currently supported methods are ``GET``
-        and``POST``.
+        and ``POST``.
     :param task_kwargs: Task keyword arguments.
     :param logger: Logger used for user/system feedback.
 
