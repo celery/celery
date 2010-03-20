@@ -4,7 +4,10 @@
 
 .. image:: http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png
 
-:Version: 1.0.0
+:Version: 1.0.1
+:Web: http://celeryproject.org/
+:Download: http://pypi.python.org/pypi/celery/
+:Source: http://github.com/ask/celery/
 :Keywords: task queue, job queue, asynchronous, rabbitmq, amqp, redis,
   django, python, webhooks, queue, distributed
 
@@ -13,7 +16,7 @@
 Celery is a task queue/job queue based on distributed message passing.
 It is focused on real-time operation, but supports scheduling as well.
 
-The execution units, called tasks, are executed concurrently on one or
+The execution units, called tasks, are executed concurrently on a single or
 more worker servers. Tasks can execute asynchronously (in the background) or synchronously
 (wait until ready).
 
@@ -46,7 +49,7 @@ The result of the task can be stored for later retrieval (called its
 Example
 =======
 
-You probably want to see some code by now, so I'll give you an example task
+You probably want to see some code by now, so here's an example task
 adding two numbers:
 ::
 
@@ -69,7 +72,7 @@ Features
 
     +-----------------+----------------------------------------------------+
     | Messaging       | Supported brokers include `RabbitMQ`_, `Stomp`_,   |
-    |                 | `Redis`_, and the most common SQL databases.       |
+    |                 | `Redis`_, and most common SQL databases.           |
     +-----------------+----------------------------------------------------+
     | Robust          | Using `RabbitMQ`, celery survives most error       |
     |                 | scenarios, and your tasks will never be lost.      |
@@ -224,6 +227,11 @@ Bug tracker
 
 If you have any suggestions, bug reports or annoyances please report them
 to our issue tracker at http://github.com/ask/celery/issues/
+
+Wiki
+====
+
+http://wiki.github.com/ask/celery/
 
 Contributing
 ============
