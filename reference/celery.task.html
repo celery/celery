@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Task Information and Utilities - celery.task &mdash; Celery v1.0.1.pre2 (unstable) documentation</title>
+    <title>Task Information and Utilities - celery.task &mdash; Celery v1.0.1 (stable) documentation</title>
     <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.0.1.pre2 (unstable)',
+        VERSION:     '1.0.1 (stable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,14 +19,14 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v1.0.1.pre2 (unstable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v1.0.1 (stable) documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="Configuration - celery.conf" href="celery.conf.html" />
     <link rel="prev" title="Task Result - celery.result" href="celery.result.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v1.0.1.pre2 (unstable) documentation</p>
+	<p>Celery v1.0.1 (stable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Task Information and Utilities - celery.task</h1></div>
@@ -157,6 +157,19 @@ however if you want a periodic task, you should subclass
 <dt id="celery.task.Task.exchange">
 <tt class="descname">exchange</tt><a class="headerlink" href="#celery.task.Task.exchange" title="Permalink to this definition">¶</a></dt>
 <dd>Override the global default <tt class="docutils literal"><span class="pre">exchange</span></tt> for this task.</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.task.Task.exchange_type">
+<tt class="descname">exchange_type</tt><a class="headerlink" href="#celery.task.Task.exchange_type" title="Permalink to this definition">¶</a></dt>
+<dd>Override the global default exchange type for this task.</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.task.Task.delivery_mode">
+<tt class="descname">delivery_mode</tt><a class="headerlink" href="#celery.task.Task.delivery_mode" title="Permalink to this definition">¶</a></dt>
+<dd>Override the global default delivery mode for this task.
+By default this is set to <tt class="docutils literal"><span class="pre">2</span></tt> (persistent). You can change this
+to <tt class="docutils literal"><span class="pre">1</span></tt> to get non-persistent behavior, which means the messages
+are lost if the broker is restarted.</dd></dl>
 
 <dl class="attribute">
 <dt id="celery.task.Task.mandatory">
@@ -883,7 +896,7 @@ argument, as this attribute is intended for subclasses.</dd></dl>
     </div>
 	<div id="breadcrumbs">
 		<a href="index.html" accesskey="U">API Reference</a><img src="triangle_closed.png" alt="Right arrow">
-		<a href="../index.html">Celery v1.0.1.pre2 (unstable) documentation</a>
+		<a href="../index.html">Celery v1.0.1 (stable) documentation</a>
 		</ul>
 	</div>
   </body>

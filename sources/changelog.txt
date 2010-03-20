@@ -42,6 +42,12 @@
   ``backend.reload_taskset_result`` (that's for those who want to send
   results incrementally).
 
+* ``celeryd`` now works on Windows again. Note that if running with Django,
+  you can't use ``project.settings`` as the settings module name, but the
+  following should work::
+
+		$ python manage.py celeryd --settings=settings
+
 * Execution: ``.messaging.TaskPublisher.send_task`` now
   incorporates all the functionality apply_async previously did (like
   converting countdowns to eta), so :func:`celery.execute.apply_async` is
@@ -85,6 +91,9 @@
   A ``REDIS_PASSWORD`` setting has been added, so you can use the new
   simple authentication mechanism in Redis.
 
+* The redis result backend no longer calls ``SAVE`` when disconnecting,
+  as this is apparently better handled by Redis itself.
+
 * If ``settings.DEBUG`` is on, celeryd now warns about the possible
   memory leak it can result in.
 
@@ -123,6 +132,10 @@
 * New pip requirements files available in ``contrib/requirements``.
 
 * TaskPublisher: Declarations are now done once (per process).
+
+* Added ``Task.delivery_mode`` and the ``CELERY_DEFAULT_DELIVERY_MODE``
+  setting. These can be used to mark messages non-persistent (i.e. so they are
+  lost if the broker is restarted).
 
 * Now have our own ``ImproperlyConfigured`` exception, instead of using the
   Django one.

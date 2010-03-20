@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Change history &mdash; Celery v1.0.1.pre2 (unstable) documentation</title>
+    <title>Change history &mdash; Celery v1.0.1 (stable) documentation</title>
     <link rel="stylesheet" href="static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '#',
-        VERSION:     '1.0.1.pre2 (unstable)',
+        VERSION:     '1.0.1 (stable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,13 +19,13 @@
     </script>
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v1.0.1.pre2 (unstable) documentation" href="index.html" />
+    <link rel="top" title="Celery v1.0.1 (stable) documentation" href="index.html" />
     <link rel="next" title="Interesting Links" href="links.html" />
     <link rel="prev" title="Django Models - celery.models" href="internals/reference/celery.models.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v1.0.1.pre2 (unstable) documentation</p>
+	<p>Celery v1.0.1 (stable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Change history</h1></div>
@@ -154,6 +154,12 @@ results using <tt class="docutils literal"><span class="pre">backend.reload_task
 <tt class="docutils literal"><span class="pre">backend.reload_taskset_result</span></tt> (that&#8217;s for those who want to send
 results incrementally).</p>
 </li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">celeryd</span></tt> now works on Windows again. Note that if running with Django,
+you can&#8217;t use <tt class="docutils literal"><span class="pre">project.settings</span></tt> as the settings module name, but the
+following should work:</p>
+<div class="highlight-python"><pre>$ python manage.py celeryd --settings=settings</pre>
+</div>
+</li>
 <li><p class="first">Execution: <tt class="docutils literal"><span class="pre">.messaging.TaskPublisher.send_task</span></tt> now
 incorporates all the functionality apply_async previously did (like
 converting countdowns to eta), so <a title="celery.execute.apply_async" class="reference external" href="reference/celery.execute.html#celery.execute.apply_async"><tt class="xref docutils literal"><span class="pre">celery.execute.apply_async()</span></tt></a> is
@@ -192,6 +198,9 @@ settings has been deprecated:</p>
 <p>These will emit a <tt class="docutils literal"><span class="pre">DeprecationWarning</span></tt> if used.</p>
 <p>A <tt class="docutils literal"><span class="pre">REDIS_PASSWORD</span></tt> setting has been added, so you can use the new
 simple authentication mechanism in Redis.</p>
+</li>
+<li><p class="first">The redis result backend no longer calls <tt class="docutils literal"><span class="pre">SAVE</span></tt> when disconnecting,
+as this is apparently better handled by Redis itself.</p>
 </li>
 <li><p class="first">If <tt class="docutils literal"><span class="pre">settings.DEBUG</span></tt> is on, celeryd now warns about the possible
 memory leak it can result in.</p>
@@ -237,6 +246,10 @@ cases.</p>
 <li><p class="first">New pip requirements files available in <tt class="docutils literal"><span class="pre">contrib/requirements</span></tt>.</p>
 </li>
 <li><p class="first">TaskPublisher: Declarations are now done once (per process).</p>
+</li>
+<li><p class="first">Added <tt class="docutils literal"><span class="pre">Task.delivery_mode</span></tt> and the <tt class="docutils literal"><span class="pre">CELERY_DEFAULT_DELIVERY_MODE</span></tt>
+setting. These can be used to mark messages non-persistent (i.e. so they are
+lost if the broker is restarted).</p>
 </li>
 <li><p class="first">Now have our own <tt class="docutils literal"><span class="pre">ImproperlyConfigured</span></tt> exception, instead of using the
 Django one.</p>
@@ -1407,7 +1420,7 @@ the name change request is in <tt class="docutils literal"><span class="pre">doc
       <div class="clearer"></div>
     </div>
 	<div id="breadcrumbs">
-		<a href="index.html">Celery v1.0.1.pre2 (unstable) documentation</a>
+		<a href="index.html">Celery v1.0.1 (stable) documentation</a>
 		</ul>
 	</div>
   </body>
