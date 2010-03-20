@@ -28,9 +28,17 @@ def process_initializer():
     # There seems to a bug in multiprocessing (backport?)
     # when detached, where the worker gets EOFErrors from time to time
     # and the logger is left from the parent process causing a crash.
-    platform.reset_signal("SIGTERM")
     _hijack_multiprocessing_logger()
+
+    platform.reset_signal("SIGTERM")
     platform.set_mp_process_title("celeryd")
+
+    # This is for windows and other platforms not supporting
+    # fork(). Note that init_worker makes sure it's only
+    # run once per process.
+    from celery.loaders import current_loader
+    current_loader().init_worker()
+
 
 
 class WorkController(object):

@@ -178,7 +178,7 @@ class Worker(object):
     def worker_init(self):
         # Run the worker init handler.
         # (Usually imports task modules and such.)
-        self.loader.on_worker_init()
+        self.loader.init_worker()
 
     def tasklist(self, include_builtins=True):
         from celery.registry import tasks
@@ -292,5 +292,4 @@ def main():
     return run_worker(**vars(options))
 
 if __name__ == "__main__":
-    multiprocessing.freeze_support()
     main()

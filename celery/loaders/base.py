@@ -1,3 +1,4 @@
+BUILTIN_MODULES = ["celery.task"]
 
 
 class BaseLoader(object):
@@ -17,6 +18,7 @@ class BaseLoader(object):
 
     """
     _conf_cache = None
+    worker_initialized = False
 
     def on_task_init(self, task_id, task):
         """This method is called before a task is executed."""
@@ -31,7 +33,13 @@ class BaseLoader(object):
 
     def import_default_modules(self):
         imports = getattr(self.conf, "CELERY_IMPORTS", None) or []
+        imports = set(list(imports) + BUILTIN_MODULES)
         return map(self.import_task_module, imports)
+
+    def init_worker(self):
+        if not self.worker_initialized:
+            self.worker_initialized = True
+            self.on_worker_init()
 
     @property
     def conf(self):

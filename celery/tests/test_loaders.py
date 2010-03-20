@@ -2,6 +2,7 @@ import os
 import sys
 import unittest2 as unittest
 
+from celery import task
 from celery import loaders
 from celery.loaders import base
 from celery.loaders import djangoapp
@@ -60,7 +61,7 @@ class TestLoaderBase(unittest.TestCase):
 
     def test_import_default_modules(self):
         self.assertSameElements(self.loader.import_default_modules(),
-                                [os, sys])
+                                [os, sys, task])
 
 
 class TestDjangoLoader(unittest.TestCase):
