@@ -1,8 +1,6 @@
 import sys
 import unittest2 as unittest
 
-from celery.exceptions import ImproperlyConfigured
-
 from celery import states
 from celery.utils import gen_unique_id
 from celery.backends.amqp import AMQPBackend

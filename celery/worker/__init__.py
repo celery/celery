@@ -40,7 +40,6 @@ def process_initializer():
     current_loader().init_worker()
 
 
-
 class WorkController(object):
     """Executes tasks waiting in the task queue.
 
