@@ -5,7 +5,7 @@ Celery AMQP Administration Tool using the AMQP API.
 """
 from django.core.management.base import BaseCommand
 
-from celery.bin.camqpadm import camqadm, OPTION_LIST
+from celery.bin.camqadm import camqadm, OPTION_LIST
 
 
 class Command(BaseCommand):
