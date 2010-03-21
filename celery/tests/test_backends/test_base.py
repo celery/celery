@@ -2,7 +2,7 @@ import sys
 import types
 import unittest2 as unittest
 
-from django.db.models.base import subclass_exception
+from billiard.serialization import subclass_exception
 from billiard.serialization import find_nearest_pickleable_exception as fnpe
 from billiard.serialization import UnpickleableExceptionWrapper
 from billiard.serialization import get_pickleable_exception as gpe
