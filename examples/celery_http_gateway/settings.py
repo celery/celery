@@ -4,7 +4,7 @@ DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 CARROT_BACKEND = "amqp"
-CELERY_BACKEND = "database"
+CELERY_RESULT_BACKEND = "database"
 BROKER_HOST = "localhost"
 BROKER_VHOST = "/"
 BROKER_USER = "guest"

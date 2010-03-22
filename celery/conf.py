@@ -14,7 +14,7 @@ LOG_LEVELS[logging.FATAL] = "FATAL"
 settings = load_settings()
 
 _DEFAULTS = {
-    "CELERY_BACKEND": "database",
+    "CELERY_RESULT_BACKEND": "database",
     "CELERY_ALWAYS_EAGER": False,
     "CELERY_TASK_RESULT_EXPIRES": timedelta(days=5),
     "CELERY_SEND_EVENTS": False,
@@ -74,7 +74,8 @@ def _get(name, default=None, compat=None):
 
 # <--- Task                                        <-   --   --- - ----- -- #
 ALWAYS_EAGER = _get("CELERY_ALWAYS_EAGER")
-CELERY_BACKEND = _get("CELERY_BACKEND")
+RESULT_BACKEND = _get("CELERY_RESULT_BACKEND", compat=["CELERY_BACKEND"])
+CELERY_BACKEND = RESULT_BACKEND # FIXME Remove in 1.4
 CELERY_CACHE_BACKEND = _get("CELERY_CACHE_BACKEND")
 TASK_SERIALIZER = _get("CELERY_TASK_SERIALIZER")
 TASK_RESULT_EXPIRES = _get("CELERY_TASK_RESULT_EXPIRES")

@@ -40,17 +40,17 @@ def get_backend_cls(backend):
 """
 .. function:: get_default_backend_cls()
 
-    Get the backend class specified in :setting:`CELERY_BACKEND`.
+    Get the backend class specified in :setting:`CELERY_RESULT_BACKEND`.
 
 """
-get_default_backend_cls = curry(get_backend_cls, conf.CELERY_BACKEND)
+get_default_backend_cls = curry(get_backend_cls, conf.CELERY_RESULT_BACKEND)
 
 
 """
 .. class:: DefaultBackend
 
     The default backend class used for storing task results and status,
-    specified in :setting:`CELERY_BACKEND`.
+    specified in :setting:`CELERY_RESULT_BACKEND`.
 
 """
 DefaultBackend = get_default_backend_cls()

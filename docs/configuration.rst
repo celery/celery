@@ -20,7 +20,7 @@ It should contain all you need to run a basic celery set-up.
 
 .. code-block:: python
 
-    CELERY_BACKEND = "database"
+    CELERY_RESULT_BACKEND = "database"
     DATABASE_ENGINE = "sqlite3"
     DATABASE_NAME = "mydatabase.db"
 
@@ -61,7 +61,7 @@ Concurrency settings
 Task result backend settings
 ============================
 
-* CELERY_BACKEND
+* CELERY_RESULT_BACKEND
     The backend used to store task results (tombstones).
     Can be one of the following:
 
@@ -112,7 +112,7 @@ Example configuration
 
 .. code-block:: python
 
-    CELERY_BACKEND = "database"
+    CELERY_RESULT_BACKEND = "database"
     DATABASE_ENGINE = "mysql"
     DATABASE_USER = "myusername"
     DATABASE_PASSWORD = "mypassword"
@@ -127,7 +127,7 @@ The AMQP backend does not have any settings yet.
 Example configuration
 ---------------------
 
-    CELERY_BACKEND = "amqp"
+    CELERY_RESULT_BACKEND = "amqp"
 
 Cache backend settings
 ======================
@@ -152,7 +152,7 @@ Using multiple memcached servers:
 
 .. code-block:: python
 
-    CELERY_BACKEND = "cache"
+    CELERY_RESULT_BACKEND = "cache"
     CACHE_BACKEND = 'memcached://172.19.26.240:11211;172.19.26.242:11211/'
 
 
@@ -176,7 +176,7 @@ Example configuration
 
 .. code-block:: python
 
-    CELERY_BACKEND = "tyrant"
+    CELERY_RESULT_BACKEND = "tyrant"
     TT_HOST = "localhost"
     TT_PORT = 1978
 
@@ -217,7 +217,7 @@ Example configuration
 
 .. code-block:: python
 
-    CELERY_BACKEND = "redis"
+    CELERY_RESULT_BACKEND = "redis"
     REDIS_HOST = "localhost"
     REDIS_PORT = 6379
     REDIS_DATABASE = "celery_results"
@@ -258,7 +258,7 @@ Example configuration
 
 .. code-block:: python
 
-    CELERY_BACKEND = "mongodb"
+    CELERY_RESULT_BACKEND = "mongodb"
     CELERY_MONGODB_BACKEND_SETTINGS = {
         "host": "192.168.1.100",
         "port": 30000,

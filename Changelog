@@ -1107,9 +1107,9 @@ arguments, so be sure to flush your task queue before you upgrade.
   a new backend for Tokyo Tyrant. You can set the backend in your django
   settings file. e.g::
 
-		CELERY_BACKEND = "database"; # Uses the database
-		CELERY_BACKEND = "cache"; # Uses the django cache framework
-		CELERY_BACKEND = "tyrant"; # Uses Tokyo Tyrant
+		CELERY_RESULT_BACKEND = "database"; # Uses the database
+		CELERY_RESULT_BACKEND = "cache"; # Uses the django cache framework
+		CELERY_RESULT_BACKEND = "tyrant"; # Uses Tokyo Tyrant
 		TT_HOST = "localhost"; # Hostname for the Tokyo Tyrant server.
 		TT_PORT = 6657; # Port of the Tokyo Tyrant server.
 

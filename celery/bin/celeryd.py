@@ -137,7 +137,7 @@ class Worker(object):
 
         self.init_loader()
 
-        if conf.CELERY_BACKEND == "database" \
+        if conf.RESULT_BACKEND == "database" \
                 and self.settings.DATABASE_ENGINE == "sqlite3" and \
                 self.concurrency > 1:
             warnings.warn("The sqlite3 database engine doesn't handle "

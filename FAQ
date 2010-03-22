@@ -538,7 +538,7 @@ configuration using the database backend with MySQL:
     CARROT_BACKEND="amqp"
 
     # Using the database backend.
-    CELERY_BACKEND = "database"
+    CELERY_RESULT_BACKEND = "database"
     DATABASE_ENGINE = "mysql" # see Django docs for a description of these.
     DATABASE_NAME = "mydb"
     DATABASE_HOST = "mydb.example.org"
