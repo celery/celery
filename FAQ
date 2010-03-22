@@ -268,6 +268,27 @@ same worker when it has been restarted), so to properly purge the queue of
 waiting tasks you have to stop all the workers, and then discard the tasks
 using ``discard_all``.
 
+Results
+=======
+
+How dow I get the result of a task if I have the ID that points there?
+----------------------------------------------------------------------
+
+**Answer**: Use ``Task.AsyncResult``::
+
+    >>> result = MyTask.AsyncResult(task_id)
+    >>> result.get()
+
+This will give you a :class:`celery.result.BaseAsyncResult` instance
+using the tasks current result backend.
+
+If you need to specify a custom result backend you should use
+:class:`celery.result.BaseAsyncResult` directly::
+
+    >>> from celery.result import BaseAsyncResult
+    >>> result = BaseAsyncResult(task_id, backend=...)
+    >>> result.get()
+
 Brokers
 =======
 
