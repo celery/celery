@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 
 from celery import task
 from celery import messaging
+from celery.utils import gen_unique_id
 from celery.result import EagerResult
 from celery.execute import send_task
 from celery.backends import default_backend
@@ -201,6 +202,12 @@ class TestCeleryTasks(unittest.TestCase):
         cls = type(cls_name, (task.Task, ), attrs)
         cls.run = return_True
         return cls
+
+    def test_AsyncResult(self):
+        task_id = gen_unique_id()
+        result = RetryTask.AsyncResult(task_id)
+        self.assertEqual(result.backend, RetryTask.backend)
+        self.assertEqual(result.task_id, task_id)
 
     def test_ping(self):
         from celery import conf
