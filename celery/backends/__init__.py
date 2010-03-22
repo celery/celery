@@ -43,7 +43,7 @@ def get_backend_cls(backend):
     Get the backend class specified in :setting:`CELERY_RESULT_BACKEND`.
 
 """
-get_default_backend_cls = curry(get_backend_cls, conf.CELERY_RESULT_BACKEND)
+get_default_backend_cls = curry(get_backend_cls, conf.RESULT_BACKEND)
 
 
 """
