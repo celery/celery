@@ -120,4 +120,7 @@ class ControlDispatch(object):
         if control is None or not control.exposed:
             self.logger.error("No such control command: %s" % command)
         else:
+            # need to make sure keyword arguments are not in unicode
+            # this should be fixed in newer Python's (see: http://bugs.python.org/issue4978)
+            kwargs = dict((k.encode('utf8'), v.encode('utf8')) for (k, v) in kwargs.iteritems())
             return control(**kwargs)

@@ -132,7 +132,7 @@ class WorkController(object):
             self.ready_queue = Queue()
         else:
             self.ready_queue = TaskBucket(task_registry=registry.tasks)
-        self.eta_schedule = Scheduler(self.ready_queue)
+        self.eta_schedule = Scheduler(self.ready_queue, logger=self.logger)
 
         self.logger.debug("Instantiating thread components...")
 
