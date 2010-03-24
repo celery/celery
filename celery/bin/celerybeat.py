@@ -91,6 +91,7 @@ def run_clockservice(loglevel=conf.CELERYBEAT_LOG_LEVEL,
         clockservice = ClockService(logger=logger, schedule_filename=schedule)
 
         try:
+            install_sync_handler(clockservice)
             clockservice.start()
         except Exception, e:
             emergency_error(logfile,
@@ -98,6 +99,18 @@ def run_clockservice(loglevel=conf.CELERYBEAT_LOG_LEVEL,
                             e.__class__, e, traceback.format_exc()))
 
     _run_clock()
+
+
+def install_sync_handler(beat):
+    """Install a ``SIGTERM`` + ``SIGINT`` handler that saves
+    the celerybeat schedule."""
+
+    def _sync(signum, frame):
+        beat.sync()
+        raise SystemExit()
+
+    platform.install_signal_handler("SIGTERM", _sync)
+    platform.install_signal_handler("SIGINT", _sync)
 
 
 def parse_options(arguments):
