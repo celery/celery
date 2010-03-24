@@ -93,7 +93,7 @@ if [ ! -z "$VIRTUALENV" ]; then
     fi
 fi
 
-if [ -f "$CELERYBEAT" && ! -x "$CELERYBEAT" ]; then
+if [ -f "$CELERYBEAT" -a ! -x "$CELERYBEAT" ]; then
     echo "ERROR: $CELERYBEAT is not executable."
     echo "Please make it executable by doing: chmod +x '$CELERYBEAT'"
 
