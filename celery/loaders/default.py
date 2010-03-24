@@ -24,7 +24,6 @@ class Loader(BaseLoader):
     """
 
     def setup_django_env(self, settingsdict):
-        print("SETUP_DJANGO_ENV")
         config = dict(DEFAULT_SETTINGS, **settingsdict)
 
         from django.conf import settings
