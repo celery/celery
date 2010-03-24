@@ -88,7 +88,9 @@ class Scheduler(UserDict):
     def __init__(self, registry=None, schedule=None, logger=None,
             max_interval=None):
         self.registry = registry or _registry.TaskRegistry()
-        self.data = schedule or {}
+        self.data = schedule
+        if self.data is None:
+            self.data = {}
         self.logger = logger or log.get_default_logger()
         self.max_interval = max_interval or conf.CELERYBEAT_MAX_LOOP_INTERVAL
 
