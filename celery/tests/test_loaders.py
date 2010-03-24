@@ -71,7 +71,7 @@ class TestDjangoLoader(unittest.TestCase):
 
     def test_on_worker_init(self):
         from django.conf import settings
-        old_imports = settings.CELERY_IMPORTS
+        old_imports = getattr(settings, "CELERY_IMPORTS", None)
         settings.CELERY_IMPORTS = ("xxx.does.not.exist", )
         try:
             self.assertRaises(ImportError, self.loader.on_worker_init)
@@ -93,6 +93,23 @@ class TestDjangoLoader(unittest.TestCase):
                                                        "frobulators"))
 
 
+def modifies_django_env(fun):
+
+    def _protected(*args, **kwargs):
+        from django.conf import settings
+        current = dict((key, getattr(settings, key))
+                        for key in settings.get_all_members()
+                            if key.isupper())
+        try:
+            return fun(*args, **kwargs)
+        finally:
+            for key, value in current.items():
+                setattr(settings, key, value)
+
+    return _protected
+
+
+
 class TestDefaultLoader(unittest.TestCase):
 
     def test_wanted_module_item(self):
@@ -101,6 +118,7 @@ class TestDefaultLoader(unittest.TestCase):
         self.assertFalse(default.wanted_module_item("_foo"))
         self.assertFalse(default.wanted_module_item("__foo"))
 
+    @modifies_django_env
     def test_read_configuration(self):
         from types import ModuleType
 
