@@ -1,11 +1,13 @@
 from __future__ import generators
-############## parse_qsl ####################################################
+
+############## urlparse.parse_qsl ###########################################
+
 try:
     from urlparse import parse_qsl
 except ImportError:
     from cgi import parse_qsl
 
-############## all ##########################################################
+############## __builtin__.all ##############################################
 
 try:
     all([True])
@@ -17,7 +19,7 @@ except NameError:
                 return False
         return True
 
-############## any ##########################################################
+############## __builtin__.any ##############################################
 
 try:
     any([True])
@@ -29,7 +31,7 @@ except NameError:
                 return True
         return False
 
-############## OrderedDict ##################################################
+############## collections.OrderedDict ######################################
 
 import weakref
 try:
@@ -240,7 +242,7 @@ class OrderedDict(dict, MutableMapping):
     def __ne__(self, other):
         return not (self == other)
 
-############## defaultdict ##################################################
+############## collections.defaultdict ######################################
 
 try:
     from collections import defaultdict
@@ -286,3 +288,47 @@ except ImportError:
                                             dict.__repr__(self))
     import collections
     collections.defaultdict = defaultdict # Pickle needs this.
+
+############## logging.LoggerAdapter ########################################
+
+try:
+    from logging import LoggerAdapter
+except ImportError:
+    class LoggerAdapter(object):
+
+        def __init__(self, logger, extra):
+            self.logger = logger
+            self.extra = extra
+
+        def process(self, msg, kwargs):
+            kwargs["extra"] = self.extra
+            return msg, kwargs
+
+        def debug(self, msg, *args, **kwargs):
+            msg, kwargs = self.process(msg, kwargs)
+            self.logger.debug(msg, *args, **kwargs)
+
+        def info(self, msg, *args, **kwargs):
+            msg, kwargs = self.process(msg, kwargs)
+            self.logger.info(msg, *args, **kwargs)
+
+        def warning(self, msg, *args, **kwargs):
+            msg, kwargs = self.process(msg, kwargs)
+            self.logger.warning(msg, *args, **kwargs)
+
+        def error(self, msg, *args, **kwargs):
+            msg, kwargs = self.process(msg, kwargs)
+            self.logger.error(msg, *args, **kwargs)
+
+        def exception(self, msg, *args, **kwargs):
+            msg, kwargs = self.process(msg, kwargs)
+            kwargs["exc_info"] = 1
+            self.logger.error(msg, *args, **kwargs)
+
+        def critical(self, msg, *args, **kwargs):
+            msg, kwargs = self.process(msg, kwargs)
+            self.logger.critical(msg, *args, **kwargs)
+
+        def log(self, level, msg, *args, **kwargs):
+            msg, kwargs = self.process(msg, kwargs)
+            self.logger.log(level, msg, *args, **kwargs)

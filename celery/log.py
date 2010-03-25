@@ -8,6 +8,7 @@ import traceback
 from celery import conf
 from celery.utils import noop
 from celery.utils.patch import ensure_process_aware_logger
+from celery.utils.compat import LoggerAdapter
 
 _hijacked = False
 _monkeypatched = False
@@ -89,7 +90,7 @@ def setup_task_logger(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
     task_kwargs.setdefault("task_name", "-?-")
     logger = _setup_logger(get_task_logger(loglevel),
                            logfile, format, **kwargs)
-    return logging.LoggerAdapter(logger, task_kwargs)
+    return LoggerAdapter(logger, task_kwargs)
 
 
 def _setup_logger(logger, logfile, format,
