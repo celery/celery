@@ -4,10 +4,14 @@ from datetime import timedelta
 
 from celery.loaders import load_settings
 
-DEFAULT_P_LOG_FMT = '[%(asctime)s: %(levelname)s/%(processName)s] %(message)s'
+DEFAULT_PROCESS_LOG_FMT = """
+    [%(asctime)s: %(levelname)s/%(processName)s] %(message)s
+""".strip()
 DEFAULT_LOG_FMT = '[%(asctime)s: %(levelname)s] %(message)s'
-DEFAULT_TASK_LOG_FMT = ('[%(asctime)s: %(levelname)s/%(processName)s] '
-                        '[%(task_name)s(%(task_id)s)] %(message)s')
+DEFAULT_TASK_LOG_FMT = " ".join("""
+    [%(asctime)s: %(levelname)s/%(processName)s]
+    [%(task_name)s(%(task_id)s)] %(message)s
+""".strip().split())
 
 LOG_LEVELS = dict(logging._levelNames)
 LOG_LEVELS["FATAL"] = logging.FATAL
@@ -34,7 +38,7 @@ _DEFAULTS = {
     "CELERY_BROKER_CONNECTION_MAX_RETRIES": 100,
     "CELERYD_CONCURRENCY": 0, # defaults to cpu count
     "CELERYD_PREFETCH_MULTIPLIER": 4,
-    "CELERYD_LOG_FORMAT": DEFAULT_P_LOG_FMT,
+    "CELERYD_LOG_FORMAT": DEFAULT_PROCESS_LOG_FMT,
     "CELERYD_TASK_LOG_FORMAT": DEFAULT_TASK_LOG_FMT,
     "CELERYD_LOG_LEVEL": "WARN",
     "CELERYD_LOG_FILE": None, # stderr

@@ -2,7 +2,50 @@
  Change history
 ================
 
-1.0.1 [2010-02-24 xx:xx x.x CET]
+1.0.2 [xxxx-xx-xx xx:xx x.x CET]
+================================
+
+* Deprecated: ``CELERY_BACKEND``, please use ``CELERY_RESULT_BACKEND``
+  instead.
+
+* We now use a custom logger in tasks. This logger supports task magic
+  keyword arguments in formats.
+  The default format for tasks (``CELERYD_TASK_LOG_FORMAT``) now includes
+  the id and the name of tasks so the origin of task log messages can
+  easily be traced.
+
+  Example output::
+  	[2010-03-25 13:11:20,317: INFO/PoolWorker-1]
+  		[tasks.add(a6e1c5ad-60d9-42a0-8b24-9e39363125a4)] Hello from add
+
+  To revert to the previous behavior you can set::
+
+	CELERYD_TASK_LOG_FORMAT = """
+	[%(asctime)s: %(levelname)s/%(processName)s] %(message)s
+	""".strip()
+
+* Unittests: Don't disable the django test database teardown,
+  instead fixed the underlying issue which was caused by modifications
+  to the DATABASE_NAME setting (http://github.com/ask/celery/issues/82).
+
+* Debian init scripts: Use ``-a`` not ``&&``
+  (http://github.com/ask/celery/issues/82).
+
+* celery.beat.Scheduler: Fixed a bug where the schedule was not properly
+  flushed to disk if the schedule had not been properly initialized.
+
+* celerybeat: Now syncs the schedule to disk when receiving the ``SIGTERM``
+  and ``SIGINT`` signals.
+
+* Control commands: Make sure keywords arguments are not in unicode.
+
+* ETA scheduler: Was missing a logger object, so the scheduler crashed
+  when trying to log that a task had been revoked.
+
+* management.commands.camqadm: Fixed typo ``camqpadm`` -> ``camqadm``
+  (http://github.com/ask/celery/issues/83).
+
+1.0.1 [2010-02-24 07:05 P.M CET]
 ================================
 
 * Tasks are now acknowledged early instead of late.
