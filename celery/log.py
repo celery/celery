@@ -13,6 +13,14 @@ _hijacked = False
 _monkeypatched = False
 
 
+def get_task_logger(loglevel=None):
+    ensure_process_aware_logger()
+    logger = logging.getLogger("celery.Task")
+    if loglevel is not None:
+        logger.setLevel(loglevel)
+    return logger
+
+
 def _hijack_multiprocessing_logger():
     from multiprocessing import util as mputil
     global _hijacked
@@ -54,21 +62,43 @@ def get_default_logger(loglevel=None):
     return logger
 
 
+
 def setup_logger(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
         format=conf.CELERYD_LOG_FORMAT, **kwargs):
     """Setup the ``multiprocessing`` logger. If ``logfile`` is not specified,
+    then ``stderr`` is used.
+
+    Returns logger object.
+
+    """
+    return _setup_logger(get_default_logger(loglevel),
+                         logfile, format, **kwargs)
+
+
+def setup_task_logger(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
+        format=conf.CELERYD_TASK_LOG_FORMAT, task_kwargs=None, **kwargs):
+    """Setup the task logger. If ``logfile`` is not specified, then
     ``stderr`` is used.
 
     Returns logger object.
 
     """
-    logger = get_default_logger(loglevel=loglevel)
+    if task_kwargs is None:
+        task_kwargs = {}
+    task_kwargs.setdefault("task_id", "-?-")
+    task_kwargs.setdefault("task_name", "-?-")
+    logger = _setup_logger(get_task_logger(loglevel),
+                           logfile, format, **kwargs)
+    return logging.LoggerAdapter(logger, task_kwargs)
+
+
+def _setup_logger(logger, logfile, format,
+        formatter=logging.Formatter, **kwargs):
+
     if logger.handlers: # Logger already configured
         return logger
-
     handler = _detect_handler(logfile)
-    formatter = logging.Formatter(format)
-    handler.setFormatter(formatter)
+    handler.setFormatter(formatter(format))
     logger.addHandler(handler)
     return logger
 

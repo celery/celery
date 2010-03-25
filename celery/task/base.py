@@ -6,7 +6,7 @@ from Queue import Queue
 from billiard.serialization import pickle
 
 from celery import conf
-from celery.log import setup_logger
+from celery.log import setup_task_logger
 from celery.utils import gen_unique_id, padlist, timedelta_seconds
 from celery.result import BaseAsyncResult, TaskSetResult, EagerResult
 from celery.execute import apply_async, apply
@@ -208,12 +208,13 @@ class Task(object):
 
     @classmethod
     def get_logger(self, loglevel=None, logfile=None, **kwargs):
-        """Get process-aware logger object.
+        """Get task-aware logger object.
 
-        See :func:`celery.log.setup_logger`.
+        See :func:`celery.log.setup_task_logger`.
 
         """
-        return setup_logger(loglevel=loglevel, logfile=logfile)
+        return setup_task_logger(loglevel=loglevel, logfile=logfile,
+                                 task_kwargs=kwargs)
 
     @classmethod
     def establish_connection(self,
