@@ -183,6 +183,19 @@ class CarrotListener(object):
         if close:
             self.close_connection()
 
+    def on_decode_error(self, message, exc):
+        """Callback called if the message had decoding errors.
+
+        :param message: The message with errors.
+        :param exc: The original exception instance.
+
+        """
+        self.logger.critical("Message decoding error: %s "
+                             "(type:%s encoding:%s raw:'%s')" % (
+                                exc, message.content_type,
+                                message.content_encoding, message.body))
+        message.ack()
+
     def reset_connection(self):
         self.logger.debug(
                 "CarrotListener: Re-establishing connection to the broker...")
@@ -199,6 +212,7 @@ class CarrotListener(object):
         self.connection = self._open_connection()
         self.logger.debug("CarrotListener: Connection Established.")
         self.task_consumer = get_consumer_set(connection=self.connection)
+        self.task_consumer.on_decode_error = self.on_decode_error
         self.broadcast_consumer = BroadcastConsumer(self.connection,
                                                     hostname=self.hostname)
         self.task_consumer.register_callback(self.receive_message)
