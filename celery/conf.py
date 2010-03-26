@@ -71,7 +71,7 @@ def _get(name, default=None, compat=None):
     compat = [name] + compat
     for i, alias in enumerate(compat):
         try:
-            value = getattr(settings, name)
+            value = getattr(settings, alias)
             i > 0 and warnings.warn(DeprecationWarning(_DEPRECATION_FMT % (
                                                         alias, name)))
             return value
