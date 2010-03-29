@@ -61,7 +61,7 @@ _DEFAULTS = {
 }
 
 _DEPRECATION_FMT = """
-%s is deprecated in favor of %s and is schedule for removal in celery v1.2.
+%s is deprecated in favor of %s and is scheduled for removal in celery v1.2.
 """.strip()
 
 def _get(name, default=None, compat=None):
