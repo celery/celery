@@ -15,13 +15,11 @@ from celery import platform
 from celery import signals
 from celery.log import setup_logger, _hijack_multiprocessing_logger
 from celery.beat import EmbeddedClockService
-from celery.utils import noop
+from celery.utils import noop, instantiate
 
 from celery.worker.pool import TaskPool
 from celery.worker.buckets import TaskBucket
-from celery.worker.listener import CarrotListener
 from celery.worker.scheduler import Scheduler
-from celery.worker.controllers import Mediator, ScheduleController
 
 
 def process_initializer():
@@ -114,6 +112,9 @@ class WorkController(object):
     def __init__(self, concurrency=None, logfile=None, loglevel=None,
             send_events=conf.SEND_EVENTS, hostname=None,
             ready_callback=noop, embed_clockservice=False,
+            pool_cls=conf.CELERYD_POOL, listener_cls=conf.CELERYD_LISTENER,
+            mediator_cls=conf.CELERYD_MEDIATOR,
+            eta_scheduler_cls=conf.CELERYD_ETA_SCHEDULER,
             schedule_filename=conf.CELERYBEAT_SCHEDULE_FILENAME):
 
         # Options
@@ -137,14 +138,14 @@ class WorkController(object):
         self.logger.debug("Instantiating thread components...")
 
         # Threads + Pool + Consumer
-        self.pool = TaskPool(self.concurrency,
-                             logger=self.logger,
-                             initializer=process_initializer)
-        self.mediator = Mediator(self.ready_queue,
-                                 callback=self.process_task,
-                                 logger=self.logger)
-        self.scheduler = ScheduleController(self.eta_schedule,
-                                            logger=self.logger)
+        self.pool = instantiate(pool_cls, self.concurrency,
+                                logger=self.logger,
+                                initializer=process_initializer)
+        self.mediator = instantiate(mediator_cls, self.ready_queue,
+                                    callback=self.process_task,
+                                    logger=self.logger)
+        self.scheduler = instantiate(eta_scheduler_cls,
+                                     self.eta_schedule, logger=self.logger)
 
         self.clockservice = None
         if self.embed_clockservice:
@@ -152,13 +153,14 @@ class WorkController(object):
                                     schedule_filename=schedule_filename)
 
         prefetch_count = self.concurrency * conf.CELERYD_PREFETCH_MULTIPLIER
-        self.listener = CarrotListener(self.ready_queue,
-                                       self.eta_schedule,
-                                       logger=self.logger,
-                                       hostname=self.hostname,
-                                       send_events=self.send_events,
-                                       init_callback=self.ready_callback,
-                                       initial_prefetch_count=prefetch_count)
+        self.listener = instantiate(listener_cls,
+                                    self.ready_queue,
+                                    self.eta_schedule,
+                                    logger=self.logger,
+                                    hostname=self.hostname,
+                                    send_events=self.send_events,
+                                    init_callback=self.ready_callback,
+                                    initial_prefetch_count=prefetch_count)
 
         # The order is important here;
         #   the first in the list is the first to start,

@@ -193,13 +193,15 @@ def timedelta_seconds(delta):
 
 
 def get_cls_by_name(name, aliases={}):
+
+    if not isinstance(name, basestring):
+        return name # already a class
+
     name = aliases.get(name) or name
     module_name, _, cls_name = rpartition(name, ".")
     module = importlib.import_module(module_name)
     return getattr(module, cls_name)
 
 
-def instantiate(name, aliases={}, *args, **kwargs):
-    return _get_cls_by_name(name, aliases)(*args, **kwargs)
-
-
+def instantiate(name, *args, **kwargs):
+    return get_cls_by_name(name)(*args, **kwargs)

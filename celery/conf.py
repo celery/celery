@@ -36,6 +36,10 @@ _DEFAULTS = {
     "CELERY_BROKER_CONNECTION_TIMEOUT": 4,
     "CELERY_BROKER_CONNECTION_RETRY": True,
     "CELERY_BROKER_CONNECTION_MAX_RETRIES": 100,
+    "CELERYD_POOL": "celery.worker.pool.TaskPool",
+    "CELERYD_MEDIATOR": "celery.worker.controllers.Mediator",
+    "CELERYD_ETA_SCHEDULER": "celery.worker.controllers.ScheduleController",
+    "CELERYD_LISTENER": "celery.worker.listener.CarrotListener",
     "CELERYD_CONCURRENCY": 0, # defaults to cpu count
     "CELERYD_PREFETCH_MULTIPLIER": 4,
     "CELERYD_LOG_FORMAT": DEFAULT_PROCESS_LOG_FMT,
@@ -113,6 +117,11 @@ CELERYD_LOG_LEVEL = _get("CELERYD_LOG_LEVEL",
 CELERYD_LOG_LEVEL = LOG_LEVELS[CELERYD_LOG_LEVEL.upper()]
 CELERYD_CONCURRENCY = _get("CELERYD_CONCURRENCY")
 CELERYD_PREFETCH_MULTIPLIER = _get("CELERYD_PREFETCH_MULTIPLIER")
+
+CELERYD_POOL = _get("CELERYD_POOL")
+CELERYD_LISTENER = _get("CELERYD_LISTENER")
+CELERYD_MEDIATOR = _get("CELERYD_MEDIATOR")
+CELERYD_ETA_SCHEDULER = _get("CELERYD_ETA_SCHEDULER")
 
 # <--- Message routing                             <-   --   --- - ----- -- #
 QUEUES = _get("CELERY_QUEUES")
