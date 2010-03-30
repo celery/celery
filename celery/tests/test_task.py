@@ -436,6 +436,17 @@ class TestPeriodicTask(unittest.TestCase):
         for delta, seconds in deltamap:
             self.assertEqual(MyPeriodic().timedelta_seconds(delta), seconds)
 
+    def test_delta_resolution(self):
+        D = MyPeriodic().delta_resolution
+
+        dt = datetime(2010, 3, 30, 11, 50, 58, 41065)
+        deltamap = ((timedelta(days=2), datetime(2010, 3, 30, 0, 0)),
+                    (timedelta(hours=2), datetime(2010, 3, 30, 11, 0)),
+                    (timedelta(minutes=2), datetime(2010, 3, 30, 11, 50)),
+                    (timedelta(seconds=2), dt))
+        for delta, shoulda in deltamap:
+            self.assertEqual(D(dt, delta), shoulda)
+
     def test_is_due_not_due(self):
         due, remaining = MyPeriodic().is_due(datetime.now())
         self.assertFalse(due)

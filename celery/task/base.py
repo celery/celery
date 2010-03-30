@@ -714,12 +714,34 @@ class PeriodicTask(Task):
         return False, rem
 
     def delta_resolution(self, dt, delta):
-        resolution = {3: lambda x: x / 86400,
-                      4: lambda x: x / 3600,
-                      5: lambda x: x / 60}
+        """Round a datetime to the resolution of a timedelta.
+
+        If the timedelta is in days, the datetime will be rounded
+        to the nearest days, if the timedelta is in hours the datetime
+        will be rounded to the nearest hour, and so on until seconds
+        which will just return the original datetime.
+
+            >>> now = datetime.now()
+            >>> now
+            datetime.datetime(2010, 3, 30, 11, 50, 58, 41065)
+            >>> delta_resolution(now, timedelta(days=2))
+            datetime.datetime(2010, 3, 30, 0, 0)
+            >>> delta_resolution(now, timedelta(hours=2))
+            datetime.datetime(2010, 3, 30, 11, 0)
+            >>> delta_resolution(now, timedelta(minutes=2))
+            datetime.datetime(2010, 3, 30, 11, 50)
+            >>> delta_resolution(now, timedelta(seconds=2))
+            datetime.datetime(2010, 3, 30, 11, 50, 58, 41065)
+
+        """
+        delta = self.timedelta_seconds(delta)
+
+        resolutions = ((3, lambda x: x / 86400),
+                       (4, lambda x: x / 3600),
+                       (5, lambda x: x / 60))
+
         args = dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second
-        r = None
-        for res, predicate in resolution.items():
-            if predicate(self.timedelta_seconds(delta)):
-                r = res
-        return datetime(*args[:r])
+        for res, predicate in resolutions:
+            if predicate(delta) >= 1.0:
+                return datetime(*args[:res])
+        return dt
