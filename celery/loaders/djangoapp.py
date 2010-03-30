@@ -8,11 +8,22 @@ _RACE_PROTECTION = False
 
 class Loader(BaseLoader):
     """The Django loader."""
+    _db_reuse = 0
 
     def read_configuration(self):
         """Load configuration from Django settings."""
         from django.conf import settings
         return settings
+
+    def close_database(self):
+        from django.db import connection
+        db_reuse_max = getattr(self.conf, "CELERY_DB_REUSE_MAX", None)
+        if not db_reuse_max:
+            return connection.close()
+        if self._db_reuse >= db_reuse_max:
+            self._db_reuse = 0
+            return connection.close()
+        self._db_reuse += 1
 
     def on_task_init(self, task_id, task):
         """This method is called before a task is executed.
@@ -21,11 +32,9 @@ class Loader(BaseLoader):
         multiprocessing environment.
 
         """
-
         # See http://groups.google.com/group/django-users/
         #            browse_thread/thread/78200863d0c07c6d/
-        from django.db import connection
-        connection.close()
+        self.close_database()
 
         # ## Reset cache connection only if using memcached/libmemcached
         from django.core import cache
