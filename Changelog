@@ -28,8 +28,39 @@
   instead fixed the underlying issue which was caused by modifications
   to the DATABASE_NAME setting (http://github.com/ask/celery/issues/82).
 
+* Django Loader: New config ``CELERY_DB_REUSE_MAX`` (max number of tasks
+  to reuse the same database connection)
+
+  The default is to use a new connection for every task.
+  We would very much like to reuse the connection, but a safe number of
+  reuses is not known, and we don't have any way to handle the errors
+  that might happen, which may even be database dependent.
+
+  See: http://bit.ly/94fwdd
+
+* celeryd: The worker components are now configurable: ``CELERYD_POOL``,
+	``CELERYD_LISTENER``, ``CELERYD_MEDIATOR``, and ``CELERYD_ETA_SCHEDULER``.
+
+	The default configuration is as follows:
+
+  .. code-block:: python
+
+    CELERYD_POOL = "celery.worker.pool.TaskPool"
+    CELERYD_MEDIATOR = "celery.worker.controllers.Mediator"
+    CELERYD_ETA_SCHEDULER = "celery.worker.controllers.ScheduleController"
+    CELERYD_LISTENER = "celery.worker.listener.CarrotListener"
+
+  THe ``CELERYD_POOL`` setting makes it easy to swap out the multiprocessing
+  pool with a threaded pool, or how about a twisted/eventlet pool?
+
+  Consider the competition for the first pool plug-in started!
+
+
 * Debian init scripts: Use ``-a`` not ``&&``
   (http://github.com/ask/celery/issues/82).
+
+* Debian init scripts: Now always preserves ``$CELERYD_OPTS`` from the
+	``/etc/default/celeryd`` and ``/etc/default/celerybeat``.
 
 * celery.beat.Scheduler: Fixed a bug where the schedule was not properly
   flushed to disk if the schedule had not been properly initialized.
@@ -44,6 +75,15 @@
 
 * management.commands.camqadm: Fixed typo ``camqpadm`` -> ``camqadm``
   (http://github.com/ask/celery/issues/83).
+
+* PeriodicTask.delta_resolution: Was not working for days and hours, now fixed
+  by rounding to the nearest day/hour.
+
+* Fixed a potential infinite loop in ``BaseAsyncResult.__eq__``, although
+  there is no evidence that it has ever been triggered. 
+
+* celeryd: Now handles messages with encoding problems by acking them and
+  emitting an error message.
 
 1.0.1 [2010-02-24 07:05 P.M CET]
 ================================
