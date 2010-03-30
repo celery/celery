@@ -193,6 +193,35 @@ def timedelta_seconds(delta):
 
 
 def get_cls_by_name(name, aliases={}):
+    """Get class by name.
+
+    The name should be the full dot-separated path to the class::
+
+        modulename.ClassName
+
+    Example::
+
+        celery.worker.pool.TaskPool
+                           ^- class name
+
+    If ``aliases`` is provided, a dict containing short name/long name
+    mappings, the name is looked up in the aliases first.
+
+    Examples:
+
+        >>> get_cls_by_name("celery.worker.pool.TaskPool")
+        <class 'celery.worker.pool.TaskPool'>
+
+        >>> get_cls_by_name("default", {
+        ...     "default": "celery.worker.pool.TaskPool"})
+        <class 'celery.worker.pool.TaskPool'>
+
+        # Does not try to look up non-string names.
+        >>> from celery.worker.pool import TaskPool
+        >>> get_cls_by_name(TaskPool) is TaskPool
+        True
+
+    """
 
     if not isinstance(name, basestring):
         return name # already a class
@@ -204,4 +233,9 @@ def get_cls_by_name(name, aliases={}):
 
 
 def instantiate(name, *args, **kwargs):
+    """Instantiate class by name.
+
+    See :func:`get_cls_by_name`.
+
+    """
     return get_cls_by_name(name)(*args, **kwargs)
