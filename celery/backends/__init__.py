@@ -1,9 +1,7 @@
-import importlib
-
 from billiard.utils.functional import curry
-from carrot.utils import rpartition
 
 from celery import conf
+from celery.utils import get_cls_by_name
 
 BACKEND_ALIASES = {
     "amqp": "celery.backends.amqp.AMQPBackend",
@@ -18,22 +16,10 @@ BACKEND_ALIASES = {
 _backend_cache = {}
 
 
-def resolve_backend(backend):
-    backend = BACKEND_ALIASES.get(backend, backend)
-    backend_module_name, _, backend_cls_name = rpartition(backend, ".")
-    return backend_module_name, backend_cls_name
-
-
-def _get_backend_cls(backend):
-    backend_module_name, backend_cls_name = resolve_backend(backend)
-    backend_module = importlib.import_module(backend_module_name)
-    return getattr(backend_module, backend_cls_name)
-
-
 def get_backend_cls(backend):
     """Get backend class by name/alias"""
     if backend not in _backend_cache:
-        _backend_cache[backend] = _get_backend_cls(backend)
+        _backend_cache[backend] = get_cls_by_name(backend, BACKEND_ALIASES)
     return _backend_cache[backend]
 
 

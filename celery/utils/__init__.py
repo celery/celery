@@ -10,10 +10,12 @@ try:
     import ctypes
 except ImportError:
     ctypes = None
+import importlib
 from uuid import UUID, uuid4, _uuid_generate_random
 from inspect import getargspec
 from itertools import islice
 
+from carrot.utils import rpartition
 from billiard.utils.functional import curry
 
 from celery.utils.compat import all, any, defaultdict
@@ -188,3 +190,16 @@ def timedelta_seconds(delta):
     if delta.days < 0:
         return 0
     return delta.days * 86400 + delta.seconds + (delta.microseconds / 10e5)
+
+
+def get_cls_by_name(name, aliases={}):
+    name = aliases.get(name) or name
+    module_name, _, cls_name = rpartition(name, ".")
+    module = importlib.import_module(module_name)
+    return getattr(module, cls_name)
+
+
+def instantiate(name, aliases={}, *args, **kwargs):
+    return _get_cls_by_name(name, aliases)(*args, **kwargs)
+
+
