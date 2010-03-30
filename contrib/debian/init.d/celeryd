@@ -36,7 +36,7 @@ export DJANGO_PROJECT_DIR
 if [ -z "$CELERYD" ]; then
     if [ ! -z "$DJANGO_PROJECT_DIR" ]; then
         CELERYD="$DJANGO_PROJECT_DIR/manage.py"
-        CELERYD_OPTS="celeryd"
+        CELERYD_OPTS="celeryd $CELERYD_OPTS"
     else
         CELERYD=$DEFAULT_CELERYD
     fi

@@ -42,7 +42,7 @@ export DJANGO_PROJECT_DIR
 if [ -z "$CELERYBEAT" ]; then
     if [ ! -z "$DJANGO_PROJECT_DIR" ]; then
         CELERYBEAT="$DJANGO_PROJECT_DIR/manage.py"
-        CELERYBEAT_OPTS="celerybeat"
+        CELERYBEAT_OPTS="celerybeat $CELERYBEAT_OPTS"
     else
         CELERYBEAT=$DEFAULT_CELERYBEAT
     fi
