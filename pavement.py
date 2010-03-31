@@ -30,7 +30,7 @@ def ghdocs(options):
     builtdocs = sphinx_builddir(options)
     sh("sphinx-to-github", cwd=builtdocs)
     sh("git checkout gh-pages && \
-            cp -r '%s/*' .    && \
+            cp -r %s/* .    && \
             git commit . -m 'Rendered documentation for Github Pages.' && \
             git push origin gh-pages && \
             git checkout master" % builtdocs)
