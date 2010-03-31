@@ -268,6 +268,33 @@ same worker when it has been restarted), so to properly purge the queue of
 waiting tasks you have to stop all the workers, and then discard the tasks
 using ``discard_all``.
 
+
+Windows: The ``-B`` / ``--beat`` option to celeryd doesn't work?
+----------------------------------------------------------------
+**Answer**: That's right. Run ``celerybeat`` and ``celeryd`` as separate
+services instead.
+
+Results
+=======
+
+How dow I get the result of a task if I have the ID that points there?
+----------------------------------------------------------------------
+
+**Answer**: Use ``Task.AsyncResult``::
+
+    >>> result = MyTask.AsyncResult(task_id)
+    >>> result.get()
+
+This will give you a :class:`celery.result.BaseAsyncResult` instance
+using the tasks current result backend.
+
+If you need to specify a custom result backend you should use
+:class:`celery.result.BaseAsyncResult` directly::
+
+    >>> from celery.result import BaseAsyncResult
+    >>> result = BaseAsyncResult(task_id, backend=...)
+    >>> result.get()
+
 Brokers
 =======
 
@@ -517,7 +544,7 @@ configuration using the database backend with MySQL:
     CARROT_BACKEND="amqp"
 
     # Using the database backend.
-    CELERY_BACKEND = "database"
+    CELERY_RESULT_BACKEND = "database"
     DATABASE_ENGINE = "mysql" # see Django docs for a description of these.
     DATABASE_NAME = "mydb"
     DATABASE_HOST = "mydb.example.org"

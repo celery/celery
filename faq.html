@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Frequently Asked Questions &mdash; Celery v1.0.1 (stable) documentation</title>
+    <title>Frequently Asked Questions &mdash; Celery v1.0.2 (stable) documentation</title>
     <link rel="stylesheet" href="static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '#',
-        VERSION:     '1.0.1 (stable)',
+        VERSION:     '1.0.2 (stable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,13 +19,13 @@
     </script>
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v1.0.1 (stable) documentation" href="index.html" />
+    <link rel="top" title="Celery v1.0.2 (stable) documentation" href="index.html" />
     <link rel="next" title="API Reference" href="reference/index.html" />
     <link rel="prev" title="Tutorial: Creating a click counter using carrot and celery" href="tutorials/clickcounter.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v1.0.1 (stable) documentation</p>
+	<p>Celery v1.0.2 (stable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Frequently Asked Questions</h1></div>
@@ -53,6 +53,7 @@
 <li class="toctree-l2"><a class="reference external" href="#general">General</a></li>
 <li class="toctree-l2"><a class="reference external" href="#misconceptions">Misconceptions</a></li>
 <li class="toctree-l2"><a class="reference external" href="#troubleshooting">Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference external" href="#results">Results</a></li>
 <li class="toctree-l2"><a class="reference external" href="#brokers">Brokers</a></li>
 <li class="toctree-l2"><a class="reference external" href="#features">Features</a></li>
 </ul>
@@ -310,6 +311,31 @@ same worker when it has been restarted), so to properly purge the queue of
 waiting tasks you have to stop all the workers, and then discard the tasks
 using <tt class="docutils literal"><span class="pre">discard_all</span></tt>.</p>
 </div>
+<div class="section" id="windows-the-b-beat-option-to-celeryd-doesn-t-work">
+<h3>Windows: The <tt class="docutils literal"><span class="pre">-B</span></tt> / <tt class="docutils literal"><span class="pre">--beat</span></tt> option to celeryd doesn&#8217;t work?<a class="headerlink" href="#windows-the-b-beat-option-to-celeryd-doesn-t-work" title="Permalink to this headline">¶</a></h3>
+<p><strong>Answer</strong>: That&#8217;s right. Run <tt class="docutils literal"><span class="pre">celerybeat</span></tt> and <tt class="docutils literal"><span class="pre">celeryd</span></tt> as separate
+services instead.</p>
+</div>
+</div>
+<div class="section" id="results">
+<h2>Results<a class="headerlink" href="#results" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="how-dow-i-get-the-result-of-a-task-if-i-have-the-id-that-points-there">
+<h3>How dow I get the result of a task if I have the ID that points there?<a class="headerlink" href="#how-dow-i-get-the-result-of-a-task-if-i-have-the-id-that-points-there" title="Permalink to this headline">¶</a></h3>
+<p><strong>Answer</strong>: Use <tt class="docutils literal"><span class="pre">Task.AsyncResult</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">MyTask</span><span class="o">.</span><span class="n">AsyncResult</span><span class="p">(</span><span class="n">task_id</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>This will give you a <a title="celery.result.BaseAsyncResult" class="reference external" href="reference/celery.result.html#celery.result.BaseAsyncResult"><tt class="xref docutils literal"><span class="pre">celery.result.BaseAsyncResult</span></tt></a> instance
+using the tasks current result backend.</p>
+<p>If you need to specify a custom result backend you should use
+<a title="celery.result.BaseAsyncResult" class="reference external" href="reference/celery.result.html#celery.result.BaseAsyncResult"><tt class="xref docutils literal"><span class="pre">celery.result.BaseAsyncResult</span></tt></a> directly:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.result</span> <span class="kn">import</span> <span class="n">BaseAsyncResult</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">BaseAsyncResult</span><span class="p">(</span><span class="n">task_id</span><span class="p">,</span> <span class="n">backend</span><span class="o">=...</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
 </div>
 <div class="section" id="brokers">
 <h2>Brokers<a class="headerlink" href="#brokers" title="Permalink to this headline">¶</a></h2>
@@ -520,7 +546,7 @@ configuration using the database backend with MySQL:</p>
 <span class="n">CARROT_BACKEND</span><span class="o">=</span><span class="s">&quot;amqp&quot;</span>
 
 <span class="c"># Using the database backend.</span>
-<span class="n">CELERY_BACKEND</span> <span class="o">=</span> <span class="s">&quot;database&quot;</span>
+<span class="n">CELERY_RESULT_BACKEND</span> <span class="o">=</span> <span class="s">&quot;database&quot;</span>
 <span class="n">DATABASE_ENGINE</span> <span class="o">=</span> <span class="s">&quot;mysql&quot;</span> <span class="c"># see Django docs for a description of these.</span>
 <span class="n">DATABASE_NAME</span> <span class="o">=</span> <span class="s">&quot;mydb&quot;</span>
 <span class="n">DATABASE_HOST</span> <span class="o">=</span> <span class="s">&quot;mydb.example.org&quot;</span>
@@ -640,7 +666,7 @@ get a chance to shut down.</p>
       <div class="clearer"></div>
     </div>
 	<div id="breadcrumbs">
-		<a href="index.html">Celery v1.0.1 (stable) documentation</a>
+		<a href="index.html">Celery v1.0.2 (stable) documentation</a>
 		</ul>
 	</div>
   </body>

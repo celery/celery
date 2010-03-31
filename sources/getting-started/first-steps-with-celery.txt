@@ -56,7 +56,7 @@ Let's create our ``celeryconfig.py``.
 2. In this example we don't want to store the results of the tasks, so
    we'll use the simplest backend available; the AMQP backend::
 
-        CELERY_BACKEND = "amqp"
+        CELERY_RESULT_BACKEND = "amqp"
 
 3. Finally, we list the modules to import, that is, all the modules
    that contain tasks. This is so celery knows about what tasks it can

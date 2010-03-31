@@ -2,7 +2,90 @@
  Change history
 ================
 
-1.0.1 [2010-02-24 xx:xx x.x CET]
+1.0.2 [2010-03-31 12:50 P.M CET]
+================================
+
+* Deprecated: ``CELERY_BACKEND``, please use ``CELERY_RESULT_BACKEND``
+  instead.
+
+* We now use a custom logger in tasks. This logger supports task magic
+  keyword arguments in formats.
+  The default format for tasks (``CELERYD_TASK_LOG_FORMAT``) now includes
+  the id and the name of tasks so the origin of task log messages can
+  easily be traced.
+
+  Example output::
+  	[2010-03-25 13:11:20,317: INFO/PoolWorker-1]
+  		[tasks.add(a6e1c5ad-60d9-42a0-8b24-9e39363125a4)] Hello from add
+
+  To revert to the previous behavior you can set::
+
+	CELERYD_TASK_LOG_FORMAT = """
+	[%(asctime)s: %(levelname)s/%(processName)s] %(message)s
+	""".strip()
+
+* Unittests: Don't disable the django test database teardown,
+  instead fixed the underlying issue which was caused by modifications
+  to the ``DATABASE_NAME`` setting (http://github.com/ask/celery/issues/82).
+
+* Django Loader: New config ``CELERY_DB_REUSE_MAX`` (max number of tasks
+  to reuse the same database connection)
+
+  The default is to use a new connection for every task.
+  We would very much like to reuse the connection, but a safe number of
+  reuses is not known, and we don't have any way to handle the errors
+  that might happen, which may even be database dependent.
+
+  See: http://bit.ly/94fwdd
+
+* celeryd: The worker components are now configurable: ``CELERYD_POOL``,
+	``CELERYD_LISTENER``, ``CELERYD_MEDIATOR``, and ``CELERYD_ETA_SCHEDULER``.
+
+	The default configuration is as follows:
+
+  .. code-block:: python
+
+    CELERYD_POOL = "celery.worker.pool.TaskPool"
+    CELERYD_MEDIATOR = "celery.worker.controllers.Mediator"
+    CELERYD_ETA_SCHEDULER = "celery.worker.controllers.ScheduleController"
+    CELERYD_LISTENER = "celery.worker.listener.CarrotListener"
+
+  THe ``CELERYD_POOL`` setting makes it easy to swap out the multiprocessing
+  pool with a threaded pool, or how about a twisted/eventlet pool?
+
+  Consider the competition for the first pool plug-in started!
+
+
+* Debian init scripts: Use ``-a`` not ``&&``
+  (http://github.com/ask/celery/issues/82).
+
+* Debian init scripts: Now always preserves ``$CELERYD_OPTS`` from the
+	``/etc/default/celeryd`` and ``/etc/default/celerybeat``.
+
+* celery.beat.Scheduler: Fixed a bug where the schedule was not properly
+  flushed to disk if the schedule had not been properly initialized.
+
+* celerybeat: Now syncs the schedule to disk when receiving the ``SIGTERM``
+  and ``SIGINT`` signals.
+
+* Control commands: Make sure keywords arguments are not in unicode.
+
+* ETA scheduler: Was missing a logger object, so the scheduler crashed
+  when trying to log that a task had been revoked.
+
+* management.commands.camqadm: Fixed typo ``camqpadm`` -> ``camqadm``
+  (http://github.com/ask/celery/issues/83).
+
+* PeriodicTask.delta_resolution: Was not working for days and hours, now fixed
+  by rounding to the nearest day/hour.
+
+* Fixed a potential infinite loop in ``BaseAsyncResult.__eq__``, although
+  there is no evidence that it has ever been triggered. 
+
+* celeryd: Now handles messages with encoding problems by acking them and
+  emitting an error message.
+
+1.0.1 [2010-02-24 07:05 P.M CET]
 ================================
 
 * Tasks are now acknowledged early instead of late.
@@ -1107,9 +1190,9 @@ arguments, so be sure to flush your task queue before you upgrade.
   a new backend for Tokyo Tyrant. You can set the backend in your django
   settings file. e.g::
 
-		CELERY_BACKEND = "database"; # Uses the database
-		CELERY_BACKEND = "cache"; # Uses the django cache framework
-		CELERY_BACKEND = "tyrant"; # Uses Tokyo Tyrant
+		CELERY_RESULT_BACKEND = "database"; # Uses the database
+		CELERY_RESULT_BACKEND = "cache"; # Uses the django cache framework
+		CELERY_RESULT_BACKEND = "tyrant"; # Uses Tokyo Tyrant
 		TT_HOST = "localhost"; # Hostname for the Tokyo Tyrant server.
 		TT_PORT = 6657; # Port of the Tokyo Tyrant server.
 

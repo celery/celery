@@ -145,6 +145,13 @@ is available as the tombstone (result) of the task. When
 raised. However, if an ``exc`` argument is not provided the
 :exc:`RetryTaskError` exception is raised instead.
 
+**Important note:** The task has to take the magic keyword arguments
+in order for max retries to work properly, this is because it keeps track
+of the current number of retries using the ``task_retries`` keyword argument
+passed on to the task. In addition, it also uses the ``task_id`` keyword
+argument to use the same task id, and ``delivery_info`` to route the
+retried task to the same destination.
+
 Using a custom retry delay
 --------------------------
 

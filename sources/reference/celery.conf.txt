@@ -63,7 +63,7 @@ Configuration - celery.conf
 
     Default is ``pickle``.
 
-.. data:: CELERY_BACKEND
+.. data:: RESULT_BACKEND
 
     The backend used to store task results (tombstones).
 
