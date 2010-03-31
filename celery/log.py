@@ -63,7 +63,6 @@ def get_default_logger(loglevel=None):
     return logger
 
 
-
 def setup_logger(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
         format=conf.CELERYD_LOG_FORMAT, **kwargs):
     """Setup the ``multiprocessing`` logger. If ``logfile`` is not specified,

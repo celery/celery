@@ -17,7 +17,6 @@ from celery.log import setup_logger, _hijack_multiprocessing_logger
 from celery.beat import EmbeddedClockService
 from celery.utils import noop, instantiate
 
-from celery.worker.pool import TaskPool
 from celery.worker.buckets import TaskBucket
 from celery.worker.scheduler import Scheduler
 

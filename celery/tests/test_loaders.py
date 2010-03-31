@@ -109,7 +109,6 @@ def modifies_django_env(fun):
     return _protected
 
 
-
 class TestDefaultLoader(unittest.TestCase):
 
     def test_wanted_module_item(self):

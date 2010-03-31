@@ -17,7 +17,8 @@ class Scheduler(object):
 
     """
 
-    def __init__(self, ready_queue, logger=None, max_interval=DEFAULT_MAX_INTERVAL):
+    def __init__(self, ready_queue, logger=None,
+            max_interval=DEFAULT_MAX_INTERVAL):
         self.max_interval = float(max_interval)
         self.ready_queue = ready_queue
         self.logger = logger or log.get_default_logger()
