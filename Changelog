@@ -2,7 +2,7 @@
  Change history
 ================
 
-1.0.2 [xxxx-xx-xx xx:xx x.x CET]
+1.0.2 [2010-03-31 12:50 P.M CET]
 ================================
 
 * Deprecated: ``CELERY_BACKEND``, please use ``CELERY_RESULT_BACKEND``
@@ -26,7 +26,7 @@
 
 * Unittests: Don't disable the django test database teardown,
   instead fixed the underlying issue which was caused by modifications
-  to the DATABASE_NAME setting (http://github.com/ask/celery/issues/82).
+  to the ``DATABASE_NAME`` setting (http://github.com/ask/celery/issues/82).
 
 * Django Loader: New config ``CELERY_DB_REUSE_MAX`` (max number of tasks
   to reuse the same database connection)
