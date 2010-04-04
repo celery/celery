@@ -1,7 +1,6 @@
 from django.conf.urls.defaults import *
 
 from celery.task.builtins import PingTask
-from celery.views import task_view
 from celery import views as celery_views
 
 # Uncomment the next two lines to enable the admin:
@@ -10,7 +9,7 @@ from celery import views as celery_views
 
 urlpatterns = patterns("",
     url(r'^apply/(?P<task_name>.+?)/', celery_views.apply),
-    url(r'^ping/', task_view(PingTask)),
+    url(r'^ping/', celery_views.task_view(PingTask)),
     url(r'^(?P<task_id>[\w\d\-]+)/done/?$', celery_views.is_task_successful,
         name="celery-is_task_successful"),
     url(r'^(?P<task_id>[\w\d\-]+)/status/?$', celery_views.task_status,
