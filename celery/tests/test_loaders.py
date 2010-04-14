@@ -60,8 +60,8 @@ class TestLoaderBase(unittest.TestCase):
         self.assertEqual(self.loader.conf.foo, "bar")
 
     def test_import_default_modules(self):
-        self.assertSameElements(self.loader.import_default_modules(),
-                                [os, sys, task])
+        self.assertItemsEqual(self.loader.import_default_modules(),
+                              [os, sys, task])
 
 
 class TestDjangoLoader(unittest.TestCase):
