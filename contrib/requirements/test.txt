@@ -1,4 +1,4 @@
-unittest2
+unittest2>=0.4.0
 simplejson
 nose
 nose-cover3
