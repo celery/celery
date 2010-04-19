@@ -345,8 +345,8 @@ class TaskWrapper(object):
             "hostname": socket.gethostname(),
             "id": self.task_id,
             "name": self.task_name,
-            "exc": exc_info.exception,
-            "traceback": exc_info.traceback,
+            "exc": repr(exc_info.exception),
+            "traceback": unicode(exc_info.traceback, 'utf-8'),
             "args": self.args,
             "kwargs": self.kwargs,
         }

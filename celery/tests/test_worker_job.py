@@ -387,11 +387,11 @@ class TestTaskWrapper(unittest.TestCase):
                     "delivery_info": {},
                     "task_name": tw.task_name})
 
-    def test_on_failure(self):
+    def _test_on_failure(self, exception):
         tid = gen_unique_id()
         tw = TaskWrapper(mytask.name, tid, [4], {"f": "x"})
         try:
-            raise Exception("Inside unit tests")
+            raise exception
         except Exception:
             exc_info = ExceptionInfo(sys.exc_info())
 
@@ -409,3 +409,12 @@ class TestTaskWrapper(unittest.TestCase):
         self.assertIn("ERROR", logvalue)
 
         conf.CELERY_SEND_TASK_ERROR_EMAILS = False
+
+    def test_on_failure(self):
+        self._test_on_failure(Exception("Inside unit tests"))
+
+    def test_on_failure_unicode_exception(self):
+        self._test_on_failure(Exception(u"Бобры атакуют"))
+
+    def test_on_failure_utf8_exception(self):
+        self._test_on_failure(Exception(u"Бобры атакуют".encode('utf8')))
