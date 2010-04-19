@@ -375,6 +375,10 @@ Task execution settings
   This value is used for tasks that does not have a custom rate limit
   The default is no rate limit.
 
+* CELERY_DISABLE_RATE_LIMITS
+
+    Disable all rate limits, even if tasks has explicit rate limits set.
+
 
 Worker: celeryd
 ===============
