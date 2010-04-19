@@ -112,6 +112,7 @@ class Task(object):
     .. attribute:: max_retries
 
         Maximum number of retries before giving up.
+        If set to ``None``, it will never stop retrying.
 
     .. attribute:: default_retry_delay
 
@@ -348,7 +349,8 @@ class Task(object):
         max_exc = exc or self.MaxRetriesExceededError(
                 "Can't retry %s[%s] args:%s kwargs:%s" % (
                     self.name, options["task_id"], args, kwargs))
-        if options["retries"] > self.max_retries:
+        max_retries = self.max_retries
+        if max_retries is not None and options["retries"] > max_retries:
             raise max_exc
 
         # If task was executed eagerly using apply(),
