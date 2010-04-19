@@ -374,6 +374,7 @@ blog/tasks.py
     from blog.models import Comment
 
 
+    @task
     def spam_filter(comment_id, remote_addr=None, **kwargs):
             logger = spam_filter.get_logger(**kwargs)
             logger.info("Running spam filter for comment %s" % comment_id)
