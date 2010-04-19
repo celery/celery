@@ -153,6 +153,15 @@ class Task(object):
         If ``True`` the task is automatically registered in the task
         registry, which is the default behaviour.
 
+    .. attribute:: track_running
+        If ``True`` the task will report its status as "running" to the
+        broker when the task is executed by a worker.
+        The default value is ``False`` as the normal behaviour is to not
+        report that level of granularity. Tasks are either pending, finished,
+        or waiting to be retried. Having a "running" status can be useful for
+        when there are long running tasks and there is a need to report which
+        task is currently running.
+
 
     The resulting class is callable, which if called will apply the
     :meth:`run` method.
@@ -179,6 +188,7 @@ class Task(object):
     backend = default_backend
     exchange_type = conf.DEFAULT_EXCHANGE_TYPE
     delivery_mode = conf.DEFAULT_DELIVERY_MODE
+    track_running = conf.TRACK_RUNNING
 
     MaxRetriesExceededError = MaxRetriesExceededError
 

@@ -69,7 +69,7 @@ class BaseAsyncResult(object):
 
     def ready(self):
         """Returns ``True`` if the task executed successfully, or raised
-        an exception. If the task is still pending, or is waiting for retry
+        an exception. If the task is still running, pending, or is waiting for retry
         then ``False`` is returned.
 
         :rtype: bool
@@ -127,6 +127,10 @@ class BaseAsyncResult(object):
             *PENDING*
 
                 The task is waiting for execution.
+
+            *RUNNING*
+
+                The task is executing
 
             *RETRY*
 

@@ -100,6 +100,8 @@ class WorkerTaskTrace(TaskTrace):
         """Execute, trace and store the result of the task."""
         self.loader.on_task_init(self.task_id, self.task)
         self.task.backend.process_cleanup()
+        if self.task.track_running:
+            self.task.backend.mark_as_running(self.task_id)
         return super(WorkerTaskTrace, self).execute()
 
     def handle_success(self, retval, *args):
