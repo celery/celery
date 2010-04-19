@@ -14,6 +14,7 @@ from celery import log
 from celery import conf
 from celery import registry as _registry
 from celery import platform
+from celery.messaging import establish_connection
 from celery.utils.info import humanize_seconds
 
 
