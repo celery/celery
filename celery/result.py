@@ -128,9 +128,9 @@ class BaseAsyncResult(object):
 
                 The task is waiting for execution.
 
-            *RUNNING*
+            *STARTED*
 
-                The task is executing
+                The task has been started.
 
             *RETRY*
 

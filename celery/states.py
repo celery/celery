@@ -4,9 +4,9 @@
 
     Task is waiting for execution or unknown.
 
-.. data:: RUNNING
+.. data:: STARTED
 
-    Task is curretly executing on a worker
+    Task has been started.
 
 .. data:: SUCCESS
 
@@ -22,7 +22,7 @@
 
 """
 PENDING = "PENDING"
-RUNNING = "RUNNING"
+STARTED = "STARTED"
 SUCCESS = "SUCCESS"
 FAILURE = "FAILURE"
 RETRY = "RETRY"
@@ -47,9 +47,9 @@ RETRY = "RETRY"
 
 """
 READY_STATES = frozenset([SUCCESS, FAILURE])
-UNREADY_STATES = frozenset([PENDING, RUNNING, RETRY])
+UNREADY_STATES = frozenset([PENDING, STARTED, RETRY])
 EXCEPTION_STATES = frozenset([RETRY, FAILURE])
 
-ALL_STATES = frozenset([PENDING, RUNNING, SUCCESS, FAILURE, RETRY])
+ALL_STATES = frozenset([PENDING, STARTED, SUCCESS, FAILURE, RETRY])
 
 

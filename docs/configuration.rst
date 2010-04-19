@@ -348,6 +348,16 @@ Task execution settings
     stored task tombstones are deleted.
 
     **NOTE**: For the moment this only works with the database, cache and MongoDB
+
+* CELERY_TRACK_STARTED
+
+    If ``True`` the task will report its status as "started"
+    when the task is executed by a worker.
+    The default value is ``False`` as the normal behaviour is to not
+    report that level of granularity. Tasks are either pending, finished,
+    or waiting to be retried. Having a "started" status can be useful for
+    when there are long running tasks and there is a need to report which
+    task is currently running.
     backends.
 
 * CELERY_TASK_SERIALIZER
