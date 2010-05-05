@@ -30,6 +30,14 @@ def noop(*args, **kwargs):
     pass
 
 
+def first(predicate, iterable):
+    """Returns the first element in ``iterable`` that ``predicate`` returns a
+    ``True`` value for."""
+    for item in iterable:
+        if predicate(item):
+            return item
+
+
 def chunks(it, n):
     """Split an iterator into chunks with ``n`` elements each.
 
