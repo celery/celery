@@ -1,11 +1,10 @@
 import os
-import string
 import warnings
 import importlib
 
 from carrot.utils import rpartition
 
-from celery.utils import get_full_cls_name
+from celery.utils import get_full_cls_name, first
 from celery.loaders.default import Loader as DefaultLoader
 from celery.loaders.djangoapp import Loader as DjangoLoader
 
@@ -17,16 +16,14 @@ _loader = None
 _settings = None
 
 
-def first_letter(s):
-    for char in s:
-        if char in string.letters:
-            return char
-
-
 def resolve_loader(loader):
     loader = LOADER_ALIASES.get(loader, loader)
     loader_module_name, _, loader_cls_name = rpartition(loader, ".")
-    if first_letter(loader_cls_name) not in string.uppercase:
+
+    # For backward compatibility, try to detect a valid loader name by
+    # ensuring the first letter in the name is uppercase.
+    # e.g. both module.Foo and module.__Foo is valid, but not module.foo.
+    if not first(str.isalpha, loader_cls_name).isupper():
         warnings.warn(DeprecationWarning(
             "CELERY_LOADER now needs loader class name, e.g. %s.%s" % (
                 loader, _DEFAULT_LOADER_CLASS_NAME)))
