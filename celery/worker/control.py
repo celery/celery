@@ -20,9 +20,10 @@ class Control(object):
 
     """
 
-    def __init__(self, logger, hostname=None):
+    def __init__(self, logger, hostname=None, listener=None):
         self.logger = logger
         self.hostname = hostname or socket.gethostname()
+        self.listener = listener
 
     @expose
     def revoke(self, task_id, **kwargs):
@@ -44,6 +45,8 @@ class Control(object):
             tasks[task_name].rate_limit = rate_limit
         except KeyError:
             return
+
+        self.listener.ready_queue.refresh()
 
         if not rate_limit:
             self.logger.warn("Disabled rate limits for tasks of type %s" % (
@@ -82,10 +85,13 @@ class ControlDispatch(object):
 
     panel_cls = Control
 
-    def __init__(self, logger=None, hostname=None):
+    def __init__(self, logger=None, hostname=None, listener=None):
         self.logger = logger or log.get_default_logger()
         self.hostname = hostname
-        self.panel = self.panel_cls(self.logger, hostname=self.hostname)
+        self.listener = listener
+        self.panel = self.panel_cls(self.logger,
+                                    hostname=self.hostname,
+                                    listener=self.listener)
 
     def dispatch_from_message(self, message):
         """Dispatch by using message data received by the broker.
