@@ -56,7 +56,8 @@ class CarrotListener(object):
         self.logger = logger
         self.hostname = hostname or socket.gethostname()
         self.control_dispatch = ControlDispatch(logger=logger,
-                                                hostname=self.hostname)
+                                                hostname=self.hostname,
+                                                listener=self)
         self.prefetch_count = SharedCounter(initial_prefetch_count)
         self.event_dispatcher = None
         self.heart = None
