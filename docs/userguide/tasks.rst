@@ -136,7 +136,7 @@ attribute:
             twitter = Twitter(oauth)
             twitter.update_status(tweet)
         except (Twitter.FailWhaleError, Twitter.LoginError), exc:
-            send_twitter_status.retry(args=[oauth, tweet], kwargs, exc=exc)
+            send_twitter_status.retry(args=[oauth, tweet], kwargs=kwargs, exc=exc)
 
 Here we used the ``exc`` argument to pass the current exception to
 :meth:`Task.retry`. At each step of the retry this exception
