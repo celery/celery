@@ -30,7 +30,7 @@ Configuration - celery.conf
 .. data:: CELERY_SEND_TASK_ERROR_EMAILS
 
     If set to ``True``, errors in tasks will be sent to admins by e-mail.
-    If unset, it will send the e-mails if ``settings.DEBUG`` is False.
+    If unset, it will send the e-mails if ``settings.DEBUG`` is ``True``.
 
 .. data:: ALWAYS_EAGER
 
