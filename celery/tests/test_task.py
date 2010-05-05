@@ -261,6 +261,14 @@ class TestCeleryTasks(unittest.TestCase):
 
         self.assertRaises(NotImplementedError, IncompleteTask().run)
 
+    def test_task_kwargs_must_be_dictionary(self):
+        self.assertRaises(ValueError, IncrementCounterTask.apply_async,
+                          [], "str")
+
+    def test_task_args_must_be_list(self):
+        self.assertRaises(ValueError, IncrementCounterTask.apply_async,
+                          "str", {})
+
     def test_regular_task(self):
         T1 = self.createTaskCls("T1", "c.unittest.t.t1")
         self.assertIsInstance(T1(), T1)
