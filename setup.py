@@ -65,7 +65,7 @@ install_requires.extend([
     "anyjson",
     "carrot>=0.10.3",
     "django-picklefield",
-    "billiard>=0.2.1"])
+    "billiard>=0.3.0"])
 
 py_version = sys.version_info
 if sys.version_info <= (2, 5):
