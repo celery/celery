@@ -64,6 +64,9 @@ class Task(object):
     The :meth:`run` method can take use of the default keyword arguments,
     as listed in the :meth:`run` documentation.
 
+    The resulting class is callable, which if called will apply the
+    :meth:`run` method.
+
     .. attribute:: name
         Name of the task.
 
@@ -166,8 +169,18 @@ class Task(object):
         The global default can be overridden by the ``CELERY_TRACK_STARTED``
         setting.
 
-    The resulting class is callable, which if called will apply the
-    :meth:`run` method.
+    .. attribute:: acks_late
+
+        If set to ``True`` messages for this task will be acknowledged
+        **after** the task has been executed, not *just before*, which is
+        the default behavior.
+
+        Note that this means the task may be executed twice if the worker
+        crashes in the middle of execution, which may be acceptable for some
+        applications.
+
+        The global default can be overriden by the ``CELERY_ACKS_LATE``
+        setting.
 
     """
     __metaclass__ = TaskType
@@ -192,6 +205,7 @@ class Task(object):
     exchange_type = conf.DEFAULT_EXCHANGE_TYPE
     delivery_mode = conf.DEFAULT_DELIVERY_MODE
     track_started = conf.TRACK_STARTED
+    acks_late = conf.ACKS_LATE
 
     MaxRetriesExceededError = MaxRetriesExceededError
 

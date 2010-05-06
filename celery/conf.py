@@ -36,6 +36,7 @@ _DEFAULTS = {
     "CELERY_BROKER_CONNECTION_TIMEOUT": 4,
     "CELERY_BROKER_CONNECTION_RETRY": True,
     "CELERY_BROKER_CONNECTION_MAX_RETRIES": 100,
+    "CELERY_ACKS_LATE": False,
     "CELERYD_POOL": "celery.worker.pool.TaskPool",
     "CELERYD_MEDIATOR": "celery.worker.controllers.Mediator",
     "CELERYD_ETA_SCHEDULER": "celery.worker.controllers.ScheduleController",
@@ -93,6 +94,7 @@ TASK_SERIALIZER = _get("CELERY_TASK_SERIALIZER")
 TASK_RESULT_EXPIRES = _get("CELERY_TASK_RESULT_EXPIRES")
 IGNORE_RESULT = _get("CELERY_IGNORE_RESULT")
 TRACK_STARTED = _get("CELERY_TRACK_STARTED")
+ACKS_LATE = _get("CELERY_ACKS_LATE")
 # Make sure TASK_RESULT_EXPIRES is a timedelta.
 if isinstance(TASK_RESULT_EXPIRES, int):
     TASK_RESULT_EXPIRES = timedelta(seconds=TASK_RESULT_EXPIRES)

@@ -168,8 +168,12 @@ class TaskWrapper(object):
 
     .. attribute executed
 
-    Set if the task has been executed. A task should only be executed
-    once.
+        Set to ``True`` if the task has been executed.
+        A task should only be executed once.
+
+    .. attribute acknowledged
+
+        Set to ``True`` if the task has been acknowledged.
 
     """
     success_msg = "Task %(name)s[%(id)s] processed: %(return_value)s"
@@ -181,6 +185,7 @@ class TaskWrapper(object):
     """
     fail_email_body = TASK_FAIL_EMAIL_BODY
     executed = False
+    acknowledged = False
     time_start = None
 
     def __init__(self, task_name, task_id, args, kwargs,
@@ -321,14 +326,23 @@ class TaskWrapper(object):
         return result
 
     def on_accepted(self):
-        self.on_ack()
+        if not self.task.acks_late:
+            self.acknowledge()
         self.send_event("task-accepted", uuid=self.task_id)
         self.logger.debug("Task accepted: %s[%s]" % (
             self.task_name, self.task_id))
 
+    def acknowledge(self):
+        if not self.acknowledged:
+            self.on_ack()
+            self.acknowledged = True
+
     def on_success(self, ret_value):
         """The handler used if the task was successfully processed (
         without raising an exception)."""
+
+        if self.task.acks_late:
+            self.acknowledge()
 
         runtime = time.time() - self.time_start
         self.send_event("task-succeeded", uuid=self.task_id,
@@ -342,6 +356,9 @@ class TaskWrapper(object):
 
     def on_failure(self, exc_info):
         """The handler used if the task raised an exception."""
+
+        if self.task.acks_late:
+            self.acknowledge()
 
         self.send_event("task-failed", uuid=self.task_id,
                                        exception=exc_info.exception,
