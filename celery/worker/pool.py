@@ -57,7 +57,7 @@ class TaskPool(object):
                     dead_count))
 
     def apply_async(self, target, args=None, kwargs=None, callbacks=None,
-            errbacks=None, **compat):
+            errbacks=None, accept_callback=None, **compat):
         """Equivalent of the :func:``apply`` built-in function.
 
         All ``callbacks`` and ``errbacks`` should complete immediately since
@@ -77,7 +77,8 @@ class TaskPool(object):
         self.replace_dead_workers()
 
         return self._pool.apply_async(target, args, kwargs,
-                                        callback=on_ready)
+                                      callback=on_ready,
+                                      accept_callback=accept_callback)
 
     def on_ready(self, callbacks, errbacks, ret_value):
         """What to do when a worker task is ready and its return value has
