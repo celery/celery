@@ -21,6 +21,7 @@ class Control(object):
     """
 
     def __init__(self, logger, hostname=None, listener=None):
+        assert listener is not None
         self.logger = logger
         self.hostname = hostname or socket.gethostname()
         self.listener = listener
