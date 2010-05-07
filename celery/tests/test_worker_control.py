@@ -9,10 +9,11 @@ from celery.registry import tasks
 
 hostname = socket.gethostname()
 
+
 class TestControlPanel(unittest.TestCase):
 
     def setUp(self):
-        self.panel = self.create_panel()
+        self.panel = self.create_panel(listener=object())
 
     def create_panel(self, **kwargs):
         return control.ControlDispatch(hostname=hostname, **kwargs)
