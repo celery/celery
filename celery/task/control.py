@@ -44,6 +44,24 @@ def revoke(task_id, destination=None, **kwargs):
                                arguments={"task_id": task_id}, **kwargs)
 
 
+def ping(destination=None, timeout=1, **kwargs):
+    """Ping workers.
+
+    Returns answer from alive workers.
+
+    :keyword destination: If set, a list of the hosts to send the command to,
+        when empty broadcast to all workers.
+    :keyword connection: Custom broker connection to use, if not set,
+        a connection will be established automatically.
+    :keyword connect_timeout: Timeout for new connection if a custom
+        connection is not provided.
+    :keyword reply: Wait for and return the reply.
+    :keyword timeout: Timeout in seconds to wait for the reply.
+    :keyword limit: Limit number of replies.
+
+    """
+    return broadcast("ping", wait=True, destination=destination,
+                     timeout=timeout, **kwargs)
 
 
 def rate_limit(task_name, rate_limit, destination=None, **kwargs):
