@@ -227,7 +227,7 @@ class CarrotListener(object):
 
     def _mainloop(self, **kwargs):
         while 1:
-            yield self.connection.connection.drain_events()
+            yield self.connection.drain_events()
 
     def _detect_wait_method(self):
         if hasattr(self.connection.connection, "drain_events"):

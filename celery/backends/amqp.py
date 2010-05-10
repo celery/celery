@@ -1,7 +1,11 @@
 """celery.backends.amqp"""
+import socket
+
 from carrot.messaging import Consumer, Publisher
 
 from celery import conf
+from celery import states
+from celery.exceptions import TimeoutError
 from celery.backends.base import BaseDictBackend
 from celery.messaging import establish_connection
 
@@ -47,10 +51,9 @@ class AMQPBackend(BaseDictBackend):
     def _publisher_for_task_id(self, task_id, connection):
         routing_key = task_id.replace("-", "")
         self._declare_queue(task_id, connection)
-        p = Publisher(connection, exchange=self.exchange,
+        return Publisher(connection, exchange=self.exchange,
                       exchange_type="direct",
                       routing_key=routing_key)
-        return p
 
     def _consumer_for_task_id(self, task_id, connection):
         routing_key = task_id.replace("-", "")
@@ -78,7 +81,18 @@ class AMQPBackend(BaseDictBackend):
 
         return result
 
-    def _get_task_meta_for(self, task_id):
+    def wait_for(self, task_id, timeout=None):
+        try:
+            meta = self._get_task_meta_for(task_id, timeout)
+        except socket.timeout:
+            raise TimeoutError("The operation timed out.")
+
+        if meta["status"] == states.SUCCESS:
+            return self.get_result(task_id)
+        elif meta["status"] == states.FAILURE:
+            raise self.get_result(task_id)
+
+    def _get_task_meta_for(self, task_id, timeout=None):
         assert task_id not in self._seen
         self._use_debug_tracking and self._seen.add(task_id)
 
@@ -91,11 +105,13 @@ class AMQPBackend(BaseDictBackend):
         routing_key = task_id.replace("-", "")
 
         connection = self.connection
+        wait = connection.connection.wait_multi
         consumer = self._consumer_for_task_id(task_id, connection)
         consumer.register_callback(callback)
 
+        consumer.consume()
         try:
-            consumer.iterconsume().next()
+            wait([consumer.backend.channel], timeout=timeout)
         finally:
             consumer.backend.channel.queue_delete(routing_key)
             consumer.close()

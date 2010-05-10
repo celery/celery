@@ -139,7 +139,7 @@ class TestCarrotListener(unittest.TestCase):
             def drain_events(self):
                 return "draining"
 
-        l.connection = PlaceHolder()
+        l.connection = MockConnection()
         l.connection.connection = MockConnection()
 
         it = l._mainloop()
