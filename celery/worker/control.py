@@ -1,10 +1,12 @@
 import socket
+from datetime import datetime
 
 from celery import log
 from celery.registry import tasks
 from celery.worker.revoke import revoked
 
 TASK_INFO_FIELDS = ("exchange", "routing_key", "rate_limit")
+
 
 def expose(fun):
     """Expose method as a celery worker control command, allowed to be called
@@ -60,6 +62,18 @@ class Control(object):
     def shutdown(self, **kwargs):
         self.logger.critical("Got shutdown from remote.")
         raise SystemExit
+
+    @expose
+    def dump_schedule(self, **kwargs):
+        schedule = self.listener.eta_schedule
+        info = "--Empty Schedule--"
+        if schedule.queue:
+            formatitem = lambda (i, item): "%s. %s pri%s %r" % (i,
+                    datetime.fromtimestamp(item["eta"]),
+                    item["priority"],
+                    item["item"])
+            info = "\n".join(map(formatitem, enumerate(schedule.info())))
+        self.logger.warn("* Dump of current schedule:\n%s" % (info, ))
 
     @expose
     def dump_tasks(self, **kwargs):
