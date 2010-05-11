@@ -16,7 +16,7 @@ class TaskMeta(models.Model):
     task_id = models.CharField(_(u"task id"), max_length=255, unique=True)
     status = models.CharField(_(u"task status"), max_length=50,
             default=states.PENDING, choices=TASK_STATUSES_CHOICES)
-    result = PickledObjectField(null=True)
+    result = PickledObjectField(null=False)
     date_done = models.DateTimeField(_(u"done at"), auto_now=True)
     traceback = models.TextField(_(u"traceback"), blank=True, null=True)
 
