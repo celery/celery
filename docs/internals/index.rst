@@ -12,4 +12,5 @@
     worker
     protocol
     events
+    moduleindex
     reference/index
