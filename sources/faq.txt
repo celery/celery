@@ -298,6 +298,44 @@ If you need to specify a custom result backend you should use
 Brokers
 =======
 
+Why is RabbitMQ crashing?
+-------------------------
+
+RabbitMQ will crash if it runs out of memory. This will be fixed in a
+future release of RabbitMQ. please refer to the RabbitMQ FAQ:
+http://www.rabbitmq.com/faq.html#node-runs-out-of-memory
+
+Some common Celery misconfigurations can crash RabbitMQ:
+
+* Events.
+
+Running ``celeryd`` with the ``-E``/``--events`` option will send messages
+for events happening inside of the worker. If these event messages
+are not consumed, you will eventually run out of memory.
+
+Events should only be enabled if you have an active monitor consuming them.
+
+* AMQP backend results.
+
+When running with the AMQP result backend, every task result will be sent
+as a message. If you don't collect these results, they will build up and
+RabbitMQ will eventually run out of memory.
+
+If you don't use the results for a task, make sure you set the
+``ignore_result`` option:
+
+.. code-block python
+
+    @task(ignore_result=True)
+    def mytask():
+        ...
+
+    class MyTask(Task):
+        ignore_result = True
+
+Results can also be disabled globally using the ``CELERY_IGNORE_RESULT``
+setting.
+
 Can I use celery with ActiveMQ/STOMP?
 -------------------------------------
 
@@ -381,6 +419,58 @@ using the STOMP backend:
 
 Features
 ========
+
+How can I run a task once another task has finished?
+----------------------------------------------------
+
+**Answer**: You can safely launch a task inside a task.
+Also, a common pattern is to use callback tasks:
+
+.. code-block:: python
+
+    @task()
+    def add(x, y, callback=None):
+        result = x + y
+        if callback:
+            callback.delay(result)
+        return result
+
+
+    @task(ignore_result=True)
+    def log_result(result, **kwargs):
+        logger = log_result.get_logger(**kwargs)
+        logger.info("log_result got: %s" % (result, ))
+
+
+    >>> add.delay(2, 2, callback=log_result)
+
+Can I cancel the execution of a task?
+-------------------------------------
+**Answer**: Yes. Use ``result.revoke``::
+
+    >>> result = add.apply_async(args=[2, 2], countdown=120)
+    >>> result.revoke()
+
+or if you only have the task id::
+
+    >>> from celery.task.control import revoke
+    >>> revoke(task_id)
+
+Why aren't my remote control commands received by all workers?
+--------------------------------------------------------------
+
+**Answer**: To receive broadcast remote control commands, every ``celeryd``
+uses its hostname to create a unique queue name to listen to,
+so if you have more than one worker with the same hostname, the
+control commands will be recieved in round-robin between them.
+
+To work around this you can explicitly set the hostname for every worker
+using the ``--hostname`` argument to ``celeryd``::
+
+    $ celeryd --hostname=$(hostname).1
+    $ celeryd --hostname=$(hostname).2
+
+etc, etc.
 
 Can I send some tasks to only some servers?
 --------------------------------------------
@@ -659,7 +749,6 @@ The good news is, if anyone is willing
 to implement it, it shouldn't be that hard. Some pointers to achieve this has
 been written here: http://bit.ly/99UQNO
 
-
 How do I shut down ``celeryd`` safely?
 --------------------------------------
 
@@ -668,4 +757,49 @@ executing jobs and shut down as soon as possible. No tasks should be lost.
 
 You should never stop ``celeryd`` with the ``KILL`` signal (``-9``),
 unless you've tried ``TERM`` a few times and waited a few minutes to let it
-get a chance to shut down.
+get a chance to shut down. As if you do tasks may be terminated mid-execution,
+and they will not be re-run unless you have the ``acks_late`` option set.
+(``Task.acks_late`` / ``CELERY_ACKS_LATE``).
+
+How do I run celeryd in the background on [platform]?
+-----------------------------------------------------
+**Answer**: Please see :doc:`cookbook/daemonizing`.
+
+Django
+======
+
+Generating a template in a task doesn't seem to respect my i18n settings?
+-------------------------------------------------------------------------
+
+**Answer**: To enable the Django translation machinery you need to activate
+it with a language. **Note**: Be sure to reset to the previous language when
+done.
+
+    >>> from django.utils import translation
+
+    >>> prev_language = translation.get_language()
+    >>> translation.activate(language)
+    >>> try:
+    ...     render_template()
+    ... finally:
+            translation.activate(prev_language)
+
+The common pattern here would be for the task to take a ``language``
+argument:
+
+.. code-block:: python
+
+    from celery.decorators import task
+
+    from django.utils import translation
+    from django.template.loader import render_to_string
+
+    @task()
+    def generate_report(template="report.html", language=None):
+        prev_language = translation.get_language()
+        language and translation.activate(language)
+        try:
+            report = render_to_string(template)
+        finally:
+            translation.activate(prev_language)
+        save_report_somewhere(report)

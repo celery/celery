@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Defining Tasks - celery.task.base &mdash; Celery v1.0.2 (stable) documentation</title>
+    <title>Defining Tasks - celery.task.base &mdash; Celery v1.0.3-pre1 (unstable) documentation</title>
     <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.0.2 (stable)',
+        VERSION:     '1.0.3-pre1 (unstable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,14 +19,14 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v1.0.2 (stable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v1.0.3-pre1 (unstable) documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="Executing Tasks - celery.execute" href="celery.execute.html" />
     <link rel="prev" title="Task Decorators - celery.decorators" href="celery.decorators.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v1.0.2 (stable) documentation</p>
+	<p>Celery v1.0.3-pre1 (unstable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Defining Tasks - celery.task.base</h1></div>
@@ -269,6 +269,8 @@ responsiveness if of importance to you.</p>
 which is the actual method the <tt class="docutils literal"><span class="pre">celery</span></tt> daemon executes.</p>
 <p>The <a title="celery.task.base.Task.run" class="reference internal" href="#celery.task.base.Task.run"><tt class="xref docutils literal"><span class="pre">run()</span></tt></a> method can take use of the default keyword arguments,
 as listed in the <a title="celery.task.base.Task.run" class="reference internal" href="#celery.task.base.Task.run"><tt class="xref docutils literal"><span class="pre">run()</span></tt></a> documentation.</p>
+<p>The resulting class is callable, which if called will apply the
+<a title="celery.task.base.Task.run" class="reference internal" href="#celery.task.base.Task.run"><tt class="xref docutils literal"><span class="pre">run()</span></tt></a> method.</p>
 <dl class="attribute">
 <dt id="celery.task.base.Task.name">
 <tt class="descname">name</tt><a class="headerlink" href="#celery.task.base.Task.name" title="Permalink to this definition">¶</a></dt>
@@ -337,7 +339,8 @@ can&#8217;t be routed to a worker immediately.</dd></dl>
 <dl class="attribute">
 <dt id="celery.task.base.Task.max_retries">
 <tt class="descname">max_retries</tt><a class="headerlink" href="#celery.task.base.Task.max_retries" title="Permalink to this definition">¶</a></dt>
-<dd>Maximum number of retries before giving up.</dd></dl>
+<dd>Maximum number of retries before giving up.
+If set to <tt class="xref docutils literal"><span class="pre">None</span></tt>, it will never stop retrying.</dd></dl>
 
 <dl class="attribute">
 <dt id="celery.task.base.Task.default_retry_delay">
@@ -390,8 +393,33 @@ a <tt class="xref docutils literal"><span class="pre">Queue.LifoQueue</span></tt
 <tt class="descname">registry, which is the default behaviour.</tt></dt>
 <dd></dd></dl>
 
-<p>The resulting class is callable, which if called will apply the
-<a title="celery.task.base.Task.run" class="reference internal" href="#celery.task.base.Task.run"><tt class="xref docutils literal"><span class="pre">run()</span></tt></a> method.</p>
+<dl class="attribute">
+<dt id="celery.task.base.Task.track_started">
+<tt class="descname">track_started</tt><a class="headerlink" href="#celery.task.base.Task.track_started" title="Permalink to this definition">¶</a></dt>
+<dd><p>If <tt class="xref docutils literal"><span class="pre">True</span></tt> the task will report its status as &#8220;started&#8221;
+when the task is executed by a worker.
+The default value is <tt class="xref docutils literal"><span class="pre">False</span></tt> as the normal behaviour is to not
+report that level of granularity. Tasks are either pending, finished,
+or waiting to be retried. Having a &#8220;started&#8221; status can be useful for
+when there are long running tasks and there is a need to report which
+task is currently running.</p>
+<p>The global default can be overridden by the <tt class="docutils literal"><span class="pre">CELERY_TRACK_STARTED</span></tt>
+setting.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.task.base.Task.acks_late">
+<tt class="descname">acks_late</tt><a class="headerlink" href="#celery.task.base.Task.acks_late" title="Permalink to this definition">¶</a></dt>
+<dd><p>If set to <tt class="xref docutils literal"><span class="pre">True</span></tt> messages for this task will be acknowledged
+<strong>after</strong> the task has been executed, not <em>just before</em>, which is
+the default behavior.</p>
+<p>Note that this means the task may be executed twice if the worker
+crashes in the middle of execution, which may be acceptable for some
+applications.</p>
+<p>The global default can be overriden by the <tt class="docutils literal"><span class="pre">CELERY_ACKS_LATE</span></tt>
+setting.</p>
+</dd></dl>
+
 <dl class="classmethod">
 <dt id="celery.task.base.Task.AsyncResult">
 <em class="property">classmethod </em><tt class="descname">AsyncResult</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.task.base.Task.AsyncResult" title="Permalink to this definition">¶</a></dt>
@@ -861,7 +889,7 @@ set to the name of the module it was defined in, and the class name.</p>
     </div>
 	<div id="breadcrumbs">
 		<a href="index.html" accesskey="U">API Reference</a><img src="triangle_closed.png" alt="Right arrow">
-		<a href="../index.html">Celery v1.0.2 (stable) documentation</a>
+		<a href="../index.html">Celery v1.0.3-pre1 (unstable) documentation</a>
 		</ul>
 	</div>
   </body>

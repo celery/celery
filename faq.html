@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Frequently Asked Questions &mdash; Celery v1.0.2 (stable) documentation</title>
+    <title>Frequently Asked Questions &mdash; Celery v1.0.3-pre1 (unstable) documentation</title>
     <link rel="stylesheet" href="static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '#',
-        VERSION:     '1.0.2 (stable)',
+        VERSION:     '1.0.3-pre1 (unstable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,13 +19,13 @@
     </script>
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v1.0.2 (stable) documentation" href="index.html" />
+    <link rel="top" title="Celery v1.0.3-pre1 (unstable) documentation" href="index.html" />
     <link rel="next" title="API Reference" href="reference/index.html" />
     <link rel="prev" title="Tutorial: Creating a click counter using carrot and celery" href="tutorials/clickcounter.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v1.0.2 (stable) documentation</p>
+	<p>Celery v1.0.3-pre1 (unstable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Frequently Asked Questions</h1></div>
@@ -56,6 +56,7 @@
 <li class="toctree-l2"><a class="reference external" href="#results">Results</a></li>
 <li class="toctree-l2"><a class="reference external" href="#brokers">Brokers</a></li>
 <li class="toctree-l2"><a class="reference external" href="#features">Features</a></li>
+<li class="toctree-l2"><a class="reference external" href="#django">Django</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference external" href="reference/index.html">API Reference</a></li>
@@ -339,6 +340,30 @@ using the tasks current result backend.</p>
 </div>
 <div class="section" id="brokers">
 <h2>Brokers<a class="headerlink" href="#brokers" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="why-is-rabbitmq-crashing">
+<h3>Why is RabbitMQ crashing?<a class="headerlink" href="#why-is-rabbitmq-crashing" title="Permalink to this headline">¶</a></h3>
+<p>RabbitMQ will crash if it runs out of memory. This will be fixed in a
+future release of RabbitMQ. please refer to the RabbitMQ FAQ:
+<a class="reference external" href="http://www.rabbitmq.com/faq.html#node-runs-out-of-memory">http://www.rabbitmq.com/faq.html#node-runs-out-of-memory</a></p>
+<p>Some common Celery misconfigurations can crash RabbitMQ:</p>
+<ul class="simple">
+<li>Events.</li>
+</ul>
+<p>Running <tt class="docutils literal"><span class="pre">celeryd</span></tt> with the <tt class="docutils literal"><span class="pre">-E</span></tt>/<tt class="docutils literal"><span class="pre">--events</span></tt> option will send messages
+for events happening inside of the worker. If these event messages
+are not consumed, you will eventually run out of memory.</p>
+<p>Events should only be enabled if you have an active monitor consuming them.</p>
+<ul class="simple">
+<li>AMQP backend results.</li>
+</ul>
+<p>When running with the AMQP result backend, every task result will be sent
+as a message. If you don&#8217;t collect these results, they will build up and
+RabbitMQ will eventually run out of memory.</p>
+<p>If you don&#8217;t use the results for a task, make sure you set the
+<tt class="docutils literal"><span class="pre">ignore_result</span></tt> option:</p>
+<p>Results can also be disabled globally using the <tt class="docutils literal"><span class="pre">CELERY_IGNORE_RESULT</span></tt>
+setting.</p>
+</div>
 <div class="section" id="can-i-use-celery-with-activemq-stomp">
 <h3>Can I use celery with ActiveMQ/STOMP?<a class="headerlink" href="#can-i-use-celery-with-activemq-stomp" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer</strong>: Yes, but this is somewhat experimental for now.
@@ -410,6 +435,53 @@ using the STOMP backend:</p>
 </div>
 <div class="section" id="features">
 <h2>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="how-can-i-run-a-task-once-another-task-has-finished">
+<h3>How can I run a task once another task has finished?<a class="headerlink" href="#how-can-i-run-a-task-once-another-task-has-finished" title="Permalink to this headline">¶</a></h3>
+<p><strong>Answer</strong>: You can safely launch a task inside a task.
+Also, a common pattern is to use callback tasks:</p>
+<div class="highlight-python"><pre>@task()
+def add(x, y, callback=None):
+    result = x + y
+    if callback:
+        callback.delay(result)
+    return result
+
+
+@task(ignore_result=True)
+def log_result(result, **kwargs):
+    logger = log_result.get_logger(**kwargs)
+    logger.info("log_result got: %s" % (result, ))
+
+
+&gt;&gt;&gt; add.delay(2, 2, callback=log_result)</pre>
+</div>
+</div>
+<div class="section" id="can-i-cancel-the-execution-of-a-task">
+<h3>Can I cancel the execution of a task?<a class="headerlink" href="#can-i-cancel-the-execution-of-a-task" title="Permalink to this headline">¶</a></h3>
+<p><strong>Answer</strong>: Yes. Use <tt class="docutils literal"><span class="pre">result.revoke</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">add</span><span class="o">.</span><span class="n">apply_async</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">countdown</span><span class="o">=</span><span class="mi">120</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">revoke</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>or if you only have the task id:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task.control</span> <span class="kn">import</span> <span class="n">revoke</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">revoke</span><span class="p">(</span><span class="n">task_id</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="why-aren-t-my-remote-control-commands-received-by-all-workers">
+<h3>Why aren&#8217;t my remote control commands received by all workers?<a class="headerlink" href="#why-aren-t-my-remote-control-commands-received-by-all-workers" title="Permalink to this headline">¶</a></h3>
+<p><strong>Answer</strong>: To receive broadcast remote control commands, every <tt class="docutils literal"><span class="pre">celeryd</span></tt>
+uses its hostname to create a unique queue name to listen to,
+so if you have more than one worker with the same hostname, the
+control commands will be recieved in round-robin between them.</p>
+<p>To work around this you can explicitly set the hostname for every worker
+using the <tt class="docutils literal"><span class="pre">--hostname</span></tt> argument to <tt class="docutils literal"><span class="pre">celeryd</span></tt>:</p>
+<div class="highlight-python"><pre>$ celeryd --hostname=$(hostname).1
+$ celeryd --hostname=$(hostname).2</pre>
+</div>
+<p>etc, etc.</p>
+</div>
 <div class="section" id="can-i-send-some-tasks-to-only-some-servers">
 <h3>Can I send some tasks to only some servers?<a class="headerlink" href="#can-i-send-some-tasks-to-only-some-servers" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> Yes. You can route tasks to an arbitrary server using AMQP,
@@ -648,7 +720,53 @@ been written here: <a class="reference external" href="http://bit.ly/99UQNO">htt
 executing jobs and shut down as soon as possible. No tasks should be lost.</p>
 <p>You should never stop <tt class="docutils literal"><span class="pre">celeryd</span></tt> with the <tt class="docutils literal"><span class="pre">KILL</span></tt> signal (<tt class="docutils literal"><span class="pre">-9</span></tt>),
 unless you&#8217;ve tried <tt class="docutils literal"><span class="pre">TERM</span></tt> a few times and waited a few minutes to let it
-get a chance to shut down.</p>
+get a chance to shut down. As if you do tasks may be terminated mid-execution,
+and they will not be re-run unless you have the <tt class="docutils literal"><span class="pre">acks_late</span></tt> option set.
+(<tt class="docutils literal"><span class="pre">Task.acks_late</span></tt> / <tt class="docutils literal"><span class="pre">CELERY_ACKS_LATE</span></tt>).</p>
+</div>
+<div class="section" id="how-do-i-run-celeryd-in-the-background-on-platform">
+<h3>How do I run celeryd in the background on [platform]?<a class="headerlink" href="#how-do-i-run-celeryd-in-the-background-on-platform" title="Permalink to this headline">¶</a></h3>
+<p><strong>Answer</strong>: Please see <a class="reference external" href="cookbook/daemonizing.html"><em>Running celeryd as a daemon</em></a>.</p>
+</div>
+</div>
+<div class="section" id="django">
+<h2>Django<a class="headerlink" href="#django" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="generating-a-template-in-a-task-doesn-t-seem-to-respect-my-i18n-settings">
+<h3>Generating a template in a task doesn&#8217;t seem to respect my i18n settings?<a class="headerlink" href="#generating-a-template-in-a-task-doesn-t-seem-to-respect-my-i18n-settings" title="Permalink to this headline">¶</a></h3>
+<p><strong>Answer</strong>: To enable the Django translation machinery you need to activate
+it with a language. <strong>Note</strong>: Be sure to reset to the previous language when
+done.</p>
+<blockquote>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">django.utils</span> <span class="kn">import</span> <span class="n">translation</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">prev_language</span> <span class="o">=</span> <span class="n">translation</span><span class="o">.</span><span class="n">get_language</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">translation</span><span class="o">.</span><span class="n">activate</span><span class="p">(</span><span class="n">language</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">try</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">render_template</span><span class="p">()</span>
+<span class="gp">... </span><span class="k">finally</span><span class="p">:</span>
+<span class="go">        translation.activate(prev_language)</span>
+</pre></div>
+</div>
+</blockquote>
+<p>The common pattern here would be for the task to take a <tt class="docutils literal"><span class="pre">language</span></tt>
+argument:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.decorators</span> <span class="kn">import</span> <span class="n">task</span>
+
+<span class="kn">from</span> <span class="nn">django.utils</span> <span class="kn">import</span> <span class="n">translation</span>
+<span class="kn">from</span> <span class="nn">django.template.loader</span> <span class="kn">import</span> <span class="n">render_to_string</span>
+
+<span class="nd">@task</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">generate_report</span><span class="p">(</span><span class="n">template</span><span class="o">=</span><span class="s">&quot;report.html&quot;</span><span class="p">,</span> <span class="n">language</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="n">prev_language</span> <span class="o">=</span> <span class="n">translation</span><span class="o">.</span><span class="n">get_language</span><span class="p">()</span>
+    <span class="n">language</span> <span class="ow">and</span> <span class="n">translation</span><span class="o">.</span><span class="n">activate</span><span class="p">(</span><span class="n">language</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">report</span> <span class="o">=</span> <span class="n">render_to_string</span><span class="p">(</span><span class="n">template</span><span class="p">)</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">translation</span><span class="o">.</span><span class="n">activate</span><span class="p">(</span><span class="n">prev_language</span><span class="p">)</span>
+    <span class="n">save_report_somewhere</span><span class="p">(</span><span class="n">report</span><span class="p">)</span>
+</pre></div>
+</div>
 </div>
 </div>
 </div>
@@ -666,7 +784,7 @@ get a chance to shut down.</p>
       <div class="clearer"></div>
     </div>
 	<div id="breadcrumbs">
-		<a href="index.html">Celery v1.0.2 (stable) documentation</a>
+		<a href="index.html">Celery v1.0.3-pre1 (unstable) documentation</a>
 		</ul>
 	</div>
   </body>
