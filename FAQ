@@ -713,3 +713,41 @@ How do I run celeryd in the background on [platform]?
 -----------------------------------------------------
 **Answer**: Please see :doc:`cookbook/daemonizing`.
 
+Django
+======
+
+Generating a template in a task doesn't seem to respect my i18n settings?
+-------------------------------------------------------------------------
+
+**Answer**: To enable the Django translation machinery you need to activate
+it with a language. **Note**: Be sure to reset to the previous language when
+done.
+
+    >>> from django.utils import translation
+
+    >>> prev_language = translation.get_language()
+    >>> translation.activate(language)
+    >>> try:
+    ...     render_template()
+    ... finally:
+            translation.activate(prev_language)
+
+The common pattern here would be for the task to take a ``language``
+argument::
+
+.. code-block:: python
+
+    from celery.decorators import task
+
+    from django.utils import translation
+    from django.template.loader import render_to_string
+
+    @task()
+    def generate_report(template="report.html", language=None):
+        prev_language = translation.get_language()
+        language and translation.activate(language)
+        try:
+            report = render_to_string(template)
+        finally:
+            translation.activate(prev_language)
+        save_report_somewhere(report)
