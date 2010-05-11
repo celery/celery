@@ -423,7 +423,7 @@ Features
 How can I run a task once another task has finished?
 ----------------------------------------------------
 
-You can safely launch a task inside a task.
+**Answer**: You can safely launch a task inside a task.
 Also, a common pattern is to use callback tasks:
 
 .. code-block:: python
@@ -443,6 +443,18 @@ Also, a common pattern is to use callback tasks:
 
 
     >>> add.delay(2, 2, callback=log_result)
+
+Can I cancel the execution of a task?
+-------------------------------------
+**Answer**: Yes. Use ``result.revoke``::
+
+    >>> result = add.apply_async(args=[2, 2], countdown=120)
+    >>> result.revoke()
+
+or if you only have the task id::
+
+    >>> from celery.task.control import revoke
+    >>> revoke(task_id)
 
 Can I send some tasks to only some servers?
 --------------------------------------------
