@@ -456,6 +456,22 @@ or if you only have the task id::
     >>> from celery.task.control import revoke
     >>> revoke(task_id)
 
+Why aren't my remote control commands received by all workers?
+--------------------------------------------------------------
+
+**Answer**: To receive broadcast remote control commands, every ``celeryd``
+uses its hostname to create a unique queue name to listen to,
+so if you have more than one worker with the same hostname, the
+control commands will be recieved in round-robin between them.
+
+To work around this you can explicitly set the hostname for every worker
+using the ``--hostname`` argument to ``celeryd``::
+
+    $ celeryd --hostname=$(hostname).1
+    $ celeryd --hostname=$(hostname).2
+
+etc, etc.
+
 Can I send some tasks to only some servers?
 --------------------------------------------
 
