@@ -454,6 +454,88 @@ This means that your workers should always be updated with the same software
 as the client. This is a drawback, but the alternative is a technical
 challenge that has yet to be solved.
 
+Tips and Best Practices
+=======================
+
+Ignore results you don't want
+-----------------------------
+
+If you don't care about the results of a task, be sure to set the
+``ignore_result`` option, as storing results wastes time and resources.
+
+.. code-block:: python
+
+    @task(ignore_result=True)
+    def mytask(...)
+        something()
+
+Results can even be disabled globally using the ``CELERY_IGNORE_RESULT``
+setting.
+
+Avoid launching synchronous subtasks
+------------------------------------
+
+Having a task wait for the result of another task is really inefficient,
+and may even cause a deadlock if the worker pool is exhausted.
+
+Make your design asynchronous instead, for example by using *callbacks*.
+
+
+Bad:
+
+.. code-block:: python
+
+    @task()
+    def update_page_info(url):
+        page = fetch_page.delay(url).get()
+        info = parse_page.delay(url, page).get()
+        store_page_info.delay(url, info)
+
+    @task()
+    def fetch_page(url):
+        return myhttplib.get(url)
+
+    @task()
+    def parse_page(url, page):
+        return myparser.parse_document(page)
+
+    @task()
+    def store_page_info(url, info):
+        return PageInfo.objects.create(url, info)
+
+
+Good:
+
+.. code-block:: python
+
+    from functools import curry
+
+    @task(ignore_result=True)
+    def update_page_info(url):
+        # fetch_page -> parse_page -> store_page
+        callback = curry(parse_page.delay, callback=store_page_info)
+        fetch_page.delay(url, callback=callback)
+
+    @task(ignore_result=True)
+    def fetch_page(url, callback=None):
+        page = myparser.parse_document(page)
+        if callback:
+            callback(page)
+
+    @task(ignore_result=True)
+    def parse_page(url, page, callback=None):
+        info = myparser.parse_document(page)
+        if callback:
+            callback(url, info)
+
+    @task(ignore_result=True)
+    def store_page_info(url, info):
+        PageInfo.objects.create(url, info)
+
+
+
+
+
 Performance and Strategies
 ==========================
 
