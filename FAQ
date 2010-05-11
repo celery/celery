@@ -322,7 +322,7 @@ as a message. If you don't collect these results, they will build up and
 RabbitMQ will eventually run out of memory.
 
 If you don't use the results for a task, make sure you set the
-``ignore_result`` option::
+``ignore_result`` option:
 
 .. code-block python
 
@@ -419,6 +419,30 @@ using the STOMP backend:
 
 Features
 ========
+
+How can I run a task once another task has finished?
+----------------------------------------------------
+
+You can safely launch a task inside a task.
+Also, a common pattern is to use callback tasks:
+
+.. code-block:: python
+
+    @task()
+    def add(x, y, callback=None):
+        result = x + y
+        if callback:
+            callback.delay(result)
+        return result
+
+
+    @task(ignore_result=True)
+    def log_result(result, **kwargs):
+        logger = log_result.get_logger(**kwargs)
+        logger.info("log_result got: %s" % (result, ))
+
+
+    >>> add.delay(2, 2, callback=log_result)
 
 Can I send some tasks to only some servers?
 --------------------------------------------
@@ -733,7 +757,7 @@ done.
             translation.activate(prev_language)
 
 The common pattern here would be for the task to take a ``language``
-argument::
+argument:
 
 .. code-block:: python
 
