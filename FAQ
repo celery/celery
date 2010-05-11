@@ -298,6 +298,44 @@ If you need to specify a custom result backend you should use
 Brokers
 =======
 
+Why is RabbitMQ crashing?
+-------------------------
+
+RabbitMQ will crash if it runs out of memory. This will be fixed in a
+future release of RabbitMQ. please refer to the RabbitMQ FAQ:
+http://www.rabbitmq.com/faq.html#node-runs-out-of-memory
+
+Some common Celery misconfigurations can crash RabbitMQ:
+
+* Events.
+
+Running ``celeryd`` with the ``-E``/``--events`` option will send messages
+for events happening inside of the worker. If these event messages
+are not consumed, you will eventually run out of memory.
+
+Events should only be enabled if you have an active monitor consuming them.
+
+* AMQP backend results.
+
+When running with the AMQP result backend, every task result will be sent
+as a message. If you don't collect these results, they will build up and
+RabbitMQ will eventually run out of memory.
+
+If you don't use the results for a task, make sure you set the
+``ignore_result`` option::
+
+.. code-block python
+
+    @task(ignore_result=True)
+    def mytask():
+        ...
+
+    class MyTask(Task):
+        ignore_result = True
+
+Results can also be disabled globally using the ``CELERY_IGNORE_RESULT``
+setting.
+
 Can I use celery with ActiveMQ/STOMP?
 -------------------------------------
 
@@ -659,7 +697,6 @@ The good news is, if anyone is willing
 to implement it, it shouldn't be that hard. Some pointers to achieve this has
 been written here: http://bit.ly/99UQNO
 
-
 How do I shut down ``celeryd`` safely?
 --------------------------------------
 
@@ -668,4 +705,7 @@ executing jobs and shut down as soon as possible. No tasks should be lost.
 
 You should never stop ``celeryd`` with the ``KILL`` signal (``-9``),
 unless you've tried ``TERM`` a few times and waited a few minutes to let it
-get a chance to shut down.
+get a chance to shut down. As if you do tasks may be terminated mid-execution,
+and they will not be re-run unless you have the ``acks_late`` option set.
+(``Task.acks_late`` / ``CELERY_ACKS_LATE``).
+
