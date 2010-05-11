@@ -709,3 +709,7 @@ get a chance to shut down. As if you do tasks may be terminated mid-execution,
 and they will not be re-run unless you have the ``acks_late`` option set.
 (``Task.acks_late`` / ``CELERY_ACKS_LATE``).
 
+How do I run celeryd in the background on [platform]?
+-----------------------------------------------------
+**Answer**: Please see :doc:`cookbook/daemonizing`.
+
