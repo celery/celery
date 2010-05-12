@@ -124,7 +124,7 @@ class TaskBucket(object):
             if remaining_time:
                 if not block or did_timeout():
                     raise QueueEmpty
-                time.sleep(remaining_time)
+                time.sleep(min(remaining_time, timeout or 1))
             else:
                 return item
 
