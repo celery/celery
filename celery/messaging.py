@@ -139,6 +139,9 @@ class EventConsumer(Consumer):
 class ControlReplyConsumer(Consumer):
     exchange = "celerycrq"
     exchange_type = "direct"
+    durable = False
+    exclusive = False
+    auto_delete = True
     no_ack = True
 
     def __init__(self, connection, ticket, **kwargs):
@@ -168,6 +171,7 @@ class ControlReplyConsumer(Consumer):
 class ControlReplyPublisher(Publisher):
     exchange = "celerycrq"
     exchange_type = "direct"
+    delivery_mode = "non-persistent"
 
 
 class BroadcastPublisher(Publisher):
