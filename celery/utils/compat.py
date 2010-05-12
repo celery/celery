@@ -348,8 +348,8 @@ except ImportError:
         fillers = itertools.repeat(fillvalue)
         iters = [itertools.chain(it, sentinel(), fillers)
                     for it in args]
-    try:
-        for tup in itertools.izip(*iters):
-            yield tup
-    except IndexError:
-        pass
+        try:
+            for tup in itertools.izip(*iters):
+                yield tup
+        except IndexError:
+            pass
