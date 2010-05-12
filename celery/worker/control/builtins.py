@@ -1,7 +1,9 @@
 from datetime import datetime
 
+from celery import conf
 from celery.registry import tasks
 from celery.worker.revoke import revoked
+from celery.worker.buckets import TaskBucket
 from celery.worker.control.registry import Panel
 
 TASK_INFO_FIELDS = ("exchange", "routing_key", "rate_limit")
@@ -30,17 +32,22 @@ def rate_limit(panel, task_name, rate_limit, **kwargs):
     except KeyError:
         panel.logger.error("Rate limit attempt for unknown task %s" % (
             task_name, ))
-        return "unknown task"
+        return {"error": "unknown task"}
+
+    if conf.DISABLE_RATE_LIMITS:
+        panel.logger.error("Rate limit attempt, but rate limits disabled.")
+        return {"error": "rate limits disabled"}
 
     panel.listener.ready_queue.refresh()
 
     if not rate_limit:
         panel.logger.warn("Disabled rate limits for tasks of type %s" % (
                             task_name, ))
-    else:
-        panel.logger.warn("New rate limit for tasks of type %s: %s." % (
-                    task_name, rate_limit))
-    return True
+        return {"ok": "rate limit disabled successfully"}
+
+    panel.logger.warn("New rate limit for tasks of type %s: %s." % (
+                task_name, rate_limit))
+    return {"ok": "new rate limit set successfully"}
 
 
 @Panel.register

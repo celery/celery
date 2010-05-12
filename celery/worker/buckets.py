@@ -157,12 +157,10 @@ class TaskBucket(object):
         if task_name in self.buckets:
             task_queue = self._get_queue_for_type(task_name)
         else:
-            task_queue = task_type.rate_limit_queue_type()
+            task_queue = FastQueue()
 
         if rate_limit:
             task_queue = TokenBucketQueue(rate_limit, queue=task_queue)
-        else:
-            task_queue.expected_time = lambda: 0
 
         self.buckets[task_name] = task_queue
         return task_queue
@@ -194,6 +192,23 @@ class TaskBucket(object):
                 # Probably a Queue, not a TokenBucketQueue, so clear the
                 # underlying deque instead.
                 bucket.queue.clear()
+
+
+class FastQueue(Queue):
+    """:class:`Queue.Queue` supporting the interface of
+    :class:`TokenBucketQueue`."""
+
+    def clear(self):
+        return self.queue.clear()
+
+    def expected_time(self, tokens=1):
+        return 0
+
+    def can_consume(self, tokens=1):
+        return True
+
+    def wait(self, block=True):
+        return self.get(block=block)
 
 
 class TokenBucketQueue(object):

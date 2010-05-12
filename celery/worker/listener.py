@@ -203,12 +203,8 @@ class CarrotListener(object):
                 "CarrotListener: Re-establishing connection to the broker...")
         self.stop_consumers()
 
-        try:
-            # TaskBucket supports clear directly.
-            self.ready_queue.clear()
-        except AttributeError:
-            # Use the underlying deque of regular Queue
-            self.ready_queue.queue.clear()
+        # Clear internal queues.
+        self.ready_queue.clear()
         self.eta_schedule.clear()
 
         self.connection = self._open_connection()

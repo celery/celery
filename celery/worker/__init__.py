@@ -17,7 +17,7 @@ from celery.log import setup_logger, _hijack_multiprocessing_logger
 from celery.beat import EmbeddedClockService
 from celery.utils import noop, instantiate
 
-from celery.worker.buckets import TaskBucket
+from celery.worker.buckets import TaskBucket, FastQueue
 from celery.worker.scheduler import Scheduler
 
 
@@ -129,7 +129,7 @@ class WorkController(object):
 
         # Queues
         if conf.DISABLE_RATE_LIMITS:
-            self.ready_queue = Queue()
+            self.ready_queue = FastQueue()
         else:
             self.ready_queue = TaskBucket(task_registry=registry.tasks)
         self.eta_schedule = Scheduler(self.ready_queue, logger=self.logger)
