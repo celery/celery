@@ -2,6 +2,213 @@
  Change history
 ================
 
+1.0.3 [2010-05-13 xx:Xx x.x CET]
+================================
+
+Important notes
+---------------
+
+* Messages are now acked *just before* the task function is executed.
+
+	This is the behavior we've wanted all along, but couldn't have because of
+	limitations in the multiprocessing module.
+	The previous behavior was not good, and the situation worsened with the
+	release of 1.0.1, so this change will definitely improve
+	reliability, performance and operations in general.
+
+	For more information please see http://bit.ly/9hom6T
+
+* Database result backend: result now expliclty sets ``null=True`` as
+  ``django-picklefield`` version 0.1.5 changed the default behavior
+  right under our noses :(
+
+	See: http://bit.ly/d5OwMr
+
+	This means those who created their celery tables (via syncdb or
+	celeryinit) with picklefield versions >= 0.1.5 has to alter their tables to
+	allow the result field to be ``NULL`` manually.
+    
+	MySQL::
+    
+		ALTER TABLE celery_taskmeta MODIFY result TEXT NULL
+	
+
+* Removed ``Task.rate_limit_queue_type``, as it was not really useful
+  and made it harder to refactor some parts.
+
+* Now depends on carrot >= 0.10.4
+
+* Now depends on billiard >= 0.3.0
+
+News
+----
+
+* AMQP backend: Added timeout support for ``result.get()`` /
+  ``result.wait()``.
+
+* New task option: ``Task.acks_late`` (default: ``CELERY_ACKS_LATE``)
+
+	Late ack means the task messages will be acknowledged **after** the task
+	has been executed, not *just before*, which is the default behavior.
+
+	Note that this means the tasks may be executed twice if the worker
+	crashes in the middle of their execution. Not acceptable for most
+	applications, but desirable for others.
+
+* ``TaskPool.apply_async``: Now supports the ``accept_callback`` argument.
+
+* ``apply_async``: Now raises :exc:`ValueError` if task args is not a list,
+  or kwargs is not a tuple (http://github.com/ask/celery/issues/issue/95).
+
+* ``Task.max_retries`` can now be ``None``, which means it will retry forever.
+
+* Celerybeat: Now reuses the same connection when publishing large
+  sets of tasks.
+
+* Modified the task locking example in the documentation to use
+  ``cache.add`` for atomic locking.
+
+* Added experimental support for a *started* status on tasks.
+
+	If ``Task.track_started`` is enabled the task will report its status
+	as "started" when the task is executed by a worker.
+
+	The default value is ``False`` as the normal behaviour is to not
+	report that level of granularity. Tasks are either pending, finished,
+	or waiting to be retried. Having a "started" status can be useful for
+	when there are long running tasks and there is a need to report which
+	task is currently running.
+
+	The global default can be overridden by the ``CELERY_TRACK_STARTED``
+	setting.
+
+* User Guide: New section ``Tips and Best Practices``.
+
+	Contributions welcome!
+
+Fixes
+-----
+
+* Mediator thread no longer blocks for more than 1 second.
+
+	With rate limits enabled and when there was a lot of remaining time,
+	the mediator thread could block shutdown (and potentially block other
+	jobs from coming in).
+
+* Remote rate limits was not properly applied
+  (http://github.com/ask/celery/issues/issue/98)
+
+* Now handles exceptions with unicode messages correctly in
+  ``TaskWrapper.on_failure``.
+  
+* Database backend: ``TaskMeta.result``: default value should be ``None``
+  not empty string.
+
+Remote control commands
+-----------------------
+
+* Remote control commands can now send replies back to the caller.
+
+	Existing commands has been improved to send replies, and the client
+	interface in ``celery.task.control`` has new keyword arguments: ``reply``,
+	``timeout`` and ``limit``. Where reply means it will wait for replies,
+	timeout is the time in seconds to stop waiting for replies, and limit
+	is the maximum number of replies to get.
+
+	By default, it will wait for as many replies as possible for one second.
+
+	* rate_limit(task_name, destination=all, reply=False, timeout=1, limit=0)
+
+		Worker returns ``{"ok": message}`` on success,
+		or ``{"failure": message}`` on failure.
+
+			>>> from celery.task.control import rate_limit
+			>>> rate_limit("tasks.add", "10/s", reply=True)
+			[{'worker1': {'ok': 'new rate limit set successfully'}},
+			 {'worker2': {'ok': 'new rate limit set successfully'}}]
+
+	* ping(destination=all, reply=False, timeout=1, limit=0)
+
+		Worker returns the simple message ``"pong"``.
+
+			>>> from celery.task.control import ping
+			>>> ping(reply=True)
+			[{'worker1': 'pong'},
+			 {'worker2': 'pong'},
+
+	* revoke(destination=all, reply=False, timeout=1, limit=0)
+
+		Worker simply returns ``True``.
+
+			>>> from celery.task.control import revoke
+			>>> revoke("419e46eb-cf6a-4271-86a8-442b7124132c", reply=True)
+			[{'worker1': True},
+			 {'worker2'; True}]
+
+* You can now add your own remote control commands!
+
+	Remote control commands are functions registered in the command registry.
+	Registering a command is done using
+	``celery.worker.control.Panel.register``:
+
+	.. code-block:: python
+
+		from celery.task.control import Panel
+
+		@Panel.register
+		def reset_broker_connection(panel, **kwargs):
+			panel.listener.reset_connection()
+			return {"ok": "connection re-established"}
+
+	With this module imported in the worker, you can launch the command
+	using ``celery.task.control.broadcast``::
+
+		>>> from celery.task.control import broadcast
+		>>> broadcast("reset_broker_connection", reply=True)
+		[{'worker1': {'ok': 'connection re-established'},
+		 {'worker2': {'ok': 'connection re-established'}}]
+
+	**TIP** You can choose the worker(s) to receive the command
+	by using the ``destination`` argument::
+
+		>>> broadcast("reset_broker_connection", destination=["worker1"])
+		[{'worker1': {'ok': 'connection re-established'}]
+
+* New remote control command: ``dump_reserved``
+
+	Dumps tasks reserved by the worker, waiting to be executed::
+
+		>>> from celery.task.control import broadcast
+		>>> broadcast("dump_reserved", reply=True)
+		[{'myworker1': [<TaskWrapper ....>]}]
+
+* New remote control command: ``dump_schedule``
+
+	Dumps the workers currently registered ETA schedule.
+
+		>>> from celery.task.control import broadcast
+		>>> broadcast("dump_schedule", reply=True)
+		[{'w1': []},
+		{'w3': []},
+		{'w2': ['0. 2010-05-12 11:06:00 pri0 <TaskWrapper:
+					{name:"opalfeeds.tasks.refresh_feed_slice",
+					 id:"95b45760-4e73-4ce8-8eac-f100aa80273a",
+					 args:"(<Feeds freq_max:3600 freq_min:60
+								   start:2184.0 stop:3276.0>,)",
+					 kwargs:"{'page': 2}"}>']},
+		{'w4': ['0. 2010-05-12 11:00:00 pri0 <TaskWrapper:
+					{name:"opalfeeds.tasks.refresh_feed_slice",
+					 id:"c053480b-58fb-422f-ae68-8d30a464edfe",
+					 args:"(<Feeds freq_max:3600 freq_min:60
+								   start:1092.0 stop:2184.0>,)",
+					 kwargs:"{\'page\': 1}"}>',
+				'1. 2010-05-12 11:12:00 pri0 <TaskWrapper:
+					{name:"opalfeeds.tasks.refresh_feed_slice",
+					 id:"ab8bc59e-6cf8-44b8-88d0-f1af57789758",
+					 args:"(<Feeds freq_max:3600 freq_min:60
+								   start:3276.0 stop:4365>,)",
+					 kwargs:"{\'page\': 3}"}>']}]
+
 1.0.2 [2010-03-31 12:50 P.M CET]
 ================================
 

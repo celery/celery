@@ -472,6 +472,20 @@ If you don't care about the results of a task, be sure to set the
 Results can even be disabled globally using the ``CELERY_IGNORE_RESULT``
 setting.
 
+Disable rate limits if they're not used
+---------------------------------------
+
+Disabling rate limits altogether is recommended if you don't have
+any tasks using them. This is because the rate limit subsystem introduces
+quite a lot of complexity.
+
+Set the ``CELERY_DISABLE_RATE_LIMITS`` setting to globally disable
+rate limits:
+
+.. code-block:: python
+
+    CELERY_DISABLE_RATE_LIMITS = True
+
 Avoid launching synchronous subtasks
 ------------------------------------
 

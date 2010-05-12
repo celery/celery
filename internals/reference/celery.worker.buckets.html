@@ -91,6 +91,12 @@
             
   <div class="section" id="module-celery.worker.buckets">
 <h1>Token Bucket (rate limiting) - celery.worker.buckets<a class="headerlink" href="#module-celery.worker.buckets" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="celery.worker.buckets.FastQueue">
+<em class="property">class </em><tt class="descclassname">celery.worker.buckets.</tt><tt class="descname">FastQueue</tt><big>(</big><em>maxsize=0</em><big>)</big><a class="headerlink" href="#celery.worker.buckets.FastQueue" title="Permalink to this definition">¶</a></dt>
+<dd><tt class="xref docutils literal"><span class="pre">Queue.Queue</span></tt> supporting the interface of
+<a title="celery.worker.buckets.TokenBucketQueue" class="reference internal" href="#celery.worker.buckets.TokenBucketQueue"><tt class="xref docutils literal"><span class="pre">TokenBucketQueue</span></tt></a>.</dd></dl>
+
 <dl class="exception">
 <dt id="celery.worker.buckets.RateLimitExceeded">
 <em class="property">exception </em><tt class="descclassname">celery.worker.buckets.</tt><tt class="descname">RateLimitExceeded</tt><a class="headerlink" href="#celery.worker.buckets.RateLimitExceeded" title="Permalink to this definition">¶</a></dt>

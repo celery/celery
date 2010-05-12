@@ -535,6 +535,17 @@ def mytask(...)
 <p>Results can even be disabled globally using the <tt class="docutils literal"><span class="pre">CELERY_IGNORE_RESULT</span></tt>
 setting.</p>
 </div>
+<div class="section" id="disable-rate-limits-if-they-re-not-used">
+<h3>Disable rate limits if they&#8217;re not used<a class="headerlink" href="#disable-rate-limits-if-they-re-not-used" title="Permalink to this headline">¶</a></h3>
+<p>Disabling rate limits altogether is recommended if you don&#8217;t have
+any tasks using them. This is because the rate limit subsystem introduces
+quite a lot of complexity.</p>
+<p>Set the <tt class="docutils literal"><span class="pre">CELERY_DISABLE_RATE_LIMITS</span></tt> setting to globally disable
+rate limits:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_DISABLE_RATE_LIMITS</span> <span class="o">=</span> <span class="bp">True</span>
+</pre></div>
+</div>
+</div>
 <div class="section" id="avoid-launching-synchronous-subtasks">
 <h3>Avoid launching synchronous subtasks<a class="headerlink" href="#avoid-launching-synchronous-subtasks" title="Permalink to this headline">¶</a></h3>
 <p>Having a task wait for the result of another task is really inefficient,

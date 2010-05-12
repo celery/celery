@@ -214,13 +214,6 @@ limit), <tt class="docutils literal"><span class="pre">&quot;100/s&quot;</span><
 tasks a minute), <tt class="docutils literal"><span class="pre">&quot;100/h&quot;</span></tt> (hundred tasks an hour)</dd></dl>
 
 <dl class="attribute">
-<dt id="celery.task.Task.rate_limit_queue_type">
-<tt class="descname">rate_limit_queue_type</tt><a class="headerlink" href="#celery.task.Task.rate_limit_queue_type" title="Permalink to this definition">¶</a></dt>
-<dd>Type of queue used by the rate limiter for this kind of tasks.
-Default is a <tt class="xref docutils literal"><span class="pre">Queue.Queue</span></tt>, but you can change this to
-a <tt class="xref docutils literal"><span class="pre">Queue.LifoQueue</span></tt> or an invention of your own.</dd></dl>
-
-<dl class="attribute">
 <dt id="celery.task.Task.ignore_result">
 <tt class="descname">ignore_result</tt><a class="headerlink" href="#celery.task.Task.ignore_result" title="Permalink to this definition">¶</a></dt>
 <dd>Don&#8217;t store the return value of this task.</dd></dl>
@@ -510,11 +503,6 @@ with this object, i.e.:</p>
 </table>
 <p>The return value of this handler is ignored.</p>
 </dd></dl>
-
-<dl class="attribute">
-<dt>
-<tt class="descclassname">Task.</tt><tt class="descname">rate_limit_queue_type</tt></dt>
-<dd>alias of <tt class="xref docutils literal"><span class="pre">Queue</span></tt></dd></dl>
 
 <dl class="classmethod">
 <dt id="celery.task.Task.retry">
