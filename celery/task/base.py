@@ -1,7 +1,6 @@
 import sys
 import warnings
 from datetime import datetime, timedelta
-from Queue import Queue
 
 from billiard.serialization import pickle
 
@@ -128,12 +127,6 @@ class Task(object):
         limit), ``"100/s"`` (hundred tasks a second), ``"100/m"`` (hundred
         tasks a minute), ``"100/h"`` (hundred tasks an hour)
 
-    .. attribute:: rate_limit_queue_type
-
-        Type of queue used by the rate limiter for this kind of tasks.
-        Default is a :class:`Queue.Queue`, but you can change this to
-        a :class:`Queue.LifoQueue` or an invention of your own.
-
     .. attribute:: ignore_result
 
         Don't store the return value of this task.
@@ -200,7 +193,6 @@ class Task(object):
     default_retry_delay = 3 * 60
     serializer = conf.TASK_SERIALIZER
     rate_limit = conf.DEFAULT_RATE_LIMIT
-    rate_limit_queue_type = Queue
     backend = default_backend
     exchange_type = conf.DEFAULT_EXCHANGE_TYPE
     delivery_mode = conf.DEFAULT_DELIVERY_MODE
