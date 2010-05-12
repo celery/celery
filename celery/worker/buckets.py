@@ -1,10 +1,11 @@
 import time
 from Queue import Queue, Empty as QueueEmpty
-from itertools import chain, izip_longest
+from itertools import chain
 
 from carrot.utils import partition
 
 from celery.utils import all
+from celery.utils.compat import izip_longest
 
 RATE_MODIFIER_MAP = {"s": lambda n: n,
                      "m": lambda n: n / 60.0,
