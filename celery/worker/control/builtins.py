@@ -53,7 +53,6 @@ def rate_limit(panel, task_name, rate_limit, **kwargs):
 @Panel.register
 def dump_schedule(panel, **kwargs):
     schedule = panel.listener.eta_schedule
-    info = ["--Empty Schedule--"]
     if not schedule.queue:
         panel.logger.info("--Empty schedule--")
         return []
@@ -66,6 +65,20 @@ def dump_schedule(panel, **kwargs):
     panel.logger.info("* Dump of current schedule:\n%s" % (
                             "\n".join(info, )))
     return info
+
+
+@Panel.register
+def dump_reserved(panel, **kwargs):
+    ready_queue = panel.listener.ready_queue
+    reserved = ready_queue.items
+    if not reserved:
+        panel.logger.info("--Empty queue--")
+        return []
+    info = map(repr, reserved)
+    panel.logger.info("* Dump of currently reserved tasks:\n%s" % (
+                            "\n".join(info, )))
+    return info
+
 
 
 @Panel.register

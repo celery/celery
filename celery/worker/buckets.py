@@ -1,5 +1,6 @@
 import time
 from Queue import Queue, Empty as QueueEmpty
+from itertools import chain, izip_longest
 
 from carrot.utils import partition
 
@@ -176,7 +177,6 @@ class TaskBucket(object):
         if task_name not in self.buckets:
             return self.update_bucket_for_type(task_name)
 
-
     def qsize(self):
         """Get the total size of all the queues."""
         return sum(bucket.qsize() for bucket in self.buckets.values())
@@ -186,13 +186,14 @@ class TaskBucket(object):
 
     def clear(self):
         for bucket in self.buckets.values():
-            try:
-                bucket.clear()
-            except AttributeError:
-                # Probably a Queue, not a TokenBucketQueue, so clear the
-                # underlying deque instead.
-                bucket.queue.clear()
+            bucket.clear()
 
+    @property
+    def items(self):
+        # for queues with contents [(1, 2), (3, 4), (5, 6), (7, 8)]
+        # zips and flattens to [1, 3, 5, 7, 2, 4, 6, 8]
+        return filter(None, chain.from_iterable(izip_longest(*[bucket.items
+                                    for bucket in self.buckets.values()])))
 
 class FastQueue(Queue):
     """:class:`Queue.Queue` supporting the interface of
@@ -209,6 +210,10 @@ class FastQueue(Queue):
 
     def wait(self, block=True):
         return self.get(block=block)
+
+    @property
+    def items(self):
+        return self.queue
 
 
 class TokenBucketQueue(object):
@@ -307,7 +312,7 @@ class TokenBucketQueue(object):
         return self.queue.empty()
 
     def clear(self):
-        return self.queue.queue.clear()
+        return self.items.clear()
 
     def wait(self, block=False):
         """Wait until a token can be retrieved from the bucket and return
@@ -339,3 +344,7 @@ class TokenBucketQueue(object):
             self._tokens = min(self.capacity, self._tokens + delta)
             self.timestamp = now
         return self._tokens
+
+    @property
+    def items(self):
+        return self.queue.queue
