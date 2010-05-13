@@ -839,32 +839,23 @@ class ScheduledTask(PeriodicTask):
     day_of_week = None    # (0 - 6) (Sunday=0)
     abstract = True
 
+    def check_hour_minute(self, now):
+        (due, when) = (False, 1)
+        if self.hour is None and self.minute is None:
+            (due, when) = (True, 1)
+        if self.hour is None and self.minute == now.minute:
+            (due, when) = (True, 1)
+        if self.hour == now.hour and self.minute is None:
+            (due, when) = (True, 1)
+        if self.hour == now.hour and self.minute == now.minute:
+            (due, when) = (True, 1)
+        return (due, when)
+
     def is_due(self, last_run_at):
         n = get_current_time()
         last = (n - last_run_at)
+        (due, when) = (False, 1)
         if last.days > 0 or last.seconds > 60:
-            if self.day_of_week is None:
-                if self.hour is None and self.minute is None:
-                    return (True, 1)
-
-                if self.hour is None and self.minute == n.minute:
-                    return (True, 1)
-
-                if self.hour == n.hour and self.minute is None:
-                    return (True, 1)
-
-                if self.hour == n.hour and self.minute == n.minute:
-                    return (True, 1)
-            elif self.day_of_week == n.isoweekday():
-                if self.hour is None and self.minute is None:
-                    return (True, 1)
-
-                if self.hour is None and self.minute == n.minute:
-                    return (True, 1)
-
-                if self.hour == n.hour and self.minute is None:
-                    return (True, 1)
-
-                if self.hour == n.hour and self.minute == n.minute:
-                    return (True, 1)
-        return (False, 1)
+            if self.day_of_week in (None, n.isoweekday()):
+                (due, when) = self.check_hour_minute(n)
+        return (due, when)
