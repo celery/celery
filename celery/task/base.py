@@ -16,6 +16,10 @@ from celery.messaging import establish_connection as _establish_connection
 from celery.exceptions import MaxRetriesExceededError, RetryTaskError
 
 
+def get_current_time():
+    return datetime.now()
+
+
 class TaskType(type):
     """Metaclass for tasks.
 
@@ -776,3 +780,91 @@ class PeriodicTask(Task):
             if predicate(delta) >= 1.0:
                 return datetime(*args[:res])
         return dt
+
+
+class ScheduledTask(PeriodicTask):
+    """A scheduled task is a task that adds more precise scheduling to the
+    features of a :class:`celery.task.base.PeriodicTask`.
+
+    Like a :manpage:`cron` job, you can specify units of time of when you would
+    like the task to execute.  While not a full implementation of cron, it
+    should provide a fair degree of common scheduling needs.  You can specify
+    a minute, an hour, and/or a day of the week.
+
+    .. attribute:: minute
+
+        An integer from 0-59 that represents the minute of an hour of when
+        execution should occur.
+
+    .. attribute:: hour
+
+        An integer from 0-23 that represents the hour of a day of when
+        execution should occur.
+
+    .. attribute:: day_of_week
+
+        An integer from 0-6, where Sunday = 0 and Saturday = 6, that represents
+        the day of week that execution should occur.
+
+    Example
+
+        >>> from celery.task import ScheduledTask
+        >>> class EveryMondayMorningTask(ScheduledTask):
+        ...     hour = 7
+        ...     minute = 30
+        ...     day_of_week = 1
+        ...     def run(self, **kwargs):
+        ...         logger = self.get_logger(**kwargs)
+        ...         logger.info("Execute every Monday at 7:30AM.")
+
+        >>> from celery.task import ScheduledTask
+        >>> class EveryMorningTask(ScheduledTask):
+        ...     hour = 7
+        ...     minute = 30
+        ...     def run(self, **kwargs):
+        ...         logger = self.get_logger(**kwargs)
+        ...         logger.info("Execute every day at 7:30AM.")
+
+        >>> from celery.task import ScheduledTask
+        >>> class EveryQuarterPastTheHourTask(ScheduledTask):
+        ...     minute = 15
+        ...     def run(self, **kwargs):
+        ...         logger = self.get_logger(**kwargs)
+        ...         logger.info("Execute every 0:15 past the hour every day.")
+
+    """
+    run_every = timedelta(seconds=1)
+    hour = None           # (0 - 23)
+    minute = None         # (0 - 59)
+    day_of_week = None    # (0 - 6) (Sunday=0)
+    abstract = True
+
+    def is_due(self, last_run_at):
+        n = get_current_time()
+        last = (n - last_run_at)
+        if last.days > 0 or last.seconds > 60:
+            if self.day_of_week is None:
+                if self.hour is None and self.minute is None:
+                    return (True, 1)
+
+                if self.hour is None and self.minute == n.minute:
+                    return (True, 1)
+
+                if self.hour == n.hour and self.minute is None:
+                    return (True, 1)
+
+                if self.hour == n.hour and self.minute == n.minute:
+                    return (True, 1)
+            elif self.day_of_week == n.isoweekday():
+                if self.hour is None and self.minute is None:
+                    return (True, 1)
+
+                if self.hour is None and self.minute == n.minute:
+                    return (True, 1)
+
+                if self.hour == n.hour and self.minute is None:
+                    return (True, 1)
+
+                if self.hour == n.hour and self.minute == n.minute:
+                    return (True, 1)
+        return (False, 1)

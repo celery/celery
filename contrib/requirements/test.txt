@@ -8,3 +8,10 @@ pytyrant
 redis
 pymongo
 git+git://github.com/exogen/nose-achievements.git
+mock>=0.6.0
+-e git+git://github.com/ask/billiard.git#egg=billiard
+-e git+git://github.com/ask/carrot.git#egg=carrot
+django
+importlib
+django-picklefield
+python-dateutil

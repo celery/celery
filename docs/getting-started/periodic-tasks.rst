@@ -19,6 +19,21 @@ Here's an example of a periodic task:
             logger.info("Running periodic task!")
     >>> tasks.register(MyPeriodicTask)
 
+If you want a little more control over when the task is executed, for example,
+a particular time of day or day of the week, you can subclass a ``ScheduledTask``:
+
+.. code-block:: python
+
+    from celery.task import ScheduledTask
+
+    class EveryMondayMorningTask(ScheduledTask):
+        hour = 7
+        minute = 30
+        day_of_week = 1
+
+        def run(self, **kwargs):
+            logger = self.get_logger(**kwargs)
+            logger.info("This will execute every Monday at 7:30AM.")
 
 If you want to use periodic tasks you need to start the ``celerybeat``
 service. You have to make sure only one instance of this server is running at

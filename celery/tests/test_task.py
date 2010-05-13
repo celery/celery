@@ -1,6 +1,7 @@
 import unittest2 as unittest
 from StringIO import StringIO
 from datetime import datetime, timedelta
+from mock import patch
 
 from celery import task
 from celery import messaging
@@ -465,3 +466,80 @@ class TestPeriodicTask(unittest.TestCase):
         due, remaining = p.is_due(datetime.now() - p.run_every)
         self.assertTrue(due)
         self.assertEqual(remaining, p.timedelta_seconds(p.run_every))
+
+
+class EveryMinutePeriodic(task.ScheduledTask):
+    pass
+
+
+class HourlyPeriodic(task.ScheduledTask):
+    minute = 30
+
+
+class DailyPeriodic(task.ScheduledTask):
+    hour = 7
+    minute = 30
+
+
+class WeeklyPeriodic(task.ScheduledTask):
+    hour = 7
+    minute = 30
+    day_of_week = 4
+
+
+class TestScheduledTask(unittest.TestCase):
+    
+    def test_every_minute_execution_is_due(self):
+        last_ran = datetime.now() - timedelta(seconds=61)
+        due, remaining = EveryMinutePeriodic().is_due(last_ran)
+        self.assertTrue(due)
+        self.assertEquals(remaining, 1)
+        
+    def test_every_minute_execution_is_not_due(self):
+        last_ran = datetime.now() - timedelta(seconds=30)
+        due, remaining = EveryMinutePeriodic().is_due(last_ran)
+        self.assertFalse(due)
+        self.assertEquals(remaining, 1)
+    
+    @patch('celery.task.base.get_current_time')
+    def test_every_hour_execution_is_due(self, NowMock):
+        NowMock.return_value = datetime(2010, 5, 10, 10, 30)
+        due, remaining = HourlyPeriodic().is_due(datetime(2010, 5, 10, 6, 30))
+        self.assertTrue(due)
+        self.assertEquals(remaining, 1)
+    
+    @patch('celery.task.base.get_current_time')
+    def test_every_hour_execution_is_not_due(self, NowMock):
+        NowMock.return_value = datetime(2010, 5, 10, 10, 29)
+        due, remaining = HourlyPeriodic().is_due(datetime(2010, 5, 10, 9, 30))
+        self.assertFalse(due)
+        self.assertEquals(remaining, 1)
+
+    @patch('celery.task.base.get_current_time')
+    def test_daily_execution_is_due(self, NowMock):
+        NowMock.return_value = datetime(2010, 5, 10, 7, 30)
+        due, remaining = DailyPeriodic().is_due(datetime(2010, 5, 9, 7, 30))
+        self.assertTrue(due)
+        self.assertEquals(remaining, 1)
+
+    @patch('celery.task.base.get_current_time')
+    def test_daily_execution_is_not_due(self, NowMock):
+        NowMock.return_value = datetime(2010, 5, 10, 10, 30)
+        due, remaining = DailyPeriodic().is_due(datetime(2010, 5, 10, 6, 29))
+        self.assertFalse(due)
+        self.assertEquals(remaining, 1)
+
+    @patch('celery.task.base.get_current_time')
+    def test_weekly_execution_is_due(self, NowMock):
+        NowMock.return_value = datetime(2010, 5, 6, 7, 30)
+        due, remaining = WeeklyPeriodic().is_due(datetime(2010, 4, 30, 7, 30))
+        self.assertTrue(due)
+        self.assertEquals(remaining, 1)
+
+    @patch('celery.task.base.get_current_time')
+    def test_weekly_execution_is_not_due(self, NowMock):
+        NowMock.return_value = datetime(2010, 5, 7, 10, 30)
+        due, remaining = WeeklyPeriodic().is_due(datetime(2010, 4, 30, 6, 29))
+        self.assertFalse(due)
+        self.assertEquals(remaining, 1)
+
