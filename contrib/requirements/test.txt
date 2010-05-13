@@ -7,4 +7,3 @@ coverage>=3.0
 pytyrant
 redis
 pymongo
-git+git://github.com/exogen/nose-achievements.git
