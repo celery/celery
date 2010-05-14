@@ -80,7 +80,6 @@ def dump_reserved(panel, **kwargs):
     return info
 
 
-
 @Panel.register
 def dump_tasks(panel, **kwargs):
 

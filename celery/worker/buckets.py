@@ -174,6 +174,7 @@ class TaskBucket(object):
         return filter(None, chain.from_iterable(izip_longest(*[bucket.items
                                     for bucket in self.buckets.values()])))
 
+
 class FastQueue(Queue):
     """:class:`Queue.Queue` supporting the interface of
     :class:`TokenBucketQueue`."""

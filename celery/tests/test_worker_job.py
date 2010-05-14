@@ -417,4 +417,5 @@ class TestTaskWrapper(unittest.TestCase):
         self._test_on_failure(Exception(u"Бобры атакуют"))
 
     def test_on_failure_utf8_exception(self):
-        self._test_on_failure(Exception(u"Бобры атакуют".encode('utf8')))
+        self._test_on_failure(Exception(
+            u"Бобры атакуют".encode('utf8')))

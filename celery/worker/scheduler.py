@@ -85,6 +85,7 @@ class Scheduler(object):
     def info(self):
         return ({"eta": eta, "priority": priority, "item": item}
                     for eta, priority, item, _ in self.queue)
+
     @property
     def queue(self):
         events = list(self._queue)
