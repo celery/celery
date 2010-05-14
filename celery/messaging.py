@@ -160,12 +160,13 @@ class ControlReplyConsumer(Consumer):
             responses.append(message_data)
 
         self.callbacks = [callback]
-        it = self.iterconsume()
+        self.consume()
         for i in limit and range(limit) or count():
             try:
                 self.connection.drain_events(timeout=timeout)
             except socket.timeout:
                 break
+
         return responses
 
 

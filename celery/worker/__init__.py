@@ -6,7 +6,6 @@ The Multiprocessing Worker Server
 import socket
 import logging
 import traceback
-from Queue import Queue
 from multiprocessing.util import Finalize
 
 from celery import conf
@@ -83,12 +82,6 @@ class WorkController(object):
 
         The :class:`Queue.Queue` that holds tasks ready for immediate
         processing.
-
-    .. attribute:: hold_queue
-
-        The :class:`Queue.Queue` that holds paused tasks. Reasons for holding
-        back the task include waiting for ``eta`` to pass or the task is being
-        retried.
 
     .. attribute:: schedule_controller
 

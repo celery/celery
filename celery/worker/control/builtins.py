@@ -3,7 +3,6 @@ from datetime import datetime
 from celery import conf
 from celery.registry import tasks
 from celery.worker.revoke import revoked
-from celery.worker.buckets import TaskBucket
 from celery.worker.control.registry import Panel
 
 TASK_INFO_FIELDS = ("exchange", "routing_key", "rate_limit")
