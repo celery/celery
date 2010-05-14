@@ -186,28 +186,28 @@ Remote control commands
 
 	Dumps the workers currently registered ETA schedule.
 
-		>>> from celery.task.control import broadcast
-		>>> broadcast("dump_schedule", reply=True)
-		[{'w1': []},
-		{'w3': []},
-		{'w2': ['0. 2010-05-12 11:06:00 pri0 <TaskWrapper:
-					{name:"opalfeeds.tasks.refresh_feed_slice",
-					 id:"95b45760-4e73-4ce8-8eac-f100aa80273a",
-					 args:"(<Feeds freq_max:3600 freq_min:60
-								   start:2184.0 stop:3276.0>,)",
-					 kwargs:"{'page': 2}"}>']},
-		{'w4': ['0. 2010-05-12 11:00:00 pri0 <TaskWrapper:
-					{name:"opalfeeds.tasks.refresh_feed_slice",
-					 id:"c053480b-58fb-422f-ae68-8d30a464edfe",
-					 args:"(<Feeds freq_max:3600 freq_min:60
-								   start:1092.0 stop:2184.0>,)",
-					 kwargs:"{\'page\': 1}"}>',
-				'1. 2010-05-12 11:12:00 pri0 <TaskWrapper:
-					{name:"opalfeeds.tasks.refresh_feed_slice",
-					 id:"ab8bc59e-6cf8-44b8-88d0-f1af57789758",
-					 args:"(<Feeds freq_max:3600 freq_min:60
-								   start:3276.0 stop:4365>,)",
-					 kwargs:"{\'page\': 3}"}>']}]
+        >>> from celery.task.control import broadcast
+        >>> broadcast("dump_schedule", reply=True)
+        [{'w1': []},
+         {'w3': []},
+         {'w2': ['0. 2010-05-12 11:06:00 pri0 <TaskWrapper:
+                    {name:"opalfeeds.tasks.refresh_feed_slice",
+                     id:"95b45760-4e73-4ce8-8eac-f100aa80273a",
+                     args:"(<Feeds freq_max:3600 freq_min:60
+                                   start:2184.0 stop:3276.0>,)",
+                     kwargs:"{'page': 2}"}>']},
+         {'w4': ['0. 2010-05-12 11:00:00 pri0 <TaskWrapper:
+                    {name:"opalfeeds.tasks.refresh_feed_slice",
+                     id:"c053480b-58fb-422f-ae68-8d30a464edfe",
+                     args:"(<Feeds freq_max:3600 freq_min:60
+                                   start:1092.0 stop:2184.0>,)",
+                     kwargs:"{\'page\': 1}"}>',
+                '1. 2010-05-12 11:12:00 pri0 <TaskWrapper:
+                    {name:"opalfeeds.tasks.refresh_feed_slice",
+                     id:"ab8bc59e-6cf8-44b8-88d0-f1af57789758",
+                     args:"(<Feeds freq_max:3600 freq_min:60
+                                   start:3276.0 stop:4365>,)",
+                     kwargs:"{\'page\': 3}"}>']}]
 
 1.0.2 [2010-03-31 12:50 P.M CET]
 ================================
