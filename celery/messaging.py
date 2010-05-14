@@ -125,6 +125,7 @@ class EventPublisher(Publisher):
     exchange = conf.EVENT_EXCHANGE
     exchange_type = conf.EVENT_EXCHANGE_TYPE
     routing_key = conf.EVENT_ROUTING_KEY
+    serializer = conf.EVENT_SERIALIZER
 
 
 class EventConsumer(Consumer):

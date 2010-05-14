@@ -483,7 +483,7 @@ class DailyPeriodic(task.PeriodicTask):
 
 
 class WeeklyPeriodic(task.PeriodicTask):
-    run_every = task.crontab(hour=7, minute=30, day_of_week=4)
+    run_every = task.crontab(hour=7, minute=30, day_of_week="thursday")
 
 
 def patch_crontab_nowfun(cls, retval):

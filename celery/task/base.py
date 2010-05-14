@@ -740,12 +740,24 @@ class crontab(schedule):
         represents the day of week that execution should occur.
 
     """
+    daynames = "sun", "mon", "tue", "wed", "thu", "fri", "sat"
+    weekdays = dict((name, dow) for name, dow in zip(daynames, range(7)))
+
     def __init__(self, minute=None, hour=None, day_of_week=None,
             nowfun=datetime.now):
         self.hour = hour                  # (0 - 23)
         self.minute = minute              # (0 - 59)
         self.day_of_week = day_of_week    # (0 - 6) (Sunday=0)
         self.nowfun = nowfun
+
+        if isinstance(self.day_of_week, basestring):
+            abbreviation = self.day_of_week[0:3].lower()
+            try:
+                self.day_of_week = self.weekdays[abbreviation]
+            except KeyError:
+                # Show original day name in exception, instead of abbr.
+                raise KeyError(self.day_of_week)
+
 
     def remaining_estimate(self, last_run_at):
         # remaining_estimate controls the frequency of scheduler
