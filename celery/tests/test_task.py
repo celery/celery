@@ -6,6 +6,7 @@ from billiard.utils.functional import wraps
 
 from celery import task
 from celery import messaging
+from celery.task.schedules import crontab
 from celery.utils import timeutils
 from celery.utils import gen_unique_id
 from celery.result import EagerResult
@@ -472,19 +473,19 @@ class TestPeriodicTask(unittest.TestCase):
 
 
 class EveryMinutePeriodic(task.PeriodicTask):
-    run_every = task.crontab()
+    run_every = crontab()
 
 
 class HourlyPeriodic(task.PeriodicTask):
-    run_every = task.crontab(minute=30)
+    run_every = crontab(minute=30)
 
 
 class DailyPeriodic(task.PeriodicTask):
-    run_every = task.crontab(hour=7, minute=30)
+    run_every = crontab(hour=7, minute=30)
 
 
 class WeeklyPeriodic(task.PeriodicTask):
-    run_every = task.crontab(hour=7, minute=30, day_of_week="thursday")
+    run_every = crontab(hour=7, minute=30, day_of_week="thursday")
 
 
 def patch_crontab_nowfun(cls, retval):

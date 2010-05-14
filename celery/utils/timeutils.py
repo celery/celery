@@ -55,6 +55,40 @@ def delta_resolution(dt, delta):
     return dt
 
 
+def remaining(start, ends_in, now=None, relative=True):
+    """Calculate the remaining time for a start date and a timedelta.
+
+    E.g. "how many seconds left for 30 seconds after ``start``?"
+
+    :param start: Start :class:`datetime.datetime`.
+    :param ends_in: The end delta as a :class:`datetime.timedelta`.
+
+    :keyword relative: If set to ``False``, the end time will be calculated
+        using :func:`delta_resolution` (i.e. rounded to the resolution
+          of ``ends_in``).
+    :keyword now: The current time, defaults to :func:`datetime.now`.
+
+    >>> remaining(datetime.now(), ends_in=timedelta(seconds=30))
+    '0:0:29.999948'
+
+    >>> str(remaining(datetime.now() - timedelta(minutes=29),
+                  ends_in=timedelta(hours=2)))
+    '1:30:59.999938'
+
+    >>> str(remaining(datetime.now() - timedelta(minutes=29),
+                  ends_in=timedelta(hours=2),
+                  relative=False))
+    '1:11:18.458437'
+
+    """
+    now = now or datetime.now()
+
+    end_date = start + ends_in
+    if not relative:
+        end_date = delta_resolution(end_date, ends_in)
+    return end_date - now
+
+
 def rate(rate):
     """Parses rate strings, such as ``"100/m"`` or ``"2/h"``
     and converts them to seconds."""
