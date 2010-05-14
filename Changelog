@@ -55,6 +55,41 @@ News
 	crashes in the middle of their execution. Not acceptable for most
 	applications, but desirable for others.
 
+* Added crontab-like scheduling to periodic tasks.
+
+	Like a cron job, you can specify units of time of when
+	you would like the task to execute. While not a full implementation
+	of cron's features, it should provide a fair degree of common scheduling
+	needs.
+    
+    You can specify a minute (0-59), an hour (0-23), and/or a day of the
+    week (0-6 where 0 is Sunday, or by names: sun, mon, tue, wed, thu, fri,
+    sat).
+
+	Examples:
+
+	.. code-block:: python
+
+		from celery.task import crontab
+		from celery.decorators import periodic_task
+
+		@periodic_task(run_every=crontab(hour=7, minute=30))
+		def every_morning():
+			print("Runs every morning at 7:30a.m")
+
+		@periodic_task(run_every=crontab(hour=7, minute=30,
+									     day_of_week="monday"))
+		def every_monday_morning():
+			print("Run every monday morning at 7:30a.m")
+
+		@periodic_task(run_every=crontab(minutes=30))
+		def every_hour():
+			print("Runs every hour on the clock. e.g. 1:30, 2:30, 3:30 etc.")
+
+	Note that this a late addition. While we have unittests, due to the
+	nature of this feature we haven't been able to completely test this
+	in practice, so consider this experimental.
+
 * ``TaskPool.apply_async``: Now supports the ``accept_callback`` argument.
 
 * ``apply_async``: Now raises :exc:`ValueError` if task args is not a list,
