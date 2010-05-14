@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../../static/doctools.js"></script>
     <link rel="top" title="Celery v1.0.3-pre1 (unstable) documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
-    <link rel="next" title="Debugging Info - celery.utils.info" href="celery.utils.info.html" />
+    <link rel="next" title="Time and Date Utilities - celery.utils.timeutils" href="celery.utils.timeutils.html" />
     <link rel="prev" title="Logging - celery.log" href="celery.log.html" /> 
   </head>
   <body>
@@ -35,7 +35,7 @@
 		<li id="page_buttons">
 			<div class="headerButton"><a href="../../genindex.html" title="General Index" accesskey="I">index</a></div>
 			<div class="headerButton"><a href="../../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
-			<div class="headerButton"><a href="celery.utils.info.html" title="Debugging Info - celery.utils.info" accesskey="N">next</a></div>
+			<div class="headerButton"><a href="celery.utils.timeutils.html" title="Time and Date Utilities - celery.utils.timeutils" accesskey="N">next</a></div>
 			<div class="headerButton"><a href="celery.log.html" title="Logging - celery.log" accesskey="P">previous</a></div>
 		</li>
 	</ul>
@@ -244,7 +244,7 @@ yield the last value infinitely.</dd></dl>
 
 <dl class="function">
 <dt id="celery.utils.retry_over_time">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">retry_over_time</tt><big>(</big><em>fun</em>, <em>catch</em>, <em>args=</em><span class="optional">[</span><span class="optional">]</span>, <em>kwargs={}</em>, <em>errback=&lt;function noop at 0x102dd12a8&gt;</em>, <em>max_retries=None</em>, <em>interval_start=2</em>, <em>interval_step=2</em>, <em>interval_max=30</em><big>)</big><a class="headerlink" href="#celery.utils.retry_over_time" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.utils.</tt><tt class="descname">retry_over_time</tt><big>(</big><em>fun</em>, <em>catch</em>, <em>args=</em><span class="optional">[</span><span class="optional">]</span>, <em>kwargs={}</em>, <em>errback=&lt;function noop at 0x1038062a8&gt;</em>, <em>max_retries=None</em>, <em>interval_start=2</em>, <em>interval_step=2</em>, <em>interval_max=30</em><big>)</big><a class="headerlink" href="#celery.utils.retry_over_time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retry the function over and over until max retries is exceeded.</p>
 <p>For each retry we sleep a for a while before we try again, this interval
 is increased for every retry until the max seconds is reached.</p>
@@ -274,13 +274,6 @@ retry.</li>
 </tr>
 </tbody>
 </table>
-</dd></dl>
-
-<dl class="function">
-<dt id="celery.utils.timedelta_seconds">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">timedelta_seconds</tt><big>(</big><em>delta</em><big>)</big><a class="headerlink" href="#celery.utils.timedelta_seconds" title="Permalink to this definition">¶</a></dt>
-<dd><p>Convert <tt class="xref docutils literal"><span class="pre">datetime.timedelta</span></tt> to seconds.</p>
-<p>Doesn&#8217;t account for negative values.</p>
 </dd></dl>
 
 </div>

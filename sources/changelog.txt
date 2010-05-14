@@ -55,6 +55,41 @@ News
 	crashes in the middle of their execution. Not acceptable for most
 	applications, but desirable for others.
 
+* Added crontab-like scheduling to periodic tasks.
+
+	Like a cron job, you can specify units of time of when
+	you would like the task to execute. While not a full implementation
+	of cron's features, it should provide a fair degree of common scheduling
+	needs.
+    
+    You can specify a minute (0-59), an hour (0-23), and/or a day of the
+    week (0-6 where 0 is Sunday, or by names: sun, mon, tue, wed, thu, fri,
+    sat).
+
+	Examples:
+
+	.. code-block:: python
+
+		from celery.task import crontab
+		from celery.decorators import periodic_task
+
+		@periodic_task(run_every=crontab(hour=7, minute=30))
+		def every_morning():
+			print("Runs every morning at 7:30a.m")
+
+		@periodic_task(run_every=crontab(hour=7, minute=30,
+									     day_of_week="monday"))
+		def every_monday_morning():
+			print("Run every monday morning at 7:30a.m")
+
+		@periodic_task(run_every=crontab(minutes=30))
+		def every_hour():
+			print("Runs every hour on the clock. e.g. 1:30, 2:30, 3:30 etc.")
+
+	Note that this a late addition. While we have unittests, due to the
+	nature of this feature we haven't been able to completely test this
+	in practice, so consider this experimental.
+
 * ``TaskPool.apply_async``: Now supports the ``accept_callback`` argument.
 
 * ``apply_async``: Now raises :exc:`ValueError` if task args is not a list,
@@ -186,28 +221,28 @@ Remote control commands
 
 	Dumps the workers currently registered ETA schedule.
 
-		>>> from celery.task.control import broadcast
-		>>> broadcast("dump_schedule", reply=True)
-		[{'w1': []},
-		{'w3': []},
-		{'w2': ['0. 2010-05-12 11:06:00 pri0 <TaskWrapper:
-					{name:"opalfeeds.tasks.refresh_feed_slice",
-					 id:"95b45760-4e73-4ce8-8eac-f100aa80273a",
-					 args:"(<Feeds freq_max:3600 freq_min:60
-								   start:2184.0 stop:3276.0>,)",
-					 kwargs:"{'page': 2}"}>']},
-		{'w4': ['0. 2010-05-12 11:00:00 pri0 <TaskWrapper:
-					{name:"opalfeeds.tasks.refresh_feed_slice",
-					 id:"c053480b-58fb-422f-ae68-8d30a464edfe",
-					 args:"(<Feeds freq_max:3600 freq_min:60
-								   start:1092.0 stop:2184.0>,)",
-					 kwargs:"{\'page\': 1}"}>',
-				'1. 2010-05-12 11:12:00 pri0 <TaskWrapper:
-					{name:"opalfeeds.tasks.refresh_feed_slice",
-					 id:"ab8bc59e-6cf8-44b8-88d0-f1af57789758",
-					 args:"(<Feeds freq_max:3600 freq_min:60
-								   start:3276.0 stop:4365>,)",
-					 kwargs:"{\'page\': 3}"}>']}]
+        >>> from celery.task.control import broadcast
+        >>> broadcast("dump_schedule", reply=True)
+        [{'w1': []},
+         {'w3': []},
+         {'w2': ['0. 2010-05-12 11:06:00 pri0 <TaskWrapper:
+                    {name:"opalfeeds.tasks.refresh_feed_slice",
+                     id:"95b45760-4e73-4ce8-8eac-f100aa80273a",
+                     args:"(<Feeds freq_max:3600 freq_min:60
+                                   start:2184.0 stop:3276.0>,)",
+                     kwargs:"{'page': 2}"}>']},
+         {'w4': ['0. 2010-05-12 11:00:00 pri0 <TaskWrapper:
+                    {name:"opalfeeds.tasks.refresh_feed_slice",
+                     id:"c053480b-58fb-422f-ae68-8d30a464edfe",
+                     args:"(<Feeds freq_max:3600 freq_min:60
+                                   start:1092.0 stop:2184.0>,)",
+                     kwargs:"{\'page\': 1}"}>',
+                '1. 2010-05-12 11:12:00 pri0 <TaskWrapper:
+                    {name:"opalfeeds.tasks.refresh_feed_slice",
+                     id:"ab8bc59e-6cf8-44b8-88d0-f1af57789758",
+                     args:"(<Feeds freq_max:3600 freq_min:60
+                                   start:3276.0 stop:4365>,)",
+                     kwargs:"{\'page\': 3}"}>']}]
 
 1.0.2 [2010-03-31 12:50 P.M CET]
 ================================

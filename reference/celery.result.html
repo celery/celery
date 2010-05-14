@@ -60,6 +60,7 @@
 <li class="toctree-l2"><a class="reference external" href="celery.conf.html">Configuration - celery.conf</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.task.control.html">Remote Management of Workers - celery.task.control</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.task.http.html">HTTP Callback Tasks - celery.task.http</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.task.schedules.html">Periodic Task Schedule Behaviors - celery.task.schedules</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.signals.html">Signals - celery.signals</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.exceptions.html">Exceptions - celery.exceptions</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.task.builtins.html">Built-in Task Classes - celery.task.builtins</a></li>
@@ -182,8 +183,8 @@
 <dt id="celery.result.BaseAsyncResult.ready">
 <tt class="descclassname">BaseAsyncResult.</tt><tt class="descname">ready</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult.ready" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task executed successfully, or raised
-an exception. If the task is still running, pending, or is waiting for retry
-then <tt class="xref docutils literal"><span class="pre">False</span></tt> is returned.</p>
+an exception. If the task is still running, pending, or is waiting
+for retry then <tt class="xref docutils literal"><span class="pre">False</span></tt> is returned.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -454,12 +455,12 @@ executed.</td>
 
 <dl class="classmethod">
 <dt id="celery.result.TaskSetResult.restore">
-<em class="property">classmethod </em><tt class="descname">restore</tt><big>(</big><em>taskset_id</em>, <em>backend=&lt;celery.backends.database.DatabaseBackend object at 0x10255fd90&gt;</em><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult.restore" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><tt class="descname">restore</tt><big>(</big><em>taskset_id</em>, <em>backend=&lt;celery.backends.database.DatabaseBackend object at 0x103813a10&gt;</em><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult.restore" title="Permalink to this definition">¶</a></dt>
 <dd>Restore previously saved taskset result.</dd></dl>
 
 <dl class="method">
 <dt id="celery.result.TaskSetResult.save">
-<tt class="descname">save</tt><big>(</big><em>backend=&lt;celery.backends.database.DatabaseBackend object at 0x10255fd90&gt;</em><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult.save" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">save</tt><big>(</big><em>backend=&lt;celery.backends.database.DatabaseBackend object at 0x103813a10&gt;</em><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult.save" title="Permalink to this definition">¶</a></dt>
 <dd><p>Save taskset result for later retrieval using <a title="celery.result.TaskSetResult.restore" class="reference internal" href="#celery.result.TaskSetResult.restore"><tt class="xref docutils literal"><span class="pre">restore()</span></tt></a>.</p>
 <p>Example:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>

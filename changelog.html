@@ -172,6 +172,42 @@ crashes in the middle of their execution. Not acceptable for most
 applications, but desirable for others.</p>
 </blockquote>
 </li>
+<li><p class="first">Added crontab-like scheduling to periodic tasks.</p>
+<blockquote>
+<blockquote>
+<p>Like a cron job, you can specify units of time of when
+you would like the task to execute. While not a full implementation
+of cron&#8217;s features, it should provide a fair degree of common scheduling
+needs.</p>
+</blockquote>
+<p>You can specify a minute (0-59), an hour (0-23), and/or a day of the
+week (0-6 where 0 is Sunday, or by names: sun, mon, tue, wed, thu, fri,
+sat).</p>
+<blockquote>
+<p>Examples:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">crontab</span>
+<span class="kn">from</span> <span class="nn">celery.decorators</span> <span class="kn">import</span> <span class="n">periodic_task</span>
+
+<span class="nd">@periodic_task</span><span class="p">(</span><span class="n">run_every</span><span class="o">=</span><span class="n">crontab</span><span class="p">(</span><span class="n">hour</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">minute</span><span class="o">=</span><span class="mi">30</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">every_morning</span><span class="p">():</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Runs every morning at 7:30a.m&quot;</span><span class="p">)</span>
+
+<span class="nd">@periodic_task</span><span class="p">(</span><span class="n">run_every</span><span class="o">=</span><span class="n">crontab</span><span class="p">(</span><span class="n">hour</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">minute</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+                                                             <span class="n">day_of_week</span><span class="o">=</span><span class="s">&quot;monday&quot;</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">every_monday_morning</span><span class="p">():</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Run every monday morning at 7:30a.m&quot;</span><span class="p">)</span>
+
+<span class="nd">@periodic_task</span><span class="p">(</span><span class="n">run_every</span><span class="o">=</span><span class="n">crontab</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">30</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">every_hour</span><span class="p">():</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Runs every hour on the clock. e.g. 1:30, 2:30, 3:30 etc.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Note that this a late addition. While we have unittests, due to the
+nature of this feature we haven&#8217;t been able to completely test this
+in practice, so consider this experimental.</p>
+</blockquote>
+</blockquote>
+</li>
 <li><p class="first"><tt class="docutils literal"><span class="pre">TaskPool.apply_async</span></tt>: Now supports the <tt class="docutils literal"><span class="pre">accept_callback</span></tt> argument.</p>
 </li>
 <li><p class="first"><tt class="docutils literal"><span class="pre">apply_async</span></tt>: Now raises <tt class="xref docutils literal"><span class="pre">ValueError</span></tt> if task args is not a list,
@@ -320,25 +356,25 @@ by using the <tt class="docutils literal"><span class="pre">destination</span></
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task.control</span> <span class="kn">import</span> <span class="n">broadcast</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">broadcast</span><span class="p">(</span><span class="s">&quot;dump_schedule&quot;</span><span class="p">,</span> <span class="n">reply</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 <span class="go">[{&#39;w1&#39;: []},</span>
-<span class="go">{&#39;w3&#39;: []},</span>
-<span class="go">{&#39;w2&#39;: [&#39;0. 2010-05-12 11:06:00 pri0 &lt;TaskWrapper:</span>
-<span class="go">                        {name:&quot;opalfeeds.tasks.refresh_feed_slice&quot;,</span>
-<span class="go">                         id:&quot;95b45760-4e73-4ce8-8eac-f100aa80273a&quot;,</span>
-<span class="go">                         args:&quot;(&lt;Feeds freq_max:3600 freq_min:60</span>
-<span class="go">                                                   start:2184.0 stop:3276.0&gt;,)&quot;,</span>
-<span class="go">                         kwargs:&quot;{&#39;page&#39;: 2}&quot;}&gt;&#39;]},</span>
-<span class="go">{&#39;w4&#39;: [&#39;0. 2010-05-12 11:00:00 pri0 &lt;TaskWrapper:</span>
-<span class="go">                        {name:&quot;opalfeeds.tasks.refresh_feed_slice&quot;,</span>
-<span class="go">                         id:&quot;c053480b-58fb-422f-ae68-8d30a464edfe&quot;,</span>
-<span class="go">                         args:&quot;(&lt;Feeds freq_max:3600 freq_min:60</span>
-<span class="go">                                                   start:1092.0 stop:2184.0&gt;,)&quot;,</span>
-<span class="go">                         kwargs:&quot;{\&#39;page\&#39;: 1}&quot;}&gt;&#39;,</span>
-<span class="go">                &#39;1. 2010-05-12 11:12:00 pri0 &lt;TaskWrapper:</span>
-<span class="go">                        {name:&quot;opalfeeds.tasks.refresh_feed_slice&quot;,</span>
-<span class="go">                         id:&quot;ab8bc59e-6cf8-44b8-88d0-f1af57789758&quot;,</span>
-<span class="go">                         args:&quot;(&lt;Feeds freq_max:3600 freq_min:60</span>
-<span class="go">                                                   start:3276.0 stop:4365&gt;,)&quot;,</span>
-<span class="go">                         kwargs:&quot;{\&#39;page\&#39;: 3}&quot;}&gt;&#39;]}]</span>
+<span class="go"> {&#39;w3&#39;: []},</span>
+<span class="go"> {&#39;w2&#39;: [&#39;0. 2010-05-12 11:06:00 pri0 &lt;TaskWrapper:</span>
+<span class="go">            {name:&quot;opalfeeds.tasks.refresh_feed_slice&quot;,</span>
+<span class="go">             id:&quot;95b45760-4e73-4ce8-8eac-f100aa80273a&quot;,</span>
+<span class="go">             args:&quot;(&lt;Feeds freq_max:3600 freq_min:60</span>
+<span class="go">                           start:2184.0 stop:3276.0&gt;,)&quot;,</span>
+<span class="go">             kwargs:&quot;{&#39;page&#39;: 2}&quot;}&gt;&#39;]},</span>
+<span class="go"> {&#39;w4&#39;: [&#39;0. 2010-05-12 11:00:00 pri0 &lt;TaskWrapper:</span>
+<span class="go">            {name:&quot;opalfeeds.tasks.refresh_feed_slice&quot;,</span>
+<span class="go">             id:&quot;c053480b-58fb-422f-ae68-8d30a464edfe&quot;,</span>
+<span class="go">             args:&quot;(&lt;Feeds freq_max:3600 freq_min:60</span>
+<span class="go">                           start:1092.0 stop:2184.0&gt;,)&quot;,</span>
+<span class="go">             kwargs:&quot;{\&#39;page\&#39;: 1}&quot;}&gt;&#39;,</span>
+<span class="go">        &#39;1. 2010-05-12 11:12:00 pri0 &lt;TaskWrapper:</span>
+<span class="go">            {name:&quot;opalfeeds.tasks.refresh_feed_slice&quot;,</span>
+<span class="go">             id:&quot;ab8bc59e-6cf8-44b8-88d0-f1af57789758&quot;,</span>
+<span class="go">             args:&quot;(&lt;Feeds freq_max:3600 freq_min:60</span>
+<span class="go">                           start:3276.0 stop:4365&gt;,)&quot;,</span>
+<span class="go">             kwargs:&quot;{\&#39;page\&#39;: 3}&quot;}&gt;&#39;]}]</span>
 </pre></div>
 </div>
 </blockquote>

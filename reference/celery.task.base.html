@@ -60,6 +60,7 @@
 <li class="toctree-l2"><a class="reference external" href="celery.conf.html">Configuration - celery.conf</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.task.control.html">Remote Management of Workers - celery.task.control</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.task.http.html">HTTP Callback Tasks - celery.task.http</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.task.schedules.html">Periodic Task Schedule Behaviors - celery.task.schedules</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.signals.html">Signals - celery.signals</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.exceptions.html">Exceptions - celery.exceptions</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.task.builtins.html">Built-in Task Classes - celery.task.builtins</a></li>
@@ -167,8 +168,8 @@ defined in the REPL (that is the python shell, or <tt class="docutils literal"><
 <dt id="celery.task.base.PeriodicTask.run_every">
 <tt class="descname">run_every</tt><a class="headerlink" href="#celery.task.base.PeriodicTask.run_every" title="Permalink to this definition">¶</a></dt>
 <dd><em>REQUIRED</em> Defines how often the task is run (its interval),
-it can be either a <tt class="xref docutils literal"><span class="pre">datetime.timedelta</span></tt> object or an
-integer specifying the time in seconds.</dd></dl>
+it can be a <tt class="xref docutils literal"><span class="pre">datetime.timedelta</span></tt> object, a <tt class="xref docutils literal"><span class="pre">crontab</span></tt>
+object or an integer specifying the time in seconds.</dd></dl>
 
 <dl class="attribute">
 <dt id="celery.task.base.PeriodicTask.relative">
@@ -188,39 +189,46 @@ not defined.</td>
 </tbody>
 </table>
 <p>Example</p>
+<blockquote>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">tasks</span><span class="p">,</span> <span class="n">PeriodicTask</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">timedelta</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">MyPeriodicTask</span><span class="p">(</span><span class="n">PeriodicTask</span><span class="p">):</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">EveryThirtySecondsTask</span><span class="p">(</span><span class="n">PeriodicTask</span><span class="p">):</span>
 <span class="gp">... </span>    <span class="n">run_every</span> <span class="o">=</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
 <span class="gp">...</span>
 <span class="gp">... </span>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="gp">... </span>        <span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-<span class="gp">... </span>        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Running MyPeriodicTask&quot;</span><span class="p">)</span>
+<span class="gp">... </span>        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Execute every 30 seconds&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<dl class="method">
-<dt id="celery.task.base.PeriodicTask.delta_resolution">
-<tt class="descname">delta_resolution</tt><big>(</big><em>dt</em>, <em>delta</em><big>)</big><a class="headerlink" href="#celery.task.base.PeriodicTask.delta_resolution" title="Permalink to this definition">¶</a></dt>
-<dd><p>Round a datetime to the resolution of a timedelta.</p>
-<p>If the timedelta is in days, the datetime will be rounded
-to the nearest days, if the timedelta is in hours the datetime
-will be rounded to the nearest hour, and so on until seconds
-which will just return the original datetime.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">now</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">now</span>
-<span class="go">datetime.datetime(2010, 3, 30, 11, 50, 58, 41065)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">delta_resolution</span><span class="p">(</span><span class="n">now</span><span class="p">,</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
-<span class="go">datetime.datetime(2010, 3, 30, 0, 0)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">delta_resolution</span><span class="p">(</span><span class="n">now</span><span class="p">,</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
-<span class="go">datetime.datetime(2010, 3, 30, 11, 0)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">delta_resolution</span><span class="p">(</span><span class="n">now</span><span class="p">,</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
-<span class="go">datetime.datetime(2010, 3, 30, 11, 50)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">delta_resolution</span><span class="p">(</span><span class="n">now</span><span class="p">,</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
-<span class="go">datetime.datetime(2010, 3, 30, 11, 50, 58, 41065)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">PeriodicTask</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task.schedules</span> <span class="kn">import</span> <span class="n">crontab</span>
 </pre></div>
 </div>
-</dd></dl>
-
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">EveryMondayMorningTask</span><span class="p">(</span><span class="n">PeriodicTask</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">run_every</span> <span class="o">=</span> <span class="n">crontab</span><span class="p">(</span><span class="n">hour</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">minute</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">day_of_week</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<span class="gp">... </span>        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Execute every Monday at 7:30AM.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">EveryMorningTask</span><span class="p">(</span><span class="n">PeriodicTask</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">run_every</span> <span class="o">=</span> <span class="n">crontab</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">minute</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<span class="gp">... </span>        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Execute every day at 7:30AM.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">EveryQuarterPastTheHourTask</span><span class="p">(</span><span class="n">PeriodicTask</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">run_every</span> <span class="o">=</span> <span class="n">crontab</span><span class="p">(</span><span class="n">minute</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<span class="gp">... </span>        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Execute every 0:15 past the hour every day.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</blockquote>
 <dl class="method">
 <dt id="celery.task.base.PeriodicTask.is_due">
 <tt class="descname">is_due</tt><big>(</big><em>last_run_at</em><big>)</big><a class="headerlink" href="#celery.task.base.PeriodicTask.is_due" title="Permalink to this definition">¶</a></dt>

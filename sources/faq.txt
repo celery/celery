@@ -274,6 +274,14 @@ Windows: The ``-B`` / ``--beat`` option to celeryd doesn't work?
 **Answer**: That's right. Run ``celerybeat`` and ``celeryd`` as separate
 services instead.
 
+Tasks
+=====
+
+How can I reuse the same connection when applying tasks?
+--------------------------------------------------------
+
+**Answer**: See :doc:`userguide/executing`.
+
 Results
 =======
 
