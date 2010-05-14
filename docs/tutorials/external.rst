@@ -41,7 +41,8 @@ http://robertpogorzelski.com/blog/2009/09/10/rabbitmq-celery-and-django/
 Message Queues, Django and Celery Quick Start
 =============================================
 
-Celery tutorial by `Rich Leland`_, the installation section is Mac OS X specific:
+Celery tutorial by `Rich Leland`_, the installation section is Mac OS X
+specific:
 http://mathematism.com/2010/feb/16/message-queues-django-and-celery-quick-start/
 
 .. _`Rich Leland`: http://twitter.com/richleland
@@ -54,6 +55,14 @@ Background task processing and deferred execution in Django
     http://www.turnkeylinux.org/blog/django-celery-rabbitmq
 
 .. _`Alon Swartz`: http://twitter.com/alonswartz
+
+Build a processing queue [...] in less than a day using RabbitMQ and Celery
+===========================================================================
+
+Tutorial in 2 parts written by `Tim Bull`_:
+http://timbull.com/build-a-processing-queue-with-multi-threading
+
+.. _`Tim Bull`: http://twitter.com/timbull
 
 How to get celeryd to work on FreeBSD
 =====================================
