@@ -6,7 +6,9 @@ from billiard.serialization import pickle
 
 from celery import conf
 from celery.log import setup_task_logger
-from celery.utils import gen_unique_id, padlist, timedelta_seconds
+from celery.utils import gen_unique_id, padlist
+from celery.utils.timeutils import timedelta_seconds, weekday
+from celery.utils.timeutils import delta_resolution
 from celery.result import BaseAsyncResult, TaskSetResult, EagerResult
 from celery.execute import apply_async, apply
 from celery.registry import tasks
@@ -663,7 +665,7 @@ class schedule(object):
         """Returns when the periodic task should run next as a timedelta."""
         next_run_at = last_run_at + self.run_every
         if not self.relative:
-            next_run_at = self.delta_resolution(next_run_at, self.run_every)
+            next_run_at = delta_resolution(next_run_at, self.run_every)
         return next_run_at - datetime.now()
 
     def is_due(self, last_run_at):
@@ -678,39 +680,6 @@ class schedule(object):
         if rem == 0:
             return True, timedelta_seconds(self.run_every)
         return False, rem
-
-    def delta_resolution(self, dt, delta):
-        """Round a datetime to the resolution of a timedelta.
-
-        If the timedelta is in days, the datetime will be rounded
-        to the nearest days, if the timedelta is in hours the datetime
-        will be rounded to the nearest hour, and so on until seconds
-        which will just return the original datetime.
-
-            >>> now = datetime.now()
-            >>> now
-            datetime.datetime(2010, 3, 30, 11, 50, 58, 41065)
-            >>> delta_resolution(now, timedelta(days=2))
-            datetime.datetime(2010, 3, 30, 0, 0)
-            >>> delta_resolution(now, timedelta(hours=2))
-            datetime.datetime(2010, 3, 30, 11, 0)
-            >>> delta_resolution(now, timedelta(minutes=2))
-            datetime.datetime(2010, 3, 30, 11, 50)
-            >>> delta_resolution(now, timedelta(seconds=2))
-            datetime.datetime(2010, 3, 30, 11, 50, 58, 41065)
-
-        """
-        delta = timedelta_seconds(delta)
-
-        resolutions = ((3, lambda x: x / 86400),
-                       (4, lambda x: x / 3600),
-                       (5, lambda x: x / 60))
-
-        args = dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second
-        for res, predicate in resolutions:
-            if predicate(delta) >= 1.0:
-                return datetime(*args[:res])
-        return dt
 
 
 class crontab(schedule):
@@ -740,8 +709,6 @@ class crontab(schedule):
         represents the day of week that execution should occur.
 
     """
-    daynames = "sun", "mon", "tue", "wed", "thu", "fri", "sat"
-    weekdays = dict((name, dow) for name, dow in zip(daynames, range(7)))
 
     def __init__(self, minute=None, hour=None, day_of_week=None,
             nowfun=datetime.now):
@@ -751,12 +718,7 @@ class crontab(schedule):
         self.nowfun = nowfun
 
         if isinstance(self.day_of_week, basestring):
-            abbreviation = self.day_of_week[0:3].lower()
-            try:
-                self.day_of_week = self.weekdays[abbreviation]
-            except KeyError:
-                # Show original day name in exception, instead of abbr.
-                raise KeyError(self.day_of_week)
+            self.day_of_week = weekday(self.day_of_week)
 
 
     def remaining_estimate(self, last_run_at):

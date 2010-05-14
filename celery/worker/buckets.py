@@ -2,34 +2,12 @@ import time
 from Queue import Queue, Empty as QueueEmpty
 from itertools import chain
 
-from carrot.utils import partition
-
 from celery.utils import all
+from celery.utils import timeutils
 from celery.utils.compat import izip_longest
-
-RATE_MODIFIER_MAP = {"s": lambda n: n,
-                     "m": lambda n: n / 60.0,
-                     "h": lambda n: n / 60.0 / 60.0}
-
 
 class RateLimitExceeded(Exception):
     """The token buckets rate limit has been exceeded."""
-
-
-def parse_ratelimit_string(rate_limit):
-    """Parse rate limit configurations such as ``"100/m"`` or ``"2/h"``
-        and convert them into seconds.
-
-    Returns ``0`` for no rate limit.
-
-    """
-
-    if rate_limit:
-        if isinstance(rate_limit, basestring):
-            ops, _, modifier = partition(rate_limit, "/")
-            return RATE_MODIFIER_MAP[modifier or "s"](int(ops)) or 0
-        return rate_limit or 0
-    return 0
 
 
 class TaskBucket(object):
@@ -155,7 +133,7 @@ class TaskBucket(object):
     def update_bucket_for_type(self, task_name):
         task_type = self.task_registry[task_name]
         rate_limit = getattr(task_type, "rate_limit", None)
-        rate_limit = parse_ratelimit_string(rate_limit)
+        rate_limit = timeutils.rate(rate_limit)
         if task_name in self.buckets:
             task_queue = self._get_queue_for_type(task_name)
         else:

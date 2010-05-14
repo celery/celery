@@ -6,6 +6,7 @@ from billiard.utils.functional import wraps
 
 from celery import task
 from celery import messaging
+from celery.utils import timeutils
 from celery.utils import gen_unique_id
 from celery.result import EagerResult
 from celery.execute import send_task
@@ -447,7 +448,7 @@ class TestPeriodicTask(unittest.TestCase):
             self.assertEqual(MyPeriodic().timedelta_seconds(delta), seconds)
 
     def test_delta_resolution(self):
-        D = MyPeriodic().run_every.delta_resolution
+        D = timeutils.delta_resolution
 
         dt = datetime(2010, 3, 30, 11, 50, 58, 41065)
         deltamap = ((timedelta(days=2), datetime(2010, 3, 30, 0, 0)),
