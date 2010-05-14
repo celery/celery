@@ -1,6 +1,6 @@
 """Distributed Task Queue"""
 
-VERSION = (1, 0, 3, "-pre1")
+VERSION = (1, 0, 3, "-pre2")
 
 __version__ = ".".join(map(str, VERSION[0:3])) + "".join(VERSION[3:])
 __author__ = "Ask Solem"
