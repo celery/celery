@@ -1,0 +1,205 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Time and Date Utilities - celery.utils.timeutils &mdash; Celery v1.0.3-pre1 (unstable) documentation</title>
+    <link rel="stylesheet" href="../../static/adctheme.css" type="text/css" />
+    <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.0.3-pre1 (unstable)',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../static/jquery.js"></script>
+    <script type="text/javascript" src="../../static/doctools.js"></script>
+    <link rel="top" title="Celery v1.0.3-pre1 (unstable) documentation" href="../../index.html" />
+    <link rel="up" title="Internal Module Reference" href="index.html" />
+    <link rel="next" title="Debugging Info - celery.utils.info" href="celery.utils.info.html" />
+    <link rel="prev" title="Multiprocessing Worker - celery.worker" href="celery.utils.html" /> 
+  </head>
+  <body>
+<div id="docstitle">
+	<p>Celery v1.0.3-pre1 (unstable) documentation</p>
+</div>
+<div id="header">
+	<div id="title"><h1>Time and Date Utilities - celery.utils.timeutils</h1></div>
+	<ul id="headerButtons">
+		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
+		<li id="page_buttons">
+			<div class="headerButton"><a href="../../genindex.html" title="General Index" accesskey="I">index</a></div>
+			<div class="headerButton"><a href="../../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="celery.utils.info.html" title="Debugging Info - celery.utils.info" accesskey="N">next</a></div>
+			<div class="headerButton"><a href="celery.utils.html" title="Multiprocessing Worker - celery.worker" accesskey="P">previous</a></div>
+		</li>
+	</ul>
+</div>
+
+<div id="sphinxsidebar">
+  <div class="sphinxsidebarwrapper">
+	<ul><li class="toctree-l1"><a href="../../index.html">Main Page</a></li></ul>
+	<ul>
+<li class="toctree-l1"><a class="reference external" href="../../getting-started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference external" href="../../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference external" href="../../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference external" href="../../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference external" href="../../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference external" href="../../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference external" href="../../reference/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference external" href="../index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference external" href="../../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference external" href="../../links.html">Interesting Links</a></li>
+</ul>
+
+      <h3>This Page</h3>
+      <ul class="this-page-menu">
+        <li><a href="../../sources/internals/reference/celery.utils.timeutils.txt"
+               rel="nofollow">Show Source</a></li>
+      </ul>
+    <div id="searchbox" style="display: none">
+      
+        <form class="search" action="../../search.html" method="get">
+			<div class="search-wrapper">
+			<span class="search-left"></span>
+			<input class="prettysearch" type="text" name="q" size="18" />
+			<span class="search-right">&nbsp;</span>
+			</div>
+          <input type="submit" value="Search" class="searchbutton" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </form>
+        <p class="searchtip" style="font-size: 90%">
+        Enter search terms or a module, class or function name.
+        </p>
+    </div>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+  </div>
+</div>
+
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-celery.utils.timeutils">
+<h1>Time and Date Utilities - celery.utils.timeutils<a class="headerlink" href="#module-celery.utils.timeutils" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="celery.utils.timeutils.delta_resolution">
+<tt class="descclassname">celery.utils.timeutils.</tt><tt class="descname">delta_resolution</tt><big>(</big><em>dt</em>, <em>delta</em><big>)</big><a class="headerlink" href="#celery.utils.timeutils.delta_resolution" title="Permalink to this definition">¶</a></dt>
+<dd><p>Round a datetime to the resolution of a timedelta.</p>
+<p>If the timedelta is in days, the datetime will be rounded
+to the nearest days, if the timedelta is in hours the datetime
+will be rounded to the nearest hour, and so on until seconds
+which will just return the original datetime.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">now</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">now</span>
+<span class="go">datetime.datetime(2010, 3, 30, 11, 50, 58, 41065)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">delta_resolution</span><span class="p">(</span><span class="n">now</span><span class="p">,</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+<span class="go">datetime.datetime(2010, 3, 30, 0, 0)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">delta_resolution</span><span class="p">(</span><span class="n">now</span><span class="p">,</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+<span class="go">datetime.datetime(2010, 3, 30, 11, 0)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">delta_resolution</span><span class="p">(</span><span class="n">now</span><span class="p">,</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+<span class="go">datetime.datetime(2010, 3, 30, 11, 50)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">delta_resolution</span><span class="p">(</span><span class="n">now</span><span class="p">,</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+<span class="go">datetime.datetime(2010, 3, 30, 11, 50, 58, 41065)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.timeutils.rate">
+<tt class="descclassname">celery.utils.timeutils.</tt><tt class="descname">rate</tt><big>(</big><em>rate</em><big>)</big><a class="headerlink" href="#celery.utils.timeutils.rate" title="Permalink to this definition">¶</a></dt>
+<dd>Parses rate strings, such as <tt class="docutils literal"><span class="pre">&quot;100/m&quot;</span></tt> or <tt class="docutils literal"><span class="pre">&quot;2/h&quot;</span></tt>
+and converts them to seconds.</dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.timeutils.remaining">
+<tt class="descclassname">celery.utils.timeutils.</tt><tt class="descname">remaining</tt><big>(</big><em>start</em>, <em>ends_in</em>, <em>now=None</em>, <em>relative=True</em><big>)</big><a class="headerlink" href="#celery.utils.timeutils.remaining" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the remaining time for a start date and a timedelta.</p>
+<p>E.g. &#8220;how many seconds left for 30 seconds after <tt class="docutils literal"><span class="pre">start</span></tt>?&#8221;</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><em>start</em> &#8211; Start <tt class="xref docutils literal"><span class="pre">datetime.datetime</span></tt>.</li>
+<li><em>ends_in</em> &#8211; The end delta as a <tt class="xref docutils literal"><span class="pre">datetime.timedelta</span></tt>.</li>
+<li><em>relative</em> &#8211; <p>If set to <tt class="xref docutils literal"><span class="pre">False</span></tt>, the end time will be calculated
+using <a title="celery.utils.timeutils.delta_resolution" class="reference internal" href="#celery.utils.timeutils.delta_resolution"><tt class="xref docutils literal"><span class="pre">delta_resolution()</span></tt></a> (i.e. rounded to the resolution</p>
+<blockquote>
+of <tt class="docutils literal"><span class="pre">ends_in</span></tt>).</blockquote>
+</li>
+<li><em>now</em> &#8211; The current time, defaults to <tt class="xref docutils literal"><span class="pre">datetime.now()</span></tt>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">remaining</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(),</span> <span class="n">ends_in</span><span class="o">=</span><span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="mi">30</span><span class="p">))</span>
+<span class="go">&#39;0:0:29.999948&#39;</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nb">str</span><span class="p">(</span><span class="n">remaining</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">29</span><span class="p">),</span>
+<span class="go">              ends_in=timedelta(hours=2)))</span>
+<span class="go">&#39;1:30:59.999938&#39;</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nb">str</span><span class="p">(</span><span class="n">remaining</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">29</span><span class="p">),</span>
+<span class="go">              ends_in=timedelta(hours=2),</span>
+<span class="go">              relative=False))</span>
+<span class="go">&#39;1:11:18.458437&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.timeutils.timedelta_seconds">
+<tt class="descclassname">celery.utils.timeutils.</tt><tt class="descname">timedelta_seconds</tt><big>(</big><em>delta</em><big>)</big><a class="headerlink" href="#celery.utils.timeutils.timedelta_seconds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert <tt class="xref docutils literal"><span class="pre">datetime.timedelta</span></tt> to seconds.</p>
+<p>Doesn&#8217;t account for negative values.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.timeutils.weekday">
+<tt class="descclassname">celery.utils.timeutils.</tt><tt class="descname">weekday</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#celery.utils.timeutils.weekday" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the position of a weekday (0 - 7, where 0 is Sunday).</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">weekday</span><span class="p">(</span><span class="s">&quot;sunday&quot;</span><span class="p">)</span>
+<span class="go">0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">weekday</span><span class="p">(</span><span class="s">&quot;sun&quot;</span><span class="p">)</span>
+<span class="go">0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">weekday</span><span class="p">(</span><span class="s">&quot;mon&quot;</span><span class="p">)</span>
+<span class="go">1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+          </div> 
+        </div>
+      </div>
+    <div class="footer">
+    <p>
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+	</p>
+    </div>
+      <div class="clearer"></div>
+    </div>
+	<div id="breadcrumbs">
+		<a href="../index.html" accesskey="U">Internals</a><img src="triangle_closed.png" alt="Right arrow">
+		<a href="index.html" >Internal Module Reference</a><img src="triangle_closed.png" alt="Right arrow">
+		<a href="../../index.html">Celery v1.0.3-pre1 (unstable) documentation</a>
+		</ul>
+	</div>
+  </body>
+</html>
