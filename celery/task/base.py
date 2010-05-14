@@ -16,10 +16,6 @@ from celery.messaging import establish_connection as _establish_connection
 from celery.exceptions import MaxRetriesExceededError, RetryTaskError
 
 
-def get_current_time():
-    return datetime.now()
-
-
 class TaskType(type):
     """Metaclass for tasks.
 
@@ -656,6 +652,128 @@ class TaskSet(object):
         return AsynchronousMapTask.delay(serfunc, args, timeout=timeout)
 
 
+class schedule(object):
+    relative = False
+
+    def __init__(self, run_every=None, relative=False):
+        self.run_every = run_every
+        self.relative = relative
+
+    def remaining_estimate(self, last_run_at):
+        """Returns when the periodic task should run next as a timedelta."""
+        next_run_at = last_run_at + self.run_every
+        if not self.relative:
+            next_run_at = self.delta_resolution(next_run_at, self.run_every)
+        return next_run_at - datetime.now()
+
+    def is_due(self, last_run_at):
+        """Returns tuple of two items ``(is_due, next_time_to_run)``,
+        where next time to run is in seconds.
+
+        See :meth:`PeriodicTask.is_due` for more information.
+
+        """
+        rem_delta = self.remaining_estimate(last_run_at)
+        rem = timedelta_seconds(rem_delta)
+        if rem == 0:
+            return True, timedelta_seconds(self.run_every)
+        return False, rem
+
+    def delta_resolution(self, dt, delta):
+        """Round a datetime to the resolution of a timedelta.
+
+        If the timedelta is in days, the datetime will be rounded
+        to the nearest days, if the timedelta is in hours the datetime
+        will be rounded to the nearest hour, and so on until seconds
+        which will just return the original datetime.
+
+            >>> now = datetime.now()
+            >>> now
+            datetime.datetime(2010, 3, 30, 11, 50, 58, 41065)
+            >>> delta_resolution(now, timedelta(days=2))
+            datetime.datetime(2010, 3, 30, 0, 0)
+            >>> delta_resolution(now, timedelta(hours=2))
+            datetime.datetime(2010, 3, 30, 11, 0)
+            >>> delta_resolution(now, timedelta(minutes=2))
+            datetime.datetime(2010, 3, 30, 11, 50)
+            >>> delta_resolution(now, timedelta(seconds=2))
+            datetime.datetime(2010, 3, 30, 11, 50, 58, 41065)
+
+        """
+        delta = timedelta_seconds(delta)
+
+        resolutions = ((3, lambda x: x / 86400),
+                       (4, lambda x: x / 3600),
+                       (5, lambda x: x / 60))
+
+        args = dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second
+        for res, predicate in resolutions:
+            if predicate(delta) >= 1.0:
+                return datetime(*args[:res])
+        return dt
+
+
+class crontab(schedule):
+    """A crontab can be used as the ``run_every`` value of a
+    :class:`PeriodicTask` to add cron-like scheduling.
+
+    Like a :manpage:`cron` job, you can specify units of time of when
+    you would like the task to execute. While not a full implementation
+    of cron's features, it should provide a fair degree of common scheduling
+    needs.
+
+    You can specify a minute, an hour, and/or a day of the week.
+
+    .. attribute:: minute
+
+        An integer from 0-59 that represents the minute of an hour of when
+        execution should occur.
+
+    .. attribute:: hour
+
+        An integer from 0-23 that represents the hour of a day of when
+        execution should occur.
+
+    .. attribute:: day_of_week
+
+        An integer from 0-6, where Sunday = 0 and Saturday = 6, that
+        represents the day of week that execution should occur.
+
+    """
+    def __init__(self, minute=None, hour=None, day_of_week=None,
+            nowfun=datetime.now):
+        self.hour = hour                  # (0 - 23)
+        self.minute = minute              # (0 - 59)
+        self.day_of_week = day_of_week    # (0 - 6) (Sunday=0)
+        self.nowfun = nowfun
+
+    def remaining_estimate(self, last_run_at):
+        # remaining_estimate controls the frequency of scheduler
+        # ticks. The scheduler needs to wake up every second in this case.
+        return 1
+
+    def is_due(self, last_run_at):
+        now = self.nowfun()
+        last = now - last_run_at
+        due, when = False, 1
+        if last.days > 0 or last.seconds > 60:
+            if self.day_of_week in (None, now.isoweekday()):
+                due, when = self._check_hour_minute(now)
+        return due, when
+
+    def _check_hour_minute(self, now):
+        due, when = False, 1
+        if self.hour is None and self.minute is None:
+            due, when = True, 1
+        if self.hour is None and self.minute == now.minute:
+            due, when = True, 1
+        if self.hour == now.hour and self.minute is None:
+            due, when = True, 1
+        if self.hour == now.hour and self.minute == now.minute:
+            due, when = True, 1
+        return due, when
+
+
 class PeriodicTask(Task):
     """A periodic task is a task that behaves like a :manpage:`cron` job.
 
@@ -664,8 +782,8 @@ class PeriodicTask(Task):
     .. attribute:: run_every
 
         *REQUIRED* Defines how often the task is run (its interval),
-        it can be either a :class:`datetime.timedelta` object or an
-        integer specifying the time in seconds.
+        it can be a :class:`datetime.timedelta` object, a :class:`crontab`
+        object or an integer specifying the time in seconds.
 
     .. attribute:: relative
 
@@ -680,12 +798,34 @@ class PeriodicTask(Task):
 
         >>> from celery.task import tasks, PeriodicTask
         >>> from datetime import timedelta
-        >>> class MyPeriodicTask(PeriodicTask):
+        >>> class EveryThirtySecondsTask(PeriodicTask):
         ...     run_every = timedelta(seconds=30)
         ...
         ...     def run(self, **kwargs):
         ...         logger = self.get_logger(**kwargs)
-        ...         logger.info("Running MyPeriodicTask")
+        ...         logger.info("Execute every 30 seconds")
+
+        >>> from celery.task import PeriodicTask, crontab
+        >>> class EveryMondayMorningTask(PeriodicTask):
+        ...     run_every = crontab(hour=7, minute=30, day_of_week=1)
+        ...
+        ...     def run(self, **kwargs):
+        ...         logger = self.get_logger(**kwargs)
+        ...         logger.info("Execute every Monday at 7:30AM.")
+
+        >>> class EveryMorningTask(PeriodicTask):
+        ...     run_every = crontab(hours=7, minute=30)
+        ...
+        ...     def run(self, **kwargs):
+        ...         logger = self.get_logger(**kwargs)
+        ...         logger.info("Execute every day at 7:30AM.")
+
+        >>> class EveryQuarterPastTheHourTask(PeriodicTask):
+        ...     run_every = crontab(minute=15)
+
+        ...     def run(self, **kwargs):
+        ...         logger = self.get_logger(**kwargs)
+        ...         logger.info("Execute every 0:15 past the hour every day.")
 
     """
     abstract = True
@@ -704,14 +844,12 @@ class PeriodicTask(Task):
         if isinstance(self.__class__.run_every, int):
             self.__class__.run_every = timedelta(seconds=self.run_every)
 
-        super(PeriodicTask, self).__init__()
+        # Convert timedelta to instance of schedule.
+        if isinstance(self.__class__.run_every, timedelta):
+            self.__class__.run_every = schedule(self.__class__.run_every,
+                                                self.relative)
 
-    def remaining_estimate(self, last_run_at):
-        """Returns when the periodic task should run next as a timedelta."""
-        next_run_at = last_run_at + self.run_every
-        if not self.relative:
-            next_run_at = self.delta_resolution(next_run_at, self.run_every)
-        return next_run_at - datetime.now()
+        super(PeriodicTask, self).__init__()
 
     def timedelta_seconds(self, delta):
         """Convert :class:`datetime.timedelta` to seconds.
@@ -742,120 +880,8 @@ class PeriodicTask(Task):
         responsiveness if of importance to you.
 
         """
-        rem_delta = self.remaining_estimate(last_run_at)
-        rem = self.timedelta_seconds(rem_delta)
-        if rem == 0:
-            return True, self.timedelta_seconds(self.run_every)
-        return False, rem
+        return self.run_every.is_due(last_run_at)
 
-    def delta_resolution(self, dt, delta):
-        """Round a datetime to the resolution of a timedelta.
-
-        If the timedelta is in days, the datetime will be rounded
-        to the nearest days, if the timedelta is in hours the datetime
-        will be rounded to the nearest hour, and so on until seconds
-        which will just return the original datetime.
-
-            >>> now = datetime.now()
-            >>> now
-            datetime.datetime(2010, 3, 30, 11, 50, 58, 41065)
-            >>> delta_resolution(now, timedelta(days=2))
-            datetime.datetime(2010, 3, 30, 0, 0)
-            >>> delta_resolution(now, timedelta(hours=2))
-            datetime.datetime(2010, 3, 30, 11, 0)
-            >>> delta_resolution(now, timedelta(minutes=2))
-            datetime.datetime(2010, 3, 30, 11, 50)
-            >>> delta_resolution(now, timedelta(seconds=2))
-            datetime.datetime(2010, 3, 30, 11, 50, 58, 41065)
-
-        """
-        delta = self.timedelta_seconds(delta)
-
-        resolutions = ((3, lambda x: x / 86400),
-                       (4, lambda x: x / 3600),
-                       (5, lambda x: x / 60))
-
-        args = dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second
-        for res, predicate in resolutions:
-            if predicate(delta) >= 1.0:
-                return datetime(*args[:res])
-        return dt
-
-
-class ScheduledTask(PeriodicTask):
-    """A scheduled task is a task that adds more precise scheduling to the
-    features of a :class:`celery.task.base.PeriodicTask`.
-
-    Like a :manpage:`cron` job, you can specify units of time of when you would
-    like the task to execute.  While not a full implementation of cron, it
-    should provide a fair degree of common scheduling needs.  You can specify
-    a minute, an hour, and/or a day of the week.
-
-    .. attribute:: minute
-
-        An integer from 0-59 that represents the minute of an hour of when
-        execution should occur.
-
-    .. attribute:: hour
-
-        An integer from 0-23 that represents the hour of a day of when
-        execution should occur.
-
-    .. attribute:: day_of_week
-
-        An integer from 0-6, where Sunday = 0 and Saturday = 6, that represents
-        the day of week that execution should occur.
-
-    Example
-
-        >>> from celery.task import ScheduledTask
-        >>> class EveryMondayMorningTask(ScheduledTask):
-        ...     hour = 7
-        ...     minute = 30
-        ...     day_of_week = 1
-        ...     def run(self, **kwargs):
-        ...         logger = self.get_logger(**kwargs)
-        ...         logger.info("Execute every Monday at 7:30AM.")
-
-        >>> from celery.task import ScheduledTask
-        >>> class EveryMorningTask(ScheduledTask):
-        ...     hour = 7
-        ...     minute = 30
-        ...     def run(self, **kwargs):
-        ...         logger = self.get_logger(**kwargs)
-        ...         logger.info("Execute every day at 7:30AM.")
-
-        >>> from celery.task import ScheduledTask
-        >>> class EveryQuarterPastTheHourTask(ScheduledTask):
-        ...     minute = 15
-        ...     def run(self, **kwargs):
-        ...         logger = self.get_logger(**kwargs)
-        ...         logger.info("Execute every 0:15 past the hour every day.")
-
-    """
-    run_every = timedelta(seconds=1)
-    hour = None           # (0 - 23)
-    minute = None         # (0 - 59)
-    day_of_week = None    # (0 - 6) (Sunday=0)
-    abstract = True
-
-    def check_hour_minute(self, now):
-        (due, when) = (False, 1)
-        if self.hour is None and self.minute is None:
-            (due, when) = (True, 1)
-        if self.hour is None and self.minute == now.minute:
-            (due, when) = (True, 1)
-        if self.hour == now.hour and self.minute is None:
-            (due, when) = (True, 1)
-        if self.hour == now.hour and self.minute == now.minute:
-            (due, when) = (True, 1)
-        return (due, when)
-
-    def is_due(self, last_run_at):
-        n = get_current_time()
-        last = (n - last_run_at)
-        (due, when) = (False, 1)
-        if last.days > 0 or last.seconds > 60:
-            if self.day_of_week in (None, n.isoweekday()):
-                (due, when) = self.check_hour_minute(n)
-        return (due, when)
+    def remaining_estimate(self, last_run_at):
+        """Returns when the periodic task should run next as a timedelta."""
+        return self.run_every.remaining_estimate(last_run_at)

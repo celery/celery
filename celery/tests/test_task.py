@@ -1,7 +1,8 @@
 import unittest2 as unittest
 from StringIO import StringIO
 from datetime import datetime, timedelta
-from mock import patch
+
+from billiard.utils.functional import wraps
 
 from celery import task
 from celery import messaging
@@ -446,7 +447,7 @@ class TestPeriodicTask(unittest.TestCase):
             self.assertEqual(MyPeriodic().timedelta_seconds(delta), seconds)
 
     def test_delta_resolution(self):
-        D = MyPeriodic().delta_resolution
+        D = MyPeriodic().run_every.delta_resolution
 
         dt = datetime(2010, 3, 30, 11, 50, 58, 41065)
         deltamap = ((timedelta(days=2), datetime(2010, 3, 30, 0, 0)),
@@ -463,83 +464,92 @@ class TestPeriodicTask(unittest.TestCase):
 
     def test_is_due(self):
         p = MyPeriodic()
-        due, remaining = p.is_due(datetime.now() - p.run_every)
+        due, remaining = p.is_due(datetime.now() - p.run_every.run_every)
         self.assertTrue(due)
-        self.assertEqual(remaining, p.timedelta_seconds(p.run_every))
+        self.assertEqual(remaining,
+                         p.timedelta_seconds(p.run_every.run_every))
 
 
-class EveryMinutePeriodic(task.ScheduledTask):
-    pass
+class EveryMinutePeriodic(task.PeriodicTask):
+    run_every = task.crontab()
 
 
-class HourlyPeriodic(task.ScheduledTask):
-    minute = 30
+class HourlyPeriodic(task.PeriodicTask):
+    run_every = task.crontab(minute=30)
 
 
-class DailyPeriodic(task.ScheduledTask):
-    hour = 7
-    minute = 30
+class DailyPeriodic(task.PeriodicTask):
+    run_every = task.crontab(hour=7, minute=30)
 
 
-class WeeklyPeriodic(task.ScheduledTask):
-    hour = 7
-    minute = 30
-    day_of_week = 4
+class WeeklyPeriodic(task.PeriodicTask):
+    run_every = task.crontab(hour=7, minute=30, day_of_week=4)
 
 
-class TestScheduledTask(unittest.TestCase):
-    
+def patch_crontab_nowfun(cls, retval):
+
+    def create_patcher(fun):
+
+        @wraps(fun)
+        def __inner(*args, **kwargs):
+            prev_nowfun = cls.run_every.nowfun
+            cls.run_every.nowfun = lambda: retval
+            try:
+                return fun(*args, **kwargs)
+            finally:
+                cls.run_every.nowfun = prev_nowfun
+
+        return __inner
+
+    return create_patcher
+
+
+class test_crontab(unittest.TestCase):
+
     def test_every_minute_execution_is_due(self):
         last_ran = datetime.now() - timedelta(seconds=61)
         due, remaining = EveryMinutePeriodic().is_due(last_ran)
         self.assertTrue(due)
         self.assertEquals(remaining, 1)
-        
+
     def test_every_minute_execution_is_not_due(self):
         last_ran = datetime.now() - timedelta(seconds=30)
         due, remaining = EveryMinutePeriodic().is_due(last_ran)
         self.assertFalse(due)
         self.assertEquals(remaining, 1)
-    
-    @patch('celery.task.base.get_current_time')
-    def test_every_hour_execution_is_due(self, NowMock):
-        NowMock.return_value = datetime(2010, 5, 10, 10, 30)
+
+    @patch_crontab_nowfun(HourlyPeriodic, datetime(2010, 5, 10, 10, 30))
+    def test_every_hour_execution_is_due(self):
         due, remaining = HourlyPeriodic().is_due(datetime(2010, 5, 10, 6, 30))
         self.assertTrue(due)
         self.assertEquals(remaining, 1)
-    
-    @patch('celery.task.base.get_current_time')
-    def test_every_hour_execution_is_not_due(self, NowMock):
-        NowMock.return_value = datetime(2010, 5, 10, 10, 29)
-        due, remaining = HourlyPeriodic().is_due(datetime(2010, 5, 10, 9, 30))
+
+    @patch_crontab_nowfun(HourlyPeriodic, datetime(2010, 5, 10, 10, 30))
+    def test_every_hour_execution_is_not_due(self):
+        due, remaining = HourlyPeriodic().is_due(datetime(2010, 5, 10, 6, 30))
         self.assertFalse(due)
         self.assertEquals(remaining, 1)
 
-    @patch('celery.task.base.get_current_time')
-    def test_daily_execution_is_due(self, NowMock):
-        NowMock.return_value = datetime(2010, 5, 10, 7, 30)
+    @patch_crontab_nowfun(DailyPeriodic, datetime(2010, 5, 10, 7, 30))
+    def test_daily_execution_is_due(self):
         due, remaining = DailyPeriodic().is_due(datetime(2010, 5, 9, 7, 30))
         self.assertTrue(due)
         self.assertEquals(remaining, 1)
 
-    @patch('celery.task.base.get_current_time')
-    def test_daily_execution_is_not_due(self, NowMock):
-        NowMock.return_value = datetime(2010, 5, 10, 10, 30)
+    @patch_crontab_nowfun(DailyPeriodic, datetime(2010, 5, 10, 10, 30))
+    def test_daily_execution_is_not_due(self):
         due, remaining = DailyPeriodic().is_due(datetime(2010, 5, 10, 6, 29))
         self.assertFalse(due)
         self.assertEquals(remaining, 1)
 
-    @patch('celery.task.base.get_current_time')
-    def test_weekly_execution_is_due(self, NowMock):
-        NowMock.return_value = datetime(2010, 5, 6, 7, 30)
+    @patch_crontab_nowfun(WeeklyPeriodic, datetime(2010, 5, 6, 7, 30))
+    def test_weekly_execution_is_due(self):
         due, remaining = WeeklyPeriodic().is_due(datetime(2010, 4, 30, 7, 30))
         self.assertTrue(due)
         self.assertEquals(remaining, 1)
 
-    @patch('celery.task.base.get_current_time')
-    def test_weekly_execution_is_not_due(self, NowMock):
-        NowMock.return_value = datetime(2010, 5, 7, 10, 30)
+    @patch_crontab_nowfun(WeeklyPeriodic, datetime(2010, 5, 7, 10, 30))
+    def test_weekly_execution_is_not_due(self):
         due, remaining = WeeklyPeriodic().is_due(datetime(2010, 4, 30, 6, 29))
         self.assertFalse(due)
         self.assertEquals(remaining, 1)
-
