@@ -524,7 +524,7 @@ class test_crontab(unittest.TestCase):
         self.assertTrue(due)
         self.assertEquals(remaining, 1)
 
-    @patch_crontab_nowfun(HourlyPeriodic, datetime(2010, 5, 10, 10, 30))
+    @patch_crontab_nowfun(HourlyPeriodic, datetime(2010, 5, 10, 10, 29))
     def test_every_hour_execution_is_not_due(self):
         due, remaining = HourlyPeriodic().is_due(datetime(2010, 5, 10, 6, 30))
         self.assertFalse(due)
