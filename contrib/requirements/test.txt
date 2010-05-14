@@ -4,14 +4,7 @@ nose
 nose-cover3
 django-nose
 coverage>=3.0
+mock>=0.6.0
 pytyrant
 redis
 pymongo
-git+git://github.com/exogen/nose-achievements.git
-mock>=0.6.0
--e git+git://github.com/ask/billiard.git#egg=billiard
--e git+git://github.com/ask/carrot.git#egg=carrot
-django
-importlib
-django-picklefield
-python-dateutil
