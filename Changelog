@@ -18,7 +18,7 @@ Important notes
 
     For more information please see http://bit.ly/9hom6T
 
-* Database result backend: result now expliclty sets ``null=True`` as
+* Database result backend: result now explicitly sets ``null=True`` as
   ``django-picklefield`` version 0.1.5 changed the default behavior
   right under our noses :(
 
@@ -69,15 +69,14 @@ News
 
     .. code-block:: python
 
-        from celery.task import crontab
+        from celery.task.schedules import crontab
         from celery.decorators import periodic_task
 
         @periodic_task(run_every=crontab(hour=7, minute=30))
         def every_morning():
             print("Runs every morning at 7:30a.m")
 
-        @periodic_task(run_every=crontab(hour=7, minute=30,
-                       day_of_week="monday"))
+        @periodic_task(run_every=crontab(hour=7, minute=30, day_of_week="mon"))
         def every_monday_morning():
             print("Run every monday morning at 7:30a.m")
 
