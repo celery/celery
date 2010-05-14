@@ -8,6 +8,11 @@ Worker
 celery.worker
 -------------
 
+* :class:`celery.worker.WorkController`
+
+This is the worker's main process. It starts and stops all the components
+required by the worker: Pool, Mediator, Scheduler, ClockService, and Listener.
+
 celery.worker.job
 -----------------
 
