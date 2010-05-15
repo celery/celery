@@ -29,6 +29,8 @@ def delta_resolution(dt, delta):
     will be rounded to the nearest hour, and so on until seconds
     which will just return the original datetime.
 
+    Examples::
+
         >>> now = datetime.now()
         >>> now
         datetime.datetime(2010, 3, 30, 11, 50, 58, 41065)
@@ -68,17 +70,19 @@ def remaining(start, ends_in, now=None, relative=True):
           of ``ends_in``).
     :keyword now: The current time, defaults to :func:`datetime.now`.
 
-    >>> remaining(datetime.now(), ends_in=timedelta(seconds=30))
-    '0:0:29.999948'
+    Examples::
 
-    >>> str(remaining(datetime.now() - timedelta(minutes=29),
-                  ends_in=timedelta(hours=2)))
-    '1:30:59.999938'
+        >>> remaining(datetime.now(), ends_in=timedelta(seconds=30))
+        '0:0:29.999948'
 
-    >>> str(remaining(datetime.now() - timedelta(minutes=29),
-                  ends_in=timedelta(hours=2),
-                  relative=False))
-    '1:11:18.458437'
+        >>> str(remaining(datetime.now() - timedelta(minutes=29),
+                ends_in=timedelta(hours=2)))
+        '1:30:59.999938'
+
+        >>> str(remaining(datetime.now() - timedelta(minutes=29),
+                ends_in=timedelta(hours=2),
+                relative=False))
+        '1:11:18.458437'
 
     """
     now = now or datetime.now()
