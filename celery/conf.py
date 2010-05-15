@@ -61,7 +61,7 @@ _DEFAULTS = {
     "CELERY_EVENT_EXCHANGE": "celeryevent",
     "CELERY_EVENT_EXCHANGE_TYPE": "direct",
     "CELERY_EVENT_ROUTING_KEY": "celeryevent",
-    "CELERY_EVENT_SERIALIZER": "pickle",
+    "CELERY_EVENT_SERIALIZER": "json",
     "CELERY_RESULT_EXCHANGE": "celeryresults",
     "CELERY_MAX_CACHED_RESULTS": 5000,
     "CELERY_TRACK_STARTED": False,
