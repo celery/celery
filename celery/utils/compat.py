@@ -300,6 +300,14 @@ except ImportError:
             self.logger = logger
             self.extra = extra
 
+        @property
+        def level(self):
+            return self.logger.level
+
+        @property
+        def handlers(self):
+            return self.logger.handlers
+
         def process(self, msg, kwargs):
             kwargs["extra"] = self.extra
             return msg, kwargs
