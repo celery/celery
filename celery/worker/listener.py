@@ -113,8 +113,8 @@ class CarrotListener(object):
             return task.on_ack()
 
         self.event_dispatcher.send("task-received", uuid=task.task_id,
-                name=task.task_name, args=task.args, kwargs=task.kwargs,
-                retries=task.retries, eta=eta)
+                name=task.task_name, args=repr(task.args),
+                kwargs=repr(task.kwargs), retries=task.retries, eta=eta)
 
         if eta:
             if not isinstance(eta, datetime):

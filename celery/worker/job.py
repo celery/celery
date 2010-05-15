@@ -346,7 +346,7 @@ class TaskWrapper(object):
 
         runtime = time.time() - self.time_start
         self.send_event("task-succeeded", uuid=self.task_id,
-                        result=ret_value, runtime=runtime)
+                        result=repr(ret_value), runtime=runtime)
 
         msg = self.success_msg.strip() % {
                 "id": self.task_id,
@@ -361,7 +361,7 @@ class TaskWrapper(object):
             self.acknowledge()
 
         self.send_event("task-failed", uuid=self.task_id,
-                                       exception=exc_info.exception,
+                                       exception=repr(exc_info.exception),
                                        traceback=exc_info.traceback)
 
         context = {
