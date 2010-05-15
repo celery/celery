@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Time and Date Utilities - celery.utils.timeutils &mdash; Celery v1.0.3-pre1 (unstable) documentation</title>
+    <title>Time and Date Utilities - celery.utils.timeutils &mdash; Celery v1.0.3 (stable) documentation</title>
     <link rel="stylesheet" href="../../static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.0.3-pre1 (unstable)',
+        VERSION:     '1.0.3 (stable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,14 +19,14 @@
     </script>
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v1.0.3-pre1 (unstable) documentation" href="../../index.html" />
+    <link rel="top" title="Celery v1.0.3 (stable) documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="Debugging Info - celery.utils.info" href="celery.utils.info.html" />
     <link rel="prev" title="Multiprocessing Worker - celery.worker" href="celery.utils.html" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v1.0.3-pre1 (unstable) documentation</p>
+	<p>Celery v1.0.3 (stable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Time and Date Utilities - celery.utils.timeutils</h1></div>
@@ -99,6 +99,7 @@
 to the nearest days, if the timedelta is in hours the datetime
 will be rounded to the nearest hour, and so on until seconds
 which will just return the original datetime.</p>
+<p>Examples:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">now</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">now</span>
 <span class="go">datetime.datetime(2010, 3, 30, 11, 50, 58, 41065)</span>
@@ -143,18 +144,17 @@ of <tt class="docutils literal"><span class="pre">ends_in</span></tt>).</blockqu
 </tr>
 </tbody>
 </table>
+<p>Examples:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">remaining</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(),</span> <span class="n">ends_in</span><span class="o">=</span><span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="mi">30</span><span class="p">))</span>
 <span class="go">&#39;0:0:29.999948&#39;</span>
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nb">str</span><span class="p">(</span><span class="n">remaining</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">29</span><span class="p">),</span>
-<span class="go">              ends_in=timedelta(hours=2)))</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">str</span><span class="p">(</span><span class="n">remaining</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">29</span><span class="p">),</span>
+<span class="go">        ends_in=timedelta(hours=2)))</span>
 <span class="go">&#39;1:30:59.999938&#39;</span>
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nb">str</span><span class="p">(</span><span class="n">remaining</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">29</span><span class="p">),</span>
-<span class="go">              ends_in=timedelta(hours=2),</span>
-<span class="go">              relative=False))</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">str</span><span class="p">(</span><span class="n">remaining</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">29</span><span class="p">),</span>
+<span class="go">        ends_in=timedelta(hours=2),</span>
+<span class="go">        relative=False))</span>
 <span class="go">&#39;1:11:18.458437&#39;</span>
 </pre></div>
 </div>
@@ -198,7 +198,7 @@ of <tt class="docutils literal"><span class="pre">ends_in</span></tt>).</blockqu
 	<div id="breadcrumbs">
 		<a href="../index.html" accesskey="U">Internals</a><img src="triangle_closed.png" alt="Right arrow">
 		<a href="index.html" >Internal Module Reference</a><img src="triangle_closed.png" alt="Right arrow">
-		<a href="../../index.html">Celery v1.0.3-pre1 (unstable) documentation</a>
+		<a href="../../index.html">Celery v1.0.3 (stable) documentation</a>
 		</ul>
 	</div>
   </body>

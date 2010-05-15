@@ -2,8 +2,8 @@
  Change history
 ================
 
-1.0.3 [2010-05-13 xx:Xx x.x CET]
-================================
+1.0.3 [2010-05-15 03:00 P.M CEST]
+=================================
 
 Important notes
 ---------------
@@ -18,7 +18,7 @@ Important notes
 
     For more information please see http://bit.ly/9hom6T
 
-* Database result backend: result now expliclty sets ``null=True`` as
+* Database result backend: result now explicitly sets ``null=True`` as
   ``django-picklefield`` version 0.1.5 changed the default behavior
   right under our noses :(
 
@@ -69,15 +69,14 @@ News
 
     .. code-block:: python
 
-        from celery.task import crontab
+        from celery.task.schedules import crontab
         from celery.decorators import periodic_task
 
         @periodic_task(run_every=crontab(hour=7, minute=30))
         def every_morning():
             print("Runs every morning at 7:30a.m")
 
-        @periodic_task(run_every=crontab(hour=7, minute=30,
-                       day_of_week="monday"))
+        @periodic_task(run_every=crontab(hour=7, minute=30, day_of_week="mon"))
         def every_monday_morning():
             print("Run every monday morning at 7:30a.m")
 
@@ -119,24 +118,6 @@ News
 * User Guide: New section ``Tips and Best Practices``.
 
     Contributions welcome!
-
-Fixes
------
-
-* Mediator thread no longer blocks for more than 1 second.
-
-    With rate limits enabled and when there was a lot of remaining time,
-    the mediator thread could block shutdown (and potentially block other
-    jobs from coming in).
-
-* Remote rate limits was not properly applied
-  (http://github.com/ask/celery/issues/issue/98)
-
-* Now handles exceptions with unicode messages correctly in
-  ``TaskWrapper.on_failure``.
-
-* Database backend: ``TaskMeta.result``: default value should be ``None``
-  not empty string.
 
 Remote control commands
 -----------------------
@@ -183,7 +164,7 @@ Remote control commands
 
     Remote control commands are functions registered in the command
     registry. Registering a command is done using
-    ``celery.worker.control.Panel.register``:
+    :meth:`celery.worker.control.Panel.register`:
 
     .. code-block:: python
 
@@ -219,6 +200,8 @@ Remote control commands
 * New remote control command: ``dump_schedule``
 
     Dumps the workers currently registered ETA schedule.
+    These are tasks with an ``eta`` (or ``countdown``) argument
+    waiting to be executed by the worker.
 
         >>> from celery.task.control import broadcast
         >>> broadcast("dump_schedule", reply=True)
@@ -242,6 +225,24 @@ Remote control commands
                      args:"(<Feeds freq_max:3600 freq_min:60
                                    start:3276.0 stop:4365>,)",
                      kwargs:"{\'page\': 3}"}>']}]
+
+Fixes
+-----
+
+* Mediator thread no longer blocks for more than 1 second.
+
+    With rate limits enabled and when there was a lot of remaining time,
+    the mediator thread could block shutdown (and potentially block other
+    jobs from coming in).
+
+* Remote rate limits was not properly applied
+  (http://github.com/ask/celery/issues/issue/98)
+
+* Now handles exceptions with unicode messages correctly in
+  ``TaskWrapper.on_failure``.
+
+* Database backend: ``TaskMeta.result``: default value should be ``None``
+  not empty string.
 
 1.0.2 [2010-03-31 12:50 P.M CET]
 ================================
