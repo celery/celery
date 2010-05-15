@@ -2,8 +2,8 @@
  Change history
 ================
 
-1.0.3 [2010-05-13 xx:Xx x.x CET]
-================================
+1.0.3 [2010-05-15 03:00 P.M CEST]
+=================================
 
 Important notes
 ---------------
@@ -119,24 +119,6 @@ News
 
     Contributions welcome!
 
-Fixes
------
-
-* Mediator thread no longer blocks for more than 1 second.
-
-    With rate limits enabled and when there was a lot of remaining time,
-    the mediator thread could block shutdown (and potentially block other
-    jobs from coming in).
-
-* Remote rate limits was not properly applied
-  (http://github.com/ask/celery/issues/issue/98)
-
-* Now handles exceptions with unicode messages correctly in
-  ``TaskWrapper.on_failure``.
-
-* Database backend: ``TaskMeta.result``: default value should be ``None``
-  not empty string.
-
 Remote control commands
 -----------------------
 
@@ -182,7 +164,7 @@ Remote control commands
 
     Remote control commands are functions registered in the command
     registry. Registering a command is done using
-    ``celery.worker.control.Panel.register``:
+    :meth:`celery.worker.control.Panel.register`:
 
     .. code-block:: python
 
@@ -218,6 +200,8 @@ Remote control commands
 * New remote control command: ``dump_schedule``
 
     Dumps the workers currently registered ETA schedule.
+    These are tasks with an ``eta`` (or ``countdown``) argument
+    waiting to be executed by the worker.
 
         >>> from celery.task.control import broadcast
         >>> broadcast("dump_schedule", reply=True)
@@ -241,6 +225,24 @@ Remote control commands
                      args:"(<Feeds freq_max:3600 freq_min:60
                                    start:3276.0 stop:4365>,)",
                      kwargs:"{\'page\': 3}"}>']}]
+
+Fixes
+-----
+
+* Mediator thread no longer blocks for more than 1 second.
+
+    With rate limits enabled and when there was a lot of remaining time,
+    the mediator thread could block shutdown (and potentially block other
+    jobs from coming in).
+
+* Remote rate limits was not properly applied
+  (http://github.com/ask/celery/issues/issue/98)
+
+* Now handles exceptions with unicode messages correctly in
+  ``TaskWrapper.on_failure``.
+
+* Database backend: ``TaskMeta.result``: default value should be ``None``
+  not empty string.
 
 1.0.2 [2010-03-31 12:50 P.M CET]
 ================================
