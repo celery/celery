@@ -91,7 +91,7 @@ class CancelableAsyncResult(AsyncResult):
     """
 
     def is_cancelled(self):
-        """Returns ``True'' if the task is (being) cancelled."""
+        """Returns :const:`True` if the task is (being) cancelled."""
         return self.backend.get_status(self.task_id) == CANCELLED
 
     def cancel(self):
@@ -115,7 +115,7 @@ class CancelableTask(Task):
 
     All subclasses of :class:`CancelableTask` must call the
     :meth:`is_cancelled` method periodically and act accordingly when
-    the call evaluates to ``True''.
+    the call evaluates to :const:`True`.
 
     """
 
@@ -128,8 +128,8 @@ class CancelableTask(Task):
         """Checks against the backend whether this
         :class:`CancelableAsyncResult` is :const:`CANCELLED`.
 
-        Always returns ``False'' in case the `task_id` parameter refers
-        to a regular (non-cancelable) :class:`Task`.
+        Always returns :const:`False` in case the `task_id` parameter
+        refers to a regular (non-cancelable) :class:`Task`.
 
         Be aware that invoking this method will cause a hit in the
         backend (for example a database query), so find a good balance
