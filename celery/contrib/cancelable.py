@@ -95,10 +95,14 @@ class CancelableAsyncResult(AsyncResult):
         return self.backend.get_status(self.task_id) == CANCELLED
 
     def cancel(self):
-        """Set the state of the task to cancelled.
+        """Set the state of the task to :const:`CANCELLED`.
 
-        TODO: Be more descriptive. What does this mean for the worker?
-        TODO: What does the method return?
+        Cancelable tasks monitor their state at regular intervals and
+        terminate execution if so.
+
+        Be aware that invoking this method does not guarantee when the
+        task will be cancelled (or even if the task will be cancelled at
+        all).
 
         """
         # TODO: store_result requires all four arguments to be set, but only status should be updated here
