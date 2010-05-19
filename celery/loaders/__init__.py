@@ -7,7 +7,7 @@ from carrot.utils import rpartition
 from celery.utils import get_full_cls_name, first
 from celery.loaders.default import Loader as DefaultLoader
 
-from djcelery.loaders.djangoapp import Loader as DjangoLoader
+#from djcelery.loaders.djangoapp import Loader as DjangoLoader
 
 _DEFAULT_LOADER_CLASS_NAME = "Loader"
 LOADER_ALIASES = {"default": "celery.loaders.default.Loader",
@@ -49,46 +49,7 @@ def detect_loader():
     loader = os.environ.get("CELERY_LOADER")
     if loader:
         return get_loader_cls(loader)
-
-    loader = _detect_loader()
-    os.environ["CELERY_LOADER"] = get_full_cls_name(loader)
-
-    return loader
-
-
-def _detect_loader(): # pragma: no cover
-    from django.conf import settings
-    if settings.configured:
-        return DjangoLoader
-    try:
-        # A settings module may be defined, but Django didn't attempt to
-        # load it yet. As an alternative to calling the private _setup(),
-        # we could also check whether DJANGO_SETTINGS_MODULE is set.
-        settings._setup()
-    except ImportError:
-        if not callable(getattr(os, "fork", None)):
-            # Platform doesn't support fork()
-            # XXX On systems without fork, multiprocessing seems to be
-            # launching the processes in some other way which does
-            # not copy the memory of the parent process. This means
-            # any configured env might be lost. This is a hack to make
-            # it work on Windows.
-            # A better way might be to use os.environ to set the currently
-            # used configuration method so to propogate it to the "child"
-            # processes. But this has to be experimented with.
-            # [asksol/heyman]
-            from django.core.management import setup_environ
-            try:
-                settings_mod = os.environ.get("DJANGO_SETTINGS_MODULE",
-                                                "settings")
-                project_settings = __import__(settings_mod, {}, {}, [''])
-                setup_environ(project_settings)
-                return DjangoLoader
-            except ImportError:
-                pass
-    else:
-        return DjangoLoader
-
+    os.environ["CELERY_LOADER"] = "default"
     return DefaultLoader
 
 

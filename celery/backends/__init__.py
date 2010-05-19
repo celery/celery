@@ -19,7 +19,6 @@ _backend_cache = {}
 def get_backend_cls(backend):
     """Get backend class by name/alias"""
     if backend not in _backend_cache:
-        print("GET_CLS_BY_NAME: %s" % backend)
         _backend_cache[backend] = get_cls_by_name(backend, BACKEND_ALIASES)
     return _backend_cache[backend]
 
