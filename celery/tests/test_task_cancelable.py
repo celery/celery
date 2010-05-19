@@ -1,18 +1,22 @@
 import unittest2 as unittest
 
-from celery.contrib.cancelable import CancelableTask, CancelableAsyncResult, CANCELLED
+from celery.contrib.cancelable import CANCELLED
+from celery.contrib.cancelable import CancelableTask, CancelableAsyncResult
+
 
 class MyCancelableTask(CancelableTask):
+
     def run(self, **kwargs):
         return True
 
+
 class TestCancelableTask(unittest.TestCase):
+
     def test_async_result_is_cancelable(self):
         t = MyCancelableTask()
         result = t.apply_async()
         tid = result.task_id
-        self.assertIsInstance(t.AsyncResult(tid), \
-                              CancelableAsyncResult)
+        self.assertIsInstance(t.AsyncResult(tid), CancelableAsyncResult)
 
     def test_is_not_cancelled(self):
         t = MyCancelableTask()
@@ -26,4 +30,3 @@ class TestCancelableTask(unittest.TestCase):
         result.cancel()
         tid = result.task_id
         self.assertTrue(t.is_cancelled(task_id=tid))
-
