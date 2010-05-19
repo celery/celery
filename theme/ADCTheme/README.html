@@ -19,7 +19,8 @@
     </script>
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v1.0.3 (stable) documentation" href="../../index.html" /> 
+    <link rel="top" title="Celery v1.0.3 (stable) documentation" href="../../index.html" />
+    <link media="only screen and (max-device-width: 480px)" href="../../static/mobile.css" type="text/css" rel="stylesheet" /> 
   </head>
   <body>
 <div id="docstitle">
@@ -97,9 +98,25 @@
 </pre></div>
 </div>
 </div>
+<div class="section" id="install-directly-in-your-documentation">
+<h2>Install Directly in Your Documentation<a class="headerlink" href="#install-directly-in-your-documentation" title="Permalink to this headline">¶</a></h2>
+<p>If you want to include the files directly in the documentation, so another person can build your documentation, it is easy.</p>
+<ol class="arabic">
+<li><p class="first">Copy over everything in the <tt class="docutils literal"><span class="pre">static</span></tt> directory into the <tt class="docutils literal"><span class="pre">_static</span></tt> directory of your documentation&#8217;s source folder.</p>
+</li>
+<li><p class="first">Copy the <tt class="docutils literal"><span class="pre">layout.html</span></tt> file into the <tt class="docutils literal"><span class="pre">_templates</span></tt> directory of your documentation&#8217;s source folder.</p>
+</li>
+<li><p class="first">Alter your <tt class="docutils literal"><span class="pre">conf.py</span></tt></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">html_theme</span> <span class="o">=</span> <span class="s">&#39;basic&#39;</span>
+</pre></div>
+</div>
+<p>instead of <tt class="docutils literal"><span class="pre">'ADCtheme'</span></tt>.</p>
+</li>
+</ol>
+</div>
 <div class="section" id="making-sphinx-use-the-theme">
 <h2>Making Sphinx Use the Theme<a class="headerlink" href="#making-sphinx-use-the-theme" title="Permalink to this headline">¶</a></h2>
-<p>Edit the <tt class="docutils literal"><span class="pre">conf.py</span></tt> file and make the following setting:</p>
+<p>If you aren&#8217;t installing the files directly into your documentation, edit the <tt class="docutils literal"><span class="pre">conf.py</span></tt> file and make the following setting:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">html_theme</span> <span class="o">=</span> <span class="s">&#39;ADCtheme&#39;</span>
 </pre></div>
 </div>
@@ -131,8 +148,9 @@
       <div class="clearer"></div>
     </div>
 	<div id="breadcrumbs">
-		<a href="../../index.html">Celery v1.0.3 (stable) documentation</a>
+		How To Install
 		</ul>
 	</div>
+	<script type="text/javascript" charset="utf-8" src="../../static/toc.js"></script>
   </body>
 </html>

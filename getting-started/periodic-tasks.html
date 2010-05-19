@@ -22,7 +22,8 @@
     <link rel="top" title="Celery v1.0.3 (stable) documentation" href="../index.html" />
     <link rel="up" title="Getting Started" href="index.html" />
     <link rel="next" title="Resources" href="resources.html" />
-    <link rel="prev" title="First steps with Django" href="first-steps-with-django.html" /> 
+    <link rel="prev" title="First steps with Django" href="first-steps-with-django.html" />
+    <link media="only screen and (max-device-width: 480px)" href="../static/mobile.css" type="text/css" rel="stylesheet" /> 
   </head>
   <body>
 <div id="docstitle">
@@ -114,17 +115,17 @@ class MyPeriodicTask(PeriodicTask):
 &gt;&gt;&gt; tasks.register(MyPeriodicTask)</pre>
 </div>
 <p>If you want a little more control over when the task is executed, for example,
-a particular time of day or day of the week, you can subclass a <tt class="docutils literal"><span class="pre">ScheduledTask</span></tt>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">ScheduledTask</span>
+a particular time of day or day of the week, you can use <tt class="docutils literal"><span class="pre">crontab</span></tt> to set
+the <tt class="docutils literal"><span class="pre">run_every</span></tt> property:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">PeriodicTask</span>
+<span class="kn">from</span> <span class="nn">celery.task.schedules</span> <span class="kn">import</span> <span class="n">crontab</span>
 
-<span class="k">class</span> <span class="nc">EveryMondayMorningTask</span><span class="p">(</span><span class="n">ScheduledTask</span><span class="p">):</span>
-    <span class="n">hour</span> <span class="o">=</span> <span class="mi">7</span>
-    <span class="n">minute</span> <span class="o">=</span> <span class="mi">30</span>
-    <span class="n">day_of_week</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="k">class</span> <span class="nc">EveryMondayMorningTask</span><span class="p">(</span><span class="n">PeriodicTask</span><span class="p">):</span>
+    <span class="n">run_every</span> <span class="o">=</span> <span class="n">crontab</span><span class="p">(</span><span class="n">hour</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">minute</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">day_of_week</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;This will execute every Monday at 7:30AM.&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Execute every Monday at 7:30AM.&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>If you want to use periodic tasks you need to start the <tt class="docutils literal"><span class="pre">celerybeat</span></tt>
@@ -158,9 +159,10 @@ this is convenient if you only have one server:</p>
       <div class="clearer"></div>
     </div>
 	<div id="breadcrumbs">
-		<a href="index.html" accesskey="U">Getting Started</a><img src="triangle_closed.png" alt="Right arrow">
-		<a href="../index.html">Celery v1.0.3 (stable) documentation</a>
+		<a href="index.html" accesskey="U">Getting Started</a><img src="../static/triangle_closed.png" height="9" width="9" alt="&gt;">
+		Periodic Tasks
 		</ul>
 	</div>
+	<script type="text/javascript" charset="utf-8" src="../static/toc.js"></script>
   </body>
 </html>
