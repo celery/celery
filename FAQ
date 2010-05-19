@@ -745,6 +745,50 @@ to different servers. In the real world this may actually work better than per m
 priorities. You can use this in combination with rate limiting to achieve a
 highly performant system.
 
+Should I use retry or acks_late?
+--------------------------------
+
+**Answer**: Depends. It's not necessarily one or the other, you may want
+to use both.
+
+``Task.retry`` is used to retry tasks, notably for expected errors that
+is catchable with the ``try:`` block. The AMQP transaction is not used
+for these errors: **if the task raises an exception it is still acked!**.
+
+The ``acks_late`` setting would be used when you need the task to be
+executed again if the worker (for some reason) crashes mid-execution.
+It's important to note that the worker is not known to crash, and if
+it does it is usually an unrecoverable error that requires human
+intervention (bug in the worker, or task code).
+
+In an ideal world you could safely retry any task that has failed, but
+this is rarely the case. Imagine the following task:
+
+.. code-block:: python
+
+    @task()
+    def process_upload(filename, tmpfile):
+        # Increment a file count stored in a database
+        increment_file_counter()
+        add_file_metadata_to_db(filename, tmpfile)
+        copy_file_to_destination(filename, tmpfile)
+
+If this crashed in the middle of copying the file to its destination
+the world would contain incomplete state. This is not a critical
+scenario of course, but you can probably imagine something far more
+sinister. So for ease of programming we have less reliability;
+It's a good default, users who require it and know what they
+are doing can still enable acks_late (and in the future hopefully
+use manual acknowledgement)
+
+In addition ``Task.retry`` has features not available in AMQP
+transactions: delay between retries, max retries, etc.
+
+So use retry for Python errors, and if your task is reentrant
+combine that with ``acks_late`` if that level of reliability
+is required.
+
+
 Can I schedule tasks to execute at a specific time?
 ---------------------------------------------------
 
