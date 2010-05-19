@@ -1,32 +1,32 @@
 import unittest2 as unittest
 
-from celery.contrib.cancelable import CANCELLED
-from celery.contrib.cancelable import CancelableTask, CancelableAsyncResult
+from celery.contrib.abortable import ABORTED
+from celery.contrib.abortable import AbortableTask, AbortableAsyncResult
 
 
-class MyCancelableTask(CancelableTask):
+class MyAbortableTask(AbortableTask):
 
     def run(self, **kwargs):
         return True
 
 
-class TestCancelableTask(unittest.TestCase):
+class TestAbortableTask(unittest.TestCase):
 
-    def test_async_result_is_cancelable(self):
-        t = MyCancelableTask()
+    def test_async_result_is_abortable(self):
+        t = MyAbortableTask()
         result = t.apply_async()
         tid = result.task_id
-        self.assertIsInstance(t.AsyncResult(tid), CancelableAsyncResult)
+        self.assertIsInstance(t.AsyncResult(tid), AbortableAsyncResult)
 
-    def test_is_not_cancelled(self):
-        t = MyCancelableTask()
+    def test_is_not_aborted(self):
+        t = MyAbortableTask()
         result = t.apply_async()
         tid = result.task_id
-        self.assertFalse(t.is_cancelled(task_id=tid))
+        self.assertFalse(t.is_aborted(task_id=tid))
 
-    def test_cancel_yields_cancelled(self):
-        t = MyCancelableTask()
+    def test_abort_yields_aborted(self):
+        t = MyAbortableTask()
         result = t.apply_async()
-        result.cancel()
+        result.abort()
         tid = result.task_id
-        self.assertTrue(t.is_cancelled(task_id=tid))
+        self.assertTrue(t.is_aborted(task_id=tid))
