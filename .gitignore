@@ -11,3 +11,4 @@ pip-log.txt
 .directory
 erl_crash.dump
 *.db
+Documentation/
