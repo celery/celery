@@ -20,8 +20,6 @@ class BaseBackend(object):
 
     TimeoutError = TimeoutError
 
-    capabilities = []
-
     def __init__(self, *args, **kwargs):
         pass
 
@@ -144,8 +142,6 @@ class BaseBackend(object):
 
 
 class BaseDictBackend(BaseBackend):
-
-    capabilities = ["ResultStore"]
 
     def __init__(self, *args, **kwargs):
         super(BaseDictBackend, self).__init__(*args, **kwargs)
