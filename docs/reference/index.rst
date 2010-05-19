@@ -28,7 +28,7 @@
     celery.states
     celery.messaging
     celery.contrib.test_runner
-    celery.contrib.cancelable
+    celery.contrib.abortable
     celery.views
     celery.events
     celery.bin.celeryd
