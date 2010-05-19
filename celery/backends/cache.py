@@ -6,7 +6,7 @@ from django.core.cache import cache, get_cache
 from django.core.cache.backends.base import InvalidCacheBackendError
 
 from celery import conf
-from celery.utils import timedelta_seconds
+from celery.utils.timeutils import timedelta_seconds
 from celery.backends.base import KeyValueStoreBackend
 
 # CELERY_CACHE_BACKEND overrides the django-global(tm) backend settings.
