@@ -1,0 +1,757 @@
+/**
+ * Sphinx stylesheet -- basic theme
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ */
+ h3 {
+     color:#000000;
+     font-size: 17px;
+     margin-bottom:0.5em;
+     margin-top:2em;
+ }
+/* -- main layout ----------------------------------------------------------- */
+
+div.clearer {
+    clear: both;
+}
+
+/* -- header ---------------------------------------------------------------- */
+
+#header #title {
+    background:#29334F url(title_background.png) repeat-x scroll 0 0;
+    border-bottom:1px solid #B6B6B6;
+    height:25px;
+    overflow:hidden;
+}
+#headerButtons {
+    position: absolute;
+    list-style: none outside;
+    top: 26px;
+    left: 0px;
+    right: 0px;
+    margin: 0px;
+    padding: 0px;
+    border-top: 1px solid #2B334F;
+    border-bottom: 1px solid #EDEDED;
+    height: 20px;
+    font-size: 8pt;
+    overflow: hidden;
+    background-color: #D8D8D8;
+}
+
+#headerButtons li {
+    background-repeat:no-repeat;
+    display:inline;
+    margin-top:0;
+    padding:0;
+}
+
+.headerButton {
+    display: inline;
+    height:20px;
+}
+
+.headerButton a {
+    text-decoration: none;
+    float: right;
+    height: 20px;
+    padding: 4px 15px;
+    border-left: 1px solid #ACACAC;
+    font-family:'Lucida Grande',Geneva,Helvetica,Arial,sans-serif;
+    color: black;
+}
+.headerButton a:hover {
+    color: white;
+    background-color: #787878;
+    
+}
+
+li#toc_button {
+    text-align:left;
+}
+
+li#toc_button .headerButton a {
+    width:198px;
+    padding-top: 4px;
+    font-family:'Lucida Grande',Geneva,Helvetica,Arial,sans-serif;
+    color: black;
+    float: left;
+    padding-left:15px;
+    border-right:1px solid #ACACAC;
+    background:transparent url(triangle_open.png) no-repeat scroll 4px 6px;
+}
+
+li#toc_button .headerButton a:hover {
+    background-color: #787878;
+    color: white;
+}
+
+li#page_buttons {
+position:absolute;
+right:0;
+}
+
+#breadcrumbs {
+    color: black;
+    background-image:url(breadcrumb_background.png);
+    border-top:1px solid #2B334F;
+    bottom:0;
+    font-size:10px;
+    height:15px;
+    left:0;
+    overflow:hidden;
+    padding:3px 10px 0;
+    position:absolute;
+    right:0;
+    white-space:nowrap;
+    z-index:901;
+}
+#breadcrumbs a {
+    color: black;
+    text-decoration: none;
+}
+#breadcrumbs a:hover {
+    text-decoration: underline;
+}
+#breadcrumbs img {
+    padding-left: 3px;
+}
+/* -- sidebar --------------------------------------------------------------- */
+#sphinxsidebar {
+    position: absolute;
+    top: 84px;
+    bottom: 19px;
+    left: 0px;
+    width: 229px; 
+    background-color: #E4EBF7;
+    border-right: 1px solid #ACACAC;
+    border-top: 1px solid #2B334F;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 0px 0px 0px 0px;
+    font-size:11px;
+}
+
+div.sphinxsidebarwrapper {
+    padding: 10px 5px 0 10px;
+}
+
+#sphinxsidebar li {
+    margin: 0px;
+    padding: 0px;
+    font-weight: normal;
+    margin: 0px 0px 7px 0px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 11px;
+}
+
+#sphinxsidebar ul {
+    list-style: none;
+    margin: 0px 0px 0px 0px;
+    padding: 0px 5px 0px 5px;
+}
+
+#sphinxsidebar ul ul,
+#sphinxsidebar ul.want-points {
+    list-style: square;
+}
+
+#sphinxsidebar ul ul {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+#sphinxsidebar form {
+    margin-top: 10px;
+}
+
+#sphinxsidebar input {
+    border: 1px solid #787878;
+    font-family: sans-serif;
+    font-size: 1em;
+}
+
+img {
+    border: 0;
+}
+
+#sphinxsidebar li.toctree-l1 a {
+    font-weight: bold;
+    color: #000;
+    text-decoration: none;
+}
+
+#sphinxsidebar li.toctree-l2 a {
+    font-weight: bold;
+    color: #4f4f4f;
+    text-decoration: none;
+}
+
+/* -- search page ----------------------------------------------------------- */
+
+ul.search {
+    margin: 10px 0 0 20px;
+    padding: 0;
+}
+
+ul.search li {
+    padding: 5px 0 5px 20px;
+    background-image: url(file.png);
+    background-repeat: no-repeat;
+    background-position: 0 7px;
+}
+
+ul.search li a {
+    font-weight: bold;
+}
+
+ul.search li div.context {
+    color: #888;
+    margin: 2px 0 0 30px;
+    text-align: left;
+}
+
+ul.keywordmatches li.goodmatch a {
+    font-weight: bold;
+}
+#sphinxsidebar input.prettysearch {border:none;}
+input.searchbutton {
+    float: right;
+}
+.search-wrapper {width: 100%; height: 25px;}
+.search-wrapper input.prettysearch { border: none; width:200px; height: 16px; background: url(searchfield_repeat.png) center top repeat-x; border: 0px; margin: 0; padding: 3px 0 0 0; font: 11px "Lucida Grande", "Lucida Sans Unicode", Arial, sans-serif; }
+.search-wrapper input.prettysearch { width: 184px; margin-left: 20px; *margin-top:-1px; *margin-right:-2px; *margin-left:10px; }
+.search-wrapper .search-left { display: block; position: absolute; width: 20px; height: 19px; background: url(searchfield_leftcap.png) left top no-repeat; }
+.search-wrapper .search-right { display: block; position: relative; left: 204px; top: -19px; width: 10px; height: 19px; background: url(searchfield_rightcap.png) right top no-repeat; }
+
+/* -- index page ------------------------------------------------------------ */
+
+table.contentstable {
+    width: 90%;
+}
+
+table.contentstable p.biglink {
+    line-height: 150%;
+}
+
+a.biglink {
+    font-size: 1.3em;
+}
+
+span.linkdescr {
+    font-style: italic;
+    padding-top: 5px;
+    font-size: 90%;
+}
+
+/* -- general index --------------------------------------------------------- */
+
+table.indextable td {
+    text-align: left;
+    vertical-align: top;
+}
+
+table.indextable dl, table.indextable dd {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+table.indextable tr.pcap {
+    height: 10px;
+}
+
+table.indextable tr.cap {
+    margin-top: 10px;
+    background-color: #f2f2f2;
+}
+
+img.toggler {
+    margin-right: 3px;
+    margin-top: 3px;
+    cursor: pointer;
+}
+
+/* -- general body styles --------------------------------------------------- */
+.document {
+    border-top:1px solid #2B334F;
+    overflow:auto;
+    padding-left:2em;
+    padding-right:2em;
+    position:absolute;
+    z-index:1;
+    top:84px;
+    bottom:19px;
+    right:0;
+    left:230px;
+}
+
+a.headerlink {
+    visibility: hidden;
+}
+
+h1:hover > a.headerlink,
+h2:hover > a.headerlink,
+h3:hover > a.headerlink,
+h4:hover > a.headerlink,
+h5:hover > a.headerlink,
+h6:hover > a.headerlink,
+dt:hover > a.headerlink {
+    visibility: visible;
+}
+
+div.body p.caption {
+    text-align: inherit;
+}
+
+div.body td {
+    text-align: left;
+}
+
+.field-list ul {
+    padding-left: 1em;
+}
+
+.first {
+    margin-top: 0 !important;
+}
+
+p.rubric {
+    margin-top: 30px;
+    font-weight: bold;
+}
+
+/* -- sidebars -------------------------------------------------------------- */
+
+/*div.sidebar {
+    margin: 0 0 0.5em 1em;
+    border: 1px solid #ddb;
+    padding: 7px 7px 0 7px;
+    background-color: #ffe;
+    width: 40%;
+    float: right;
+}
+
+p.sidebar-title {
+    font-weight: bold;
+}
+*/
+/* -- topics ---------------------------------------------------------------- */
+
+div.topic {
+    border: 1px solid #ccc;
+    padding: 7px 7px 0 7px;
+    margin: 10px 0 10px 0;
+}
+
+p.topic-title {
+    font-size: 1.1em;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+/* -- admonitions ----------------------------------------------------------- */
+.admonition {
+    border: 1px solid #a1a5a9;
+    background-color: #f7f7f7;
+    margin: 20px;
+    padding: 0px 8px 7px 9px;
+    text-align: left;
+}
+.warning {
+    background-color:#E8E8E8;
+    border:1px solid #111111;
+    margin:30px;
+}
+.admonition p { 
+    font: 12px 'Lucida Grande', Geneva, Helvetica, Arial, sans-serif;
+    margin-top: 7px;
+    margin-bottom: 0px;
+}
+
+div.admonition dt {
+    font-weight: bold;
+}
+
+div.admonition dl {
+    margin-bottom: 0;
+}
+
+p.admonition-title {
+    margin: 0px 10px 5px 0px;
+    font-weight: bold;
+    padding-top: 3px;
+}
+
+div.body p.centered {
+    text-align: center;
+    margin-top: 25px;
+}
+
+/* -- tables ---------------------------------------------------------------- */
+
+table.docutils {
+    border-collapse: collapse;
+    border-top: 1px solid #919699;
+    border-left: 1px solid #919699;
+    border-right: 1px solid #919699;
+    font-size:12px;
+    padding:8px;
+    text-align:left;
+    vertical-align:top;
+}
+
+table.docutils td, table.docutils th {
+    padding: 8px;
+    font-size: 12px;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid #919699;
+}
+
+table.docutils th {
+    font-weight: bold;
+}
+/* This alternates colors in up to six table rows (light blue for odd, white for even)*/      
+.docutils tr {
+        background: #F0F5F9;
+}
+
+.docutils tr + tr {
+        background: #FFFFFF;
+}
+
+.docutils tr + tr + tr {
+        background: #F0F5F9;
+}
+
+.docutils tr + tr + tr + tr {
+        background: #FFFFFF;
+}
+
+.docutils tr + tr + tr +tr + tr {
+        background: #F0F5F9;
+}
+
+.docutils tr + tr + tr + tr + tr + tr {
+        background: #FFFFFF;
+}
+
+.docutils tr + tr + tr + tr + tr + tr + tr {
+        background: #F0F5F9;
+}
+
+table.footnote td, table.footnote th {
+    border: 0 !important;
+}
+
+th {
+    text-align: left;
+    padding-right: 5px;
+}
+
+/* -- other body styles ----------------------------------------------------- */
+
+dl {
+    margin-bottom: 15px;
+}
+
+dd p {
+    margin-top: 0px;
+    font-size: 12px;
+}
+
+dd ul, dd table {
+    margin-bottom: 10px;
+}
+
+dd {
+    margin-top: 3px;
+    margin-bottom: 10px;
+    margin-left: 30px;
+    font-size: 12px;
+}
+
+dt:target, .highlight {
+    background-color: #fbe54e;
+}
+
+dl.glossary dt {
+    font-weight: bold;
+    font-size: 0.8em;
+}
+
+dl.glossary dd {
+	font-size:12px;
+}
+.field-list ul {
+    vertical-align: top;
+    margin: 0;
+    padding-bottom: 0;
+    list-style: none inside;
+}
+
+.field-list ul li {
+    margin-top: 0;
+}
+
+.field-list p {
+    margin: 0;
+}
+
+.refcount {
+    color: #060;
+}
+
+.optional {
+    font-size: 1.3em;
+}
+
+.versionmodified {
+    font-style: italic;
+}
+
+.system-message {
+    background-color: #fda;
+    padding: 5px;
+    border: 3px solid red;
+}
+
+.footnote:target  {
+    background-color: #ffa
+}
+
+/* -- code displays --------------------------------------------------------- */
+
+pre {
+    overflow: auto;
+    background-color:#F1F5F9;
+    border:1px solid #C9D1D7;
+    border-spacing:0;
+    font-family:"Bitstream Vera Sans Mono",Monaco,"Lucida Console",Courier,Consolas,monospace;
+    font-size:11px;
+    padding: 10px;
+}
+
+td.linenos pre {
+    padding: 5px 0px;
+    border: 0;
+    background-color: transparent;
+    color: #aaa;
+}
+
+table.highlighttable {
+    margin-left: 0.5em;
+}
+
+table.highlighttable td {
+    padding: 0 0.5em 0 0.5em;
+}
+
+tt {
+	font-family:"Bitstream Vera Sans Mono",Monaco,"Lucida Console",Courier,Consolas,monospace;
+
+}
+
+tt.descname {
+    background-color: transparent;
+    font-weight: bold;
+    font-size: 1em;
+}
+
+tt.descclassname {
+    background-color: transparent;
+}
+
+tt.xref, a tt {
+    background-color: transparent;
+    font-weight: bold;
+}
+
+h1 tt, h2 tt, h3 tt, h4 tt, h5 tt, h6 tt {
+    background-color: transparent;
+}
+
+/* -- math display ---------------------------------------------------------- */
+
+img.math {
+    vertical-align: middle;
+}
+
+div.body div.math p {
+    text-align: center;
+}
+
+span.eqno {
+    float: right;
+}
+
+/* -- printout stylesheet --------------------------------------------------- */
+
+@media print {
+    div.document,
+    div.documentwrapper,
+    div.bodywrapper {
+        margin: 0;
+        width: 100%;
+    }
+
+    div.sphinxsidebar,
+    div.related,
+    div.footer,
+    #top-link {
+        display: none;
+    }
+}
+
+body {
+    font-family:'Lucida Grande',Geneva,Helvetica,Arial,sans-serif;
+}
+
+dl.class dt {
+    padding: 3px;
+/*    border-top: 2px solid #999;*/
+}
+
+em.property {
+    font-style: normal;
+}
+
+dl.class dd p {
+	margin-top: 6px;
+}
+
+dl.class dd dl.exception dt {
+    padding: 3px;
+    background-color: #FFD6D6;
+    border-top: none;
+}
+
+dl.class dd dl.method dt {
+   padding: 3px;
+   background-color: #e9e9e9;
+   border-top: none;
+   
+}
+
+dl.function dt {
+    padding: 3px;
+    border-top: 2px solid #999;
+}
+
+ul {
+list-style-image:none;
+list-style-position:outside;
+list-style-type:square;
+margin:0 0 0 30px;
+padding:0 0 12px 6px;
+}
+#docstitle {
+    height: 36px; 
+    background-image: url(header_sm_mid.png);
+    left: 0;
+    top: 0;
+    position: absolute;
+    width: 100%;
+}
+#docstitle p {
+    padding:7px 0 0 45px;
+    margin: 0;
+    color: white;
+    text-shadow:0 1px 0 #787878;
+    background: transparent url(documentation.png) no-repeat scroll 10px 3px;
+    height: 36px;
+    font-size: 15px;
+}
+#header {
+height:45px;
+left:0;
+position:absolute;
+right:0;
+top:36px;
+z-index:900;
+}
+
+#header h1 {
+font-size:10pt;
+margin:0;
+padding:5px 0 0 10px;
+text-shadow:0 1px 0 #D5D5D5;
+white-space:nowrap;
+}
+
+h1 {
+-x-system-font:none;
+color:#000000;
+font-family:'Lucida Grande',Geneva,Helvetica,Arial,sans-serif;
+font-size:30px;
+font-size-adjust:none;
+font-stretch:normal;
+font-style:normal;
+font-variant:normal;
+font-weight:bold;
+line-height:normal;
+margin-bottom:25px;
+margin-top:1em;
+}
+
+.footer {
+border-top:1px solid #DDDDDD;
+clear:both;
+padding-top:9px;
+width:100%;
+font-size:10px;
+}
+
+p {
+-x-system-font:none;
+font-family:'Lucida Grande',Geneva,Helvetica,Arial,sans-serif;
+font-size:12px;
+font-size-adjust:none;
+font-stretch:normal;
+font-style:normal;
+font-variant:normal;
+font-weight:normal;
+line-height:normal;
+margin-bottom:10px;
+margin-top:0;
+}
+
+h2 {
+border-bottom:1px solid #919699;
+color:#000000;
+font-size:24px;
+margin-top:2.5em;
+padding-bottom:2px;
+}
+
+a:link:hover {
+color:#093D92;
+text-decoration:underline;
+}
+
+a:link {
+color:#093D92;
+text-decoration:none;
+}
+
+
+ol {
+list-style-position:outside;
+list-style-type:decimal;
+margin:0 0 0 30px;
+padding:0 0 12px 6px;
+}
+li {
+margin-top:7px;
+font-family:'Lucida Grande',Geneva,Helvetica,Arial,sans-serif;
+font-size:12px;
+font-size-adjust:none;
+font-stretch:normal;
+font-style:normal;
+font-variant:normal;
+font-weight:normal;
+line-height:normal;
+}
+li p {
+margin-top:8px;
+}

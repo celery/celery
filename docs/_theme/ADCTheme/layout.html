@@ -1,0 +1,145 @@
+{% extends "basic/layout.html" %}
+{%- block doctype -%}
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+{%- endblock %}
+{%- set reldelim1 = reldelim1 is not defined and ' &raquo;' or reldelim1 %}
+{%- set reldelim2 = reldelim2 is not defined and ' |' or reldelim2 %}
+{%- block linktags %}
+    {%- if hasdoc('about') %}
+    <link rel="author" title="{{ _('About these documents') }}" href="{{ pathto('about') }}" />
+    {%- endif %}
+    {%- if hasdoc('genindex') %}
+    <link rel="index" title="{{ _('Index') }}" href="{{ pathto('genindex') }}" />
+    {%- endif %}
+    {%- if hasdoc('search') %}
+    <link rel="search" title="{{ _('Search') }}" href="{{ pathto('search') }}" />
+    {%- endif %}
+    {%- if hasdoc('copyright') %}
+    <link rel="copyright" title="{{ _('Copyright') }}" href="{{ pathto('copyright') }}" />
+    {%- endif %}
+    <link rel="top" title="{{ docstitle|e }}" href="{{ pathto('index') }}" />
+    {%- if parents %}
+    <link rel="up" title="{{ parents[-1].title|striptags }}" href="{{ parents[-1].link|e }}" />
+    {%- endif %}
+    {%- if next %}
+    <link rel="next" title="{{ next.title|striptags }}" href="{{ next.link|e }}" />
+    {%- endif %}
+    {%- if prev %}
+    <link rel="prev" title="{{ prev.title|striptags }}" href="{{ prev.link|e }}" />
+    {%- endif %}
+    <link media="only screen and (max-device-width: 480px)" href="{{ pathto('_static/mobile.css', 1) }}" type="text/css" rel="stylesheet" />
+{%- endblock %}
+{%- block extrahead %} {% endblock %}
+{%- block header %}{% endblock %}
+{%- block relbar1 %}
+<div id="docstitle">
+	<p>{{docstitle}}</p>
+</div>
+<div id="header">
+	<div id="title"><h1>{{ title|striptags }}</h1></div>
+	<ul id="headerButtons">
+		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
+		<li id="page_buttons">
+			{%- for rellink in rellinks %}
+			<div class="headerButton"><a href="{{ pathto(rellink[0]) }}" title="{{ rellink[1]|striptags }}" {{ accesskey(rellink[2]) }}>{{ rellink[3] }}</a></div>
+			{%- endfor %}
+		</li>
+	</ul>
+</div>
+{% endblock %}
+
+{%- block sidebar1 %}
+{%- if not embedded %}{% if not theme_nosidebar|tobool %}
+<div id="sphinxsidebar">
+  <div class="sphinxsidebarwrapper">
+    {%- block sidebarlogo %}
+    {%- if logo %}
+      <p class="logo"><a href="{{ pathto(master_doc) }}">
+        <img class="logo" src="{{ pathto('_static/' + logo, 1) }}" alt="Logo"/>
+      </a></p>
+    {%- endif %}
+    {%- endblock %}
+    {%- block sidebartoc %}
+	<ul><li class="toctree-l1"><a href="{{ pathto(master_doc) }}">{{ _('Main Page') }}</a></li></ul>
+	{{ toctree() }}
+    {%- endblock %}
+    {%- block sidebarrel %}
+    {%- endblock %}
+    {%- block sidebarsourcelink %}
+    {%- if show_source and has_source and sourcename %}
+      <h3>{{ _('This Page') }}</h3>
+      <ul class="this-page-menu">
+        <li><a href="{{ pathto('_sources/' + sourcename, true)|e }}"
+               rel="nofollow">{{ _('Show Source') }}</a></li>
+      </ul>
+    {%- endif %}
+    {%- endblock %}
+    {%- if customsidebar %}
+    {% include customsidebar %}
+    {%- endif %}
+    {%- block sidebarsearch %}
+    {%- if pagename != "search" %}
+    <div id="searchbox" style="display: none">
+      {# <h3>{{ _('Quick search') }}</h3> #}
+        <form class="search" action="{{ pathto('search') }}" method="get">
+			<div class="search-wrapper">
+			<span class="search-left"></span>
+			<input class="prettysearch" type="text" name="q" size="18" />
+			<span class="search-right">&nbsp;</span>
+			</div>
+          <input type="submit" value="{{ _('Search') }}" class="searchbutton" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </form>
+        <p class="searchtip" style="font-size: 90%">
+        {{ _('Enter search terms or a module, class or function name.') }}
+        </p>
+    </div>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    {%- endif %}
+    {%- endblock %}
+  </div>
+</div>
+{%- endif %}{% endif %}
+
+{% endblock %}
+{%- block document %}
+      <div class="documentwrapper">
+      {%- if not embedded %}{% if not theme_nosidebar|tobool %}
+        <div class="bodywrapper">
+      {%- endif %}{% endif %}
+          <div class="body">
+            {% block body %} {% endblock %}
+          </div>
+      {%- if not embedded %}{% if not theme_nosidebar|tobool %} 
+        </div>
+      {%- endif %}{% endif %}
+      </div>
+    <div class="footer">
+    <p>{%- if hasdoc('copyright') %}
+      {% trans path=pathto('copyright'), copyright=copyright|e %}&copy; <a href="{{ path }}">Copyright</a> {{ copyright }}.{% endtrans %}
+    {%- else %}
+      {% trans copyright=copyright|e %}&copy; Copyright {{ copyright }}.{% endtrans %}
+    {%- endif %}
+    {%- if last_updated %}
+      {% trans last_updated=last_updated|e %}Last updated on {{ last_updated }}.{% endtrans %}
+    {%- endif %}
+    {%- if show_sphinx %}
+      {% trans sphinx_version=sphinx_version|e %}Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> {{ sphinx_version }}.{% endtrans %}
+    {%- endif %}
+	</p>
+    </div>
+{%- endblock %}
+{%- block sidebar2 %}{% endblock %}
+{%- block relbar2 %}{% endblock %}
+{%- block footer %}
+	<div id="breadcrumbs">
+		{%- for parent in parents %}
+		<a href="{{ parent.link|e }}" {{ accesskey("U") }}>{{ parent.title|safe }}</a><img src="{{ pathto('_static/triangle_closed.png', 1) }}" height="9" width="9" alt="&gt;">
+		{%- endfor %}
+		{{ title|safe|e }}
+		</ul>
+	</div>
+	<script type="text/javascript" charset="utf-8" src="{{ pathto('_static/toc.js', 1) }}"></script>
+{%- endblock %}
