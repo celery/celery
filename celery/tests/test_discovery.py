@@ -2,8 +2,9 @@ import unittest2 as unittest
 
 from django.conf import settings
 
-from celery.loaders.djangoapp import autodiscover
 from celery.task import tasks
+
+from djcelery.loaders.djangoapp import autodiscover
 
 
 class TestDiscovery(unittest.TestCase):

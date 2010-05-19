@@ -12,7 +12,6 @@ from celery import states
 from celery.log import setup_logger
 from celery.task.base import Task
 from celery.utils import gen_unique_id
-from celery.models import TaskMeta
 from celery.result import AsyncResult
 from celery.worker.job import WorkerTaskTrace, TaskWrapper
 from celery.worker.pool import TaskPool
@@ -22,6 +21,8 @@ from celery.datastructures import ExceptionInfo
 
 from celery.tests.utils import execute_context
 from celery.tests.compat import catch_warnings
+
+from djcelery.models import TaskMeta
 
 scratch = {"ACK": False}
 some_kwargs_scratchpad = {}

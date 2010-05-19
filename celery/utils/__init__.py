@@ -225,7 +225,10 @@ def get_cls_by_name(name, aliases={}):
         return name # already a class
 
     name = aliases.get(name) or name
+    print("NAME: %s" % name)
+    print("ALIASES: %s" % aliases)
     module_name, _, cls_name = rpartition(name, ".")
+    print("MODULE_NAME=%s CLS_NAME=%s" % (module_name, cls_name))
     module = importlib.import_module(module_name)
     return getattr(module, cls_name)
 

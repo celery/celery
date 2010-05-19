@@ -3,7 +3,8 @@ from datetime import datetime, timedelta
 
 from celery import states
 from celery.utils import gen_unique_id
-from celery.models import TaskMeta, TaskSetMeta
+
+from djcelery.models import TaskMeta, TaskSetMeta
 
 
 class TestModels(unittest.TestCase):

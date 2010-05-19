@@ -11,7 +11,7 @@ SITE_ID = 300
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
-ROOT_URLCONF = "urls"
+ROOT_URLCONF = "tests.urls"
 
 ADMINS = (
     # ('Your Name', 'your_email@domain.com'),
@@ -70,7 +70,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
     'django_nose',
-    'celery',
+    'djcelery',
     'someapp',
     'someappwotask',
 )

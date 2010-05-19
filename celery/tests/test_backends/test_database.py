@@ -4,7 +4,8 @@ from datetime import timedelta
 from celery import states
 from celery.task import PeriodicTask
 from celery.utils import gen_unique_id
-from celery.backends.database import DatabaseBackend
+
+from djcelery.backends.database import DatabaseBackend
 
 
 class SomeClass(object):

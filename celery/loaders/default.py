@@ -16,6 +16,18 @@ def wanted_module_item(item):
     return not item.startswith("_")
 
 
+class Settings(dict):
+
+    def __getattr__(self, key):
+        try:
+            return self[key]
+        except KeyError:
+            raise AttributeError(key)
+
+    def __setattr_(self, key, value):
+        self[key] = value
+
+
 class Loader(BaseLoader):
     """The default loader.
 
@@ -24,13 +36,7 @@ class Loader(BaseLoader):
     """
 
     def setup_django_env(self, settingsdict):
-        config = dict(DEFAULT_SETTINGS, **settingsdict)
-
-        from django.conf import settings
-        if not settings.configured:
-            settings.configure()
-        for config_key, config_value in config.items():
-            setattr(settings, config_key, config_value)
+        settings = Settings(DEFAULT_SETTINGS, **settingsdict)
         installed_apps = set(list(DEFAULT_SETTINGS["INSTALLED_APPS"]) + \
                              list(settings.INSTALLED_APPS))
         settings.INSTALLED_APPS = tuple(installed_apps)

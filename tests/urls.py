@@ -1,6 +1,6 @@
 from django.conf.urls.defaults import (patterns, url, include,
                                        handler500, handler404)
-from celery.views import apply
+from djcelery.views import apply
 
 # Uncomment the next two lines to enable the admin:
 # from django.contrib import admin
@@ -17,6 +17,6 @@ urlpatterns = patterns('',
     # Uncomment the next line to enable the admin:
     # (r'^admin/(.*)', admin.site.root),
     url(r"^apply/(?P<task_name>.+?)/", apply, name="celery-apply"),
-    url(r"^celery/", include("celery.urls")),
+    url(r"^celery/", include("djcelery.urls")),
 
 )

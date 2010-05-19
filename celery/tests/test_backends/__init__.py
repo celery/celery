@@ -1,9 +1,10 @@
 import unittest2 as unittest
 
 from celery import backends
-from celery.backends.database import DatabaseBackend
 from celery.backends.amqp import AMQPBackend
 from celery.backends.pyredis import RedisBackend
+
+from djcelery.backends.database import DatabaseBackend
 
 
 class TestBackends(unittest.TestCase):

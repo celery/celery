@@ -5,12 +5,12 @@ from celery.utils import get_cls_by_name
 
 BACKEND_ALIASES = {
     "amqp": "celery.backends.amqp.AMQPBackend",
-    "database": "celery.backends.database.DatabaseBackend",
-    "db": "celery.backends.database.DatabaseBackend",
     "redis": "celery.backends.pyredis.RedisBackend",
-    "cache": "celery.backends.cache.CacheBackend",
     "mongodb": "celery.backends.mongodb.MongoBackend",
     "tyrant": "celery.backends.tyrant.TyrantBackend",
+    "db": "djcelery.backends.database.DatabaseBackend",
+    "database": "djcelery.backends.database.DatabaseBackend",
+    "cache": "djcelery.backends.cache.CacheBackend",
 }
 
 _backend_cache = {}
@@ -19,6 +19,7 @@ _backend_cache = {}
 def get_backend_cls(backend):
     """Get backend class by name/alias"""
     if backend not in _backend_cache:
+        print("GET_CLS_BY_NAME: %s" % backend)
         _backend_cache[backend] = get_cls_by_name(backend, BACKEND_ALIASES)
     return _backend_cache[backend]
 

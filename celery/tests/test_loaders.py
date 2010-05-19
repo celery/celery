@@ -5,10 +5,12 @@ import unittest2 as unittest
 from celery import task
 from celery import loaders
 from celery.loaders import base
-from celery.loaders import djangoapp
 from celery.loaders import default
 
+from djcelery.loaders import djangoapp
+
 from celery.tests.utils import with_environ
+
 
 
 class TestLoaders(unittest.TestCase):
