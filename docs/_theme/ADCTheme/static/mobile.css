@@ -1,0 +1,17 @@
+/*
+ * CSS adjustments (overrides) for mobile browsers that cannot handle
+ * fix-positioned div's very well.
+ * This makes long pages scrollable on mobile browsers.
+ */
+
+#breadcrumbs {
+	display: none !important;
+}
+
+.document {
+    bottom: inherit !important;
+}
+
+#sphinxsidebar {
+    bottom: inherit !important;
+}

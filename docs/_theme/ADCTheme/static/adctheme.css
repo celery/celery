@@ -2,7 +2,16 @@
  * Sphinx stylesheet -- basic theme
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  */
+<<<<<<< HEAD
 
+=======
+ h3 {
+     color:#000000;
+     font-size: 17px;
+     margin-bottom:0.5em;
+     margin-top:2em;
+ }
+>>>>>>> 12ce4b1... Updated docs/_theme/ADCTheme
 /* -- main layout ----------------------------------------------------------- */
 
 div.clearer {
@@ -72,10 +81,20 @@ li#toc_button .headerButton a {
     float: left;
     padding-left:15px;
     border-right:1px solid #ACACAC;
+<<<<<<< HEAD
     background:transparent url(triangle_closed.png) no-repeat scroll 4px 6px;
 }
 
 
+=======
+    background:transparent url(triangle_open.png) no-repeat scroll 4px 6px;
+}
+
+li#toc_button .headerButton a:hover {
+    background-color: #787878;
+    color: white;
+}
+>>>>>>> 12ce4b1... Updated docs/_theme/ADCTheme
 
 li#page_buttons {
 position:absolute;
@@ -104,7 +123,13 @@ right:0;
 #breadcrumbs a:hover {
     text-decoration: underline;
 }
+<<<<<<< HEAD
 
+=======
+#breadcrumbs img {
+    padding-left: 3px;
+}
+>>>>>>> 12ce4b1... Updated docs/_theme/ADCTheme
 /* -- sidebar --------------------------------------------------------------- */
 #sphinxsidebar {
     position: absolute;
@@ -447,6 +472,10 @@ dl {
 
 dd p {
     margin-top: 0px;
+<<<<<<< HEAD
+=======
+    font-size: 12px;
+>>>>>>> 12ce4b1... Updated docs/_theme/ADCTheme
 }
 
 dd ul, dd table {
@@ -457,6 +486,10 @@ dd {
     margin-top: 3px;
     margin-bottom: 10px;
     margin-left: 30px;
+<<<<<<< HEAD
+=======
+    font-size: 12px;
+>>>>>>> 12ce4b1... Updated docs/_theme/ADCTheme
 }
 
 dt:target, .highlight {
@@ -465,9 +498,18 @@ dt:target, .highlight {
 
 dl.glossary dt {
     font-weight: bold;
+<<<<<<< HEAD
     font-size: 1.1em;
 }
 
+=======
+    font-size: 0.8em;
+}
+
+dl.glossary dd {
+	font-size:12px;
+}
+>>>>>>> 12ce4b1... Updated docs/_theme/ADCTheme
 .field-list ul {
     vertical-align: top;
     margin: 0;
@@ -532,10 +574,22 @@ table.highlighttable td {
     padding: 0 0.5em 0 0.5em;
 }
 
+<<<<<<< HEAD
 tt.descname {
     background-color: transparent;
     font-weight: bold;
     font-size: 1.2em;
+=======
+tt {
+	font-family:"Bitstream Vera Sans Mono",Monaco,"Lucida Console",Courier,Consolas,monospace;
+
+}
+
+tt.descname {
+    background-color: transparent;
+    font-weight: bold;
+    font-size: 1em;
+>>>>>>> 12ce4b1... Updated docs/_theme/ADCTheme
 }
 
 tt.descclassname {
@@ -589,11 +643,15 @@ body {
 
 dl.class dt {
     padding: 3px;
+<<<<<<< HEAD
     border-top: 2px solid #999;
 }
 
 tt.descname {
     font-size: 1em;
+=======
+/*    border-top: 2px solid #999;*/
+>>>>>>> 12ce4b1... Updated docs/_theme/ADCTheme
 }
 
 em.property {
@@ -601,6 +659,10 @@ em.property {
 }
 
 dl.class dd p {
+<<<<<<< HEAD
+=======
+	margin-top: 6px;
+>>>>>>> 12ce4b1... Updated docs/_theme/ADCTheme
 }
 
 dl.class dd dl.exception dt {
@@ -735,9 +797,12 @@ font-variant:normal;
 font-weight:normal;
 line-height:normal;
 }
+<<<<<<< HEAD
 li > p {
 display:inline;
 }
+=======
+>>>>>>> 12ce4b1... Updated docs/_theme/ADCTheme
 li p {
 margin-top:8px;
 }
