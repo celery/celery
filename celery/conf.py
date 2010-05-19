@@ -63,9 +63,13 @@ _DEFAULTS = {
     "CELERY_EVENT_ROUTING_KEY": "celeryevent",
     "CELERY_EVENT_SERIALIZER": "json",
     "CELERY_RESULT_EXCHANGE": "celeryresults",
+    "CELERY_RESULT_EXCHANGE_TYPE": "direct",
+    "CELERY_RESULT_SERIALIZER": "pickle",
+    "CELERY_RESULT_PERSISTENT": False,
     "CELERY_MAX_CACHED_RESULTS": 5000,
     "CELERY_TRACK_STARTED": False,
 }
+
 
 _DEPRECATION_FMT = """
 %s is deprecated in favor of %s and is scheduled for removal in celery v1.2.
@@ -211,9 +215,12 @@ BROKER_CONNECTION_RETRY = _get("CELERY_BROKER_CONNECTION_RETRY",
 BROKER_CONNECTION_MAX_RETRIES = _get("CELERY_BROKER_CONNECTION_MAX_RETRIES",
                                 compat=["CELERY_AMQP_CONNECTION_MAX_RETRIES"])
 
-# :--- Backend settings                             <-   --   --- - ----- -- #
+# :--- AMQP Backend settings                        <-   --   --- - ----- -- #
 
 RESULT_EXCHANGE = _get("CELERY_RESULT_EXCHANGE")
+RESULT_EXCHANGE_TYPE = _get("CELERY_RESULT_EXCHANGE_TYPE")
+RESULT_SERIALIZER = _get("CELERY_RESULT_SERIALIZER")
+RESULT_PERSISTENT = _get("CELERY_RESULT_PERSISTENT")
 
 # :--- Celery Beat                                  <-   --   --- - ----- -- #
 CELERYBEAT_LOG_LEVEL = _get("CELERYBEAT_LOG_LEVEL")
