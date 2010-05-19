@@ -18,6 +18,11 @@ Configuration - celery.conf
 
     Default exchange type.
 
+.. data:: DEFAULT_DELIVERY_MODE
+
+    Default delivery mode (``"persistent"`` or ``"non-persistent"``).
+    Default is ``"persistent"``.
+
 .. data:: DEFAULT_ROUTING_KEY
 
     Default routing key used when sending tasks.
@@ -26,6 +31,51 @@ Configuration - celery.conf
 
     The timeout in seconds before we give up establishing a connection
     to the AMQP server.
+
+.. data:: BROADCAST_QUEUE
+
+    Name prefix for the queue used when listening for
+    broadcast messages. The workers hostname will be appended
+    to the prefix to create the final queue name.
+
+    Default is ``"celeryctl"``.
+
+.. data:: BROADCAST_EXCHANGE
+
+    Name of the exchange used for broadcast messages.
+
+    Default is ``"celeryctl"``.
+
+.. data:: BROADCAST_EXCHANGE_TYPE
+
+    Exchange type used for broadcast messages. Default is ``"fanout"``.
+
+.. data:: EVENT_QUEUE
+
+    Name of queue used to listen for event messages. Default is
+    ``"celeryevent"``.
+
+.. data:: EVENT_EXCHANGE
+
+    Exchange used to send event messages. Default is ``"celeryevent"``.
+
+.. data:: EVENT_EXCHANGE_TYPE
+
+    Exchange type used for the event exchange. Default is ``"topic"``.
+
+.. data:: EVENT_ROUTING_KEY
+
+    Routing key used for events. Default is ``"celeryevent"``.
+
+.. data:: EVENT_SERIALIZER
+
+    Type of serialization method used to serialize events. Default is
+    ``"json"``.
+
+.. data:: RESULT_EXCHANGE
+
+    Exchange used by the AMQP result backend to publish task results.
+    Default is ``"celeryresult"``.
 
 .. data:: CELERY_SEND_TASK_ERROR_EMAILS
 
@@ -39,6 +89,30 @@ Configuration - celery.conf
 .. data:: TASK_RESULT_EXPIRES
 
     Task tombstone expire time in seconds.
+
+.. data:: IGNORE_RESULT
+
+    If enabled, the default behavior will be to not store task results.
+
+.. data:: TRACK_STARTED
+
+    If enabled, the default behavior will be to track when tasks starts by
+    storing the :const:`STARTED` state.
+
+.. data:: ACKS_LATE
+
+    If enabled, the default behavior will be to acknowledge task messages
+    after the task is executed.
+
+.. data:: STORE_ERRORS_EVEN_IF_IGNORED
+
+    If enabled, task errors will be stored even though ``Task.ignore_result``
+    is enabled.
+
+.. data:: MAX_CACHED_RESULTS
+
+    Total number of results to store before results are evicted from the
+    result cache.
 
 .. data:: BROKER_CONNECTION_RETRY
 
@@ -72,7 +146,7 @@ Configuration - celery.conf
     Use a custom cache backend for celery. If not set the django-global
     cache backend in ``CACHE_BACKEND`` will be used.
 
-.. data:: CELERY_SEND_EVENTS
+.. data:: SEND_EVENTS
 
     If set, celery will send events that can be captured by monitors like
     ``celerymon``.
@@ -127,9 +201,13 @@ Configuration - celery.conf
 
     Mapping of log level names to :mod:`logging` module constants.
 
-.. data:: LOG_FORMAT
+.. data:: CELERYD_LOG_FORMAT
 
     The format to use for log messages.
+
+.. data:: CELERYD_TASK_LOG_FORMAT
+
+    The format to use for task log messages.
 
 .. data:: CELERYD_LOG_FILE
 
@@ -144,3 +222,28 @@ Configuration - celery.conf
 
     The number of concurrent worker processes.
     If set to ``0``, the total number of available CPUs/cores will be used.
+
+.. data:: CELERYD_PREFETCH_MULTIPLIER
+
+    The number of concurrent workers is multipled by this number to yield
+    the wanted AMQP QoS message prefetch count.
+
+.. data:: CELERYD_POOL
+
+    Name of the task pool class used by the worker.
+    Default is ``"celery.worker.pool.TaskPool"`.
+
+.. data:: CELERYD_LISTENER
+
+    Name of the listener class used by the worker.
+    Default is ``"celery.worker.listener.CarrotListener"``.
+
+.. data:: CELERYD_MEDIATOR
+
+    Name of the mediator class used by the worker.
+    Default is ``"celery.worker.controllers.Mediator"``.
+
+.. data:: CELERYD_ETA_SCHEDULER
+
+    Name of the ETA scheduler class used by the worker.
+    Default is ``"celery.worker.controllers.ScheduleController"``.
