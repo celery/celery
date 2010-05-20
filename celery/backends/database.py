@@ -8,14 +8,19 @@ from celery.db.session import ResultSession
 from celery.backends.base import BaseDictBackend
 
 
-
-
 class DatabaseBackend(BaseDictBackend):
     """The database result backend."""
 
+    def __init__(self, dburi=conf.RESULT_DBURI, **kwargs):
+        self.dburi = dburi
+        super(DatabaseBackend, self).__init__(**kwargs)
+
+    def ResultSession(self):
+        return ResultSession(dburi=self.dburi)
+
     def _store_result(self, task_id, result, status, traceback=None):
         """Store return value and status of an executed task."""
-        session = ResultSession()
+        session = self.ResultSession()
         try:
             tasks = session.query(Task).filter(Task.task_id == task_id).all()
             if not tasks:
@@ -35,7 +40,7 @@ class DatabaseBackend(BaseDictBackend):
     def _save_taskset(self, taskset_id, result):
         """Store the result of an executed taskset."""
         taskset = TaskSet(taskset_id, result)
-        session = ResultSession()
+        session = self.ResultSession()
         try:
             session.add(taskset)
             session.flush()
@@ -46,7 +51,7 @@ class DatabaseBackend(BaseDictBackend):
 
     def _get_task_meta_for(self, task_id):
         """Get task metadata for a task by id."""
-        session = ResultSession()
+        session = self.ResultSession()
         try:
             task = None
             for task in session.query(Task).filter(Task.task_id == task_id):
@@ -63,7 +68,7 @@ class DatabaseBackend(BaseDictBackend):
 
     def _restore_taskset(self, taskset_id):
         """Get taskset metadata for a taskset by id."""
-        session = ResultSession()
+        session = self.ResultSession()
         try:
             qs = session.query(TaskSet)
             for taskset in qs.filter(TaskSet.task_id == task_id):
@@ -74,7 +79,7 @@ class DatabaseBackend(BaseDictBackend):
     def cleanup(self):
         """Delete expired metadata."""
         expires = conf.TASK_RESULT_EXPIRES
-        session = ResultSession()
+        session = self.ResultSession()
         try:
             for task in session.query(Task).filter(
                     Task.date_done < (datetime.now() - expires)):
