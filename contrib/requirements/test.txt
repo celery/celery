@@ -2,7 +2,6 @@ unittest2>=0.4.0
 simplejson
 nose
 nose-cover3
-django-nose
 coverage>=3.0
 mock>=0.6.0
 pytyrant
