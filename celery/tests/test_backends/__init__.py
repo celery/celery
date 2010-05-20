@@ -12,7 +12,6 @@ class TestBackends(unittest.TestCase):
     def test_get_backend_aliases(self):
         expects = [("amqp", AMQPBackend),
                    ("database", DatabaseBackend),
-                   ("db", DatabaseBackend),
                    ("redis", RedisBackend)]
         for expect_name, expect_cls in expects:
             self.assertIsInstance(backends.get_backend_cls(expect_name)(),

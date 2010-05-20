@@ -2,15 +2,13 @@ from billiard.utils.functional import curry
 
 from celery import conf
 from celery.utils import get_cls_by_name
+from celery.loaders import current_loader
 
 BACKEND_ALIASES = {
     "amqp": "celery.backends.amqp.AMQPBackend",
     "redis": "celery.backends.pyredis.RedisBackend",
     "mongodb": "celery.backends.mongodb.MongoBackend",
     "tyrant": "celery.backends.tyrant.TyrantBackend",
-    "db": "djcelery.backends.database.DatabaseBackend",
-    "database": "djcelery.backends.database.DatabaseBackend",
-    "cache": "djcelery.backends.cache.CacheBackend",
 }
 
 _backend_cache = {}
@@ -19,7 +17,8 @@ _backend_cache = {}
 def get_backend_cls(backend):
     """Get backend class by name/alias"""
     if backend not in _backend_cache:
-        _backend_cache[backend] = get_cls_by_name(backend, BACKEND_ALIASES)
+        aliases = dict(BACKEND_ALIASES, **current_loader().override_backends)
+        _backend_cache[backend] = get_cls_by_name(backend, aliases)
     return _backend_cache[backend]
 
 
