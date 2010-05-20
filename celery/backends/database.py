@@ -1,28 +1,13 @@
 import urllib
 from datetime import datetime
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
 from celery import conf
-from celery.db.models import ModelBase, Task, TaskSet
+from celery.db.models import Task, TaskSet
+from celery.db.session import ResultSession
 from celery.backends.base import BaseDictBackend
 
-server = '<sql server host>'
-database = '<your db>'
-userid = '<your user>'
-password = '<your password>'
-port = 1433
-raw_cs = "DRIVER={FreeTDS};SERVER=%s;PORT=%d;DATABASE=%s;UID=%s;PWD=%s;CHARSET=UTF8;TDS_VERSION=8.0;TEXTSIZE=10000" % (server, port, database, userid, password)
-#connection_string = "mssql:///?odbc_connect=%s" % urllib.quote_plus(raw_cs)
-#connection_string = 'sqlite:////mnt/winctmp/celery.db'
-connection_string = 'sqlite:///celery.db'
-engine = create_engine(connection_string)
-Session = sessionmaker(bind=engine)
 
-import os
-if os.environ.get("CELERYINIT"):
-    ModelBase.metadata.create_all(engine)
 
 
 class DatabaseBackend(BaseDictBackend):
@@ -30,7 +15,7 @@ class DatabaseBackend(BaseDictBackend):
 
     def _store_result(self, task_id, result, status, traceback=None):
         """Store return value and status of an executed task."""
-        session = Session()
+        session = ResultSession()
         try:
             tasks = session.query(Task).filter(Task.task_id == task_id).all()
             if not tasks:
@@ -50,7 +35,7 @@ class DatabaseBackend(BaseDictBackend):
     def _save_taskset(self, taskset_id, result):
         """Store the result of an executed taskset."""
         taskset = TaskSet(taskset_id, result)
-        session = Session()
+        session = ResultSession()
         try:
             session.add(taskset)
             session.flush()
@@ -61,7 +46,7 @@ class DatabaseBackend(BaseDictBackend):
 
     def _get_task_meta_for(self, task_id):
         """Get task metadata for a task by id."""
-        session = Session()
+        session = ResultSession()
         try:
             task = None
             for task in session.query(Task).filter(Task.task_id == task_id):
@@ -78,7 +63,7 @@ class DatabaseBackend(BaseDictBackend):
 
     def _restore_taskset(self, taskset_id):
         """Get taskset metadata for a taskset by id."""
-        session = Session()
+        session = ResultSession()
         try:
             qs = session.query(TaskSet)
             for taskset in qs.filter(TaskSet.task_id == task_id):
@@ -89,7 +74,7 @@ class DatabaseBackend(BaseDictBackend):
     def cleanup(self):
         """Delete expired metadata."""
         expires = conf.TASK_RESULT_EXPIRES
-        session = Session()
+        session = ResultSession()
         try:
             for task in session.query(Task).filter(
                     Task.date_done < (datetime.now() - expires)):

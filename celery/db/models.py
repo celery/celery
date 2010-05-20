@@ -6,11 +6,11 @@ from sqlalchemy.orm import relation
 from sqlalchemy.ext.declarative import declarative_base
 
 from celery import states
+from celery.db.session import ResultModelBase
 
-ModelBase = declarative_base()
 
 
-class Task(ModelBase):
+class Task(ResultModelBase):
     """Task result/status."""
     __tablename__ = "celery_taskmeta"
     __table_args__ = {"sqlite_autoincrement": True}
@@ -44,7 +44,7 @@ class Task(ModelBase):
         return u"<Task: %s successful: %s>" % (self.task_id, self.status)
 
 
-class TaskSet(ModelBase):
+class TaskSet(ResultModelBase):
     """TaskSet result"""
     __tablename__ = "celery_tasksetmeta"
     __table_args__ = {"sqlite_autoincrement": True}
