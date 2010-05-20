@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from celery import conf
-from celery.db.models import Task, TaskSet
+from celery.db.models import ModelBase, Task, TaskSet
 from celery.backends.base import BaseDictBackend
 
 server = '<sql server host>'
@@ -20,6 +20,10 @@ connection_string = 'sqlite:///celery.db'
 engine = create_engine(connection_string)
 Session = sessionmaker(bind=engine)
 
+import os
+if os.environ.get("CELERYINIT"):
+    ModelBase.metadata.create_all(engine)
+
 
 class DatabaseBackend(BaseDictBackend):
     """The database result backend."""
@@ -32,6 +36,7 @@ class DatabaseBackend(BaseDictBackend):
             if not tasks:
                 task = Task(task_id)
                 session.add(task)
+                session.flush()
             else:
                 task = tasks[0]
             task.result = result
@@ -48,6 +53,7 @@ class DatabaseBackend(BaseDictBackend):
         session = Session()
         try:
             session.add(taskset)
+            session.flush()
             session.commit()
         finally:
             session.close()
@@ -63,6 +69,7 @@ class DatabaseBackend(BaseDictBackend):
             if not task:
                 task = Task(task_id)
                 session.add(task)
+                session.flush()
                 session.commit()
             if task:
                 return task.to_dict()

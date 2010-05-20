@@ -13,9 +13,11 @@ ModelBase = declarative_base()
 class Task(ModelBase):
     """Task result/status."""
     __tablename__ = "celery_taskmeta"
+    __table_args__ = {"sqlite_autoincrement": True}
 
-    id = Column("id", Integer, Sequence("task_id_sequence"), primary_key=True)
-    task_id = Column("task_id", String(255), primary_key=True)
+    id = Column("id", Integer, Sequence("task_id_sequence"), primary_key=True,
+            autoincrement=True)
+    task_id = Column("task_id", String(255))
     status = Column("status", String(50), default=states.PENDING)
     result = Column("result", PickleType, nullable=True)
     date_done = Column("date_done", DateTime, default=datetime.now,
@@ -45,13 +47,14 @@ class Task(ModelBase):
 class TaskSet(ModelBase):
     """TaskSet result"""
     __tablename__ = "celery_tasksetmeta"
+    __table_args__ = {"sqlite_autoincrement": True}
 
     id = Column("id", Integer, Sequence("taskset_id_sequence"),
-                primary_key=True)
-    taskset_id = Column("taskset_id", String(255), unique=True)
+                autoincrement=True, primary_key=True)
+    taskset_id = Column("taskset_id", String(255))
     result = Column("result", PickleType, nullable=True)
     date_done = Column("date_done", DateTime, default=datetime.now,
-                       onupdate=datetime.now, nullable=True)
+                       nullable=True)
 
     def __init__(self, task_id):
         self.task_id = task_id
