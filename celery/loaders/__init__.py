@@ -7,8 +7,6 @@ from carrot.utils import rpartition
 from celery.utils import get_full_cls_name, first
 from celery.loaders.default import Loader as DefaultLoader
 
-#from djcelery.loaders.djangoapp import Loader as DjangoLoader
-
 _DEFAULT_LOADER_CLASS_NAME = "Loader"
 LOADER_ALIASES = {"default": "celery.loaders.default.Loader",
                   "django": "djcelery.loaders.djangoapp.Loader"}

@@ -7,41 +7,26 @@ import platform
 
 try:
     from setuptools import setup, find_packages, Command
+    from setuptools.command.test import test as TestCommand
 except ImportError:
     from ez_setup import use_setuptools
     use_setuptools()
     from setuptools import setup, find_packages, Command
+    from setuptools.command.test import test as TestCommand
 
 import celery as distmeta
 
 
-class RunTests(Command):
-    description = "Run the django test suite from the tests dir."
-    user_options = []
+class RunTests(TestCommand):
+    env = dict(CELERY_LOADER="default",
+               CELERY_CONFIG_MODULE="tests.celeryconfig",
+               CELERYINIT=1)
     extra_env = {}
 
-    def run(self):
-        for env_name, env_value in self.extra_env.items():
+    def run(self, *args, **kwargs):
+        for env_name, env_value in dict(self.env, **self.extra_env).items():
             os.environ[env_name] = str(env_value)
-
-        this_dir = os.getcwd()
-        testproj_dir = os.path.join(this_dir, "tests")
-        os.chdir(testproj_dir)
-        sys.path.append(testproj_dir)
-        from django.core.management import execute_manager
-        os.environ["DJANGO_SETTINGS_MODULE"] = os.environ.get(
-                        "DJANGO_SETTINGS_MODULE", "settings")
-        settings_file = os.environ["DJANGO_SETTINGS_MODULE"]
-        settings_mod = __import__(settings_file, {}, {}, [''])
-        execute_manager(settings_mod, argv=[
-            __file__, "test"])
-        os.chdir(this_dir)
-
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
+        TestCommand.run(self, *args, **kwargs)
 
 
 class QuickRunTests(RunTests):
@@ -89,6 +74,7 @@ setup(
     zip_safe=False,
     install_requires=install_requires,
     cmdclass = {"test": RunTests, "quicktest": QuickRunTests},
+    test_suite="nose.collector",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Framework :: Django",

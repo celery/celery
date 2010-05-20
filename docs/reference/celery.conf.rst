@@ -143,8 +143,7 @@ Configuration - celery.conf
 
 .. data:: CELERY_CACHE_BACKEND
 
-    Use a custom cache backend for celery. If not set the django-global
-    cache backend in ``CACHE_BACKEND`` will be used.
+    Celery cache backend.
 
 .. data:: SEND_EVENTS
 
