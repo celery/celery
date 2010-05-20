@@ -25,12 +25,14 @@ Celery is already used in production to process millions of tasks a day.
 Celery is written in Python, but the protocol can be implemented in any
 language. It can also `operate with other languages using webhooks`_.
 
-The recommended message broker is `RabbitMQ`_, but support for Redis and
+The recommended message broker is `RabbitMQ`_, but support for `Redis`_ and
 databases (`SQLAlchemy`_) is also available.
 
 You may also be pleased to know that full Django integration exists
 via the `django-celery`_ package.
 
+.. _`RabbitMQ`: http://www.rabbitmq.com/
+.. _`Redis`: http://code.google.com/p/redis/
 .. _`SQLAlchemy`: http://www.sqlalchemy.org/
 .. _`django-celery`: http://pypi.python.org/pypi/django-celery
 .. _`operate with other languages using webhooks`:
@@ -154,12 +156,10 @@ Features
     +-----------------+----------------------------------------------------+
 
 
-.. _`RabbitMQ`: http://www.rabbitmq.com/
 .. _`clustering`: http://www.rabbitmq.com/clustering.html
 .. _`AMQP`: http://www.amqp.org/
 .. _`Stomp`: http://stomp.codehaus.org/
 .. _`MongoDB`: http://www.mongodb.org/
-.. _`Redis`: http://code.google.com/p/redis/
 .. _`Tokyo Tyrant`: http://tokyocabinet.sourceforge.net/
 
 Documentation
