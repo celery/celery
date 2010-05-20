@@ -50,11 +50,6 @@ class QuickRunTests(RunTests):
 install_requires = []
 
 try:
-    import django
-except ImportError:
-    install_requires.append("django")
-
-try:
     import importlib
 except ImportError:
     install_requires.append("importlib")
@@ -65,7 +60,6 @@ install_requires.extend([
     "mailer",
     "anyjson",
     "carrot>=0.10.4",
-    "django-picklefield",
     "billiard>=0.3.0"])
 
 py_version = sys.version_info
