@@ -18,12 +18,12 @@ class TestLoaders(unittest.TestCase):
     def test_get_loader_cls(self):
 
         self.assertEqual(loaders.get_loader_cls("django"),
-                          loaders.DjangoLoader)
+                          djangoapp.Loader)
         self.assertEqual(loaders.get_loader_cls("default"),
                           loaders.DefaultLoader)
         # Execute cached branch.
         self.assertEqual(loaders.get_loader_cls("django"),
-                          loaders.DjangoLoader)
+                          djangoapp.Loader)
         self.assertEqual(loaders.get_loader_cls("default"),
                           loaders.DefaultLoader)
 
@@ -69,7 +69,7 @@ class TestLoaderBase(unittest.TestCase):
 class TestDjangoLoader(unittest.TestCase):
 
     def setUp(self):
-        self.loader = loaders.DjangoLoader()
+        self.loader = djangoapp.Loader()
 
     def test_on_worker_init(self):
         from django.conf import settings
