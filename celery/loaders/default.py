@@ -35,7 +35,7 @@ class Loader(BaseLoader):
 
     """
 
-    def setup_django_env(self, settingsdict):
+    def setup_settings(self, settingsdict):
         settings = Settings(DEFAULT_SETTINGS, **settingsdict)
         installed_apps = set(list(DEFAULT_SETTINGS["INSTALLED_APPS"]) + \
                              list(settings.INSTALLED_APPS))
@@ -52,7 +52,7 @@ class Loader(BaseLoader):
         usercfg = dict((key, getattr(celeryconfig, key))
                             for key in dir(celeryconfig)
                                 if wanted_module_item(key))
-        return self.setup_django_env(usercfg)
+        return self.setup_settings(usercfg)
 
     def on_worker_init(self):
         """Imports modules at worker init so tasks can be registered
