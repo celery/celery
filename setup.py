@@ -89,7 +89,7 @@ setup(
     platforms=["any"],
     license="BSD",
     packages=find_packages(exclude=['ez_setup', 'tests', 'tests.*']),
-    scripts=["bin/celeryd", "bin/celeryinit", "bin/celerybeat", "bin/camqadm"],
+    scripts=["bin/celeryd", "bin/celerybeat", "bin/camqadm"],
     zip_safe=False,
     install_requires=install_requires,
     cmdclass = {"test": RunTests, "quicktest": QuickRunTests},
