@@ -4,14 +4,11 @@ from celery import backends
 from celery.backends.amqp import AMQPBackend
 from celery.backends.pyredis import RedisBackend
 
-from djcelery.backends.database import DatabaseBackend
-
 
 class TestBackends(unittest.TestCase):
 
     def test_get_backend_aliases(self):
         expects = [("amqp", AMQPBackend),
-                   ("database", DatabaseBackend),
                    ("redis", RedisBackend)]
         for expect_name, expect_cls in expects:
             self.assertIsInstance(backends.get_backend_cls(expect_name)(),
