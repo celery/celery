@@ -9,10 +9,17 @@ from celery import conf
 ResultModelBase = declarative_base()
 
 _SETUP = {"results": False}
+_ENGINES = {}
+
+
+def get_engine(dburi, **kwargs):
+    if dburi not in _ENGINES:
+        _ENGINES[dburi] = create_engine(dburi, **kwargs)
+    return _ENGINES[dburi]
 
 
 def create_session(dburi, **kwargs):
-    engine = create_engine(dburi, **kwargs)
+    engine = get_engine(dburi, **kwargs)
     return engine, sessionmaker(bind=engine)
 
 
