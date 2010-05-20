@@ -430,9 +430,7 @@ This is the list of tasks built-in to celery. Note that we had to import
 only be registered when the module they are defined in is imported.
 
 The default loader imports any modules listed in the
-``CELERY_IMPORTS`` setting. If using Django it loads all ``tasks.py`` modules
-for the applications listed in ``INSTALLED_APPS``. If you want to do something
-special you can create your own loader to do what you want.
+``CELERY_IMPORTS`` setting. 
 
 The entity responsible for registering your task in the registry is a
 meta class, :class:`TaskType`. This is the default meta class for
