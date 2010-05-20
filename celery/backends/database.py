@@ -17,7 +17,7 @@ raw_cs = "DRIVER={FreeTDS};SERVER=%s;PORT=%d;DATABASE=%s;UID=%s;PWD=%s;CHARSET=U
 #connection_string = "mssql:///?odbc_connect=%s" % urllib.quote_plus(raw_cs)
 #connection_string = 'sqlite:////mnt/winctmp/celery.db'
 connection_string = 'sqlite:///celery.db'
-engine = create_engine(connection_string, echo=True)
+engine = create_engine(connection_string)
 Session = sessionmaker(bind=engine)
 
 
@@ -30,10 +30,13 @@ class DatabaseBackend(BaseDictBackend):
         try:
             tasks = session.query(Task).filter(Task.task_id == task_id).all()
             if not tasks:
-                raise RuntimeError('Task with task_id: %s not found' % task_id)
-            tasks[0].result = result
-            tasks[0].status = status
-            tasks[0].traceback = traceback
+                task = Task(task_id)
+                session.add(task)
+            else:
+                task = tasks[0]
+            task.result = result
+            task.status = status
+            task.traceback = traceback
             session.commit()
         finally:
             session.close()

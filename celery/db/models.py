@@ -18,7 +18,7 @@ class Task(ModelBase):
     task_id = Column("task_id", String(255), primary_key=True)
     status = Column("status", String(50), default=states.PENDING)
     result = Column("result", PickleType, nullable=True)
-    date_done = Column("date_done", DateTime,
+    date_done = Column("date_done", DateTime, default=datetime.now,
                        onupdate=datetime.now, nullable=True)
     traceback = Column("traceback", Text, nullable=True)
 
@@ -50,7 +50,7 @@ class TaskSet(ModelBase):
                 primary_key=True)
     taskset_id = Column("taskset_id", String(255), unique=True)
     result = Column("result", PickleType, nullable=True)
-    date_done = Column("date_done", DateTime,
+    date_done = Column("date_done", DateTime, default=datetime.now,
                        onupdate=datetime.now, nullable=True)
 
     def __init__(self, task_id):

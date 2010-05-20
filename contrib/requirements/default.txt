@@ -1,5 +1,6 @@
 mailer
 python-dateutil
+sqlalchemy
 anyjson
 carrot>=0.10.4
 django-picklefield
