@@ -62,6 +62,7 @@ except ImportError:
 
 install_requires.extend([
     "python-dateutil",
+    "mailer",
     "anyjson",
     "carrot>=0.10.4",
     "django-picklefield",
