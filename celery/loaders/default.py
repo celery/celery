@@ -1,4 +1,5 @@
 import os
+from importlib import import_module
 
 from celery.loaders.base import BaseLoader
 
@@ -10,6 +11,7 @@ DEFAULT_SETTINGS = {
     "DATABASE_ENGINE": "sqlite3",
     "DATABASE_NAME": "celery.sqlite",
     "INSTALLED_APPS": ("celery", ),
+    "CELERY_IMPORTS": (),
 }
 
 
@@ -49,7 +51,7 @@ class Loader(BaseLoader):
         celery and Django so it can be used by regular Python."""
         configname = os.environ.get("CELERY_CONFIG_MODULE",
                                     DEFAULT_CONFIG_MODULE)
-        celeryconfig = __import__(configname, {}, {}, [''])
+        celeryconfig = import_module(configname)
         usercfg = dict((key, getattr(celeryconfig, key))
                             for key in dir(celeryconfig)
                                 if wanted_module_item(key))

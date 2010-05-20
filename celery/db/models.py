@@ -3,7 +3,6 @@ from datetime import datetime
 from sqlalchemy import Column, Sequence, ForeignKey
 from sqlalchemy import Integer, String, Text, DateTime, PickleType
 from sqlalchemy.orm import relation
-from sqlalchemy.ext.declarative import declarative_base
 
 from celery import states
 from celery.db.session import ResultModelBase

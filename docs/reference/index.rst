@@ -30,5 +30,4 @@
     celery.events
     celery.bin.celeryd
     celery.bin.celerybeat
-    celery.bin.celeryinit
     celery.bin.camqadm

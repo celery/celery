@@ -13,4 +13,5 @@ CELERY_SEND_TASK_ERROR_EMAILS = False
 @atexit.register
 def teardown_testdb():
     import os
-    os.remove("test.db")
+    if os.path.exists("test.db"):
+        os.remove("test.db")

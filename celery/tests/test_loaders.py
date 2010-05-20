@@ -60,22 +60,6 @@ class TestLoaderBase(unittest.TestCase):
                               [os, sys, task])
 
 
-def modifies_django_env(fun):
-
-    def _protected(*args, **kwargs):
-        from django.conf import settings
-        current = dict((key, getattr(settings, key))
-                        for key in settings.get_all_members()
-                            if key.isupper())
-        try:
-            return fun(*args, **kwargs)
-        finally:
-            for key, value in current.items():
-                setattr(settings, key, value)
-
-    return _protected
-
-
 class TestDefaultLoader(unittest.TestCase):
 
     def test_wanted_module_item(self):
@@ -84,7 +68,6 @@ class TestDefaultLoader(unittest.TestCase):
         self.assertFalse(default.wanted_module_item("_foo"))
         self.assertFalse(default.wanted_module_item("__foo"))
 
-    @modifies_django_env
     def test_read_configuration(self):
         from types import ModuleType
 
@@ -93,17 +76,16 @@ class TestDefaultLoader(unittest.TestCase):
 
         celeryconfig = ConfigModule("celeryconfig")
         celeryconfig.CELERY_IMPORTS = ("os", "sys")
+        configname = os.environ.get("CELERY_CONFIG_MODULE") or "celeryconfig"
 
-        sys.modules["celeryconfig"] = celeryconfig
+        prevconfig = sys.modules[configname]
+        sys.modules[configname] = celeryconfig
         try:
             l = default.Loader()
             settings = l.read_configuration()
             self.assertTupleEqual(settings.CELERY_IMPORTS, ("os", "sys"))
-            from django.conf import settings
-            settings.configured = False
             settings = l.read_configuration()
             self.assertTupleEqual(settings.CELERY_IMPORTS, ("os", "sys"))
-            self.assertTrue(settings.configured)
             l.on_worker_init()
         finally:
-            sys.modules.pop("celeryconfig", None)
+            sys.modules[configname] = prevconfig

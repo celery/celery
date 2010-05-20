@@ -77,7 +77,6 @@ setup(
     test_suite="nose.collector",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
-        "Framework :: Django",
         "Operating System :: OS Independent",
         "Programming Language :: Python",
         "Environment :: No Input/Output (Daemon)",
