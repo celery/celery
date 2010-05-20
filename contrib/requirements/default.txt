@@ -1,4 +1,4 @@
-django
+mailer
 python-dateutil
 anyjson
 carrot>=0.10.4
