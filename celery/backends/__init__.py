@@ -9,6 +9,7 @@ BACKEND_ALIASES = {
     "redis": "celery.backends.pyredis.RedisBackend",
     "mongodb": "celery.backends.mongodb.MongoBackend",
     "tyrant": "celery.backends.tyrant.TyrantBackend",
+    "database": "celery.backends.database.DatabaseBackend",
 }
 
 _backend_cache = {}
