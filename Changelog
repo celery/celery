@@ -2,6 +2,125 @@
  Change history
 ================
 
+1.2.0 [xxxx-xx-xx xx:xx x.x xxxx]
+=================================
+
+Upgrading for Django-users
+--------------------------
+
+Django integration has been moved to a separate package: `django-celery`_.
+
+To upgrade you need to install the `django-celery`_ module and change::
+
+    INSTALLED_APPS = "celery"
+
+to:
+
+    INSTALLED_APPS = "djcelery"
+
+
+The following modules has been moved to `django-celery`_:
+
+    =====================================  =====================================
+    **Module name**                        **Replace with**
+    =====================================  =====================================
+    ``celery.models``                      ``djcelery.models``
+    ``celery.managers``                    ``djcelery.managers``
+    ``celery.views``                       ``djcelery.views``
+    ``celery.urls``                        ``djcelery.url``
+    ``celery.management``                  ``djcelery.management``
+    ``celery.loaders.djangoapp``           ``djcelery.loaders``
+    ``celery.backends.database``           ``djcelery.backends.database``
+    ``celery.backends.cache``              ``djcelery.backends.cache``
+    =====================================  =====================================
+
+Importing ``djcelery`` will automatically setup celery to use the Django
+loader by setting the :env:`CELERY_LOADER`` environment variable (it won't
+change it if it's already defined).
+
+When the Django loader is used, the "database" and "cache" backend aliases
+will point to the ``djcelery`` backends instead of the built-in backends.
+
+.. _`django-celery`: http://pypi.python.org/pypi/django-celery
+
+
+Upgrading for others
+--------------------
+
+The database backend is now using `SQLAlchemy`_ instead of the Django ORM,
+see `Supported Databases`_ for a table of supported databases.
+
+
+The ``DATABASE_*`` settings has been replaced by a single setting:
+``CELERY_RESULT_DBURI``. The value here should be an `SQLAlchemy Connection
+String`_, some examples include:
+
+.. code-block:: python
+
+    # sqlite (filename)
+    CELERY_RESULT_DBURI = "sqlite:///celerydb.sqlite"
+
+    # mysql
+    CELERY_RESULT_DBURI = "mysql://scott:tiger@localhost/foo"
+
+    # postgresql
+    CELERY_RESULT_DBURI = "postgresql://scott:tiger@localhost/mydatabase"
+
+    # oracle
+    CELERY_RESULT_DBURI = "oracle://scott:tiger@127.0.0.1:1521/sidname"
+
+See `SQLAlchemy Connection Strings`_ for more information about connection
+strings.
+
+To specify additional SQLAlchemy database engine options you can use
+the ``CELERY_RESULT_ENGINE_OPTIONS`` setting::
+
+    # echo enables verbose logging from SQLAlchemy.
+    CELERY_RESULT_ENGINE_OPTIONS = {"echo": True}
+
+.. _`Supported Databases`:
+    http://www.sqlalchemy.org/docs/dbengine.html#supported-databases
+.. _`SQLAlchemy Connection String`:
+    http://www.sqlalchemy.org/docs/dbengine.html#create-engine-url-arguments
+.. _`SQLAlchemy Connection Strings`:
+    http://www.sqlalchemy.org/docs/dbengine.html#create-engine-url-arguments
+
+Backward incompatible changes
+-----------------------------
+
+* The following deprecated settings has been removed (as scheduled by
+  the `deprecation timeline`_):
+
+    =====================================  =====================================
+    **Setting name**                       **Replace with**
+    =====================================  =====================================
+    ``CELERY_AMQP_CONSUMER_QUEUES``        ``CELERY_QUEUES``
+    ``CELERY_AMQP_CONSUMER_QUEUES``        ``CELERY_QUEUES``
+    ``CELERY_AMQP_EXCHANGE``               ``CELERY_DEFAULT_EXCHANGE``
+    ``CELERY_AMQP_EXCHANGE_TYPE``          ``CELERY_DEFAULT_AMQP_EXCHANGE_TYPE``
+    ``CELERY_AMQP_CONSUMER_ROUTING_KEY``   ``CELERY_QUEUES``
+    ``CELERY_AMQP_PUBLISHER_ROUTING_KEY``  ``CELERY_DEFAULT_ROUTING_KEY``
+    =====================================  =====================================
+
+.. _`deprecation timeline`:
+    http://ask.github.com/celery/internals/deprecation.html
+
+* The ``celery.task.rest`` module has been removed, use ``celery.task.http``
+  instead (as scheduled by the `deprecation timeline`_).
+
+* It's no longer allowed to skip the class name in loader names.
+  (as scheduled by the `deprecation timeline`_):
+
+    Assuming the implicit ``Loader`` class name is no longer supported,
+    if you use e.g.::
+
+        CELERY_LOADER = "myapp.loaders"
+
+    You need to include the loader class name, like this::
+
+        CELERY_LOADER = "myapp.loaders.Loader"
+
+
 1.0.3 [2010-05-15 03:00 P.M CEST]
 =================================
 
