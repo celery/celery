@@ -134,65 +134,15 @@ CELERYD_MEDIATOR = _get("CELERYD_MEDIATOR")
 CELERYD_ETA_SCHEDULER = _get("CELERYD_ETA_SCHEDULER")
 
 # <--- Message routing                             <-   --   --- - ----- -- #
-QUEUES = _get("CELERY_QUEUES")
 DEFAULT_QUEUE = _get("CELERY_DEFAULT_QUEUE")
 DEFAULT_ROUTING_KEY = _get("CELERY_DEFAULT_ROUTING_KEY")
 DEFAULT_EXCHANGE = _get("CELERY_DEFAULT_EXCHANGE")
 DEFAULT_EXCHANGE_TYPE = _get("CELERY_DEFAULT_EXCHANGE_TYPE")
 DEFAULT_DELIVERY_MODE = _get("CELERY_DEFAULT_DELIVERY_MODE")
-
-_DEPRECATIONS = {"CELERY_AMQP_CONSUMER_QUEUES": "CELERY_QUEUES",
-                 "CELERY_AMQP_CONSUMER_QUEUE": "CELERY_QUEUES",
-                 "CELERY_AMQP_EXCHANGE": "CELERY_DEFAULT_EXCHANGE",
-                 "CELERY_AMQP_EXCHANGE_TYPE": "CELERY_DEFAULT_EXCHANGE_TYPE",
-                 "CELERY_AMQP_CONSUMER_ROUTING_KEY": "CELERY_QUEUES",
-                 "CELERY_AMQP_PUBLISHER_ROUTING_KEY":
-                 "CELERY_DEFAULT_ROUTING_KEY"}
-
-
-_DEPRECATED_QUEUE_SETTING_FMT = """
-%s is deprecated in favor of %s and scheduled for removal in celery v1.0.
-Please visit http://bit.ly/5DsSuX for more information.
-
-We're sorry for the inconvenience.
-""".strip()
-
-
-def _find_deprecated_queue_settings():
-    global DEFAULT_QUEUE, DEFAULT_ROUTING_KEY
-    global DEFAULT_EXCHANGE, DEFAULT_EXCHANGE_TYPE
-    binding_key = None
-
-    multi = _get("CELERY_AMQP_CONSUMER_QUEUES")
-    if multi:
-        return multi
-
-    single = _get("CELERY_AMQP_CONSUMER_QUEUE")
-    if single:
-        DEFAULT_QUEUE = single
-        DEFAULT_EXCHANGE = _get("CELERY_AMQP_EXCHANGE", DEFAULT_EXCHANGE)
-        DEFAULT_EXCHANGE_TYPE = _get("CELERY_AMQP_EXCHANGE_TYPE",
-                                     DEFAULT_EXCHANGE_TYPE)
-        binding_key = _get("CELERY_AMQP_CONSUMER_ROUTING_KEY",
-                            DEFAULT_ROUTING_KEY)
-        DEFAULT_ROUTING_KEY = _get("CELERY_AMQP_PUBLISHER_ROUTING_KEY",
-                                   DEFAULT_ROUTING_KEY)
-    binding_key = binding_key or DEFAULT_ROUTING_KEY
-    return {DEFAULT_QUEUE: {"exchange": DEFAULT_EXCHANGE,
-                            "exchange_type": DEFAULT_EXCHANGE_TYPE,
-                            "binding_key": binding_key}}
-
-
-def _warn_if_deprecated_queue_settings():
-    for setting, new_setting in _DEPRECATIONS.items():
-        if _get(setting):
-            warnings.warn(DeprecationWarning(_DEPRECATED_QUEUE_SETTING_FMT % (
-                setting, _DEPRECATIONS[setting])))
-            break
-
-_warn_if_deprecated_queue_settings()
-if not QUEUES:
-    QUEUES = _find_deprecated_queue_settings()
+QUEUES = _get("CELERY_QUEUES") or {DEFAULT_QUEUE: {
+                                       "exchange": DEFAULT_EXCHANGE,
+                                       "exchange_type": DEFAULT_EXCHANGE_TYPE,
+                                       "binding_key": DEFAULT_ROUTING_KEY}}
 
 # :--- Broadcast queue settings                     <-   --   --- - ----- -- #
 
