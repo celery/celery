@@ -16,14 +16,14 @@ class TestLoaders(unittest.TestCase):
     def test_get_loader_cls(self):
 
         self.assertEqual(loaders.get_loader_cls("default"),
-                          loaders.DefaultLoader)
+                          default.Loader)
         # Execute cached branch.
         self.assertEqual(loaders.get_loader_cls("default"),
-                          loaders.DefaultLoader)
+                          default.Loader)
 
     @with_environ("CELERY_LOADER", "default")
     def test_detect_loader_CELERY_LOADER(self):
-        self.assertEqual(loaders.detect_loader(), loaders.DefaultLoader)
+        self.assertIsInstance(loaders.setup_loader(), default.Loader)
 
 
 class DummyLoader(base.BaseLoader):
