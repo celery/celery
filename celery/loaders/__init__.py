@@ -9,7 +9,7 @@ from celery.loaders.default import Loader as DefaultLoader
 
 _DEFAULT_LOADER_CLASS_NAME = "Loader"
 LOADER_ALIASES = {"default": "celery.loaders.default.Loader",
-                  "django": "djcelery.loaders.djangoapp.Loader"}
+                  "django": "djcelery.loaders.DjangoLoader"}
 _loader_cache = {}
 _loader = None
 _settings = None
