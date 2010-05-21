@@ -1,5 +1,4 @@
 import sys
-import warnings
 from datetime import timedelta
 
 from billiard.serialization import pickle
@@ -561,13 +560,6 @@ class TaskSet(object):
         self.task_name = task_name
         self.arguments = args
         self.total = len(args)
-
-    def run(self, *args, **kwargs):
-        """Deprecated alias to :meth:`apply_async`"""
-        warnings.warn(DeprecationWarning(
-            "TaskSet.run will be deprecated in favor of TaskSet.apply_async "
-            "in celery v1.2.0"))
-        return self.apply_async(*args, **kwargs)
 
     def apply_async(self, connect_timeout=conf.BROKER_CONNECTION_TIMEOUT):
         """Run all tasks in the taskset.
