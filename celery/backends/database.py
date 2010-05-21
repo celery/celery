@@ -11,12 +11,15 @@ from celery.backends.base import BaseDictBackend
 class DatabaseBackend(BaseDictBackend):
     """The database result backend."""
 
-    def __init__(self, dburi=conf.RESULT_DBURI, **kwargs):
+    def __init__(self, dburi=conf.RESULT_DBURI,
+            engine_options=None, **kwargs):
         self.dburi = dburi
+        self.engine_options = dict(engine_options or {},
+                                   **conf.RESULT_ENGINE_OPTIONS or {})
         super(DatabaseBackend, self).__init__(**kwargs)
 
     def ResultSession(self):
-        return ResultSession(dburi=self.dburi)
+        return ResultSession(dburi=self.dburi, **self.engine_options)
 
     def _store_result(self, task_id, result, status, traceback=None):
         """Store return value and status of an executed task."""

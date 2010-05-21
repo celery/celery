@@ -94,7 +94,6 @@ def _get(name, default=None, compat=None):
 ALWAYS_EAGER = _get("CELERY_ALWAYS_EAGER")
 RESULT_BACKEND = _get("CELERY_RESULT_BACKEND", compat=["CELERY_BACKEND"])
 CELERY_BACKEND = RESULT_BACKEND # FIXME Remove in 1.4
-RESULT_DBURI = _get("CELERY_RESULT_DBURI")
 CELERY_CACHE_BACKEND = _get("CELERY_CACHE_BACKEND")
 TASK_SERIALIZER = _get("CELERY_TASK_SERIALIZER")
 TASK_RESULT_EXPIRES = _get("CELERY_TASK_RESULT_EXPIRES")
@@ -104,6 +103,11 @@ ACKS_LATE = _get("CELERY_ACKS_LATE")
 # Make sure TASK_RESULT_EXPIRES is a timedelta.
 if isinstance(TASK_RESULT_EXPIRES, int):
     TASK_RESULT_EXPIRES = timedelta(seconds=TASK_RESULT_EXPIRES)
+
+# <--- SQLAlchemy                                  <-   --   --- - ----- -- #
+RESULT_DBURI = _get("CELERY_RESULT_DBURI")
+RESULT_ENGINE_OPTIONS = _get("CELERY_RESULT_ENGINE_OPTIONS")
+
 
 # <--- Client                                      <-   --   --- - ----- -- #
 
