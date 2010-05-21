@@ -27,10 +27,13 @@ class TaskPool(object):
 
     """
 
-    def __init__(self, limit, logger=None, initializer=None):
+    def __init__(self, limit, logger=None, initializer=None,
+            timeout=None, soft_timeout=None):
         self.limit = limit
         self.logger = logger or log.get_default_logger()
         self.initializer = initializer
+        self.timeout = timeout
+        self.soft_timeout = soft_timeout
         self._pool = None
 
     def start(self):
@@ -40,7 +43,9 @@ class TaskPool(object):
 
         """
         self._pool = DynamicPool(processes=self.limit,
-                                 initializer=self.initializer)
+                                 initializer=self.initializer,
+                                 timeout=self.timeout,
+                                 soft_timeout=self.soft_timeout)
 
     def stop(self):
         """Terminate the pool."""
@@ -57,7 +62,8 @@ class TaskPool(object):
                     dead_count))
 
     def apply_async(self, target, args=None, kwargs=None, callbacks=None,
-            errbacks=None, accept_callback=None, **compat):
+            errbacks=None, accept_callback=None, timeout_callback=None,
+            **compat):
         """Equivalent of the :func:``apply`` built-in function.
 
         All ``callbacks`` and ``errbacks`` should complete immediately since
@@ -78,7 +84,8 @@ class TaskPool(object):
 
         return self._pool.apply_async(target, args, kwargs,
                                       callback=on_ready,
-                                      accept_callback=accept_callback)
+                                      accept_callback=accept_callback,
+                                      timeout_callback=timeout_callback)
 
     def on_ready(self, callbacks, errbacks, ret_value):
         """What to do when a worker task is ready and its return value has

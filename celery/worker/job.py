@@ -322,6 +322,7 @@ class TaskWrapper(object):
         self.time_start = time.time()
         result = pool.apply_async(execute_and_trace, args=args,
                     accept_callback=self.on_accepted,
+                    timeout_callback=self.on_timeout,
                     callbacks=[self.on_success], errbacks=[self.on_failure])
         return result
 
@@ -331,6 +332,14 @@ class TaskWrapper(object):
         self.send_event("task-accepted", uuid=self.task_id)
         self.logger.debug("Task accepted: %s[%s]" % (
             self.task_name, self.task_id))
+
+    def on_timeout(self, soft):
+        if soft:
+            self.logger.warning("Soft time limit exceeded for %s[%s]" % (
+                self.task_name, self.task_id))
+        else:
+            self.logger.error("Hard time limit exceeded for %s[%s]" % (
+                self.task_name, self.task_id))
 
     def acknowledge(self):
         if not self.acknowledged:
