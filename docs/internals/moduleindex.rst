@@ -63,12 +63,6 @@ celery.task.base
 celery.task.http
 ----------------
 
-celery.task.rest
-----------------
-
-Backward compatible interface to :mod:`celery.task.http`.
-Will be deprecated in future versions.
-
 celery.task.control
 -------------------
 
