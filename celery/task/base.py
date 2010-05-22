@@ -110,6 +110,7 @@ class Task(object):
         can't be routed to a worker immediately.
 
     .. attribute:: priority:
+
         The message priority. A number from ``0`` to ``9``, where ``0`` is the
         highest. Note that RabbitMQ doesn't support priorities yet.
 

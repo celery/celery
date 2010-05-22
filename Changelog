@@ -10,16 +10,16 @@ Upgrading for Django-users
 
 Django integration has been moved to a separate package: `django-celery`_.
 
-To upgrade you need to install the `django-celery`_ module and change::
+* To upgrade you need to install the `django-celery`_ module and change::
 
     INSTALLED_APPS = "celery"
 
-to:
+  to::
 
     INSTALLED_APPS = "djcelery"
 
 
-The following modules has been moved to `django-celery`_:
+* The following modules has been moved to `django-celery`_:
 
     =====================================  =====================================
     **Module name**                        **Replace with**
@@ -35,7 +35,7 @@ The following modules has been moved to `django-celery`_:
     =====================================  =====================================
 
 Importing ``djcelery`` will automatically setup celery to use the Django
-loader by setting the :env:`CELERY_LOADER`` environment variable (it won't
+loader by setting the :envvar:`CELERY_LOADER`` environment variable (it won't
 change it if it's already defined).
 
 When the Django loader is used, the "database" and "cache" backend aliases
@@ -78,6 +78,8 @@ the ``CELERY_RESULT_ENGINE_OPTIONS`` setting::
     # echo enables verbose logging from SQLAlchemy.
     CELERY_RESULT_ENGINE_OPTIONS = {"echo": True}
 
+.. _`SQLAlchemy`:
+    http://www.sqlalchemy.org
 .. _`Supported Databases`:
     http://www.sqlalchemy.org/docs/dbengine.html#supported-databases
 .. _`SQLAlchemy Connection String`:
