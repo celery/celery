@@ -1,5 +1,4 @@
 import sys
-import warnings
 from datetime import timedelta
 
 from billiard.serialization import pickle
@@ -111,6 +110,7 @@ class Task(object):
         can't be routed to a worker immediately.
 
     .. attribute:: priority:
+
         The message priority. A number from ``0`` to ``9``, where ``0`` is the
         highest. Note that RabbitMQ doesn't support priorities yet.
 
@@ -561,13 +561,6 @@ class TaskSet(object):
         self.task_name = task_name
         self.arguments = args
         self.total = len(args)
-
-    def run(self, *args, **kwargs):
-        """Deprecated alias to :meth:`apply_async`"""
-        warnings.warn(DeprecationWarning(
-            "TaskSet.run will be deprecated in favor of TaskSet.apply_async "
-            "in celery v1.2.0"))
-        return self.apply_async(*args, **kwargs)
 
     def apply_async(self, connect_timeout=conf.BROKER_CONNECTION_TIMEOUT):
         """Run all tasks in the taskset.

@@ -2,7 +2,7 @@
 
 PACKAGE="$1"
 SKIP_PACKAGES="$PACKAGE tests management urls"
-SKIP_FILES="celery.bin.rst celery.task.rest.rst celery.contrib.rst
+SKIP_FILES="celery.bin.rst celery.contrib.rst
             celery.contrib.batches.rst"
 
 modules=$(find "$PACKAGE" -name "*.py")

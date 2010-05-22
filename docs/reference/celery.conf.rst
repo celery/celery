@@ -143,8 +143,7 @@ Configuration - celery.conf
 
 .. data:: CELERY_CACHE_BACKEND
 
-    Use a custom cache backend for celery. If not set the django-global
-    cache backend in ``CACHE_BACKEND`` will be used.
+    Celery cache backend.
 
 .. data:: SEND_EVENTS
 
@@ -231,7 +230,7 @@ Configuration - celery.conf
 .. data:: CELERYD_POOL
 
     Name of the task pool class used by the worker.
-    Default is ``"celery.worker.pool.TaskPool"`.
+    Default is ``"celery.worker.pool.TaskPool"``.
 
 .. data:: CELERYD_LISTENER
 

@@ -58,41 +58,11 @@ Is celery for Django only?
 
 **Answer:** No.
 
-You can use all of the features without using Django.
+Celery does not depend on Django anymore. To use Celery with Django you have
+to use the `django-celery`_ package:
 
 
-Why is Django a dependency?
----------------------------
-
-Celery uses the Django ORM for database access when using the database result
-backend, the Django cache framework when using the cache result backend, and the Django signal
-dispatch mechanisms for signaling.
-
-This doesn't mean you need to have a Django project to use celery, it
-just means that sometimes we use internal Django components.
-
-The long term plan is to replace these with other solutions, (e.g. `SQLAlchemy`_ as the ORM,
-and `louie`_, for signaling). The celery distribution will be split into two:
-
-    * celery
-
-        The core. Using SQLAlchemy for the database backend.
-
-    * django-celery
-
-        Celery integration for Django, using the Django ORM for the database
-        backend.
-
-We're currently seeking people with `SQLAlchemy`_ experience, so please
-contact the project if you want this done sooner.
-
-The reason for the split is for purity only. It shouldn't affect you much as a
-user, so please don't worry about the Django dependency, just have a good time
-using celery.
-
-.. _`SQLAlchemy`: http://www.sqlalchemy.org/
-.. _`louie`: http://pypi.python.org/pypi/Louie/
-
+.. _`django-celery`: http://pypi.python.org/pypi/django-celery
 
 Do I have to use AMQP/RabbitMQ?
 -------------------------------
@@ -222,9 +192,7 @@ with::
 Why won't my Task run?
 ----------------------
 
-**Answer:** Did you register the task in the applications ``tasks.py`` module?
-(or in some other module Django loads by default, like ``models.py``?).
-Also there might be syntax errors preventing the tasks module being imported.
+**Answer:** There might be syntax errors preventing the tasks module being imported.
 
 You can find out if celery is able to run the task by executing the
 task manually:
@@ -612,121 +580,6 @@ could also be useful as a source of information.
 .. _`Standard Exchange Types`: http://bit.ly/EEWca
 .. _`RabbitMQ FAQ`: http://www.rabbitmq.com/faq.html
 
-Can I use celery without Django?
---------------------------------
-
-**Answer:** Yes.
-
-Celery uses something called loaders to read/setup configuration, import
-modules that register tasks and to decide what happens when a task is
-executed. Currently there are two loaders, the default loader and the Django
-loader. If you want to use celery without a Django project, you either have to
-use the default loader, or write a loader of your own.
-
-The rest of this answer describes how to use the default loader.
-
-While it is possible to use Celery from outside of Django, we still need
-Django itself to run, this is to use the ORM and cache-framework.
-Duplicating these features would be time consuming and mostly pointless, so
-while me might rewrite these in the future, this is a good solution in the
-mean time.
-Install Django using your favorite install tool, ``easy_install``, ``pip``, or
-whatever::
-
-    # easy_install django # as root
-
-You need a configuration file named ``celeryconfig.py``, either in the
-directory you run ``celeryd`` in, or in a Python library path where it is
-able to find it. The configuration file can contain any of the settings
-described in :mod:`celery.conf`. In addition; if you're using the
-database backend you have to configure the database. Here is an example
-configuration using the database backend with MySQL:
-
-.. code-block:: python
-
-    # Broker configuration
-    BROKER_HOST = "localhost"
-    BROKER_PORT = "5672"
-    BROKER_VHOST = "celery"
-    BROKER_USER = "celery"
-    BROKER_PASSWORD = "celerysecret"
-    CARROT_BACKEND="amqp"
-
-    # Using the database backend.
-    CELERY_RESULT_BACKEND = "database"
-    DATABASE_ENGINE = "mysql" # see Django docs for a description of these.
-    DATABASE_NAME = "mydb"
-    DATABASE_HOST = "mydb.example.org"
-    DATABASE_USER = "myuser"
-    DATABASE_PASSWORD = "mysecret"
-
-    # Number of processes that processes tasks simultaneously.
-    CELERYD_CONCURRENCY = 8
-
-    # Modules to import when celeryd starts.
-    # This must import every module where you register tasks so celeryd
-    # is able to find and run them.
-    CELERY_IMPORTS = ("mytaskmodule1", "mytaskmodule2")
-    
-With this configuration file in the current directory you have to
-run ``celeryinit`` to create the database tables::
-
-    $ celeryinit
-
-At this point you should be able to successfully run ``celeryd``::
-
-    $ celeryd --loglevel=INFO
-
-and send a task from a python shell (note that it must be able to import
-``celeryconfig.py``):
-
-    >>> from celery.task.builtins import PingTask
-    >>> result = PingTask.apply_async()
-    >>> result.get()
-    'pong'
-
-The celery test-suite is failing
---------------------------------
-
-**Answer**: If you're running tests from your Django project, and the celery
-test suite is failing in that context, then follow the steps below. If the
-celery tests are failing in another context, please report an issue to our
-issue tracker at GitHub:
-
-    http://github.com/ask/celery/issues/
-
-That Django is running tests for all applications in ``INSTALLED_APPS``
-by default is a pet peeve for many. You should use a test runner that either
-
-    1) Explicitly lists the apps you want to run tests for, or
-
-    2) Make a test runner that skips tests for apps you don't want to run.
-
-For example the test runner that celery is using:
-
-    http://bit.ly/NVKep
-
-To use this test runner, add the following to your ``settings.py``:
-
-.. code-block:: python
-
-    TEST_RUNNER = "celery.tests.runners.run_tests"
-    TEST_APPS = (
-        "app1",
-        "app2",
-        "app3",
-        "app4",
-    )
-
-Or, if you just want to skip the celery tests:
-
-.. code-block:: python
-
-    INSTALLED_APPS = (.....)
-    TEST_RUNNER = "celery.tests.runners.run_tests"
-    TEST_APPS = filter(lambda k: k != "celery", INSTALLED_APPS)
-
-
 Can I change the interval of a periodic task at runtime?
 --------------------------------------------------------
 
@@ -835,42 +688,3 @@ and they will not be re-run unless you have the ``acks_late`` option set.
 How do I run celeryd in the background on [platform]?
 -----------------------------------------------------
 **Answer**: Please see :doc:`cookbook/daemonizing`.
-
-Django
-======
-
-Generating a template in a task doesn't seem to respect my i18n settings?
--------------------------------------------------------------------------
-
-**Answer**: To enable the Django translation machinery you need to activate
-it with a language. **Note**: Be sure to reset to the previous language when
-done.
-
-    >>> from django.utils import translation
-
-    >>> prev_language = translation.get_language()
-    >>> translation.activate(language)
-    >>> try:
-    ...     render_template()
-    ... finally:
-            translation.activate(prev_language)
-
-The common pattern here would be for the task to take a ``language``
-argument:
-
-.. code-block:: python
-
-    from celery.decorators import task
-
-    from django.utils import translation
-    from django.template.loader import render_to_string
-
-    @task()
-    def generate_report(template="report.html", language=None):
-        prev_language = translation.get_language()
-        language and translation.activate(language)
-        try:
-            report = render_to_string(template)
-        finally:
-            translation.activate(prev_language)
-        save_report_somewhere(report)

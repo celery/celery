@@ -6,20 +6,13 @@ import os
 # If your extensions are in another directory, add it here. If the directory
 # is relative to the documentation root, use os.path.abspath to make it
 # absolute, like shown here.
-sys.path.append("../celery")
-sys.path.append("../tests")
-import settings
-from django.core.management import setup_environ
-from django.conf import settings as dsettings
-setup_environ(settings)
-dsettings.configure()
+sys.path.append(os.path.join(os.pardir, "tests"))
 import celery
-sys.path.append(os.path.join(os.path.dirname(__file__), "_ext"))
 
 # General configuration
 # ---------------------
 
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.coverage', 'djangodocs']
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.coverage']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['.templates']

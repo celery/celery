@@ -72,7 +72,7 @@ _DEFAULTS = {
 
 
 _DEPRECATION_FMT = """
-%s is deprecated in favor of %s and is scheduled for removal in celery v1.2.
+%s is deprecated in favor of %s and is scheduled for removal in celery v1.4.
 """.strip()
 
 def _get(name, default=None, compat=None):
@@ -104,6 +104,11 @@ ACKS_LATE = _get("CELERY_ACKS_LATE")
 if isinstance(TASK_RESULT_EXPIRES, int):
     TASK_RESULT_EXPIRES = timedelta(seconds=TASK_RESULT_EXPIRES)
 
+# <--- SQLAlchemy                                  <-   --   --- - ----- -- #
+RESULT_DBURI = _get("CELERY_RESULT_DBURI")
+RESULT_ENGINE_OPTIONS = _get("CELERY_RESULT_ENGINE_OPTIONS")
+
+
 # <--- Client                                      <-   --   --- - ----- -- #
 
 MAX_CACHED_RESULTS = _get("CELERY_MAX_CACHED_RESULTS")
@@ -122,7 +127,7 @@ CELERYD_LOG_FORMAT = _get("CELERYD_LOG_FORMAT",
 CELERYD_TASK_LOG_FORMAT = _get("CELERYD_TASK_LOG_FORMAT")
 CELERYD_LOG_FILE = _get("CELERYD_LOG_FILE")
 CELERYD_LOG_LEVEL = _get("CELERYD_LOG_LEVEL",
-                        compat=["CELERYD_DAEMON_LOG_LEVEL"])
+                            compat=["CELERYD_DAEMON_LOG_LEVEL"])
 CELERYD_LOG_LEVEL = LOG_LEVELS[CELERYD_LOG_LEVEL.upper()]
 CELERYD_CONCURRENCY = _get("CELERYD_CONCURRENCY")
 CELERYD_PREFETCH_MULTIPLIER = _get("CELERYD_PREFETCH_MULTIPLIER")
@@ -133,65 +138,15 @@ CELERYD_MEDIATOR = _get("CELERYD_MEDIATOR")
 CELERYD_ETA_SCHEDULER = _get("CELERYD_ETA_SCHEDULER")
 
 # <--- Message routing                             <-   --   --- - ----- -- #
-QUEUES = _get("CELERY_QUEUES")
 DEFAULT_QUEUE = _get("CELERY_DEFAULT_QUEUE")
 DEFAULT_ROUTING_KEY = _get("CELERY_DEFAULT_ROUTING_KEY")
 DEFAULT_EXCHANGE = _get("CELERY_DEFAULT_EXCHANGE")
 DEFAULT_EXCHANGE_TYPE = _get("CELERY_DEFAULT_EXCHANGE_TYPE")
 DEFAULT_DELIVERY_MODE = _get("CELERY_DEFAULT_DELIVERY_MODE")
-
-_DEPRECATIONS = {"CELERY_AMQP_CONSUMER_QUEUES": "CELERY_QUEUES",
-                 "CELERY_AMQP_CONSUMER_QUEUE": "CELERY_QUEUES",
-                 "CELERY_AMQP_EXCHANGE": "CELERY_DEFAULT_EXCHANGE",
-                 "CELERY_AMQP_EXCHANGE_TYPE": "CELERY_DEFAULT_EXCHANGE_TYPE",
-                 "CELERY_AMQP_CONSUMER_ROUTING_KEY": "CELERY_QUEUES",
-                 "CELERY_AMQP_PUBLISHER_ROUTING_KEY":
-                 "CELERY_DEFAULT_ROUTING_KEY"}
-
-
-_DEPRECATED_QUEUE_SETTING_FMT = """
-%s is deprecated in favor of %s and scheduled for removal in celery v1.0.
-Please visit http://bit.ly/5DsSuX for more information.
-
-We're sorry for the inconvenience.
-""".strip()
-
-
-def _find_deprecated_queue_settings():
-    global DEFAULT_QUEUE, DEFAULT_ROUTING_KEY
-    global DEFAULT_EXCHANGE, DEFAULT_EXCHANGE_TYPE
-    binding_key = None
-
-    multi = _get("CELERY_AMQP_CONSUMER_QUEUES")
-    if multi:
-        return multi
-
-    single = _get("CELERY_AMQP_CONSUMER_QUEUE")
-    if single:
-        DEFAULT_QUEUE = single
-        DEFAULT_EXCHANGE = _get("CELERY_AMQP_EXCHANGE", DEFAULT_EXCHANGE)
-        DEFAULT_EXCHANGE_TYPE = _get("CELERY_AMQP_EXCHANGE_TYPE",
-                                     DEFAULT_EXCHANGE_TYPE)
-        binding_key = _get("CELERY_AMQP_CONSUMER_ROUTING_KEY",
-                            DEFAULT_ROUTING_KEY)
-        DEFAULT_ROUTING_KEY = _get("CELERY_AMQP_PUBLISHER_ROUTING_KEY",
-                                   DEFAULT_ROUTING_KEY)
-    binding_key = binding_key or DEFAULT_ROUTING_KEY
-    return {DEFAULT_QUEUE: {"exchange": DEFAULT_EXCHANGE,
-                            "exchange_type": DEFAULT_EXCHANGE_TYPE,
-                            "binding_key": binding_key}}
-
-
-def _warn_if_deprecated_queue_settings():
-    for setting, new_setting in _DEPRECATIONS.items():
-        if _get(setting):
-            warnings.warn(DeprecationWarning(_DEPRECATED_QUEUE_SETTING_FMT % (
-                setting, _DEPRECATIONS[setting])))
-            break
-
-_warn_if_deprecated_queue_settings()
-if not QUEUES:
-    QUEUES = _find_deprecated_queue_settings()
+QUEUES = _get("CELERY_QUEUES") or {DEFAULT_QUEUE: {
+                                       "exchange": DEFAULT_EXCHANGE,
+                                       "exchange_type": DEFAULT_EXCHANGE_TYPE,
+                                       "binding_key": DEFAULT_ROUTING_KEY}}
 
 # :--- Broadcast queue settings                     <-   --   --- - ----- -- #
 

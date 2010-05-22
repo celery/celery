@@ -23,15 +23,11 @@
     celery.loaders
     celery.loaders.base
     celery.loaders.default
-    celery.loaders.djangoapp
     celery.registry
     celery.states
     celery.messaging
-    celery.contrib.test_runner
     celery.contrib.abortable
-    celery.views
     celery.events
     celery.bin.celeryd
     celery.bin.celerybeat
-    celery.bin.celeryinit
     celery.bin.camqadm

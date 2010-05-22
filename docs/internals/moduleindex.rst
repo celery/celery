@@ -63,12 +63,6 @@ celery.task.base
 celery.task.http
 ----------------
 
-celery.task.rest
-----------------
-
-Backward compatible interface to :mod:`celery.task.http`.
-Will be deprecated in future versions.
-
 celery.task.control
 -------------------
 
@@ -97,23 +91,6 @@ Messaging
 
 celery.messaging
 ----------------
-
-Django-specific
-===============
-
-celery.models
--------------
-
-celery.managers
----------------
-
-celery.views
-------------
-
-celery.urls
------------
-
-celery.management
 
 Result backends
 ===============
@@ -144,9 +121,6 @@ celery.loaders.base - Loader base classes
 
 celery.loaders.default - The default loader
 -------------------------------------------
-
-celery.loaders.djangoapp - The Django loader
---------------------------------------------
 
 CeleryBeat
 ==========

@@ -8,12 +8,12 @@ import time
 import socket
 import warnings
 
-from django.core.mail import mail_admins
 
 from celery import conf
 from celery import platform
 from celery.log import get_default_logger
 from celery.utils import noop, fun_takes_kwargs
+from celery.utils.mail import mail_admins
 from celery.loaders import current_loader
 from celery.execute.trace import TaskTrace
 from celery.registry import tasks

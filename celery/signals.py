@@ -1,4 +1,4 @@
-from django.dispatch import Signal
+from celery.utils.dispatch import Signal
 
 task_sent = Signal(providing_args=["task_id", "task",
                                    "args", "kwargs",

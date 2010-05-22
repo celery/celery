@@ -5,29 +5,25 @@ import unittest2 as unittest
 from celery import task
 from celery import loaders
 from celery.loaders import base
-from celery.loaders import djangoapp
 from celery.loaders import default
 
 from celery.tests.utils import with_environ
+
 
 
 class TestLoaders(unittest.TestCase):
 
     def test_get_loader_cls(self):
 
-        self.assertEqual(loaders.get_loader_cls("django"),
-                          loaders.DjangoLoader)
         self.assertEqual(loaders.get_loader_cls("default"),
-                          loaders.DefaultLoader)
+                          default.Loader)
         # Execute cached branch.
-        self.assertEqual(loaders.get_loader_cls("django"),
-                          loaders.DjangoLoader)
         self.assertEqual(loaders.get_loader_cls("default"),
-                          loaders.DefaultLoader)
+                          default.Loader)
 
     @with_environ("CELERY_LOADER", "default")
     def test_detect_loader_CELERY_LOADER(self):
-        self.assertEqual(loaders.detect_loader(), loaders.DefaultLoader)
+        self.assertIsInstance(loaders.setup_loader(), default.Loader)
 
 
 class DummyLoader(base.BaseLoader):
@@ -64,51 +60,6 @@ class TestLoaderBase(unittest.TestCase):
                               [os, sys, task])
 
 
-class TestDjangoLoader(unittest.TestCase):
-
-    def setUp(self):
-        self.loader = loaders.DjangoLoader()
-
-    def test_on_worker_init(self):
-        from django.conf import settings
-        old_imports = getattr(settings, "CELERY_IMPORTS", None)
-        settings.CELERY_IMPORTS = ("xxx.does.not.exist", )
-        try:
-            self.assertRaises(ImportError, self.loader.on_worker_init)
-        finally:
-            settings.CELERY_IMPORTS = old_imports
-
-    def test_race_protection(self):
-        djangoapp._RACE_PROTECTION = True
-        try:
-            self.assertFalse(self.loader.on_worker_init())
-        finally:
-            djangoapp._RACE_PROTECTION = False
-
-    def test_find_related_module_no_path(self):
-        self.assertFalse(djangoapp.find_related_module("sys", "tasks"))
-
-    def test_find_related_module_no_related(self):
-        self.assertFalse(djangoapp.find_related_module("someapp",
-                                                       "frobulators"))
-
-
-def modifies_django_env(fun):
-
-    def _protected(*args, **kwargs):
-        from django.conf import settings
-        current = dict((key, getattr(settings, key))
-                        for key in settings.get_all_members()
-                            if key.isupper())
-        try:
-            return fun(*args, **kwargs)
-        finally:
-            for key, value in current.items():
-                setattr(settings, key, value)
-
-    return _protected
-
-
 class TestDefaultLoader(unittest.TestCase):
 
     def test_wanted_module_item(self):
@@ -117,7 +68,6 @@ class TestDefaultLoader(unittest.TestCase):
         self.assertFalse(default.wanted_module_item("_foo"))
         self.assertFalse(default.wanted_module_item("__foo"))
 
-    @modifies_django_env
     def test_read_configuration(self):
         from types import ModuleType
 
@@ -126,17 +76,16 @@ class TestDefaultLoader(unittest.TestCase):
 
         celeryconfig = ConfigModule("celeryconfig")
         celeryconfig.CELERY_IMPORTS = ("os", "sys")
+        configname = os.environ.get("CELERY_CONFIG_MODULE") or "celeryconfig"
 
-        sys.modules["celeryconfig"] = celeryconfig
+        prevconfig = sys.modules[configname]
+        sys.modules[configname] = celeryconfig
         try:
             l = default.Loader()
             settings = l.read_configuration()
             self.assertTupleEqual(settings.CELERY_IMPORTS, ("os", "sys"))
-            from django.conf import settings
-            settings.configured = False
             settings = l.read_configuration()
             self.assertTupleEqual(settings.CELERY_IMPORTS, ("os", "sys"))
-            self.assertTrue(settings.configured)
             l.on_worker_init()
         finally:
-            sys.modules.pop("celeryconfig", None)
+            sys.modules[configname] = prevconfig

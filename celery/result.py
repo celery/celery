@@ -176,8 +176,8 @@ class TaskSetResult(object):
     """Working with :class:`celery.task.TaskSet` results.
 
     An instance of this class is returned by
-    :meth:`celery.task.TaskSet.run()`. It lets you inspect the status and
-    return values of the taskset as a single entity.
+    :meth:`celery.task.TaskSet.apply_async()`. It lets you inspect the
+    status and return values of the taskset as a single entity.
 
     :option taskset_id: see :attr:`taskset_id`.
     :option subtasks: see :attr:`subtasks`.

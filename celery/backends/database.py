@@ -1,34 +1,95 @@
-from celery.models import TaskMeta, TaskSetMeta
+import urllib
+from datetime import datetime
+
+
+from celery import conf
+from celery.db.models import Task, TaskSet
+from celery.db.session import ResultSession
 from celery.backends.base import BaseDictBackend
 
 
 class DatabaseBackend(BaseDictBackend):
-    """The database backends. Using Django models to store task metadata."""
+    """The database result backend."""
+
+    def __init__(self, dburi=conf.RESULT_DBURI,
+            engine_options=None, **kwargs):
+        self.dburi = dburi
+        self.engine_options = dict(engine_options or {},
+                                   **conf.RESULT_ENGINE_OPTIONS or {})
+        super(DatabaseBackend, self).__init__(**kwargs)
+
+    def ResultSession(self):
+        return ResultSession(dburi=self.dburi, **self.engine_options)
 
     def _store_result(self, task_id, result, status, traceback=None):
         """Store return value and status of an executed task."""
-        TaskMeta.objects.store_result(task_id, result, status,
-                                      traceback=traceback)
+        session = self.ResultSession()
+        try:
+            tasks = session.query(Task).filter(Task.task_id == task_id).all()
+            if not tasks:
+                task = Task(task_id)
+                session.add(task)
+                session.flush()
+            else:
+                task = tasks[0]
+            task.result = result
+            task.status = status
+            task.traceback = traceback
+            session.commit()
+        finally:
+            session.close()
         return result
 
     def _save_taskset(self, taskset_id, result):
         """Store the result of an executed taskset."""
-        TaskSetMeta.objects.store_result(taskset_id, result)
+        taskset = TaskSet(taskset_id, result)
+        session = self.ResultSession()
+        try:
+            session.add(taskset)
+            session.flush()
+            session.commit()
+        finally:
+            session.close()
         return result
 
     def _get_task_meta_for(self, task_id):
         """Get task metadata for a task by id."""
-        meta = TaskMeta.objects.get_task(task_id)
-        if meta:
-            return meta.to_dict()
+        session = self.ResultSession()
+        try:
+            task = None
+            for task in session.query(Task).filter(Task.task_id == task_id):
+                break
+            if not task:
+                task = Task(task_id)
+                session.add(task)
+                session.flush()
+                session.commit()
+            if task:
+                return task.to_dict()
+        finally:
+            session.close()
 
     def _restore_taskset(self, taskset_id):
         """Get taskset metadata for a taskset by id."""
-        meta = TaskSetMeta.objects.restore_taskset(taskset_id)
-        if meta:
-            return meta.to_dict()
+        session = self.ResultSession()
+        try:
+            qs = session.query(TaskSet)
+            for taskset in qs.filter(TaskSet.task_id == task_id):
+                return taskset.to_dict()
+        finally:
+            session.close()
 
     def cleanup(self):
         """Delete expired metadata."""
-        TaskMeta.objects.delete_expired()
-        TaskSetMeta.objects.delete_expired()
+        expires = conf.TASK_RESULT_EXPIRES
+        session = self.ResultSession()
+        try:
+            for task in session.query(Task).filter(
+                    Task.date_done < (datetime.now() - expires)):
+                session.delete(task)
+            for taskset in session.query(TaskSet).filter(
+                    TaskSet.date_done < (datetime.now() - expires)):
+                session.delete(taskset)
+            session.commit()
+        finally:
+            session.close()

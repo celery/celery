@@ -14,6 +14,7 @@ from billiard.utils.functional import wraps
 from celery import conf
 from celery import signals
 from celery.utils import gen_unique_id, mitemgetter, noop
+from celery.loaders import load_settings
 
 
 MSG_OPTIONS = ("mandatory", "priority",
@@ -209,7 +210,8 @@ class BroadcastConsumer(Consumer):
 
 def establish_connection(connect_timeout=conf.BROKER_CONNECTION_TIMEOUT):
     """Establish a connection to the message broker."""
-    return DjangoBrokerConnection(connect_timeout=connect_timeout)
+    return DjangoBrokerConnection(connect_timeout=connect_timeout,
+                                  settings=load_settings())
 
 
 def with_connection(fun):
