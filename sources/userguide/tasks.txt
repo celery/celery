@@ -415,24 +415,22 @@ yourself:
     >>> from celery import task
     >>> registry.tasks
     {'celery.delete_expired_task_meta':
-      <celery.task.builtins.DeleteExpiredTaskMetaTask object at 0x101d1f510>,
-    'celery.execute_remote':
-      <celery.task.base.ExecuteRemoteTask object at 0x101d17890>,
-    'celery.task.rest.RESTProxyTask':
-      <celery.task.rest.RESTProxyTask object at 0x101d1f410>,
-    'celery.task.rest.Task': <celery.task.rest.Task object at 0x101d1f4d0>,
-    'celery.map_async':
-      <celery.task.base.AsynchronousMapTask object at 0x101d17910>,
-    'celery.ping': <celery.task.builtins.PingTask object at 0x101d1f550>}
+        <PeriodicTask: celery.delete_expired_task_meta (periodic)>,
+     'celery.task.http.HttpDispatchTask':
+        <Task: celery.task.http.HttpDispatchTask (regular)>,
+     'celery.execute_remote':
+        <Task: celery.execute_remote (regular)>,
+     'celery.map_async':
+        <Task: celery.map_async (regular)>,
+     'celery.ping':
+        <Task: celery.ping (regular)>}
 
 This is the list of tasks built-in to celery. Note that we had to import
 ``celery.task`` first for these to show up. This is because the tasks will
 only be registered when the module they are defined in is imported.
 
 The default loader imports any modules listed in the
-``CELERY_IMPORTS`` setting. If using Django it loads all ``tasks.py`` modules
-for the applications listed in ``INSTALLED_APPS``. If you want to do something
-special you can create your own loader to do what you want.
+``CELERY_IMPORTS`` setting. 
 
 The entity responsible for registering your task in the registry is a
 meta class, :class:`TaskType`. This is the default meta class for

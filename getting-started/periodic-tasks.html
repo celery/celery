@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Periodic Tasks &mdash; Celery v1.0.3 (stable) documentation</title>
+    <title>Periodic Tasks &mdash; Celery v1.1.0 (unstable) documentation</title>
     <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.0.3 (stable)',
+        VERSION:     '1.1.0 (unstable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,15 +19,15 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v1.0.3 (stable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="../index.html" />
     <link rel="up" title="Getting Started" href="index.html" />
     <link rel="next" title="Resources" href="resources.html" />
-    <link rel="prev" title="First steps with Django" href="first-steps-with-django.html" />
+    <link rel="prev" title="First steps with Celery" href="first-steps-with-celery.html" />
     <link media="only screen and (max-device-width: 480px)" href="../static/mobile.css" type="text/css" rel="stylesheet" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v1.0.3 (stable) documentation</p>
+	<p>Celery v1.1.0 (unstable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Periodic Tasks</h1></div>
@@ -37,7 +37,7 @@
 			<div class="headerButton"><a href="../genindex.html" title="General Index" accesskey="I">index</a></div>
 			<div class="headerButton"><a href="../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
 			<div class="headerButton"><a href="resources.html" title="Resources" accesskey="N">next</a></div>
-			<div class="headerButton"><a href="first-steps-with-django.html" title="First steps with Django" accesskey="P">previous</a></div>
+			<div class="headerButton"><a href="first-steps-with-celery.html" title="First steps with Celery" accesskey="P">previous</a></div>
 		</li>
 	</ul>
 </div>
@@ -50,7 +50,6 @@
 <li class="toctree-l2"><a class="reference external" href="introduction.html">Introduction</a></li>
 <li class="toctree-l2"><a class="reference external" href="broker-installation.html">Broker Installation</a></li>
 <li class="toctree-l2"><a class="reference external" href="first-steps-with-celery.html">First steps with Celery</a></li>
-<li class="toctree-l2"><a class="reference external" href="first-steps-with-django.html">First steps with Django</a></li>
 <li class="toctree-l2 current"><a class="current reference external" href="">Periodic Tasks</a></li>
 <li class="toctree-l2"><a class="reference external" href="resources.html">Resources</a></li>
 </ul>
@@ -102,31 +101,24 @@
 <h1>Periodic Tasks<a class="headerlink" href="#periodic-tasks" title="Permalink to this headline">¶</a></h1>
 <p>You can schedule tasks to run at intervals like <tt class="docutils literal"><span class="pre">cron</span></tt>.
 Here&#8217;s an example of a periodic task:</p>
-<div class="highlight-python"><pre>from celery.task import PeriodicTask
-from celery.registry import tasks
+<div class="highlight-python"><pre>from celery.decorators import periodic_task
 from datetime import timedelta
 
-class MyPeriodicTask(PeriodicTask):
-    run_every = timedelta(seconds=30)
-
-    def run(self, **kwargs):
-        logger = self.get_logger(**kwargs)
-        logger.info("Running periodic task!")
-&gt;&gt;&gt; tasks.register(MyPeriodicTask)</pre>
+@periodic_task(run_every=timedelta(seconds=30))
+def every_30_seconds(\*\*kwargs):
+    logger = self.get_logger(\*\*kwargs)
+    logger.info("Running periodic task!")</pre>
 </div>
 <p>If you want a little more control over when the task is executed, for example,
-a particular time of day or day of the week, you can use <tt class="docutils literal"><span class="pre">crontab</span></tt> to set
-the <tt class="docutils literal"><span class="pre">run_every</span></tt> property:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">PeriodicTask</span>
-<span class="kn">from</span> <span class="nn">celery.task.schedules</span> <span class="kn">import</span> <span class="n">crontab</span>
+a particular time of day or day of the week, you can use the <tt class="docutils literal"><span class="pre">crontab</span></tt> schedule
+type:</p>
+<div class="highlight-python"><pre>from celery.task.schedules import crontab
+from celery.decorators import periodic_task
 
-<span class="k">class</span> <span class="nc">EveryMondayMorningTask</span><span class="p">(</span><span class="n">PeriodicTask</span><span class="p">):</span>
-    <span class="n">run_every</span> <span class="o">=</span> <span class="n">crontab</span><span class="p">(</span><span class="n">hour</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">minute</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">day_of_week</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Execute every Monday at 7:30AM.&quot;</span><span class="p">)</span>
-</pre></div>
+@periodoc_task(run_every=crontab(hour=7, minute=30, day_of_week=1))
+def every_monday_morning(\*\*kwargs):
+    logger = self.get_logger(\*\*kwargs)
+    logger.info("Execute every Monday at 7:30AM.")</pre>
 </div>
 <p>If you want to use periodic tasks you need to start the <tt class="docutils literal"><span class="pre">celerybeat</span></tt>
 service. You have to make sure only one instance of this server is running at
@@ -134,15 +126,9 @@ any time, or else you will end up with multiple executions of the same task.</p>
 <p>To start the <tt class="docutils literal"><span class="pre">celerybeat</span></tt> service:</p>
 <div class="highlight-python"><pre>$ celerybeat</pre>
 </div>
-<p>or if using Django:</p>
-<div class="highlight-python"><pre>$ python manage.py celerybeat</pre>
-</div>
 <p>You can also start <tt class="docutils literal"><span class="pre">celerybeat</span></tt> with <tt class="docutils literal"><span class="pre">celeryd</span></tt> by using the <tt class="docutils literal"><span class="pre">-B</span></tt> option,
 this is convenient if you only have one server:</p>
 <div class="highlight-python"><pre>$ celeryd -B</pre>
-</div>
-<p>or if using Django:</p>
-<div class="highlight-python"><pre>$ python manage.py celeryd  -B</pre>
 </div>
 </div>
 

@@ -24,8 +24,6 @@
     celery.backends
     celery.backends.base
     celery.backends.amqp
-    celery.backends.database
-    celery.backends.cache
     celery.backends.mongodb
     celery.backends.pyredis
     celery.backends.tyrant
@@ -38,5 +36,3 @@
     celery.utils.compat
     celery.utils.patch
     celery.platform
-    celery.managers
-    celery.models

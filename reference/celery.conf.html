@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Configuration - celery.conf &mdash; Celery v1.0.3 (stable) documentation</title>
+    <title>Configuration - celery.conf &mdash; Celery v1.1.0 (unstable) documentation</title>
     <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.0.3 (stable)',
+        VERSION:     '1.1.0 (unstable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,7 +19,7 @@
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v1.0.3 (stable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="Remote Management of Workers - celery.task.control" href="celery.task.control.html" />
     <link rel="prev" title="Task Information and Utilities - celery.task" href="celery.task.html" />
@@ -27,7 +27,7 @@
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v1.0.3 (stable) documentation</p>
+	<p>Celery v1.1.0 (unstable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Configuration - celery.conf</h1></div>
@@ -68,17 +68,13 @@
 <li class="toctree-l2"><a class="reference external" href="celery.loaders.html">Loaders - celery.loaders</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.loaders.base.html">Loader Base Classes - celery.loaders.base</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.loaders.djangoapp.html">Django Loader - celery.loaders.djangoapp</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.registry.html">Task Registry - celery.registry</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.states.html">Task States - celery.states</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.messaging.html">Messaging - celery.messaging</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.contrib.test_runner.html">Contrib: Test runner - celery.contrib.test_runner</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.contrib.cancelable.html">Contrib: Cancelable tasks - celery.contrib.cancelable</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.views.html">Django Views - celery.views</a></li>
+<li class="toctree-l2"><a class="reference external" href="celery.contrib.abortable.html">Contrib: Abortable tasks - celery.contrib.abortable</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.events.html">Events - celery.events</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.bin.celerybeat.html">Celery Periodic Task Server - celery.bin.celerybeat</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.bin.celeryinit.html">Celery Initialize - celery.bin.celeryinit</a></li>
 <li class="toctree-l2"><a class="reference external" href="celery.bin.camqadm.html">caqmadm: AMQP API Command-line Shell - celery.bin.camqadm</a></li>
 </ul>
 </li>
@@ -142,6 +138,12 @@
 <dd>Default exchange type.</dd></dl>
 
 <dl class="data">
+<dt id="DEFAULT_DELIVERY_MODE">
+<tt class="descname">DEFAULT_DELIVERY_MODE</tt><a class="headerlink" href="#DEFAULT_DELIVERY_MODE" title="Permalink to this definition">¶</a></dt>
+<dd>Default delivery mode (<tt class="docutils literal"><span class="pre">&quot;persistent&quot;</span></tt> or <tt class="docutils literal"><span class="pre">&quot;non-persistent&quot;</span></tt>).
+Default is <tt class="docutils literal"><span class="pre">&quot;persistent&quot;</span></tt>.</dd></dl>
+
+<dl class="data">
 <dt id="DEFAULT_ROUTING_KEY">
 <tt class="descname">DEFAULT_ROUTING_KEY</tt><a class="headerlink" href="#DEFAULT_ROUTING_KEY" title="Permalink to this definition">¶</a></dt>
 <dd>Default routing key used when sending tasks.</dd></dl>
@@ -151,6 +153,60 @@
 <tt class="descname">BROKER_CONNECTION_TIMEOUT</tt><a class="headerlink" href="#BROKER_CONNECTION_TIMEOUT" title="Permalink to this definition">¶</a></dt>
 <dd>The timeout in seconds before we give up establishing a connection
 to the AMQP server.</dd></dl>
+
+<dl class="data">
+<dt id="BROADCAST_QUEUE">
+<tt class="descname">BROADCAST_QUEUE</tt><a class="headerlink" href="#BROADCAST_QUEUE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name prefix for the queue used when listening for
+broadcast messages. The workers hostname will be appended
+to the prefix to create the final queue name.</p>
+<p>Default is <tt class="docutils literal"><span class="pre">&quot;celeryctl&quot;</span></tt>.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="BROADCAST_EXCHANGE">
+<tt class="descname">BROADCAST_EXCHANGE</tt><a class="headerlink" href="#BROADCAST_EXCHANGE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name of the exchange used for broadcast messages.</p>
+<p>Default is <tt class="docutils literal"><span class="pre">&quot;celeryctl&quot;</span></tt>.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="BROADCAST_EXCHANGE_TYPE">
+<tt class="descname">BROADCAST_EXCHANGE_TYPE</tt><a class="headerlink" href="#BROADCAST_EXCHANGE_TYPE" title="Permalink to this definition">¶</a></dt>
+<dd>Exchange type used for broadcast messages. Default is <tt class="docutils literal"><span class="pre">&quot;fanout&quot;</span></tt>.</dd></dl>
+
+<dl class="data">
+<dt id="EVENT_QUEUE">
+<tt class="descname">EVENT_QUEUE</tt><a class="headerlink" href="#EVENT_QUEUE" title="Permalink to this definition">¶</a></dt>
+<dd>Name of queue used to listen for event messages. Default is
+<tt class="docutils literal"><span class="pre">&quot;celeryevent&quot;</span></tt>.</dd></dl>
+
+<dl class="data">
+<dt id="EVENT_EXCHANGE">
+<tt class="descname">EVENT_EXCHANGE</tt><a class="headerlink" href="#EVENT_EXCHANGE" title="Permalink to this definition">¶</a></dt>
+<dd>Exchange used to send event messages. Default is <tt class="docutils literal"><span class="pre">&quot;celeryevent&quot;</span></tt>.</dd></dl>
+
+<dl class="data">
+<dt id="EVENT_EXCHANGE_TYPE">
+<tt class="descname">EVENT_EXCHANGE_TYPE</tt><a class="headerlink" href="#EVENT_EXCHANGE_TYPE" title="Permalink to this definition">¶</a></dt>
+<dd>Exchange type used for the event exchange. Default is <tt class="docutils literal"><span class="pre">&quot;topic&quot;</span></tt>.</dd></dl>
+
+<dl class="data">
+<dt id="EVENT_ROUTING_KEY">
+<tt class="descname">EVENT_ROUTING_KEY</tt><a class="headerlink" href="#EVENT_ROUTING_KEY" title="Permalink to this definition">¶</a></dt>
+<dd>Routing key used for events. Default is <tt class="docutils literal"><span class="pre">&quot;celeryevent&quot;</span></tt>.</dd></dl>
+
+<dl class="data">
+<dt id="EVENT_SERIALIZER">
+<tt class="descname">EVENT_SERIALIZER</tt><a class="headerlink" href="#EVENT_SERIALIZER" title="Permalink to this definition">¶</a></dt>
+<dd>Type of serialization method used to serialize events. Default is
+<tt class="docutils literal"><span class="pre">&quot;json&quot;</span></tt>.</dd></dl>
+
+<dl class="data">
+<dt id="RESULT_EXCHANGE">
+<tt class="descname">RESULT_EXCHANGE</tt><a class="headerlink" href="#RESULT_EXCHANGE" title="Permalink to this definition">¶</a></dt>
+<dd>Exchange used by the AMQP result backend to publish task results.
+Default is <tt class="docutils literal"><span class="pre">&quot;celeryresult&quot;</span></tt>.</dd></dl>
 
 <dl class="data">
 <dt id="CELERY_SEND_TASK_ERROR_EMAILS">
@@ -167,6 +223,35 @@ If unset, it will send the e-mails if <tt class="docutils literal"><span class="
 <dt id="TASK_RESULT_EXPIRES">
 <tt class="descname">TASK_RESULT_EXPIRES</tt><a class="headerlink" href="#TASK_RESULT_EXPIRES" title="Permalink to this definition">¶</a></dt>
 <dd>Task tombstone expire time in seconds.</dd></dl>
+
+<dl class="data">
+<dt id="IGNORE_RESULT">
+<tt class="descname">IGNORE_RESULT</tt><a class="headerlink" href="#IGNORE_RESULT" title="Permalink to this definition">¶</a></dt>
+<dd>If enabled, the default behavior will be to not store task results.</dd></dl>
+
+<dl class="data">
+<dt id="TRACK_STARTED">
+<tt class="descname">TRACK_STARTED</tt><a class="headerlink" href="#TRACK_STARTED" title="Permalink to this definition">¶</a></dt>
+<dd>If enabled, the default behavior will be to track when tasks starts by
+storing the <tt class="xref docutils literal"><span class="pre">STARTED</span></tt> state.</dd></dl>
+
+<dl class="data">
+<dt id="ACKS_LATE">
+<tt class="descname">ACKS_LATE</tt><a class="headerlink" href="#ACKS_LATE" title="Permalink to this definition">¶</a></dt>
+<dd>If enabled, the default behavior will be to acknowledge task messages
+after the task is executed.</dd></dl>
+
+<dl class="data">
+<dt id="STORE_ERRORS_EVEN_IF_IGNORED">
+<tt class="descname">STORE_ERRORS_EVEN_IF_IGNORED</tt><a class="headerlink" href="#STORE_ERRORS_EVEN_IF_IGNORED" title="Permalink to this definition">¶</a></dt>
+<dd>If enabled, task errors will be stored even though <tt class="docutils literal"><span class="pre">Task.ignore_result</span></tt>
+is enabled.</dd></dl>
+
+<dl class="data">
+<dt id="MAX_CACHED_RESULTS">
+<tt class="descname">MAX_CACHED_RESULTS</tt><a class="headerlink" href="#MAX_CACHED_RESULTS" title="Permalink to this definition">¶</a></dt>
+<dd>Total number of results to store before results are evicted from the
+result cache.</dd></dl>
 
 <dl class="data">
 <dt id="BROKER_CONNECTION_RETRY">
@@ -201,12 +286,11 @@ been registered with <tt class="xref docutils literal"><span class="pre">carrot.
 <dl class="data">
 <dt id="CELERY_CACHE_BACKEND">
 <tt class="descname">CELERY_CACHE_BACKEND</tt><a class="headerlink" href="#CELERY_CACHE_BACKEND" title="Permalink to this definition">¶</a></dt>
-<dd>Use a custom cache backend for celery. If not set the django-global
-cache backend in <tt class="docutils literal"><span class="pre">CACHE_BACKEND</span></tt> will be used.</dd></dl>
+<dd>Celery cache backend.</dd></dl>
 
 <dl class="data">
-<dt id="CELERY_SEND_EVENTS">
-<tt class="descname">CELERY_SEND_EVENTS</tt><a class="headerlink" href="#CELERY_SEND_EVENTS" title="Permalink to this definition">¶</a></dt>
+<dt id="SEND_EVENTS">
+<tt class="descname">SEND_EVENTS</tt><a class="headerlink" href="#SEND_EVENTS" title="Permalink to this definition">¶</a></dt>
 <dd>If set, celery will send events that can be captured by monitors like
 <tt class="docutils literal"><span class="pre">celerymon</span></tt>.
 Default is: <tt class="xref docutils literal"><span class="pre">False</span></tt>.</dd></dl>
@@ -270,9 +354,14 @@ Default is: <tt class="xref docutils literal"><span class="pre">None</span></tt>
 <dd>Mapping of log level names to <tt class="xref docutils literal"><span class="pre">logging</span></tt> module constants.</dd></dl>
 
 <dl class="data">
-<dt id="LOG_FORMAT">
-<tt class="descname">LOG_FORMAT</tt><a class="headerlink" href="#LOG_FORMAT" title="Permalink to this definition">¶</a></dt>
+<dt id="CELERYD_LOG_FORMAT">
+<tt class="descname">CELERYD_LOG_FORMAT</tt><a class="headerlink" href="#CELERYD_LOG_FORMAT" title="Permalink to this definition">¶</a></dt>
 <dd>The format to use for log messages.</dd></dl>
+
+<dl class="data">
+<dt id="CELERYD_TASK_LOG_FORMAT">
+<tt class="descname">CELERYD_TASK_LOG_FORMAT</tt><a class="headerlink" href="#CELERYD_TASK_LOG_FORMAT" title="Permalink to this definition">¶</a></dt>
+<dd>The format to use for task log messages.</dd></dl>
 
 <dl class="data">
 <dt id="CELERYD_LOG_FILE">
@@ -290,6 +379,36 @@ Default is: <tt class="xref docutils literal"><span class="pre">None</span></tt>
 <tt class="descname">CELERYD_CONCURRENCY</tt><a class="headerlink" href="#CELERYD_CONCURRENCY" title="Permalink to this definition">¶</a></dt>
 <dd>The number of concurrent worker processes.
 If set to <tt class="docutils literal"><span class="pre">0</span></tt>, the total number of available CPUs/cores will be used.</dd></dl>
+
+<dl class="data">
+<dt id="CELERYD_PREFETCH_MULTIPLIER">
+<tt class="descname">CELERYD_PREFETCH_MULTIPLIER</tt><a class="headerlink" href="#CELERYD_PREFETCH_MULTIPLIER" title="Permalink to this definition">¶</a></dt>
+<dd>The number of concurrent workers is multipled by this number to yield
+the wanted AMQP QoS message prefetch count.</dd></dl>
+
+<dl class="data">
+<dt id="CELERYD_POOL">
+<tt class="descname">CELERYD_POOL</tt><a class="headerlink" href="#CELERYD_POOL" title="Permalink to this definition">¶</a></dt>
+<dd>Name of the task pool class used by the worker.
+Default is <tt class="docutils literal"><span class="pre">&quot;celery.worker.pool.TaskPool&quot;</span></tt>.</dd></dl>
+
+<dl class="data">
+<dt id="CELERYD_LISTENER">
+<tt class="descname">CELERYD_LISTENER</tt><a class="headerlink" href="#CELERYD_LISTENER" title="Permalink to this definition">¶</a></dt>
+<dd>Name of the listener class used by the worker.
+Default is <tt class="docutils literal"><span class="pre">&quot;celery.worker.listener.CarrotListener&quot;</span></tt>.</dd></dl>
+
+<dl class="data">
+<dt id="CELERYD_MEDIATOR">
+<tt class="descname">CELERYD_MEDIATOR</tt><a class="headerlink" href="#CELERYD_MEDIATOR" title="Permalink to this definition">¶</a></dt>
+<dd>Name of the mediator class used by the worker.
+Default is <tt class="docutils literal"><span class="pre">&quot;celery.worker.controllers.Mediator&quot;</span></tt>.</dd></dl>
+
+<dl class="data">
+<dt id="CELERYD_ETA_SCHEDULER">
+<tt class="descname">CELERYD_ETA_SCHEDULER</tt><a class="headerlink" href="#CELERYD_ETA_SCHEDULER" title="Permalink to this definition">¶</a></dt>
+<dd>Name of the ETA scheduler class used by the worker.
+Default is <tt class="docutils literal"><span class="pre">&quot;celery.worker.controllers.ScheduleController&quot;</span></tt>.</dd></dl>
 
 </div>
 

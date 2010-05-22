@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Frequently Asked Questions &mdash; Celery v1.0.3 (stable) documentation</title>
+    <title>Frequently Asked Questions &mdash; Celery v1.1.0 (unstable) documentation</title>
     <link rel="stylesheet" href="static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '#',
-        VERSION:     '1.0.3 (stable)',
+        VERSION:     '1.1.0 (unstable)',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,14 +19,14 @@
     </script>
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v1.0.3 (stable) documentation" href="index.html" />
+    <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="index.html" />
     <link rel="next" title="API Reference" href="reference/index.html" />
     <link rel="prev" title="Tutorial: Creating a click counter using carrot and celery" href="tutorials/clickcounter.html" />
     <link media="only screen and (max-device-width: 480px)" href="static/mobile.css" type="text/css" rel="stylesheet" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v1.0.3 (stable) documentation</p>
+	<p>Celery v1.1.0 (unstable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Frequently Asked Questions</h1></div>
@@ -58,7 +58,6 @@
 <li class="toctree-l2"><a class="reference external" href="#results">Results</a></li>
 <li class="toctree-l2"><a class="reference external" href="#brokers">Brokers</a></li>
 <li class="toctree-l2"><a class="reference external" href="#features">Features</a></li>
-<li class="toctree-l2"><a class="reference external" href="#django">Django</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference external" href="reference/index.html">API Reference</a></li>
@@ -142,35 +141,8 @@ instance.</p>
 <div class="section" id="is-celery-for-django-only">
 <h3>Is celery for Django only?<a class="headerlink" href="#is-celery-for-django-only" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> No.</p>
-<p>You can use all of the features without using Django.</p>
-</div>
-<div class="section" id="why-is-django-a-dependency">
-<h3>Why is Django a dependency?<a class="headerlink" href="#why-is-django-a-dependency" title="Permalink to this headline">¶</a></h3>
-<p>Celery uses the Django ORM for database access when using the database result
-backend, the Django cache framework when using the cache result backend, and the Django signal
-dispatch mechanisms for signaling.</p>
-<p>This doesn&#8217;t mean you need to have a Django project to use celery, it
-just means that sometimes we use internal Django components.</p>
-<p>The long term plan is to replace these with other solutions, (e.g. <a class="reference external" href="http://www.sqlalchemy.org/">SQLAlchemy</a> as the ORM,
-and <a class="reference external" href="http://pypi.python.org/pypi/Louie/">louie</a>, for signaling). The celery distribution will be split into two:</p>
-<ul>
-<li><p class="first">celery</p>
-<blockquote>
-<p>The core. Using SQLAlchemy for the database backend.</p>
-</blockquote>
-</li>
-<li><p class="first">django-celery</p>
-<blockquote>
-<p>Celery integration for Django, using the Django ORM for the database
-backend.</p>
-</blockquote>
-</li>
-</ul>
-<p>We&#8217;re currently seeking people with <a class="reference external" href="http://www.sqlalchemy.org/">SQLAlchemy</a> experience, so please
-contact the project if you want this done sooner.</p>
-<p>The reason for the split is for purity only. It shouldn&#8217;t affect you much as a
-user, so please don&#8217;t worry about the Django dependency, just have a good time
-using celery.</p>
+<p>Celery does not depend on Django anymore. To use Celery with Django you have
+to use the <a class="reference external" href="http://pypi.python.org/pypi/django-celery">django-celery</a> package:</p>
 </div>
 <div class="section" id="do-i-have-to-use-amqp-rabbitmq">
 <h3>Do I have to use AMQP/RabbitMQ?<a class="headerlink" href="#do-i-have-to-use-amqp-rabbitmq" title="Permalink to this headline">¶</a></h3>
@@ -273,9 +245,7 @@ with:</p>
 </div>
 <div class="section" id="why-won-t-my-task-run">
 <h3>Why won&#8217;t my Task run?<a class="headerlink" href="#why-won-t-my-task-run" title="Permalink to this headline">¶</a></h3>
-<p><strong>Answer:</strong> Did you register the task in the applications <tt class="docutils literal"><span class="pre">tasks.py</span></tt> module?
-(or in some other module Django loads by default, like <tt class="docutils literal"><span class="pre">models.py</span></tt>?).
-Also there might be syntax errors preventing the tasks module being imported.</p>
+<p><strong>Answer:</strong> There might be syntax errors preventing the tasks module being imported.</p>
 <p>You can find out if celery is able to run the task by executing the
 task manually:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">myapp.tasks</span> <span class="kn">import</span> <span class="n">MyPeriodicTask</span>
@@ -325,6 +295,17 @@ services instead.</p>
 <div class="section" id="how-can-i-reuse-the-same-connection-when-applying-tasks">
 <h3>How can I reuse the same connection when applying tasks?<a class="headerlink" href="#how-can-i-reuse-the-same-connection-when-applying-tasks" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer</strong>: See <a class="reference external" href="userguide/executing.html"><em>Executing Tasks</em></a>.</p>
+</div>
+<div class="section" id="can-i-execute-a-task-by-name">
+<h3>Can I execute a task by name?<a class="headerlink" href="#can-i-execute-a-task-by-name" title="Permalink to this headline">¶</a></h3>
+<p><strong>Answer</strong>: Yes. Use <tt class="xref docutils literal"><span class="pre">celery.execute.send_task()</span></tt>.
+You can also execute a task by name from any language
+that has an AMQP client.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.execute</span> <span class="kn">import</span> <span class="n">send_task</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">send_task</span><span class="p">(</span><span class="s">&quot;tasks.add&quot;</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{})</span>
+<span class="go">&lt;AsyncResult: 373550e8-b9a0-4666-bc61-ace01fa4f91d&gt;</span>
+</pre></div>
+</div>
 </div>
 </div>
 <div class="section" id="results">
@@ -434,12 +415,14 @@ specific options.</p>
 <h3>What features are not supported when using STOMP?<a class="headerlink" href="#what-features-are-not-supported-when-using-stomp" title="Permalink to this headline">¶</a></h3>
 <p>This is a (possible incomplete) list of features not available when
 using the STOMP backend:</p>
+<blockquote>
 <ul class="simple">
 <li>routing keys</li>
 <li>exchange types (direct, topic, headers, etc)</li>
 <li>immediate</li>
 <li>mandatory</li>
 </ul>
+</blockquote>
 </div>
 </div>
 <div class="section" id="features">
@@ -593,105 +576,6 @@ exchanges. There&#8217;s also AMQP in 10 minutes*: <a class="reference external"
 and <a class="reference external" href="http://bit.ly/EEWca">Standard Exchange Types</a>. For users of RabbitMQ the <a class="reference external" href="http://www.rabbitmq.com/faq.html">RabbitMQ FAQ</a>
 could also be useful as a source of information.</p>
 </div>
-<div class="section" id="can-i-use-celery-without-django">
-<h3>Can I use celery without Django?<a class="headerlink" href="#can-i-use-celery-without-django" title="Permalink to this headline">¶</a></h3>
-<p><strong>Answer:</strong> Yes.</p>
-<p>Celery uses something called loaders to read/setup configuration, import
-modules that register tasks and to decide what happens when a task is
-executed. Currently there are two loaders, the default loader and the Django
-loader. If you want to use celery without a Django project, you either have to
-use the default loader, or write a loader of your own.</p>
-<p>The rest of this answer describes how to use the default loader.</p>
-<p>While it is possible to use Celery from outside of Django, we still need
-Django itself to run, this is to use the ORM and cache-framework.
-Duplicating these features would be time consuming and mostly pointless, so
-while me might rewrite these in the future, this is a good solution in the
-mean time.
-Install Django using your favorite install tool, <tt class="docutils literal"><span class="pre">easy_install</span></tt>, <tt class="docutils literal"><span class="pre">pip</span></tt>, or
-whatever:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># easy_install django # as root</span>
-</pre></div>
-</div>
-<p>You need a configuration file named <tt class="docutils literal"><span class="pre">celeryconfig.py</span></tt>, either in the
-directory you run <tt class="docutils literal"><span class="pre">celeryd</span></tt> in, or in a Python library path where it is
-able to find it. The configuration file can contain any of the settings
-described in <tt class="xref docutils literal"><span class="pre">celery.conf</span></tt>. In addition; if you&#8217;re using the
-database backend you have to configure the database. Here is an example
-configuration using the database backend with MySQL:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># Broker configuration</span>
-<span class="n">BROKER_HOST</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>
-<span class="n">BROKER_PORT</span> <span class="o">=</span> <span class="s">&quot;5672&quot;</span>
-<span class="n">BROKER_VHOST</span> <span class="o">=</span> <span class="s">&quot;celery&quot;</span>
-<span class="n">BROKER_USER</span> <span class="o">=</span> <span class="s">&quot;celery&quot;</span>
-<span class="n">BROKER_PASSWORD</span> <span class="o">=</span> <span class="s">&quot;celerysecret&quot;</span>
-<span class="n">CARROT_BACKEND</span><span class="o">=</span><span class="s">&quot;amqp&quot;</span>
-
-<span class="c"># Using the database backend.</span>
-<span class="n">CELERY_RESULT_BACKEND</span> <span class="o">=</span> <span class="s">&quot;database&quot;</span>
-<span class="n">DATABASE_ENGINE</span> <span class="o">=</span> <span class="s">&quot;mysql&quot;</span> <span class="c"># see Django docs for a description of these.</span>
-<span class="n">DATABASE_NAME</span> <span class="o">=</span> <span class="s">&quot;mydb&quot;</span>
-<span class="n">DATABASE_HOST</span> <span class="o">=</span> <span class="s">&quot;mydb.example.org&quot;</span>
-<span class="n">DATABASE_USER</span> <span class="o">=</span> <span class="s">&quot;myuser&quot;</span>
-<span class="n">DATABASE_PASSWORD</span> <span class="o">=</span> <span class="s">&quot;mysecret&quot;</span>
-
-<span class="c"># Number of processes that processes tasks simultaneously.</span>
-<span class="n">CELERYD_CONCURRENCY</span> <span class="o">=</span> <span class="mi">8</span>
-
-<span class="c"># Modules to import when celeryd starts.</span>
-<span class="c"># This must import every module where you register tasks so celeryd</span>
-<span class="c"># is able to find and run them.</span>
-<span class="n">CELERY_IMPORTS</span> <span class="o">=</span> <span class="p">(</span><span class="s">&quot;mytaskmodule1&quot;</span><span class="p">,</span> <span class="s">&quot;mytaskmodule2&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>With this configuration file in the current directory you have to
-run <tt class="docutils literal"><span class="pre">celeryinit</span></tt> to create the database tables:</p>
-<div class="highlight-python"><pre>$ celeryinit</pre>
-</div>
-<p>At this point you should be able to successfully run <tt class="docutils literal"><span class="pre">celeryd</span></tt>:</p>
-<div class="highlight-python"><pre>$ celeryd --loglevel=INFO</pre>
-</div>
-<p>and send a task from a python shell (note that it must be able to import
-<tt class="docutils literal"><span class="pre">celeryconfig.py</span></tt>):</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task.builtins</span> <span class="kn">import</span> <span class="n">PingTask</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">PingTask</span><span class="o">.</span><span class="n">apply_async</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
-<span class="go">&#39;pong&#39;</span>
-</pre></div>
-</div>
-</div>
-<div class="section" id="the-celery-test-suite-is-failing">
-<h3>The celery test-suite is failing<a class="headerlink" href="#the-celery-test-suite-is-failing" title="Permalink to this headline">¶</a></h3>
-<p><strong>Answer</strong>: If you&#8217;re running tests from your Django project, and the celery
-test suite is failing in that context, then follow the steps below. If the
-celery tests are failing in another context, please report an issue to our
-issue tracker at GitHub:</p>
-<blockquote>
-<a class="reference external" href="http://github.com/ask/celery/issues/">http://github.com/ask/celery/issues/</a></blockquote>
-<p>That Django is running tests for all applications in <tt class="docutils literal"><span class="pre">INSTALLED_APPS</span></tt>
-by default is a pet peeve for many. You should use a test runner that either</p>
-<ol class="arabic simple">
-<li>Explicitly lists the apps you want to run tests for, or</li>
-<li>Make a test runner that skips tests for apps you don&#8217;t want to run.</li>
-</ol>
-<p>For example the test runner that celery is using:</p>
-<blockquote>
-<a class="reference external" href="http://bit.ly/NVKep">http://bit.ly/NVKep</a></blockquote>
-<p>To use this test runner, add the following to your <tt class="docutils literal"><span class="pre">settings.py</span></tt>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">TEST_RUNNER</span> <span class="o">=</span> <span class="s">&quot;celery.tests.runners.run_tests&quot;</span>
-<span class="n">TEST_APPS</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="s">&quot;app1&quot;</span><span class="p">,</span>
-    <span class="s">&quot;app2&quot;</span><span class="p">,</span>
-    <span class="s">&quot;app3&quot;</span><span class="p">,</span>
-    <span class="s">&quot;app4&quot;</span><span class="p">,</span>
-<span class="p">)</span>
-</pre></div>
-</div>
-<p>Or, if you just want to skip the celery tests:</p>
-<div class="highlight-python"><pre>INSTALLED_APPS = (.....)
-TEST_RUNNER = "celery.tests.runners.run_tests"
-TEST_APPS = filter(lambda k: k != "celery", INSTALLED_APPS)</pre>
-</div>
-</div>
 <div class="section" id="can-i-change-the-interval-of-a-periodic-task-at-runtime">
 <h3>Can I change the interval of a periodic task at runtime?<a class="headerlink" href="#can-i-change-the-interval-of-a-periodic-task-at-runtime" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer</strong>: Yes. You can override <tt class="docutils literal"><span class="pre">PeriodicTask.is_due</span></tt> or turn
@@ -714,6 +598,41 @@ RabbitMQ doesn&#8217;t implement them yet.</p>
 to different servers. In the real world this may actually work better than per message
 priorities. You can use this in combination with rate limiting to achieve a
 highly performant system.</p>
+</div>
+<div class="section" id="should-i-use-retry-or-acks-late">
+<h3>Should I use retry or acks_late?<a class="headerlink" href="#should-i-use-retry-or-acks-late" title="Permalink to this headline">¶</a></h3>
+<p><strong>Answer</strong>: Depends. It&#8217;s not necessarily one or the other, you may want
+to use both.</p>
+<p><tt class="docutils literal"><span class="pre">Task.retry</span></tt> is used to retry tasks, notably for expected errors that
+is catchable with the <tt class="docutils literal"><span class="pre">try:</span></tt> block. The AMQP transaction is not used
+for these errors: <strong>if the task raises an exception it is still acked!</strong>.</p>
+<p>The <tt class="docutils literal"><span class="pre">acks_late</span></tt> setting would be used when you need the task to be
+executed again if the worker (for some reason) crashes mid-execution.
+It&#8217;s important to note that the worker is not known to crash, and if
+it does it is usually an unrecoverable error that requires human
+intervention (bug in the worker, or task code).</p>
+<p>In an ideal world you could safely retry any task that has failed, but
+this is rarely the case. Imagine the following task:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@task</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">process_upload</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">tmpfile</span><span class="p">):</span>
+    <span class="c"># Increment a file count stored in a database</span>
+    <span class="n">increment_file_counter</span><span class="p">()</span>
+    <span class="n">add_file_metadata_to_db</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">tmpfile</span><span class="p">)</span>
+    <span class="n">copy_file_to_destination</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">tmpfile</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>If this crashed in the middle of copying the file to its destination
+the world would contain incomplete state. This is not a critical
+scenario of course, but you can probably imagine something far more
+sinister. So for ease of programming we have less reliability;
+It&#8217;s a good default, users who require it and know what they
+are doing can still enable acks_late (and in the future hopefully
+use manual acknowledgement)</p>
+<p>In addition <tt class="docutils literal"><span class="pre">Task.retry</span></tt> has features not available in AMQP
+transactions: delay between retries, max retries, etc.</p>
+<p>So use retry for Python errors, and if your task is reentrant
+combine that with <tt class="docutils literal"><span class="pre">acks_late</span></tt> if that level of reliability
+is required.</p>
 </div>
 <div class="section" id="module-celery.task.base">
 <h3>Can I schedule tasks to execute at a specific time?<a class="headerlink" href="#module-celery.task.base" title="Permalink to this headline">¶</a></h3>
@@ -742,46 +661,6 @@ and they will not be re-run unless you have the <tt class="docutils literal"><sp
 <div class="section" id="how-do-i-run-celeryd-in-the-background-on-platform">
 <h3>How do I run celeryd in the background on [platform]?<a class="headerlink" href="#how-do-i-run-celeryd-in-the-background-on-platform" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer</strong>: Please see <a class="reference external" href="cookbook/daemonizing.html"><em>Running celeryd as a daemon</em></a>.</p>
-</div>
-</div>
-<div class="section" id="django">
-<h2>Django<a class="headerlink" href="#django" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="generating-a-template-in-a-task-doesn-t-seem-to-respect-my-i18n-settings">
-<h3>Generating a template in a task doesn&#8217;t seem to respect my i18n settings?<a class="headerlink" href="#generating-a-template-in-a-task-doesn-t-seem-to-respect-my-i18n-settings" title="Permalink to this headline">¶</a></h3>
-<p><strong>Answer</strong>: To enable the Django translation machinery you need to activate
-it with a language. <strong>Note</strong>: Be sure to reset to the previous language when
-done.</p>
-<blockquote>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">django.utils</span> <span class="kn">import</span> <span class="n">translation</span>
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">prev_language</span> <span class="o">=</span> <span class="n">translation</span><span class="o">.</span><span class="n">get_language</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">translation</span><span class="o">.</span><span class="n">activate</span><span class="p">(</span><span class="n">language</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">try</span><span class="p">:</span>
-<span class="gp">... </span>    <span class="n">render_template</span><span class="p">()</span>
-<span class="gp">... </span><span class="k">finally</span><span class="p">:</span>
-<span class="go">        translation.activate(prev_language)</span>
-</pre></div>
-</div>
-</blockquote>
-<p>The common pattern here would be for the task to take a <tt class="docutils literal"><span class="pre">language</span></tt>
-argument:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.decorators</span> <span class="kn">import</span> <span class="n">task</span>
-
-<span class="kn">from</span> <span class="nn">django.utils</span> <span class="kn">import</span> <span class="n">translation</span>
-<span class="kn">from</span> <span class="nn">django.template.loader</span> <span class="kn">import</span> <span class="n">render_to_string</span>
-
-<span class="nd">@task</span><span class="p">()</span>
-<span class="k">def</span> <span class="nf">generate_report</span><span class="p">(</span><span class="n">template</span><span class="o">=</span><span class="s">&quot;report.html&quot;</span><span class="p">,</span> <span class="n">language</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-    <span class="n">prev_language</span> <span class="o">=</span> <span class="n">translation</span><span class="o">.</span><span class="n">get_language</span><span class="p">()</span>
-    <span class="n">language</span> <span class="ow">and</span> <span class="n">translation</span><span class="o">.</span><span class="n">activate</span><span class="p">(</span><span class="n">language</span><span class="p">)</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">report</span> <span class="o">=</span> <span class="n">render_to_string</span><span class="p">(</span><span class="n">template</span><span class="p">)</span>
-    <span class="k">finally</span><span class="p">:</span>
-        <span class="n">translation</span><span class="o">.</span><span class="n">activate</span><span class="p">(</span><span class="n">prev_language</span><span class="p">)</span>
-    <span class="n">save_report_somewhere</span><span class="p">(</span><span class="n">report</span><span class="p">)</span>
-</pre></div>
-</div>
 </div>
 </div>
 </div>
