@@ -5,6 +5,7 @@ from celery.execute.trace import TaskTrace
 from celery.registry import tasks
 from celery.messaging import with_connection
 from celery.messaging import TaskPublisher
+from celery.datastructures import ExceptionInfo
 
 extract_exec_options = mattrgetter("routing_key", "exchange",
                                    "immediate", "mandatory",
@@ -161,4 +162,6 @@ def apply(task, args, kwargs, **options):
 
     trace = TaskTrace(task.name, task_id, args, kwargs, task=task)
     retval = trace.execute()
+    if isinstance(retval, ExceptionInfo):
+        retval = retval.exception
     return EagerResult(task_id, retval, trace.status, traceback=trace.strtb)
