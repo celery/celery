@@ -3,10 +3,16 @@
 Common Exceptions
 
 """
+from billiard.pool import SoftTimeLimitExceeded as _SoftTimeLimitExceeded
 
 UNREGISTERED_FMT = """
 Task of kind %s is not registered, please make sure it's imported.
 """.strip()
+
+
+class SoftTimeLimitExceeded(_SoftTimeLimitExceeded):
+    """The soft time limit has been exceeded. This exception is raised
+    to give the task a chance to clean up."""
 
 
 class ImproperlyConfigured(Exception):

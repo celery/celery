@@ -107,7 +107,9 @@ class WorkController(object):
             pool_cls=conf.CELERYD_POOL, listener_cls=conf.CELERYD_LISTENER,
             mediator_cls=conf.CELERYD_MEDIATOR,
             eta_scheduler_cls=conf.CELERYD_ETA_SCHEDULER,
-            schedule_filename=conf.CELERYBEAT_SCHEDULE_FILENAME):
+            schedule_filename=conf.CELERYBEAT_SCHEDULE_FILENAME,
+            task_time_limit=conf.CELERYD_TASK_TIME_LIMIT,
+            task_soft_time_limit=conf.CELERYD_TASK_SOFT_TIME_LIMIT):
 
         # Options
         self.loglevel = loglevel or self.loglevel
@@ -118,6 +120,8 @@ class WorkController(object):
         self.embed_clockservice = embed_clockservice
         self.ready_callback = ready_callback
         self.send_events = send_events
+        self.task_time_limit = task_time_limit
+        self.task_soft_time_limit = task_soft_time_limit
         self._finalize = Finalize(self, self.stop, exitpriority=20)
 
         # Queues
@@ -132,7 +136,9 @@ class WorkController(object):
         # Threads + Pool + Consumer
         self.pool = instantiate(pool_cls, self.concurrency,
                                 logger=self.logger,
-                                initializer=process_initializer)
+                                initializer=process_initializer,
+                                timeout=self.task_time_limit,
+                                soft_timeout=self.task_soft_time_limit)
         self.mediator = instantiate(mediator_cls, self.ready_queue,
                                     callback=self.process_task,
                                     logger=self.logger)

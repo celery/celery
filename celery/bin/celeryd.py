@@ -110,6 +110,14 @@ OPTION_LIST = (
     optparse.make_option('-E', '--events', default=conf.SEND_EVENTS,
             action="store_true", dest="events",
             help="Send events so celery can be monitored by e.g. celerymon."),
+    optparse.make_option('--time-limit',
+            default=conf.CELERYD_TASK_TIME_LIMIT,
+            action="store", type="int", dest="task_time_limit",
+            help="Enables a hard time limit (in seconds) for task run times."),
+    optparse.make_option('--soft-time-limit',
+            default=conf.CELERYD_TASK_SOFT_TIME_LIMIT,
+            action="store", type="int", dest="task_soft_time_limit",
+            help="Enables a soft time limit (in seconds) for task run times.")
 )
 
 
@@ -119,6 +127,8 @@ class Worker(object):
             loglevel=conf.CELERYD_LOG_LEVEL, logfile=conf.CELERYD_LOG_FILE,
             hostname=None, discard=False, run_clockservice=False,
             schedule=conf.CELERYBEAT_SCHEDULE_FILENAME,
+            task_time_limit=conf.CELERYD_TASK_TIME_LIMIT,
+            task_soft_time_limit=conf.CELERYD_TASK_SOFT_TIME_LIMIT,
             events=False, **kwargs):
         self.concurrency = concurrency or multiprocessing.cpu_count()
         self.loglevel = loglevel
@@ -128,6 +138,8 @@ class Worker(object):
         self.run_clockservice = run_clockservice
         self.schedule = schedule
         self.events = events
+        self.task_time_limit = task_time_limit
+        self.task_soft_time_limit = task_soft_time_limit
         if not isinstance(self.loglevel, int):
             self.loglevel = conf.LOG_LEVELS[self.loglevel.upper()]
 
@@ -215,7 +227,9 @@ class Worker(object):
                                 ready_callback=self.on_listener_ready,
                                 embed_clockservice=self.run_clockservice,
                                 schedule_filename=self.schedule,
-                                send_events=self.events)
+                                send_events=self.events,
+                                task_time_limit=self.task_time_limit,
+                                task_soft_time_limit=self.task_soft_time_limit)
 
         # Install signal handler so SIGHUP restarts the worker.
         install_worker_restart_handler(worker)
