@@ -371,7 +371,7 @@ class EagerResult(BaseAsyncResult):
         if self.status == states.SUCCESS:
             return self.result
         elif self.status == states.FAILURE:
-            raise self.result.exception
+            raise self.result
 
     def revoke(self):
         pass
