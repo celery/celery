@@ -152,9 +152,9 @@ def apply(task, args, kwargs, **options):
                       "task_id": task_id,
                       "task_retries": retries,
                       "task_is_eager": True,
-                      "logfile": None,
+                      "logfile": options.get("logfile"),
                       "delivery_info": {"is_eager": True},
-                      "loglevel": 0}
+                      "loglevel": options.get("loglevel", 0)}
     supported_keys = fun_takes_kwargs(task.run, default_kwargs)
     extend_with = dict((key, val) for key, val in default_kwargs.items()
                             if key in supported_keys)
