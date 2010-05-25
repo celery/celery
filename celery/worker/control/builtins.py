@@ -4,14 +4,22 @@ from celery import conf
 from celery.registry import tasks
 from celery.worker.revoke import revoked
 from celery.worker.control.registry import Panel
+from celery.backends import default_backend
 
 TASK_INFO_FIELDS = ("exchange", "routing_key", "rate_limit")
 
 
 @Panel.register
-def revoke(panel, task_id, **kwargs):
+def revoke(panel, task_id, task_name=None, **kwargs):
     """Revoke task by task id."""
     revoked.add(task_id)
+    backend = default_backend
+    if task_name: # Use custom task backend (if any)
+        try:
+            backend = tasks[task_name].backend
+        except KeyError:
+            pass
+    backend.mark_as_revoked(task_id)
     panel.logger.warn("Task %s revoked" % (task_id, ))
     return True
 

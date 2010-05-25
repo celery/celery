@@ -20,11 +20,16 @@
 
     Task is being retried.
 
+.. data:: REVOKED
+
+    Task has been revoked.
+
 """
 PENDING = "PENDING"
 STARTED = "STARTED"
 SUCCESS = "SUCCESS"
 FAILURE = "FAILURE"
+REVOKED = "REVOKED"
 RETRY = "RETRY"
 
 
@@ -46,8 +51,9 @@ RETRY = "RETRY"
     Set of all possible states.
 
 """
-READY_STATES = frozenset([SUCCESS, FAILURE])
+READY_STATES = frozenset([SUCCESS, FAILURE, REVOKED])
 UNREADY_STATES = frozenset([PENDING, STARTED, RETRY])
-EXCEPTION_STATES = frozenset([RETRY, FAILURE])
+EXCEPTION_STATES = frozenset([RETRY, FAILURE, REVOKED])
+PROPAGATE_STATES = frozenset([FAILURE, REVOKED])
 
-ALL_STATES = frozenset([PENDING, STARTED, SUCCESS, FAILURE, RETRY])
+ALL_STATES = frozenset([PENDING, STARTED, SUCCESS, FAILURE, RETRY, REVOKED])

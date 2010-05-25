@@ -95,7 +95,7 @@ class AMQPBackend(BaseDictBackend):
 
         if meta["status"] == states.SUCCESS:
             return self.get_result(task_id)
-        elif meta["status"] == states.FAILURE:
+        elif meta["status"] in states.PROPAGATE_STATES:
             raise self.get_result(task_id)
 
     def _get_task_meta_for(self, task_id, timeout=None):

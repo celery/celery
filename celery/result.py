@@ -283,7 +283,7 @@ class TaskSetResult(object):
                     except ValueError:
                         pass
                     yield result.result
-                elif result.status == states.FAILURE:
+                elif result.status in states.PROPAGATE_STATES:
                     raise result.result
 
     def join(self, timeout=None):
@@ -315,7 +315,7 @@ class TaskSetResult(object):
             for position, pending_result in enumerate(self.subtasks):
                 if pending_result.status == states.SUCCESS:
                     results[position] = pending_result.result
-                elif pending_result.status == states.FAILURE:
+                elif pending_result.status in states.PROPAGATE_STATES:
                     raise pending_result.result
             if results.full():
                 # Make list copy, so the returned type is not a position
@@ -370,7 +370,7 @@ class EagerResult(BaseAsyncResult):
         """Wait until the task has been executed and return its result."""
         if self.status == states.SUCCESS:
             return self.result
-        elif self.status == states.FAILURE:
+        elif self.status in states.PROPAGATE_STATES:
             raise self.result
 
     def revoke(self):
