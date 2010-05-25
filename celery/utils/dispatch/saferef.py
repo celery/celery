@@ -135,7 +135,7 @@ class BoundMethodWeakref(object):
                 except Exception, exc:
                     try:
                         traceback.print_exc()
-                    except AttributeError, err:
+                    except AttributeError:
                         print("Exception during saferef %s cleanup function "
                               "%s: %s" % (self, function, exc))
 
@@ -193,14 +193,15 @@ class BoundMethodWeakref(object):
                 return function.__get__(target)
         return None
 
+
 class BoundNonDescriptorMethodWeakref(BoundMethodWeakref):
     """A specialized :class:`BoundMethodWeakref`, for platforms where
     instance methods are not descriptors.
 
     It assumes that the function name and the target attribute name are the
     same, instead of assuming that the function is a descriptor. This approach
-    is equally fast, but not 100% reliable because functions can be stored on an
-    attribute named differenty than the function's name such as in::
+    is equally fast, but not 100% reliable because functions can be stored on
+    an attribute named differenty than the function's name such as in::
 
         >>> class A(object):
         ...     pass
@@ -272,4 +273,5 @@ def get_bound_method_weakref(target, on_delete):
         return BoundMethodWeakref(target=target, on_delete=on_delete)
     else:
         # no luck, use the alternative implementation:
-        return BoundNonDescriptorMethodWeakref(target=target, on_delete=on_delete)
+        return BoundNonDescriptorMethodWeakref(target=target,
+                                               on_delete=on_delete)

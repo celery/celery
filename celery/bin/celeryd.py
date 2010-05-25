@@ -117,7 +117,7 @@ OPTION_LIST = (
     optparse.make_option('--soft-time-limit',
             default=conf.CELERYD_TASK_SOFT_TIME_LIMIT,
             action="store", type="int", dest="task_soft_time_limit",
-            help="Enables a soft time limit (in seconds) for task run times.")
+            help="Enables a soft time limit for task run times."),
 )
 
 

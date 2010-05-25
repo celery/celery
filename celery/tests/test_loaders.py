@@ -10,14 +10,10 @@ from celery.loaders import default
 from celery.tests.utils import with_environ
 
 
-
 class TestLoaders(unittest.TestCase):
 
     def test_get_loader_cls(self):
 
-        self.assertEqual(loaders.get_loader_cls("default"),
-                          default.Loader)
-        # Execute cached branch.
         self.assertEqual(loaders.get_loader_cls("default"),
                           default.Loader)
 

@@ -1,6 +1,5 @@
 import unittest2 as unittest
 
-from celery.contrib.abortable import ABORTED
 from celery.contrib.abortable import AbortableTask, AbortableAsyncResult
 
 

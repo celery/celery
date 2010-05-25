@@ -1,14 +1,12 @@
 from datetime import datetime
 
-from sqlalchemy import Column, Sequence, ForeignKey
+from sqlalchemy import Column, Sequence
 from sqlalchemy import Integer, String, Text, DateTime
-from sqlalchemy.orm import relation
 
 from celery import states
 from celery.db.session import ResultModelBase
 # See docstring of a805d4bd for an explanation for this workaround ;)
 from celery.db.a805d4bd import PickleType
-
 
 
 class Task(ResultModelBase):

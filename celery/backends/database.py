@@ -1,4 +1,3 @@
-import urllib
 from datetime import datetime
 
 
@@ -74,7 +73,7 @@ class DatabaseBackend(BaseDictBackend):
         session = self.ResultSession()
         try:
             qs = session.query(TaskSet)
-            for taskset in qs.filter(TaskSet.task_id == task_id):
+            for taskset in qs.filter(TaskSet.taskset_id == taskset_id):
                 return taskset.to_dict()
         finally:
             session.close()

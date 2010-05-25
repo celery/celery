@@ -46,8 +46,8 @@ class Signal(object):
             receive signals. Receivers must be hashable objects.
 
             if weak is ``True``, then receiver must be weak-referencable (more
-            precisely :func:`saferef.safe_ref()` must be able to create a reference
-            to the receiver).
+            precisely :func:`saferef.safe_ref()` must be able to create a
+            reference to the receiver).
 
             Receivers must be able to accept keyword arguments.
 
@@ -75,7 +75,8 @@ class Signal(object):
             lookup_key = (_make_id(receiver), _make_id(sender))
 
         if weak:
-            receiver = saferef.safe_ref(receiver, on_delete=self._remove_receiver)
+            receiver = saferef.safe_ref(receiver,
+                                        on_delete=self._remove_receiver)
 
         for r_key, _ in self.receivers:
             if r_key == lookup_key:
@@ -83,11 +84,12 @@ class Signal(object):
         else:
             self.receivers.append((lookup_key, receiver))
 
-    def disconnect(self, receiver=None, sender=None, weak=True, dispatch_uid=None):
+    def disconnect(self, receiver=None, sender=None, weak=True,
+            dispatch_uid=None):
         """Disconnect receiver from sender for signal.
 
-        If weak references are used, disconnect need not be called. The receiver
-        will be remove from dispatch automatically.
+        If weak references are used, disconnect need not be called. The
+        receiver will be removed from dispatch automatically.
 
         :keyword receiver: The registered receiver to disconnect. May be
             none if ``dispatch_uid`` is specified.
@@ -114,9 +116,9 @@ class Signal(object):
     def send(self, sender, **named):
         """Send signal from sender to all connected receivers.
 
-        If any receiver raises an error, the error propagates back through send,
-        terminating the dispatch loop, so it is quite possible to not have all
-        receivers called if a raises an error.
+        If any receiver raises an error, the error propagates back through
+        send, terminating the dispatch loop, so it is quite possible to not
+        have all receivers called if a raises an error.
 
         :param sender: The sender of the signal. Either a specific
             object or ``None``.
@@ -151,8 +153,8 @@ class Signal(object):
         :raises DispatcherKeyError:
 
         if any receiver raises an error (specifically any subclass of
-        :exc:`Exception`), the error instance is returned as the result for that
-        receiver.
+        :exc:`Exception`), the error instance is returned as the result
+        for that receiver.
 
         """
         responses = []

@@ -29,14 +29,12 @@ class PickleType(_PickleType):
         dumps = self.pickler.dumps
         protocol = self.protocol
         if impl_processor:
-
             def process(value):
                 if value is not None:
                     value = dumps(value, protocol)
                 return impl_processor(value)
 
         else:
-
             def process(value):
                 if value is not None:
                     value = dumps(value, protocol)
