@@ -122,6 +122,36 @@ Backward incompatible changes
 
         CELERY_LOADER = "myapp.loaders.Loader"
 
+News
+----
+
+* now depends on billiard >= 0.4.0
+
+* Added support for task soft and hard timelimits.
+
+    New settings added:
+
+    * CELERYD_TASK_TIME_LIMIT
+
+        Hard time limit. The worker processing the task will be killed and
+        replaced with a new one when this is exceeded.
+    * CELERYD_SOFT_TASK_TIME_LIMIT
+
+        Soft time limit. The celery.exceptions.SoftTimeLimitExceeded exception
+        will be raised when this is exceeded. The task can catch this to
+        e.g. clean up before the hard time limit comes.
+
+    New command line arguments to celeryd added:
+    ``--time-limit`` and ``--soft-time-limit``.
+
+    What's left?
+
+    This won't work on platforms not supporting signals (and specifically
+    the ``SIGUSR1`` signal) yet. So an alternative the ability to disable
+    the feature alltogether on nonconforming platforms must be implemented.
+
+    Also when the hard time limit is exceeded, the task result should
+    be a ``TimeLimitExceeded`` exception.
 
 1.0.3 [2010-05-15 03:00 P.M CEST]
 =================================
