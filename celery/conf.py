@@ -22,6 +22,7 @@ settings = load_settings()
 _DEFAULTS = {
     "CELERY_RESULT_BACKEND": "database",
     "CELERY_ALWAYS_EAGER": False,
+    "CELERY_EAGER_PROPAGATES_EXCEPTIONS": False,
     "CELERY_TASK_RESULT_EXPIRES": timedelta(days=5),
     "CELERY_SEND_EVENTS": False,
     "CELERY_IGNORE_RESULT": False,
@@ -92,6 +93,7 @@ def _get(name, default=None, compat=None):
 
 # <--- Task                                        <-   --   --- - ----- -- #
 ALWAYS_EAGER = _get("CELERY_ALWAYS_EAGER")
+EAGER_PROPAGATES_EXCEPTIONS = _get("CELERY_EAGER_PROPAGATES_EXCEPTIONS")
 RESULT_BACKEND = _get("CELERY_RESULT_BACKEND", compat=["CELERY_BACKEND"])
 CELERY_BACKEND = RESULT_BACKEND # FIXME Remove in 1.4
 CELERY_CACHE_BACKEND = _get("CELERY_CACHE_BACKEND")

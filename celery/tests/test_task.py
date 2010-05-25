@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 
 from billiard.utils.functional import wraps
 
+from celery import conf
 from celery import task
 from celery import messaging
 from celery.task.schedules import crontab
@@ -395,6 +396,16 @@ class TestTaskSet(unittest.TestCase):
 
 
 class TestTaskApply(unittest.TestCase):
+
+    def test_apply_throw(self):
+        self.assertRaises(KeyError, RaisingTask.apply, throw=True)
+
+    def test_apply_with_CELERY_EAGER_PROPAGATES_EXCEPTIONS(self):
+        conf.EAGER_PROPAGATES_EXCEPTIONS = True
+        try:
+            self.assertRaises(KeyError, RaisingTask.apply)
+        finally:
+            conf.EAGER_PROPAGATES_EXCEPTIONS = False
 
     def test_apply(self):
         IncrementCounterTask.count = 0

@@ -137,6 +137,9 @@ def delay_task(task_name, *args, **kwargs):
 def apply(task, args, kwargs, **options):
     """Apply the task locally.
 
+    :keyword throw: Re-raise task exceptions. Defaults to
+        the ``CELERY_EAGER_PROPAGATES_EXCEPTIONS`` setting.
+
     This will block until the task completes, and returns a
     :class:`celery.result.EagerResult` instance.
 
@@ -145,6 +148,7 @@ def apply(task, args, kwargs, **options):
     kwargs = kwargs or {}
     task_id = options.get("task_id", gen_unique_id())
     retries = options.get("retries", 0)
+    throw = options.pop("throw", conf.EAGER_PROPAGATES_EXCEPTIONS)
 
     task = tasks[task.name] # Make sure we get the instance, not class.
 
@@ -163,5 +167,7 @@ def apply(task, args, kwargs, **options):
     trace = TaskTrace(task.name, task_id, args, kwargs, task=task)
     retval = trace.execute()
     if isinstance(retval, ExceptionInfo):
+        if throw:
+            raise retval.exception
         retval = retval.exception
     return EagerResult(task_id, retval, trace.status, traceback=trace.strtb)
