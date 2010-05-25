@@ -35,6 +35,8 @@ def process_initializer():
     from celery.loaders import current_loader
     current_loader().init_worker()
 
+    signals.worker_process_init.send(sender=None)
+
 
 class WorkController(object):
     """Executes tasks waiting in the task queue.
