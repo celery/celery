@@ -294,10 +294,13 @@ class TaskWrapper(object):
         self._set_executed_bit()
 
         # acknowledge task as being processed.
-        self.on_ack()
+        if not self.task.acks_late:
+            self.acknowledge()
 
         tracer = WorkerTaskTrace(*self._get_tracer_args(loglevel, logfile))
-        return tracer.execute()
+        retval = tracer.execute()
+        self.acknowledge()
+        return retval
 
     def send_event(self, type, **fields):
         if self.eventer:
