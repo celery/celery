@@ -118,6 +118,11 @@ OPTION_LIST = (
             default=conf.CELERYD_TASK_SOFT_TIME_LIMIT,
             action="store", type="int", dest="task_soft_time_limit",
             help="Enables a soft time limit for task run times."),
+    optparse.make_option('--maxtasksperchild',
+            default=conf.CELERYD_MAX_TASKS_PER_CHILD,
+            action="store", type="int", dest="max_tasks_per_child",
+            help="Maximum number of tasks a pool worker can execute"
+                 "before it's replaced with a new one."),
 )
 
 
@@ -129,6 +134,7 @@ class Worker(object):
             schedule=conf.CELERYBEAT_SCHEDULE_FILENAME,
             task_time_limit=conf.CELERYD_TASK_TIME_LIMIT,
             task_soft_time_limit=conf.CELERYD_TASK_SOFT_TIME_LIMIT,
+            max_tasks_per_child=conf.CELERYD_MAX_TASKS_PER_CHILD,
             events=False, **kwargs):
         self.concurrency = concurrency or multiprocessing.cpu_count()
         self.loglevel = loglevel
@@ -140,6 +146,7 @@ class Worker(object):
         self.events = events
         self.task_time_limit = task_time_limit
         self.task_soft_time_limit = task_soft_time_limit
+        self.max_tasks_per_child = max_tasks_per_child
         if not isinstance(self.loglevel, int):
             self.loglevel = conf.LOG_LEVELS[self.loglevel.upper()]
 
@@ -228,6 +235,7 @@ class Worker(object):
                                 embed_clockservice=self.run_clockservice,
                                 schedule_filename=self.schedule,
                                 send_events=self.events,
+                                max_tasks_per_child=self.max_tasks_per_child,
                                 task_time_limit=self.task_time_limit,
                                 task_soft_time_limit=self.task_soft_time_limit)
 

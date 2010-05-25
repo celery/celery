@@ -86,6 +86,11 @@ Configuration - celery.conf
 
     Always execute tasks locally, don't send to the queue.
 
+.. data:: EAGER_PROPAGATES_EXCEPTIONS
+
+    If set to ``True``, :func:`celery.execute.apply` will re-raise task exceptions.
+    It's the same as always running apply with ``throw=True``.
+
 .. data:: TASK_RESULT_EXPIRES
 
     Task tombstone expire time in seconds.

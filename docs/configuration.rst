@@ -456,6 +456,35 @@ Worker: celeryd
     useful to add tasks if you are not using django or cannot use task
     auto-discovery.
 
+* CELERYD_MAX_TASKS_PER_CHILD
+
+  Maximum number of tasks a pool worker process can execute before
+  it's replaced with a new one. Default is no limit.
+
+* CELERYD_TASK_TIME_LIMIT
+
+    Task hard time limit in seconds. The worker processing the task will
+    be killed and replaced with a new one when this is exceeded.
+
+* CELERYD_SOFT_TASK_TIME_LIMIT
+
+    Task soft time limit in seconds.
+    The :exc:`celery.exceptions.SoftTimeLimitExceeded` exception will be
+    raised when this is exceeded. The task can catch this to
+    e.g. clean up before the hard time limit comes.
+
+    .. code-block:: python
+
+        from celery.decorators import task
+        from celery.exceptions import SoftTimeLimitExceeded
+
+        @task()
+        def mytask():
+            try:
+                return do_work()
+            except SoftTimeLimitExceeded:
+                cleanup_in_a_hurry()
+
 * CELERY_SEND_TASK_ERROR_EMAILS
 
     If set to ``True``, errors in tasks will be sent to admins by e-mail.

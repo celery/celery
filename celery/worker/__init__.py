@@ -111,7 +111,8 @@ class WorkController(object):
             eta_scheduler_cls=conf.CELERYD_ETA_SCHEDULER,
             schedule_filename=conf.CELERYBEAT_SCHEDULE_FILENAME,
             task_time_limit=conf.CELERYD_TASK_TIME_LIMIT,
-            task_soft_time_limit=conf.CELERYD_TASK_SOFT_TIME_LIMIT):
+            task_soft_time_limit=conf.CELERYD_TASK_SOFT_TIME_LIMIT,
+            max_tasks_per_child=conf.CELERYD_MAX_TASKS_PER_CHILD):
 
         # Options
         self.loglevel = loglevel or self.loglevel
@@ -124,6 +125,7 @@ class WorkController(object):
         self.send_events = send_events
         self.task_time_limit = task_time_limit
         self.task_soft_time_limit = task_soft_time_limit
+        self.max_tasks_per_child = max_tasks_per_child
         self._finalize = Finalize(self, self.stop, exitpriority=20)
 
         # Queues
@@ -139,6 +141,7 @@ class WorkController(object):
         self.pool = instantiate(pool_cls, self.concurrency,
                                 logger=self.logger,
                                 initializer=process_initializer,
+                                maxtasksperchild=self.max_tasks_per_child,
                                 timeout=self.task_time_limit,
                                 soft_timeout=self.task_soft_time_limit)
         self.mediator = instantiate(mediator_cls, self.ready_queue,

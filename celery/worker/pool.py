@@ -28,10 +28,11 @@ class TaskPool(object):
     """
 
     def __init__(self, limit, logger=None, initializer=None,
-            timeout=None, soft_timeout=None):
+            maxtasksperchild=None, timeout=None, soft_timeout=None):
         self.limit = limit
         self.logger = logger or log.get_default_logger()
         self.initializer = initializer
+        self.maxtasksperchild = maxtasksperchild
         self.timeout = timeout
         self.soft_timeout = soft_timeout
         self._pool = None
@@ -45,21 +46,14 @@ class TaskPool(object):
         self._pool = DynamicPool(processes=self.limit,
                                  initializer=self.initializer,
                                  timeout=self.timeout,
-                                 soft_timeout=self.soft_timeout)
+                                 soft_timeout=self.soft_timeout,
+                                 maxtasksperchild=self.maxtasksperchild)
 
     def stop(self):
         """Terminate the pool."""
         self._pool.close()
         self._pool.join()
         self._pool = None
-
-    def replace_dead_workers(self):
-        self.logger.debug("TaskPool: Finding dead pool processes...")
-        dead_count = self._pool.replace_dead_workers()
-        if dead_count: # pragma: no cover
-            self.logger.info(
-                "TaskPool: Replaced %d dead pool workers..." % (
-                    dead_count))
 
     def apply_async(self, target, args=None, kwargs=None, callbacks=None,
             errbacks=None, accept_callback=None, timeout_callback=None,
@@ -79,8 +73,6 @@ class TaskPool(object):
 
         self.logger.debug("TaskPool: Apply %s (args:%s kwargs:%s)" % (
             target, args, kwargs))
-
-        self.replace_dead_workers()
 
         return self._pool.apply_async(target, args, kwargs,
                                       callback=on_ready,
