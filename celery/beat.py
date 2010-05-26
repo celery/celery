@@ -45,14 +45,14 @@ class ScheduleEntry(object):
 
     def __init__(self, name, last_run_at=None, total_run_count=None):
         self.name = name
-        self.last_run_at = last_run_at or datetime.utcnow()
+        self.last_run_at = last_run_at or datetime.now()
         self.total_run_count = total_run_count or 0
 
     def next(self):
         """Returns a new instance of the same class, but with
         its date and count fields updated."""
         return self.__class__(self.name,
-                              datetime.utcnow(),
+                              datetime.now(),
                               self.total_run_count + 1)
 
     def is_due(self, task):
