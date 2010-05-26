@@ -23,7 +23,7 @@ MSG_OPTIONS = ("mandatory", "priority",
 
 get_msg_options = mitemgetter(*MSG_OPTIONS)
 extract_msg_options = lambda d: dict(zip(MSG_OPTIONS, get_msg_options(d)))
-default_queue = conf.routing_table[conf.DEFAULT_QUEUE]
+default_queue = conf.get_routing_table()[conf.DEFAULT_QUEUE]
 
 _queues_declared = False
 _exchanges_declared = {}
@@ -242,7 +242,7 @@ def get_consumer_set(connection, queues=None, **options):
     Defaults to the queues in ``CELERY_QUEUES``.
 
     """
-    queues = queues or conf.routing_table
+    queues = queues or conf.get_routing_table()
     cset = ConsumerSet(connection)
     for queue_name, queue_options in queues.items():
         queue_options = dict(queue_options)
