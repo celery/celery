@@ -5,10 +5,11 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
 from celery import conf
+from celery.utils.compat import defaultdict
 
 ResultModelBase = declarative_base()
 
-_SETUP = {"results": False}
+_SETUP = defaultdict(lambda: False)
 _ENGINES = {}
 
 
@@ -31,6 +32,5 @@ def setup_results(engine):
 
 def ResultSession(dburi=conf.RESULT_DBURI, **kwargs):
     engine, session = create_session(dburi, **kwargs)
-    if os.environ.get("CELERYINIT"):
-        setup_results(engine)
+    setup_results(engine)
     return session()
