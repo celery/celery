@@ -412,7 +412,7 @@ class Task(object):
         """
         return BaseAsyncResult(task_id, backend=self.backend)
 
-    def on_retry(self, exc, task_id, args, kwargs):
+    def on_retry(self, exc, task_id, args, kwargs, einfo=None):
         """Retry handler.
 
         This is run by the worker when the task is to be retried.
@@ -422,12 +422,15 @@ class Task(object):
         :param args: Original arguments for the retried task.
         :param kwargs: Original keyword arguments for the retried task.
 
+        :keyword einfo: :class:`celery.datastructures.ExceptionInfo` instance,
+           containing the traceback.
+
         The return value of this handler is ignored.
 
         """
         pass
 
-    def on_failure(self, exc, task_id, args, kwargs):
+    def on_failure(self, exc, task_id, args, kwargs, einfo=None):
         """Error handler.
 
         This is run by the worker when the task fails.
@@ -436,6 +439,9 @@ class Task(object):
         :param task_id: Unique id of the failed task.
         :param args: Original arguments for the task that failed.
         :param kwargs: Original keyword arguments for the task that failed.
+
+        :keyword einfo: :class:`celery.datastructures.ExceptionInfo` instance,
+           containing the traceback.
 
         The return value of this handler is ignored.
 

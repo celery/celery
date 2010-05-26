@@ -77,7 +77,6 @@ class TaskTrace(object):
 
     def handle_retry(self, exc, type_, tb, strtb):
         """Handle retry exception."""
-        self.task.on_retry(exc, self.task_id, self.args, self.kwargs)
 
         # Create a simpler version of the RetryTaskError that stringifies
         # the original exception instead of including the exception instance.
@@ -85,11 +84,16 @@ class TaskTrace(object):
         # guaranteeing pickleability.
         message, orig_exc = exc.args
         expanded_msg = "%s: %s" % (message, str(orig_exc))
-        return ExceptionInfo((type_,
-                              type_(expanded_msg, None),
-                              tb))
+        einfo = ExceptionInfo((type_,
+                               type_(expanded_msg, None),
+                               tb))
+        self.task.on_retry(exc, self.task_id,
+                           self.args, self.kwargs, einfo=einfo)
+        return einfo
 
     def handle_failure(self, exc, type_, tb, strtb):
         """Handle exception."""
-        self.task.on_failure(exc, self.task_id, self.args, self.kwargs)
-        return ExceptionInfo((type_, exc, tb))
+        einfo = ExceptionInfo((type_, exc, tb))
+        self.task.on_failure(exc, self.task_id,
+                             self.args, self.kwargs, einfo=info)
+        return einfo
