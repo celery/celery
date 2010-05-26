@@ -49,16 +49,15 @@ install_requires.extend([
     "billiard>=0.3.0"])
 
 py_version = sys.version_info
-if sys.version_info <= (2, 5):
+if sys.version_info < (2, 6):
     install_requires.append("multiprocessing==2.6.2.1")
-if sys.version_info <= (2, 4):
+if sys.version_info < (2, 5):
     install_requires.append("uuid")
 
 if os.path.exists("README.rst"):
     long_description = codecs.open("README.rst", "r", "utf-8").read()
 else:
     long_description = "See http://pypi.python.org/pypi/celery"
-
 
 setup(
     name='celery',
