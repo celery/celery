@@ -3,7 +3,7 @@
 Process Pools.
 
 """
-from billiard.pool import DynamicPool
+from billiard.pool import Pool
 from billiard.utils.functional import curry
 
 from celery import log
