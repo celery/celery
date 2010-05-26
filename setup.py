@@ -71,6 +71,7 @@ setup(
     packages=find_packages(exclude=['ez_setup', 'tests', 'tests.*']),
     scripts=["bin/celeryd", "bin/celerybeat", "bin/camqadm"],
     zip_safe=False,
+    setup_requires=["nose", "nose-cover3", "unittest2>=0.4.0", "simplejson"],
     install_requires=install_requires,
     cmdclass = {"test": RunTests, "quicktest": QuickRunTests},
     test_suite="nose.collector",
