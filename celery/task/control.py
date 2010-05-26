@@ -60,7 +60,7 @@ def ping(destination=None, timeout=1, **kwargs):
     :keyword limit: Limit number of replies.
 
     """
-    return broadcast("ping", wait=True, destination=destination,
+    return broadcast("ping", reply=True, destination=destination,
                      timeout=timeout, **kwargs)
 
 
