@@ -300,11 +300,29 @@ class TestTaskWrapper(unittest.TestCase):
     def test_execute_using_pool(self):
         tid = gen_unique_id()
         tw = TaskWrapper(mytask.name, tid, [4], {"f": "x"})
-        p = TaskPool(2)
-        p.start()
-        asyncres = tw.execute_using_pool(p)
-        self.assertEqual(asyncres.get(), 256)
-        p.stop()
+
+        class MockPool(object):
+            target = None
+            args = None
+            kwargs = None
+
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def apply_async(self, target, args=None, kwargs=None,
+                    *margs, **mkwargs):
+                self.target = target
+                self.args = args
+                self.kwargs = kwargs
+
+        p = MockPool()
+        tw.execute_using_pool(p)
+        self.assertTrue(p.target)
+        self.assertEqual(p.args[0], mytask.name)
+        self.assertEqual(p.args[1], tid)
+        self.assertEqual(p.args[2], [4])
+        self.assertIn("f", p.args[3])
+        self.assertIn([4], p.args)
 
     def test_default_kwargs(self):
         tid = gen_unique_id()

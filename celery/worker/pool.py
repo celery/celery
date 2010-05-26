@@ -3,7 +3,7 @@
 Process Pools.
 
 """
-from billiard.pool import Pool
+from billiard.pool import Pool, RUN
 from billiard.utils.functional import curry
 
 from celery import log
@@ -43,17 +43,18 @@ class TaskPool(object):
         Will pre-fork all workers so they're ready to accept tasks.
 
         """
-        self._pool = DynamicPool(processes=self.limit,
-                                 initializer=self.initializer,
-                                 timeout=self.timeout,
-                                 soft_timeout=self.soft_timeout,
-                                 maxtasksperchild=self.maxtasksperchild)
+        self._pool = Pool(processes=self.limit,
+                          initializer=self.initializer,
+                          timeout=self.timeout,
+                          soft_timeout=self.soft_timeout,
+                          maxtasksperchild=self.maxtasksperchild)
 
     def stop(self):
         """Terminate the pool."""
-        self._pool.close()
-        self._pool.join()
-        self._pool = None
+        if self._pool is not None and self._pool._state == RUN:
+            self._pool.close()
+            self._pool.join()
+            self._pool = None
 
     def apply_async(self, target, args=None, kwargs=None, callbacks=None,
             errbacks=None, accept_callback=None, timeout_callback=None,

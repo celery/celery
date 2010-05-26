@@ -46,6 +46,10 @@ RETRY = "RETRY"
 
     Set of states meaning the task returned an exception.
 
+.. data:: PROPAGATE_STATES
+
+    Set of exception states that should propagate exceptions to the user.
+
 .. data:: ALL_STATES
 
     Set of all possible states.
