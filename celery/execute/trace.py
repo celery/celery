@@ -67,8 +67,17 @@ class TaskTrace(object):
         trace = TraceInfo.trace(self.task, self.args, self.kwargs)
         self.status = trace.status
         self.strtb = trace.strtb
+        self.handle_after_return(trace.status, trace.retval,
+                                 trace.exc_type, trace.tb, trace.strtb)
         handler = self._trace_handlers[trace.status]
         return handler(trace.retval, trace.exc_type, trace.tb, trace.strtb)
+
+    def handle_after_return(self, status, retval, type_, tb, strtb):
+        einfo = None
+        if status in states.EXCEPTION_STATES:
+            einfo = ExceptionInfo((retval, type_, tb))
+        self.task.after_return(status, retval, self.task_id,
+                               self.args, self.kwargs, einfo=einfo)
 
     def handle_success(self, retval, *args):
         """Handle successful execution."""
@@ -95,5 +104,5 @@ class TaskTrace(object):
         """Handle exception."""
         einfo = ExceptionInfo((type_, exc, tb))
         self.task.on_failure(exc, self.task_id,
-                             self.args, self.kwargs, einfo=info)
+                             self.args, self.kwargs, einfo=einfo)
         return einfo

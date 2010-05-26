@@ -430,6 +430,23 @@ class Task(object):
         """
         pass
 
+    def after_return(self, status, retval, task_id, args, kwargs, einfo=None):
+        """Handler called after the task returns.
+
+        :param status: Current task state.
+        :param retval: Task return value/exception.
+        :param task_id: Unique id of the task.
+        :param args: Original arguments for the task that failed.
+        :param kwargs: Original keyword arguments for the task that failed.
+
+        :keyword einfo: :class:`celery.datastructures.ExceptionInfo` instance,
+           containing the traceback (if any).
+
+        The return value of this handler is ignored.
+
+        """
+        pass
+
     def on_failure(self, exc, task_id, args, kwargs, einfo=None):
         """Error handler.
 
