@@ -121,8 +121,8 @@ def multi_args(p, cmd="celeryd", prefix="", suffix=""):
 
     for name in names:
         this_name = options["-n"] = prefix + name + suffix
-        expand = abbreviations({"%n": this_name,
-                                "%p": prefix + name})
+        expand = abbreviations({"%h": this_name,
+                                "%n": name})
         line = expand(cmd) + " " + " ".join(
                 format_opt(opt, expand(value))
                     for opt, value in p.optmerge(name, options).items())

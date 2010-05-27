@@ -26,13 +26,13 @@
 
 set -e
 
-CELERYD_PID_FILE="/var/run/celeryd-%p.pid"
-CELERYD_LOG_FILE="/var/log/celeryd-%p.log"
+CELERYD_PID_FILE="/var/run/celeryd-%n.pid"
+CELERYD_LOG_FILE="/var/log/celeryd-%n.log"
 CELERYD_LOG_LEVEL="INFO"
 CELERYD_NUM_WORKERS=2
 DEFAULT_CELERYD="celeryd"
 
-# /etc/init.d/ssh: start and stop the celery task worker daemon.
+# /etc/init.d/celeryd-multi start and stop the celery task worker daemon.
 
 if test -f /etc/default/celeryd; then
     . /etc/default/celeryd
