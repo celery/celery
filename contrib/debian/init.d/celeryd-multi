@@ -1,0 +1,183 @@
+#!/bin/bash
+
+### BEGIN INIT INFO
+# Provides:		celeryd
+# Required-Start:	
+# Required-Stop:	
+# Default-Start:	2 3 4 5
+# Default-Stop:		1
+# Short-Description:	celery task worker daemon
+### END INIT INFO
+
+# OS X Debug replacements to lsb-functions.
+#log_action_msg () {
+#    echo $*
+#}
+#log_daemon_msg () {
+#    echo $*
+#}
+#log_end_msg () {
+#    if [ $1 -eq 0 ]; then
+#        echo "ok"
+#    else
+#        echo "failed!"
+#    fi
+#}
+
+set -e
+
+CELERYD_PID_FILE="/var/run/celeryd-%p.pid"
+CELERYD_LOG_FILE="/var/log/celeryd-%p.log"
+CELERYD_LOG_LEVEL="INFO"
+CELERYD_NUM_WORKERS=2
+DEFAULT_CELERYD="celeryd"
+
+# /etc/init.d/ssh: start and stop the celery task worker daemon.
+
+if test -f /etc/default/celeryd; then
+    . /etc/default/celeryd
+fi
+
+export CELERY_LOADER
+
+. /lib/lsb/init-functions
+
+CELERYD_OPTS="$CELERYD_OPTS -f $CELERYD_LOG_FILE -l $CELERYD_LOG_LEVEL"
+
+if [ -n "$2" ]; then
+    CELERYD_OPTS="$CELERYD_OPTS $2"
+fi
+
+# Extra start-stop-daemon options, like user/group.
+if [ -n "$CELERYD_USER" ]; then
+    DAEMON_OPTS="$DAEMON_OPTS --chuid $CELERYD_USER"
+fi
+if [ -n "$CELERYD_GROUP" ]; then
+    DAEMON_OPTS="$DAEMON_OPTS --group $CELERYD_GROUP"
+fi
+
+
+# Are we running from init?
+run_by_init() {
+    ([ "$previous" ] && [ "$runlevel" ]) || [ "$runlevel" = S ]
+}
+
+
+check_dev_null() {
+    if [ ! -c /dev/null ]; then
+	if [ "$1" = log_end_msg ]; then
+	    log_end_msg 1 || true
+	fi
+	if ! run_by_init; then
+	    log_action_msg "/dev/null is not a character device!"
+	fi
+	exit 1
+    fi
+}
+
+
+export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
+if [ ! -z "$VIRTUALENV" ]; then
+    export PATH="$VIRTUALENV/bin:$PATH"
+    CELERYD="$VIRTUALENV/bin/$CELERYD"
+fi
+
+
+if [ -f "$CELERYD" -a ! -x "$CELERYD" ]; then
+    echo "ERROR: $CELERYD is not executable."
+    echo "Please make it executable by doing: chmod +x '$CELERYD'"
+
+    echo "celeryd is disabled"
+    exit
+fi
+
+WORKERS=$CELERYD_NUM_WORKERS
+
+stop_worker () {
+    cmd="start-stop-daemon  --stop --quiet $* --pidfile $CELERYD_PID_FILE"
+    w=`celeryd-multi start $WORKERS --cmd="start-stop-daemon --stop \
+                                        --quiet $* \
+                                        --pidfile $CELERYD_PID_FILE"`
+    for wname in `celeryd-multi names $WORKERS $CELERYD_OPTS`; do
+        log_daemon_msg "Stopping celery task worker" "$wname"
+        stopcmd=`celeryd-multi get "$wname" $WORKERS --cmd="$cmd" $CELERYD_OPTS`
+        if `$stopcmd`; then
+            log_end_msg 0
+        else:
+            log_end_msg 1
+        fi
+    done
+}
+
+start_worker () {
+    check_dev_null
+    cmd="start-stop-daemon --start $DAEMON_OPTS \
+                                    --quiet --oknodo --background \
+                                    --make-pidfile $* \
+                                    --pidfile $CELERYD_PID_FILE \
+                                    --exec $CELERYD --"
+    for wname in `celeryd-multi names $WORKERS $CELERYD_OPTS`; do
+        log_daemon_msg "Starting celery task worker" "$wname"
+        startcmd=`celeryd-multi get "$wname" $WORKERS --cmd="$cmd" $CELERYD_OPTS`
+        if `$startcmd`; then
+            log_end_msg 0
+        else
+            log_end_msg 1
+        fi
+    done
+}
+
+case "$1" in
+  start)
+    start_worker
+    ;;
+  stop)
+    stop_worker --oknodo
+    ;;
+
+  reload|force-reload)
+    echo "Use start+stop"
+    ;;
+
+  restart)
+    stop_worker --retry 30 --oknodo
+    start_worker
+    ;;
+
+  try-restart)
+    log_daemon_msg "Restarting celery task worker server" "celeryd"
+    set +e
+    stop_worker --retry 30
+    RET="$?"
+    set -e
+    case $RET in
+        0)
+		# old daemon stopped
+		check_dev_null log_end_msg
+        start_worker
+		;;
+	    1)
+		# daemon not running
+		log_progress_msg "(not running)"
+		log_end_msg 0
+		;;
+	    *)
+		# failed to stop
+		log_progress_msg "(failed to stop)"
+		log_end_msg 1
+		;;
+	esac
+	;;
+
+  status)
+    pidfiles=`celeryd-multi expand "$CELERYD_PID_FILE" $WORKERS $DAEMON_OPTS`
+    for pidfile in $pidfiles; do
+        status_of_proc -p $pidfile $CELERYD celeryd && exit 0 || exit $?
+    done
+	;;
+  *)
+	log_action_msg "Usage: /etc/init.d/celeryd-multi {start|stop|force-reload|restart|try-restart|status}"
+	exit 1
+esac
+
+exit 0

@@ -73,8 +73,8 @@ def format_opt(opt, value):
     if not value:
         return opt
     if opt[0:2] == "--":
-        return "%s=%s" % (opt, quote(value))
-    return "%s %s" % (opt, quote(value))
+        return "%s=%s" % (opt, value)
+    return "%s %s" % (opt, value)
 
 
 def parse_ns_range(ns, ranges=False):
@@ -87,6 +87,17 @@ def parse_ns_range(ns, ranges=False):
         else:
             ret.append(space)
     return ret
+
+
+def abbreviations(map):
+
+    def expand(S):
+        ret = S
+        for short, long in map.items():
+            ret = ret.replace(short, long)
+        return ret
+
+    return expand
 
 
 def multi_args(p, cmd="celeryd", prefix="", suffix=""):
@@ -108,29 +119,49 @@ def multi_args(p, cmd="celeryd", prefix="", suffix=""):
                 p.namespaces[subns].update(ns_opts)
         p.namespaces.pop(ns_name)
 
-    cels = []
     for name in names:
         this_name = options["-n"] = prefix + name + suffix
-        this_cmd = cmd.replace("%n", this_name)
-        line = this_cmd + " " + " ".join(format_opt(opt, value)
-                for opt, value in p.optmerge(name, options).items())
-        cels.append((this_name, line))
+        expand = abbreviations({"%n": this_name,
+                                "%p": prefix + name})
+        line = expand(cmd) + " " + " ".join(
+                format_opt(opt, expand(value))
+                    for opt, value in p.optmerge(name, options).items())
+        yield this_name, line, expand
 
-    return cels
+
 
 
 def names(argv, cmd):
     p = NamespacedOptionParser(argv)
     print("\n".join(hostname
-                        for hostname, _ in multi_args(p, cmd)))
+                        for hostname, _, _ in multi_args(p, cmd)))
+
+def get(argv, cmd):
+    wanted = argv[0]
+    p = NamespacedOptionParser(argv[1:])
+    for name, worker, _ in multi_args(p, cmd):
+        if name == wanted:
+            print(worker)
+            return
+
 
 def start(argv, cmd):
     p = NamespacedOptionParser(argv)
     print("\n".join(worker
-                        for _, worker in multi_args(p, cmd)))
+                        for _, worker, _ in multi_args(p, cmd)))
+
+def expand(argv, cmd=None):
+    template = argv[0]
+    p = NamespacedOptionParser(argv[1:])
+    for _, _, expander in multi_args(p, cmd):
+        print(expander(template))
 
 
-COMMANDS = {"start": start, "names": names}
+
+COMMANDS = {"start": start,
+            "names": names,
+            "expand": expand,
+            "get": get}
 
 
 def celeryd_multi(argv, cmd="celeryd"):
