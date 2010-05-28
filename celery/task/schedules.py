@@ -1,4 +1,6 @@
 from datetime import datetime
+from collections import Iterable
+from pyparsing import Word, Literal, ZeroOrMore, Optional, Group, StringEnd
 
 from celery.utils.timeutils import timedelta_seconds, weekday, remaining
 
@@ -26,6 +28,86 @@ class schedule(object):
         if rem == 0:
             return True, timedelta_seconds(self.run_every)
         return False, rem
+
+
+class crontab_parser(object):
+    """Parser for crontab expressions. Any expression of the form 'groups' (see
+    BNF grammar below) is accepted and expanded to a set of numbers.  These
+    numbers represent the units of time that the crontab needs to run on.
+
+        digit   :: '0'..'9'
+        number  :: digit+
+        steps   :: number
+        range   :: number ( '-' number ) ?
+        numspec :: '*' | range
+        expr    :: numspec ( '/' steps ) ?
+        groups  :: expr ( ',' expr ) *
+
+    The parser is a general purpose one, useful for parsing hours, minutes and
+    day_of_week expressions.  Example usage::
+
+        minutes = crontab_parser(60).parse("*/15")  # yields [0,15,30,45]
+        hours = crontab_parser(24).parse("*/4")     # yields [0,4,8,12,16,20]
+        day_of_week = crontab_parser(7).parse("*")  # yields [0,1,2,3,4,5,6]
+
+    """
+
+    def __init__(self, max_=60):
+        # define the grammar structure
+        digits = "0123456789"
+        star = Literal('*')
+        number = Word(digits)
+        steps = number
+        range_ = number + Optional(Literal('-') + number)
+        numspec = star | range_
+        expr = Group(numspec) + Optional(Literal('/') + steps)
+        extra_groups = ZeroOrMore(Literal(',') + expr)
+        groups = expr + extra_groups + StringEnd()
+
+        # define parse actions
+        star.setParseAction(self._expand_star)
+        number.setParseAction(self._expand_number)
+        range_.setParseAction(self._expand_range)
+        expr.setParseAction(self._filter_steps)
+        extra_groups.setParseAction(self._ignore_comma)
+        groups.setParseAction(self._join_to_set)
+
+        self.max_ = max_
+        self.parser = groups
+
+    @staticmethod
+    def _expand_number(toks):
+        return [int(toks[0])]
+
+    @staticmethod
+    def _expand_range(toks):
+        if len(toks) > 1:
+            return range(toks[0], int(toks[2])+1)
+        else:
+            return toks[0]
+
+    def _expand_star(self, toks):
+        return range(self.max_)
+
+    @staticmethod
+    def _filter_steps(toks):
+        numbers = toks[0]
+        if len(toks) > 1:
+            steps = toks[2]
+            return [n for n in numbers if n % steps == 0]
+        else:
+            return numbers
+
+    @staticmethod
+    def _ignore_comma(toks):
+        return filter(lambda x: x != ',', toks)
+
+    @staticmethod
+    def _join_to_set(toks):
+        return set(toks.asList())
+
+    def parse(self, cronspec):
+        return self.parser.parseString(cronspec).pop()
 
 
 class crontab(schedule):
@@ -56,15 +138,69 @@ class crontab(schedule):
 
     """
 
-    def __init__(self, minute=None, hour=None, day_of_week=None,
-            nowfun=datetime.now):
-        self.hour = hour                  # (0 - 23)
-        self.minute = minute              # (0 - 59)
-        self.day_of_week = day_of_week    # (0 - 6) (Sunday=0)
-        self.nowfun = nowfun
+    @staticmethod
+    def _expand_cronspec(cronspec, max_):
+        """Takes the given cronspec argument in one of the forms::
 
-        if isinstance(self.day_of_week, basestring):
-            self.day_of_week = weekday(self.day_of_week)
+            int         (like 7)
+            basestring  (like '3-5,*/15', '*', or 'monday')
+            set         (like set([0,15,30,45]))
+            list        (like [8-17])
+
+        And convert it to an (expanded) set representing all time unit
+        values on which the crontab triggers.  Only in case of the base
+        type being 'basestring', parsing occurs.  (It is fast and
+        happens only once for each crontab instance, so there is no
+        significant performance overhead involved.)
+
+        For the other base types, merely Python type conversions happen.
+
+        The argument `max_` is needed to determine the expansion of '*'.
+
+        """
+        if isinstance(cronspec, int):
+            result = set([cronspec])
+        elif isinstance(cronspec, basestring):
+            result = crontab_parser(max_).parse(cronspec)
+        elif isinstance(cronspec, set):
+            result = cronspec
+        elif isinstance(cronspec, Iterable):
+            result = set(cronspec)
+        else:
+            raise TypeError("Argument cronspec needs to be of any of the " + \
+                    "following types: int, basestring, set, or Iterable. " + \
+                    "'%s' was given." % type(cronspec))
+
+        # assure the result does not exceed the max
+        for number in result:
+            if number >= max_:
+                raise ValueError("Invalid crontab pattern. Valid " + \
+                "range is 0-%d. '%d' was found." % (max_, number))
+
+        return result
+
+    def __init__(self, minute='*', hour='*', day_of_week='*',
+            nowfun=datetime.now):
+
+        # ---------------------------------------------------------------------
+        # TODO: Isolated HACK
+        aliases = {'sun': '0', 'sunday': '0',  \
+                    'mon': '1', 'monday': '1',  \
+                    'tue': '2', 'tuesday': '2', \
+                    'wed': '3', 'wednesday': '3', \
+                    'thu': '4', 'thursday': '4', \
+                    'fri': '5', 'friday': '5', \
+                    'sat': '6', 'saturday': '6'}
+        for key in sorted(aliases, lambda x, y: cmp(len(x), len(y)),
+                      reverse=True):
+            val = aliases[key]
+            day_of_week = day_of_week.replace(key,val)
+        # ---------------------------------------------------------------------
+
+        self.hour = self._expand_cronspec(hour, 24)
+        self.minute = self._expand_cronspec(minute, 60)
+        self.day_of_week = self._expand_cronspec(day_of_week, 7)
+        self.nowfun = nowfun
 
     def remaining_estimate(self, last_run_at):
         # remaining_estimate controls the frequency of scheduler
@@ -76,18 +212,11 @@ class crontab(schedule):
         last = now - last_run_at
         due, when = False, 1
         if last.days > 0 or last.seconds > 60:
-            if self.day_of_week in (None, now.isoweekday()):
+            if now.isoweekday() in self.day_of_week:
                 due, when = self._check_hour_minute(now)
         return due, when
 
     def _check_hour_minute(self, now):
-        due, when = False, 1
-        if self.hour is None and self.minute is None:
-            due, when = True, 1
-        if self.hour is None and self.minute == now.minute:
-            due, when = True, 1
-        if self.hour == now.hour and self.minute is None:
-            due, when = True, 1
-        if self.hour == now.hour and self.minute == now.minute:
-            due, when = True, 1
+        due = now.hour in self.hour and now.minute in self.minute
+        when = 1
         return due, when

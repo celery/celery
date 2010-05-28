@@ -2,12 +2,14 @@ import unittest2 as unittest
 from StringIO import StringIO
 from datetime import datetime, timedelta
 
+from pyparsing import ParseException
+
 from billiard.utils.functional import wraps
 
 from celery import conf
 from celery import task
 from celery import messaging
-from celery.task.schedules import crontab
+from celery.task.schedules import crontab, crontab_parser
 from celery.utils import timeutils
 from celery.utils import gen_unique_id
 from celery.result import EagerResult
@@ -487,6 +489,10 @@ class EveryMinutePeriodic(task.PeriodicTask):
     run_every = crontab()
 
 
+class QuarterlyPeriodic(task.PeriodicTask):
+    run_every = crontab(minute="*/15")
+
+
 class HourlyPeriodic(task.PeriodicTask):
     run_every = crontab(minute=30)
 
@@ -517,7 +523,86 @@ def patch_crontab_nowfun(cls, retval):
     return create_patcher
 
 
-class test_crontab(unittest.TestCase):
+class test_crontab_parser(unittest.TestCase):
+
+    def test_parse_star(self):
+        self.assertEquals(crontab_parser(24).parse('*'), set(range(24)))
+        self.assertEquals(crontab_parser(60).parse('*'), set(range(60)))
+        self.assertEquals(crontab_parser(7).parse('*'), set(range(7)))
+
+    def test_parse_range(self):
+        self.assertEquals(crontab_parser(60).parse('1-10'), set(range(1,10+1)))
+        self.assertEquals(crontab_parser(24).parse('0-20'), set(range(0,20+1)))
+        self.assertEquals(crontab_parser().parse('2-10'), set(range(2,10+1)))
+
+    def test_parse_groups(self):
+        self.assertEquals(crontab_parser().parse('1,2,3,4'), set([1,2,3,4]))
+        self.assertEquals(crontab_parser().parse('0,15,30,45'), set([0,15,30,45]))
+
+    def test_parse_steps(self):
+        self.assertEquals(crontab_parser(8).parse('*/2'), set([0,2,4,6]))
+        self.assertEquals(crontab_parser().parse('*/2'), set([ i*2 for i in xrange(30) ]))
+        self.assertEquals(crontab_parser().parse('*/3'), set([ i*3 for i in xrange(20) ]))
+
+    def test_parse_composite(self):
+        self.assertEquals(crontab_parser(8).parse('*/2'), set([0,2,4,6]))
+        self.assertEquals(crontab_parser().parse('2-9/5'), set([5]))
+        self.assertEquals(crontab_parser().parse('2-10/5'), set([5,10]))
+        self.assertEquals(crontab_parser().parse('2-11/5,3'), set([3,5,10]))
+        self.assertEquals(crontab_parser().parse('2-4/3,*/5,0-21/4'), set([0,3,4,5,8,10,12,15,16,20,25,30,35,40,45,50,55]))
+
+    def test_parse_errors_on_empty_string(self):
+        self.assertRaises(ParseException, crontab_parser(60).parse, '')
+
+    def test_parse_errors_on_empty_group(self):
+        self.assertRaises(ParseException, crontab_parser(60).parse, '1,,2')
+
+    def test_parse_errors_on_empty_steps(self):
+        self.assertRaises(ParseException, crontab_parser(60).parse, '*/')
+
+    def test_parse_errors_on_negative_number(self):
+        self.assertRaises(ParseException, crontab_parser(60).parse, '-20')
+
+
+class test_crontab_is_due(unittest.TestCase):
+
+    def test_default_crontab_spec(self):
+        c = crontab()
+        self.assertEquals(c.minute, set(range(60)))
+        self.assertEquals(c.hour, set(range(24)))
+        self.assertEquals(c.day_of_week, set(range(7)))
+
+    def test_simple_crontab_spec(self):
+        c = crontab(minute=30)
+        self.assertEquals(c.minute, set([30]))
+        self.assertEquals(c.hour, set(range(24)))
+        self.assertEquals(c.day_of_week, set(range(7)))
+
+    def test_crontab_spec_minute_formats(self):
+        c = crontab(minute=30)
+        self.assertEquals(c.minute, set([30]))
+        c = crontab(minute='30')
+        self.assertEquals(c.minute, set([30]))
+        c = crontab(minute=(30,40,50))
+        self.assertEquals(c.minute, set([30,40,50]))
+        c = crontab(minute=set([30,40,50]))
+        self.assertEquals(c.minute, set([30,40,50]))
+
+    def test_crontab_spec_invalid_minute(self):
+        self.assertRaises(ValueError, crontab, minute=60)
+        self.assertRaises(ValueError, crontab, minute='0-100')
+
+    def test_crontab_spec_hour_formats(self):
+        c = crontab(hour=6)
+        self.assertEquals(c.hour, set([6]))
+        c = crontab(hour='5')
+        self.assertEquals(c.hour, set([5]))
+        c = crontab(hour=(4,8,12))
+        self.assertEquals(c.hour, set([4,8,12]))
+
+    def test_crontab_spec_invalid_hour(self):
+        self.assertRaises(ValueError, crontab, hour=24)
+        self.assertRaises(ValueError, crontab, hour='0-30')
 
     def test_every_minute_execution_is_due(self):
         last_ran = datetime.now() - timedelta(seconds=61)
@@ -540,6 +625,30 @@ class test_crontab(unittest.TestCase):
     @patch_crontab_nowfun(HourlyPeriodic, datetime(2010, 5, 10, 10, 29))
     def test_every_hour_execution_is_not_due(self):
         due, remaining = HourlyPeriodic().is_due(datetime(2010, 5, 10, 6, 30))
+        self.assertFalse(due)
+        self.assertEquals(remaining, 1)
+
+    @patch_crontab_nowfun(QuarterlyPeriodic, datetime(2010, 5, 10, 10, 15))
+    def test_first_quarter_execution_is_due(self):
+        due, remaining = QuarterlyPeriodic().is_due(datetime(2010, 5, 10, 6, 30))
+        self.assertTrue(due)
+        self.assertEquals(remaining, 1)
+
+    @patch_crontab_nowfun(QuarterlyPeriodic, datetime(2010, 5, 10, 10, 30))
+    def test_second_quarter_execution_is_due(self):
+        due, remaining = QuarterlyPeriodic().is_due(datetime(2010, 5, 10, 6, 30))
+        self.assertTrue(due)
+        self.assertEquals(remaining, 1)
+
+    @patch_crontab_nowfun(QuarterlyPeriodic, datetime(2010, 5, 10, 10, 14))
+    def test_first_quarter_execution_is_not_due(self):
+        due, remaining = QuarterlyPeriodic().is_due(datetime(2010, 5, 10, 6, 30))
+        self.assertFalse(due)
+        self.assertEquals(remaining, 1)
+
+    @patch_crontab_nowfun(QuarterlyPeriodic, datetime(2010, 5, 10, 10, 29))
+    def test_second_quarter_execution_is_not_due(self):
+        due, remaining = QuarterlyPeriodic().is_due(datetime(2010, 5, 10, 6, 30))
         self.assertFalse(due)
         self.assertEquals(remaining, 1)
 
