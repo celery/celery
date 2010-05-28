@@ -2,6 +2,7 @@ import logging
 import warnings
 from datetime import timedelta
 
+from celery import routes
 from celery.loaders import load_settings
 
 DEFAULT_PROCESS_LOG_FMT = """
@@ -32,6 +33,7 @@ _DEFAULTS = {
     "CELERYD_TASK_TIME_LIMIT": None,
     "CELERYD_TASK_SOFT_TIME_LIMIT": None,
     "CELERYD_MAX_TASKS_PER_CHILD": None,
+    "CELERY_ROUTES": None,
     "CELERY_DEFAULT_ROUTING_KEY": "celery",
     "CELERY_DEFAULT_QUEUE": "celery",
     "CELERY_DEFAULT_EXCHANGE": "celery",
@@ -156,6 +158,22 @@ QUEUES = _get("CELERY_QUEUES") or {DEFAULT_QUEUE: {
                                        "exchange_type": DEFAULT_EXCHANGE_TYPE,
                                        "binding_key": DEFAULT_ROUTING_KEY}}
 
+# CELERY_ROUTES initialization
+"""
+
+    >>> CELERY_ROUTES = {"celery.ping": "default",
+                          "mytasks.add": "cpu-bound",
+                          "video.encode": {
+                            "queue": "video",
+                            "exchange": "media"
+                            "routing_key": "media.video.encode"}}
+
+    >>> CELERY_ROUTES = ("myapp.tasks.Router",
+                         {"celery.ping": "default})
+
+"""
+
+ROUTES = routes.prepare(_get("CELERY_ROUTES") or [])
 # :--- Broadcast queue settings                     <-   --   --- - ----- -- #
 
 BROADCAST_QUEUE = _get("CELERY_BROADCAST_QUEUE")

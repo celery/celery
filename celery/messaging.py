@@ -14,6 +14,7 @@ from billiard.utils.functional import wraps
 from celery import conf
 from celery import signals
 from celery.utils import gen_unique_id, mitemgetter, noop
+from celery.routes import lookup_route, expand_destination
 from celery.loaders import load_settings
 
 
@@ -78,7 +79,17 @@ class TaskPublisher(Publisher):
         if taskset_id:
             message_data["taskset"] = taskset_id
 
-        self.send(message_data, **extract_msg_options(kwargs))
+        route = {}
+        if conf.ROUTES:
+            route = lookup_route(conf.ROUTES, task_name, task_id,
+                                 task_args, task_kwargs)
+        if route:
+            dest = expand_destination(route, conf.get_routing_table())
+            msg_options = dict(extract_msg_options(kwargs), **dest)
+        else:
+            msg_options = extract_msg_options(kwargs)
+
+        self.send(message_data, **msg_options)
         signals.task_sent.send(sender=task_name, **message_data)
 
         return task_id
