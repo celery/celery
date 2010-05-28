@@ -214,7 +214,8 @@ class Worker(object):
         print("celery@%s has started." % self.hostname)
 
     def init_queues(self):
-        conf.QUEUES = dict((queue, options)
+        if self.queues:
+            conf.QUEUES = dict((queue, options)
                                 for queue, options in conf.QUEUES.items()
                                     if queue in self.queues)
 
