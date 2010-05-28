@@ -156,12 +156,71 @@ def expand(argv, cmd=None):
     for _, _, expander in multi_args(p, cmd):
         print(expander(template))
 
+def help(argv, cmd=None):
+    print("""Some examples:
+
+    # Advanced example with 10 workers:
+    #   * Three of the workers processes the images and video queue
+    #   * Two of the workers processes the data queue with loglevel DEBUG
+    #   * the rest processes the default' queue.
+    $ celeryd-multi start 10 -l INFO -Q:1-3 images,video -Q:4,5:data
+        -Q default -L:4,5 DEBUG
+
+    # get commands to start 10 workers, with 3 processes each
+    $ celeryd-multi start 3 -c 3
+    celeryd -n celeryd1.myhost -c 3
+    celeryd -n celeryd2.myhost -c 3
+    celeryd- n celeryd3.myhost -c 3
+
+    # start 3 named workers
+    $ celeryd-multi start image video data -c 3
+    celeryd -n image.myhost -c 3
+    celeryd -n video.myhost -c 3
+    celeryd -n data.myhost -c 3
+
+    # specify custom hostname
+    $ celeryd-multi start 2 -n worker.example.com -c 3
+    celeryd -n celeryd1.worker.example.com -c 3
+    celeryd -n celeryd2.worker.example.com -c 3
+
+    # Additionl options are added to each celeryd',
+    # but you can also modify the options for ranges of or single workers
+
+    # 3 workers: Two with 3 processes, and one with 10 processes.
+    $ celeryd-multi start 3 -c 3 -c:1 10
+    celeryd -n celeryd1.myhost -c 10
+    celeryd -n celeryd2.myhost -c 3
+    celeryd -n celeryd3.myhost -c 3
+
+    # can also specify options for named workers
+    $ celeryd-multi start image video data -c 3 -c:image 10
+    celeryd -n image.myhost -c 10
+    celeryd -n video.myhost -c 3
+    celeryd -n data.myhost -c 3
+
+    # ranges and lists of workers in options is also allowed:
+    # (-c:1-3 can also be written as -c:1,2,3)
+    $ celeryd-multi start 5 -c 3  -c:1-3 10
+    celeryd-multi -n celeryd1.myhost -c 10
+    celeryd-multi -n celeryd2.myhost -c 10
+    celeryd-multi -n celeryd3.myhost -c 10
+    celeryd-multi -n celeryd4.myhost -c 3
+    celeryd-multi -n celeryd5.myhost -c 3
+
+    # lists also works with named workers
+    $ celeryd-multi start foo bar baz xuzzy -c 3 -c:foo,bar,baz 10
+    celeryd-multi -n foo.myhost -c 10
+    celeryd-multi -n bar.myhost -c 10
+    celeryd-multi -n baz.myhost -c 10
+    celeryd-multi -n xuzzy.myhost -c 3
+""")
 
 
 COMMANDS = {"start": start,
             "names": names,
             "expand": expand,
-            "get": get}
+            "get": get,
+            "help": help}
 
 
 def celeryd_multi(argv, cmd="celeryd"):
