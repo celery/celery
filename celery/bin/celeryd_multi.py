@@ -100,7 +100,7 @@ def abbreviations(map):
     return expand
 
 
-def multi_args(p, cmd="celeryd", prefix="", suffix=""):
+def multi_args(p, cmd="celeryd", cmd_suffix="", prefix="", suffix=""):
     names = p.values
     options = dict(p.options)
     ranges = len(names) == 1
@@ -108,6 +108,7 @@ def multi_args(p, cmd="celeryd", prefix="", suffix=""):
         names = map(str, range(1, int(names[0]) + 1))
         prefix = "celery"
     cmd = options.pop("--cmd", cmd)
+    cmd_suffix = options.pop("--cmd-suffix", cmd_suffix)
     hostname = options.pop("--hostname",
                    options.pop("-n", socket.gethostname()))
     prefix = options.pop("--prefix", prefix) or ""
@@ -125,7 +126,8 @@ def multi_args(p, cmd="celeryd", prefix="", suffix=""):
                                 "%n": name})
         line = expand(cmd) + " " + " ".join(
                 format_opt(opt, expand(value))
-                    for opt, value in p.optmerge(name, options).items())
+                    for opt, value in p.optmerge(name, options).items()) + \
+               " " + expand(cmd_suffix)
         yield this_name, line, expand
 
 
