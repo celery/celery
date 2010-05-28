@@ -108,7 +108,7 @@ def multi_args(p, cmd="celeryd", append="", prefix="", suffix=""):
         names = map(str, range(1, int(names[0]) + 1))
         prefix = "celery"
     cmd = options.pop("--cmd", cmd)
-    append = options.pop("--append", append) 
+    append = options.pop("--append", append)
     hostname = options.pop("--hostname",
                    options.pop("-n", socket.gethostname()))
     prefix = options.pop("--prefix", prefix) or ""
@@ -131,12 +131,11 @@ def multi_args(p, cmd="celeryd", append="", prefix="", suffix=""):
         yield this_name, line, expand
 
 
-
-
 def names(argv, cmd):
     p = NamespacedOptionParser(argv)
     print("\n".join(hostname
                         for hostname, _, _ in multi_args(p, cmd)))
+
 
 def get(argv, cmd):
     wanted = argv[0]
@@ -152,11 +151,13 @@ def start(argv, cmd):
     print("\n".join(worker
                         for _, worker, _ in multi_args(p, cmd)))
 
+
 def expand(argv, cmd=None):
     template = argv[0]
     p = NamespacedOptionParser(argv[1:])
     for _, _, expander in multi_args(p, cmd):
         print(expander(template))
+
 
 def help(argv, cmd=None):
     print("""Some examples:
@@ -217,7 +218,6 @@ def help(argv, cmd=None):
     celeryd -n xuzzy.myhost -c 3
 """)
 
-
 COMMANDS = {"start": start,
             "names": names,
             "expand": expand,
@@ -225,7 +225,9 @@ COMMANDS = {"start": start,
             "help": help}
 
 def usage():
-    print("Please use one of the following commands: %s" % ", ".join(COMMANDS.keys()))
+    print("Please use one of the following commands: %s" % (
+        ", ".join(COMMANDS.keys())))
+
 
 def celeryd_multi(argv, cmd="celeryd"):
     if len(argv) == 0:
@@ -238,6 +240,7 @@ def celeryd_multi(argv, cmd="celeryd"):
         print("Invalid command: %s" % argv[0])
         usage()
         sys.exit(1)
+
 
 def main():
     celeryd_multi(sys.argv[1:])

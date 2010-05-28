@@ -120,8 +120,6 @@ class Beat(object):
         platform.install_signal_handler("SIGINT", _sync)
 
 
-
-
 def parse_options(arguments):
     """Parse the available options to ``celeryd``."""
     parser = optparse.OptionParser(option_list=OPTION_LIST)

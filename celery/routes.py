@@ -40,7 +40,6 @@ def prepare(routes):
     return map(expand_route, routes)
 
 
-
 def firstmatcher(method):
     """With a list of instances, find the first instance that returns a
     value for the given method."""

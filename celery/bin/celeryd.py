@@ -58,7 +58,7 @@
 
 .. cmdoption:: --maxtasksperchild
 
-    Maximum number of tasks a pool worker can execute before it's 
+    Maximum number of tasks a pool worker can execute before it's
     terminated and replaced by a new worker.
 
 """

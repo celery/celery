@@ -210,5 +210,6 @@ def _init_routing_table(queues):
 
     return dict((queue, _defaults(opts)) for queue, opts in queues.items())
 
+
 def get_routing_table():
     return _init_routing_table(QUEUES)

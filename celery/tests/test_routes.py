@@ -110,5 +110,3 @@ class test_lookup_disabled(unittest.TestCase):
         for i, (router, state) in enumerate((R1, R2, R3, R4, R5, R6)):
             self.assertEqual(routes.lookup_disabled(router, "celery.ping"),
                              state, "ok %d" % i)
-
-
