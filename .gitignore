@@ -4,6 +4,7 @@
 .*.sw[po]
 dist/
 *.egg-info
+*.egg/
 doc/__build/*
 build/
 .build/
