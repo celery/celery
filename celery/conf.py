@@ -157,22 +157,6 @@ QUEUES = _get("CELERY_QUEUES") or {DEFAULT_QUEUE: {
                                        "exchange": DEFAULT_EXCHANGE,
                                        "exchange_type": DEFAULT_EXCHANGE_TYPE,
                                        "binding_key": DEFAULT_ROUTING_KEY}}
-
-# CELERY_ROUTES initialization
-"""
-
-    >>> CELERY_ROUTES = {"celery.ping": "default",
-                          "mytasks.add": "cpu-bound",
-                          "video.encode": {
-                            "queue": "video",
-                            "exchange": "media"
-                            "routing_key": "media.video.encode"}}
-
-    >>> CELERY_ROUTES = ("myapp.tasks.Router",
-                         {"celery.ping": "default})
-
-"""
-
 ROUTES = routes.prepare(_get("CELERY_ROUTES") or [])
 # :--- Broadcast queue settings                     <-   --   --- - ----- -- #
 
