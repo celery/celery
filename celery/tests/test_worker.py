@@ -1,5 +1,5 @@
 import unittest2 as unittest
-from Queue import Queue, Empty
+from Queue import Empty
 from datetime import datetime, timedelta
 from multiprocessing import get_logger
 
@@ -10,8 +10,9 @@ from billiard.serialization import pickle
 from celery import conf
 from celery.utils import gen_unique_id
 from celery.worker import WorkController
-from celery.worker.listener import CarrotListener, RUN
 from celery.worker.job import TaskWrapper
+from celery.worker.buckets import FastQueue
+from celery.worker.listener import CarrotListener, RUN
 from celery.worker.scheduler import Scheduler
 from celery.decorators import task as task_dec
 from celery.decorators import periodic_task as periodic_task_dec
@@ -125,7 +126,7 @@ def create_message(backend, **data):
 class TestCarrotListener(unittest.TestCase):
 
     def setUp(self):
-        self.ready_queue = Queue()
+        self.ready_queue = FastQueue()
         self.eta_schedule = Scheduler(self.ready_queue)
         self.logger = get_logger()
         self.logger.setLevel(0)
@@ -139,7 +140,7 @@ class TestCarrotListener(unittest.TestCase):
             def drain_events(self):
                 return "draining"
 
-        l.connection = PlaceHolder()
+        l.connection = MockConnection()
         l.connection.connection = MockConnection()
 
         it = l._mainloop()
@@ -266,7 +267,7 @@ class TestCarrotListener(unittest.TestCase):
         self.assertTrue(found)
 
     def test_revoke(self):
-        ready_queue = Queue()
+        ready_queue = FastQueue()
         l = CarrotListener(ready_queue, self.eta_schedule, self.logger,
                            send_events=False)
         backend = MockBackend()

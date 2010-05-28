@@ -1,4 +1,5 @@
 from __future__ import generators
+
 import socket
 import warnings
 from datetime import datetime
@@ -56,7 +57,8 @@ class CarrotListener(object):
         self.logger = logger
         self.hostname = hostname or socket.gethostname()
         self.control_dispatch = ControlDispatch(logger=logger,
-                                                hostname=self.hostname)
+                                                hostname=self.hostname,
+                                                listener=self)
         self.prefetch_count = SharedCounter(initial_prefetch_count)
         self.event_dispatcher = None
         self.heart = None
@@ -111,8 +113,8 @@ class CarrotListener(object):
             return task.on_ack()
 
         self.event_dispatcher.send("task-received", uuid=task.task_id,
-                name=task.task_name, args=task.args, kwargs=task.kwargs,
-                retries=task.retries, eta=eta)
+                name=task.task_name, args=repr(task.args),
+                kwargs=repr(task.kwargs), retries=task.retries, eta=eta)
 
         if eta:
             if not isinstance(eta, datetime):
@@ -201,12 +203,8 @@ class CarrotListener(object):
                 "CarrotListener: Re-establishing connection to the broker...")
         self.stop_consumers()
 
-        try:
-            # TaskBucket supports clear directly.
-            self.ready_queue.clear()
-        except AttributeError:
-            # Use the underlying deque of regular Queue
-            self.ready_queue.queue.clear()
+        # Clear internal queues.
+        self.ready_queue.clear()
         self.eta_schedule.clear()
 
         self.connection = self._open_connection()
@@ -225,7 +223,7 @@ class CarrotListener(object):
 
     def _mainloop(self, **kwargs):
         while 1:
-            yield self.connection.connection.drain_events()
+            yield self.connection.drain_events()
 
     def _detect_wait_method(self):
         if hasattr(self.connection.connection, "drain_events"):

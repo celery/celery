@@ -90,14 +90,14 @@ def bump(options):
     ("verbose", "V", "Make more noise"),
 ])
 def test(options):
-    cmd = "python manage.py test"
+    cmd = "CELERY_LOADER=default PYTHONPATH=tests nosetests"
     if getattr(options, "coverage", False):
-        cmd += " --coverage"
+        cmd += " --with-coverage3"
     if getattr(options, "quick", False):
-        cmd = "env QUICKTEST=1 SKIP_RLIMITS=1 %s" % cmd
+        cmd = "QUICKTEST=1 SKIP_RLIMITS=1 %s" % cmd
     if getattr(options, "verbose", False):
         cmd += " --verbosity=2"
-    sh(cmd, cwd="tests")
+    sh(cmd)
 
 
 @task

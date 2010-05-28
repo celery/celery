@@ -11,6 +11,5 @@
     introduction
     broker-installation
     first-steps-with-celery
-    first-steps-with-django
     periodic-tasks
     resources

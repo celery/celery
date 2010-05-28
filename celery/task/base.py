@@ -1,13 +1,12 @@
 import sys
-import warnings
-from datetime import datetime, timedelta
-from Queue import Queue
+from datetime import timedelta
 
 from billiard.serialization import pickle
 
 from celery import conf
 from celery.log import setup_task_logger
-from celery.utils import gen_unique_id, padlist, timedelta_seconds
+from celery.utils import gen_unique_id, padlist
+from celery.utils.timeutils import timedelta_seconds
 from celery.result import BaseAsyncResult, TaskSetResult, EagerResult
 from celery.execute import apply_async, apply
 from celery.registry import tasks
@@ -15,6 +14,8 @@ from celery.backends import default_backend
 from celery.messaging import TaskPublisher, TaskConsumer
 from celery.messaging import establish_connection as _establish_connection
 from celery.exceptions import MaxRetriesExceededError, RetryTaskError
+
+from celery.task.schedules import schedule
 
 
 class TaskType(type):
@@ -64,6 +65,9 @@ class Task(object):
     The :meth:`run` method can take use of the default keyword arguments,
     as listed in the :meth:`run` documentation.
 
+    The resulting class is callable, which if called will apply the
+    :meth:`run` method.
+
     .. attribute:: name
         Name of the task.
 
@@ -106,6 +110,7 @@ class Task(object):
         can't be routed to a worker immediately.
 
     .. attribute:: priority:
+
         The message priority. A number from ``0`` to ``9``, where ``0`` is the
         highest. Note that RabbitMQ doesn't support priorities yet.
 
@@ -124,12 +129,6 @@ class Task(object):
         Set the rate limit for this task type, Examples: ``None`` (no rate
         limit), ``"100/s"`` (hundred tasks a second), ``"100/m"`` (hundred
         tasks a minute), ``"100/h"`` (hundred tasks an hour)
-
-    .. attribute:: rate_limit_queue_type
-
-        Type of queue used by the rate limiter for this kind of tasks.
-        Default is a :class:`Queue.Queue`, but you can change this to
-        a :class:`Queue.LifoQueue` or an invention of your own.
 
     .. attribute:: ignore_result
 
@@ -166,8 +165,18 @@ class Task(object):
         The global default can be overridden by the ``CELERY_TRACK_STARTED``
         setting.
 
-    The resulting class is callable, which if called will apply the
-    :meth:`run` method.
+    .. attribute:: acks_late
+
+        If set to ``True`` messages for this task will be acknowledged
+        **after** the task has been executed, not *just before*, which is
+        the default behavior.
+
+        Note that this means the task may be executed twice if the worker
+        crashes in the middle of execution, which may be acceptable for some
+        applications.
+
+        The global default can be overriden by the ``CELERY_ACKS_LATE``
+        setting.
 
     """
     __metaclass__ = TaskType
@@ -187,11 +196,11 @@ class Task(object):
     default_retry_delay = 3 * 60
     serializer = conf.TASK_SERIALIZER
     rate_limit = conf.DEFAULT_RATE_LIMIT
-    rate_limit_queue_type = Queue
     backend = default_backend
     exchange_type = conf.DEFAULT_EXCHANGE_TYPE
     delivery_mode = conf.DEFAULT_DELIVERY_MODE
     track_started = conf.TRACK_STARTED
+    acks_late = conf.ACKS_LATE
 
     MaxRetriesExceededError = MaxRetriesExceededError
 
@@ -403,7 +412,7 @@ class Task(object):
         """
         return BaseAsyncResult(task_id, backend=self.backend)
 
-    def on_retry(self, exc, task_id, args, kwargs):
+    def on_retry(self, exc, task_id, args, kwargs, einfo=None):
         """Retry handler.
 
         This is run by the worker when the task is to be retried.
@@ -413,12 +422,32 @@ class Task(object):
         :param args: Original arguments for the retried task.
         :param kwargs: Original keyword arguments for the retried task.
 
+        :keyword einfo: :class:`celery.datastructures.ExceptionInfo` instance,
+           containing the traceback.
+
         The return value of this handler is ignored.
 
         """
         pass
 
-    def on_failure(self, exc, task_id, args, kwargs):
+    def after_return(self, status, retval, task_id, args, kwargs, einfo=None):
+        """Handler called after the task returns.
+
+        :param status: Current task state.
+        :param retval: Task return value/exception.
+        :param task_id: Unique id of the task.
+        :param args: Original arguments for the task that failed.
+        :param kwargs: Original keyword arguments for the task that failed.
+
+        :keyword einfo: :class:`celery.datastructures.ExceptionInfo` instance,
+           containing the traceback (if any).
+
+        The return value of this handler is ignored.
+
+        """
+        pass
+
+    def on_failure(self, exc, task_id, args, kwargs, einfo=None):
         """Error handler.
 
         This is run by the worker when the task fails.
@@ -427,6 +456,9 @@ class Task(object):
         :param task_id: Unique id of the failed task.
         :param args: Original arguments for the task that failed.
         :param kwargs: Original keyword arguments for the task that failed.
+
+        :keyword einfo: :class:`celery.datastructures.ExceptionInfo` instance,
+           containing the traceback.
 
         The return value of this handler is ignored.
 
@@ -553,13 +585,6 @@ class TaskSet(object):
         self.arguments = args
         self.total = len(args)
 
-    def run(self, *args, **kwargs):
-        """Deprecated alias to :meth:`apply_async`"""
-        warnings.warn(DeprecationWarning(
-            "TaskSet.run will be deprecated in favor of TaskSet.apply_async "
-            "in celery v1.2.0"))
-        return self.apply_async(*args, **kwargs)
-
     def apply_async(self, connect_timeout=conf.BROKER_CONNECTION_TIMEOUT):
         """Run all tasks in the taskset.
 
@@ -654,8 +679,8 @@ class PeriodicTask(Task):
     .. attribute:: run_every
 
         *REQUIRED* Defines how often the task is run (its interval),
-        it can be either a :class:`datetime.timedelta` object or an
-        integer specifying the time in seconds.
+        it can be a :class:`datetime.timedelta` object, a :class:`crontab`
+        object or an integer specifying the time in seconds.
 
     .. attribute:: relative
 
@@ -670,12 +695,36 @@ class PeriodicTask(Task):
 
         >>> from celery.task import tasks, PeriodicTask
         >>> from datetime import timedelta
-        >>> class MyPeriodicTask(PeriodicTask):
+        >>> class EveryThirtySecondsTask(PeriodicTask):
         ...     run_every = timedelta(seconds=30)
         ...
         ...     def run(self, **kwargs):
         ...         logger = self.get_logger(**kwargs)
-        ...         logger.info("Running MyPeriodicTask")
+        ...         logger.info("Execute every 30 seconds")
+
+        >>> from celery.task import PeriodicTask
+        >>> from celery.task.schedules import crontab
+
+        >>> class EveryMondayMorningTask(PeriodicTask):
+        ...     run_every = crontab(hour=7, minute=30, day_of_week=1)
+        ...
+        ...     def run(self, **kwargs):
+        ...         logger = self.get_logger(**kwargs)
+        ...         logger.info("Execute every Monday at 7:30AM.")
+
+        >>> class EveryMorningTask(PeriodicTask):
+        ...     run_every = crontab(hours=7, minute=30)
+        ...
+        ...     def run(self, **kwargs):
+        ...         logger = self.get_logger(**kwargs)
+        ...         logger.info("Execute every day at 7:30AM.")
+
+        >>> class EveryQuarterPastTheHourTask(PeriodicTask):
+        ...     run_every = crontab(minute=15)
+        ...
+        ...     def run(self, **kwargs):
+        ...         logger = self.get_logger(**kwargs)
+        ...         logger.info("Execute every 0:15 past the hour every day.")
 
     """
     abstract = True
@@ -694,14 +743,12 @@ class PeriodicTask(Task):
         if isinstance(self.__class__.run_every, int):
             self.__class__.run_every = timedelta(seconds=self.run_every)
 
-        super(PeriodicTask, self).__init__()
+        # Convert timedelta to instance of schedule.
+        if isinstance(self.__class__.run_every, timedelta):
+            self.__class__.run_every = schedule(self.__class__.run_every,
+                                                self.relative)
 
-    def remaining_estimate(self, last_run_at):
-        """Returns when the periodic task should run next as a timedelta."""
-        next_run_at = last_run_at + self.run_every
-        if not self.relative:
-            next_run_at = self.delta_resolution(next_run_at, self.run_every)
-        return next_run_at - datetime.now()
+        super(PeriodicTask, self).__init__()
 
     def timedelta_seconds(self, delta):
         """Convert :class:`datetime.timedelta` to seconds.
@@ -732,41 +779,8 @@ class PeriodicTask(Task):
         responsiveness if of importance to you.
 
         """
-        rem_delta = self.remaining_estimate(last_run_at)
-        rem = self.timedelta_seconds(rem_delta)
-        if rem == 0:
-            return True, self.timedelta_seconds(self.run_every)
-        return False, rem
+        return self.run_every.is_due(last_run_at)
 
-    def delta_resolution(self, dt, delta):
-        """Round a datetime to the resolution of a timedelta.
-
-        If the timedelta is in days, the datetime will be rounded
-        to the nearest days, if the timedelta is in hours the datetime
-        will be rounded to the nearest hour, and so on until seconds
-        which will just return the original datetime.
-
-            >>> now = datetime.now()
-            >>> now
-            datetime.datetime(2010, 3, 30, 11, 50, 58, 41065)
-            >>> delta_resolution(now, timedelta(days=2))
-            datetime.datetime(2010, 3, 30, 0, 0)
-            >>> delta_resolution(now, timedelta(hours=2))
-            datetime.datetime(2010, 3, 30, 11, 0)
-            >>> delta_resolution(now, timedelta(minutes=2))
-            datetime.datetime(2010, 3, 30, 11, 50)
-            >>> delta_resolution(now, timedelta(seconds=2))
-            datetime.datetime(2010, 3, 30, 11, 50, 58, 41065)
-
-        """
-        delta = self.timedelta_seconds(delta)
-
-        resolutions = ((3, lambda x: x / 86400),
-                       (4, lambda x: x / 3600),
-                       (5, lambda x: x / 60))
-
-        args = dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second
-        for res, predicate in resolutions:
-            if predicate(delta) >= 1.0:
-                return datetime(*args[:res])
-        return dt
+    def remaining_estimate(self, last_run_at):
+        """Returns when the periodic task should run next as a timedelta."""
+        return self.run_every.remaining_estimate(last_run_at)

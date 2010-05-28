@@ -69,8 +69,8 @@ class BaseAsyncResult(object):
 
     def ready(self):
         """Returns ``True`` if the task executed successfully, or raised
-        an exception. If the task is still running, pending, or is waiting for retry
-        then ``False`` is returned.
+        an exception. If the task is still running, pending, or is waiting
+        for retry then ``False`` is returned.
 
         :rtype: bool
 
@@ -176,8 +176,8 @@ class TaskSetResult(object):
     """Working with :class:`celery.task.TaskSet` results.
 
     An instance of this class is returned by
-    :meth:`celery.task.TaskSet.run()`. It lets you inspect the status and
-    return values of the taskset as a single entity.
+    :meth:`celery.task.TaskSet.apply_async()`. It lets you inspect the
+    status and return values of the taskset as a single entity.
 
     :option taskset_id: see :attr:`taskset_id`.
     :option subtasks: see :attr:`subtasks`.
@@ -283,7 +283,7 @@ class TaskSetResult(object):
                     except ValueError:
                         pass
                     yield result.result
-                elif result.status == states.FAILURE:
+                elif result.status in states.PROPAGATE_STATES:
                     raise result.result
 
     def join(self, timeout=None):
@@ -315,7 +315,7 @@ class TaskSetResult(object):
             for position, pending_result in enumerate(self.subtasks):
                 if pending_result.status == states.SUCCESS:
                     results[position] = pending_result.result
-                elif pending_result.status == states.FAILURE:
+                elif pending_result.status in states.PROPAGATE_STATES:
                     raise pending_result.result
             if results.full():
                 # Make list copy, so the returned type is not a position
@@ -370,8 +370,8 @@ class EagerResult(BaseAsyncResult):
         """Wait until the task has been executed and return its result."""
         if self.status == states.SUCCESS:
             return self.result
-        elif self.status == states.FAILURE:
-            raise self.result.exception
+        elif self.status in states.PROPAGATE_STATES:
+            raise self.result
 
     def revoke(self):
         pass

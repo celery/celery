@@ -2,6 +2,399 @@
  Change history
 ================
 
+1.2.0 [xxxx-xx-xx xx:xx x.x xxxx]
+=================================
+
+Upgrading for Django-users
+--------------------------
+
+Django integration has been moved to a separate package: `django-celery`_.
+
+* To upgrade you need to install the `django-celery`_ module and change::
+
+    INSTALLED_APPS = "celery"
+
+  to::
+
+    INSTALLED_APPS = "djcelery"
+
+
+* The following modules has been moved to `django-celery`_:
+
+    =====================================  =====================================
+    **Module name**                        **Replace with**
+    =====================================  =====================================
+    ``celery.models``                      ``djcelery.models``
+    ``celery.managers``                    ``djcelery.managers``
+    ``celery.views``                       ``djcelery.views``
+    ``celery.urls``                        ``djcelery.url``
+    ``celery.management``                  ``djcelery.management``
+    ``celery.loaders.djangoapp``           ``djcelery.loaders``
+    ``celery.backends.database``           ``djcelery.backends.database``
+    ``celery.backends.cache``              ``djcelery.backends.cache``
+    =====================================  =====================================
+
+Importing ``djcelery`` will automatically setup celery to use the Django
+loader by setting the :envvar:`CELERY_LOADER`` environment variable (it won't
+change it if it's already defined).
+
+When the Django loader is used, the "database" and "cache" backend aliases
+will point to the ``djcelery`` backends instead of the built-in backends.
+
+.. _`django-celery`: http://pypi.python.org/pypi/django-celery
+
+
+Upgrading for others
+--------------------
+
+The database backend is now using `SQLAlchemy`_ instead of the Django ORM,
+see `Supported Databases`_ for a table of supported databases.
+
+
+The ``DATABASE_*`` settings has been replaced by a single setting:
+``CELERY_RESULT_DBURI``. The value here should be an `SQLAlchemy Connection
+String`_, some examples include:
+
+.. code-block:: python
+
+    # sqlite (filename)
+    CELERY_RESULT_DBURI = "sqlite:///celerydb.sqlite"
+
+    # mysql
+    CELERY_RESULT_DBURI = "mysql://scott:tiger@localhost/foo"
+
+    # postgresql
+    CELERY_RESULT_DBURI = "postgresql://scott:tiger@localhost/mydatabase"
+
+    # oracle
+    CELERY_RESULT_DBURI = "oracle://scott:tiger@127.0.0.1:1521/sidname"
+
+See `SQLAlchemy Connection Strings`_ for more information about connection
+strings.
+
+To specify additional SQLAlchemy database engine options you can use
+the ``CELERY_RESULT_ENGINE_OPTIONS`` setting::
+
+    # echo enables verbose logging from SQLAlchemy.
+    CELERY_RESULT_ENGINE_OPTIONS = {"echo": True}
+
+.. _`SQLAlchemy`:
+    http://www.sqlalchemy.org
+.. _`Supported Databases`:
+    http://www.sqlalchemy.org/docs/dbengine.html#supported-databases
+.. _`SQLAlchemy Connection String`:
+    http://www.sqlalchemy.org/docs/dbengine.html#create-engine-url-arguments
+.. _`SQLAlchemy Connection Strings`:
+    http://www.sqlalchemy.org/docs/dbengine.html#create-engine-url-arguments
+
+Backward incompatible changes
+-----------------------------
+
+* The following deprecated settings has been removed (as scheduled by
+  the `deprecation timeline`_):
+
+    =====================================  =====================================
+    **Setting name**                       **Replace with**
+    =====================================  =====================================
+    ``CELERY_AMQP_CONSUMER_QUEUES``        ``CELERY_QUEUES``
+    ``CELERY_AMQP_CONSUMER_QUEUES``        ``CELERY_QUEUES``
+    ``CELERY_AMQP_EXCHANGE``               ``CELERY_DEFAULT_EXCHANGE``
+    ``CELERY_AMQP_EXCHANGE_TYPE``          ``CELERY_DEFAULT_AMQP_EXCHANGE_TYPE``
+    ``CELERY_AMQP_CONSUMER_ROUTING_KEY``   ``CELERY_QUEUES``
+    ``CELERY_AMQP_PUBLISHER_ROUTING_KEY``  ``CELERY_DEFAULT_ROUTING_KEY``
+    =====================================  =====================================
+
+.. _`deprecation timeline`:
+    http://ask.github.com/celery/internals/deprecation.html
+
+* The ``celery.task.rest`` module has been removed, use ``celery.task.http``
+  instead (as scheduled by the `deprecation timeline`_).
+
+* It's no longer allowed to skip the class name in loader names.
+  (as scheduled by the `deprecation timeline`_):
+
+    Assuming the implicit ``Loader`` class name is no longer supported,
+    if you use e.g.::
+
+        CELERY_LOADER = "myapp.loaders"
+
+    You need to include the loader class name, like this::
+
+        CELERY_LOADER = "myapp.loaders.Loader"
+
+News
+----
+
+* now depends on billiard >= 0.4.0
+
+* Added support for task soft and hard timelimits.
+
+    New settings added:
+
+    * CELERYD_TASK_TIME_LIMIT
+
+        Hard time limit. The worker processing the task will be killed and
+        replaced with a new one when this is exceeded.
+    * CELERYD_SOFT_TASK_TIME_LIMIT
+
+        Soft time limit. The celery.exceptions.SoftTimeLimitExceeded exception
+        will be raised when this is exceeded. The task can catch this to
+        e.g. clean up before the hard time limit comes.
+
+    New command line arguments to celeryd added:
+    ``--time-limit`` and ``--soft-time-limit``.
+
+    What's left?
+
+    This won't work on platforms not supporting signals (and specifically
+    the ``SIGUSR1`` signal) yet. So an alternative the ability to disable
+    the feature alltogether on nonconforming platforms must be implemented.
+
+    Also when the hard time limit is exceeded, the task result should
+    be a ``TimeLimitExceeded`` exception.
+
+1.0.3 [2010-05-15 03:00 P.M CEST]
+=================================
+
+Important notes
+---------------
+
+* Messages are now acked *just before* the task function is executed.
+
+    This is the behavior we've wanted all along, but couldn't have because of
+    limitations in the multiprocessing module.
+    The previous behavior was not good, and the situation worsened with the
+    release of 1.0.1, so this change will definitely improve
+    reliability, performance and operations in general.
+
+    For more information please see http://bit.ly/9hom6T
+
+* Database result backend: result now explicitly sets ``null=True`` as
+  ``django-picklefield`` version 0.1.5 changed the default behavior
+  right under our noses :(
+
+    See: http://bit.ly/d5OwMr
+
+    This means those who created their celery tables (via syncdb or
+    celeryinit) with picklefield versions >= 0.1.5 has to alter their tables to
+    allow the result field to be ``NULL`` manually.
+
+    MySQL::
+
+        ALTER TABLE celery_taskmeta MODIFY result TEXT NULL
+
+* Removed ``Task.rate_limit_queue_type``, as it was not really useful
+  and made it harder to refactor some parts.
+
+* Now depends on carrot >= 0.10.4
+
+* Now depends on billiard >= 0.3.0
+
+News
+----
+
+* AMQP backend: Added timeout support for ``result.get()`` /
+  ``result.wait()``.
+
+* New task option: ``Task.acks_late`` (default: ``CELERY_ACKS_LATE``)
+
+    Late ack means the task messages will be acknowledged **after** the task
+    has been executed, not *just before*, which is the default behavior.
+
+    Note that this means the tasks may be executed twice if the worker
+    crashes in the middle of their execution. Not acceptable for most
+    applications, but desirable for others.
+
+* Added crontab-like scheduling to periodic tasks.
+
+    Like a cron job, you can specify units of time of when
+    you would like the task to execute. While not a full implementation
+    of cron's features, it should provide a fair degree of common scheduling
+    needs.
+
+    You can specify a minute (0-59), an hour (0-23), and/or a day of the
+    week (0-6 where 0 is Sunday, or by names: sun, mon, tue, wed, thu, fri,
+    sat).
+
+    Examples:
+
+    .. code-block:: python
+
+        from celery.task.schedules import crontab
+        from celery.decorators import periodic_task
+
+        @periodic_task(run_every=crontab(hour=7, minute=30))
+        def every_morning():
+            print("Runs every morning at 7:30a.m")
+
+        @periodic_task(run_every=crontab(hour=7, minute=30, day_of_week="mon"))
+        def every_monday_morning():
+            print("Run every monday morning at 7:30a.m")
+
+        @periodic_task(run_every=crontab(minutes=30))
+        def every_hour():
+            print("Runs every hour on the clock. e.g. 1:30, 2:30, 3:30 etc.")
+
+    Note that this a late addition. While we have unittests, due to the
+    nature of this feature we haven't been able to completely test this
+    in practice, so consider this experimental.
+
+* ``TaskPool.apply_async``: Now supports the ``accept_callback`` argument.
+
+* ``apply_async``: Now raises :exc:`ValueError` if task args is not a list,
+  or kwargs is not a tuple (http://github.com/ask/celery/issues/issue/95).
+
+* ``Task.max_retries`` can now be ``None``, which means it will retry forever.
+
+* Celerybeat: Now reuses the same connection when publishing large
+  sets of tasks.
+
+* Modified the task locking example in the documentation to use
+  ``cache.add`` for atomic locking.
+
+* Added experimental support for a *started* status on tasks.
+
+    If ``Task.track_started`` is enabled the task will report its status
+    as "started" when the task is executed by a worker.
+
+    The default value is ``False`` as the normal behaviour is to not
+    report that level of granularity. Tasks are either pending, finished,
+    or waiting to be retried. Having a "started" status can be useful for
+    when there are long running tasks and there is a need to report which
+    task is currently running.
+
+    The global default can be overridden by the ``CELERY_TRACK_STARTED``
+    setting.
+
+* User Guide: New section ``Tips and Best Practices``.
+
+    Contributions welcome!
+
+Remote control commands
+-----------------------
+
+* Remote control commands can now send replies back to the caller.
+
+    Existing commands has been improved to send replies, and the client
+    interface in ``celery.task.control`` has new keyword arguments: ``reply``,
+    ``timeout`` and ``limit``. Where reply means it will wait for replies,
+    timeout is the time in seconds to stop waiting for replies, and limit
+    is the maximum number of replies to get.
+
+    By default, it will wait for as many replies as possible for one second.
+
+    * rate_limit(task_name, destination=all, reply=False, timeout=1, limit=0)
+
+        Worker returns ``{"ok": message}`` on success,
+        or ``{"failure": message}`` on failure.
+
+            >>> from celery.task.control import rate_limit
+            >>> rate_limit("tasks.add", "10/s", reply=True)
+            [{'worker1': {'ok': 'new rate limit set successfully'}},
+             {'worker2': {'ok': 'new rate limit set successfully'}}]
+
+    * ping(destination=all, reply=False, timeout=1, limit=0)
+
+        Worker returns the simple message ``"pong"``.
+
+            >>> from celery.task.control import ping
+            >>> ping(reply=True)
+            [{'worker1': 'pong'},
+             {'worker2': 'pong'},
+
+    * revoke(destination=all, reply=False, timeout=1, limit=0)
+
+        Worker simply returns ``True``.
+
+            >>> from celery.task.control import revoke
+            >>> revoke("419e46eb-cf6a-4271-86a8-442b7124132c", reply=True)
+            [{'worker1': True},
+             {'worker2'; True}]
+
+* You can now add your own remote control commands!
+
+    Remote control commands are functions registered in the command
+    registry. Registering a command is done using
+    :meth:`celery.worker.control.Panel.register`:
+
+    .. code-block:: python
+
+        from celery.task.control import Panel
+
+        @Panel.register
+        def reset_broker_connection(panel, **kwargs):
+            panel.listener.reset_connection()
+            return {"ok": "connection re-established"}
+
+    With this module imported in the worker, you can launch the command
+    using ``celery.task.control.broadcast``::
+
+        >>> from celery.task.control import broadcast
+        >>> broadcast("reset_broker_connection", reply=True)
+        [{'worker1': {'ok': 'connection re-established'},
+         {'worker2': {'ok': 'connection re-established'}}]
+
+    **TIP** You can choose the worker(s) to receive the command
+    by using the ``destination`` argument::
+
+        >>> broadcast("reset_broker_connection", destination=["worker1"])
+        [{'worker1': {'ok': 'connection re-established'}]
+
+* New remote control command: ``dump_reserved``
+
+    Dumps tasks reserved by the worker, waiting to be executed::
+
+        >>> from celery.task.control import broadcast
+        >>> broadcast("dump_reserved", reply=True)
+        [{'myworker1': [<TaskWrapper ....>]}]
+
+* New remote control command: ``dump_schedule``
+
+    Dumps the workers currently registered ETA schedule.
+    These are tasks with an ``eta`` (or ``countdown``) argument
+    waiting to be executed by the worker.
+
+        >>> from celery.task.control import broadcast
+        >>> broadcast("dump_schedule", reply=True)
+        [{'w1': []},
+         {'w3': []},
+         {'w2': ['0. 2010-05-12 11:06:00 pri0 <TaskWrapper:
+                    {name:"opalfeeds.tasks.refresh_feed_slice",
+                     id:"95b45760-4e73-4ce8-8eac-f100aa80273a",
+                     args:"(<Feeds freq_max:3600 freq_min:60
+                                   start:2184.0 stop:3276.0>,)",
+                     kwargs:"{'page': 2}"}>']},
+         {'w4': ['0. 2010-05-12 11:00:00 pri0 <TaskWrapper:
+                    {name:"opalfeeds.tasks.refresh_feed_slice",
+                     id:"c053480b-58fb-422f-ae68-8d30a464edfe",
+                     args:"(<Feeds freq_max:3600 freq_min:60
+                                   start:1092.0 stop:2184.0>,)",
+                     kwargs:"{\'page\': 1}"}>',
+                '1. 2010-05-12 11:12:00 pri0 <TaskWrapper:
+                    {name:"opalfeeds.tasks.refresh_feed_slice",
+                     id:"ab8bc59e-6cf8-44b8-88d0-f1af57789758",
+                     args:"(<Feeds freq_max:3600 freq_min:60
+                                   start:3276.0 stop:4365>,)",
+                     kwargs:"{\'page\': 3}"}>']}]
+
+Fixes
+-----
+
+* Mediator thread no longer blocks for more than 1 second.
+
+    With rate limits enabled and when there was a lot of remaining time,
+    the mediator thread could block shutdown (and potentially block other
+    jobs from coming in).
+
+* Remote rate limits was not properly applied
+  (http://github.com/ask/celery/issues/issue/98)
+
+* Now handles exceptions with unicode messages correctly in
+  ``TaskWrapper.on_failure``.
+
+* Database backend: ``TaskMeta.result``: default value should be ``None``
+  not empty string.
+
 1.0.2 [2010-03-31 12:50 P.M CET]
 ================================
 
@@ -10,19 +403,20 @@
 
 * We now use a custom logger in tasks. This logger supports task magic
   keyword arguments in formats.
-  The default format for tasks (``CELERYD_TASK_LOG_FORMAT``) now includes
-  the id and the name of tasks so the origin of task log messages can
-  easily be traced.
 
-  Example output::
-  	[2010-03-25 13:11:20,317: INFO/PoolWorker-1]
-  		[tasks.add(a6e1c5ad-60d9-42a0-8b24-9e39363125a4)] Hello from add
+    The default format for tasks (``CELERYD_TASK_LOG_FORMAT``) now includes
+    the id and the name of tasks so the origin of task log messages can
+    easily be traced.
 
-  To revert to the previous behavior you can set::
+    Example output::
+        [2010-03-25 13:11:20,317: INFO/PoolWorker-1]
+            [tasks.add(a6e1c5ad-60d9-42a0-8b24-9e39363125a4)] Hello from add
 
-	CELERYD_TASK_LOG_FORMAT = """
-	[%(asctime)s: %(levelname)s/%(processName)s] %(message)s
-	""".strip()
+    To revert to the previous behavior you can set::
+
+        CELERYD_TASK_LOG_FORMAT = """
+            [%(asctime)s: %(levelname)s/%(processName)s] %(message)s
+        """.strip()
 
 * Unittests: Don't disable the django test database teardown,
   instead fixed the underlying issue which was caused by modifications
@@ -31,36 +425,36 @@
 * Django Loader: New config ``CELERY_DB_REUSE_MAX`` (max number of tasks
   to reuse the same database connection)
 
-  The default is to use a new connection for every task.
-  We would very much like to reuse the connection, but a safe number of
-  reuses is not known, and we don't have any way to handle the errors
-  that might happen, which may even be database dependent.
+    The default is to use a new connection for every task.
+    We would very much like to reuse the connection, but a safe number of
+    reuses is not known, and we don't have any way to handle the errors
+    that might happen, which may even be database dependent.
 
-  See: http://bit.ly/94fwdd
+    See: http://bit.ly/94fwdd
 
 * celeryd: The worker components are now configurable: ``CELERYD_POOL``,
-	``CELERYD_LISTENER``, ``CELERYD_MEDIATOR``, and ``CELERYD_ETA_SCHEDULER``.
+  ``CELERYD_LISTENER``, ``CELERYD_MEDIATOR``, and ``CELERYD_ETA_SCHEDULER``.
 
-	The default configuration is as follows:
+    The default configuration is as follows:
 
-  .. code-block:: python
+    .. code-block:: python
 
-    CELERYD_POOL = "celery.worker.pool.TaskPool"
-    CELERYD_MEDIATOR = "celery.worker.controllers.Mediator"
-    CELERYD_ETA_SCHEDULER = "celery.worker.controllers.ScheduleController"
-    CELERYD_LISTENER = "celery.worker.listener.CarrotListener"
+        CELERYD_POOL = "celery.worker.pool.TaskPool"
+        CELERYD_MEDIATOR = "celery.worker.controllers.Mediator"
+        CELERYD_ETA_SCHEDULER = "celery.worker.controllers.ScheduleController"
+        CELERYD_LISTENER = "celery.worker.listener.CarrotListener"
 
-  THe ``CELERYD_POOL`` setting makes it easy to swap out the multiprocessing
-  pool with a threaded pool, or how about a twisted/eventlet pool?
+    The ``CELERYD_POOL`` setting makes it easy to swap out the multiprocessing
+    pool with a threaded pool, or how about a twisted/eventlet pool?
 
-  Consider the competition for the first pool plug-in started!
+    Consider the competition for the first pool plug-in started!
 
 
 * Debian init scripts: Use ``-a`` not ``&&``
   (http://github.com/ask/celery/issues/82).
 
 * Debian init scripts: Now always preserves ``$CELERYD_OPTS`` from the
-	``/etc/default/celeryd`` and ``/etc/default/celerybeat``.
+  ``/etc/default/celeryd`` and ``/etc/default/celerybeat``.
 
 * celery.beat.Scheduler: Fixed a bug where the schedule was not properly
   flushed to disk if the schedule had not been properly initialized.
@@ -90,24 +484,24 @@
 
 * Tasks are now acknowledged early instead of late.
 
-  This is done because messages can only be acked within the same
-  connection channel, so if the connection is lost we would have to refetch
-  the message again to acknowledge it.
+    This is done because messages can only be acked within the same
+    connection channel, so if the connection is lost we would have to refetch
+    the message again to acknowledge it.
 
-  This might or might not affect you, but mostly those running tasks with a
-  really long execution time are affected, as all tasks that has made it
-  all the way into the pool needs to be executed before the worker can
-  safely terminate (this is at most the number of pool workers, multiplied
-  by the ``CELERYD_PREFETCH_MULTIPLIER`` setting.)
+    This might or might not affect you, but mostly those running tasks with a
+    really long execution time are affected, as all tasks that has made it
+    all the way into the pool needs to be executed before the worker can
+    safely terminate (this is at most the number of pool workers, multiplied
+    by the ``CELERYD_PREFETCH_MULTIPLIER`` setting.)
 
-  We multiply the prefetch count by default to increase the performance at
-  times with bursts of tasks with a short execution time. If this doesn't
-  apply to your use case, you should be able to set the prefetch multiplier
-  to zero, without sacrificing performance.
+    We multiply the prefetch count by default to increase the performance at
+    times with bursts of tasks with a short execution time. If this doesn't
+    apply to your use case, you should be able to set the prefetch multiplier
+    to zero, without sacrificing performance.
 
-  Please note that a patch to :mod:`multiprocessing` is currently being
-  worked on, this patch would enable us to use a better solution, and is
-  scheduled for inclusion in the ``1.2.0`` release.
+    Please note that a patch to :mod:`multiprocessing` is currently being
+    worked on, this patch would enable us to use a better solution, and is
+    scheduled for inclusion in the ``1.2.0`` release.
 
 * celeryd now shutdowns cleanly when receving the ``TERM`` signal.
 
@@ -118,61 +512,67 @@
   to implement this functionality in the base classes.
 
 * Caches are now also limited in size, so their memory usage doesn't grow
-  out of control. You can set the maximum number of results the cache
-  can hold using the ``CELERY_MAX_CACHED_RESULTS`` setting (the default
-  is five thousand results). In addition, you can refetch already retrieved
-  results using ``backend.reload_task_result`` +
-  ``backend.reload_taskset_result`` (that's for those who want to send
-  results incrementally).
+  out of control.
+  
+    You can set the maximum number of results the cache
+    can hold using the ``CELERY_MAX_CACHED_RESULTS`` setting (the default
+    is five thousand results). In addition, you can refetch already retrieved
+    results using ``backend.reload_task_result`` +
+    ``backend.reload_taskset_result`` (that's for those who want to send
+    results incrementally).
 
-* ``celeryd`` now works on Windows again. Note that if running with Django,
-  you can't use ``project.settings`` as the settings module name, but the
-  following should work::
+* ``celeryd`` now works on Windows again.
 
-		$ python manage.py celeryd --settings=settings
+    Note that if running with Django,
+    you can't use ``project.settings`` as the settings module name, but the
+    following should work::
+
+        $ python manage.py celeryd --settings=settings
 
 * Execution: ``.messaging.TaskPublisher.send_task`` now
-  incorporates all the functionality apply_async previously did (like
-  converting countdowns to eta), so :func:`celery.execute.apply_async` is
-  now simply a convenient front-end to
-  :meth:`celery.messaging.TaskPublisher.send_task`, using
-  the task classes default options.
+  incorporates all the functionality apply_async previously did.
+  
+    Like converting countdowns to eta, so :func:`celery.execute.apply_async` is
+    now simply a convenient front-end to
+    :meth:`celery.messaging.TaskPublisher.send_task`, using
+    the task classes default options.
 
-  Also :func:`celery.execute.send_task` has been
-  introduced, which can apply tasks using just the task name (useful
-  if the client does not have the destination task in its task registry).
+    Also :func:`celery.execute.send_task` has been
+    introduced, which can apply tasks using just the task name (useful
+    if the client does not have the destination task in its task registry).
 
-  Example:
+    Example:
 
-		>>> from celery.execute import send_task
-		>>> result = send_task("celery.ping", args=[], kwargs={})
-		>>> result.get()
-		'pong'
+        >>> from celery.execute import send_task
+        >>> result = send_task("celery.ping", args=[], kwargs={})
+        >>> result.get()
+        'pong'
 
 * ``camqadm``: This is a new utility for command line access to the AMQP API.
-  Excellent for deleting queues/bindings/exchanges, experimentation and
-  testing::
 
-	$ camqadm
-	1> help
+    Excellent for deleting queues/bindings/exchanges, experimentation and
+    testing::
 
-  Gives an interactive shell, type ``help`` for a list of commands.
+        $ camqadm
+        1> help
 
-  When using Django, use the management command instead::
+    Gives an interactive shell, type ``help`` for a list of commands.
 
-  	$ python manage.py camqadm
-  	1> help
+    When using Django, use the management command instead::
+
+        $ python manage.py camqadm
+        1> help
 
 * Redis result backend: To conform to recent Redis API changes, the following
   settings has been deprecated:
-  
-		* ``REDIS_TIMEOUT``
-		* ``REDIS_CONNECT_RETRY``
 
-  These will emit a ``DeprecationWarning`` if used.
+        * ``REDIS_TIMEOUT``
+        * ``REDIS_CONNECT_RETRY``
 
-  A ``REDIS_PASSWORD`` setting has been added, so you can use the new
-  simple authentication mechanism in Redis.
+    These will emit a ``DeprecationWarning`` if used.
+
+    A ``REDIS_PASSWORD`` setting has been added, so you can use the new
+    simple authentication mechanism in Redis.
 
 * The redis result backend no longer calls ``SAVE`` when disconnecting,
   as this is apparently better handled by Redis itself.
@@ -183,9 +583,10 @@
 * The ETA scheduler now sleeps at most two seconds between iterations.
 
 * The ETA scheduler now deletes any revoked tasks it might encounter.
-  As revokes are not yet persistent, this is done to make sure the task
-  is revoked even though it's currently being hold because its eta is e.g.
-  a week into the future.
+
+    As revokes are not yet persistent, this is done to make sure the task
+    is revoked even though it's currently being hold because its eta is e.g.
+    a week into the future.
 
 * The ``task_id`` argument is now respected even if the task is executed 
   eagerly (either using apply, or ``CELERY_ALWAYS_EAGER``).
@@ -193,11 +594,12 @@
 * The internal queues are now cleared if the connection is reset.
 
 * New magic keyword argument: ``delivery_info``.
-	Used by retry() to resend the task to its original destination using the same
-	exchange/routing_key.
+
+    Used by retry() to resend the task to its original destination using the same
+    exchange/routing_key.
 
 * Events: Fields was not passed by ``.send()`` (fixes the uuid keyerrors
-	in celerymon)
+  in celerymon)
 
 * Added ``--schedule``/``-s`` option to celeryd, so it is possible to
   specify a custom schedule filename when using an embedded celerybeat
@@ -217,8 +619,10 @@
 * TaskPublisher: Declarations are now done once (per process).
 
 * Added ``Task.delivery_mode`` and the ``CELERY_DEFAULT_DELIVERY_MODE``
-  setting. These can be used to mark messages non-persistent (i.e. so they are
-  lost if the broker is restarted).
+  setting.
+
+    These can be used to mark messages non-persistent (i.e. so they are
+    lost if the broker is restarted).
 
 * Now have our own ``ImproperlyConfigured`` exception, instead of using the
   Django one.
@@ -237,92 +641,97 @@ BACKWARD INCOMPATIBLE CHANGES
   available on your platform, or something like supervisord to make
   celeryd/celerybeat/celerymon into background processes.
 
-  We've had too many problems with celeryd daemonizing itself, so it was
-  decided it has to be removed. Example startup scripts has been added to
-  ``contrib/``:
+    We've had too many problems with celeryd daemonizing itself, so it was
+    decided it has to be removed. Example startup scripts has been added to
+    ``contrib/``:
 
-      * Debian, Ubuntu, (start-stop-daemon)
+    * Debian, Ubuntu, (start-stop-daemon)
 
-           ``contrib/debian/init.d/celeryd``
-           ``contrib/debian/init.d/celerybeat``
+        ``contrib/debian/init.d/celeryd``
+        ``contrib/debian/init.d/celerybeat``
 
-      * Mac OS X launchd
+    * Mac OS X launchd
 
-            ``contrib/mac/org.celeryq.celeryd.plist``
-            ``contrib/mac/org.celeryq.celerybeat.plist``
-            ``contrib/mac/org.celeryq.celerymon.plist``
+        ``contrib/mac/org.celeryq.celeryd.plist``
+        ``contrib/mac/org.celeryq.celerybeat.plist``
+        ``contrib/mac/org.celeryq.celerymon.plist``
 
-      * Supervisord (http://supervisord.org)
+    * Supervisord (http://supervisord.org)
 
-            ``contrib/supervisord/supervisord.conf``
+        ``contrib/supervisord/supervisord.conf``
 
-  In addition to ``--detach``, the following program arguments has been
-  removed: ``--uid``, ``--gid``, ``--workdir``, ``--chroot``, ``--pidfile``,
-  ``--umask``. All good daemonization tools should support equivalent
-  functionality, so don't worry.
+    In addition to ``--detach``, the following program arguments has been
+    removed: ``--uid``, ``--gid``, ``--workdir``, ``--chroot``, ``--pidfile``,
+    ``--umask``. All good daemonization tools should support equivalent
+    functionality, so don't worry.
 
-  Also the following configuration keys has been removed:
-  ``CELERYD_PID_FILE``, ``CELERYBEAT_PID_FILE``, ``CELERYMON_PID_FILE``.
+    Also the following configuration keys has been removed:
+    ``CELERYD_PID_FILE``, ``CELERYBEAT_PID_FILE``, ``CELERYMON_PID_FILE``.
 
 * Default celeryd loglevel is now ``WARN``, to enable the previous log level
   start celeryd with ``--loglevel=INFO``.
 
 * Tasks are automatically registered.
 
-  This means you no longer have to register your tasks manually.
-  You don't have to change your old code right away, as it doesn't matter if
-  a task is registered twice.
+    This means you no longer have to register your tasks manually.
+    You don't have to change your old code right away, as it doesn't matter if
+    a task is registered twice.
 
-  If you don't want your task to be automatically registered you can set
-  the ``abstract`` attribute
+    If you don't want your task to be automatically registered you can set
+    the ``abstract`` attribute
 
-  .. code-block:: python
+    .. code-block:: python
 
-		class MyTask(Task):
-			abstract = True
+        class MyTask(Task):
+            abstract = True
 
-  By using ``abstract`` only tasks subclassing this task will be automatically
-  registered (this works like the Django ORM).
+    By using ``abstract`` only tasks subclassing this task will be automatically
+    registered (this works like the Django ORM).
 
-  If you don't want subclasses to be registered either, you can set the
-  ``autoregister`` attribute to ``False``.
+    If you don't want subclasses to be registered either, you can set the
+    ``autoregister`` attribute to ``False``.
 
-  Incidentally, this change also fixes the problems with automatic name
-  assignment and relative imports. So you also don't have to specify a task name
-  anymore if you use relative imports.
+    Incidentally, this change also fixes the problems with automatic name
+    assignment and relative imports. So you also don't have to specify a task name
+    anymore if you use relative imports.
 
-* You can no longer use regular functions as tasks. This change was added
-  because it makes the internals a lot more clean and simple. However, you can
-  now turn functions into tasks by using the ``@task`` decorator:
+* You can no longer use regular functions as tasks.
 
-  .. code-block:: python
+    This change was added
+    because it makes the internals a lot more clean and simple. However, you can
+    now turn functions into tasks by using the ``@task`` decorator:
 
-		from celery.decorators import task
+    .. code-block:: python
 
-		@task
-		def add(x, y):
-			return x + y
+        from celery.decorators import task
 
-  See the User Guide: :doc:`userguide/tasks` for more information.
+        @task
+        def add(x, y):
+            return x + y
 
-* The periodic task system has been rewritten to a centralized solution, this
-  means ``celeryd`` no longer schedules periodic tasks by default, but a new
-  daemon has been introduced: ``celerybeat``.
+    See the User Guide: :doc:`userguide/tasks` for more information.
 
-  To launch the periodic task scheduler you have to run celerybeat::
+* The periodic task system has been rewritten to a centralized solution.
 
-		$ celerybeat
+    This means ``celeryd`` no longer schedules periodic tasks by default,
+    but a new daemon has been introduced: ``celerybeat``.
 
-  Make sure this is running on one server only, if you run it twice, all
-  periodic tasks will also be executed twice.
+    To launch the periodic task scheduler you have to run celerybeat::
 
-  If you only have one worker server you can embed it into celeryd like this::
+        $ celerybeat
 
-		$ celeryd --beat # Embed celerybeat in celeryd.
+    Make sure this is running on one server only, if you run it twice, all
+    periodic tasks will also be executed twice.
 
-* The supervisor has been removed, please use something like
-  http://supervisord.org instead. This means the ``-S`` and ``--supervised``
-  options to ``celeryd`` is no longer supported.
+    If you only have one worker server you can embed it into celeryd like this::
+
+        $ celeryd --beat # Embed celerybeat in celeryd.
+
+* The supervisor has been removed.
+
+    This means the ``-S`` and ``--supervised`` options to ``celeryd`` is
+    no longer supported. Please use something like http://supervisord.org
+    instead.
 
 * ``TaskSet.join`` has been removed, use ``TaskSetResult.join`` instead.
 
@@ -344,23 +753,26 @@ BACKWARD INCOMPATIBLE CHANGES
   now in ``celery.loaders.djangoapp``. Reason: Internal API.
 
 * ``CELERY_LOADER`` now needs loader class name in addition to module name,
-  e.g. where you previously had: ``"celery.loaders.default"``, you now need
-  ``"celery.loaders.default.Loader"``, using the previous syntax will result
-  in a DeprecationWarning.
+
+    E.g. where you previously had: ``"celery.loaders.default"``, you now need
+    ``"celery.loaders.default.Loader"``, using the previous syntax will result
+    in a DeprecationWarning.
 
 * Detecting the loader is now lazy, and so is not done when importing
-  ``celery.loaders``. To make this happen ``celery.loaders.settings`` has
-  been renamed to ``load_settings`` and is now a function returning the
-  settings object. ``celery.loaders.current_loader`` is now also
-  a function, returning the current loader.
+  ``celery.loaders``.
 
-  So::
+    To make this happen ``celery.loaders.settings`` has
+    been renamed to ``load_settings`` and is now a function returning the
+    settings object. ``celery.loaders.current_loader`` is now also
+    a function, returning the current loader.
 
-    	loader = current_loader
+    So::
 
-  needs to be changed to::
+        loader = current_loader
 
-    	loader = current_loader()
+    needs to be changed to::
+
+        loader = current_loader()
 
 DEPRECATIONS
 ------------
@@ -368,25 +780,28 @@ DEPRECATIONS
 * The following configuration variables has been renamed and will be
   deprecated in v1.2:
 
-  	* CELERYD_DAEMON_LOG_FORMAT -> CELERYD_LOG_FORMAT
-  	* CELERYD_DAEMON_LOG_LEVEL -> CELERYD_LOG_LEVEL
-  	* CELERY_AMQP_CONNECTION_TIMEOUT -> CELERY_BROKER_CONNECTION_TIMEOUT
-  	* CELERY_AMQP_CONNECTION_RETRY -> CELERY_BROKER_CONNECTION_RETRY
-  	* CELERY_AMQP_CONNECTION_MAX_RETRIES -> CELERY_BROKER_CONNECTION_MAX_RETRIES
-  	* SEND_CELERY_TASK_ERROR_EMAILS -> CELERY_SEND_TASK_ERROR_EMAILS
+    * CELERYD_DAEMON_LOG_FORMAT -> CELERYD_LOG_FORMAT
+    * CELERYD_DAEMON_LOG_LEVEL -> CELERYD_LOG_LEVEL
+    * CELERY_AMQP_CONNECTION_TIMEOUT -> CELERY_BROKER_CONNECTION_TIMEOUT
+    * CELERY_AMQP_CONNECTION_RETRY -> CELERY_BROKER_CONNECTION_RETRY
+    * CELERY_AMQP_CONNECTION_MAX_RETRIES -> CELERY_BROKER_CONNECTION_MAX_RETRIES
+    * SEND_CELERY_TASK_ERROR_EMAILS -> CELERY_SEND_TASK_ERROR_EMAILS
 
 * The public api names in celery.conf has also changed to a consistent naming
   scheme.
 
-* We now support consuming from an arbitrary number of queues, but to do this
-  we had to rename the configuration syntax. If you use any of the custom
-  AMQP routing options (queue/exchange/routing_key, etc), you should read the
-  new FAQ entry: http://bit.ly/aiWoH. The previous syntax is deprecated and
-  scheduled for removal in v1.2.
+* We now support consuming from an arbitrary number of queues.
+
+    To do this we had to rename the configuration syntax. If you use any of
+    the custom AMQP routing options (queue/exchange/routing_key, etc), you
+    should read the new FAQ entry: http://bit.ly/aiWoH.
+
+    The previous syntax is deprecated and scheduled for removal in v1.2.
 
 * ``TaskSet.run`` has been renamed to ``TaskSet.apply_async``.
-  ``run`` is still deprecated, and is scheduled for removal in v1.2.
 
+    ``TaskSet.run`` has now been deprecated, and is scheduled for
+    removal in v1.2.
 
 NEWS
 ----
@@ -400,12 +815,14 @@ NEWS
 * New cool task decorator syntax.
 
 * celeryd now sends events if enabled with the ``-E`` argument.
-  Excellent for monitoring tools, one is already in the making
-  (http://github.com/ask/celerymon).
 
-  Current events include: worker-heartbeat,
-  task-[received/succeeded/failed/retried],
-  worker-online, worker-offline.
+
+    Excellent for monitoring tools, one is already in the making
+    (http://github.com/ask/celerymon).
+
+    Current events include: worker-heartbeat,
+    task-[received/succeeded/failed/retried],
+    worker-online, worker-offline.
 
 * You can now delete (revoke) tasks that has already been applied.
 
@@ -419,10 +836,11 @@ NEWS
 
 * ``celeryd`` now responds to the ``HUP`` signal by restarting itself.
 
-* Periodic tasks are now scheduled on the clock, i.e. ``timedelta(hours=1)``
-  means every hour at :00 minutes, not every hour from the server starts.
-  To revert to the previous behaviour you can set
-  ``PeriodicTask.relative = True``.
+* Periodic tasks are now scheduled on the clock.
+
+    I.e. ``timedelta(hours=1)`` means every hour at :00 minutes, not every
+    hour from the server starts.  To revert to the previous behaviour you
+    can set ``PeriodicTask.relative = True``.
 
 * Now supports passing execute options to a TaskSets list of args, e.g.:
 
@@ -432,14 +850,16 @@ NEWS
     >>> ts.run()
 
 * Got a 3x performance gain by setting the prefetch count to four times the 
-  concurrency, (from an average task round-trip of 0.1s to 0.03s!). A new
-  setting has been added: ``CELERYD_PREFETCH_MULTIPLIER``, which is set
-  to ``4`` by default.
+  concurrency, (from an average task round-trip of 0.1s to 0.03s!).
+
+    A new setting has been added: ``CELERYD_PREFETCH_MULTIPLIER``, which
+    is set to ``4`` by default.
 
 * Improved support for webhook tasks.
-  ``celery.task.rest`` is now deprecated, replaced with the new and shiny
-  :mod:`celery.task.http`. With more reflective names, sensible interface, and
-  it's possible to override the methods used to perform HTTP requests.
+
+    ``celery.task.rest`` is now deprecated, replaced with the new and shiny
+    :mod:`celery.task.http`. With more reflective names, sensible interface,
+    and it's possible to override the methods used to perform HTTP requests.
 
 * The results of tasksets are now cached by storing it in the result
   backend.
@@ -456,8 +876,9 @@ CHANGES
 * The ``uuid`` distribution is added as a dependency when running Python 2.4.
 
 * Now remembers the previously detected loader by keeping it in
-  the ``CELERY_LOADER`` environment variable. This may help on windows where
-  fork emulation is used.
+  the ``CELERY_LOADER`` environment variable.
+
+    This may help on windows where fork emulation is used.
 
 * ETA no longer sends datetime objects, but uses ISO 8601 date format in a
   string for better compatibility with other platforms.
@@ -469,9 +890,10 @@ CHANGES
 * Refactored the ExecuteWrapper, ``apply`` and ``CELERY_ALWAYS_EAGER`` now
   also executes the task callbacks and signals.
 
-* Now using a proper scheduler for the tasks with an ETA. This means waiting
-  eta tasks are sorted by time, so we don't have to poll the whole list all the
-  time.
+* Now using a proper scheduler for the tasks with an ETA.
+
+    This means waiting eta tasks are sorted by time, so we don't have
+    to poll the whole list all the time.
 
 * Now also imports modules listed in CELERY_IMPORTS when running
   with django (as documented).
@@ -484,8 +906,10 @@ CHANGES
   connection to the broker.
 
 * When running as a separate service the periodic task scheduler does some
-  smart moves to not poll too regularly, if you need faster poll times you
-  can lower the value of ``CELERYBEAT_MAX_LOOP_INTERVAL``.
+  smart moves to not poll too regularly.
+
+    If you need faster poll times you can lower the value
+    of ``CELERYBEAT_MAX_LOOP_INTERVAL``.
 
 * You can now change periodic task intervals at runtime, by making
   ``run_every`` a property, or subclassing ``PeriodicTask.is_due``.

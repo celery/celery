@@ -26,6 +26,12 @@
     Also run the ``celerybeat`` periodic task scheduler. Please note that
     there must only be one instance of this service.
 
+.. cmdoption:: -Q, queues
+
+    List of queues to enable for this worker separated by comma.
+    By default all configured queues are enabled.
+    Example: ``-Q video,image``
+
 .. cmdoption:: -s, --schedule
 
     Path to the schedule database if running with the ``-B`` option.
@@ -41,6 +47,19 @@
     Discard all waiting tasks before the daemon is started.
     **WARNING**: This is unrecoverable, and the tasks will be
     deleted from the messaging server.
+
+.. cmdoption:: --time-limit
+
+    Enables a hard time limit (in seconds) for tasks.
+
+.. cmdoption:: --soft-time-limit
+
+    Enables a soft time limit (in seconds) for tasks.
+
+.. cmdoption:: --maxtasksperchild
+
+    Maximum number of tasks a pool worker can execute before it's 
+    terminated and replaced by a new worker.
 
 """
 import os
@@ -110,6 +129,24 @@ OPTION_LIST = (
     optparse.make_option('-E', '--events', default=conf.SEND_EVENTS,
             action="store_true", dest="events",
             help="Send events so celery can be monitored by e.g. celerymon."),
+    optparse.make_option('--time-limit',
+            default=conf.CELERYD_TASK_TIME_LIMIT,
+            action="store", type="int", dest="task_time_limit",
+            help="Enables a hard time limit (in seconds) for tasks."),
+    optparse.make_option('--soft-time-limit',
+            default=conf.CELERYD_TASK_SOFT_TIME_LIMIT,
+            action="store", type="int", dest="task_soft_time_limit",
+            help="Enables a soft time limit (in seconds) for tasks."),
+    optparse.make_option('--maxtasksperchild',
+            default=conf.CELERYD_MAX_TASKS_PER_CHILD,
+            action="store", type="int", dest="max_tasks_per_child",
+            help="Maximum number of tasks a pool worker can execute"
+                 "before it's terminated and replaced by a new worker."),
+    optparse.make_option('--queues', '-Q', default=[],
+            action="store", dest="queues",
+            help="Comma separated list of queues to enable for this worker. "
+                 "By default all configured queues are enabled. "
+                 "Example: -Q video,image"),
 )
 
 
@@ -119,7 +156,10 @@ class Worker(object):
             loglevel=conf.CELERYD_LOG_LEVEL, logfile=conf.CELERYD_LOG_FILE,
             hostname=None, discard=False, run_clockservice=False,
             schedule=conf.CELERYBEAT_SCHEDULE_FILENAME,
-            events=False, **kwargs):
+            task_time_limit=conf.CELERYD_TASK_TIME_LIMIT,
+            task_soft_time_limit=conf.CELERYD_TASK_SOFT_TIME_LIMIT,
+            max_tasks_per_child=conf.CELERYD_MAX_TASKS_PER_CHILD,
+            queues=None, events=False, **kwargs):
         self.concurrency = concurrency or multiprocessing.cpu_count()
         self.loglevel = loglevel
         self.logfile = logfile
@@ -128,6 +168,14 @@ class Worker(object):
         self.run_clockservice = run_clockservice
         self.schedule = schedule
         self.events = events
+        self.task_time_limit = task_time_limit
+        self.task_soft_time_limit = task_soft_time_limit
+        self.max_tasks_per_child = max_tasks_per_child
+        self.queues = queues or []
+
+        if isinstance(self.queues, basestring):
+            self.queues = self.queues.split(",")
+
         if not isinstance(self.loglevel, int):
             self.loglevel = conf.LOG_LEVELS[self.loglevel.upper()]
 
@@ -136,6 +184,7 @@ class Worker(object):
                                               celery.__version__))
 
         self.init_loader()
+        self.init_queues()
 
         if conf.RESULT_BACKEND == "database" \
                 and self.settings.DATABASE_ENGINE == "sqlite3" and \
@@ -163,6 +212,12 @@ class Worker(object):
     def on_listener_ready(self, listener):
         signals.worker_ready.send(sender=listener)
         print("celery@%s has started." % self.hostname)
+
+    def init_queues(self):
+        if self.queues:
+            conf.QUEUES = dict((queue, options)
+                                for queue, options in conf.QUEUES.items()
+                                    if queue in self.queues)
 
     def init_loader(self):
         from celery.loaders import current_loader, load_settings
@@ -215,7 +270,10 @@ class Worker(object):
                                 ready_callback=self.on_listener_ready,
                                 embed_clockservice=self.run_clockservice,
                                 schedule_filename=self.schedule,
-                                send_events=self.events)
+                                send_events=self.events,
+                                max_tasks_per_child=self.max_tasks_per_child,
+                                task_time_limit=self.task_time_limit,
+                                task_soft_time_limit=self.task_soft_time_limit)
 
         # Install signal handler so SIGHUP restarts the worker.
         install_worker_restart_handler(worker)

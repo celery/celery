@@ -7,52 +7,32 @@ import platform
 
 try:
     from setuptools import setup, find_packages, Command
+    from setuptools.command.test import test as TestCommand
 except ImportError:
     from ez_setup import use_setuptools
     use_setuptools()
     from setuptools import setup, find_packages, Command
+    from setuptools.command.test import test as TestCommand
 
 import celery as distmeta
 
 
-class RunTests(Command):
-    description = "Run the django test suite from the tests dir."
-    user_options = []
+class RunTests(TestCommand):
+    env = dict(CELERY_LOADER="default",
+               CELERY_CONFIG_MODULE="tests.celeryconfig",
+               CELERYINIT=1)
     extra_env = {}
 
-    def run(self):
-        for env_name, env_value in self.extra_env.items():
+    def run(self, *args, **kwargs):
+        for env_name, env_value in dict(self.env, **self.extra_env).items():
             os.environ[env_name] = str(env_value)
-
-        this_dir = os.getcwd()
-        testproj_dir = os.path.join(this_dir, "tests")
-        os.chdir(testproj_dir)
-        sys.path.append(testproj_dir)
-        from django.core.management import execute_manager
-        os.environ["DJANGO_SETTINGS_MODULE"] = os.environ.get(
-                        "DJANGO_SETTINGS_MODULE", "settings")
-        settings_file = os.environ["DJANGO_SETTINGS_MODULE"]
-        settings_mod = __import__(settings_file, {}, {}, [''])
-        execute_manager(settings_mod, argv=[
-            __file__, "test"])
-        os.chdir(this_dir)
-
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
+        TestCommand.run(self, *args, **kwargs)
 
 
 class QuickRunTests(RunTests):
     extra_env = dict(SKIP_RLIMITS=1, QUICKTEST=1)
 
 install_requires = []
-
-try:
-    import django
-except ImportError:
-    install_requires.append("django")
 
 try:
     import importlib
@@ -62,22 +42,22 @@ except ImportError:
 
 install_requires.extend([
     "python-dateutil",
+    "mailer",
+    "sqlalchemy",
     "anyjson",
-    "carrot>=0.10.3",
-    "django-picklefield",
-    "billiard>=0.2.1"])
+    "carrot>=0.10.4",
+    "billiard>=0.3.0"])
 
 py_version = sys.version_info
-if sys.version_info <= (2, 5):
+if sys.version_info < (2, 6):
     install_requires.append("multiprocessing==2.6.2.1")
-if sys.version_info <= (2, 4):
+if sys.version_info < (2, 5):
     install_requires.append("uuid")
 
 if os.path.exists("README.rst"):
     long_description = codecs.open("README.rst", "r", "utf-8").read()
 else:
     long_description = "See http://pypi.python.org/pypi/celery"
-
 
 setup(
     name='celery',
@@ -89,13 +69,15 @@ setup(
     platforms=["any"],
     license="BSD",
     packages=find_packages(exclude=['ez_setup', 'tests', 'tests.*']),
-    scripts=["bin/celeryd", "bin/celeryinit", "bin/celerybeat", "bin/camqadm"],
+    scripts=["bin/celeryd", "bin/celerybeat",
+             "bin/camqadm", "bin/celeryd-multi"],
     zip_safe=False,
+    setup_requires=["nose", "nose-cover3", "unittest2>=0.4.0", "simplejson"],
     install_requires=install_requires,
     cmdclass = {"test": RunTests, "quicktest": QuickRunTests},
+    test_suite="nose.collector",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
-        "Framework :: Django",
         "Operating System :: OS Independent",
         "Programming Language :: Python",
         "Environment :: No Input/Output (Daemon)",
@@ -112,6 +94,7 @@ setup(
             'celeryinit = celery.bin.celeryinit:main',
             'celerybeat = celery.bin.celerybeat:main',
             'camqadm = celery.bin.camqadm:main',
+            'celeryd-multi = celery.bin.celeryd_multi:main',
             ],
     },
     long_description=long_description,

@@ -4,13 +4,8 @@
 
 This document describes the configuration options available.
 
-If you're using celery in a Django project these settings should be defined
-in the project's ``settings.py`` file.
-
-In a regular Python environment, that is using the default loader, you must create
-the ``celeryconfig.py`` module and make sure it is available on the
-Python path.
-
+If you're using the default loader, you must create the ``celeryconfig.py``
+module and make sure it is available on the Python path.
 
 Example configuration file
 ==========================
@@ -21,8 +16,7 @@ It should contain all you need to run a basic celery set-up.
 .. code-block:: python
 
     CELERY_RESULT_BACKEND = "database"
-    DATABASE_ENGINE = "sqlite3"
-    DATABASE_NAME = "mydatabase.db"
+    CELERY_RESULT_DBURI = "sqlite:///mydatabase.db"
 
     BROKER_HOST = "localhost"
     BROKER_PORT = 5672
@@ -43,12 +37,13 @@ Concurrency settings
 ====================
 
 * CELERYD_CONCURRENCY
+
     The number of concurrent worker processes, executing tasks simultaneously.
 
     Defaults to the number of CPUs/cores available.
 
-
 * CELERYD_PREFETCH_MULTIPLIER
+
     How many messages to prefetch at a time multiplied by the number of
     concurrent processes. The default is 4 (four messages for each
     process). The default setting seems pretty good here. However, if you have
@@ -62,11 +57,12 @@ Task result backend settings
 ============================
 
 * CELERY_RESULT_BACKEND
+
     The backend used to store task results (tombstones).
     Can be one of the following:
 
     * database (default)
-        Use a relational database supported by the Django ORM.
+        Use a relational database supported by `SQLAlchemy`_.
 
     * cache
         Use `memcached`_ to store the results.
@@ -86,6 +82,7 @@ Task result backend settings
         receive the result once. See :doc:`userguide/executing`).
 
 
+.. _`SQLAlchemy`: http://sqlalchemy.org
 .. _`memcached`: http://memcached.org
 .. _`MongoDB`: http://mongodb.org
 .. _`Redis`: http://code.google.com/p/redis/
@@ -94,16 +91,46 @@ Task result backend settings
 Database backend settings
 =========================
 
+Please see `Supported Databases`_ for a table of supported databases.
+To use this backend you need to configure it with an
+`SQLAlchemy Connection String`_, some examples include:
+
+.. code-block:: python
+
+    # sqlite (filename)
+    CELERY_RESULT_DBURI = "sqlite:///celerydb.sqlite"
+
+    # mysql
+    CELERY_RESULT_DBURI = "mysql://scott:tiger@localhost/foo"
+
+    # postgresql
+    CELERY_RESULT_DBURI = "postgresql://scott:tiger@localhost/mydatabase"
+
+    # oracle
+    CELERY_RESULT_DBURI = "oracle://scott:tiger@127.0.0.1:1521/sidname"
+
+See `SQLAlchemy Connection Strings`_ for more information about connection
+strings.
+
+To specify additional SQLAlchemy database engine options you can use
+the ``CELERY_RESULT_ENGINE_OPTIONS`` setting::
+
+    # echo enables verbose logging from SQLAlchemy.
+    CELERY_RESULT_ENGINE_OPTIONS = {"echo": True}
+
+.. _`SQLAlchemy`:
+    http://www.sqlalchemy.org
+.. _`Supported Databases`:
+    http://www.sqlalchemy.org/docs/dbengine.html#supported-databases
+.. _`SQLAlchemy Connection String`:
+    http://www.sqlalchemy.org/docs/dbengine.html#create-engine-url-arguments
+.. _`SQLAlchemy Connection Strings`:
+    http://www.sqlalchemy.org/docs/dbengine.html#create-engine-url-arguments
 Please see the Django ORM database settings documentation:
 http://docs.djangoproject.com/en/dev/ref/settings/#database-engine
 
 If you use this backend, make sure to initialize the database tables
-after configuration. When using celery with a Django project this
-means executing::
-
-    $ python manage.py syncdb
-
-When using celery in a regular Python environment you have to execute::
+after configuration. Use the ``celeryinit`` command to do so::
 
     $ celeryinit
 
@@ -113,16 +140,29 @@ Example configuration
 .. code-block:: python
 
     CELERY_RESULT_BACKEND = "database"
-    DATABASE_ENGINE = "mysql"
-    DATABASE_USER = "myusername"
-    DATABASE_PASSWORD = "mypassword"
-    DATABASE_NAME = "mydatabase"
-    DATABASE_HOST = "localhost"
+    CELERY_RESULT_DBURI = "mysql://user:password@host/dbname"
 
 AMQP backend settings
 =====================
 
-The AMQP backend does not have any settings yet.
+* CELERY_RESULT_EXCHANGE
+
+    Name of the exchange to publish results in. Default is ``"celeryresults"``.
+
+* CELERY_RESULT_EXCHANGE_TYPE
+
+    The exchange type of the result exchange. Default is to use a ``direct``
+    exchange.
+
+* CELERY_RESULT_SERIALIZER
+
+    Result message serialization format. Default is ``"pickle"``.
+
+* CELERY_RESULTS_PERSISTENT
+
+    If set to ``True``, result messages will be persistent. This means the
+    messages will not be lost after a broker restart. The default is for the
+    results to be transient.
 
 Example configuration
 ---------------------
@@ -209,8 +249,6 @@ Also, the following optional configuration directives are available:
 * REDIS_PASSWORD
 
     Password used to connect to the database.
-
-
 
 Example configuration
 ---------------------
@@ -300,6 +338,11 @@ Routing
     The default routing key used when sending tasks.
     The default is: ``celery``.
 
+* CELERY_DEFAULT_DELIVERY_MODE
+
+    Can be ``transient`` or ``persistent``. Default is to send
+    persistent messages.
+
 Connection
 ----------
 
@@ -337,6 +380,13 @@ Task execution settings
     Tasks will never be sent to the queue, but executed locally
     instead.
 
+* CELERY_EAGER_PROPAGATES_EXCEPTIONS
+
+    If this is ``True``, eagerly executed tasks (using ``.apply``, or with
+    ``CELERY_ALWAYS_EAGER`` on), will raise exceptions.
+
+    It's the same as always running ``apply`` with ``throw=True``.
+
 * CELERY_IGNORE_RESULT
 
     Whether to store the task return values or not (tombstones).
@@ -345,9 +395,20 @@ Task execution settings
 
 * CELERY_TASK_RESULT_EXPIRES
     Time (in seconds, or a :class:`datetime.timedelta` object) for when after
-    stored task tombstones are deleted.
+    stored task tombstones will be deleted.
+
+    A built-in periodic task will delete the results after this time
+    (:class:`celery.task.builtins.DeleteExpiredTaskMetaTask`).
 
     **NOTE**: For the moment this only works with the database, cache and MongoDB
+    backends.
+
+    **NOTE**: ``celerybeat`` must be running for the results to be expired.
+
+* CELERY_MAX_CACHED_RESULTS
+
+  Total number of results to store before results are evicted from the
+  result cache. The default is ``5000``.
 
 * CELERY_TRACK_STARTED
 
@@ -379,25 +440,108 @@ Task execution settings
 
     Disable all rate limits, even if tasks has explicit rate limits set.
 
+* CELERY_ACKS_LATE
+
+    Late ack means the task messages will be acknowledged **after** the task
+    has been executed, not *just before*, which is the default behavior.
+
+    See http://ask.github.com/celery/faq.html#should-i-use-retry-or-acks-late
 
 Worker: celeryd
 ===============
 
 * CELERY_IMPORTS
+
     A sequence of modules to import when the celery daemon starts.  This is
     useful to add tasks if you are not using django or cannot use task
     auto-discovery.
 
-* CELERY_SEND_EVENTS
-    Send events so the worker can be monitored by tools like ``celerymon``.
+* CELERYD_MAX_TASKS_PER_CHILD
+
+  Maximum number of tasks a pool worker process can execute before
+  it's replaced with a new one. Default is no limit.
+
+* CELERYD_TASK_TIME_LIMIT
+
+    Task hard time limit in seconds. The worker processing the task will
+    be killed and replaced with a new one when this is exceeded.
+
+* CELERYD_SOFT_TASK_TIME_LIMIT
+
+    Task soft time limit in seconds.
+    The :exc:`celery.exceptions.SoftTimeLimitExceeded` exception will be
+    raised when this is exceeded. The task can catch this to
+    e.g. clean up before the hard time limit comes.
+
+    .. code-block:: python
+
+        from celery.decorators import task
+        from celery.exceptions import SoftTimeLimitExceeded
+
+        @task()
+        def mytask():
+            try:
+                return do_work()
+            except SoftTimeLimitExceeded:
+                cleanup_in_a_hurry()
 
 * CELERY_SEND_TASK_ERROR_EMAILS
+
     If set to ``True``, errors in tasks will be sent to admins by e-mail.
     If unset, it will send the e-mails if ``settings.DEBUG`` is False.
 
 * CELERY_STORE_ERRORS_EVEN_IF_IGNORED
+
     If set, the worker stores all task errors in the result store even if
     ``Task.ignore_result`` is on.
+
+Events
+------
+
+* CELERY_SEND_EVENTS
+
+    Send events so the worker can be monitored by tools like ``celerymon``.
+
+* CELERY_EVENT_EXCHANGE
+
+    Name of the exchange to send event messages to. Default is
+    ``"celeryevent"``.
+
+* CELERY_EVENT_EXCHANGE_TYPE
+
+    The exchange type of the event exchange. Default is to use a ``direct``
+    exchange.
+
+* CELERY_EVENT_ROUTING_KEY
+
+    Routing key used when sending event messages. Default is
+    ``"celeryevent"``.
+
+* CELERY_EVENT_SERIALIZER
+
+    Message serialization format used when sending event messages. Default is
+    ``"json"``.
+
+Broadcast Commands
+------------------
+
+* CELERY_BROADCAST_QUEUE
+
+    Name prefix for the queue used when listening for
+    broadcast messages. The workers hostname will be appended
+    to the prefix to create the final queue name.
+
+    Default is ``"celeryctl"``.
+
+* CELERY_BROADCAST_EXCHANGE
+
+    Name of the exchange used for broadcast messages.
+
+    Default is ``"celeryctl"``.
+
+* CELERY_BROADCAST_EXCHANGE_TYPE
+
+    Exchange type used for broadcast messages. Default is ``"fanout"``.
 
 Logging
 -------
@@ -410,6 +554,7 @@ Logging
     Can also be set via the ``--logfile`` argument.
 
 * CELERYD_LOG_LEVEL
+
     Worker log level, can be any of ``DEBUG``, ``INFO``, ``WARNING``,
     ``ERROR``, ``CRITICAL``.
 
@@ -418,13 +563,49 @@ Logging
     See the :mod:`logging` module for more information.
 
 * CELERYD_LOG_FORMAT
-    The format to use for log messages. Can be overridden using
-    the ``--loglevel`` option to ``celeryd``.
+
+    The format to use for log messages.
 
     Default is ``[%(asctime)s: %(levelname)s/%(processName)s] %(message)s``
 
     See the Python :mod:`logging` module for more information about log
     formats.
+
+* CELERYD_TASK_LOG_FORMAT
+
+    The format to use for log messages logged in tasks. Can be overridden using
+    the ``--loglevel`` option to ``celeryd``.
+
+    Default is::
+
+        [%(asctime)s: %(levelname)s/%(processName)s]
+            [%(task_name)s(%(task_id)s)] %(message)s
+
+    See the Python :mod:`logging` module for more information about log
+    formats.
+
+Custom Component Classes (advanced)
+-----------------------------------
+
+* CELERYD_POOL
+
+    Name of the task pool class used by the worker.
+    Default is ``"celery.worker.pool.TaskPool"``.
+
+* CELERYD_LISTENER
+
+    Name of the listener class used by the worker.
+    Default is ``"celery.worker.listener.CarrotListener"``.
+
+* CELERYD_MEDIATOR
+
+    Name of the mediator class used by the worker.
+    Default is ``"celery.worker.controllers.Mediator"``.
+
+* CELERYD_ETA_SCHEDULER
+
+    Name of the ETA scheduler class used by the worker.
+    Default is ``"celery.worker.controllers.ScheduleController"``.
 
 Periodic Task Server: celerybeat
 ================================

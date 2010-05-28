@@ -6,7 +6,6 @@ The Multiprocessing Worker Server
 import socket
 import logging
 import traceback
-from Queue import Queue
 from multiprocessing.util import Finalize
 
 from celery import conf
@@ -17,7 +16,7 @@ from celery.log import setup_logger, _hijack_multiprocessing_logger
 from celery.beat import EmbeddedClockService
 from celery.utils import noop, instantiate
 
-from celery.worker.buckets import TaskBucket
+from celery.worker.buckets import TaskBucket, FastQueue
 from celery.worker.scheduler import Scheduler
 
 
@@ -35,6 +34,8 @@ def process_initializer():
     # run once per process.
     from celery.loaders import current_loader
     current_loader().init_worker()
+
+    signals.worker_process_init.send(sender=None)
 
 
 class WorkController(object):
@@ -84,12 +85,6 @@ class WorkController(object):
         The :class:`Queue.Queue` that holds tasks ready for immediate
         processing.
 
-    .. attribute:: hold_queue
-
-        The :class:`Queue.Queue` that holds paused tasks. Reasons for holding
-        back the task include waiting for ``eta`` to pass or the task is being
-        retried.
-
     .. attribute:: schedule_controller
 
         Instance of :class:`celery.worker.controllers.ScheduleController`.
@@ -114,7 +109,10 @@ class WorkController(object):
             pool_cls=conf.CELERYD_POOL, listener_cls=conf.CELERYD_LISTENER,
             mediator_cls=conf.CELERYD_MEDIATOR,
             eta_scheduler_cls=conf.CELERYD_ETA_SCHEDULER,
-            schedule_filename=conf.CELERYBEAT_SCHEDULE_FILENAME):
+            schedule_filename=conf.CELERYBEAT_SCHEDULE_FILENAME,
+            task_time_limit=conf.CELERYD_TASK_TIME_LIMIT,
+            task_soft_time_limit=conf.CELERYD_TASK_SOFT_TIME_LIMIT,
+            max_tasks_per_child=conf.CELERYD_MAX_TASKS_PER_CHILD):
 
         # Options
         self.loglevel = loglevel or self.loglevel
@@ -125,11 +123,14 @@ class WorkController(object):
         self.embed_clockservice = embed_clockservice
         self.ready_callback = ready_callback
         self.send_events = send_events
+        self.task_time_limit = task_time_limit
+        self.task_soft_time_limit = task_soft_time_limit
+        self.max_tasks_per_child = max_tasks_per_child
         self._finalize = Finalize(self, self.stop, exitpriority=20)
 
         # Queues
         if conf.DISABLE_RATE_LIMITS:
-            self.ready_queue = Queue()
+            self.ready_queue = FastQueue()
         else:
             self.ready_queue = TaskBucket(task_registry=registry.tasks)
         self.eta_schedule = Scheduler(self.ready_queue, logger=self.logger)
@@ -139,7 +140,10 @@ class WorkController(object):
         # Threads + Pool + Consumer
         self.pool = instantiate(pool_cls, self.concurrency,
                                 logger=self.logger,
-                                initializer=process_initializer)
+                                initializer=process_initializer,
+                                maxtasksperchild=self.max_tasks_per_child,
+                                timeout=self.task_time_limit,
+                                soft_timeout=self.task_soft_time_limit)
         self.mediator = instantiate(mediator_cls, self.ready_queue,
                                     callback=self.process_task,
                                     logger=self.logger)

@@ -1,6 +1,7 @@
-django
+mailer
 python-dateutil
+sqlalchemy
 anyjson
-carrot>=0.10.3
+carrot>=0.10.4
 django-picklefield
-billiard>=0.2.1
+billiard>=0.3.0

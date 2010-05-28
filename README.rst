@@ -4,12 +4,12 @@
 
 .. image:: http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png
 
-:Version: 1.0.1
+:Version: 1.1.0
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
 :Source: http://github.com/ask/celery/
 :Keywords: task queue, job queue, asynchronous, rabbitmq, amqp, redis,
-  django, python, webhooks, queue, distributed
+  python, webhooks, queue, distributed
 
 --
 
@@ -22,14 +22,20 @@ more worker servers. Tasks can execute asynchronously (in the background) or syn
 
 Celery is already used in production to process millions of tasks a day.
 
-Celery was originally created for use with Django, but is now usable
-from any Python project. It can
-also `operate with other languages via webhooks`_.
+Celery is written in Python, but the protocol can be implemented in any
+language. It can also `operate with other languages using webhooks`_.
 
-The recommended message broker is `RabbitMQ`_, but support for Redis and
-databases is also available.
+The recommended message broker is `RabbitMQ`_, but support for `Redis`_ and
+databases (`SQLAlchemy`_) is also available.
 
-.. _`operate with other languages via webhooks`:
+You may also be pleased to know that full Django integration exists
+via the `django-celery`_ package.
+
+.. _`RabbitMQ`: http://www.rabbitmq.com/
+.. _`Redis`: http://code.google.com/p/redis/
+.. _`SQLAlchemy`: http://www.sqlalchemy.org/
+.. _`django-celery`: http://pypi.python.org/pypi/django-celery
+.. _`operate with other languages using webhooks`:
     http://ask.github.com/celery/userguide/remote-tasks.html
 
 Overview
@@ -150,12 +156,10 @@ Features
     +-----------------+----------------------------------------------------+
 
 
-.. _`RabbitMQ`: http://www.rabbitmq.com/
 .. _`clustering`: http://www.rabbitmq.com/clustering.html
 .. _`AMQP`: http://www.amqp.org/
 .. _`Stomp`: http://stomp.codehaus.org/
 .. _`MongoDB`: http://www.mongodb.org/
-.. _`Redis`: http://code.google.com/p/redis/
 .. _`Tokyo Tyrant`: http://tokyocabinet.sourceforge.net/
 
 Documentation

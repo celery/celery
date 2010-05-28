@@ -30,13 +30,6 @@ class TestTaskPool(unittest.TestCase):
         self.assertIsInstance(p.logger, logging.Logger)
         self.assertIsNone(p._pool)
 
-    def test_start_stop(self):
-        p = TaskPool(limit=2)
-        p.start()
-        self.assertIsNotNone(p._pool)
-        p.stop()
-        self.assertIsNone(p._pool)
-
     def x_apply(self):
         p = TaskPool(limit=2)
         p.start()

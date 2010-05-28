@@ -3,7 +3,7 @@
 Process Pools.
 
 """
-from billiard.pool import DynamicPool
+from billiard.pool import Pool, RUN
 from billiard.utils.functional import curry
 
 from celery import log
@@ -27,10 +27,14 @@ class TaskPool(object):
 
     """
 
-    def __init__(self, limit, logger=None, initializer=None):
+    def __init__(self, limit, logger=None, initializer=None,
+            maxtasksperchild=None, timeout=None, soft_timeout=None):
         self.limit = limit
         self.logger = logger or log.get_default_logger()
         self.initializer = initializer
+        self.maxtasksperchild = maxtasksperchild
+        self.timeout = timeout
+        self.soft_timeout = soft_timeout
         self._pool = None
 
     def start(self):
@@ -39,25 +43,22 @@ class TaskPool(object):
         Will pre-fork all workers so they're ready to accept tasks.
 
         """
-        self._pool = DynamicPool(processes=self.limit,
-                                 initializer=self.initializer)
+        self._pool = Pool(processes=self.limit,
+                          initializer=self.initializer,
+                          timeout=self.timeout,
+                          soft_timeout=self.soft_timeout,
+                          maxtasksperchild=self.maxtasksperchild)
 
     def stop(self):
         """Terminate the pool."""
-        self._pool.close()
-        self._pool.join()
-        self._pool = None
-
-    def replace_dead_workers(self):
-        self.logger.debug("TaskPool: Finding dead pool processes...")
-        dead_count = self._pool.replace_dead_workers()
-        if dead_count: # pragma: no cover
-            self.logger.info(
-                "TaskPool: Replaced %d dead pool workers..." % (
-                    dead_count))
+        if self._pool is not None and self._pool._state == RUN:
+            self._pool.close()
+            self._pool.join()
+            self._pool = None
 
     def apply_async(self, target, args=None, kwargs=None, callbacks=None,
-            errbacks=None, **compat):
+            errbacks=None, accept_callback=None, timeout_callback=None,
+            **compat):
         """Equivalent of the :func:``apply`` built-in function.
 
         All ``callbacks`` and ``errbacks`` should complete immediately since
@@ -74,10 +75,10 @@ class TaskPool(object):
         self.logger.debug("TaskPool: Apply %s (args:%s kwargs:%s)" % (
             target, args, kwargs))
 
-        self.replace_dead_workers()
-
         return self._pool.apply_async(target, args, kwargs,
-                                        callback=on_ready)
+                                      callback=on_ready,
+                                      accept_callback=accept_callback,
+                                      timeout_callback=timeout_callback)
 
     def on_ready(self, callbacks, errbacks, ret_value):
         """What to do when a worker task is ready and its return value has

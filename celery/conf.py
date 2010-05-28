@@ -22,12 +22,16 @@ settings = load_settings()
 _DEFAULTS = {
     "CELERY_RESULT_BACKEND": "database",
     "CELERY_ALWAYS_EAGER": False,
+    "CELERY_EAGER_PROPAGATES_EXCEPTIONS": False,
     "CELERY_TASK_RESULT_EXPIRES": timedelta(days=5),
     "CELERY_SEND_EVENTS": False,
     "CELERY_IGNORE_RESULT": False,
     "CELERY_STORE_ERRORS_EVEN_IF_IGNORED": False,
     "CELERY_TASK_SERIALIZER": "pickle",
     "CELERY_DISABLE_RATE_LIMITS": False,
+    "CELERYD_TASK_TIME_LIMIT": None,
+    "CELERYD_TASK_SOFT_TIME_LIMIT": None,
+    "CELERYD_MAX_TASKS_PER_CHILD": None,
     "CELERY_DEFAULT_ROUTING_KEY": "celery",
     "CELERY_DEFAULT_QUEUE": "celery",
     "CELERY_DEFAULT_EXCHANGE": "celery",
@@ -36,6 +40,7 @@ _DEFAULTS = {
     "CELERY_BROKER_CONNECTION_TIMEOUT": 4,
     "CELERY_BROKER_CONNECTION_RETRY": True,
     "CELERY_BROKER_CONNECTION_MAX_RETRIES": 100,
+    "CELERY_ACKS_LATE": False,
     "CELERYD_POOL": "celery.worker.pool.TaskPool",
     "CELERYD_MEDIATOR": "celery.worker.controllers.Mediator",
     "CELERYD_ETA_SCHEDULER": "celery.worker.controllers.ScheduleController",
@@ -60,13 +65,18 @@ _DEFAULTS = {
     "CELERY_EVENT_EXCHANGE": "celeryevent",
     "CELERY_EVENT_EXCHANGE_TYPE": "direct",
     "CELERY_EVENT_ROUTING_KEY": "celeryevent",
+    "CELERY_EVENT_SERIALIZER": "json",
     "CELERY_RESULT_EXCHANGE": "celeryresults",
+    "CELERY_RESULT_EXCHANGE_TYPE": "direct",
+    "CELERY_RESULT_SERIALIZER": "pickle",
+    "CELERY_RESULT_PERSISTENT": False,
     "CELERY_MAX_CACHED_RESULTS": 5000,
     "CELERY_TRACK_STARTED": False,
 }
 
+
 _DEPRECATION_FMT = """
-%s is deprecated in favor of %s and is scheduled for removal in celery v1.2.
+%s is deprecated in favor of %s and is scheduled for removal in celery v1.4.
 """.strip()
 
 def _get(name, default=None, compat=None):
@@ -86,6 +96,7 @@ def _get(name, default=None, compat=None):
 
 # <--- Task                                        <-   --   --- - ----- -- #
 ALWAYS_EAGER = _get("CELERY_ALWAYS_EAGER")
+EAGER_PROPAGATES_EXCEPTIONS = _get("CELERY_EAGER_PROPAGATES_EXCEPTIONS")
 RESULT_BACKEND = _get("CELERY_RESULT_BACKEND", compat=["CELERY_BACKEND"])
 CELERY_BACKEND = RESULT_BACKEND # FIXME Remove in 1.4
 CELERY_CACHE_BACKEND = _get("CELERY_CACHE_BACKEND")
@@ -93,9 +104,15 @@ TASK_SERIALIZER = _get("CELERY_TASK_SERIALIZER")
 TASK_RESULT_EXPIRES = _get("CELERY_TASK_RESULT_EXPIRES")
 IGNORE_RESULT = _get("CELERY_IGNORE_RESULT")
 TRACK_STARTED = _get("CELERY_TRACK_STARTED")
+ACKS_LATE = _get("CELERY_ACKS_LATE")
 # Make sure TASK_RESULT_EXPIRES is a timedelta.
 if isinstance(TASK_RESULT_EXPIRES, int):
     TASK_RESULT_EXPIRES = timedelta(seconds=TASK_RESULT_EXPIRES)
+
+# <--- SQLAlchemy                                  <-   --   --- - ----- -- #
+RESULT_DBURI = _get("CELERY_RESULT_DBURI")
+RESULT_ENGINE_OPTIONS = _get("CELERY_RESULT_ENGINE_OPTIONS")
+
 
 # <--- Client                                      <-   --   --- - ----- -- #
 
@@ -106,6 +123,9 @@ MAX_CACHED_RESULTS = _get("CELERY_MAX_CACHED_RESULTS")
 SEND_EVENTS = _get("CELERY_SEND_EVENTS")
 DEFAULT_RATE_LIMIT = _get("CELERY_DEFAULT_RATE_LIMIT")
 DISABLE_RATE_LIMITS = _get("CELERY_DISABLE_RATE_LIMITS")
+CELERYD_TASK_TIME_LIMIT = _get("CELERYD_TASK_TIME_LIMIT")
+CELERYD_TASK_SOFT_TIME_LIMIT = _get("CELERYD_TASK_SOFT_TIME_LIMIT")
+CELERYD_MAX_TASKS_PER_CHILD = _get("CELERYD_MAX_TASKS_PER_CHILD")
 STORE_ERRORS_EVEN_IF_IGNORED = _get("CELERY_STORE_ERRORS_EVEN_IF_IGNORED")
 CELERY_SEND_TASK_ERROR_EMAILS = _get("CELERY_SEND_TASK_ERROR_EMAILS",
                                      not settings.DEBUG,
@@ -115,7 +135,7 @@ CELERYD_LOG_FORMAT = _get("CELERYD_LOG_FORMAT",
 CELERYD_TASK_LOG_FORMAT = _get("CELERYD_TASK_LOG_FORMAT")
 CELERYD_LOG_FILE = _get("CELERYD_LOG_FILE")
 CELERYD_LOG_LEVEL = _get("CELERYD_LOG_LEVEL",
-                        compat=["CELERYD_DAEMON_LOG_LEVEL"])
+                            compat=["CELERYD_DAEMON_LOG_LEVEL"])
 CELERYD_LOG_LEVEL = LOG_LEVELS[CELERYD_LOG_LEVEL.upper()]
 CELERYD_CONCURRENCY = _get("CELERYD_CONCURRENCY")
 CELERYD_PREFETCH_MULTIPLIER = _get("CELERYD_PREFETCH_MULTIPLIER")
@@ -126,65 +146,15 @@ CELERYD_MEDIATOR = _get("CELERYD_MEDIATOR")
 CELERYD_ETA_SCHEDULER = _get("CELERYD_ETA_SCHEDULER")
 
 # <--- Message routing                             <-   --   --- - ----- -- #
-QUEUES = _get("CELERY_QUEUES")
 DEFAULT_QUEUE = _get("CELERY_DEFAULT_QUEUE")
 DEFAULT_ROUTING_KEY = _get("CELERY_DEFAULT_ROUTING_KEY")
 DEFAULT_EXCHANGE = _get("CELERY_DEFAULT_EXCHANGE")
 DEFAULT_EXCHANGE_TYPE = _get("CELERY_DEFAULT_EXCHANGE_TYPE")
 DEFAULT_DELIVERY_MODE = _get("CELERY_DEFAULT_DELIVERY_MODE")
-
-_DEPRECATIONS = {"CELERY_AMQP_CONSUMER_QUEUES": "CELERY_QUEUES",
-                 "CELERY_AMQP_CONSUMER_QUEUE": "CELERY_QUEUES",
-                 "CELERY_AMQP_EXCHANGE": "CELERY_DEFAULT_EXCHANGE",
-                 "CELERY_AMQP_EXCHANGE_TYPE": "CELERY_DEFAULT_EXCHANGE_TYPE",
-                 "CELERY_AMQP_CONSUMER_ROUTING_KEY": "CELERY_QUEUES",
-                 "CELERY_AMQP_PUBLISHER_ROUTING_KEY":
-                 "CELERY_DEFAULT_ROUTING_KEY"}
-
-
-_DEPRECATED_QUEUE_SETTING_FMT = """
-%s is deprecated in favor of %s and scheduled for removal in celery v1.0.
-Please visit http://bit.ly/5DsSuX for more information.
-
-We're sorry for the inconvenience.
-""".strip()
-
-
-def _find_deprecated_queue_settings():
-    global DEFAULT_QUEUE, DEFAULT_ROUTING_KEY
-    global DEFAULT_EXCHANGE, DEFAULT_EXCHANGE_TYPE
-    binding_key = None
-
-    multi = _get("CELERY_AMQP_CONSUMER_QUEUES")
-    if multi:
-        return multi
-
-    single = _get("CELERY_AMQP_CONSUMER_QUEUE")
-    if single:
-        DEFAULT_QUEUE = single
-        DEFAULT_EXCHANGE = _get("CELERY_AMQP_EXCHANGE", DEFAULT_EXCHANGE)
-        DEFAULT_EXCHANGE_TYPE = _get("CELERY_AMQP_EXCHANGE_TYPE",
-                                     DEFAULT_EXCHANGE_TYPE)
-        binding_key = _get("CELERY_AMQP_CONSUMER_ROUTING_KEY",
-                            DEFAULT_ROUTING_KEY)
-        DEFAULT_ROUTING_KEY = _get("CELERY_AMQP_PUBLISHER_ROUTING_KEY",
-                                   DEFAULT_ROUTING_KEY)
-    binding_key = binding_key or DEFAULT_ROUTING_KEY
-    return {DEFAULT_QUEUE: {"exchange": DEFAULT_EXCHANGE,
-                            "exchange_type": DEFAULT_EXCHANGE_TYPE,
-                            "binding_key": binding_key}}
-
-
-def _warn_if_deprecated_queue_settings():
-    for setting, new_setting in _DEPRECATIONS.items():
-        if _get(setting):
-            warnings.warn(DeprecationWarning(_DEPRECATED_QUEUE_SETTING_FMT % (
-                setting, _DEPRECATIONS[setting])))
-            break
-
-_warn_if_deprecated_queue_settings()
-if not QUEUES:
-    QUEUES = _find_deprecated_queue_settings()
+QUEUES = _get("CELERY_QUEUES") or {DEFAULT_QUEUE: {
+                                       "exchange": DEFAULT_EXCHANGE,
+                                       "exchange_type": DEFAULT_EXCHANGE_TYPE,
+                                       "binding_key": DEFAULT_ROUTING_KEY}}
 
 # :--- Broadcast queue settings                     <-   --   --- - ----- -- #
 
@@ -198,6 +168,7 @@ EVENT_QUEUE = _get("CELERY_EVENT_QUEUE")
 EVENT_EXCHANGE = _get("CELERY_EVENT_EXCHANGE")
 EVENT_EXCHANGE_TYPE = _get("CELERY_EVENT_EXCHANGE_TYPE")
 EVENT_ROUTING_KEY = _get("CELERY_EVENT_ROUTING_KEY")
+EVENT_SERIALIZER = _get("CELERY_EVENT_SERIALIZER")
 
 # :--- Broker connections                           <-   --   --- - ----- -- #
 BROKER_CONNECTION_TIMEOUT = _get("CELERY_BROKER_CONNECTION_TIMEOUT",
@@ -207,9 +178,12 @@ BROKER_CONNECTION_RETRY = _get("CELERY_BROKER_CONNECTION_RETRY",
 BROKER_CONNECTION_MAX_RETRIES = _get("CELERY_BROKER_CONNECTION_MAX_RETRIES",
                                 compat=["CELERY_AMQP_CONNECTION_MAX_RETRIES"])
 
-# :--- Backend settings                             <-   --   --- - ----- -- #
+# :--- AMQP Backend settings                        <-   --   --- - ----- -- #
 
 RESULT_EXCHANGE = _get("CELERY_RESULT_EXCHANGE")
+RESULT_EXCHANGE_TYPE = _get("CELERY_RESULT_EXCHANGE_TYPE")
+RESULT_SERIALIZER = _get("CELERY_RESULT_SERIALIZER")
+RESULT_PERSISTENT = _get("CELERY_RESULT_PERSISTENT")
 
 # :--- Celery Beat                                  <-   --   --- - ----- -- #
 CELERYBEAT_LOG_LEVEL = _get("CELERYBEAT_LOG_LEVEL")
@@ -234,4 +208,5 @@ def _init_routing_table(queues):
 
     return dict((queue, _defaults(opts)) for queue, opts in queues.items())
 
-routing_table = _init_routing_table(QUEUES)
+def get_routing_table():
+    return _init_routing_table(QUEUES)

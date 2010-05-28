@@ -19,6 +19,7 @@ class BaseLoader(object):
     """
     _conf_cache = None
     worker_initialized = False
+    override_backends = {}
 
     def on_task_init(self, task_id, task):
         """This method is called before a task is executed."""

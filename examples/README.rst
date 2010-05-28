@@ -7,10 +7,6 @@
 
 Example Python project using celery.
 
-* django
-
-Example Django project using celery.
-
 * httpexample
 
 Example project using remote tasks (webhook tasks)

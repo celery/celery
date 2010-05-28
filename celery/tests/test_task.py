@@ -2,8 +2,13 @@ import unittest2 as unittest
 from StringIO import StringIO
 from datetime import datetime, timedelta
 
+from billiard.utils.functional import wraps
+
+from celery import conf
 from celery import task
 from celery import messaging
+from celery.task.schedules import crontab
+from celery.utils import timeutils
 from celery.utils import gen_unique_id
 from celery.result import EagerResult
 from celery.execute import send_task
@@ -261,6 +266,14 @@ class TestCeleryTasks(unittest.TestCase):
 
         self.assertRaises(NotImplementedError, IncompleteTask().run)
 
+    def test_task_kwargs_must_be_dictionary(self):
+        self.assertRaises(ValueError, IncrementCounterTask.apply_async,
+                          [], "str")
+
+    def test_task_args_must_be_list(self):
+        self.assertRaises(ValueError, IncrementCounterTask.apply_async,
+                          "str", {})
+
     def test_regular_task(self):
         T1 = self.createTaskCls("T1", "c.unittest.t.t1")
         self.assertIsInstance(T1(), T1)
@@ -384,6 +397,16 @@ class TestTaskSet(unittest.TestCase):
 
 class TestTaskApply(unittest.TestCase):
 
+    def test_apply_throw(self):
+        self.assertRaises(KeyError, RaisingTask.apply, throw=True)
+
+    def test_apply_with_CELERY_EAGER_PROPAGATES_EXCEPTIONS(self):
+        conf.EAGER_PROPAGATES_EXCEPTIONS = True
+        try:
+            self.assertRaises(KeyError, RaisingTask.apply)
+        finally:
+            conf.EAGER_PROPAGATES_EXCEPTIONS = False
+
     def test_apply(self):
         IncrementCounterTask.count = 0
 
@@ -437,7 +460,7 @@ class TestPeriodicTask(unittest.TestCase):
             self.assertEqual(MyPeriodic().timedelta_seconds(delta), seconds)
 
     def test_delta_resolution(self):
-        D = MyPeriodic().delta_resolution
+        D = timeutils.delta_resolution
 
         dt = datetime(2010, 3, 30, 11, 50, 58, 41065)
         deltamap = ((timedelta(days=2), datetime(2010, 3, 30, 0, 0)),
@@ -454,6 +477,92 @@ class TestPeriodicTask(unittest.TestCase):
 
     def test_is_due(self):
         p = MyPeriodic()
-        due, remaining = p.is_due(datetime.now() - p.run_every)
+        due, remaining = p.is_due(datetime.now() - p.run_every.run_every)
         self.assertTrue(due)
-        self.assertEqual(remaining, p.timedelta_seconds(p.run_every))
+        self.assertEqual(remaining,
+                         p.timedelta_seconds(p.run_every.run_every))
+
+
+class EveryMinutePeriodic(task.PeriodicTask):
+    run_every = crontab()
+
+
+class HourlyPeriodic(task.PeriodicTask):
+    run_every = crontab(minute=30)
+
+
+class DailyPeriodic(task.PeriodicTask):
+    run_every = crontab(hour=7, minute=30)
+
+
+class WeeklyPeriodic(task.PeriodicTask):
+    run_every = crontab(hour=7, minute=30, day_of_week="thursday")
+
+
+def patch_crontab_nowfun(cls, retval):
+
+    def create_patcher(fun):
+
+        @wraps(fun)
+        def __inner(*args, **kwargs):
+            prev_nowfun = cls.run_every.nowfun
+            cls.run_every.nowfun = lambda: retval
+            try:
+                return fun(*args, **kwargs)
+            finally:
+                cls.run_every.nowfun = prev_nowfun
+
+        return __inner
+
+    return create_patcher
+
+
+class test_crontab(unittest.TestCase):
+
+    def test_every_minute_execution_is_due(self):
+        last_ran = datetime.now() - timedelta(seconds=61)
+        due, remaining = EveryMinutePeriodic().is_due(last_ran)
+        self.assertTrue(due)
+        self.assertEquals(remaining, 1)
+
+    def test_every_minute_execution_is_not_due(self):
+        last_ran = datetime.now() - timedelta(seconds=30)
+        due, remaining = EveryMinutePeriodic().is_due(last_ran)
+        self.assertFalse(due)
+        self.assertEquals(remaining, 1)
+
+    @patch_crontab_nowfun(HourlyPeriodic, datetime(2010, 5, 10, 10, 30))
+    def test_every_hour_execution_is_due(self):
+        due, remaining = HourlyPeriodic().is_due(datetime(2010, 5, 10, 6, 30))
+        self.assertTrue(due)
+        self.assertEquals(remaining, 1)
+
+    @patch_crontab_nowfun(HourlyPeriodic, datetime(2010, 5, 10, 10, 29))
+    def test_every_hour_execution_is_not_due(self):
+        due, remaining = HourlyPeriodic().is_due(datetime(2010, 5, 10, 6, 30))
+        self.assertFalse(due)
+        self.assertEquals(remaining, 1)
+
+    @patch_crontab_nowfun(DailyPeriodic, datetime(2010, 5, 10, 7, 30))
+    def test_daily_execution_is_due(self):
+        due, remaining = DailyPeriodic().is_due(datetime(2010, 5, 9, 7, 30))
+        self.assertTrue(due)
+        self.assertEquals(remaining, 1)
+
+    @patch_crontab_nowfun(DailyPeriodic, datetime(2010, 5, 10, 10, 30))
+    def test_daily_execution_is_not_due(self):
+        due, remaining = DailyPeriodic().is_due(datetime(2010, 5, 10, 6, 29))
+        self.assertFalse(due)
+        self.assertEquals(remaining, 1)
+
+    @patch_crontab_nowfun(WeeklyPeriodic, datetime(2010, 5, 6, 7, 30))
+    def test_weekly_execution_is_due(self):
+        due, remaining = WeeklyPeriodic().is_due(datetime(2010, 4, 30, 7, 30))
+        self.assertTrue(due)
+        self.assertEquals(remaining, 1)
+
+    @patch_crontab_nowfun(WeeklyPeriodic, datetime(2010, 5, 7, 10, 30))
+    def test_weekly_execution_is_not_due(self):
+        due, remaining = WeeklyPeriodic().is_due(datetime(2010, 4, 30, 6, 29))
+        self.assertFalse(due)
+        self.assertEquals(remaining, 1)

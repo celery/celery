@@ -9,6 +9,7 @@ from itertools import chain, izip
 from billiard.utils.functional import curry
 
 from celery.task.base import Task
+from celery.utils import timeutils
 from celery.utils import gen_unique_id
 from celery.worker import buckets
 from celery.registry import TaskRegistry
@@ -97,15 +98,15 @@ class TestRateLimitString(unittest.TestCase):
 
     @skip_if_disabled
     def test_conversion(self):
-        self.assertEqual(buckets.parse_ratelimit_string(999), 999)
-        self.assertEqual(buckets.parse_ratelimit_string("1456/s"), 1456)
-        self.assertEqual(buckets.parse_ratelimit_string("100/m"),
+        self.assertEqual(timeutils.rate(999), 999)
+        self.assertEqual(timeutils.rate("1456/s"), 1456)
+        self.assertEqual(timeutils.rate("100/m"),
                           100 / 60.0)
-        self.assertEqual(buckets.parse_ratelimit_string("10/h"),
+        self.assertEqual(timeutils.rate("10/h"),
                           10 / 60.0 / 60.0)
 
         for zero in (0, None, "0", "0/m", "0/h", "0/s"):
-            self.assertEqual(buckets.parse_ratelimit_string(zero), 0)
+            self.assertEqual(timeutils.rate(zero), 0)
 
 
 class TaskA(Task):

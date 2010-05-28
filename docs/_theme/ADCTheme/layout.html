@@ -28,6 +28,7 @@
     {%- if prev %}
     <link rel="prev" title="{{ prev.title|striptags }}" href="{{ prev.link|e }}" />
     {%- endif %}
+    <link media="only screen and (max-device-width: 480px)" href="{{ pathto('_static/mobile.css', 1) }}" type="text/css" rel="stylesheet" />
 {%- endblock %}
 {%- block extrahead %} {% endblock %}
 {%- block header %}{% endblock %}
@@ -135,9 +136,10 @@
 {%- block footer %}
 	<div id="breadcrumbs">
 		{%- for parent in parents %}
-		<a href="{{ parent.link|e }}" {{ accesskey("U") }}>{{ parent.title }}</a><img src="triangle_closed.png" alt="Right arrow">
+		<a href="{{ parent.link|e }}" {{ accesskey("U") }}>{{ parent.title|safe }}</a><img src="{{ pathto('_static/triangle_closed.png', 1) }}" height="9" width="9" alt="&gt;">
 		{%- endfor %}
-		<a href="{{ pathto(master_doc) }}">{{ shorttitle|e }}</a>
+		{{ title|safe|e }}
 		</ul>
 	</div>
+	<script type="text/javascript" charset="utf-8" src="{{ pathto('_static/toc.js', 1) }}"></script>
 {%- endblock %}

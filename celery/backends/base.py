@@ -7,7 +7,7 @@ from billiard.serialization import get_pickleable_exception
 
 from celery import conf
 from celery import states
-from celery.exceptions import TimeoutError
+from celery.exceptions import TimeoutError, TaskRevokedError
 from celery.datastructures import LocalCache
 
 
@@ -19,8 +19,6 @@ class BaseBackend(object):
     EXCEPTION_STATES = states.EXCEPTION_STATES
 
     TimeoutError = TimeoutError
-
-    capabilities = []
 
     def __init__(self, *args, **kwargs):
         pass
@@ -54,6 +52,10 @@ class BaseBackend(object):
         exception (if any)."""
         return self.store_result(task_id, exc, status=states.RETRY,
                                  traceback=traceback)
+
+    def mark_as_revoked(self, task_id):
+        return self.store_result(task_id, TaskRevokedError(),
+                                 status=states.REVOKED, traceback=None)
 
     def prepare_exception(self, exc):
         """Prepare exception for serialization."""
@@ -90,7 +92,7 @@ class BaseBackend(object):
             status = self.get_status(task_id)
             if status == states.SUCCESS:
                 return self.get_result(task_id)
-            elif status == states.FAILURE:
+            elif status in states.PROPAGATE_STATES:
                 raise self.get_result(task_id)
             # avoid hammering the CPU checking status.
             time.sleep(sleep_inbetween)
@@ -144,8 +146,6 @@ class BaseBackend(object):
 
 
 class BaseDictBackend(BaseBackend):
-
-    capabilities = ["ResultStore"]
 
     def __init__(self, *args, **kwargs):
         super(BaseDictBackend, self).__init__(*args, **kwargs)

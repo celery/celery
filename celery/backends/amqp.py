@@ -1,9 +1,39 @@
 """celery.backends.amqp"""
+import socket
+
 from carrot.messaging import Consumer, Publisher
 
 from celery import conf
+from celery import states
+from celery.exceptions import TimeoutError
 from celery.backends.base import BaseDictBackend
 from celery.messaging import establish_connection
+
+
+class ResultPublisher(Publisher):
+    exchange = conf.RESULT_EXCHANGE
+    exchange_type = conf.RESULT_EXCHANGE_TYPE
+    delivery_mode = conf.RESULT_PERSISTENT and 2 or 1
+    serializer = conf.RESULT_SERIALIZER
+    durable = conf.RESULT_PERSISTENT
+
+    def __init__(self, connection, task_id, **kwargs):
+        super(ResultPublisher, self).__init__(connection,
+                        routing_key=task_id.replace("-", ""),
+                        **kwargs)
+
+
+class ResultConsumer(Consumer):
+    exchange = conf.RESULT_EXCHANGE
+    exchange_type = conf.RESULT_EXCHANGE_TYPE
+    durable = conf.RESULT_PERSISTENT
+    no_ack = True
+    auto_delete = True
+
+    def __init__(self, connection, task_id, **kwargs):
+        routing_key = task_id.replace("-", "")
+        super(ResultConsumer, self).__init__(connection,
+                queue=routing_key, routing_key=routing_key, **kwargs)
 
 
 class AMQPBackend(BaseDictBackend):
@@ -17,50 +47,28 @@ class AMQPBackend(BaseDictBackend):
     """
 
     exchange = conf.RESULT_EXCHANGE
-    capabilities = ["ResultStore"]
+    exchange_type = conf.RESULT_EXCHANGE_TYPE
+    persistent = conf.RESULT_PERSISTENT
+    serializer = conf.RESULT_SERIALIZER
     _connection = None
-    _use_debug_tracking = False
-    _seen = set()
 
-    def __init__(self, *args, **kwargs):
-        super(AMQPBackend, self).__init__(*args, **kwargs)
+    def _create_publisher(self, task_id, connection):
+        delivery_mode = self.persistent and 2 or 1
 
-    @property
-    def connection(self):
-        if not self._connection:
-            self._connection = establish_connection()
-        return self._connection
+        # Declares the queue.
+        self._create_consumer(task_id, connection).close()
 
-    def _declare_queue(self, task_id, connection):
-        routing_key = task_id.replace("-", "")
-        backend = connection.create_backend()
-        backend.queue_declare(queue=routing_key, durable=True,
-                                exclusive=False, auto_delete=True)
-        backend.exchange_declare(exchange=self.exchange,
-                                 type="direct",
-                                 durable=True,
-                                 auto_delete=False)
-        backend.queue_bind(queue=routing_key, exchange=self.exchange,
-                           routing_key=routing_key)
-        backend.close()
+        return ResultPublisher(connection, task_id,
+                               exchange=self.exchange,
+                               exchange_type=self.exchange_type,
+                               delivery_mode=delivery_mode,
+                               serializer=self.serializer)
 
-    def _publisher_for_task_id(self, task_id, connection):
-        routing_key = task_id.replace("-", "")
-        self._declare_queue(task_id, connection)
-        p = Publisher(connection, exchange=self.exchange,
-                      exchange_type="direct",
-                      routing_key=routing_key)
-        return p
-
-    def _consumer_for_task_id(self, task_id, connection):
-        routing_key = task_id.replace("-", "")
-        self._declare_queue(task_id, connection)
-        return Consumer(connection, queue=routing_key,
-                        exchange=self.exchange,
-                        exchange_type="direct",
-                        no_ack=False, auto_ack=False,
-                        auto_delete=True,
-                        routing_key=routing_key)
+    def _create_consumer(self, task_id, connection):
+        return ResultConsumer(connection, task_id,
+                              exchange=self.exchange,
+                              exchange_type=self.exchange_type,
+                              durable=self.persistent)
 
     def store_result(self, task_id, result, status, traceback=None):
         """Send task return value and status."""
@@ -71,33 +79,42 @@ class AMQPBackend(BaseDictBackend):
                 "status": status,
                 "traceback": traceback}
 
-        connection = self.connection
-        publisher = self._publisher_for_task_id(task_id, connection)
-        publisher.send(meta, serializer="pickle")
-        publisher.close()
+        publisher = self._create_publisher(task_id, self.connection)
+        try:
+            publisher.send(meta)
+        finally:
+            publisher.close()
 
         return result
 
-    def _get_task_meta_for(self, task_id):
-        assert task_id not in self._seen
-        self._use_debug_tracking and self._seen.add(task_id)
+    def wait_for(self, task_id, timeout=None):
+        try:
+            meta = self._get_task_meta_for(task_id, timeout)
+        except socket.timeout:
+            raise TimeoutError("The operation timed out.")
 
+        if meta["status"] == states.SUCCESS:
+            return self.get_result(task_id)
+        elif meta["status"] in states.PROPAGATE_STATES:
+            raise self.get_result(task_id)
+
+    def _get_task_meta_for(self, task_id, timeout=None):
         results = []
 
         def callback(message_data, message):
             results.append(message_data)
-            message.ack()
 
         routing_key = task_id.replace("-", "")
 
-        connection = self.connection
-        consumer = self._consumer_for_task_id(task_id, connection)
+        wait = self.connection.connection.wait_multi
+        consumer = self._create_consumer(task_id, self.connection)
         consumer.register_callback(callback)
 
+        consumer.consume()
         try:
-            consumer.iterconsume().next()
+            wait([consumer.backend.channel], timeout=timeout)
         finally:
-            consumer.backend.channel.queue_delete(routing_key)
+            consumer.backend.queue_delete(routing_key)
             consumer.close()
 
         self._cache[task_id] = results[0]
@@ -121,3 +138,13 @@ class AMQPBackend(BaseDictBackend):
         """Get the result of a taskset."""
         raise NotImplementedError(
                 "restore_taskset is not supported by this backend.")
+
+    def close(self):
+        if self._connection is not None:
+            self._connection.close()
+
+    @property
+    def connection(self):
+        if not self._connection:
+            self._connection = establish_connection()
+        return self._connection

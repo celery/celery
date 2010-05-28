@@ -9,10 +9,14 @@ from celery.registry import tasks
 
 hostname = socket.gethostname()
 
+
 class TestControlPanel(unittest.TestCase):
 
     def setUp(self):
-        self.panel = control.ControlDispatch(hostname=hostname)
+        self.panel = self.create_panel(listener=object())
+
+    def create_panel(self, **kwargs):
+        return control.ControlDispatch(hostname=hostname, **kwargs)
 
     def test_shutdown(self):
         self.assertRaises(SystemExit, self.panel.execute, "shutdown")
@@ -21,17 +25,33 @@ class TestControlPanel(unittest.TestCase):
         self.panel.execute("dump_tasks")
 
     def test_rate_limit(self):
+
+        class Listener(object):
+
+            class ReadyQueue(object):
+                fresh = False
+
+                def refresh(self):
+                    self.fresh = True
+
+            def __init__(self):
+                self.ready_queue = self.ReadyQueue()
+
+        listener = Listener()
+        panel = self.create_panel(listener=listener)
+
         task = tasks[PingTask.name]
         old_rate_limit = task.rate_limit
         try:
-            self.panel.execute("rate_limit", kwargs=dict(
-                                                task_name=task.name,
-                                                rate_limit="100/m"))
+            panel.execute("rate_limit", kwargs=dict(task_name=task.name,
+                                                    rate_limit="100/m"))
             self.assertEqual(task.rate_limit, "100/m")
-            self.panel.execute("rate_limit", kwargs=dict(
-                                                task_name=task.name,
-                                                rate_limit=0))
+            self.assertTrue(listener.ready_queue.fresh)
+            listener.ready_queue.fresh = False
+            panel.execute("rate_limit", kwargs=dict(task_name=task.name,
+                                                    rate_limit=0))
             self.assertEqual(task.rate_limit, 0)
+            self.assertTrue(listener.ready_queue.fresh)
         finally:
             task.rate_limit = old_rate_limit
 

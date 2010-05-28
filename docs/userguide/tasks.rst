@@ -136,7 +136,7 @@ attribute:
             twitter = Twitter(oauth)
             twitter.update_status(tweet)
         except (Twitter.FailWhaleError, Twitter.LoginError), exc:
-            send_twitter_status.retry(args=[oauth, tweet], kwargs, exc=exc)
+            send_twitter_status.retry(args=[oauth, tweet], kwargs=kwargs, exc=exc)
 
 Here we used the ``exc`` argument to pass the current exception to
 :meth:`Task.retry`. At each step of the retry this exception
@@ -415,24 +415,22 @@ yourself:
     >>> from celery import task
     >>> registry.tasks
     {'celery.delete_expired_task_meta':
-      <celery.task.builtins.DeleteExpiredTaskMetaTask object at 0x101d1f510>,
-    'celery.execute_remote':
-      <celery.task.base.ExecuteRemoteTask object at 0x101d17890>,
-    'celery.task.rest.RESTProxyTask':
-      <celery.task.rest.RESTProxyTask object at 0x101d1f410>,
-    'celery.task.rest.Task': <celery.task.rest.Task object at 0x101d1f4d0>,
-    'celery.map_async':
-      <celery.task.base.AsynchronousMapTask object at 0x101d17910>,
-    'celery.ping': <celery.task.builtins.PingTask object at 0x101d1f550>}
+        <PeriodicTask: celery.delete_expired_task_meta (periodic)>,
+     'celery.task.http.HttpDispatchTask':
+        <Task: celery.task.http.HttpDispatchTask (regular)>,
+     'celery.execute_remote':
+        <Task: celery.execute_remote (regular)>,
+     'celery.map_async':
+        <Task: celery.map_async (regular)>,
+     'celery.ping':
+        <Task: celery.ping (regular)>}
 
 This is the list of tasks built-in to celery. Note that we had to import
 ``celery.task`` first for these to show up. This is because the tasks will
 only be registered when the module they are defined in is imported.
 
 The default loader imports any modules listed in the
-``CELERY_IMPORTS`` setting. If using Django it loads all ``tasks.py`` modules
-for the applications listed in ``INSTALLED_APPS``. If you want to do something
-special you can create your own loader to do what you want.
+``CELERY_IMPORTS`` setting. 
 
 The entity responsible for registering your task in the registry is a
 meta class, :class:`TaskType`. This is the default meta class for
@@ -453,6 +451,102 @@ the task registry to find the execution code.
 This means that your workers should always be updated with the same software
 as the client. This is a drawback, but the alternative is a technical
 challenge that has yet to be solved.
+
+Tips and Best Practices
+=======================
+
+Ignore results you don't want
+-----------------------------
+
+If you don't care about the results of a task, be sure to set the
+``ignore_result`` option, as storing results wastes time and resources.
+
+.. code-block:: python
+
+    @task(ignore_result=True)
+    def mytask(...)
+        something()
+
+Results can even be disabled globally using the ``CELERY_IGNORE_RESULT``
+setting.
+
+Disable rate limits if they're not used
+---------------------------------------
+
+Disabling rate limits altogether is recommended if you don't have
+any tasks using them. This is because the rate limit subsystem introduces
+quite a lot of complexity.
+
+Set the ``CELERY_DISABLE_RATE_LIMITS`` setting to globally disable
+rate limits:
+
+.. code-block:: python
+
+    CELERY_DISABLE_RATE_LIMITS = True
+
+Avoid launching synchronous subtasks
+------------------------------------
+
+Having a task wait for the result of another task is really inefficient,
+and may even cause a deadlock if the worker pool is exhausted.
+
+Make your design asynchronous instead, for example by using *callbacks*.
+
+
+Bad:
+
+.. code-block:: python
+
+    @task()
+    def update_page_info(url):
+        page = fetch_page.delay(url).get()
+        info = parse_page.delay(url, page).get()
+        store_page_info.delay(url, info)
+
+    @task()
+    def fetch_page(url):
+        return myhttplib.get(url)
+
+    @task()
+    def parse_page(url, page):
+        return myparser.parse_document(page)
+
+    @task()
+    def store_page_info(url, info):
+        return PageInfo.objects.create(url, info)
+
+
+Good:
+
+.. code-block:: python
+
+    from functools import curry
+
+    @task(ignore_result=True)
+    def update_page_info(url):
+        # fetch_page -> parse_page -> store_page
+        callback = curry(parse_page.delay, callback=store_page_info)
+        fetch_page.delay(url, callback=callback)
+
+    @task(ignore_result=True)
+    def fetch_page(url, callback=None):
+        page = myparser.parse_document(page)
+        if callback:
+            callback(page)
+
+    @task(ignore_result=True)
+    def parse_page(url, page, callback=None):
+        info = myparser.parse_document(page)
+        if callback:
+            callback(url, info)
+
+    @task(ignore_result=True)
+    def store_page_info(url, info):
+        PageInfo.objects.create(url, info)
+
+
+
+
 
 Performance and Strategies
 ==========================

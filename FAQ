@@ -58,41 +58,11 @@ Is celery for Django only?
 
 **Answer:** No.
 
-You can use all of the features without using Django.
+Celery does not depend on Django anymore. To use Celery with Django you have
+to use the `django-celery`_ package:
 
 
-Why is Django a dependency?
----------------------------
-
-Celery uses the Django ORM for database access when using the database result
-backend, the Django cache framework when using the cache result backend, and the Django signal
-dispatch mechanisms for signaling.
-
-This doesn't mean you need to have a Django project to use celery, it
-just means that sometimes we use internal Django components.
-
-The long term plan is to replace these with other solutions, (e.g. `SQLAlchemy`_ as the ORM,
-and `louie`_, for signaling). The celery distribution will be split into two:
-
-    * celery
-
-        The core. Using SQLAlchemy for the database backend.
-
-    * django-celery
-
-        Celery integration for Django, using the Django ORM for the database
-        backend.
-
-We're currently seeking people with `SQLAlchemy`_ experience, so please
-contact the project if you want this done sooner.
-
-The reason for the split is for purity only. It shouldn't affect you much as a
-user, so please don't worry about the Django dependency, just have a good time
-using celery.
-
-.. _`SQLAlchemy`: http://www.sqlalchemy.org/
-.. _`louie`: http://pypi.python.org/pypi/Louie/
-
+.. _`django-celery`: http://pypi.python.org/pypi/django-celery
 
 Do I have to use AMQP/RabbitMQ?
 -------------------------------
@@ -222,9 +192,7 @@ with::
 Why won't my Task run?
 ----------------------
 
-**Answer:** Did you register the task in the applications ``tasks.py`` module?
-(or in some other module Django loads by default, like ``models.py``?).
-Also there might be syntax errors preventing the tasks module being imported.
+**Answer:** There might be syntax errors preventing the tasks module being imported.
 
 You can find out if celery is able to run the task by executing the
 task manually:
@@ -274,6 +242,25 @@ Windows: The ``-B`` / ``--beat`` option to celeryd doesn't work?
 **Answer**: That's right. Run ``celerybeat`` and ``celeryd`` as separate
 services instead.
 
+Tasks
+=====
+
+How can I reuse the same connection when applying tasks?
+--------------------------------------------------------
+
+**Answer**: See :doc:`userguide/executing`.
+
+Can I execute a task by name?
+-----------------------------
+
+**Answer**: Yes. Use :func:`celery.execute.send_task`.
+You can also execute a task by name from any language
+that has an AMQP client.
+
+    >>> from celery.execute import send_task
+    >>> send_task("tasks.add", args=[2, 2], kwargs={})
+    <AsyncResult: 373550e8-b9a0-4666-bc61-ace01fa4f91d>
+
 Results
 =======
 
@@ -297,6 +284,44 @@ If you need to specify a custom result backend you should use
 
 Brokers
 =======
+
+Why is RabbitMQ crashing?
+-------------------------
+
+RabbitMQ will crash if it runs out of memory. This will be fixed in a
+future release of RabbitMQ. please refer to the RabbitMQ FAQ:
+http://www.rabbitmq.com/faq.html#node-runs-out-of-memory
+
+Some common Celery misconfigurations can crash RabbitMQ:
+
+* Events.
+
+Running ``celeryd`` with the ``-E``/``--events`` option will send messages
+for events happening inside of the worker. If these event messages
+are not consumed, you will eventually run out of memory.
+
+Events should only be enabled if you have an active monitor consuming them.
+
+* AMQP backend results.
+
+When running with the AMQP result backend, every task result will be sent
+as a message. If you don't collect these results, they will build up and
+RabbitMQ will eventually run out of memory.
+
+If you don't use the results for a task, make sure you set the
+``ignore_result`` option:
+
+.. code-block python
+
+    @task(ignore_result=True)
+    def mytask():
+        ...
+
+    class MyTask(Task):
+        ignore_result = True
+
+Results can also be disabled globally using the ``CELERY_IGNORE_RESULT``
+setting.
 
 Can I use celery with ActiveMQ/STOMP?
 -------------------------------------
@@ -381,6 +406,58 @@ using the STOMP backend:
 
 Features
 ========
+
+How can I run a task once another task has finished?
+----------------------------------------------------
+
+**Answer**: You can safely launch a task inside a task.
+Also, a common pattern is to use callback tasks:
+
+.. code-block:: python
+
+    @task()
+    def add(x, y, callback=None):
+        result = x + y
+        if callback:
+            callback.delay(result)
+        return result
+
+
+    @task(ignore_result=True)
+    def log_result(result, **kwargs):
+        logger = log_result.get_logger(**kwargs)
+        logger.info("log_result got: %s" % (result, ))
+
+
+    >>> add.delay(2, 2, callback=log_result)
+
+Can I cancel the execution of a task?
+-------------------------------------
+**Answer**: Yes. Use ``result.revoke``::
+
+    >>> result = add.apply_async(args=[2, 2], countdown=120)
+    >>> result.revoke()
+
+or if you only have the task id::
+
+    >>> from celery.task.control import revoke
+    >>> revoke(task_id)
+
+Why aren't my remote control commands received by all workers?
+--------------------------------------------------------------
+
+**Answer**: To receive broadcast remote control commands, every ``celeryd``
+uses its hostname to create a unique queue name to listen to,
+so if you have more than one worker with the same hostname, the
+control commands will be recieved in round-robin between them.
+
+To work around this you can explicitly set the hostname for every worker
+using the ``--hostname`` argument to ``celeryd``::
+
+    $ celeryd --hostname=$(hostname).1
+    $ celeryd --hostname=$(hostname).2
+
+etc, etc.
 
 Can I send some tasks to only some servers?
 --------------------------------------------
@@ -503,121 +580,6 @@ could also be useful as a source of information.
 .. _`Standard Exchange Types`: http://bit.ly/EEWca
 .. _`RabbitMQ FAQ`: http://www.rabbitmq.com/faq.html
 
-Can I use celery without Django?
---------------------------------
-
-**Answer:** Yes.
-
-Celery uses something called loaders to read/setup configuration, import
-modules that register tasks and to decide what happens when a task is
-executed. Currently there are two loaders, the default loader and the Django
-loader. If you want to use celery without a Django project, you either have to
-use the default loader, or write a loader of your own.
-
-The rest of this answer describes how to use the default loader.
-
-While it is possible to use Celery from outside of Django, we still need
-Django itself to run, this is to use the ORM and cache-framework.
-Duplicating these features would be time consuming and mostly pointless, so
-while me might rewrite these in the future, this is a good solution in the
-mean time.
-Install Django using your favorite install tool, ``easy_install``, ``pip``, or
-whatever::
-
-    # easy_install django # as root
-
-You need a configuration file named ``celeryconfig.py``, either in the
-directory you run ``celeryd`` in, or in a Python library path where it is
-able to find it. The configuration file can contain any of the settings
-described in :mod:`celery.conf`. In addition; if you're using the
-database backend you have to configure the database. Here is an example
-configuration using the database backend with MySQL:
-
-.. code-block:: python
-
-    # Broker configuration
-    BROKER_HOST = "localhost"
-    BROKER_PORT = "5672"
-    BROKER_VHOST = "celery"
-    BROKER_USER = "celery"
-    BROKER_PASSWORD = "celerysecret"
-    CARROT_BACKEND="amqp"
-
-    # Using the database backend.
-    CELERY_RESULT_BACKEND = "database"
-    DATABASE_ENGINE = "mysql" # see Django docs for a description of these.
-    DATABASE_NAME = "mydb"
-    DATABASE_HOST = "mydb.example.org"
-    DATABASE_USER = "myuser"
-    DATABASE_PASSWORD = "mysecret"
-
-    # Number of processes that processes tasks simultaneously.
-    CELERYD_CONCURRENCY = 8
-
-    # Modules to import when celeryd starts.
-    # This must import every module where you register tasks so celeryd
-    # is able to find and run them.
-    CELERY_IMPORTS = ("mytaskmodule1", "mytaskmodule2")
-    
-With this configuration file in the current directory you have to
-run ``celeryinit`` to create the database tables::
-
-    $ celeryinit
-
-At this point you should be able to successfully run ``celeryd``::
-
-    $ celeryd --loglevel=INFO
-
-and send a task from a python shell (note that it must be able to import
-``celeryconfig.py``):
-
-    >>> from celery.task.builtins import PingTask
-    >>> result = PingTask.apply_async()
-    >>> result.get()
-    'pong'
-
-The celery test-suite is failing
---------------------------------
-
-**Answer**: If you're running tests from your Django project, and the celery
-test suite is failing in that context, then follow the steps below. If the
-celery tests are failing in another context, please report an issue to our
-issue tracker at GitHub:
-
-    http://github.com/ask/celery/issues/
-
-That Django is running tests for all applications in ``INSTALLED_APPS``
-by default is a pet peeve for many. You should use a test runner that either
-
-    1) Explicitly lists the apps you want to run tests for, or
-
-    2) Make a test runner that skips tests for apps you don't want to run.
-
-For example the test runner that celery is using:
-
-    http://bit.ly/NVKep
-
-To use this test runner, add the following to your ``settings.py``:
-
-.. code-block:: python
-
-    TEST_RUNNER = "celery.tests.runners.run_tests"
-    TEST_APPS = (
-        "app1",
-        "app2",
-        "app3",
-        "app4",
-    )
-
-Or, if you just want to skip the celery tests:
-
-.. code-block:: python
-
-    INSTALLED_APPS = (.....)
-    TEST_RUNNER = "celery.tests.runners.run_tests"
-    TEST_APPS = filter(lambda k: k != "celery", INSTALLED_APPS)
-
-
 Can I change the interval of a periodic task at runtime?
 --------------------------------------------------------
 
@@ -647,6 +609,50 @@ to different servers. In the real world this may actually work better than per m
 priorities. You can use this in combination with rate limiting to achieve a
 highly performant system.
 
+Should I use retry or acks_late?
+--------------------------------
+
+**Answer**: Depends. It's not necessarily one or the other, you may want
+to use both.
+
+``Task.retry`` is used to retry tasks, notably for expected errors that
+is catchable with the ``try:`` block. The AMQP transaction is not used
+for these errors: **if the task raises an exception it is still acked!**.
+
+The ``acks_late`` setting would be used when you need the task to be
+executed again if the worker (for some reason) crashes mid-execution.
+It's important to note that the worker is not known to crash, and if
+it does it is usually an unrecoverable error that requires human
+intervention (bug in the worker, or task code).
+
+In an ideal world you could safely retry any task that has failed, but
+this is rarely the case. Imagine the following task:
+
+.. code-block:: python
+
+    @task()
+    def process_upload(filename, tmpfile):
+        # Increment a file count stored in a database
+        increment_file_counter()
+        add_file_metadata_to_db(filename, tmpfile)
+        copy_file_to_destination(filename, tmpfile)
+
+If this crashed in the middle of copying the file to its destination
+the world would contain incomplete state. This is not a critical
+scenario of course, but you can probably imagine something far more
+sinister. So for ease of programming we have less reliability;
+It's a good default, users who require it and know what they
+are doing can still enable acks_late (and in the future hopefully
+use manual acknowledgement)
+
+In addition ``Task.retry`` has features not available in AMQP
+transactions: delay between retries, max retries, etc.
+
+So use retry for Python errors, and if your task is reentrant
+combine that with ``acks_late`` if that level of reliability
+is required.
+
+
 Can I schedule tasks to execute at a specific time?
 ---------------------------------------------------
 
@@ -654,11 +660,18 @@ Can I schedule tasks to execute at a specific time?
 
 **Answer**: Yes. You can use the ``eta`` argument of :meth:`Task.apply_async`.
 
-However, you can't schedule a periodic task at a specific time yet.
-The good news is, if anyone is willing
-to implement it, it shouldn't be that hard. Some pointers to achieve this has
-been written here: http://bit.ly/99UQNO
+Or to schedule a periodic task at a specific time, use the
+:class:`celery.task.schedules.crontab` schedule behavior:
 
+
+.. code-block:: python
+
+    from celery.task.schedules import crontab
+    from celery.decorators import periodic_task
+
+    @periodic_task(run_every=crontab(hours=7, minute=30, day_of_week="mon"))
+    def every_monday_morning():
+        print("This is run every monday morning at 7:30")
 
 How do I shut down ``celeryd`` safely?
 --------------------------------------
@@ -668,4 +681,10 @@ executing jobs and shut down as soon as possible. No tasks should be lost.
 
 You should never stop ``celeryd`` with the ``KILL`` signal (``-9``),
 unless you've tried ``TERM`` a few times and waited a few minutes to let it
-get a chance to shut down.
+get a chance to shut down. As if you do tasks may be terminated mid-execution,
+and they will not be re-run unless you have the ``acks_late`` option set.
+(``Task.acks_late`` / ``CELERY_ACKS_LATE``).
+
+How do I run celeryd in the background on [platform]?
+-----------------------------------------------------
+**Answer**: Please see :doc:`cookbook/daemonizing`.

@@ -49,6 +49,11 @@ class TestBroadcast(unittest.TestCase):
         self.assertIn("revoke", MockBroadcastPublisher.sent)
 
     @with_mock_broadcast
+    def test_ping(self):
+        control.ping()
+        self.assertIn("ping", MockBroadcastPublisher.sent)
+
+    @with_mock_broadcast
     def test_revoke_from_result(self):
         from celery.result import AsyncResult
         AsyncResult("foozbazzbar").revoke()

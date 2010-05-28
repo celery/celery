@@ -1,104 +1,27 @@
 import os
-import string
-import warnings
-import importlib
 
-from carrot.utils import rpartition
+from celery.utils import get_cls_by_name
 
-from celery.utils import get_full_cls_name
-from celery.loaders.default import Loader as DefaultLoader
-from celery.loaders.djangoapp import Loader as DjangoLoader
-
-_DEFAULT_LOADER_CLASS_NAME = "Loader"
-LOADER_ALIASES = {"django": "celery.loaders.djangoapp.Loader",
-                  "default": "celery.loaders.default.Loader"}
-_loader_cache = {}
+LOADER_ALIASES = {"default": "celery.loaders.default.Loader",
+                  "django": "djcelery.loaders.DjangoLoader"}
 _loader = None
 _settings = None
 
 
-def first_letter(s):
-    for char in s:
-        if char in string.letters:
-            return char
-
-
-def resolve_loader(loader):
-    loader = LOADER_ALIASES.get(loader, loader)
-    loader_module_name, _, loader_cls_name = rpartition(loader, ".")
-    if first_letter(loader_cls_name) not in string.uppercase:
-        warnings.warn(DeprecationWarning(
-            "CELERY_LOADER now needs loader class name, e.g. %s.%s" % (
-                loader, _DEFAULT_LOADER_CLASS_NAME)))
-        return loader, _DEFAULT_LOADER_CLASS_NAME
-    return loader_module_name, loader_cls_name
-
-
-def _get_loader_cls(loader):
-    loader_module_name, loader_cls_name = resolve_loader(loader)
-    loader_module = importlib.import_module(loader_module_name)
-    return getattr(loader_module, loader_cls_name)
-
-
 def get_loader_cls(loader):
     """Get loader class by name/alias"""
-    if loader not in _loader_cache:
-        _loader_cache[loader] = _get_loader_cls(loader)
-    return _loader_cache[loader]
+    return get_cls_by_name(loader, LOADER_ALIASES)
 
 
-def detect_loader():
-    loader = os.environ.get("CELERY_LOADER")
-    if loader:
-        return get_loader_cls(loader)
-
-    loader = _detect_loader()
-    os.environ["CELERY_LOADER"] = get_full_cls_name(loader)
-
-    return loader
-
-
-def _detect_loader(): # pragma: no cover
-    from django.conf import settings
-    if settings.configured:
-        return DjangoLoader
-    try:
-        # A settings module may be defined, but Django didn't attempt to
-        # load it yet. As an alternative to calling the private _setup(),
-        # we could also check whether DJANGO_SETTINGS_MODULE is set.
-        settings._setup()
-    except ImportError:
-        if not callable(getattr(os, "fork", None)):
-            # Platform doesn't support fork()
-            # XXX On systems without fork, multiprocessing seems to be
-            # launching the processes in some other way which does
-            # not copy the memory of the parent process. This means
-            # any configured env might be lost. This is a hack to make
-            # it work on Windows.
-            # A better way might be to use os.environ to set the currently
-            # used configuration method so to propogate it to the "child"
-            # processes. But this has to be experimented with.
-            # [asksol/heyman]
-            from django.core.management import setup_environ
-            try:
-                settings_mod = os.environ.get("DJANGO_SETTINGS_MODULE",
-                                                "settings")
-                project_settings = __import__(settings_mod, {}, {}, [''])
-                setup_environ(project_settings)
-                return DjangoLoader
-            except ImportError:
-                pass
-    else:
-        return DjangoLoader
-
-    return DefaultLoader
+def setup_loader():
+    return get_loader_cls(os.environ.setdefault("CELERY_LOADER", "default"))()
 
 
 def current_loader():
     """Detect and return the current loader."""
     global _loader
     if _loader is None:
-        _loader = detect_loader()()
+        _loader = setup_loader()
     return _loader
 
 

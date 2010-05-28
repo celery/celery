@@ -332,3 +332,24 @@ except ImportError:
         def log(self, level, msg, *args, **kwargs):
             msg, kwargs = self.process(msg, kwargs)
             self.logger.log(level, msg, *args, **kwargs)
+
+############## itertools.izip_longest #######################################
+
+try:
+    from itertools import izip_longest
+except ImportError:
+    import itertools
+    def izip_longest(*args, **kwds):
+        fillvalue = kwds.get("fillvalue")
+
+        def sentinel(counter=([fillvalue] * (len(args) - 1)).pop):
+            yield counter() # yields the fillvalue, or raises IndexError
+
+        fillers = itertools.repeat(fillvalue)
+        iters = [itertools.chain(it, sentinel(), fillers)
+                    for it in args]
+        try:
+            for tup in itertools.izip(*iters):
+                yield tup
+        except IndexError:
+            pass
