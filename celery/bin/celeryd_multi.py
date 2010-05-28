@@ -201,18 +201,18 @@ def help(argv, cmd=None):
     # ranges and lists of workers in options is also allowed:
     # (-c:1-3 can also be written as -c:1,2,3)
     $ celeryd-multi start 5 -c 3  -c:1-3 10
-    celeryd-multi -n celeryd1.myhost -c 10
-    celeryd-multi -n celeryd2.myhost -c 10
-    celeryd-multi -n celeryd3.myhost -c 10
-    celeryd-multi -n celeryd4.myhost -c 3
-    celeryd-multi -n celeryd5.myhost -c 3
+    celeryd -n celeryd1.myhost -c 10
+    celeryd -n celeryd2.myhost -c 10
+    celeryd -n celeryd3.myhost -c 10
+    celeryd -n celeryd4.myhost -c 3
+    celeryd -n celeryd5.myhost -c 3
 
     # lists also works with named workers
     $ celeryd-multi start foo bar baz xuzzy -c 3 -c:foo,bar,baz 10
-    celeryd-multi -n foo.myhost -c 10
-    celeryd-multi -n bar.myhost -c 10
-    celeryd-multi -n baz.myhost -c 10
-    celeryd-multi -n xuzzy.myhost -c 3
+    celeryd -n foo.myhost -c 10
+    celeryd -n bar.myhost -c 10
+    celeryd -n baz.myhost -c 10
+    celeryd -n xuzzy.myhost -c 3
 """)
 
 
