@@ -222,10 +222,20 @@ COMMANDS = {"start": start,
             "get": get,
             "help": help}
 
+def usage():
+    print("Please use one of the following commands: %s" % ", ".join(COMMANDS.keys()))
 
 def celeryd_multi(argv, cmd="celeryd"):
-    return COMMANDS[argv[0]](argv[1:], cmd)
+    if len(argv) == 0:
+        usage()
+        sys.exit(0)
 
+    try:
+        return COMMANDS[argv[0]](argv[1:], cmd)
+    except KeyError, e:
+        print("Invalid command: %s" % argv[0])
+        usage()
+        sys.exit(1)
 
 def main():
     celeryd_multi(sys.argv[1:])
