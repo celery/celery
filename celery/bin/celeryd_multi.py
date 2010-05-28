@@ -100,7 +100,7 @@ def abbreviations(map):
     return expand
 
 
-def multi_args(p, cmd="celeryd", append=None, prefix="", suffix=""):
+def multi_args(p, cmd="celeryd", append="", prefix="", suffix=""):
     names = p.values
     options = dict(p.options)
     ranges = len(names) == 1
@@ -108,7 +108,7 @@ def multi_args(p, cmd="celeryd", append=None, prefix="", suffix=""):
         names = map(str, range(1, int(names[0]) + 1))
         prefix = "celery"
     cmd = options.pop("--cmd", cmd)
-    append = options.pop("--append", append)
+    append = options.pop("--append", append) 
     hostname = options.pop("--hostname",
                    options.pop("-n", socket.gethostname()))
     prefix = options.pop("--prefix", prefix) or ""
@@ -118,7 +118,7 @@ def multi_args(p, cmd="celeryd", append=None, prefix="", suffix=""):
         if "," in ns_name or (ranges and "-" in ns_name):
             for subns in parse_ns_range(ns_name, ranges):
                 p.namespaces[subns].update(ns_opts)
-        p.namespaces.pop(ns_name)
+            p.namespaces.pop(ns_name)
 
     for name in names:
         this_name = options["-n"] = prefix + name + suffix
