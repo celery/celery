@@ -81,7 +81,10 @@ class crontab_parser(object):
         try:
             i = int(toks[0])
         except ValueError:
-            i = weekday(toks[0])
+            try:
+                i = weekday(toks[0])
+            except KeyError:
+                raise ValueError("Invalid weekday literal '%s'." % toks[0])
         return [i]
 
     @staticmethod
