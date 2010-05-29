@@ -1,6 +1,6 @@
 from datetime import datetime
 from collections import Iterable
-from pyparsing import Word, Literal, ZeroOrMore, Optional, Group, StringEnd
+from pyparsing import Word, Literal, ZeroOrMore, Optional, Group, StringEnd, alphas
 
 from celery.utils.timeutils import timedelta_seconds, weekday, remaining
 
@@ -36,7 +36,8 @@ class crontab_parser(object):
     numbers represent the units of time that the crontab needs to run on.
 
         digit   :: '0'..'9'
-        number  :: digit+
+        dow     :: 'a'..'z'
+        number  :: digit+ | dow+
         steps   :: number
         range   :: number ( '-' number ) ?
         numspec :: '*' | range
@@ -56,7 +57,7 @@ class crontab_parser(object):
         # define the grammar structure
         digits = "0123456789"
         star = Literal('*')
-        number = Word(digits)
+        number = Word(digits) | Word(alphas)
         steps = number
         range_ = number + Optional(Literal('-') + number)
         numspec = star | range_
@@ -77,7 +78,11 @@ class crontab_parser(object):
 
     @staticmethod
     def _expand_number(toks):
-        return [int(toks[0])]
+        try:
+            i = int(toks[0])
+        except ValueError:
+            i = weekday(toks[0])
+        return [i]
 
     @staticmethod
     def _expand_range(toks):
@@ -145,7 +150,7 @@ class crontab(schedule):
           6, that represent the days of a week that execution should
           occur.
         - A string representing a crontab pattern.  This may get pretty
-          advanced, like `day_of_week="1-5"` (for weekdays only).
+          advanced, like `day_of_week="mon-fri"` (for weekdays only).
           (Beware that `day_of_week="*/2"` does not literally mean
           "every two days", but "every day that is divisible by two"!)
 
@@ -194,22 +199,6 @@ class crontab(schedule):
 
     def __init__(self, minute='*', hour='*', day_of_week='*',
             nowfun=datetime.now):
-
-        # ---------------------------------------------------------------------
-        # TODO: Isolated HACK
-        aliases = {'sun': '0', 'sunday': '0',  \
-                    'mon': '1', 'monday': '1',  \
-                    'tue': '2', 'tuesday': '2', \
-                    'wed': '3', 'wednesday': '3', \
-                    'thu': '4', 'thursday': '4', \
-                    'fri': '5', 'friday': '5', \
-                    'sat': '6', 'saturday': '6'}
-        for key in sorted(aliases, lambda x, y: cmp(len(x), len(y)),
-                      reverse=True):
-            val = aliases[key]
-            day_of_week = day_of_week.replace(key,val)
-        # ---------------------------------------------------------------------
-
         self.hour = self._expand_cronspec(hour, 24)
         self.minute = self._expand_cronspec(minute, 60)
         self.day_of_week = self._expand_cronspec(day_of_week, 7)

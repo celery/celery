@@ -604,6 +604,20 @@ class test_crontab_is_due(unittest.TestCase):
         self.assertRaises(ValueError, crontab, hour=24)
         self.assertRaises(ValueError, crontab, hour='0-30')
 
+    def test_crontab_spec_dow_formats(self):
+        c = crontab(day_of_week=5)
+        self.assertEquals(c.day_of_week, set([5]))
+        c = crontab(day_of_week='5')
+        self.assertEquals(c.day_of_week, set([5]))
+        c = crontab(day_of_week='fri')
+        self.assertEquals(c.day_of_week, set([5]))
+        c = crontab(day_of_week='tuesday,sunday,fri')
+        self.assertEquals(c.day_of_week, set([0,2,5]))
+        c = crontab(day_of_week='mon-fri')
+        self.assertEquals(c.day_of_week, set([1,2,3,4,5]))
+        c = crontab(day_of_week='*/2')
+        self.assertEquals(c.day_of_week, set([0,2,4,6]))
+
     def test_every_minute_execution_is_due(self):
         last_ran = datetime.now() - timedelta(seconds=61)
         due, remaining = EveryMinutePeriodic().is_due(last_ran)
