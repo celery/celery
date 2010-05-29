@@ -115,26 +115,39 @@ class crontab(schedule):
     :class:`PeriodicTask` to add cron-like scheduling.
 
     Like a :manpage:`cron` job, you can specify units of time of when
-    you would like the task to execute. While not a full implementation
-    of cron's features, it should provide a fair degree of common scheduling
-    needs.
+    you would like the task to execute. It is a reasonably complete
+    implementation of cron's features, so it should provide a fair
+    degree of scheduling needs.
 
-    You can specify a minute, an hour, and/or a day of the week.
+    You can specify a minute, an hour, and/or a day of the week in any
+    of the following formats:
 
     .. attribute:: minute
 
-        An integer from 0-59 that represents the minute of an hour of when
-        execution should occur.
+        - A (list of) integers from 0-59 that represent the minutes of
+          an hour of when execution should occur; or
+        - A string representing a crontab pattern.  This may get pretty
+          advanced, like `minute="*/15"` (for every quarter) or
+          `minute="1,13,30-45,50-59/2"`.
 
     .. attribute:: hour
 
-        An integer from 0-23 that represents the hour of a day of when
-        execution should occur.
+        - A (list of) integers from 0-23 that represent the hours of
+          a day of when execution should occur; or
+        - A string representing a crontab pattern.  This may get pretty
+          advanced, like `hour="*/3"` (for every three hours) or
+          `hour="0,8-17/2"` (at midnight, and every two hours during
+          office hours).
 
     .. attribute:: day_of_week
 
-        An integer from 0-6, where Sunday = 0 and Saturday = 6, that
-        represents the day of week that execution should occur.
+        - A (list of) integers from 0-6, where Sunday = 0 and Saturday =
+          6, that represent the days of a week that execution should
+          occur.
+        - A string representing a crontab pattern.  This may get pretty
+          advanced, like `day_of_week="1-5"` (for weekdays only).
+          (Beware that `day_of_week="*/2"` does not literally mean
+          "every two days", but "every day that is divisible by two"!)
 
     """
 
