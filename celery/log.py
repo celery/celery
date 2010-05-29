@@ -13,6 +13,27 @@ from celery.utils.compat import LoggerAdapter
 _hijacked = False
 _monkeypatched = False
 
+BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
+RESET_SEQ = "\033[0m"
+COLOUR_SEQ = "\033[1;%dm"
+BOLD_SEQ = "\033[1m"
+COLOURS = {
+    'WARNING': YELLOW,
+    'DEBUG': BLUE,
+    'CRITICAL': MAGENTA,
+    'ERROR': RED
+}
+
+class ColourFormatter(logging.Formatter):
+    def __init__(self, msg, use_colour=True):
+        logging.Formatter.__init__(self, msg)
+        self.use_colour = use_colour
+
+    def format(self, record):
+        levelname = record.levelname
+        if self.use_colour and levelname in COLOURS:
+            record.msg = COLOUR_SEQ % (30 + COLOURS[levelname]) + record.msg + RESET_SEQ
+        return logging.Formatter.format(self, record)
 
 def get_task_logger(loglevel=None):
     ensure_process_aware_logger()
@@ -64,7 +85,8 @@ def get_default_logger(loglevel=None):
 
 
 def setup_logger(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
-        format=conf.CELERYD_LOG_FORMAT, **kwargs):
+        format=conf.CELERYD_LOG_FORMAT, colourize=conf.CELERYD_LOG_COLOR,
+        **kwargs):
     """Setup the ``multiprocessing`` logger. If ``logfile`` is not specified,
     then ``stderr`` is used.
 
@@ -72,11 +94,12 @@ def setup_logger(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
 
     """
     return _setup_logger(get_default_logger(loglevel),
-                         logfile, format, **kwargs)
+                         logfile, format, colourize, **kwargs)
 
 
 def setup_task_logger(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
-        format=conf.CELERYD_TASK_LOG_FORMAT, task_kwargs=None, **kwargs):
+        format=conf.CELERYD_TASK_LOG_FORMAT, colourize=conf.CELERYD_LOG_COLOR,
+        task_kwargs=None, **kwargs):
     """Setup the task logger. If ``logfile`` is not specified, then
     ``stderr`` is used.
 
@@ -88,17 +111,17 @@ def setup_task_logger(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
     task_kwargs.setdefault("task_id", "-?-")
     task_kwargs.setdefault("task_name", "-?-")
     logger = _setup_logger(get_task_logger(loglevel),
-                           logfile, format, **kwargs)
+                           logfile, format, colourize, **kwargs)
     return LoggerAdapter(logger, task_kwargs)
 
 
-def _setup_logger(logger, logfile, format,
-        formatter=logging.Formatter, **kwargs):
+def _setup_logger(logger, logfile, format, colourize,
+        formatter=ColourFormatter, **kwargs):
 
     if logger.handlers: # Logger already configured
         return logger
     handler = _detect_handler(logfile)
-    handler.setFormatter(formatter(format))
+    handler.setFormatter(formatter(format, use_colour=colourize))
     logger.addHandler(handler)
     return logger
 
