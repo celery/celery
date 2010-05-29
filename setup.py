@@ -46,7 +46,8 @@ install_requires.extend([
     "sqlalchemy",
     "anyjson",
     "carrot>=0.10.4",
-    "billiard>=0.3.0"])
+    "billiard>=0.3.0",
+    "pyparsing"])
 
 py_version = sys.version_info
 if sys.version_info < (2, 6):
