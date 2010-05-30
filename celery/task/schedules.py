@@ -1,7 +1,7 @@
 from datetime import datetime
-from collections import Iterable
 from pyparsing import Word, Literal, ZeroOrMore, Optional, Group, StringEnd, alphas
 
+from celery.utils import is_iterable
 from celery.utils.timeutils import timedelta_seconds, weekday, remaining
 
 
@@ -185,11 +185,11 @@ class crontab(schedule):
             result = crontab_parser(max_).parse(cronspec)
         elif isinstance(cronspec, set):
             result = cronspec
-        elif isinstance(cronspec, Iterable):
+        elif is_iterable(cronspec):
             result = set(cronspec)
         else:
             raise TypeError("Argument cronspec needs to be of any of the " + \
-                    "following types: int, basestring, set, or Iterable. " + \
+                    "following types: int, basestring, or an iterable type. " + \
                     "'%s' was given." % type(cronspec))
 
         # assure the result does not exceed the max
