@@ -18,12 +18,12 @@ The same thing using ``apply_async`` is written like this:
 
     Task.apply_async(args=[arg1, arg2], kwargs={"kwarg1": "x", "kwarg2": "y"})
 
-You can also execute a task by name if you don't have access to the task
-class::
+You can also execute a task by name using :func:`~celery.execute.send_task`, 
+if you don't have access to the task's class::
 
-    >>> from celery.execute import apply_async
-    >>> res = apply_async("tasks.add", [2, 2])
-    >>> res.get()
+    >>> from celery.execute import send_task
+    >>> result = send_task("tasks.add", [2, 2])
+    >>> result.get()
     4
 
 While ``delay`` is convenient, it doesn't give you as much control as using ``apply_async``.
