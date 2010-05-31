@@ -1,4 +1,5 @@
 import os
+import warnings
 from importlib import import_module
 
 from celery.loaders.base import BaseLoader
@@ -13,6 +14,10 @@ DEFAULT_SETTINGS = {
     "INSTALLED_APPS": ("celery", ),
     "CELERY_IMPORTS": (),
 }
+
+
+class NotConfigured(UserWarning):
+    """Celery has not been configured, as no config module has been found."""
 
 
 def wanted_module_item(item):
@@ -51,11 +56,19 @@ class Loader(BaseLoader):
         celery and Django so it can be used by regular Python."""
         configname = os.environ.get("CELERY_CONFIG_MODULE",
                                     DEFAULT_CONFIG_MODULE)
-        celeryconfig = import_module(configname)
-        usercfg = dict((key, getattr(celeryconfig, key))
+        try:
+            celeryconfig = import_module(configname)
+        except ImportError, exc:
+            warnings.warn("No celeryconfig.py module found! Please make "
+                          "sure it exists and is available to Python.",
+                          NotConfigured)
+            return self.setup_settings({})
+        else:
+            usercfg = dict((key, getattr(celeryconfig, key))
                             for key in dir(celeryconfig)
                                 if wanted_module_item(key))
-        return self.setup_settings(usercfg)
+            self.configured = True
+            return self.setup_settings(usercfg)
 
     def on_worker_init(self):
         """Imports modules at worker init so tasks can be registered

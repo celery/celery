@@ -223,6 +223,9 @@ class Worker(object):
         from celery.loaders import current_loader, load_settings
         self.loader = current_loader()
         self.settings = load_settings()
+        if not self.loader.configured:
+            raise ImproperlyConfigured(
+                    "Celery needs to be configured to run celeryd.")
 
     def purge_messages(self):
         discarded_count = discard_all()
