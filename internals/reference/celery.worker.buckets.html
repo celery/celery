@@ -1,3 +1,4 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -12,12 +13,13 @@
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
         VERSION:     '1.1.0 (unstable)',
-        COLLAPSE_MODINDEX: false,
+        COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="../../static/jquery.js"></script>
+    <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
     <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
@@ -35,7 +37,7 @@
 		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
 		<li id="page_buttons">
 			<div class="headerButton"><a href="../../genindex.html" title="General Index" accesskey="I">index</a></div>
-			<div class="headerButton"><a href="../../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="../../py-modindex.html" title="Python Module Index" >modules</a></div>
 			<div class="headerButton"><a href="celery.worker.scheduler.html" title="Worker Scheduler - celery.worker.scheduler" accesskey="N">next</a></div>
 			<div class="headerButton"><a href="celery.worker.controllers.html" title="Worker Controller Threads - celery.worker.controllers" accesskey="P">previous</a></div>
 		</li>
@@ -46,16 +48,16 @@
   <div class="sphinxsidebarwrapper">
 	<ul><li class="toctree-l1"><a href="../../index.html">Main Page</a></li></ul>
 	<ul>
-<li class="toctree-l1"><a class="reference external" href="../../getting-started/index.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../userguide/index.html">User Guide</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../configuration.html">Configuration and defaults</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../cookbook/index.html">Cookbook</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../tutorials/index.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../reference/index.html">API Reference</a></li>
-<li class="toctree-l1"><a class="reference external" href="../index.html">Internals</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../changelog.html">Change history</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../links.html">Interesting Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting-started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../links.html">Interesting Links</a></li>
 </ul>
 
       <h3>This Page</h3>
@@ -91,17 +93,19 @@
           <div class="body">
             
   <div class="section" id="module-celery.worker.buckets">
-<h1>Token Bucket (rate limiting) - celery.worker.buckets<a class="headerlink" href="#module-celery.worker.buckets" title="Permalink to this headline">¶</a></h1>
+<span id="token-bucket-rate-limiting-celery-worker-buckets"></span><h1>Token Bucket (rate limiting) - celery.worker.buckets<a class="headerlink" href="#module-celery.worker.buckets" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="celery.worker.buckets.FastQueue">
 <em class="property">class </em><tt class="descclassname">celery.worker.buckets.</tt><tt class="descname">FastQueue</tt><big>(</big><em>maxsize=0</em><big>)</big><a class="headerlink" href="#celery.worker.buckets.FastQueue" title="Permalink to this definition">¶</a></dt>
-<dd><tt class="xref docutils literal"><span class="pre">Queue.Queue</span></tt> supporting the interface of
-<a title="celery.worker.buckets.TokenBucketQueue" class="reference internal" href="#celery.worker.buckets.TokenBucketQueue"><tt class="xref docutils literal"><span class="pre">TokenBucketQueue</span></tt></a>.</dd></dl>
+<dd><p><tt class="xref py py-class docutils literal"><span class="pre">Queue.Queue</span></tt> supporting the interface of
+<a class="reference internal" href="#celery.worker.buckets.TokenBucketQueue" title="celery.worker.buckets.TokenBucketQueue"><tt class="xref py py-class docutils literal"><span class="pre">TokenBucketQueue</span></tt></a>.</p>
+</dd></dl>
 
 <dl class="exception">
 <dt id="celery.worker.buckets.RateLimitExceeded">
 <em class="property">exception </em><tt class="descclassname">celery.worker.buckets.</tt><tt class="descname">RateLimitExceeded</tt><a class="headerlink" href="#celery.worker.buckets.RateLimitExceeded" title="Permalink to this definition">¶</a></dt>
-<dd>The token buckets rate limit has been exceeded.</dd></dl>
+<dd><p>The token buckets rate limit has been exceeded.</p>
+</dd></dl>
 
 <dl class="class">
 <dt id="celery.worker.buckets.TaskBucket">
@@ -109,8 +113,8 @@
 <dd><p>This is a collection of token buckets, each task type having
 its own token bucket. If the task type doesn&#8217;t have a rate limit,
 it will have a plain Queue object instead of a token bucket queue.</p>
-<p>The <a title="celery.worker.buckets.TaskBucket.put" class="reference internal" href="#celery.worker.buckets.TaskBucket.put"><tt class="xref docutils literal"><span class="pre">put()</span></tt></a> operation forwards the task to its appropriate bucket,
-while the <a title="celery.worker.buckets.TaskBucket.get" class="reference internal" href="#celery.worker.buckets.TaskBucket.get"><tt class="xref docutils literal"><span class="pre">get()</span></tt></a> operation iterates over the buckets and retrieves
+<p>The <a class="reference internal" href="#celery.worker.buckets.TaskBucket.put" title="celery.worker.buckets.TaskBucket.put"><tt class="xref py py-meth docutils literal"><span class="pre">put()</span></tt></a> operation forwards the task to its appropriate bucket,
+while the <a class="reference internal" href="#celery.worker.buckets.TaskBucket.get" title="celery.worker.buckets.TaskBucket.get"><tt class="xref py py-meth docutils literal"><span class="pre">get()</span></tt></a> operation iterates over the buckets and retrieves
 the first available item.</p>
 <p>Say we have three types of tasks in the registry: <tt class="docutils literal"><span class="pre">celery.ping</span></tt>,
 <tt class="docutils literal"><span class="pre">feed.refresh</span></tt> and <tt class="docutils literal"><span class="pre">video.compress</span></tt>, the TaskBucket will consist
@@ -127,8 +131,11 @@ so the order is ignored here.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>task_registry</em> &#8211; The task registry used to get the task
-type class for a given task name.</td>
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>task_registry</strong> &#8211; The task registry used to get the task
+type class for a given task name.</li>
+</ul>
+</td>
 </tr>
 </tbody>
 </table>
@@ -136,7 +143,7 @@ type class for a given task name.</td>
 <dt id="celery.worker.buckets.TaskBucket.add_bucket_for_type">
 <tt class="descname">add_bucket_for_type</tt><big>(</big><em>task_name</em><big>)</big><a class="headerlink" href="#celery.worker.buckets.TaskBucket.add_bucket_for_type" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a bucket for a task type.</p>
-<p>Will read the tasks rate limit and create a <a title="celery.worker.buckets.TokenBucketQueue" class="reference internal" href="#celery.worker.buckets.TokenBucketQueue"><tt class="xref docutils literal"><span class="pre">TokenBucketQueue</span></tt></a>
+<p>Will read the tasks rate limit and create a <a class="reference internal" href="#celery.worker.buckets.TokenBucketQueue" title="celery.worker.buckets.TokenBucketQueue"><tt class="xref py py-class docutils literal"><span class="pre">TokenBucketQueue</span></tt></a>
 if it has one. If the task doesn&#8217;t have a rate limit a regular Queue
 will be used.</p>
 </dd></dl>
@@ -152,32 +159,38 @@ consume tokens from it.</p>
 <dl class="method">
 <dt id="celery.worker.buckets.TaskBucket.get_bucket_for_type">
 <tt class="descname">get_bucket_for_type</tt><big>(</big><em>task_name</em><big>)</big><a class="headerlink" href="#celery.worker.buckets.TaskBucket.get_bucket_for_type" title="Permalink to this definition">¶</a></dt>
-<dd>Get the bucket for a particular task type.</dd></dl>
+<dd><p>Get the bucket for a particular task type.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.worker.buckets.TaskBucket.init_with_registry">
 <tt class="descname">init_with_registry</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.buckets.TaskBucket.init_with_registry" title="Permalink to this definition">¶</a></dt>
-<dd>Initialize with buckets for all the task types in the registry.</dd></dl>
+<dd><p>Initialize with buckets for all the task types in the registry.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.worker.buckets.TaskBucket.put">
 <tt class="descname">put</tt><big>(</big><em>job</em><big>)</big><a class="headerlink" href="#celery.worker.buckets.TaskBucket.put" title="Permalink to this definition">¶</a></dt>
-<dd>Put a task into the appropiate bucket.</dd></dl>
+<dd><p>Put a task into the appropiate bucket.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.worker.buckets.TaskBucket.put_nowait">
 <tt class="descname">put_nowait</tt><big>(</big><em>job</em><big>)</big><a class="headerlink" href="#celery.worker.buckets.TaskBucket.put_nowait" title="Permalink to this definition">¶</a></dt>
-<dd>Put a task into the appropiate bucket.</dd></dl>
+<dd><p>Put a task into the appropiate bucket.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.worker.buckets.TaskBucket.qsize">
 <tt class="descname">qsize</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.buckets.TaskBucket.qsize" title="Permalink to this definition">¶</a></dt>
-<dd>Get the total size of all the queues.</dd></dl>
+<dd><p>Get the total size of all the queues.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.worker.buckets.TaskBucket.refresh">
 <tt class="descname">refresh</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.buckets.TaskBucket.refresh" title="Permalink to this definition">¶</a></dt>
-<dd>Refresh rate limits for all task types in the registry.</dd></dl>
+<dd><p>Refresh rate limits for all task types in the registry.</p>
+</dd></dl>
 
 </dd></dl>
 
@@ -195,8 +208,8 @@ Most of this code was stolen from an entry in the ASPN Python Cookbook:
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><em>fill_rate</em> &#8211; see <a title="celery.worker.buckets.TokenBucketQueue.fill_rate" class="reference internal" href="#celery.worker.buckets.TokenBucketQueue.fill_rate"><tt class="xref docutils literal"><span class="pre">fill_rate</span></tt></a>.</li>
-<li><em>capacity</em> &#8211; see <a title="celery.worker.buckets.TokenBucketQueue.capacity" class="reference internal" href="#celery.worker.buckets.TokenBucketQueue.capacity"><tt class="xref docutils literal"><span class="pre">capacity</span></tt></a>.</li>
+<li><strong>fill_rate</strong> &#8211; see <a class="reference internal" href="#celery.worker.buckets.TokenBucketQueue.fill_rate" title="celery.worker.buckets.TokenBucketQueue.fill_rate"><tt class="xref py py-attr docutils literal"><span class="pre">fill_rate</span></tt></a>.</li>
+<li><strong>capacity</strong> &#8211; see <a class="reference internal" href="#celery.worker.buckets.TokenBucketQueue.capacity" title="celery.worker.buckets.TokenBucketQueue.capacity"><tt class="xref py py-attr docutils literal"><span class="pre">capacity</span></tt></a>.</li>
 </ul>
 </td>
 </tr>
@@ -205,34 +218,40 @@ Most of this code was stolen from an entry in the ASPN Python Cookbook:
 <dl class="attribute">
 <dt id="celery.worker.buckets.TokenBucketQueue.fill_rate">
 <tt class="descname">fill_rate</tt><a class="headerlink" href="#celery.worker.buckets.TokenBucketQueue.fill_rate" title="Permalink to this definition">¶</a></dt>
-<dd>The rate in tokens/second that the bucket will be refilled.</dd></dl>
+<dd><p>The rate in tokens/second that the bucket will be refilled.</p>
+</dd></dl>
 
 <dl class="attribute">
 <dt id="celery.worker.buckets.TokenBucketQueue.capacity">
 <tt class="descname">capacity</tt><a class="headerlink" href="#celery.worker.buckets.TokenBucketQueue.capacity" title="Permalink to this definition">¶</a></dt>
-<dd>Maximum number of tokens in the bucket. Default is <tt class="docutils literal"><span class="pre">1</span></tt>.</dd></dl>
+<dd><p>Maximum number of tokens in the bucket. Default is <tt class="docutils literal"><span class="pre">1</span></tt>.</p>
+</dd></dl>
 
 <dl class="attribute">
 <dt id="celery.worker.buckets.TokenBucketQueue.timestamp">
 <tt class="descname">timestamp</tt><a class="headerlink" href="#celery.worker.buckets.TokenBucketQueue.timestamp" title="Permalink to this definition">¶</a></dt>
-<dd>Timestamp of the last time a token was taken out of the bucket.</dd></dl>
+<dd><p>Timestamp of the last time a token was taken out of the bucket.</p>
+</dd></dl>
 
 <dl class="exception">
 <dt id="celery.worker.buckets.TokenBucketQueue.RateLimitExceeded">
 <em class="property">exception </em><tt class="descname">RateLimitExceeded</tt><a class="headerlink" href="#celery.worker.buckets.TokenBucketQueue.RateLimitExceeded" title="Permalink to this definition">¶</a></dt>
-<dd>The token buckets rate limit has been exceeded.</dd></dl>
+<dd><p>The token buckets rate limit has been exceeded.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.worker.buckets.TokenBucketQueue.can_consume">
 <tt class="descclassname">TokenBucketQueue.</tt><tt class="descname">can_consume</tt><big>(</big><em>tokens=1</em><big>)</big><a class="headerlink" href="#celery.worker.buckets.TokenBucketQueue.can_consume" title="Permalink to this definition">¶</a></dt>
-<dd>Consume tokens from the bucket. Returns True if there were
-sufficient tokens otherwise False.</dd></dl>
+<dd><p>Consume tokens from the bucket. Returns True if there were
+sufficient tokens otherwise False.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.worker.buckets.TokenBucketQueue.expected_time">
 <tt class="descclassname">TokenBucketQueue.</tt><tt class="descname">expected_time</tt><big>(</big><em>tokens=1</em><big>)</big><a class="headerlink" href="#celery.worker.buckets.TokenBucketQueue.expected_time" title="Permalink to this definition">¶</a></dt>
-<dd>Returns the expected time in seconds when a new token should be
-available.</dd></dl>
+<dd><p>Returns the expected time in seconds when a new token should be
+available.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.worker.buckets.TokenBucketQueue.get">
@@ -242,16 +261,16 @@ available.</dd></dl>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name" colspan="2">Raises <a title="celery.worker.buckets.RateLimitExceeded" class="reference internal" href="#celery.worker.buckets.RateLimitExceeded">RateLimitExceeded</a>:</th></tr>
-<tr><td>&nbsp;</td><td class="field-body">If a token could not be consumed from the
-token bucket (consuming from the queue too fast).</td>
-</tr>
-<tr class="field"><th class="field-name" colspan="2">Raises Queue.Empty:</th></tr>
-<tr><td>&nbsp;</td><td class="field-body">If an item is not immediately available.</td>
+<tr class="field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
+<li><strong>RateLimitExceeded</strong> &#8211; If a token could not be consumed from the
+token bucket (consuming from the queue too fast).</li>
+<li><strong>Queue.Empty</strong> &#8211; If an item is not immediately available.</li>
+</ul>
+</td>
 </tr>
 </tbody>
 </table>
-<p>Also see <tt class="xref docutils literal"><span class="pre">Queue.Queue.get()</span></tt>.</p>
+<p>Also see <tt class="xref py py-meth docutils literal"><span class="pre">Queue.Queue.get()</span></tt>.</p>
 </dd></dl>
 
 <dl class="method">
@@ -262,23 +281,23 @@ token bucket (consuming from the queue too fast).</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name" colspan="2">Raises <a title="celery.worker.buckets.RateLimitExceeded" class="reference internal" href="#celery.worker.buckets.RateLimitExceeded">RateLimitExceeded</a>:</th></tr>
-<tr><td>&nbsp;</td><td class="field-body">If a token could not be consumed from the
-token bucket (consuming from the queue too fast).</td>
-</tr>
-<tr class="field"><th class="field-name" colspan="2">Raises Queue.Empty:</th></tr>
-<tr><td>&nbsp;</td><td class="field-body">If an item is not immediately available.</td>
+<tr class="field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
+<li><strong>RateLimitExceeded</strong> &#8211; If a token could not be consumed from the
+token bucket (consuming from the queue too fast).</li>
+<li><strong>Queue.Empty</strong> &#8211; If an item is not immediately available.</li>
+</ul>
+</td>
 </tr>
 </tbody>
 </table>
-<p>Also see <tt class="xref docutils literal"><span class="pre">Queue.Queue.get_nowait()</span></tt>.</p>
+<p>Also see <tt class="xref py py-meth docutils literal"><span class="pre">Queue.Queue.get_nowait()</span></tt>.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="celery.worker.buckets.TokenBucketQueue.put">
 <tt class="descclassname">TokenBucketQueue.</tt><tt class="descname">put</tt><big>(</big><em>item</em>, <em>block=True</em><big>)</big><a class="headerlink" href="#celery.worker.buckets.TokenBucketQueue.put" title="Permalink to this definition">¶</a></dt>
 <dd><p>Put an item into the queue.</p>
-<p>Also see <tt class="xref docutils literal"><span class="pre">Queue.Queue.put()</span></tt>.</p>
+<p>Also see <tt class="xref py py-meth docutils literal"><span class="pre">Queue.Queue.put()</span></tt>.</p>
 </dd></dl>
 
 <dl class="method">
@@ -294,21 +313,22 @@ token bucket (consuming from the queue too fast).</td>
 </tr>
 </tbody>
 </table>
-<p>Also see <tt class="xref docutils literal"><span class="pre">Queue.Queue.put_nowait()</span></tt></p>
+<p>Also see <tt class="xref py py-meth docutils literal"><span class="pre">Queue.Queue.put_nowait()</span></tt></p>
 </dd></dl>
 
 <dl class="method">
 <dt id="celery.worker.buckets.TokenBucketQueue.qsize">
 <tt class="descclassname">TokenBucketQueue.</tt><tt class="descname">qsize</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.buckets.TokenBucketQueue.qsize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the size of the queue.</p>
-<p>See <tt class="xref docutils literal"><span class="pre">Queue.Queue.qsize()</span></tt>.</p>
+<p>See <tt class="xref py py-meth docutils literal"><span class="pre">Queue.Queue.qsize()</span></tt>.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="celery.worker.buckets.TokenBucketQueue.wait">
 <tt class="descclassname">TokenBucketQueue.</tt><tt class="descname">wait</tt><big>(</big><em>block=False</em><big>)</big><a class="headerlink" href="#celery.worker.buckets.TokenBucketQueue.wait" title="Permalink to this definition">¶</a></dt>
-<dd>Wait until a token can be retrieved from the bucket and return
-the next item.</dd></dl>
+<dd><p>Wait until a token can be retrieved from the bucket and return
+the next item.</p>
+</dd></dl>
 
 </dd></dl>
 
@@ -321,7 +341,7 @@ the next item.</dd></dl>
     <div class="footer">
     <p>
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
 	</p>
     </div>
       <div class="clearer"></div>

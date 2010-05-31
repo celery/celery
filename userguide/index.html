@@ -1,3 +1,4 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -12,12 +13,13 @@
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
         VERSION:     '1.1.0 (unstable)',
-        COLLAPSE_MODINDEX: false,
+        COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
     <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="../index.html" />
     <link rel="next" title="Tasks" href="tasks.html" />
@@ -34,7 +36,7 @@
 		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
 		<li id="page_buttons">
 			<div class="headerButton"><a href="../genindex.html" title="General Index" accesskey="I">index</a></div>
-			<div class="headerButton"><a href="../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="../py-modindex.html" title="Python Module Index" >modules</a></div>
 			<div class="headerButton"><a href="tasks.html" title="Tasks" accesskey="N">next</a></div>
 			<div class="headerButton"><a href="../getting-started/resources.html" title="Resources" accesskey="P">previous</a></div>
 		</li>
@@ -45,22 +47,22 @@
   <div class="sphinxsidebarwrapper">
 	<ul><li class="toctree-l1"><a href="../index.html">Main Page</a></li></ul>
 	<ul class="current">
-<li class="toctree-l1"><a class="reference external" href="../getting-started/index.html">Getting Started</a></li>
-<li class="toctree-l1 current"><a class="current reference external" href="">User Guide</a><ul>
-<li class="toctree-l2"><a class="reference external" href="tasks.html">Tasks</a></li>
-<li class="toctree-l2"><a class="reference external" href="executing.html">Executing Tasks</a></li>
-<li class="toctree-l2"><a class="reference external" href="remote-tasks.html">HTTP Callback Tasks (Webhooks)</a></li>
-<li class="toctree-l2"><a class="reference external" href="routing.html">Routing Tasks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting-started/index.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">User Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tasks.html">Tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="executing.html">Executing Tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="remote-tasks.html">HTTP Callback Tasks (Webhooks)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="routing.html">Routing Tasks</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference external" href="../configuration.html">Configuration and defaults</a></li>
-<li class="toctree-l1"><a class="reference external" href="../cookbook/index.html">Cookbook</a></li>
-<li class="toctree-l1"><a class="reference external" href="../tutorials/index.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1"><a class="reference external" href="../reference/index.html">API Reference</a></li>
-<li class="toctree-l1"><a class="reference external" href="../internals/index.html">Internals</a></li>
-<li class="toctree-l1"><a class="reference external" href="../changelog.html">Change history</a></li>
-<li class="toctree-l1"><a class="reference external" href="../links.html">Interesting Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../internals/index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../links.html">Interesting Links</a></li>
 </ul>
 
       <h3>This Page</h3>
@@ -103,39 +105,41 @@
 <tbody valign="top">
 <tr class="field"><th class="field-name">Release:</th><td class="field-body">1.1</td>
 </tr>
-<tr class="field"><th class="field-name">Date:</th><td class="field-body">May 22, 2010</td>
+<tr class="field"><th class="field-name">Date:</th><td class="field-body">May 31, 2010</td>
 </tr>
 </tbody>
 </table>
+<div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference external" href="tasks.html">Tasks</a><ul>
-<li class="toctree-l2"><a class="reference external" href="tasks.html#default-keyword-arguments">Default keyword arguments</a></li>
-<li class="toctree-l2"><a class="reference external" href="tasks.html#logging">Logging</a></li>
-<li class="toctree-l2"><a class="reference external" href="tasks.html#retrying-a-task-if-something-fails">Retrying a task if something fails</a></li>
-<li class="toctree-l2"><a class="reference external" href="tasks.html#task-options">Task options</a></li>
-<li class="toctree-l2"><a class="reference external" href="tasks.html#example">Example</a></li>
-<li class="toctree-l2"><a class="reference external" href="tasks.html#how-it-works">How it works</a></li>
-<li class="toctree-l2"><a class="reference external" href="tasks.html#tips-and-best-practices">Tips and Best Practices</a></li>
-<li class="toctree-l2"><a class="reference external" href="tasks.html#performance-and-strategies">Performance and Strategies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tasks.html">Tasks</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tasks.html#default-keyword-arguments">Default keyword arguments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tasks.html#logging">Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tasks.html#retrying-a-task-if-something-fails">Retrying a task if something fails</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tasks.html#task-options">Task options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tasks.html#example">Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tasks.html#how-it-works">How it works</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tasks.html#tips-and-best-practices">Tips and Best Practices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tasks.html#performance-and-strategies">Performance and Strategies</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference external" href="executing.html">Executing Tasks</a><ul>
-<li class="toctree-l2"><a class="reference external" href="executing.html#eta-and-countdown">ETA and countdown</a></li>
-<li class="toctree-l2"><a class="reference external" href="executing.html#serializers">Serializers</a></li>
-<li class="toctree-l2"><a class="reference external" href="executing.html#connections-and-connection-timeouts">Connections and connection timeouts.</a></li>
-<li class="toctree-l2"><a class="reference external" href="executing.html#routing-options">Routing options</a></li>
-<li class="toctree-l2"><a class="reference external" href="executing.html#amqp-options">AMQP options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="executing.html">Executing Tasks</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="executing.html#eta-and-countdown">ETA and countdown</a></li>
+<li class="toctree-l2"><a class="reference internal" href="executing.html#serializers">Serializers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="executing.html#connections-and-connection-timeouts">Connections and connection timeouts.</a></li>
+<li class="toctree-l2"><a class="reference internal" href="executing.html#routing-options">Routing options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="executing.html#amqp-options">AMQP options</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference external" href="remote-tasks.html">HTTP Callback Tasks (Webhooks)</a><ul>
-<li class="toctree-l2"><a class="reference external" href="remote-tasks.html#executing-tasks-on-a-web-server">Executing tasks on a web server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="remote-tasks.html">HTTP Callback Tasks (Webhooks)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="remote-tasks.html#executing-tasks-on-a-web-server">Executing tasks on a web server</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference external" href="routing.html">Routing Tasks</a><ul>
-<li class="toctree-l2"><a class="reference external" href="routing.html#amqp-primer">AMQP Primer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="routing.html">Routing Tasks</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="routing.html#amqp-primer">AMQP Primer</a></li>
 </ul>
 </li>
 </ul>
+</div>
 </div>
 
 
@@ -145,7 +149,7 @@
     <div class="footer">
     <p>
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
 	</p>
     </div>
       <div class="clearer"></div>

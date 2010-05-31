@@ -1,3 +1,4 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -12,12 +13,13 @@
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
         VERSION:     '1.1.0 (unstable)',
-        COLLAPSE_MODINDEX: false,
+        COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
     <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="../index.html" />
     <link rel="up" title="Getting Started" href="index.html" />
@@ -35,7 +37,7 @@
 		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
 		<li id="page_buttons">
 			<div class="headerButton"><a href="../genindex.html" title="General Index" accesskey="I">index</a></div>
-			<div class="headerButton"><a href="../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="../py-modindex.html" title="Python Module Index" >modules</a></div>
 			<div class="headerButton"><a href="periodic-tasks.html" title="Periodic Tasks" accesskey="N">next</a></div>
 			<div class="headerButton"><a href="broker-installation.html" title="Broker Installation" accesskey="P">previous</a></div>
 		</li>
@@ -46,23 +48,23 @@
   <div class="sphinxsidebarwrapper">
 	<ul><li class="toctree-l1"><a href="../index.html">Main Page</a></li></ul>
 	<ul class="current">
-<li class="toctree-l1 current"><a class="reference external" href="index.html">Getting Started</a><ul class="current">
-<li class="toctree-l2"><a class="reference external" href="introduction.html">Introduction</a></li>
-<li class="toctree-l2"><a class="reference external" href="broker-installation.html">Broker Installation</a></li>
-<li class="toctree-l2 current"><a class="current reference external" href="">First steps with Celery</a></li>
-<li class="toctree-l2"><a class="reference external" href="periodic-tasks.html">Periodic Tasks</a></li>
-<li class="toctree-l2"><a class="reference external" href="resources.html">Resources</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Getting Started</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="broker-installation.html">Broker Installation</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">First steps with Celery</a></li>
+<li class="toctree-l2"><a class="reference internal" href="periodic-tasks.html">Periodic Tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="resources.html">Resources</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference external" href="../userguide/index.html">User Guide</a></li>
-<li class="toctree-l1"><a class="reference external" href="../configuration.html">Configuration and defaults</a></li>
-<li class="toctree-l1"><a class="reference external" href="../cookbook/index.html">Cookbook</a></li>
-<li class="toctree-l1"><a class="reference external" href="../tutorials/index.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1"><a class="reference external" href="../reference/index.html">API Reference</a></li>
-<li class="toctree-l1"><a class="reference external" href="../internals/index.html">Internals</a></li>
-<li class="toctree-l1"><a class="reference external" href="../changelog.html">Change history</a></li>
-<li class="toctree-l1"><a class="reference external" href="../links.html">Interesting Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../internals/index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../links.html">Interesting Links</a></li>
 </ul>
 
       <h3>This Page</h3>
@@ -118,7 +120,7 @@ be named whatever you like, but the convention is to call it
 class. In this case we&#8217;re using a decorator that wraps the add
 function in an appropriate class for us automatically. The full
 documentation on how to create tasks and task classes are in
-<a class="reference external" href="../userguide/tasks.html"><em>Executing Tasks</em></a>.</p>
+<a class="reference internal" href="../userguide/tasks.html"><em>Executing Tasks</em></a>.</p>
 </div>
 <div class="section" id="configuration">
 <h2>Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h2>
@@ -159,7 +161,7 @@ be asked to perform. We only have a single task module,
 process work in parallel (the <tt class="docutils literal"><span class="pre">CELERY_CONCURRENCY</span></tt> setting), and we
 could use a persistent result store backend, but for now, this should
 do. For all of the options available, see the
-<a class="reference external" href="../configuration.html"><em>configuration directive reference</em></a>.</p>
+<a class="reference internal" href="../configuration.html"><em>configuration directive reference</em></a>.</p>
 </div>
 <div class="section" id="running-the-celery-worker-server">
 <h2>Running the celery worker server<a class="headerlink" href="#running-the-celery-worker-server" title="Permalink to this headline">¶</a></h2>
@@ -175,7 +177,7 @@ help command:</p>
 <div class="highlight-python"><pre>$  PYTHONPATH="." celeryd --help</pre>
 </div>
 <p>For info on how to run celery as standalone daemon, see
-<a class="reference external" href="../cookbook/daemonizing.html"><em>daemon mode reference</em></a></p>
+<a class="reference internal" href="../cookbook/daemonizing.html"><em>daemon mode reference</em></a></p>
 </div>
 <div class="section" id="executing-the-task">
 <h2>Executing the task<a class="headerlink" href="#executing-the-task" title="Permalink to this headline">¶</a></h2>
@@ -183,7 +185,7 @@ help command:</p>
 of the task class.</p>
 <p>This is a handy shortcut to the <tt class="docutils literal"><span class="pre">apply_async</span></tt> method which gives
 greater control of the task execution.
-See <a class="reference external" href="../userguide/executing.html"><em>Executing Tasks</em></a> for more information.</p>
+See <a class="reference internal" href="../userguide/executing.html"><em>Executing Tasks</em></a> for more information.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">tasks</span> <span class="kn">import</span> <span class="n">add</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">add</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
 <span class="go">&lt;AsyncResult: 889143a6-39a2-4e52-837b-d80d33efb22d&gt;</span>
@@ -217,7 +219,7 @@ finish and get its return value (or exception if the task failed).</p>
 <p>If the task raises an exception, the return value of <tt class="docutils literal"><span class="pre">result.successful()</span></tt>
 will be <tt class="xref docutils literal"><span class="pre">False</span></tt>, and <tt class="docutils literal"><span class="pre">result.result</span></tt> will contain the exception instance
 raised by the task.</p>
-<p>That&#8217;s all for now! After this you should probably read the <a class="reference external" href="../userguide/index.html"><em>User
+<p>That&#8217;s all for now! After this you should probably read the <a class="reference internal" href="../userguide/index.html"><em>User
 Guide</em></a>.</p>
 </div>
 </div>
@@ -229,7 +231,7 @@ Guide</em></a>.</p>
     <div class="footer">
     <p>
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
 	</p>
     </div>
       <div class="clearer"></div>

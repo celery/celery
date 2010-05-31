@@ -1,3 +1,4 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -12,16 +13,17 @@
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
         VERSION:     '1.1.0 (unstable)',
-        COLLAPSE_MODINDEX: false,
+        COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="../../static/jquery.js"></script>
+    <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
     <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
-    <link rel="next" title="Backend: AMQP - celery.backends.amqp" href="celery.backends.amqp.html" />
+    <link rel="next" title="Backend: SQLAlchemy Database - celery.backends.database" href="celery.backends.database.html" />
     <link rel="prev" title="Backends - celery.backends" href="celery.backends.html" />
     <link media="only screen and (max-device-width: 480px)" href="../../static/mobile.css" type="text/css" rel="stylesheet" /> 
   </head>
@@ -35,8 +37,8 @@
 		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
 		<li id="page_buttons">
 			<div class="headerButton"><a href="../../genindex.html" title="General Index" accesskey="I">index</a></div>
-			<div class="headerButton"><a href="../../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
-			<div class="headerButton"><a href="celery.backends.amqp.html" title="Backend: AMQP - celery.backends.amqp" accesskey="N">next</a></div>
+			<div class="headerButton"><a href="../../py-modindex.html" title="Python Module Index" >modules</a></div>
+			<div class="headerButton"><a href="celery.backends.database.html" title="Backend: SQLAlchemy Database - celery.backends.database" accesskey="N">next</a></div>
 			<div class="headerButton"><a href="celery.backends.html" title="Backends - celery.backends" accesskey="P">previous</a></div>
 		</li>
 	</ul>
@@ -46,16 +48,16 @@
   <div class="sphinxsidebarwrapper">
 	<ul><li class="toctree-l1"><a href="../../index.html">Main Page</a></li></ul>
 	<ul>
-<li class="toctree-l1"><a class="reference external" href="../../getting-started/index.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../userguide/index.html">User Guide</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../configuration.html">Configuration and defaults</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../cookbook/index.html">Cookbook</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../tutorials/index.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../reference/index.html">API Reference</a></li>
-<li class="toctree-l1"><a class="reference external" href="../index.html">Internals</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../changelog.html">Change history</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../links.html">Interesting Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting-started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../links.html">Interesting Links</a></li>
 </ul>
 
       <h3>This Page</h3>
@@ -91,7 +93,7 @@
           <div class="body">
             
   <div class="section" id="module-celery.backends.base">
-<h1>Backend: Base - celery.backends.base<a class="headerlink" href="#module-celery.backends.base" title="Permalink to this headline">¶</a></h1>
+<span id="backend-base-celery-backends-base"></span><h1>Backend: Base - celery.backends.base<a class="headerlink" href="#module-celery.backends.base" title="Permalink to this headline">¶</a></h1>
 <p>celery.backends.base</p>
 <dl class="class">
 <dt id="celery.backends.base.BaseBackend">
@@ -100,108 +102,127 @@
 <dl class="exception">
 <dt id="celery.backends.base.BaseBackend.TimeoutError">
 <em class="property">exception </em><tt class="descname">TimeoutError</tt><a class="headerlink" href="#celery.backends.base.BaseBackend.TimeoutError" title="Permalink to this definition">¶</a></dt>
-<dd>The operation timed out.</dd></dl>
+<dd><p>The operation timed out.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.base.BaseBackend.cleanup">
 <tt class="descclassname">BaseBackend.</tt><tt class="descname">cleanup</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.cleanup" title="Permalink to this definition">¶</a></dt>
-<dd>Backend cleanup. Is run by
-<tt class="xref docutils literal"><span class="pre">celery.task.DeleteExpiredTaskMetaTask</span></tt>.</dd></dl>
+<dd><p>Backend cleanup. Is run by
+<tt class="xref py py-class docutils literal"><span class="pre">celery.task.DeleteExpiredTaskMetaTask</span></tt>.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.base.BaseBackend.exception_to_python">
 <tt class="descclassname">BaseBackend.</tt><tt class="descname">exception_to_python</tt><big>(</big><em>exc</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.exception_to_python" title="Permalink to this definition">¶</a></dt>
-<dd>Convert serialized exception to Python exception.</dd></dl>
+<dd><p>Convert serialized exception to Python exception.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.base.BaseBackend.get_result">
 <tt class="descclassname">BaseBackend.</tt><tt class="descname">get_result</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.get_result" title="Permalink to this definition">¶</a></dt>
-<dd>Get the result of a task.</dd></dl>
+<dd><p>Get the result of a task.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.base.BaseBackend.get_status">
 <tt class="descclassname">BaseBackend.</tt><tt class="descname">get_status</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.get_status" title="Permalink to this definition">¶</a></dt>
-<dd>Get the status of a task.</dd></dl>
+<dd><p>Get the status of a task.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.base.BaseBackend.get_traceback">
 <tt class="descclassname">BaseBackend.</tt><tt class="descname">get_traceback</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.get_traceback" title="Permalink to this definition">¶</a></dt>
-<dd>Get the traceback for a failed task.</dd></dl>
+<dd><p>Get the traceback for a failed task.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.base.BaseBackend.is_successful">
 <tt class="descclassname">BaseBackend.</tt><tt class="descname">is_successful</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.is_successful" title="Permalink to this definition">¶</a></dt>
-<dd>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task was successfully executed.</dd></dl>
+<dd><p>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task was successfully executed.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.base.BaseBackend.mark_as_done">
 <tt class="descclassname">BaseBackend.</tt><tt class="descname">mark_as_done</tt><big>(</big><em>task_id</em>, <em>result</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.mark_as_done" title="Permalink to this definition">¶</a></dt>
-<dd>Mark task as successfully executed.</dd></dl>
+<dd><p>Mark task as successfully executed.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.base.BaseBackend.mark_as_failure">
 <tt class="descclassname">BaseBackend.</tt><tt class="descname">mark_as_failure</tt><big>(</big><em>task_id</em>, <em>exc</em>, <em>traceback=None</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.mark_as_failure" title="Permalink to this definition">¶</a></dt>
-<dd>Mark task as executed with failure. Stores the execption.</dd></dl>
+<dd><p>Mark task as executed with failure. Stores the execption.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.base.BaseBackend.mark_as_retry">
 <tt class="descclassname">BaseBackend.</tt><tt class="descname">mark_as_retry</tt><big>(</big><em>task_id</em>, <em>exc</em>, <em>traceback=None</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.mark_as_retry" title="Permalink to this definition">¶</a></dt>
-<dd>Mark task as being retries. Stores the current
-exception (if any).</dd></dl>
+<dd><p>Mark task as being retries. Stores the current
+exception (if any).</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.base.BaseBackend.mark_as_started">
 <tt class="descclassname">BaseBackend.</tt><tt class="descname">mark_as_started</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.mark_as_started" title="Permalink to this definition">¶</a></dt>
-<dd>Mark a task as started</dd></dl>
+<dd><p>Mark a task as started</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.base.BaseBackend.prepare_exception">
 <tt class="descclassname">BaseBackend.</tt><tt class="descname">prepare_exception</tt><big>(</big><em>exc</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.prepare_exception" title="Permalink to this definition">¶</a></dt>
-<dd>Prepare exception for serialization.</dd></dl>
+<dd><p>Prepare exception for serialization.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.base.BaseBackend.prepare_value">
 <tt class="descclassname">BaseBackend.</tt><tt class="descname">prepare_value</tt><big>(</big><em>result</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.prepare_value" title="Permalink to this definition">¶</a></dt>
-<dd>Prepare value for storage.</dd></dl>
+<dd><p>Prepare value for storage.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.base.BaseBackend.process_cleanup">
 <tt class="descclassname">BaseBackend.</tt><tt class="descname">process_cleanup</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.process_cleanup" title="Permalink to this definition">¶</a></dt>
-<dd>Cleanup actions to do at the end of a task worker process.</dd></dl>
+<dd><p>Cleanup actions to do at the end of a task worker process.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.base.BaseBackend.reload_task_result">
 <tt class="descclassname">BaseBackend.</tt><tt class="descname">reload_task_result</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.reload_task_result" title="Permalink to this definition">¶</a></dt>
-<dd>Reload task result, even if it has been previously fetched.</dd></dl>
+<dd><p>Reload task result, even if it has been previously fetched.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.base.BaseBackend.reload_taskset_result">
 <tt class="descclassname">BaseBackend.</tt><tt class="descname">reload_taskset_result</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.reload_taskset_result" title="Permalink to this definition">¶</a></dt>
-<dd>Reload taskset result, even if it has been previously fetched.</dd></dl>
+<dd><p>Reload taskset result, even if it has been previously fetched.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.base.BaseBackend.restore_taskset">
 <tt class="descclassname">BaseBackend.</tt><tt class="descname">restore_taskset</tt><big>(</big><em>taskset_id</em>, <em>cache=True</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.restore_taskset" title="Permalink to this definition">¶</a></dt>
-<dd>Get the result of a taskset.</dd></dl>
+<dd><p>Get the result of a taskset.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.base.BaseBackend.save_taskset">
 <tt class="descclassname">BaseBackend.</tt><tt class="descname">save_taskset</tt><big>(</big><em>taskset_id</em>, <em>result</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.save_taskset" title="Permalink to this definition">¶</a></dt>
-<dd>Store the result and status of a task.</dd></dl>
+<dd><p>Store the result and status of a task.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.base.BaseBackend.store_result">
 <tt class="descclassname">BaseBackend.</tt><tt class="descname">store_result</tt><big>(</big><em>task_id</em>, <em>result</em>, <em>status</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.store_result" title="Permalink to this definition">¶</a></dt>
-<dd>Store the result and status of a task.</dd></dl>
+<dd><p>Store the result and status of a task.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.base.BaseBackend.wait_for">
 <tt class="descclassname">BaseBackend.</tt><tt class="descname">wait_for</tt><big>(</big><em>task_id</em>, <em>timeout=None</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.wait_for" title="Permalink to this definition">¶</a></dt>
 <dd><p>Wait for task and return its result.</p>
 <p>If the task raises an exception, this exception
-will be re-raised by <a title="celery.backends.base.BaseBackend.wait_for" class="reference internal" href="#celery.backends.base.BaseBackend.wait_for"><tt class="xref docutils literal"><span class="pre">wait_for()</span></tt></a>.</p>
+will be re-raised by <a class="reference internal" href="#celery.backends.base.BaseBackend.wait_for" title="celery.backends.base.BaseBackend.wait_for"><tt class="xref py py-func docutils literal"><span class="pre">wait_for()</span></tt></a>.</p>
 <p>If <tt class="docutils literal"><span class="pre">timeout</span></tt> is not <tt class="xref docutils literal"><span class="pre">None</span></tt>, this raises the
-<a title="celery.exceptions.TimeoutError" class="reference external" href="../../reference/celery.exceptions.html#celery.exceptions.TimeoutError"><tt class="xref docutils literal"><span class="pre">celery.exceptions.TimeoutError</span></tt></a> exception if the operation
+<a class="reference internal" href="../../reference/celery.exceptions.html#celery.exceptions.TimeoutError" title="celery.exceptions.TimeoutError"><tt class="xref py py-class docutils literal"><span class="pre">celery.exceptions.TimeoutError</span></tt></a> exception if the operation
 takes longer than <tt class="docutils literal"><span class="pre">timeout</span></tt> seconds.</p>
 </dd></dl>
 
@@ -216,7 +237,7 @@ takes longer than <tt class="docutils literal"><span class="pre">timeout</span><
     <div class="footer">
     <p>
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
 	</p>
     </div>
       <div class="clearer"></div>

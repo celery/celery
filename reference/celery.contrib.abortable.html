@@ -1,3 +1,4 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -12,12 +13,13 @@
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
         VERSION:     '1.1.0 (unstable)',
-        COLLAPSE_MODINDEX: false,
+        COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
     <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
@@ -35,7 +37,7 @@
 		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
 		<li id="page_buttons">
 			<div class="headerButton"><a href="../genindex.html" title="General Index" accesskey="I">index</a></div>
-			<div class="headerButton"><a href="../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="../py-modindex.html" title="Python Module Index" >modules</a></div>
 			<div class="headerButton"><a href="celery.events.html" title="Events - celery.events" accesskey="N">next</a></div>
 			<div class="headerButton"><a href="celery.messaging.html" title="Messaging - celery.messaging" accesskey="P">previous</a></div>
 		</li>
@@ -46,41 +48,42 @@
   <div class="sphinxsidebarwrapper">
 	<ul><li class="toctree-l1"><a href="../index.html">Main Page</a></li></ul>
 	<ul class="current">
-<li class="toctree-l1"><a class="reference external" href="../getting-started/index.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference external" href="../userguide/index.html">User Guide</a></li>
-<li class="toctree-l1"><a class="reference external" href="../configuration.html">Configuration and defaults</a></li>
-<li class="toctree-l1"><a class="reference external" href="../cookbook/index.html">Cookbook</a></li>
-<li class="toctree-l1"><a class="reference external" href="../tutorials/index.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1 current"><a class="reference external" href="index.html">API Reference</a><ul class="current">
-<li class="toctree-l2"><a class="reference external" href="celery.decorators.html">Task Decorators - celery.decorators</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.base.html">Defining Tasks - celery.task.base</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.execute.html">Executing Tasks - celery.execute</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.result.html">Task Result - celery.result</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.html">Task Information and Utilities - celery.task</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.conf.html">Configuration - celery.conf</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.control.html">Remote Management of Workers - celery.task.control</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.http.html">HTTP Callback Tasks - celery.task.http</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.schedules.html">Periodic Task Schedule Behaviors - celery.task.schedules</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.signals.html">Signals - celery.signals</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.exceptions.html">Exceptions - celery.exceptions</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.builtins.html">Built-in Task Classes - celery.task.builtins</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.loaders.html">Loaders - celery.loaders</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.loaders.base.html">Loader Base Classes - celery.loaders.base</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.registry.html">Task Registry - celery.registry</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.states.html">Task States - celery.states</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.messaging.html">Messaging - celery.messaging</a></li>
-<li class="toctree-l2 current"><a class="current reference external" href="">Contrib: Abortable tasks - celery.contrib.abortable</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.events.html">Events - celery.events</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.bin.celerybeat.html">Celery Periodic Task Server - celery.bin.celerybeat</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.bin.camqadm.html">caqmadm: AMQP API Command-line Shell - celery.bin.camqadm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting-started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="celery.decorators.html">Task Decorators - celery.decorators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.base.html">Defining Tasks - celery.task.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.execute.html">Executing Tasks - celery.execute</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.result.html">Task Result - celery.result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.html">Task Information and Utilities - celery.task</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.conf.html">Configuration - celery.conf</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.control.html">Remote Management of Workers - celery.task.control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.http.html">HTTP Callback Tasks - celery.task.http</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.schedules.html">Periodic Task Schedule Behaviors - celery.task.schedules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.signals.html">Signals - celery.signals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.exceptions.html">Exceptions - celery.exceptions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.builtins.html">Built-in Task Classes - celery.task.builtins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.loaders.html">Loaders - celery.loaders</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.loaders.base.html">Loader Base Classes - celery.loaders.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.registry.html">Task Registry - celery.registry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.states.html">Task States - celery.states</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.messaging.html">Messaging - celery.messaging</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">Contrib: Abortable tasks - celery.contrib.abortable</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.events.html">Events - celery.events</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.celerybeat.html">Celery Periodic Task Server - celery.bin.celerybeat</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.camqadm.html">caqmadm: AMQP API Command-line Shell - celery.bin.camqadm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.celeryd_multi.html">Celeryd Multi Tool - celery.bin.celeryd_multi</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference external" href="../internals/index.html">Internals</a></li>
-<li class="toctree-l1"><a class="reference external" href="../changelog.html">Change history</a></li>
-<li class="toctree-l1"><a class="reference external" href="../links.html">Interesting Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../internals/index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../links.html">Interesting Links</a></li>
 </ul>
 
       <h3>This Page</h3>
@@ -118,22 +121,22 @@
   <div class="section" id="contrib-abortable-tasks-celery-contrib-abortable">
 <h1>Contrib: Abortable tasks - celery.contrib.abortable<a class="headerlink" href="#contrib-abortable-tasks-celery-contrib-abortable" title="Permalink to this headline">¶</a></h1>
 <blockquote>
-<div class="section" id="abortable-tasks-overview">
-<span id="module-celery.contrib.abortable"></span><h2>Abortable tasks overview<a class="headerlink" href="#abortable-tasks-overview" title="Permalink to this headline">¶</a></h2>
-<p>For long-running <tt class="xref docutils literal"><span class="pre">Task</span></tt>&#8216;s, it can be desirable to support
+<span class="target" id="module-celery.contrib.abortable"></span><div class="section" id="abortable-tasks-overview">
+<h2>Abortable tasks overview<a class="headerlink" href="#abortable-tasks-overview" title="Permalink to this headline">¶</a></h2>
+<p>For long-running <tt class="xref py py-class docutils literal"><span class="pre">Task</span></tt>&#8216;s, it can be desirable to support
 aborting during execution. Of course, these tasks should be built to
 support abortion specifically.</p>
-<p>The <a title="celery.contrib.abortable.AbortableTask" class="reference internal" href="#celery.contrib.abortable.AbortableTask"><tt class="xref docutils literal"><span class="pre">AbortableTask</span></tt></a> serves as a base class for all <tt class="xref docutils literal"><span class="pre">Task</span></tt>
+<p>The <a class="reference internal" href="#celery.contrib.abortable.AbortableTask" title="celery.contrib.abortable.AbortableTask"><tt class="xref py py-class docutils literal"><span class="pre">AbortableTask</span></tt></a> serves as a base class for all <tt class="xref py py-class docutils literal"><span class="pre">Task</span></tt>
 objects that should support abortion by producers.</p>
 <ul class="simple">
-<li>Producers may invoke the <tt class="xref docutils literal"><span class="pre">abort()</span></tt> method on
-<a title="celery.contrib.abortable.AbortableAsyncResult" class="reference internal" href="#celery.contrib.abortable.AbortableAsyncResult"><tt class="xref docutils literal"><span class="pre">AbortableAsyncResult</span></tt></a> instances, to request abortion.</li>
+<li>Producers may invoke the <tt class="xref py py-meth docutils literal"><span class="pre">abort()</span></tt> method on
+<a class="reference internal" href="#celery.contrib.abortable.AbortableAsyncResult" title="celery.contrib.abortable.AbortableAsyncResult"><tt class="xref py py-class docutils literal"><span class="pre">AbortableAsyncResult</span></tt></a> instances, to request abortion.</li>
 <li>Consumers (workers) should periodically check (and honor!) the
-<tt class="xref docutils literal"><span class="pre">is_aborted()</span></tt> method at controlled points in their task&#8217;s
-<tt class="xref docutils literal"><span class="pre">run()</span></tt> method. The more often, the better.</li>
+<tt class="xref py py-meth docutils literal"><span class="pre">is_aborted()</span></tt> method at controlled points in their task&#8217;s
+<tt class="xref py py-meth docutils literal"><span class="pre">run()</span></tt> method. The more often, the better.</li>
 </ul>
 <p>The necessary intermediate communication is dealt with by the
-<a title="celery.contrib.abortable.AbortableTask" class="reference internal" href="#celery.contrib.abortable.AbortableTask"><tt class="xref docutils literal"><span class="pre">AbortableTask</span></tt></a> implementation.</p>
+<a class="reference internal" href="#celery.contrib.abortable.AbortableTask" title="celery.contrib.abortable.AbortableTask"><tt class="xref py py-class docutils literal"><span class="pre">AbortableTask</span></tt></a> implementation.</p>
 <div class="section" id="usage-example">
 <h3>Usage example<a class="headerlink" href="#usage-example" title="Permalink to this headline">¶</a></h3>
 <p>In the consumer:</p>
@@ -181,12 +184,12 @@ have it block until the task is finished.</p>
 <dt id="celery.contrib.abortable.AbortableAsyncResult">
 <em class="property">class </em><tt class="descclassname">celery.contrib.abortable.</tt><tt class="descname">AbortableAsyncResult</tt><big>(</big><em>task_id</em>, <em>backend=None</em><big>)</big><a class="headerlink" href="#celery.contrib.abortable.AbortableAsyncResult" title="Permalink to this definition">¶</a></dt>
 <dd><p>Represents a abortable result.</p>
-<p>Specifically, this gives the <tt class="docutils literal"><span class="pre">AsyncResult</span></tt> a <a title="celery.contrib.abortable.AbortableAsyncResult.abort" class="reference internal" href="#celery.contrib.abortable.AbortableAsyncResult.abort"><tt class="xref docutils literal"><span class="pre">abort()</span></tt></a> method,
+<p>Specifically, this gives the <tt class="docutils literal"><span class="pre">AsyncResult</span></tt> a <a class="reference internal" href="#celery.contrib.abortable.AbortableAsyncResult.abort" title="celery.contrib.abortable.AbortableAsyncResult.abort"><tt class="xref py py-meth docutils literal"><span class="pre">abort()</span></tt></a> method,
 which sets the state of the underlying Task to <tt class="docutils literal"><span class="pre">&quot;ABORTED&quot;</span></tt>.</p>
 <dl class="method">
 <dt id="celery.contrib.abortable.AbortableAsyncResult.abort">
 <tt class="descname">abort</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.contrib.abortable.AbortableAsyncResult.abort" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set the state of the task to <tt class="xref docutils literal"><span class="pre">ABORTED</span></tt>.</p>
+<dd><p>Set the state of the task to <tt class="xref py py-const docutils literal"><span class="pre">ABORTED</span></tt>.</p>
 <p>Abortable tasks monitor their state at regular intervals and
 terminate execution if so.</p>
 <p>Be aware that invoking this method does not guarantee when the
@@ -197,30 +200,32 @@ all).</p>
 <dl class="method">
 <dt id="celery.contrib.abortable.AbortableAsyncResult.is_aborted">
 <tt class="descname">is_aborted</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.contrib.abortable.AbortableAsyncResult.is_aborted" title="Permalink to this definition">¶</a></dt>
-<dd>Returns <tt class="xref xref docutils literal"><span class="pre">True</span></tt> if the task is (being) aborted.</dd></dl>
+<dd><p>Returns <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> if the task is (being) aborted.</p>
+</dd></dl>
 
 </dd></dl>
 
 <dl class="class">
 <dt id="celery.contrib.abortable.AbortableTask">
 <em class="property">class </em><tt class="descclassname">celery.contrib.abortable.</tt><tt class="descname">AbortableTask</tt><a class="headerlink" href="#celery.contrib.abortable.AbortableTask" title="Permalink to this definition">¶</a></dt>
-<dd><p>A celery task that serves as a base class for all <tt class="xref docutils literal"><span class="pre">Task</span></tt>&#8216;s
+<dd><p>A celery task that serves as a base class for all <tt class="xref py py-class docutils literal"><span class="pre">Task</span></tt>&#8216;s
 that support aborting during execution.</p>
-<p>All subclasses of <a title="celery.contrib.abortable.AbortableTask" class="reference internal" href="#celery.contrib.abortable.AbortableTask"><tt class="xref docutils literal"><span class="pre">AbortableTask</span></tt></a> must call the
-<a title="celery.contrib.abortable.AbortableTask.is_aborted" class="reference internal" href="#celery.contrib.abortable.AbortableTask.is_aborted"><tt class="xref docutils literal"><span class="pre">is_aborted()</span></tt></a> method periodically and act accordingly when
-the call evaluates to <tt class="xref xref docutils literal"><span class="pre">True</span></tt>.</p>
+<p>All subclasses of <a class="reference internal" href="#celery.contrib.abortable.AbortableTask" title="celery.contrib.abortable.AbortableTask"><tt class="xref py py-class docutils literal"><span class="pre">AbortableTask</span></tt></a> must call the
+<a class="reference internal" href="#celery.contrib.abortable.AbortableTask.is_aborted" title="celery.contrib.abortable.AbortableTask.is_aborted"><tt class="xref py py-meth docutils literal"><span class="pre">is_aborted()</span></tt></a> method periodically and act accordingly when
+the call evaluates to <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt>.</p>
 <dl class="classmethod">
 <dt id="celery.contrib.abortable.AbortableTask.AsyncResult">
 <em class="property">classmethod </em><tt class="descname">AsyncResult</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.contrib.abortable.AbortableTask.AsyncResult" title="Permalink to this definition">¶</a></dt>
-<dd>Returns the accompanying AbortableAsyncResult instance.</dd></dl>
+<dd><p>Returns the accompanying AbortableAsyncResult instance.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.contrib.abortable.AbortableTask.is_aborted">
 <tt class="descname">is_aborted</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.contrib.abortable.AbortableTask.is_aborted" title="Permalink to this definition">¶</a></dt>
 <dd><p>Checks against the backend whether this
-<a title="celery.contrib.abortable.AbortableAsyncResult" class="reference internal" href="#celery.contrib.abortable.AbortableAsyncResult"><tt class="xref docutils literal"><span class="pre">AbortableAsyncResult</span></tt></a> is <tt class="xref docutils literal"><span class="pre">ABORTED</span></tt>.</p>
-<p>Always returns <tt class="xref xref docutils literal"><span class="pre">False</span></tt> in case the <cite>task_id</cite> parameter
-refers to a regular (non-abortable) <tt class="xref docutils literal"><span class="pre">Task</span></tt>.</p>
+<a class="reference internal" href="#celery.contrib.abortable.AbortableAsyncResult" title="celery.contrib.abortable.AbortableAsyncResult"><tt class="xref py py-class docutils literal"><span class="pre">AbortableAsyncResult</span></tt></a> is <tt class="xref py py-const docutils literal"><span class="pre">ABORTED</span></tt>.</p>
+<p>Always returns <tt class="xref py py-const xref docutils literal"><span class="pre">False</span></tt> in case the <cite>task_id</cite> parameter
+refers to a regular (non-abortable) <tt class="xref py py-class docutils literal"><span class="pre">Task</span></tt>.</p>
 <p>Be aware that invoking this method will cause a hit in the
 backend (for example a database query), so find a good balance
 between calling it regularly (for responsiveness), but not too
@@ -241,7 +246,7 @@ often (for performance).</p>
     <div class="footer">
     <p>
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
 	</p>
     </div>
       <div class="clearer"></div>

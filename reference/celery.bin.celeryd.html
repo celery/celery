@@ -1,3 +1,4 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -12,12 +13,13 @@
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
         VERSION:     '1.1.0 (unstable)',
-        COLLAPSE_MODINDEX: false,
+        COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
     <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
@@ -35,7 +37,7 @@
 		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
 		<li id="page_buttons">
 			<div class="headerButton"><a href="../genindex.html" title="General Index" accesskey="I">index</a></div>
-			<div class="headerButton"><a href="../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="../py-modindex.html" title="Python Module Index" >modules</a></div>
 			<div class="headerButton"><a href="celery.bin.celerybeat.html" title="Celery Periodic Task Server - celery.bin.celerybeat" accesskey="N">next</a></div>
 			<div class="headerButton"><a href="celery.events.html" title="Events - celery.events" accesskey="P">previous</a></div>
 		</li>
@@ -46,41 +48,42 @@
   <div class="sphinxsidebarwrapper">
 	<ul><li class="toctree-l1"><a href="../index.html">Main Page</a></li></ul>
 	<ul class="current">
-<li class="toctree-l1"><a class="reference external" href="../getting-started/index.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference external" href="../userguide/index.html">User Guide</a></li>
-<li class="toctree-l1"><a class="reference external" href="../configuration.html">Configuration and defaults</a></li>
-<li class="toctree-l1"><a class="reference external" href="../cookbook/index.html">Cookbook</a></li>
-<li class="toctree-l1"><a class="reference external" href="../tutorials/index.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1 current"><a class="reference external" href="index.html">API Reference</a><ul class="current">
-<li class="toctree-l2"><a class="reference external" href="celery.decorators.html">Task Decorators - celery.decorators</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.base.html">Defining Tasks - celery.task.base</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.execute.html">Executing Tasks - celery.execute</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.result.html">Task Result - celery.result</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.html">Task Information and Utilities - celery.task</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.conf.html">Configuration - celery.conf</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.control.html">Remote Management of Workers - celery.task.control</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.http.html">HTTP Callback Tasks - celery.task.http</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.schedules.html">Periodic Task Schedule Behaviors - celery.task.schedules</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.signals.html">Signals - celery.signals</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.exceptions.html">Exceptions - celery.exceptions</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.builtins.html">Built-in Task Classes - celery.task.builtins</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.loaders.html">Loaders - celery.loaders</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.loaders.base.html">Loader Base Classes - celery.loaders.base</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.registry.html">Task Registry - celery.registry</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.states.html">Task States - celery.states</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.messaging.html">Messaging - celery.messaging</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.contrib.abortable.html">Contrib: Abortable tasks - celery.contrib.abortable</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.events.html">Events - celery.events</a></li>
-<li class="toctree-l2 current"><a class="current reference external" href="">Celery Worker Daemon - celery.bin.celeryd</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.bin.celerybeat.html">Celery Periodic Task Server - celery.bin.celerybeat</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.bin.camqadm.html">caqmadm: AMQP API Command-line Shell - celery.bin.camqadm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting-started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="celery.decorators.html">Task Decorators - celery.decorators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.base.html">Defining Tasks - celery.task.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.execute.html">Executing Tasks - celery.execute</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.result.html">Task Result - celery.result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.html">Task Information and Utilities - celery.task</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.conf.html">Configuration - celery.conf</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.control.html">Remote Management of Workers - celery.task.control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.http.html">HTTP Callback Tasks - celery.task.http</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.schedules.html">Periodic Task Schedule Behaviors - celery.task.schedules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.signals.html">Signals - celery.signals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.exceptions.html">Exceptions - celery.exceptions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.builtins.html">Built-in Task Classes - celery.task.builtins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.loaders.html">Loaders - celery.loaders</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.loaders.base.html">Loader Base Classes - celery.loaders.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.registry.html">Task Registry - celery.registry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.states.html">Task States - celery.states</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.messaging.html">Messaging - celery.messaging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.contrib.abortable.html">Contrib: Abortable tasks - celery.contrib.abortable</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.events.html">Events - celery.events</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">Celery Worker Daemon - celery.bin.celeryd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.celerybeat.html">Celery Periodic Task Server - celery.bin.celerybeat</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.camqadm.html">caqmadm: AMQP API Command-line Shell - celery.bin.camqadm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.celeryd_multi.html">Celeryd Multi Tool - celery.bin.celeryd_multi</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference external" href="../internals/index.html">Internals</a></li>
-<li class="toctree-l1"><a class="reference external" href="../changelog.html">Change history</a></li>
-<li class="toctree-l1"><a class="reference external" href="../links.html">Interesting Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../internals/index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../links.html">Interesting Links</a></li>
 </ul>
 
       <h3>This Page</h3>
@@ -116,59 +119,95 @@
           <div class="body">
             
   <div class="section" id="module-celery.bin.celeryd">
-<h1>Celery Worker Daemon - celery.bin.celeryd<a class="headerlink" href="#module-celery.bin.celeryd" title="Permalink to this headline">¶</a></h1>
+<span id="celery-worker-daemon-celery-bin-celeryd"></span><h1>Celery Worker Daemon - celery.bin.celeryd<a class="headerlink" href="#module-celery.bin.celeryd" title="Permalink to this headline">¶</a></h1>
 <p>celeryd</p>
 <dl class="cmdoption">
 <dt id="cmdoption-celeryd-c">
 <tt class="descname">-c</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">--concurrency</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd-c" title="Permalink to this definition">¶</a></dt>
-<dd>Number of child processes processing the queue. The default
-is the number of CPUs available on your system.</dd></dl>
+<dd><p>Number of child processes processing the queue. The default
+is the number of CPUs available on your system.</p>
+</dd></dl>
 
 <dl class="cmdoption">
 <dt id="cmdoption-celeryd-f">
 <tt class="descname">-f</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">--logfile</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd-f" title="Permalink to this definition">¶</a></dt>
-<dd>Path to log file. If no logfile is specified, <tt class="docutils literal"><span class="pre">stderr</span></tt> is used.</dd></dl>
+<dd><p>Path to log file. If no logfile is specified, <tt class="docutils literal"><span class="pre">stderr</span></tt> is used.</p>
+</dd></dl>
 
 <dl class="cmdoption">
 <dt id="cmdoption-celeryd-l">
 <tt class="descname">-l</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">--loglevel</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd-l" title="Permalink to this definition">¶</a></dt>
-<dd>Logging level, choose between <tt class="docutils literal"><span class="pre">DEBUG</span></tt>, <tt class="docutils literal"><span class="pre">INFO</span></tt>, <tt class="docutils literal"><span class="pre">WARNING</span></tt>,
-<tt class="docutils literal"><span class="pre">ERROR</span></tt>, <tt class="docutils literal"><span class="pre">CRITICAL</span></tt>, or <tt class="docutils literal"><span class="pre">FATAL</span></tt>.</dd></dl>
+<dd><p>Logging level, choose between <tt class="docutils literal"><span class="pre">DEBUG</span></tt>, <tt class="docutils literal"><span class="pre">INFO</span></tt>, <tt class="docutils literal"><span class="pre">WARNING</span></tt>,
+<tt class="docutils literal"><span class="pre">ERROR</span></tt>, <tt class="docutils literal"><span class="pre">CRITICAL</span></tt>, or <tt class="docutils literal"><span class="pre">FATAL</span></tt>.</p>
+</dd></dl>
 
 <dl class="cmdoption">
 <dt id="cmdoption-celeryd-n">
 <tt class="descname">-n</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">--hostname</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd-n" title="Permalink to this definition">¶</a></dt>
-<dd>Set custom hostname.</dd></dl>
+<dd><p>Set custom hostname.</p>
+</dd></dl>
 
 <dl class="cmdoption">
 <dt id="cmdoption-celeryd-B">
 <tt class="descname">-B</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">--beat</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd-B" title="Permalink to this definition">¶</a></dt>
-<dd>Also run the <tt class="docutils literal"><span class="pre">celerybeat</span></tt> periodic task scheduler. Please note that
-there must only be one instance of this service.</dd></dl>
+<dd><p>Also run the <tt class="docutils literal"><span class="pre">celerybeat</span></tt> periodic task scheduler. Please note that
+there must only be one instance of this service.</p>
+</dd></dl>
+
+<dl class="cmdoption">
+<dt id="cmdoption-celeryd-Q">
+<tt class="descname">-Q</tt><tt class="descclassname">, queues</tt><a class="headerlink" href="#cmdoption-celeryd-Q" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of queues to enable for this worker separated by comma.
+By default all configured queues are enabled.
+Example: <tt class="docutils literal"><span class="pre">-Q</span> <span class="pre">video,image</span></tt></p>
+</dd></dl>
 
 <dl class="cmdoption">
 <dt id="cmdoption-celeryd-s">
 <tt class="descname">-s</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">--schedule</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd-s" title="Permalink to this definition">¶</a></dt>
-<dd>Path to the schedule database if running with the <tt class="docutils literal"><span class="pre">-B</span></tt> option.
+<dd><p>Path to the schedule database if running with the <tt class="docutils literal"><span class="pre">-B</span></tt> option.
 Defaults to <tt class="docutils literal"><span class="pre">celerybeat-schedule</span></tt>. The extension &#8220;.db&#8221; will be
-appended to the filename.</dd></dl>
+appended to the filename.</p>
+</dd></dl>
 
 <dl class="cmdoption">
 <dt id="cmdoption-celeryd-E">
 <tt class="descname">-E</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">--events</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd-E" title="Permalink to this definition">¶</a></dt>
-<dd>Send events that can be captured by monitors like <tt class="docutils literal"><span class="pre">celerymon</span></tt>.</dd></dl>
+<dd><p>Send events that can be captured by monitors like <tt class="docutils literal"><span class="pre">celerymon</span></tt>.</p>
+</dd></dl>
 
 <dl class="cmdoption">
 <dt id="cmdoption-celeryd--discard">
 <tt class="descname">--discard</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd--discard" title="Permalink to this definition">¶</a></dt>
-<dd>Discard all waiting tasks before the daemon is started.
+<dd><p>Discard all waiting tasks before the daemon is started.
 <strong>WARNING</strong>: This is unrecoverable, and the tasks will be
-deleted from the messaging server.</dd></dl>
+deleted from the messaging server.</p>
+</dd></dl>
+
+<dl class="cmdoption">
+<dt id="cmdoption-celeryd--time-limit">
+<tt class="descname">--time-limit</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd--time-limit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enables a hard time limit (in seconds) for tasks.</p>
+</dd></dl>
+
+<dl class="cmdoption">
+<dt id="cmdoption-celeryd--soft-time-limit">
+<tt class="descname">--soft-time-limit</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd--soft-time-limit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enables a soft time limit (in seconds) for tasks.</p>
+</dd></dl>
+
+<dl class="cmdoption">
+<dt id="cmdoption-celeryd--maxtasksperchild">
+<tt class="descname">--maxtasksperchild</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd--maxtasksperchild" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maximum number of tasks a pool worker can execute before it&#8217;s
+terminated and replaced by a new worker.</p>
+</dd></dl>
 
 <dl class="function">
 <dt id="celery.bin.celeryd.parse_options">
 <tt class="descclassname">celery.bin.celeryd.</tt><tt class="descname">parse_options</tt><big>(</big><em>arguments</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.parse_options" title="Permalink to this definition">¶</a></dt>
-<dd>Parse the available options to <tt class="docutils literal"><span class="pre">celeryd</span></tt>.</dd></dl>
+<dd><p>Parse the available options to <tt class="docutils literal"><span class="pre">celeryd</span></tt>.</p>
+</dd></dl>
 
 </div>
 
@@ -179,7 +218,7 @@ deleted from the messaging server.</dd></dl>
     <div class="footer">
     <p>
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
 	</p>
     </div>
       <div class="clearer"></div>

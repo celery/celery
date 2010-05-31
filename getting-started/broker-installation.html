@@ -1,3 +1,4 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -12,12 +13,13 @@
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
         VERSION:     '1.1.0 (unstable)',
-        COLLAPSE_MODINDEX: false,
+        COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
     <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="../index.html" />
     <link rel="up" title="Getting Started" href="index.html" />
@@ -35,7 +37,7 @@
 		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
 		<li id="page_buttons">
 			<div class="headerButton"><a href="../genindex.html" title="General Index" accesskey="I">index</a></div>
-			<div class="headerButton"><a href="../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="../py-modindex.html" title="Python Module Index" >modules</a></div>
 			<div class="headerButton"><a href="first-steps-with-celery.html" title="First steps with Celery" accesskey="N">next</a></div>
 			<div class="headerButton"><a href="introduction.html" title="Introduction" accesskey="P">previous</a></div>
 		</li>
@@ -46,23 +48,23 @@
   <div class="sphinxsidebarwrapper">
 	<ul><li class="toctree-l1"><a href="../index.html">Main Page</a></li></ul>
 	<ul class="current">
-<li class="toctree-l1 current"><a class="reference external" href="index.html">Getting Started</a><ul class="current">
-<li class="toctree-l2"><a class="reference external" href="introduction.html">Introduction</a></li>
-<li class="toctree-l2 current"><a class="current reference external" href="">Broker Installation</a></li>
-<li class="toctree-l2"><a class="reference external" href="first-steps-with-celery.html">First steps with Celery</a></li>
-<li class="toctree-l2"><a class="reference external" href="periodic-tasks.html">Periodic Tasks</a></li>
-<li class="toctree-l2"><a class="reference external" href="resources.html">Resources</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Getting Started</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">Broker Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="first-steps-with-celery.html">First steps with Celery</a></li>
+<li class="toctree-l2"><a class="reference internal" href="periodic-tasks.html">Periodic Tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="resources.html">Resources</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference external" href="../userguide/index.html">User Guide</a></li>
-<li class="toctree-l1"><a class="reference external" href="../configuration.html">Configuration and defaults</a></li>
-<li class="toctree-l1"><a class="reference external" href="../cookbook/index.html">Cookbook</a></li>
-<li class="toctree-l1"><a class="reference external" href="../tutorials/index.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1"><a class="reference external" href="../reference/index.html">API Reference</a></li>
-<li class="toctree-l1"><a class="reference external" href="../internals/index.html">Internals</a></li>
-<li class="toctree-l1"><a class="reference external" href="../changelog.html">Change history</a></li>
-<li class="toctree-l1"><a class="reference external" href="../links.html">Interesting Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../internals/index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../links.html">Interesting Links</a></li>
 </ul>
 
       <h3>This Page</h3>
@@ -102,7 +104,7 @@
 <div class="section" id="installing-rabbitmq">
 <h2>Installing RabbitMQ<a class="headerlink" href="#installing-rabbitmq" title="Permalink to this headline">¶</a></h2>
 <p>See <a class="reference external" href="http://www.rabbitmq.com/install.html">Installing RabbitMQ</a> over at RabbitMQ&#8217;s website. For Mac OS X
-see <a class="reference internal" href="#installing-rabbitmq-on-os-x">Installing RabbitMQ on OS X</a>.</p>
+see <a class="reference external" href="#installing-rabbitmq-on-os-x">Installing RabbitMQ on OS X</a>.</p>
 </div>
 <div class="section" id="setting-up-rabbitmq">
 <h2>Setting up RabbitMQ<a class="headerlink" href="#setting-up-rabbitmq" title="Permalink to this headline">¶</a></h2>
@@ -184,7 +186,7 @@ then RabbitMQ will try to use <tt class="docutils literal"><span class="pre">rab
 <tt class="docutils literal"><span class="pre">rabbitmqctl</span></tt> command:</p>
 <div class="highlight-python"><pre>$ sudo rabbitmqctl stop</pre>
 </div>
-<p>When the server is running, you can continue reading <a class="reference internal" href="#setting-up-rabbitmq">Setting up RabbitMQ</a>.</p>
+<p>When the server is running, you can continue reading <a class="reference external" href="#setting-up-rabbitmq">Setting up RabbitMQ</a>.</p>
 </div>
 </div>
 </div>
@@ -196,7 +198,7 @@ then RabbitMQ will try to use <tt class="docutils literal"><span class="pre">rab
     <div class="footer">
     <p>
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
 	</p>
     </div>
       <div class="clearer"></div>

@@ -2,7 +2,8 @@
  Executing Tasks
 =================
 
-Executing tasks is done with ``apply_async``, and its shortcut: ``delay``.
+Executing tasks is done with :meth:`~celery.task.Base.Task.apply_async`,
+and its shortcut: :meth:`~celery.task.Base.Task.delay`.
 
 ``delay`` is simple and convenient, as it looks like calling a regular
 function:
@@ -17,7 +18,15 @@ The same thing using ``apply_async`` is written like this:
 
     Task.apply_async(args=[arg1, arg2], kwargs={"kwarg1": "x", "kwarg2": "y"})
 
-But ``delay`` doesn't give you as much control as using ``apply_async``.
+You can also execute a task by name if you don't have access to the task
+class::
+
+    >>> from celery.execute import apply_async
+    >>> res = apply_async("tasks.add", [2, 2])
+    >>> res.get()
+    4
+
+While ``delay`` is convenient, it doesn't give you as much control as using ``apply_async``.
 With ``apply_async`` you can override the execution options available as attributes on
 the ``Task`` class: ``routing_key``, ``exchange``, ``immediate``, ``mandatory``,
 ``priority``, and ``serializer``.  In addition you can set a countdown/eta, or provide
@@ -49,10 +58,10 @@ a shortcut to set this by seconds in the future.
 Note that your task is guaranteed to be executed at some time *after* the
 specified date and time has passed, but not necessarily at that exact time.
 
-While ``countdown`` is an integer, ``eta`` must be a ``datetime`` object,
+While ``countdown`` is an integer, ``eta`` must be a :class:`~datetime.datetime` object,
 specifying an exact date and time in the future. This is good if you already
-have a ``datetime`` object and need to modify it with a ``timedelta``, or when
-using time in seconds is not very readable.
+have a :class:`~datetime.datetime`` object and need to modify it with a
+:class:`~datetime.timedelta`, or when using time in seconds is not very readable.
 
 .. code-block:: python
 
@@ -71,7 +80,7 @@ Serializers
 Data passed between celery and workers has to be serialized to be
 transferred. The default serializer is :mod:`pickle`, but you can 
 change this for each
-task. There is built-in support for using ``pickle``, ``JSON`` and ``YAML``,
+task. There is built-in support for using :mod:`pickle`, ``JSON`` and ``YAML``,
 and you can add your own custom serializers by registering them into the
 carrot serializer registry.
 

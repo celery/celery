@@ -1,3 +1,4 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -12,12 +13,13 @@
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
         VERSION:     '1.1.0 (unstable)',
-        COLLAPSE_MODINDEX: false,
+        COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
     <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
@@ -35,7 +37,7 @@
 		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
 		<li id="page_buttons">
 			<div class="headerButton"><a href="../genindex.html" title="General Index" accesskey="I">index</a></div>
-			<div class="headerButton"><a href="../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="../py-modindex.html" title="Python Module Index" >modules</a></div>
 			<div class="headerButton"><a href="routing.html" title="Routing Tasks" accesskey="N">next</a></div>
 			<div class="headerButton"><a href="executing.html" title="Executing Tasks" accesskey="P">previous</a></div>
 		</li>
@@ -46,22 +48,22 @@
   <div class="sphinxsidebarwrapper">
 	<ul><li class="toctree-l1"><a href="../index.html">Main Page</a></li></ul>
 	<ul class="current">
-<li class="toctree-l1"><a class="reference external" href="../getting-started/index.html">Getting Started</a></li>
-<li class="toctree-l1 current"><a class="reference external" href="index.html">User Guide</a><ul class="current">
-<li class="toctree-l2"><a class="reference external" href="tasks.html">Tasks</a></li>
-<li class="toctree-l2"><a class="reference external" href="executing.html">Executing Tasks</a></li>
-<li class="toctree-l2 current"><a class="current reference external" href="">HTTP Callback Tasks (Webhooks)</a></li>
-<li class="toctree-l2"><a class="reference external" href="routing.html">Routing Tasks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting-started/index.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">User Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="tasks.html">Tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="executing.html">Executing Tasks</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">HTTP Callback Tasks (Webhooks)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="routing.html">Routing Tasks</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference external" href="../configuration.html">Configuration and defaults</a></li>
-<li class="toctree-l1"><a class="reference external" href="../cookbook/index.html">Cookbook</a></li>
-<li class="toctree-l1"><a class="reference external" href="../tutorials/index.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1"><a class="reference external" href="../reference/index.html">API Reference</a></li>
-<li class="toctree-l1"><a class="reference external" href="../internals/index.html">Internals</a></li>
-<li class="toctree-l1"><a class="reference external" href="../changelog.html">Change history</a></li>
-<li class="toctree-l1"><a class="reference external" href="../links.html">Interesting Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../internals/index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../links.html">Interesting Links</a></li>
 </ul>
 
       <h3>This Page</h3>
@@ -97,7 +99,7 @@
           <div class="body">
             
   <div class="section" id="module-celery.task.http">
-<h1>HTTP Callback Tasks (Webhooks)<a class="headerlink" href="#module-celery.task.http" title="Permalink to this headline">¶</a></h1>
+<span id="http-callback-tasks-webhooks"></span><h1>HTTP Callback Tasks (Webhooks)<a class="headerlink" href="#module-celery.task.http" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="executing-tasks-on-a-web-server">
 <h2>Executing tasks on a web server<a class="headerlink" href="#executing-tasks-on-a-web-server" title="Permalink to this headline">¶</a></h2>
 <p>If you need to call into another language, framework or similar, you can
@@ -144,12 +146,12 @@ if the execution was successful:</p>
 </div>
 <p>You can easily port this scheme to any language/framework;
 new examples and libraries are very welcome.</p>
-<p>To execute the task you use the <a title="celery.task.http.URL" class="reference external" href="../reference/celery.task.http.html#celery.task.http.URL"><tt class="xref docutils literal"><span class="pre">URL</span></tt></a> class:</p>
+<p>To execute the task you use the <a class="reference internal" href="../reference/celery.task.http.html#celery.task.http.URL" title="celery.task.http.URL"><tt class="xref py py-class docutils literal"><span class="pre">URL</span></tt></a> class:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task.http</span> <span class="kn">import</span> <span class="n">URL</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">res</span> <span class="o">=</span> <span class="n">URL</span><span class="p">(</span><span class="s">&quot;http://example.com/multiply&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">get_async</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 </pre></div>
 </div>
-<p><a title="celery.task.http.URL" class="reference external" href="../reference/celery.task.http.html#celery.task.http.URL"><tt class="xref docutils literal"><span class="pre">URL</span></tt></a> is a shortcut to the <a title="celery.task.http.HttpDispatchTask" class="reference external" href="../reference/celery.task.http.html#celery.task.http.HttpDispatchTask"><tt class="xref docutils literal"><span class="pre">HttpDispatchTask</span></tt></a>. You can subclass this to extend the
+<p><a class="reference internal" href="../reference/celery.task.http.html#celery.task.http.URL" title="celery.task.http.URL"><tt class="xref py py-class docutils literal"><span class="pre">URL</span></tt></a> is a shortcut to the <a class="reference internal" href="../reference/celery.task.http.html#celery.task.http.HttpDispatchTask" title="celery.task.http.HttpDispatchTask"><tt class="xref py py-class docutils literal"><span class="pre">HttpDispatchTask</span></tt></a>. You can subclass this to extend the
 functionality.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task.http</span> <span class="kn">import</span> <span class="n">HttpDispatchTask</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">res</span> <span class="o">=</span> <span class="n">HttpDispatchTask</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s">&quot;http://example.com/multiply&quot;</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s">&quot;GET&quot;</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
@@ -175,7 +177,7 @@ For an example service exposing tasks via HTTP you should have a look at
     <div class="footer">
     <p>
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
 	</p>
     </div>
       <div class="clearer"></div>

@@ -1,3 +1,4 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -12,12 +13,13 @@
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
         VERSION:     '1.1.0 (unstable)',
-        COLLAPSE_MODINDEX: false,
+        COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
     <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
@@ -35,7 +37,7 @@
 		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
 		<li id="page_buttons">
 			<div class="headerButton"><a href="../genindex.html" title="General Index" accesskey="I">index</a></div>
-			<div class="headerButton"><a href="../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="../py-modindex.html" title="Python Module Index" >modules</a></div>
 			<div class="headerButton"><a href="celery.contrib.abortable.html" title="Contrib: Abortable tasks - celery.contrib.abortable" accesskey="N">next</a></div>
 			<div class="headerButton"><a href="celery.states.html" title="Task States - celery.states" accesskey="P">previous</a></div>
 		</li>
@@ -46,41 +48,42 @@
   <div class="sphinxsidebarwrapper">
 	<ul><li class="toctree-l1"><a href="../index.html">Main Page</a></li></ul>
 	<ul class="current">
-<li class="toctree-l1"><a class="reference external" href="../getting-started/index.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference external" href="../userguide/index.html">User Guide</a></li>
-<li class="toctree-l1"><a class="reference external" href="../configuration.html">Configuration and defaults</a></li>
-<li class="toctree-l1"><a class="reference external" href="../cookbook/index.html">Cookbook</a></li>
-<li class="toctree-l1"><a class="reference external" href="../tutorials/index.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1 current"><a class="reference external" href="index.html">API Reference</a><ul class="current">
-<li class="toctree-l2"><a class="reference external" href="celery.decorators.html">Task Decorators - celery.decorators</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.base.html">Defining Tasks - celery.task.base</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.execute.html">Executing Tasks - celery.execute</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.result.html">Task Result - celery.result</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.html">Task Information and Utilities - celery.task</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.conf.html">Configuration - celery.conf</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.control.html">Remote Management of Workers - celery.task.control</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.http.html">HTTP Callback Tasks - celery.task.http</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.schedules.html">Periodic Task Schedule Behaviors - celery.task.schedules</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.signals.html">Signals - celery.signals</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.exceptions.html">Exceptions - celery.exceptions</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.builtins.html">Built-in Task Classes - celery.task.builtins</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.loaders.html">Loaders - celery.loaders</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.loaders.base.html">Loader Base Classes - celery.loaders.base</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.registry.html">Task Registry - celery.registry</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.states.html">Task States - celery.states</a></li>
-<li class="toctree-l2 current"><a class="current reference external" href="">Messaging - celery.messaging</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.contrib.abortable.html">Contrib: Abortable tasks - celery.contrib.abortable</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.events.html">Events - celery.events</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.bin.celerybeat.html">Celery Periodic Task Server - celery.bin.celerybeat</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.bin.camqadm.html">caqmadm: AMQP API Command-line Shell - celery.bin.camqadm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting-started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="celery.decorators.html">Task Decorators - celery.decorators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.base.html">Defining Tasks - celery.task.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.execute.html">Executing Tasks - celery.execute</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.result.html">Task Result - celery.result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.html">Task Information and Utilities - celery.task</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.conf.html">Configuration - celery.conf</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.control.html">Remote Management of Workers - celery.task.control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.http.html">HTTP Callback Tasks - celery.task.http</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.schedules.html">Periodic Task Schedule Behaviors - celery.task.schedules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.signals.html">Signals - celery.signals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.exceptions.html">Exceptions - celery.exceptions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.builtins.html">Built-in Task Classes - celery.task.builtins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.loaders.html">Loaders - celery.loaders</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.loaders.base.html">Loader Base Classes - celery.loaders.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.registry.html">Task Registry - celery.registry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.states.html">Task States - celery.states</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">Messaging - celery.messaging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.contrib.abortable.html">Contrib: Abortable tasks - celery.contrib.abortable</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.events.html">Events - celery.events</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.celerybeat.html">Celery Periodic Task Server - celery.bin.celerybeat</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.camqadm.html">caqmadm: AMQP API Command-line Shell - celery.bin.camqadm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.celeryd_multi.html">Celeryd Multi Tool - celery.bin.celeryd_multi</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference external" href="../internals/index.html">Internals</a></li>
-<li class="toctree-l1"><a class="reference external" href="../changelog.html">Change history</a></li>
-<li class="toctree-l1"><a class="reference external" href="../links.html">Interesting Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../internals/index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../links.html">Interesting Links</a></li>
 </ul>
 
       <h3>This Page</h3>
@@ -116,12 +119,13 @@
           <div class="body">
             
   <div class="section" id="module-celery.messaging">
-<h1>Messaging - celery.messaging<a class="headerlink" href="#module-celery.messaging" title="Permalink to this headline">¶</a></h1>
+<span id="messaging-celery-messaging"></span><h1>Messaging - celery.messaging<a class="headerlink" href="#module-celery.messaging" title="Permalink to this headline">¶</a></h1>
 <p>Sending and Receiving Messages</p>
 <dl class="class">
 <dt id="celery.messaging.BroadcastConsumer">
 <em class="property">class </em><tt class="descclassname">celery.messaging.</tt><tt class="descname">BroadcastConsumer</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.messaging.BroadcastConsumer" title="Permalink to this definition">¶</a></dt>
-<dd>Consume broadcast commands</dd></dl>
+<dd><p>Consume broadcast commands</p>
+</dd></dl>
 
 <dl class="class">
 <dt id="celery.messaging.BroadcastPublisher">
@@ -130,7 +134,8 @@
 <dl class="method">
 <dt id="celery.messaging.BroadcastPublisher.send">
 <tt class="descname">send</tt><big>(</big><em>type</em>, <em>arguments</em>, <em>destination=None</em>, <em>reply_ticket=None</em><big>)</big><a class="headerlink" href="#celery.messaging.BroadcastPublisher.send" title="Permalink to this definition">¶</a></dt>
-<dd>Send broadcast command.</dd></dl>
+<dd><p>Send broadcast command.</p>
+</dd></dl>
 
 </dd></dl>
 
@@ -138,7 +143,7 @@
 <dt id="celery.messaging.ConsumerSet">
 <em class="property">class </em><tt class="descclassname">celery.messaging.</tt><tt class="descname">ConsumerSet</tt><big>(</big><em>connection</em>, <em>from_dict=None</em>, <em>consumers=None</em>, <em>callbacks=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.messaging.ConsumerSet" title="Permalink to this definition">¶</a></dt>
 <dd><p>ConsumerSet with an optional decode error callback.</p>
-<p>For more information see <tt class="xref docutils literal"><span class="pre">carrot.messaging.ConsumerSet</span></tt>.</p>
+<p>For more information see <tt class="xref py py-class docutils literal"><span class="pre">carrot.messaging.ConsumerSet</span></tt>.</p>
 <dl class="attribute">
 <dt id="celery.messaging.ConsumerSet.on_decode_error">
 <tt class="descname">on_decode_error</tt><a class="headerlink" href="#celery.messaging.ConsumerSet.on_decode_error" title="Permalink to this definition">¶</a></dt>
@@ -154,17 +159,20 @@ The callback is called with the signature:</p>
 <dl class="class">
 <dt id="celery.messaging.EventConsumer">
 <em class="property">class </em><tt class="descclassname">celery.messaging.</tt><tt class="descname">EventConsumer</tt><big>(</big><em>connection</em>, <em>queue=None</em>, <em>exchange=None</em>, <em>routing_key=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.messaging.EventConsumer" title="Permalink to this definition">¶</a></dt>
-<dd>Consume events</dd></dl>
+<dd><p>Consume events</p>
+</dd></dl>
 
 <dl class="class">
 <dt id="celery.messaging.EventPublisher">
 <em class="property">class </em><tt class="descclassname">celery.messaging.</tt><tt class="descname">EventPublisher</tt><big>(</big><em>connection</em>, <em>exchange=None</em>, <em>routing_key=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.messaging.EventPublisher" title="Permalink to this definition">¶</a></dt>
-<dd>Publish events</dd></dl>
+<dd><p>Publish events</p>
+</dd></dl>
 
 <dl class="class">
 <dt id="celery.messaging.TaskConsumer">
 <em class="property">class </em><tt class="descclassname">celery.messaging.</tt><tt class="descname">TaskConsumer</tt><big>(</big><em>connection</em>, <em>queue=None</em>, <em>exchange=None</em>, <em>routing_key=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.messaging.TaskConsumer" title="Permalink to this definition">¶</a></dt>
-<dd>Consume tasks</dd></dl>
+<dd><p>Consume tasks</p>
+</dd></dl>
 
 <dl class="class">
 <dt id="celery.messaging.TaskPublisher">
@@ -173,19 +181,21 @@ The callback is called with the signature:</p>
 <dl class="method">
 <dt id="celery.messaging.TaskPublisher.delay_task">
 <tt class="descname">delay_task</tt><big>(</big><em>task_name</em>, <em>task_args=None</em>, <em>task_kwargs=None</em>, <em>countdown=None</em>, <em>eta=None</em>, <em>task_id=None</em>, <em>taskset_id=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.messaging.TaskPublisher.delay_task" title="Permalink to this definition">¶</a></dt>
-<dd>Delay task for execution by the celery nodes.</dd></dl>
+<dd><p>Delay task for execution by the celery nodes.</p>
+</dd></dl>
 
 </dd></dl>
 
 <dl class="function">
 <dt id="celery.messaging.establish_connection">
 <tt class="descclassname">celery.messaging.</tt><tt class="descname">establish_connection</tt><big>(</big><em>connect_timeout=4</em><big>)</big><a class="headerlink" href="#celery.messaging.establish_connection" title="Permalink to this definition">¶</a></dt>
-<dd>Establish a connection to the message broker.</dd></dl>
+<dd><p>Establish a connection to the message broker.</p>
+</dd></dl>
 
 <dl class="function">
 <dt id="celery.messaging.get_consumer_set">
 <tt class="descclassname">celery.messaging.</tt><tt class="descname">get_consumer_set</tt><big>(</big><em>connection</em>, <em>queues=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.messaging.get_consumer_set" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get the <tt class="xref docutils literal"><span class="pre">carrot.messaging.ConsumerSet`</span></tt> for a queue
+<dd><p>Get the <tt class="xref py py-class docutils literal"><span class="pre">carrot.messaging.ConsumerSet`</span></tt> for a queue
 configuration.</p>
 <p>Defaults to the queues in <tt class="docutils literal"><span class="pre">CELERY_QUEUES</span></tt>.</p>
 </dd></dl>
@@ -193,9 +203,10 @@ configuration.</p>
 <dl class="function">
 <dt id="celery.messaging.with_connection">
 <tt class="descclassname">celery.messaging.</tt><tt class="descname">with_connection</tt><big>(</big><em>fun</em><big>)</big><a class="headerlink" href="#celery.messaging.with_connection" title="Permalink to this definition">¶</a></dt>
-<dd>Decorator for providing default message broker connection for functions
+<dd><p>Decorator for providing default message broker connection for functions
 supporting the <tt class="docutils literal"><span class="pre">connection</span></tt> and <tt class="docutils literal"><span class="pre">connect_timeout</span></tt> keyword
-arguments.</dd></dl>
+arguments.</p>
+</dd></dl>
 
 </div>
 
@@ -206,7 +217,7 @@ arguments.</dd></dl>
     <div class="footer">
     <p>
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
 	</p>
     </div>
       <div class="clearer"></div>

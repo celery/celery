@@ -1,3 +1,4 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -12,12 +13,13 @@
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
         VERSION:     '1.1.0 (unstable)',
-        COLLAPSE_MODINDEX: false,
+        COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="../../static/jquery.js"></script>
+    <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
     <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
@@ -35,7 +37,7 @@
 		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
 		<li id="page_buttons">
 			<div class="headerButton"><a href="../../genindex.html" title="General Index" accesskey="I">index</a></div>
-			<div class="headerButton"><a href="../../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="../../py-modindex.html" title="Python Module Index" >modules</a></div>
 			<div class="headerButton"><a href="celery.execute.trace.html" title="Tracing Execution - celery.execute.trace" accesskey="N">next</a></div>
 			<div class="headerButton"><a href="celery.backends.pyredis.html" title="Backend: Redis - celery.backends.pyredis" accesskey="P">previous</a></div>
 		</li>
@@ -46,16 +48,16 @@
   <div class="sphinxsidebarwrapper">
 	<ul><li class="toctree-l1"><a href="../../index.html">Main Page</a></li></ul>
 	<ul>
-<li class="toctree-l1"><a class="reference external" href="../../getting-started/index.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../userguide/index.html">User Guide</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../configuration.html">Configuration and defaults</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../cookbook/index.html">Cookbook</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../tutorials/index.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../reference/index.html">API Reference</a></li>
-<li class="toctree-l1"><a class="reference external" href="../index.html">Internals</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../changelog.html">Change history</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../links.html">Interesting Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting-started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../links.html">Interesting Links</a></li>
 </ul>
 
       <h3>This Page</h3>
@@ -91,7 +93,7 @@
           <div class="body">
             
   <div class="section" id="module-celery.backends.tyrant">
-<h1>Backend: Tokyo Tyrant - celery.backends.tyrant<a class="headerlink" href="#module-celery.backends.tyrant" title="Permalink to this headline">¶</a></h1>
+<span id="backend-tokyo-tyrant-celery-backends-tyrant"></span><h1>Backend: Tokyo Tyrant - celery.backends.tyrant<a class="headerlink" href="#module-celery.backends.tyrant" title="Permalink to this headline">¶</a></h1>
 <p>celery.backends.tyrant</p>
 <dl class="class">
 <dt id="celery.backends.tyrant.TyrantBackend">
@@ -100,25 +102,28 @@
 <dl class="attribute">
 <dt id="celery.backends.tyrant.TyrantBackend.tyrant_host">
 <tt class="descname">tyrant_host</tt><a class="headerlink" href="#celery.backends.tyrant.TyrantBackend.tyrant_host" title="Permalink to this definition">¶</a></dt>
-<dd>The hostname to the Tokyo Tyrant server.</dd></dl>
+<dd><p>The hostname to the Tokyo Tyrant server.</p>
+</dd></dl>
 
 <dl class="attribute">
 <dt id="celery.backends.tyrant.TyrantBackend.tyrant_port">
 <tt class="descname">tyrant_port</tt><a class="headerlink" href="#celery.backends.tyrant.TyrantBackend.tyrant_port" title="Permalink to this definition">¶</a></dt>
-<dd>The port to the Tokyo Tyrant server.</dd></dl>
+<dd><p>The port to the Tokyo Tyrant server.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.tyrant.TyrantBackend.close">
 <tt class="descname">close</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.backends.tyrant.TyrantBackend.close" title="Permalink to this definition">¶</a></dt>
-<dd>Close the tyrant connection and remove the cache.</dd></dl>
+<dd><p>Close the tyrant connection and remove the cache.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.tyrant.TyrantBackend.open">
 <tt class="descname">open</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.backends.tyrant.TyrantBackend.open" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get <tt class="xref docutils literal"><span class="pre">pytyrant.PyTyrant`</span></tt> instance with the current
+<dd><p>Get <tt class="xref py py-class docutils literal"><span class="pre">pytyrant.PyTyrant`</span></tt> instance with the current
 server configuration.</p>
 <p>The connection is then cached until you do an
-explicit <a title="celery.backends.tyrant.TyrantBackend.close" class="reference internal" href="#celery.backends.tyrant.TyrantBackend.close"><tt class="xref docutils literal"><span class="pre">close()</span></tt></a>.</p>
+explicit <a class="reference internal" href="#celery.backends.tyrant.TyrantBackend.close" title="celery.backends.tyrant.TyrantBackend.close"><tt class="xref py py-meth docutils literal"><span class="pre">close()</span></tt></a>.</p>
 </dd></dl>
 
 </dd></dl>
@@ -132,7 +137,7 @@ explicit <a title="celery.backends.tyrant.TyrantBackend.close" class="reference 
     <div class="footer">
     <p>
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
 	</p>
     </div>
       <div class="clearer"></div>

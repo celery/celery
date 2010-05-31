@@ -1,3 +1,4 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -12,12 +13,13 @@
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
         VERSION:     '1.1.0 (unstable)',
-        COLLAPSE_MODINDEX: false,
+        COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
     <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
@@ -35,7 +37,7 @@
 		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
 		<li id="page_buttons">
 			<div class="headerButton"><a href="../genindex.html" title="General Index" accesskey="I">index</a></div>
-			<div class="headerButton"><a href="../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="../py-modindex.html" title="Python Module Index" >modules</a></div>
 			<div class="headerButton"><a href="celery.loaders.default.html" title="Default Loader - celery.loaders.default" accesskey="N">next</a></div>
 			<div class="headerButton"><a href="celery.loaders.html" title="Loaders - celery.loaders" accesskey="P">previous</a></div>
 		</li>
@@ -46,41 +48,42 @@
   <div class="sphinxsidebarwrapper">
 	<ul><li class="toctree-l1"><a href="../index.html">Main Page</a></li></ul>
 	<ul class="current">
-<li class="toctree-l1"><a class="reference external" href="../getting-started/index.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference external" href="../userguide/index.html">User Guide</a></li>
-<li class="toctree-l1"><a class="reference external" href="../configuration.html">Configuration and defaults</a></li>
-<li class="toctree-l1"><a class="reference external" href="../cookbook/index.html">Cookbook</a></li>
-<li class="toctree-l1"><a class="reference external" href="../tutorials/index.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1 current"><a class="reference external" href="index.html">API Reference</a><ul class="current">
-<li class="toctree-l2"><a class="reference external" href="celery.decorators.html">Task Decorators - celery.decorators</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.base.html">Defining Tasks - celery.task.base</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.execute.html">Executing Tasks - celery.execute</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.result.html">Task Result - celery.result</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.html">Task Information and Utilities - celery.task</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.conf.html">Configuration - celery.conf</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.control.html">Remote Management of Workers - celery.task.control</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.http.html">HTTP Callback Tasks - celery.task.http</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.schedules.html">Periodic Task Schedule Behaviors - celery.task.schedules</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.signals.html">Signals - celery.signals</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.exceptions.html">Exceptions - celery.exceptions</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.builtins.html">Built-in Task Classes - celery.task.builtins</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.loaders.html">Loaders - celery.loaders</a></li>
-<li class="toctree-l2 current"><a class="current reference external" href="">Loader Base Classes - celery.loaders.base</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.registry.html">Task Registry - celery.registry</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.states.html">Task States - celery.states</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.messaging.html">Messaging - celery.messaging</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.contrib.abortable.html">Contrib: Abortable tasks - celery.contrib.abortable</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.events.html">Events - celery.events</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.bin.celerybeat.html">Celery Periodic Task Server - celery.bin.celerybeat</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.bin.camqadm.html">caqmadm: AMQP API Command-line Shell - celery.bin.camqadm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting-started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="celery.decorators.html">Task Decorators - celery.decorators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.base.html">Defining Tasks - celery.task.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.execute.html">Executing Tasks - celery.execute</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.result.html">Task Result - celery.result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.html">Task Information and Utilities - celery.task</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.conf.html">Configuration - celery.conf</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.control.html">Remote Management of Workers - celery.task.control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.http.html">HTTP Callback Tasks - celery.task.http</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.schedules.html">Periodic Task Schedule Behaviors - celery.task.schedules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.signals.html">Signals - celery.signals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.exceptions.html">Exceptions - celery.exceptions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.builtins.html">Built-in Task Classes - celery.task.builtins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.loaders.html">Loaders - celery.loaders</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">Loader Base Classes - celery.loaders.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.registry.html">Task Registry - celery.registry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.states.html">Task States - celery.states</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.messaging.html">Messaging - celery.messaging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.contrib.abortable.html">Contrib: Abortable tasks - celery.contrib.abortable</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.events.html">Events - celery.events</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.celerybeat.html">Celery Periodic Task Server - celery.bin.celerybeat</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.camqadm.html">caqmadm: AMQP API Command-line Shell - celery.bin.camqadm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.celeryd_multi.html">Celeryd Multi Tool - celery.bin.celeryd_multi</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference external" href="../internals/index.html">Internals</a></li>
-<li class="toctree-l1"><a class="reference external" href="../changelog.html">Change history</a></li>
-<li class="toctree-l1"><a class="reference external" href="../links.html">Interesting Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../internals/index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../links.html">Interesting Links</a></li>
 </ul>
 
       <h3>This Page</h3>
@@ -116,7 +119,7 @@
           <div class="body">
             
   <div class="section" id="module-celery.loaders.base">
-<h1>Loader Base Classes - celery.loaders.base<a class="headerlink" href="#module-celery.loaders.base" title="Permalink to this headline">¶</a></h1>
+<span id="loader-base-classes-celery-loaders-base"></span><h1>Loader Base Classes - celery.loaders.base<a class="headerlink" href="#module-celery.loaders.base" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="celery.loaders.base.BaseLoader">
 <em class="property">class </em><tt class="descclassname">celery.loaders.base.</tt><tt class="descname">BaseLoader</tt><a class="headerlink" href="#celery.loaders.base.BaseLoader" title="Permalink to this definition">¶</a></dt>
@@ -128,13 +131,13 @@
 </li>
 <li><dl class="first docutils">
 <dt>What happens when a task starts?</dt>
-<dd><p class="first last">See <a title="celery.loaders.base.BaseLoader.on_task_init" class="reference internal" href="#celery.loaders.base.BaseLoader.on_task_init"><tt class="xref docutils literal"><span class="pre">on_task_init()</span></tt></a>.</p>
+<dd><p class="first last">See <a class="reference internal" href="#celery.loaders.base.BaseLoader.on_task_init" title="celery.loaders.base.BaseLoader.on_task_init"><tt class="xref py py-meth docutils literal"><span class="pre">on_task_init()</span></tt></a>.</p>
 </dd>
 </dl>
 </li>
 <li><dl class="first docutils">
 <dt>What happens when the worker starts?</dt>
-<dd><p class="first last">See <a title="celery.loaders.base.BaseLoader.on_worker_init" class="reference internal" href="#celery.loaders.base.BaseLoader.on_worker_init"><tt class="xref docutils literal"><span class="pre">on_worker_init()</span></tt></a>.</p>
+<dd><p class="first last">See <a class="reference internal" href="#celery.loaders.base.BaseLoader.on_worker_init" title="celery.loaders.base.BaseLoader.on_worker_init"><tt class="xref py py-meth docutils literal"><span class="pre">on_worker_init()</span></tt></a>.</p>
 </dd>
 </dl>
 </li>
@@ -145,17 +148,20 @@
 <dl class="attribute">
 <dt id="celery.loaders.base.BaseLoader.conf">
 <tt class="descname">conf</tt><a class="headerlink" href="#celery.loaders.base.BaseLoader.conf" title="Permalink to this definition">¶</a></dt>
-<dd>Loader configuration.</dd></dl>
+<dd><p>Loader configuration.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.loaders.base.BaseLoader.on_task_init">
 <tt class="descname">on_task_init</tt><big>(</big><em>task_id</em>, <em>task</em><big>)</big><a class="headerlink" href="#celery.loaders.base.BaseLoader.on_task_init" title="Permalink to this definition">¶</a></dt>
-<dd>This method is called before a task is executed.</dd></dl>
+<dd><p>This method is called before a task is executed.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.loaders.base.BaseLoader.on_worker_init">
 <tt class="descname">on_worker_init</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.loaders.base.BaseLoader.on_worker_init" title="Permalink to this definition">¶</a></dt>
-<dd>This method is called when the worker (<tt class="docutils literal"><span class="pre">celeryd</span></tt>) starts.</dd></dl>
+<dd><p>This method is called when the worker (<tt class="docutils literal"><span class="pre">celeryd</span></tt>) starts.</p>
+</dd></dl>
 
 </dd></dl>
 
@@ -168,7 +174,7 @@
     <div class="footer">
     <p>
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
 	</p>
     </div>
       <div class="clearer"></div>

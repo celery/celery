@@ -1,3 +1,4 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -12,12 +13,13 @@
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
         VERSION:     '1.1.0 (unstable)',
-        COLLAPSE_MODINDEX: false,
+        COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
     <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="../index.html" />
     <link rel="next" title="External tutorials and resources" href="external.html" />
@@ -34,7 +36,7 @@
 		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
 		<li id="page_buttons">
 			<div class="headerButton"><a href="../genindex.html" title="General Index" accesskey="I">index</a></div>
-			<div class="headerButton"><a href="../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="../py-modindex.html" title="Python Module Index" >modules</a></div>
 			<div class="headerButton"><a href="external.html" title="External tutorials and resources" accesskey="N">next</a></div>
 			<div class="headerButton"><a href="../cookbook/daemonizing.html" title="Running celeryd as a daemon" accesskey="P">previous</a></div>
 		</li>
@@ -45,21 +47,21 @@
   <div class="sphinxsidebarwrapper">
 	<ul><li class="toctree-l1"><a href="../index.html">Main Page</a></li></ul>
 	<ul class="current">
-<li class="toctree-l1"><a class="reference external" href="../getting-started/index.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference external" href="../userguide/index.html">User Guide</a></li>
-<li class="toctree-l1"><a class="reference external" href="../configuration.html">Configuration and defaults</a></li>
-<li class="toctree-l1"><a class="reference external" href="../cookbook/index.html">Cookbook</a></li>
-<li class="toctree-l1 current"><a class="current reference external" href="">Tutorials</a><ul>
-<li class="toctree-l2"><a class="reference external" href="external.html">External tutorials and resources</a></li>
-<li class="toctree-l2"><a class="reference external" href="otherqueues.html">Using Celery with Redis/Database as the messaging queue.</a></li>
-<li class="toctree-l2"><a class="reference external" href="clickcounter.html">Tutorial: Creating a click counter using carrot and celery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting-started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="external.html">External tutorials and resources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="otherqueues.html">Using Celery with Redis/Database as the messaging queue.</a></li>
+<li class="toctree-l2"><a class="reference internal" href="clickcounter.html">Tutorial: Creating a click counter using carrot and celery</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1"><a class="reference external" href="../reference/index.html">API Reference</a></li>
-<li class="toctree-l1"><a class="reference external" href="../internals/index.html">Internals</a></li>
-<li class="toctree-l1"><a class="reference external" href="../changelog.html">Change history</a></li>
-<li class="toctree-l1"><a class="reference external" href="../links.html">Interesting Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../internals/index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../links.html">Interesting Links</a></li>
 </ul>
 
       <h3>This Page</h3>
@@ -102,31 +104,33 @@
 <tbody valign="top">
 <tr class="field"><th class="field-name">Release:</th><td class="field-body">1.1</td>
 </tr>
-<tr class="field"><th class="field-name">Date:</th><td class="field-body">May 22, 2010</td>
+<tr class="field"><th class="field-name">Date:</th><td class="field-body">May 31, 2010</td>
 </tr>
 </tbody>
 </table>
+<div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference external" href="external.html">External tutorials and resources</a><ul>
-<li class="toctree-l2"><a class="reference external" href="external.html#introduction-to-celery">Introduction to Celery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="external.html">External tutorials and resources</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="external.html#introduction-to-celery">Introduction to Celery</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference external" href="otherqueues.html">Using Celery with Redis/Database as the messaging queue.</a><ul>
-<li class="toctree-l2"><a class="reference external" href="otherqueues.html#installation">Installation</a></li>
-<li class="toctree-l2"><a class="reference external" href="otherqueues.html#redis">Redis</a></li>
-<li class="toctree-l2"><a class="reference external" href="otherqueues.html#database">Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="otherqueues.html">Using Celery with Redis/Database as the messaging queue.</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="otherqueues.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="otherqueues.html#redis">Redis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="otherqueues.html#database">Database</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference external" href="clickcounter.html">Tutorial: Creating a click counter using carrot and celery</a><ul>
-<li class="toctree-l2"><a class="reference external" href="clickcounter.html#introduction">Introduction</a></li>
-<li class="toctree-l2"><a class="reference external" href="clickcounter.html#the-model">The model</a></li>
-<li class="toctree-l2"><a class="reference external" href="clickcounter.html#using-carrot-to-send-clicks-as-messages">Using carrot to send clicks as messages</a></li>
-<li class="toctree-l2"><a class="reference external" href="clickcounter.html#view-and-urls">View and URLs</a></li>
-<li class="toctree-l2"><a class="reference external" href="clickcounter.html#creating-the-periodic-task">Creating the periodic task</a></li>
-<li class="toctree-l2"><a class="reference external" href="clickcounter.html#finishing">Finishing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="clickcounter.html">Tutorial: Creating a click counter using carrot and celery</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="clickcounter.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="clickcounter.html#the-model">The model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="clickcounter.html#using-carrot-to-send-clicks-as-messages">Using carrot to send clicks as messages</a></li>
+<li class="toctree-l2"><a class="reference internal" href="clickcounter.html#view-and-urls">View and URLs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="clickcounter.html#creating-the-periodic-task">Creating the periodic task</a></li>
+<li class="toctree-l2"><a class="reference internal" href="clickcounter.html#finishing">Finishing</a></li>
 </ul>
 </li>
 </ul>
+</div>
 </div>
 
 
@@ -136,7 +140,7 @@
     <div class="footer">
     <p>
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
 	</p>
     </div>
       <div class="clearer"></div>

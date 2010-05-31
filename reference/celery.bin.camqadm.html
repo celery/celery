@@ -1,3 +1,4 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -12,16 +13,17 @@
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
         VERSION:     '1.1.0 (unstable)',
-        COLLAPSE_MODINDEX: false,
+        COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
     <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
-    <link rel="next" title="Internals" href="../internals/index.html" />
+    <link rel="next" title="Celeryd Multi Tool - celery.bin.celeryd_multi" href="celery.bin.celeryd_multi.html" />
     <link rel="prev" title="Celery Periodic Task Server - celery.bin.celerybeat" href="celery.bin.celerybeat.html" />
     <link media="only screen and (max-device-width: 480px)" href="../static/mobile.css" type="text/css" rel="stylesheet" /> 
   </head>
@@ -35,8 +37,8 @@
 		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
 		<li id="page_buttons">
 			<div class="headerButton"><a href="../genindex.html" title="General Index" accesskey="I">index</a></div>
-			<div class="headerButton"><a href="../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
-			<div class="headerButton"><a href="../internals/index.html" title="Internals" accesskey="N">next</a></div>
+			<div class="headerButton"><a href="../py-modindex.html" title="Python Module Index" >modules</a></div>
+			<div class="headerButton"><a href="celery.bin.celeryd_multi.html" title="Celeryd Multi Tool - celery.bin.celeryd_multi" accesskey="N">next</a></div>
 			<div class="headerButton"><a href="celery.bin.celerybeat.html" title="Celery Periodic Task Server - celery.bin.celerybeat" accesskey="P">previous</a></div>
 		</li>
 	</ul>
@@ -46,41 +48,42 @@
   <div class="sphinxsidebarwrapper">
 	<ul><li class="toctree-l1"><a href="../index.html">Main Page</a></li></ul>
 	<ul class="current">
-<li class="toctree-l1"><a class="reference external" href="../getting-started/index.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference external" href="../userguide/index.html">User Guide</a></li>
-<li class="toctree-l1"><a class="reference external" href="../configuration.html">Configuration and defaults</a></li>
-<li class="toctree-l1"><a class="reference external" href="../cookbook/index.html">Cookbook</a></li>
-<li class="toctree-l1"><a class="reference external" href="../tutorials/index.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1 current"><a class="reference external" href="index.html">API Reference</a><ul class="current">
-<li class="toctree-l2"><a class="reference external" href="celery.decorators.html">Task Decorators - celery.decorators</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.base.html">Defining Tasks - celery.task.base</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.execute.html">Executing Tasks - celery.execute</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.result.html">Task Result - celery.result</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.html">Task Information and Utilities - celery.task</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.conf.html">Configuration - celery.conf</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.control.html">Remote Management of Workers - celery.task.control</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.http.html">HTTP Callback Tasks - celery.task.http</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.schedules.html">Periodic Task Schedule Behaviors - celery.task.schedules</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.signals.html">Signals - celery.signals</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.exceptions.html">Exceptions - celery.exceptions</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.builtins.html">Built-in Task Classes - celery.task.builtins</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.loaders.html">Loaders - celery.loaders</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.loaders.base.html">Loader Base Classes - celery.loaders.base</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.registry.html">Task Registry - celery.registry</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.states.html">Task States - celery.states</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.messaging.html">Messaging - celery.messaging</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.contrib.abortable.html">Contrib: Abortable tasks - celery.contrib.abortable</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.events.html">Events - celery.events</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.bin.celerybeat.html">Celery Periodic Task Server - celery.bin.celerybeat</a></li>
-<li class="toctree-l2 current"><a class="current reference external" href="">caqmadm: AMQP API Command-line Shell - celery.bin.camqadm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting-started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="celery.decorators.html">Task Decorators - celery.decorators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.base.html">Defining Tasks - celery.task.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.execute.html">Executing Tasks - celery.execute</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.result.html">Task Result - celery.result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.html">Task Information and Utilities - celery.task</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.conf.html">Configuration - celery.conf</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.control.html">Remote Management of Workers - celery.task.control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.http.html">HTTP Callback Tasks - celery.task.http</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.schedules.html">Periodic Task Schedule Behaviors - celery.task.schedules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.signals.html">Signals - celery.signals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.exceptions.html">Exceptions - celery.exceptions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.builtins.html">Built-in Task Classes - celery.task.builtins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.loaders.html">Loaders - celery.loaders</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.loaders.base.html">Loader Base Classes - celery.loaders.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.registry.html">Task Registry - celery.registry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.states.html">Task States - celery.states</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.messaging.html">Messaging - celery.messaging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.contrib.abortable.html">Contrib: Abortable tasks - celery.contrib.abortable</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.events.html">Events - celery.events</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.celerybeat.html">Celery Periodic Task Server - celery.bin.celerybeat</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">caqmadm: AMQP API Command-line Shell - celery.bin.camqadm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.celeryd_multi.html">Celeryd Multi Tool - celery.bin.celeryd_multi</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference external" href="../internals/index.html">Internals</a></li>
-<li class="toctree-l1"><a class="reference external" href="../changelog.html">Change history</a></li>
-<li class="toctree-l1"><a class="reference external" href="../links.html">Interesting Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../internals/index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../links.html">Interesting Links</a></li>
 </ul>
 
       <h3>This Page</h3>
@@ -116,12 +119,13 @@
           <div class="body">
             
   <div class="section" id="module-celery.bin.camqadm">
-<h1>caqmadm: AMQP API Command-line Shell - celery.bin.camqadm<a class="headerlink" href="#module-celery.bin.camqadm" title="Permalink to this headline">¶</a></h1>
+<span id="caqmadm-amqp-api-command-line-shell-celery-bin-camqadm"></span><h1>caqmadm: AMQP API Command-line Shell - celery.bin.camqadm<a class="headerlink" href="#module-celery.bin.camqadm" title="Permalink to this headline">¶</a></h1>
 <p>camqadm</p>
 <dl class="class">
 <dt id="celery.bin.camqadm.AMQPAdmin">
 <em class="property">class </em><tt class="descclassname">celery.bin.camqadm.</tt><tt class="descname">AMQPAdmin</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.bin.camqadm.AMQPAdmin" title="Permalink to this definition">¶</a></dt>
-<dd>The celery <tt class="docutils literal"><span class="pre">camqadm</span></tt> utility.</dd></dl>
+<dd><p>The celery <tt class="docutils literal"><span class="pre">camqadm</span></tt> utility.</p>
+</dd></dl>
 
 <dl class="class">
 <dt id="celery.bin.camqadm.AMQShell">
@@ -132,9 +136,9 @@
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><em>connect</em> &#8211; Function used to connect to the server, must return
+<li><strong>connect</strong> &#8211; Function used to connect to the server, must return
 connection object.</li>
-<li><em>silent</em> &#8211; If <tt class="xref docutils literal"><span class="pre">True</span></tt>, the commands won&#8217;t have annoying output not
+<li><strong>silent</strong> &#8211; If <tt class="xref docutils literal"><span class="pre">True</span></tt>, the commands won&#8217;t have annoying output not
 relevant when running in non-shell mode.</li>
 </ul>
 </td>
@@ -144,24 +148,27 @@ relevant when running in non-shell mode.</li>
 <dl class="attribute">
 <dt id="celery.bin.camqadm.AMQShell.amqp">
 <tt class="descname">amqp</tt><a class="headerlink" href="#celery.bin.camqadm.AMQShell.amqp" title="Permalink to this definition">¶</a></dt>
-<dd>Mapping of AMQP API commands and their <a title="celery.bin.camqadm.Spec" class="reference internal" href="#celery.bin.camqadm.Spec"><tt class="xref docutils literal"><span class="pre">Spec</span></tt></a>.</dd></dl>
+<dd><p>Mapping of AMQP API commands and their <a class="reference internal" href="#celery.bin.camqadm.Spec" title="celery.bin.camqadm.Spec"><tt class="xref py py-class docutils literal"><span class="pre">Spec</span></tt></a>.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.bin.camqadm.AMQShell.completenames">
 <tt class="descname">completenames</tt><big>(</big><em>text</em>, <em>*ignored</em><big>)</big><a class="headerlink" href="#celery.bin.camqadm.AMQShell.completenames" title="Permalink to this definition">¶</a></dt>
-<dd>Return all commands starting with <tt class="docutils literal"><span class="pre">text</span></tt>, for tab-completion.</dd></dl>
+<dd><p>Return all commands starting with <tt class="docutils literal"><span class="pre">text</span></tt>, for tab-completion.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.bin.camqadm.AMQShell.dispatch">
 <tt class="descname">dispatch</tt><big>(</big><em>cmd</em>, <em>argline</em><big>)</big><a class="headerlink" href="#celery.bin.camqadm.AMQShell.dispatch" title="Permalink to this definition">¶</a></dt>
 <dd><p>Dispatch and execute the command.</p>
-<p>Lookup order is: <tt class="xref docutils literal"><span class="pre">builtins</span></tt> -&gt; <a title="celery.bin.camqadm.AMQShell.amqp" class="reference internal" href="#celery.bin.camqadm.AMQShell.amqp"><tt class="xref docutils literal"><span class="pre">amqp</span></tt></a>.</p>
+<p>Lookup order is: <tt class="xref py py-attr docutils literal"><span class="pre">builtins</span></tt> -&gt; <a class="reference internal" href="#celery.bin.camqadm.AMQShell.amqp" title="celery.bin.camqadm.AMQShell.amqp"><tt class="xref py py-attr docutils literal"><span class="pre">amqp</span></tt></a>.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="celery.bin.camqadm.AMQShell.do_exit">
 <tt class="descname">do_exit</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#celery.bin.camqadm.AMQShell.do_exit" title="Permalink to this definition">¶</a></dt>
-<dd>The <tt class="docutils literal"><span class="pre">&quot;exit&quot;</span></tt> command.</dd></dl>
+<dd><p>The <tt class="docutils literal"><span class="pre">&quot;exit&quot;</span></tt> command.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.bin.camqadm.AMQShell.get_amqp_api_command">
@@ -189,7 +196,8 @@ object.</p>
 <dl class="method">
 <dt id="celery.bin.camqadm.AMQShell.onecmd">
 <tt class="descname">onecmd</tt><big>(</big><em>line</em><big>)</big><a class="headerlink" href="#celery.bin.camqadm.AMQShell.onecmd" title="Permalink to this definition">¶</a></dt>
-<dd>Parse line and execute command.</dd></dl>
+<dd><p>Parse line and execute command.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.bin.camqadm.AMQShell.parseline">
@@ -214,12 +222,14 @@ object.</p>
 <dl class="method">
 <dt id="celery.bin.camqadm.AMQShell.respond">
 <tt class="descname">respond</tt><big>(</big><em>retval</em><big>)</big><a class="headerlink" href="#celery.bin.camqadm.AMQShell.respond" title="Permalink to this definition">¶</a></dt>
-<dd>What to do with the return value of a command.</dd></dl>
+<dd><p>What to do with the return value of a command.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.bin.camqadm.AMQShell.say">
 <tt class="descname">say</tt><big>(</big><em>m</em><big>)</big><a class="headerlink" href="#celery.bin.camqadm.AMQShell.say" title="Permalink to this definition">¶</a></dt>
-<dd>Say something to the user. Disabled if <tt class="xref docutils literal"><span class="pre">silent`</span></tt>.</dd></dl>
+<dd><p>Say something to the user. Disabled if <tt class="xref py py-attr docutils literal"><span class="pre">silent`</span></tt>.</p>
+</dd></dl>
 
 </dd></dl>
 
@@ -234,8 +244,8 @@ and tooltips.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><em>args</em> &#8211; see <tt class="xref docutils literal"><span class="pre">args</span></tt>.</li>
-<li><em>returns</em> &#8211; see <tt class="xref docutils literal"><span class="pre">returns</span></tt>.</li>
+<li><strong>args</strong> &#8211; see <tt class="xref py py-attr docutils literal"><span class="pre">args</span></tt>.</li>
+<li><strong>returns</strong> &#8211; see <tt class="xref py py-attr docutils literal"><span class="pre">returns</span></tt>.</li>
 </ul>
 </td>
 </tr>
@@ -245,7 +255,7 @@ and tooltips.</p>
 <dt id="celery.bin.camqadm.Spec.coerce">
 <tt class="descname">coerce</tt><big>(</big><em>index</em>, <em>value</em><big>)</big><a class="headerlink" href="#celery.bin.camqadm.Spec.coerce" title="Permalink to this definition">¶</a></dt>
 <dd><p>Coerce value for argument at index.</p>
-<p>E.g. if <tt class="xref docutils literal"><span class="pre">args</span></tt> is <tt class="docutils literal"><span class="pre">[(&quot;is_active&quot;,</span> <span class="pre">bool)]</span></tt>:</p>
+<p>E.g. if <tt class="xref py py-attr docutils literal"><span class="pre">args</span></tt> is <tt class="docutils literal"><span class="pre">[(&quot;is_active&quot;,</span> <span class="pre">bool)]</span></tt>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nb">coerce</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s">&quot;False&quot;</span><span class="p">)</span>
 <span class="go">False</span>
 </pre></div>
@@ -255,7 +265,8 @@ and tooltips.</p>
 <dl class="method">
 <dt id="celery.bin.camqadm.Spec.format_response">
 <tt class="descname">format_response</tt><big>(</big><em>response</em><big>)</big><a class="headerlink" href="#celery.bin.camqadm.Spec.format_response" title="Permalink to this definition">¶</a></dt>
-<dd>Format the return value of this command in a human-friendly way.</dd></dl>
+<dd><p>Format the return value of this command in a human-friendly way.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.bin.camqadm.Spec.str_args_to_python">
@@ -274,7 +285,8 @@ and tooltips.</p>
 <dl class="function">
 <dt id="celery.bin.camqadm.parse_options">
 <tt class="descclassname">celery.bin.camqadm.</tt><tt class="descname">parse_options</tt><big>(</big><em>arguments</em><big>)</big><a class="headerlink" href="#celery.bin.camqadm.parse_options" title="Permalink to this definition">¶</a></dt>
-<dd>Parse the available options to <tt class="docutils literal"><span class="pre">celeryd</span></tt>.</dd></dl>
+<dd><p>Parse the available options to <tt class="docutils literal"><span class="pre">celeryd</span></tt>.</p>
+</dd></dl>
 
 </div>
 
@@ -285,7 +297,7 @@ and tooltips.</p>
     <div class="footer">
     <p>
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
 	</p>
     </div>
       <div class="clearer"></div>

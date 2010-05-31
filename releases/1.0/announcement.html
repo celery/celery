@@ -1,3 +1,4 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -12,12 +13,13 @@
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
         VERSION:     '1.1.0 (unstable)',
-        COLLAPSE_MODINDEX: false,
+        COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="../../static/jquery.js"></script>
+    <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
     <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="../../index.html" />
     <link media="only screen and (max-device-width: 480px)" href="../../static/mobile.css" type="text/css" rel="stylesheet" /> 
@@ -32,7 +34,7 @@
 		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
 		<li id="page_buttons">
 			<div class="headerButton"><a href="../../genindex.html" title="General Index" accesskey="I">index</a></div>
-			<div class="headerButton"><a href="../../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="../../py-modindex.html" title="Python Module Index" >modules</a></div>
 		</li>
 	</ul>
 </div>
@@ -41,16 +43,16 @@
   <div class="sphinxsidebarwrapper">
 	<ul><li class="toctree-l1"><a href="../../index.html">Main Page</a></li></ul>
 	<ul>
-<li class="toctree-l1"><a class="reference external" href="../../getting-started/index.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../userguide/index.html">User Guide</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../configuration.html">Configuration and defaults</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../cookbook/index.html">Cookbook</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../tutorials/index.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../reference/index.html">API Reference</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../internals/index.html">Internals</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../changelog.html">Change history</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../links.html">Interesting Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting-started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../internals/index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../links.html">Interesting Links</a></li>
 </ul>
 
       <h3>This Page</h3>
@@ -130,14 +132,14 @@ is loud by default, and will likely be quite annoying.</li>
 <li><p class="first">Task decorators</p>
 <blockquote>
 <p>Write tasks as regular functions and decorate them.
-There are both <tt class="xref docutils literal"><span class="pre">task()</span></tt>, and <tt class="xref docutils literal"><span class="pre">periodic_task()</span></tt> decorators.</p>
+There are both <tt class="xref py py-func docutils literal"><span class="pre">task()</span></tt>, and <tt class="xref py py-func docutils literal"><span class="pre">periodic_task()</span></tt> decorators.</p>
 </blockquote>
 </li>
 <li><p class="first">Tasks are automatically registered</p>
 <blockquote>
 <p>Registering the tasks manually was getting tedious, so now you don&#8217;t have
 to anymore. You can still do it manually if you need to, just
-disable <tt class="xref docutils literal"><span class="pre">Task.autoregister</span></tt>. The concept of abstract task classes
+disable <tt class="xref py py-attr docutils literal"><span class="pre">Task.autoregister</span></tt>. The concept of abstract task classes
 has also been introduced, this is like django models, where only the
 subclasses of an abstract task is registered.</p>
 </blockquote>
@@ -201,7 +203,7 @@ consumers in other languages than Python (<tt class="docutils literal"><span cla
 <p>Periodic tasks are now scheduled on the clock, i.e. <tt class="docutils literal"><span class="pre">timedelta(hours=1)</span></tt>
 means every hour at :00 minutes, not every hour from the server starts.
 To revert to the previous behavior you have the option to enable
-<tt class="xref docutils literal"><span class="pre">PeriodicTask.relative</span></tt>.</p>
+<tt class="xref py py-attr docutils literal"><span class="pre">PeriodicTask.relative</span></tt>.</p>
 </li>
 <li><p class="first">... and a lot more!</p>
 </li>
@@ -210,7 +212,7 @@ To revert to the previous behavior you have the option to enable
 the <a class="reference external" href="http://ask.github.com/celery/changelog.html">changelog</a>. This document contains crucial information for those
 upgrading from a previous version of Celery, so be sure to read the entire
 change set before you continue.</p>
-<p><strong>TIP:</strong> If you install the <tt class="xref docutils literal"><span class="pre">setproctitle</span></tt> module you can see which
+<p><strong>TIP:</strong> If you install the <tt class="xref py py-mod docutils literal"><span class="pre">setproctitle</span></tt> module you can see which
 task each worker process is currently executing in <tt class="docutils literal"><span class="pre">ps</span></tt> listings.
 Just install it using pip: <tt class="docutils literal"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">setproctitle</span></tt>.</p>
 </div>
@@ -236,7 +238,7 @@ Just install it using pip: <tt class="docutils literal"><span class="pre">pip</s
     <div class="footer">
     <p>
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
 	</p>
     </div>
       <div class="clearer"></div>

@@ -1,3 +1,4 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -12,12 +13,13 @@
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
         VERSION:     '1.1.0 (unstable)',
-        COLLAPSE_MODINDEX: false,
+        COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="../../static/jquery.js"></script>
+    <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
     <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
@@ -35,7 +37,7 @@
 		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
 		<li id="page_buttons">
 			<div class="headerButton"><a href="../../genindex.html" title="General Index" accesskey="I">index</a></div>
-			<div class="headerButton"><a href="../../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="../../py-modindex.html" title="Python Module Index" >modules</a></div>
 			<div class="headerButton"><a href="celery.backends.html" title="Backends - celery.backends" accesskey="N">next</a></div>
 			<div class="headerButton"><a href="celery.worker.revoke.html" title="Worker Revoked Tasks - celery.worker.revoke" accesskey="P">previous</a></div>
 		</li>
@@ -46,16 +48,16 @@
   <div class="sphinxsidebarwrapper">
 	<ul><li class="toctree-l1"><a href="../../index.html">Main Page</a></li></ul>
 	<ul>
-<li class="toctree-l1"><a class="reference external" href="../../getting-started/index.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../userguide/index.html">User Guide</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../configuration.html">Configuration and defaults</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../cookbook/index.html">Cookbook</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../tutorials/index.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../reference/index.html">API Reference</a></li>
-<li class="toctree-l1"><a class="reference external" href="../index.html">Internals</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../changelog.html">Change history</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../links.html">Interesting Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting-started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../links.html">Interesting Links</a></li>
 </ul>
 
       <h3>This Page</h3>
@@ -91,7 +93,7 @@
           <div class="body">
             
   <div class="section" id="module-celery.beat">
-<h1>Clock Service - celery.beat<a class="headerlink" href="#module-celery.beat" title="Permalink to this headline">¶</a></h1>
+<span id="clock-service-celery-beat"></span><h1>Clock Service - celery.beat<a class="headerlink" href="#module-celery.beat" title="Permalink to this headline">¶</a></h1>
 <p>Periodic Task Scheduler</p>
 <dl class="function">
 <dt id="celery.beat.EmbeddedClockService">
@@ -101,8 +103,11 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>thread</em> &#8211; Run threaded instead of as a separate process.
-Default is <tt class="xref docutils literal"><span class="pre">False</span></tt>.</td>
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>thread</strong> &#8211; Run threaded instead of as a separate process.
+Default is <tt class="xref docutils literal"><span class="pre">False</span></tt>.</li>
+</ul>
+</td>
 </tr>
 </tbody>
 </table>
@@ -117,9 +122,9 @@ Default is <tt class="xref docutils literal"><span class="pre">False</span></tt>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><em>task</em> &#8211; see <a title="celery.beat.ScheduleEntry.task" class="reference internal" href="#celery.beat.ScheduleEntry.task"><tt class="xref docutils literal"><span class="pre">task</span></tt></a>.</li>
-<li><em>last_run_at</em> &#8211; see <a title="celery.beat.ScheduleEntry.last_run_at" class="reference internal" href="#celery.beat.ScheduleEntry.last_run_at"><tt class="xref docutils literal"><span class="pre">last_run_at</span></tt></a>.</li>
-<li><em>total_run_count</em> &#8211; see <a title="celery.beat.ScheduleEntry.total_run_count" class="reference internal" href="#celery.beat.ScheduleEntry.total_run_count"><tt class="xref docutils literal"><span class="pre">total_run_count</span></tt></a>.</li>
+<li><strong>task</strong> &#8211; see <a class="reference internal" href="#celery.beat.ScheduleEntry.task" title="celery.beat.ScheduleEntry.task"><tt class="xref py py-attr docutils literal"><span class="pre">task</span></tt></a>.</li>
+<li><strong>last_run_at</strong> &#8211; see <a class="reference internal" href="#celery.beat.ScheduleEntry.last_run_at" title="celery.beat.ScheduleEntry.last_run_at"><tt class="xref py py-attr docutils literal"><span class="pre">last_run_at</span></tt></a>.</li>
+<li><strong>total_run_count</strong> &#8211; see <a class="reference internal" href="#celery.beat.ScheduleEntry.total_run_count" title="celery.beat.ScheduleEntry.total_run_count"><tt class="xref py py-attr docutils literal"><span class="pre">total_run_count</span></tt></a>.</li>
 </ul>
 </td>
 </tr>
@@ -128,28 +133,33 @@ Default is <tt class="xref docutils literal"><span class="pre">False</span></tt>
 <dl class="attribute">
 <dt id="celery.beat.ScheduleEntry.task">
 <tt class="descname">task</tt><a class="headerlink" href="#celery.beat.ScheduleEntry.task" title="Permalink to this definition">¶</a></dt>
-<dd>The task class.</dd></dl>
+<dd><p>The task class.</p>
+</dd></dl>
 
 <dl class="attribute">
 <dt id="celery.beat.ScheduleEntry.last_run_at">
 <tt class="descname">last_run_at</tt><a class="headerlink" href="#celery.beat.ScheduleEntry.last_run_at" title="Permalink to this definition">¶</a></dt>
-<dd>The time and date of when this task was last run.</dd></dl>
+<dd><p>The time and date of when this task was last run.</p>
+</dd></dl>
 
 <dl class="attribute">
 <dt id="celery.beat.ScheduleEntry.total_run_count">
 <tt class="descname">total_run_count</tt><a class="headerlink" href="#celery.beat.ScheduleEntry.total_run_count" title="Permalink to this definition">¶</a></dt>
-<dd>Total number of times this periodic task has been executed.</dd></dl>
+<dd><p>Total number of times this periodic task has been executed.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.beat.ScheduleEntry.is_due">
 <tt class="descname">is_due</tt><big>(</big><em>task</em><big>)</big><a class="headerlink" href="#celery.beat.ScheduleEntry.is_due" title="Permalink to this definition">¶</a></dt>
-<dd>See <a title="celery.task.base.PeriodicTask.is_due" class="reference external" href="../../reference/celery.task.base.html#celery.task.base.PeriodicTask.is_due"><tt class="xref docutils literal"><span class="pre">celery.task.base.PeriodicTask.is_due()</span></tt></a>.</dd></dl>
+<dd><p>See <a class="reference internal" href="../../reference/celery.task.base.html#celery.task.base.PeriodicTask.is_due" title="celery.task.base.PeriodicTask.is_due"><tt class="xref py py-meth docutils literal"><span class="pre">celery.task.base.PeriodicTask.is_due()</span></tt></a>.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.beat.ScheduleEntry.next">
 <tt class="descname">next</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.beat.ScheduleEntry.next" title="Permalink to this definition">¶</a></dt>
-<dd>Returns a new instance of the same class, but with
-its date and count fields updated.</dd></dl>
+<dd><p>Returns a new instance of the same class, but with
+its date and count fields updated.</p>
+</dd></dl>
 
 </dd></dl>
 
@@ -162,10 +172,10 @@ its date and count fields updated.</dd></dl>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><em>registry</em> &#8211; see <a title="celery.beat.Scheduler.registry" class="reference internal" href="#celery.beat.Scheduler.registry"><tt class="xref docutils literal"><span class="pre">registry</span></tt></a>.</li>
-<li><em>schedule</em> &#8211; see <a title="celery.beat.Scheduler.schedule" class="reference internal" href="#celery.beat.Scheduler.schedule"><tt class="xref docutils literal"><span class="pre">schedule</span></tt></a>.</li>
-<li><em>logger</em> &#8211; see <a title="celery.beat.Scheduler.logger" class="reference internal" href="#celery.beat.Scheduler.logger"><tt class="xref docutils literal"><span class="pre">logger</span></tt></a>.</li>
-<li><em>max_interval</em> &#8211; see <a title="celery.beat.Scheduler.max_interval" class="reference internal" href="#celery.beat.Scheduler.max_interval"><tt class="xref docutils literal"><span class="pre">max_interval</span></tt></a>.</li>
+<li><strong>registry</strong> &#8211; see <a class="reference internal" href="#celery.beat.Scheduler.registry" title="celery.beat.Scheduler.registry"><tt class="xref py py-attr docutils literal"><span class="pre">registry</span></tt></a>.</li>
+<li><strong>schedule</strong> &#8211; see <a class="reference internal" href="#celery.beat.Scheduler.schedule" title="celery.beat.Scheduler.schedule"><tt class="xref py py-attr docutils literal"><span class="pre">schedule</span></tt></a>.</li>
+<li><strong>logger</strong> &#8211; see <a class="reference internal" href="#celery.beat.Scheduler.logger" title="celery.beat.Scheduler.logger"><tt class="xref py py-attr docutils literal"><span class="pre">logger</span></tt></a>.</li>
+<li><strong>max_interval</strong> &#8211; see <a class="reference internal" href="#celery.beat.Scheduler.max_interval" title="celery.beat.Scheduler.max_interval"><tt class="xref py py-attr docutils literal"><span class="pre">max_interval</span></tt></a>.</li>
 </ul>
 </td>
 </tr>
@@ -174,40 +184,47 @@ its date and count fields updated.</dd></dl>
 <dl class="attribute">
 <dt id="celery.beat.Scheduler.registry">
 <tt class="descname">registry</tt><a class="headerlink" href="#celery.beat.Scheduler.registry" title="Permalink to this definition">¶</a></dt>
-<dd>The task registry to use.</dd></dl>
+<dd><p>The task registry to use.</p>
+</dd></dl>
 
 <dl class="attribute">
 <dt id="celery.beat.Scheduler.schedule">
 <tt class="descname">schedule</tt><a class="headerlink" href="#celery.beat.Scheduler.schedule" title="Permalink to this definition">¶</a></dt>
-<dd>The schedule dict/shelve.</dd></dl>
+<dd><p>The schedule dict/shelve.</p>
+</dd></dl>
 
 <dl class="attribute">
 <dt id="celery.beat.Scheduler.logger">
 <tt class="descname">logger</tt><a class="headerlink" href="#celery.beat.Scheduler.logger" title="Permalink to this definition">¶</a></dt>
-<dd>The logger to use.</dd></dl>
+<dd><p>The logger to use.</p>
+</dd></dl>
 
 <dl class="attribute">
 <dt id="celery.beat.Scheduler.max_interval">
 <tt class="descname">max_interval</tt><a class="headerlink" href="#celery.beat.Scheduler.max_interval" title="Permalink to this definition">¶</a></dt>
-<dd>Maximum time to sleep between re-checking the schedule.</dd></dl>
+<dd><p>Maximum time to sleep between re-checking the schedule.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.beat.Scheduler.schedule_registry">
 <tt class="descname">schedule_registry</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.beat.Scheduler.schedule_registry" title="Permalink to this definition">¶</a></dt>
-<dd>Add the current contents of the registry to the schedule.</dd></dl>
+<dd><p>Add the current contents of the registry to the schedule.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.beat.Scheduler.tick">
 <tt class="descname">tick</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.beat.Scheduler.tick" title="Permalink to this definition">¶</a></dt>
-<dd>Run a tick, that is one iteration of the scheduler.
-Executes all due tasks.</dd></dl>
+<dd><p>Run a tick, that is one iteration of the scheduler.
+Executes all due tasks.</p>
+</dd></dl>
 
 </dd></dl>
 
 <dl class="exception">
 <dt id="celery.beat.SchedulingError">
 <em class="property">exception </em><tt class="descclassname">celery.beat.</tt><tt class="descname">SchedulingError</tt><a class="headerlink" href="#celery.beat.SchedulingError" title="Permalink to this definition">¶</a></dt>
-<dd>An error occured while scheduling a task.</dd></dl>
+<dd><p>An error occured while scheduling a task.</p>
+</dd></dl>
 
 </div>
 
@@ -218,7 +235,7 @@ Executes all due tasks.</dd></dl>
     <div class="footer">
     <p>
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
 	</p>
     </div>
       <div class="clearer"></div>

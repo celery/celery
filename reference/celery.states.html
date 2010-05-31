@@ -1,3 +1,4 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -12,12 +13,13 @@
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
         VERSION:     '1.1.0 (unstable)',
-        COLLAPSE_MODINDEX: false,
+        COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
     <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
@@ -35,7 +37,7 @@
 		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
 		<li id="page_buttons">
 			<div class="headerButton"><a href="../genindex.html" title="General Index" accesskey="I">index</a></div>
-			<div class="headerButton"><a href="../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="../py-modindex.html" title="Python Module Index" >modules</a></div>
 			<div class="headerButton"><a href="celery.messaging.html" title="Messaging - celery.messaging" accesskey="N">next</a></div>
 			<div class="headerButton"><a href="celery.registry.html" title="Task Registry - celery.registry" accesskey="P">previous</a></div>
 		</li>
@@ -46,41 +48,42 @@
   <div class="sphinxsidebarwrapper">
 	<ul><li class="toctree-l1"><a href="../index.html">Main Page</a></li></ul>
 	<ul class="current">
-<li class="toctree-l1"><a class="reference external" href="../getting-started/index.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference external" href="../userguide/index.html">User Guide</a></li>
-<li class="toctree-l1"><a class="reference external" href="../configuration.html">Configuration and defaults</a></li>
-<li class="toctree-l1"><a class="reference external" href="../cookbook/index.html">Cookbook</a></li>
-<li class="toctree-l1"><a class="reference external" href="../tutorials/index.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1 current"><a class="reference external" href="index.html">API Reference</a><ul class="current">
-<li class="toctree-l2"><a class="reference external" href="celery.decorators.html">Task Decorators - celery.decorators</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.base.html">Defining Tasks - celery.task.base</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.execute.html">Executing Tasks - celery.execute</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.result.html">Task Result - celery.result</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.html">Task Information and Utilities - celery.task</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.conf.html">Configuration - celery.conf</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.control.html">Remote Management of Workers - celery.task.control</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.http.html">HTTP Callback Tasks - celery.task.http</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.schedules.html">Periodic Task Schedule Behaviors - celery.task.schedules</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.signals.html">Signals - celery.signals</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.exceptions.html">Exceptions - celery.exceptions</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.builtins.html">Built-in Task Classes - celery.task.builtins</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.loaders.html">Loaders - celery.loaders</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.loaders.base.html">Loader Base Classes - celery.loaders.base</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.registry.html">Task Registry - celery.registry</a></li>
-<li class="toctree-l2 current"><a class="current reference external" href="">Task States - celery.states</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.messaging.html">Messaging - celery.messaging</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.contrib.abortable.html">Contrib: Abortable tasks - celery.contrib.abortable</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.events.html">Events - celery.events</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.bin.celerybeat.html">Celery Periodic Task Server - celery.bin.celerybeat</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.bin.camqadm.html">caqmadm: AMQP API Command-line Shell - celery.bin.camqadm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting-started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="celery.decorators.html">Task Decorators - celery.decorators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.base.html">Defining Tasks - celery.task.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.execute.html">Executing Tasks - celery.execute</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.result.html">Task Result - celery.result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.html">Task Information and Utilities - celery.task</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.conf.html">Configuration - celery.conf</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.control.html">Remote Management of Workers - celery.task.control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.http.html">HTTP Callback Tasks - celery.task.http</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.schedules.html">Periodic Task Schedule Behaviors - celery.task.schedules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.signals.html">Signals - celery.signals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.exceptions.html">Exceptions - celery.exceptions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.builtins.html">Built-in Task Classes - celery.task.builtins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.loaders.html">Loaders - celery.loaders</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.loaders.base.html">Loader Base Classes - celery.loaders.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.registry.html">Task Registry - celery.registry</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">Task States - celery.states</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.messaging.html">Messaging - celery.messaging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.contrib.abortable.html">Contrib: Abortable tasks - celery.contrib.abortable</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.events.html">Events - celery.events</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.celerybeat.html">Celery Periodic Task Server - celery.bin.celerybeat</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.camqadm.html">caqmadm: AMQP API Command-line Shell - celery.bin.camqadm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.celeryd_multi.html">Celeryd Multi Tool - celery.bin.celeryd_multi</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference external" href="../internals/index.html">Internals</a></li>
-<li class="toctree-l1"><a class="reference external" href="../changelog.html">Change history</a></li>
-<li class="toctree-l1"><a class="reference external" href="../links.html">Interesting Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../internals/index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../links.html">Interesting Links</a></li>
 </ul>
 
       <h3>This Page</h3>
@@ -116,32 +119,43 @@
           <div class="body">
             
   <div class="section" id="module-celery.states">
-<h1>Task States - celery.states<a class="headerlink" href="#module-celery.states" title="Permalink to this headline">¶</a></h1>
+<span id="task-states-celery-states"></span><h1>Task States - celery.states<a class="headerlink" href="#module-celery.states" title="Permalink to this headline">¶</a></h1>
 <p>Task States</p>
 <dl class="data">
 <dt id="celery.states.PENDING">
 <tt class="descclassname">celery.states.</tt><tt class="descname">PENDING</tt><a class="headerlink" href="#celery.states.PENDING" title="Permalink to this definition">¶</a></dt>
-<dd>Task is waiting for execution or unknown.</dd></dl>
+<dd><p>Task is waiting for execution or unknown.</p>
+</dd></dl>
 
 <dl class="data">
 <dt id="celery.states.STARTED">
 <tt class="descclassname">celery.states.</tt><tt class="descname">STARTED</tt><a class="headerlink" href="#celery.states.STARTED" title="Permalink to this definition">¶</a></dt>
-<dd>Task has been started.</dd></dl>
+<dd><p>Task has been started.</p>
+</dd></dl>
 
 <dl class="data">
 <dt id="celery.states.SUCCESS">
 <tt class="descclassname">celery.states.</tt><tt class="descname">SUCCESS</tt><a class="headerlink" href="#celery.states.SUCCESS" title="Permalink to this definition">¶</a></dt>
-<dd>Task has been successfully executed.</dd></dl>
+<dd><p>Task has been successfully executed.</p>
+</dd></dl>
 
 <dl class="data">
 <dt id="celery.states.FAILURE">
 <tt class="descclassname">celery.states.</tt><tt class="descname">FAILURE</tt><a class="headerlink" href="#celery.states.FAILURE" title="Permalink to this definition">¶</a></dt>
-<dd>Task execution resulted in failure.</dd></dl>
+<dd><p>Task execution resulted in failure.</p>
+</dd></dl>
 
 <dl class="data">
 <dt id="celery.states.RETRY">
 <tt class="descclassname">celery.states.</tt><tt class="descname">RETRY</tt><a class="headerlink" href="#celery.states.RETRY" title="Permalink to this definition">¶</a></dt>
-<dd>Task is being retried.</dd></dl>
+<dd><p>Task is being retried.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="celery.states.REVOKED">
+<tt class="descclassname">celery.states.</tt><tt class="descname">REVOKED</tt><a class="headerlink" href="#celery.states.REVOKED" title="Permalink to this definition">¶</a></dt>
+<dd><p>Task has been revoked.</p>
+</dd></dl>
 
 <dl class="data">
 <dt>
@@ -149,22 +163,32 @@
 <dd><dl class="data">
 <dt id="celery.states.READY_STATES">
 <tt class="descclassname">celery.states.</tt><tt class="descname">READY_STATES</tt><a class="headerlink" href="#celery.states.READY_STATES" title="Permalink to this definition">¶</a></dt>
-<dd>Set of states meaning the task result is ready (has been executed).</dd></dl>
+<dd><p>Set of states meaning the task result is ready (has been executed).</p>
+</dd></dl>
 
 <dl class="data">
 <dt id="celery.states.UNREADY_STATES">
 <tt class="descclassname">celery.states.</tt><tt class="descname">UNREADY_STATES</tt><a class="headerlink" href="#celery.states.UNREADY_STATES" title="Permalink to this definition">¶</a></dt>
-<dd>Set of states meaning the task result is not ready (has not been executed).</dd></dl>
+<dd><p>Set of states meaning the task result is not ready (has not been executed).</p>
+</dd></dl>
 
 <dl class="data">
 <dt id="celery.states.EXCEPTION_STATES">
 <tt class="descclassname">celery.states.</tt><tt class="descname">EXCEPTION_STATES</tt><a class="headerlink" href="#celery.states.EXCEPTION_STATES" title="Permalink to this definition">¶</a></dt>
-<dd>Set of states meaning the task returned an exception.</dd></dl>
+<dd><p>Set of states meaning the task returned an exception.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="celery.states.PROPAGATE_STATES">
+<tt class="descclassname">celery.states.</tt><tt class="descname">PROPAGATE_STATES</tt><a class="headerlink" href="#celery.states.PROPAGATE_STATES" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set of exception states that should propagate exceptions to the user.</p>
+</dd></dl>
 
 <dl class="data">
 <dt id="celery.states.ALL_STATES">
 <tt class="descclassname">celery.states.</tt><tt class="descname">ALL_STATES</tt><a class="headerlink" href="#celery.states.ALL_STATES" title="Permalink to this definition">¶</a></dt>
-<dd>Set of all possible states.</dd></dl>
+<dd><p>Set of all possible states.</p>
+</dd></dl>
 
 </dd></dl>
 
@@ -177,7 +201,7 @@
     <div class="footer">
     <p>
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
 	</p>
     </div>
       <div class="clearer"></div>

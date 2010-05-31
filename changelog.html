@@ -1,3 +1,4 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -10,14 +11,15 @@
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '#',
+        URL_ROOT:    '',
         VERSION:     '1.1.0 (unstable)',
-        COLLAPSE_MODINDEX: false,
+        COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="static/jquery.js"></script>
+    <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
     <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="index.html" />
     <link rel="next" title="Interesting Links" href="links.html" />
@@ -34,7 +36,7 @@
 		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
 		<li id="page_buttons">
 			<div class="headerButton"><a href="genindex.html" title="General Index" accesskey="I">index</a></div>
-			<div class="headerButton"><a href="modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="py-modindex.html" title="Python Module Index" >modules</a></div>
 			<div class="headerButton"><a href="links.html" title="Interesting Links" accesskey="N">next</a></div>
 			<div class="headerButton"><a href="internals/reference/celery.platform.html" title="Platform Specific - celery.platform" accesskey="P">previous</a></div>
 		</li>
@@ -45,47 +47,48 @@
   <div class="sphinxsidebarwrapper">
 	<ul><li class="toctree-l1"><a href="index.html">Main Page</a></li></ul>
 	<ul class="current">
-<li class="toctree-l1"><a class="reference external" href="getting-started/index.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference external" href="userguide/index.html">User Guide</a></li>
-<li class="toctree-l1"><a class="reference external" href="configuration.html">Configuration and defaults</a></li>
-<li class="toctree-l1"><a class="reference external" href="cookbook/index.html">Cookbook</a></li>
-<li class="toctree-l1"><a class="reference external" href="tutorials/index.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference external" href="faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1"><a class="reference external" href="reference/index.html">API Reference</a></li>
-<li class="toctree-l1"><a class="reference external" href="internals/index.html">Internals</a></li>
-<li class="toctree-l1 current"><a class="current reference external" href="">Change history</a><ul>
-<li class="toctree-l2"><a class="reference external" href="#xxxx-xx-xx-xx-xx-x-x-xxxx">1.2.0 [xxxx-xx-xx xx:xx x.x xxxx]</a></li>
-<li class="toctree-l2"><a class="reference external" href="#p-m-cest">1.0.3 [2010-05-15 03:00 P.M CEST]</a></li>
-<li class="toctree-l2"><a class="reference external" href="#p-m-cet">1.0.2 [2010-03-31 12:50 P.M CET]</a></li>
-<li class="toctree-l2"><a class="reference external" href="#id1">1.0.1 [2010-02-24 07:05 P.M CET]</a></li>
-<li class="toctree-l2"><a class="reference external" href="#id2">1.0.0 [2010-02-10 04:00 P.M CET]</a></li>
-<li class="toctree-l2"><a class="reference external" href="#id7">0.8.1 [2009-11-16 05:21 P.M CEST]</a></li>
-<li class="toctree-l2"><a class="reference external" href="#id9">0.8.0 [2009-09-22 03:06 P.M CEST]</a></li>
-<li class="toctree-l2"><a class="reference external" href="#a-m-cet">0.6.0 [2009-08-07 06:54 A.M CET]</a></li>
-<li class="toctree-l2"><a class="reference external" href="#id15">0.4.1 [2009-07-02 01:42 P.M CET]</a></li>
-<li class="toctree-l2"><a class="reference external" href="#id16">0.4.0 [2009-07-01 07:29 P.M CET]</a></li>
-<li class="toctree-l2"><a class="reference external" href="#id17">0.3.20 [2009-06-25 08:42 P.M CET]</a></li>
-<li class="toctree-l2"><a class="reference external" href="#id19">0.3.3 [2009-06-08 01:07 P.M CET]</a></li>
-<li class="toctree-l2"><a class="reference external" href="#id20">0.3.2 [2009-06-08 01:07 P.M CET]</a></li>
-<li class="toctree-l2"><a class="reference external" href="#id21">0.3.1 [2009-06-08 01:07 P.M CET]</a></li>
-<li class="toctree-l2"><a class="reference external" href="#id22">0.3.0 [2009-06-08 12:41 P.M CET]</a></li>
-<li class="toctree-l2"><a class="reference external" href="#id23">0.2.0 [2009-05-20 05:14 P.M CET]</a></li>
-<li class="toctree-l2"><a class="reference external" href="#pre3-2009-05-20-05-14-p-m-cet">0.2.0-pre3 [2009-05-20 05:14 P.M CET]</a></li>
-<li class="toctree-l2"><a class="reference external" href="#pre2-2009-05-20-01-56-p-m-cet">0.2.0-pre2 [2009-05-20 01:56 P.M CET]</a></li>
-<li class="toctree-l2"><a class="reference external" href="#pre1-2009-05-20-12-33-p-m-cet">0.2.0-pre1 [2009-05-20 12:33 P.M CET]</a></li>
-<li class="toctree-l2"><a class="reference external" href="#id24">0.1.15 [2009-05-19 04:13 P.M CET]</a></li>
-<li class="toctree-l2"><a class="reference external" href="#id25">0.1.14 [2009-05-19 01:08 P.M CET]</a></li>
-<li class="toctree-l2"><a class="reference external" href="#id26">0.1.13 [2009-05-19 12:36 P.M CET]</a></li>
-<li class="toctree-l2"><a class="reference external" href="#id27">0.1.12 [2009-05-18 04:38 P.M CET]</a></li>
-<li class="toctree-l2"><a class="reference external" href="#id28">0.1.11 [2009-05-12 02:08 P.M CET]</a></li>
-<li class="toctree-l2"><a class="reference external" href="#id29">0.1.10 [2009-05-11 12:46 P.M CET]</a></li>
-<li class="toctree-l2"><a class="reference external" href="#id30">0.1.8 [2009-05-07 12:27 P.M CET]</a></li>
-<li class="toctree-l2"><a class="reference external" href="#id31">0.1.7 [2009-04-30 1:50 P.M CET]</a></li>
-<li class="toctree-l2"><a class="reference external" href="#id32">0.1.6 [2009-04-28 2:13 P.M CET]</a></li>
-<li class="toctree-l2"><a class="reference external" href="#id33">0.1.0 [2009-04-24 11:28 A.M CET]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting-started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="internals/index.html">Internals</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Change history</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#xxxx-xx-xx-xx-xx-x-x-xxxx">1.2.0 [xxxx-xx-xx xx:xx x.x xxxx]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#a-m-cest">1.0.4 [2010-05-31 09:54 A.M CEST]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#p-m-cest">1.0.3 [2010-05-15 03:00 P.M CEST]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#p-m-cet">1.0.2 [2010-03-31 12:50 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id2">1.0.1 [2010-02-24 07:05 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id3">1.0.0 [2010-02-10 04:00 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id10">0.8.1 [2009-11-16 05:21 P.M CEST]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id12">0.8.0 [2009-09-22 03:06 P.M CEST]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#a-m-cet">0.6.0 [2009-08-07 06:54 A.M CET]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id18">0.4.1 [2009-07-02 01:42 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id19">0.4.0 [2009-07-01 07:29 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id20">0.3.20 [2009-06-25 08:42 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id22">0.3.3 [2009-06-08 01:07 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id23">0.3.2 [2009-06-08 01:07 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id24">0.3.1 [2009-06-08 01:07 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id25">0.3.0 [2009-06-08 12:41 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id26">0.2.0 [2009-05-20 05:14 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pre3-2009-05-20-05-14-p-m-cet">0.2.0-pre3 [2009-05-20 05:14 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pre2-2009-05-20-01-56-p-m-cet">0.2.0-pre2 [2009-05-20 01:56 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pre1-2009-05-20-12-33-p-m-cet">0.2.0-pre1 [2009-05-20 12:33 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id27">0.1.15 [2009-05-19 04:13 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id28">0.1.14 [2009-05-19 01:08 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id29">0.1.13 [2009-05-19 12:36 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id30">0.1.12 [2009-05-18 04:38 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id31">0.1.11 [2009-05-12 02:08 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id32">0.1.10 [2009-05-11 12:46 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id33">0.1.8 [2009-05-07 12:27 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id34">0.1.7 [2009-04-30 1:50 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id35">0.1.6 [2009-04-28 2:13 P.M CET]</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id36">0.1.0 [2009-04-24 11:28 A.M CET]</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference external" href="links.html">Interesting Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="links.html">Interesting Links</a></li>
 </ul>
 
       <h3>This Page</h3>
@@ -197,19 +200,19 @@
 </blockquote>
 </li>
 </ul>
-<p>Importing <tt class="docutils literal"><span class="pre">djcelery</span></tt> will automatically setup celery to use the Django
-loader by setting the <span class="target" id="index-0"></span><strong class="xref">CELERY_LOADER`</strong> environment variable (it won&#8217;t
+<p>Importing <tt class="xref py py-mod docutils literal"><span class="pre">djcelery</span></tt> will automatically setup celery to use the Django
+loader by setting the <span class="target" id="index-0"></span><tt class="xref std std-envvar docutils literal"><span class="pre">CELERY_LOADER`</span></tt> environment variable (it won&#8217;t
 change it if it&#8217;s already defined).</p>
 <p>When the Django loader is used, the &#8220;database&#8221; and &#8220;cache&#8221; backend aliases
-will point to the <tt class="docutils literal"><span class="pre">djcelery</span></tt> backends instead of the built-in backends.</p>
+will point to the <tt class="xref py py-mod docutils literal"><span class="pre">djcelery</span></tt> backends instead of the built-in backends.</p>
 </div>
 <div class="section" id="upgrading-for-others">
 <h3>Upgrading for others<a class="headerlink" href="#upgrading-for-others" title="Permalink to this headline">¶</a></h3>
 <p>The database backend is now using <a class="reference external" href="http://www.sqlalchemy.org">SQLAlchemy</a> instead of the Django ORM,
 see <a class="reference external" href="http://www.sqlalchemy.org/docs/dbengine.html#supported-databases">Supported Databases</a> for a table of supported databases.</p>
 <p>The <tt class="docutils literal"><span class="pre">DATABASE_*</span></tt> settings has been replaced by a single setting:
-<tt class="docutils literal"><span class="pre">CELERY_RESULT_DBURI</span></tt>. The value here should be an <a class="reference external" href="http://www.sqlalchemy.org/docs/dbengine.html#create-engine-url-arguments">SQLAlchemy Connection
-String</a>, some examples include:</p>
+<tt class="docutils literal"><span class="pre">CELERY_RESULT_DBURI</span></tt>. The value here should be an
+<a class="reference external" href="http://www.sqlalchemy.org/docs/dbengine.html#create-engine-url-arguments">SQLAlchemy Connection String</a>, some examples include:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># sqlite (filename)</span>
 <span class="n">CELERY_RESULT_DBURI</span> <span class="o">=</span> <span class="s">&quot;sqlite:///celerydb.sqlite&quot;</span>
 
@@ -287,7 +290,7 @@ the <a class="reference external" href="http://ask.github.com/celery/internals/d
 </li>
 </ul>
 <ul>
-<li><p class="first">The <tt class="docutils literal"><span class="pre">celery.task.rest</span></tt> module has been removed, use <tt class="docutils literal"><span class="pre">celery.task.http</span></tt>
+<li><p class="first">The <tt class="docutils literal"><span class="pre">celery.task.rest</span></tt> module has been removed, use <a class="reference internal" href="userguide/remote-tasks.html#module-celery.task.http"><tt class="xref py py-mod docutils literal"><span class="pre">celery.task.http</span></tt></a>
 instead (as scheduled by the <a class="reference external" href="http://ask.github.com/celery/internals/deprecation.html">deprecation timeline</a>).</p>
 </li>
 <li><p class="first">It&#8217;s no longer allowed to skip the class name in loader names.
@@ -302,6 +305,306 @@ if you use e.g.:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_LOADER</span> <span class="o">=</span> <span class="s">&quot;myapp.loaders.Loader&quot;</span>
 </pre></div>
 </div>
+</blockquote>
+</li>
+</ul>
+</div>
+<div class="section" id="news">
+<h3>News<a class="headerlink" href="#news" title="Permalink to this headline">¶</a></h3>
+<ul>
+<li><p class="first">now depends on billiard &gt;= 0.4.0</p>
+</li>
+<li><p class="first">Added support for task soft and hard timelimits.</p>
+<blockquote>
+<p>New settings added:</p>
+<ul>
+<li><p class="first">CELERYD_TASK_TIME_LIMIT</p>
+<blockquote>
+<p>Hard time limit. The worker processing the task will be killed and
+replaced with a new one when this is exceeded.</p>
+</blockquote>
+</li>
+<li><p class="first">CELERYD_SOFT_TASK_TIME_LIMIT</p>
+<blockquote>
+<p>Soft time limit. The celery.exceptions.SoftTimeLimitExceeded exception
+will be raised when this is exceeded. The task can catch this to
+e.g. clean up before the hard time limit comes.</p>
+</blockquote>
+</li>
+</ul>
+<p>New command line arguments to celeryd added:
+<tt class="docutils literal"><span class="pre">--time-limit</span></tt> and <tt class="docutils literal"><span class="pre">--soft-time-limit</span></tt>.</p>
+<p>What&#8217;s left?</p>
+<p>This won&#8217;t work on platforms not supporting signals (and specifically
+the <tt class="docutils literal"><span class="pre">SIGUSR1</span></tt> signal) yet. So an alternative the ability to disable
+the feature alltogether on nonconforming platforms must be implemented.</p>
+<p>Also when the hard time limit is exceeded, the task result should
+be a <tt class="docutils literal"><span class="pre">TimeLimitExceeded</span></tt> exception.</p>
+</blockquote>
+</li>
+<li><p class="first">celeryd now waits for available pool processes before applying new tasks to the pool.</p>
+<blockquote>
+<p>This means it doesn&#8217;t have to wait for dozens of tasks to finish at shutdown
+because it applied n prefetched tasks at once.</p>
+<p>Some overhead for very short tasks though, then the shutdown probably doesn&#8217;t
+matter either so the feature can disable by the  <tt class="docutils literal"><span class="pre">CELERYD_POOL_PUTLOCKS</span></tt>
+setting:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERYD_POOL_PUTLOCKS</span> <span class="o">=</span> <span class="bp">False</span>
+</pre></div>
+</div>
+<p>See <a class="reference external" href="http://github.com/ask/celery/issues/#issue/122">http://github.com/ask/celery/issues/#issue/122</a></p>
+</blockquote>
+</li>
+<li><p class="first">Log output is now available in colors.</p>
+<blockquote>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head"><p class="first last"><strong>Log level</strong></p>
+</th>
+<th class="head"><p class="first last"><strong>Color</strong></p>
+</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><p class="first last"><tt class="docutils literal"><span class="pre">DEBUG</span></tt></p>
+</td>
+<td><p class="first last">Blue</p>
+</td>
+</tr>
+<tr><td><p class="first last"><tt class="docutils literal"><span class="pre">WARNING</span></tt></p>
+</td>
+<td><p class="first last">Yellow</p>
+</td>
+</tr>
+<tr><td><p class="first last"><tt class="docutils literal"><span class="pre">CRITICAL</span></tt></p>
+</td>
+<td><p class="first last">Magenta</p>
+</td>
+</tr>
+<tr><td><p class="first last"><tt class="docutils literal"><span class="pre">ERROR</span></tt></p>
+</td>
+<td><p class="first last">Red</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>This is only enabled when the log output is a tty.
+You can explicitly enable/disable this feature using the
+<tt class="docutils literal"><span class="pre">CELERYD_LOG_COLOR</span></tt> setting.</p>
+</blockquote>
+</li>
+<li><p class="first">Added support for task router classes (like the django multidb routers)</p>
+<blockquote>
+<ul class="simple">
+<li>New setting: CELERY_ROUTES</li>
+</ul>
+<p>This is a single, or a list of routers to traverse when
+sending tasks. Dicts in this list converts to a
+<tt class="xref py py-class docutils literal"><span class="pre">celery.routes.MapRoute</span></tt> instance.</p>
+<p>Examples:</p>
+<blockquote>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">CELERY_ROUTES</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;celery.ping&quot;</span><span class="p">:</span> <span class="s">&quot;default&quot;</span><span class="p">,</span>
+<span class="go">                     &quot;mytasks.add&quot;: &quot;cpu-bound&quot;,</span>
+<span class="go">                     &quot;video.encode&quot;: {</span>
+<span class="go">                         &quot;queue&quot;: &quot;video&quot;,</span>
+<span class="go">                         &quot;exchange&quot;: &quot;media&quot;</span>
+<span class="go">                         &quot;routing_key&quot;: &quot;media.video.encode&quot;}}</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">CELERY_ROUTES</span> <span class="o">=</span> <span class="p">(</span><span class="s">&quot;myapp.tasks.Router&quot;</span><span class="p">,</span>
+<span class="go">                     {&quot;celery.ping&quot;: &quot;default})</span>
+</pre></div>
+</div>
+</blockquote>
+<p>Where <tt class="docutils literal"><span class="pre">myapp.tasks.Router</span></tt> could be:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Router</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">route_for_task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">,</span> <span class="n">task_id</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">task</span> <span class="o">==</span> <span class="s">&quot;celery.ping&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s">&quot;default&quot;</span>
+</pre></div>
+</div>
+<p>route_for_task may return a string or a dict. A string then means
+it&#8217;s a queue name in <tt class="docutils literal"><span class="pre">CELERY_QUEUES</span></tt>, a dict means it&#8217;s a custom route.</p>
+<p>When sending tasks, the routers are consulted in order. The first
+router that doesn&#8217;t return <tt class="xref docutils literal"><span class="pre">None</span></tt> is the route to use. The message options
+is then merged with the found route settings, where the routers settings
+have priority.</p>
+<p>Example if <a class="reference internal" href="reference/celery.execute.html#celery.execute.apply_async" title="celery.execute.apply_async"><tt class="xref py py-func docutils literal"><span class="pre">apply_async()</span></tt></a> has these arguments:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">Task</span><span class="o">.</span><span class="n">apply_async</span><span class="p">(</span><span class="n">immediate</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">exchange</span><span class="o">=</span><span class="s">&quot;video&quot;</span><span class="p">,</span>
+<span class="gp">... </span>                 <span class="n">routing_key</span><span class="o">=</span><span class="s">&quot;video.compress&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>and a router returns:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span><span class="s">&quot;immediate&quot;</span><span class="p">:</span> <span class="bp">True</span><span class="p">,</span>
+ <span class="s">&quot;exchange&quot;</span><span class="p">:</span> <span class="s">&quot;urgent&quot;</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>the final message options will be:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">immediate</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">exchange</span><span class="o">=</span><span class="s">&quot;urgent&quot;</span><span class="p">,</span> <span class="n">routing_key</span><span class="o">=</span><span class="s">&quot;video.compress&quot;</span>
+</pre></div>
+</div>
+<p>(and any default message options defined in the
+<a class="reference internal" href="reference/celery.task.base.html#celery.task.base.Task" title="celery.task.base.Task"><tt class="xref py py-class docutils literal"><span class="pre">Task</span></tt></a> class)</p>
+</blockquote>
+</li>
+<li><p class="first">New Task handler called after the task returns:
+<a class="reference internal" href="reference/celery.task.base.html#celery.task.base.Task.after_return" title="celery.task.base.Task.after_return"><tt class="xref py py-meth docutils literal"><span class="pre">after_return()</span></tt></a>.</p>
+</li>
+<li><dl class="first docutils">
+<dt><a class="reference internal" href="internals/reference/celery.datastructures.html#celery.datastructures.ExceptionInfo" title="celery.datastructures.ExceptionInfo"><tt class="xref py py-class docutils literal"><span class="pre">ExceptionInfo</span></tt></a> now passed to</dt>
+<dd><p class="first last"><a class="reference internal" href="reference/celery.task.base.html#celery.task.base.Task.on_retry" title="celery.task.base.Task.on_retry"><tt class="xref py py-meth docutils literal"><span class="pre">on_retry()</span></tt></a>/
+<a class="reference internal" href="reference/celery.task.base.html#celery.task.base.Task.on_failure" title="celery.task.base.Task.on_failure"><tt class="xref py py-meth docutils literal"><span class="pre">on_failure()</span></tt></a> as einfo keyword argument.</p>
+</dd>
+</dl>
+</li>
+<li><p class="first">celeryd: Added <tt class="docutils literal"><span class="pre">CELERYD_MAX_TASKS_PER_CHILD</span></tt> /
+<em class="xref std std-option">--maxtasksperchild</em></p>
+<blockquote>
+<p>Defineds the maximum number of tasks a pool worker can process before
+the process is terminated and replaced by a new one.</p>
+</blockquote>
+</li>
+<li><p class="first">Revoked tasks now marked with state <tt class="docutils literal"><span class="pre">REVOKED</span></tt>, and <tt class="docutils literal"><span class="pre">result.get()</span></tt>
+will now raise <a class="reference internal" href="reference/celery.exceptions.html#celery.exceptions.TaskRevokedError" title="celery.exceptions.TaskRevokedError"><tt class="xref py py-exc docutils literal"><span class="pre">TaskRevokedError</span></tt></a>.</p>
+</li>
+<li><p class="first"><a class="reference internal" href="reference/celery.task.control.html#celery.task.control.ping" title="celery.task.control.ping"><tt class="xref py py-func docutils literal"><span class="pre">celery.task.control.ping()</span></tt></a> now works as expected.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">apply(throw=True)</span></tt> / <tt class="docutils literal"><span class="pre">CELERY_EAGER_PROPAGATES_EXCEPTIONS</span></tt>: Makes eager
+execution re-raise task errors.</p>
+</li>
+<li><p class="first">New signal: <tt class="xref py py-data docutils literal"><span class="pre">worker_process_init</span></tt>: Sent inside the
+pool worker process at init.</p>
+</li>
+<li><p class="first">celeryd <em class="xref std std-option">-Q</em> option: Ability to specifiy list of queues to use,
+disabling other configured queues.</p>
+<blockquote>
+<p>For example, if <tt class="docutils literal"><span class="pre">CELERY_QUEUES</span></tt> defines four queues: <tt class="docutils literal"><span class="pre">image</span></tt>, <tt class="docutils literal"><span class="pre">video</span></tt>,
+<tt class="docutils literal"><span class="pre">data</span></tt> and <tt class="docutils literal"><span class="pre">default</span></tt>, the following command would make celeryd only
+consume from the <tt class="docutils literal"><span class="pre">image</span></tt> and <tt class="docutils literal"><span class="pre">video</span></tt> queues:</p>
+<div class="highlight-python"><pre>$ celeryd -Q image,video</pre>
+</div>
+</blockquote>
+</li>
+<li><p class="first"><tt class="xref py py-mod docutils literal"><span class="pre">celeryd-multi</span></tt>: Tool for shell scripts
+to start multiple workers.</p>
+</li>
+</ul>
+<blockquote>
+<p>Some examples:</p>
+<div class="highlight-python"><pre># Advanced example with 10 workers:
+#   * Three of the workers processes the images and video queue
+#   * Two of the workers processes the data queue with loglevel DEBUG
+#   * the rest processes the default' queue.
+$ celeryd-multi start 10 -l INFO -Q:1-3 images,video -Q:4,5:data
+    -Q default -L:4,5 DEBUG
+
+# get commands to start 10 workers, with 3 processes each
+$ celeryd-multi start 3 -c 3
+celeryd -n celeryd1.myhost -c 3
+celeryd -n celeryd2.myhost -c 3
+celeryd- n celeryd3.myhost -c 3
+
+# start 3 named workers
+$ celeryd-multi start image video data -c 3
+celeryd -n image.myhost -c 3
+celeryd -n video.myhost -c 3
+celeryd -n data.myhost -c 3
+
+# specify custom hostname
+$ celeryd-multi start 2 -n worker.example.com -c 3
+celeryd -n celeryd1.worker.example.com -c 3
+celeryd -n celeryd2.worker.example.com -c 3
+
+# Additionl options are added to each celeryd',
+# but you can also modify the options for ranges of or single workers
+
+# 3 workers: Two with 3 processes, and one with 10 processes.
+$ celeryd-multi start 3 -c 3 -c:1 10
+celeryd -n celeryd1.myhost -c 10
+celeryd -n celeryd2.myhost -c 3
+celeryd -n celeryd3.myhost -c 3
+
+# can also specify options for named workers
+$ celeryd-multi start image video data -c 3 -c:image 10
+celeryd -n image.myhost -c 10
+celeryd -n video.myhost -c 3
+celeryd -n data.myhost -c 3
+
+# ranges and lists of workers in options is also allowed:
+# (-c:1-3 can also be written as -c:1,2,3)
+$ celeryd-multi start 5 -c 3  -c:1-3 10
+celeryd-multi -n celeryd1.myhost -c 10
+celeryd-multi -n celeryd2.myhost -c 10
+celeryd-multi -n celeryd3.myhost -c 10
+celeryd-multi -n celeryd4.myhost -c 3
+celeryd-multi -n celeryd5.myhost -c 3
+
+# lists also works with named workers
+$ celeryd-multi start foo bar baz xuzzy -c 3 -c:foo,bar,baz 10
+celeryd-multi -n foo.myhost -c 10
+celeryd-multi -n bar.myhost -c 10
+celeryd-multi -n baz.myhost -c 10
+celeryd-multi -n xuzzy.myhost -c 3</pre>
+</div>
+</blockquote>
+</div>
+</div>
+<div class="section" id="a-m-cest">
+<h2>1.0.4 [2010-05-31 09:54 A.M CEST]<a class="headerlink" href="#a-m-cest" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="critical">
+<h3>Critical<a class="headerlink" href="#critical" title="Permalink to this headline">¶</a></h3>
+<ul>
+<li><p class="first">SIGINT/Ctrl+C killed the pool, abrubtly terminating the currently executing
+tasks.</p>
+<blockquote>
+<p>Fixed by making the pool worker processes ignore <tt class="xref py py-const docutils literal"><span class="pre">SIGINT</span></tt>.</p>
+</blockquote>
+</li>
+<li><p class="first">Should not close the consumers before the pool is terminated, just cancel the consumers.</p>
+<blockquote>
+<p>Issue #122. <a class="reference external" href="http://github.com/ask/celery/issues/issue/122">http://github.com/ask/celery/issues/issue/122</a></p>
+</blockquote>
+</li>
+<li><p class="first">Now depends on <tt class="xref py py-mod docutils literal"><span class="pre">billiard</span></tt> &gt;= 0.3.1</p>
+</li>
+</ul>
+</div>
+<div class="section" id="changes">
+<h3>Changes<a class="headerlink" href="#changes" title="Permalink to this headline">¶</a></h3>
+<ul>
+<li><p class="first"><a class="reference internal" href="reference/celery.contrib.abortable.html#module-celery.contrib.abortable"><tt class="xref py py-mod docutils literal"><span class="pre">celery.contrib.abortable</span></tt></a>: Abortable tasks.</p>
+<blockquote>
+<p>Tasks that defines steps of execution, the task can then
+be aborted after each step has completed.</p>
+</blockquote>
+</li>
+<li><p class="first">Added required RPM package names under <tt class="docutils literal"><span class="pre">[bdist_rpm]</span></tt> section, to support building RPMs
+from the sources using setup.py</p>
+</li>
+<li><p class="first">Running unittests: <span class="target" id="index-1"></span><tt class="xref std std-envvar docutils literal"><span class="pre">NOSE_VERBOSE</span></tt> environment var now enables verbose output from Nose.</p>
+</li>
+<li><p class="first"><a class="reference internal" href="reference/celery.execute.html#celery.execute.apply" title="celery.execute.apply"><tt class="xref py py-func docutils literal"><span class="pre">celery.execute.apply()</span></tt></a>: Pass logfile/loglevel arguments as task kwargs.</p>
+<blockquote>
+<p>Issue #110 <a class="reference external" href="http://github.com/ask/celery/issues/issue/110">http://github.com/ask/celery/issues/issue/110</a></p>
+</blockquote>
+</li>
+<li><p class="first">celery.execute.apply: Should return exception, not <a class="reference internal" href="internals/reference/celery.datastructures.html#celery.datastructures.ExceptionInfo" title="celery.datastructures.ExceptionInfo"><tt class="xref py py-class docutils literal"><span class="pre">ExceptionInfo</span></tt></a>
+on error.</p>
+<blockquote>
+<p>Issue #111 <a class="reference external" href="http://github.com/ask/celery/issues/issue/111">http://github.com/ask/celery/issues/issue/111</a></p>
+</blockquote>
+</li>
+<li><p class="first">Added new entries to the <a class="reference internal" href="faq.html"><em>FAQs</em></a>:</p>
+<blockquote>
+<ul class="simple">
+<li>Should I use retry or acks_late?</li>
+<li>Can I execute a task by name?</li>
+</ul>
 </blockquote>
 </li>
 </ul>
@@ -344,8 +647,8 @@ and made it harder to refactor some parts.</p>
 </li>
 </ul>
 </div>
-<div class="section" id="news">
-<h3>News<a class="headerlink" href="#news" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id1">
+<h3>News<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first">AMQP backend: Added timeout support for <tt class="docutils literal"><span class="pre">result.get()</span></tt> /
 <tt class="docutils literal"><span class="pre">result.wait()</span></tt>.</p>
@@ -392,7 +695,7 @@ in practice, so consider this experimental.</p>
 </li>
 <li><p class="first"><tt class="docutils literal"><span class="pre">TaskPool.apply_async</span></tt>: Now supports the <tt class="docutils literal"><span class="pre">accept_callback</span></tt> argument.</p>
 </li>
-<li><p class="first"><tt class="docutils literal"><span class="pre">apply_async</span></tt>: Now raises <tt class="xref docutils literal"><span class="pre">ValueError</span></tt> if task args is not a list,
+<li><p class="first"><tt class="docutils literal"><span class="pre">apply_async</span></tt>: Now raises <tt class="xref py py-exc docutils literal"><span class="pre">ValueError</span></tt> if task args is not a list,
 or kwargs is not a tuple (<a class="reference external" href="http://github.com/ask/celery/issues/issue/95">http://github.com/ask/celery/issues/issue/95</a>).</p>
 </li>
 <li><p class="first"><tt class="docutils literal"><span class="pre">Task.max_retries</span></tt> can now be <tt class="xref docutils literal"><span class="pre">None</span></tt>, which means it will retry forever.</p>
@@ -476,7 +779,7 @@ or <tt class="docutils literal"><span class="pre">{&quot;failure&quot;:</span> <
 <blockquote>
 <p>Remote control commands are functions registered in the command
 registry. Registering a command is done using
-<tt class="xref docutils literal"><span class="pre">celery.worker.control.Panel.register()</span></tt>:</p>
+<tt class="xref py py-meth docutils literal"><span class="pre">celery.worker.control.Panel.register()</span></tt>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.task.control</span> <span class="kn">import</span> <span class="n">Panel</span>
 
 <span class="nd">@Panel.register</span>
@@ -655,8 +958,8 @@ emitting an error message.</p>
 </li>
 </ul>
 </div>
-<div class="section" id="id1">
-<h2>1.0.1 [2010-02-24 07:05 P.M CET]<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id2">
+<h2>1.0.1 [2010-02-24 07:05 P.M CET]<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><p class="first">Tasks are now acknowledged early instead of late.</p>
 <blockquote>
@@ -672,7 +975,7 @@ by the <tt class="docutils literal"><span class="pre">CELERYD_PREFETCH_MULTIPLIE
 times with bursts of tasks with a short execution time. If this doesn&#8217;t
 apply to your use case, you should be able to set the prefetch multiplier
 to zero, without sacrificing performance.</p>
-<p>Please note that a patch to <tt class="xref docutils literal"><span class="pre">multiprocessing</span></tt> is currently being
+<p>Please note that a patch to <tt class="xref py py-mod docutils literal"><span class="pre">multiprocessing</span></tt> is currently being
 worked on, this patch would enable us to use a better solution, and is
 scheduled for inclusion in the <tt class="docutils literal"><span class="pre">1.2.0</span></tt> release.</p>
 </blockquote>
@@ -708,11 +1011,11 @@ following should work:</p>
 <li><p class="first">Execution: <tt class="docutils literal"><span class="pre">.messaging.TaskPublisher.send_task</span></tt> now
 incorporates all the functionality apply_async previously did.</p>
 <blockquote>
-<p>Like converting countdowns to eta, so <a title="celery.execute.apply_async" class="reference external" href="reference/celery.execute.html#celery.execute.apply_async"><tt class="xref docutils literal"><span class="pre">celery.execute.apply_async()</span></tt></a> is
+<p>Like converting countdowns to eta, so <a class="reference internal" href="reference/celery.execute.html#celery.execute.apply_async" title="celery.execute.apply_async"><tt class="xref py py-func docutils literal"><span class="pre">celery.execute.apply_async()</span></tt></a> is
 now simply a convenient front-end to
-<tt class="xref docutils literal"><span class="pre">celery.messaging.TaskPublisher.send_task()</span></tt>, using
+<tt class="xref py py-meth docutils literal"><span class="pre">celery.messaging.TaskPublisher.send_task()</span></tt>, using
 the task classes default options.</p>
-<p>Also <tt class="xref docutils literal"><span class="pre">celery.execute.send_task()</span></tt> has been
+<p>Also <tt class="xref py py-func docutils literal"><span class="pre">celery.execute.send_task()</span></tt> has been
 introduced, which can apply tasks using just the task name (useful
 if the client does not have the destination task in its task registry).</p>
 <p>Example:</p>
@@ -814,10 +1117,10 @@ virtualenv.</p>
 </li>
 </ul>
 </div>
-<div class="section" id="id2">
-<h2>1.0.0 [2010-02-10 04:00 P.M CET]<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="id3">
-<h3>BACKWARD INCOMPATIBLE CHANGES<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<h2>1.0.0 [2010-02-10 04:00 P.M CET]<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id4">
+<h3>BACKWARD INCOMPATIBLE CHANGES<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first">Celery does not support detaching anymore, so you have to use the tools
 available on your platform, or something like supervisord to make
@@ -889,7 +1192,7 @@ now turn functions into tasks by using the <tt class="docutils literal"><span cl
     <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
 </pre></div>
 </div>
-<p>See the User Guide: <a class="reference external" href="userguide/tasks.html"><em>Tasks</em></a> for more information.</p>
+<p>See the User Guide: <a class="reference internal" href="userguide/tasks.html"><em>Tasks</em></a> for more information.</p>
 </blockquote>
 </li>
 <li><p class="first">The periodic task system has been rewritten to a centralized solution.</p>
@@ -993,8 +1296,8 @@ removal in v1.2.</p>
 </li>
 </ul>
 </div>
-<div class="section" id="id4">
-<h3>NEWS<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id5">
+<h3>NEWS<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first">Rate limiting support (per task type, or globally).</p>
 </li>
@@ -1050,7 +1353,7 @@ is set to <tt class="docutils literal"><span class="pre">4</span></tt> by defaul
 <li><p class="first">Improved support for webhook tasks.</p>
 <blockquote>
 <p><tt class="docutils literal"><span class="pre">celery.task.rest</span></tt> is now deprecated, replaced with the new and shiny
-<a title="" class="reference external" href="userguide/remote-tasks.html#module-celery.task.http"><tt class="xref docutils literal"><span class="pre">celery.task.http</span></tt></a>. With more reflective names, sensible interface,
+<a class="reference internal" href="userguide/remote-tasks.html#module-celery.task.http"><tt class="xref py py-mod docutils literal"><span class="pre">celery.task.http</span></tt></a>. With more reflective names, sensible interface,
 and it&#8217;s possible to override the methods used to perform HTTP requests.</p>
 </blockquote>
 </li>
@@ -1059,8 +1362,8 @@ backend.</p>
 </li>
 </ul>
 </div>
-<div class="section" id="changes">
-<h3>CHANGES<a class="headerlink" href="#changes" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id6">
+<h3>CHANGES<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first">Now depends on carrot &gt;= 0.8.1</p>
 </li>
@@ -1114,12 +1417,12 @@ of <tt class="docutils literal"><span class="pre">CELERYBEAT_MAX_LOOP_INTERVAL</
 </li>
 <li><p class="first">The worker now supports control commands enabled through the use of a
 broadcast queue, you can remotely revoke tasks or set the rate limit for
-a task type. See <a title="" class="reference external" href="reference/celery.task.control.html#module-celery.task.control"><tt class="xref docutils literal"><span class="pre">celery.task.control</span></tt></a>.</p>
+a task type. See <a class="reference internal" href="reference/celery.task.control.html#module-celery.task.control"><tt class="xref py py-mod docutils literal"><span class="pre">celery.task.control</span></tt></a>.</p>
 </li>
 <li><p class="first">The services now sets informative process names (as shown in <tt class="docutils literal"><span class="pre">ps</span></tt>
-listings) if the <tt class="xref docutils literal"><span class="pre">setproctitle</span></tt> module is installed.</p>
+listings) if the <tt class="xref py py-mod docutils literal"><span class="pre">setproctitle</span></tt> module is installed.</p>
 </li>
-<li><p class="first"><a title="celery.exceptions.NotRegistered" class="reference external" href="reference/celery.exceptions.html#celery.exceptions.NotRegistered"><tt class="xref docutils literal"><span class="pre">celery.exceptions.NotRegistered</span></tt></a> now inherits from <tt class="xref docutils literal"><span class="pre">KeyError</span></tt>,
+<li><p class="first"><a class="reference internal" href="reference/celery.exceptions.html#celery.exceptions.NotRegistered" title="celery.exceptions.NotRegistered"><tt class="xref py py-exc docutils literal"><span class="pre">celery.exceptions.NotRegistered</span></tt></a> now inherits from <tt class="xref py py-exc docutils literal"><span class="pre">KeyError</span></tt>,
 and <tt class="docutils literal"><span class="pre">TaskRegistry.__getitem__``+``pop</span></tt> raises <tt class="docutils literal"><span class="pre">NotRegistered</span></tt> instead</p>
 </li>
 <li><p class="first">You can set the loader via the <tt class="docutils literal"><span class="pre">CELERY_LOADER</span></tt> environment variable.</p>
@@ -1146,8 +1449,8 @@ database.</li>
 reference.</li>
 </ul>
 </div>
-<div class="section" id="id5">
-<h3>0.8.4 [2010-02-05 01:52 P.M CEST]<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id7">
+<h3>0.8.4 [2010-02-05 01:52 P.M CEST]<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li>Now emits a warning if the &#8211;detach argument is used.
 &#8211;detach should not be used anymore, as it has several not easily fixed
@@ -1157,8 +1460,8 @@ supervisord or launchd (os x).</li>
 <li>Error e-mails are not sent anymore when the task is retried.</li>
 </ul>
 </div>
-<div class="section" id="a-m-cest">
-<h3>0.8.3 [2009-12-22 09:43 A.M CEST]<a class="headerlink" href="#a-m-cest" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id8">
+<h3>0.8.3 [2009-12-22 09:43 A.M CEST]<a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li>Fixed a possible race condition that could happen when storing/querying
 task results using the the database backend.</li>
@@ -1166,8 +1469,8 @@ task results using the the database backend.</li>
 buildout will correctly install the programs celerybin and celeryinit.</li>
 </ul>
 </div>
-<div class="section" id="id6">
-<h3>0.8.2 [2009-11-20 03:40 P.M CEST]<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id9">
+<h3>0.8.2 [2009-11-20 03:40 P.M CEST]<a class="headerlink" href="#id9" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li>QOS Prefetch count was not applied properly, as it was set for every message
 received (which apparently behaves like, &#8220;receive one more&#8221;), instead of only
@@ -1175,8 +1478,8 @@ set when our wanted value cahnged.</li>
 </ul>
 </div>
 </div>
-<div class="section" id="id7">
-<h2>0.8.1 [2009-11-16 05:21 P.M CEST]<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id10">
+<h2>0.8.1 [2009-11-16 05:21 P.M CEST]<a class="headerlink" href="#id10" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="very-important-note">
 <h3>VERY IMPORTANT NOTE<a class="headerlink" href="#very-important-note" title="Permalink to this headline">¶</a></h3>
 <p>This release (with carrot 0.8.0) enables AMQP QoS (quality of service), which
@@ -1224,8 +1527,8 @@ that was the previously implied name.</p>
 </li>
 </ul>
 </div>
-<div class="section" id="id8">
-<h3>CHANGES<a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id11">
+<h3>CHANGES<a class="headerlink" href="#id11" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li>Incorporated the multiprocessing backport patch that fixes the
 <tt class="docutils literal"><span class="pre">processName</span></tt> error.</li>
@@ -1246,10 +1549,10 @@ supported)</li>
 </ul>
 </div>
 </div>
-<div class="section" id="id9">
-<h2>0.8.0 [2009-09-22 03:06 P.M CEST]<a class="headerlink" href="#id9" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="id10">
-<h3>BACKWARD INCOMPATIBLE CHANGES<a class="headerlink" href="#id10" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id12">
+<h2>0.8.0 [2009-09-22 03:06 P.M CEST]<a class="headerlink" href="#id12" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id13">
+<h3>BACKWARD INCOMPATIBLE CHANGES<a class="headerlink" href="#id13" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><dl class="first docutils">
 <dt>Add traceback to result value on failure.</dt>
@@ -1274,8 +1577,8 @@ be sure to initialize tables (django: <tt class="docutils literal"><span class="
 </li>
 </ul>
 </div>
-<div class="section" id="id11">
-<h3>IMPORTANT CHANGES<a class="headerlink" href="#id11" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id14">
+<h3>IMPORTANT CHANGES<a class="headerlink" href="#id14" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><dl class="first docutils">
 <dt>Celery can now be used in pure Python (outside of a Django project).</dt>
@@ -1318,10 +1621,10 @@ incredibly fast!</p>
 <li><dl class="first docutils">
 <dt>Add Task.on_success, .on_retry, .on_failure handlers</dt>
 <dd><dl class="first last docutils">
-<dt>See <a title="celery.task.base.Task.on_success" class="reference external" href="reference/celery.task.base.html#celery.task.base.Task.on_success"><tt class="xref docutils literal"><span class="pre">celery.task.base.Task.on_success()</span></tt></a>,</dt>
+<dt>See <a class="reference internal" href="reference/celery.task.base.html#celery.task.base.Task.on_success" title="celery.task.base.Task.on_success"><tt class="xref py py-meth docutils literal"><span class="pre">celery.task.base.Task.on_success()</span></tt></a>,</dt>
 <dd><dl class="first last docutils">
-<dt><a title="celery.task.base.Task.on_retry" class="reference external" href="reference/celery.task.base.html#celery.task.base.Task.on_retry"><tt class="xref docutils literal"><span class="pre">celery.task.base.Task.on_retry()</span></tt></a>,</dt>
-<dd><p class="first last"><a title="celery.task.base.Task.on_failure" class="reference external" href="reference/celery.task.base.html#celery.task.base.Task.on_failure"><tt class="xref docutils literal"><span class="pre">celery.task.base.Task.on_failure()</span></tt></a>,</p>
+<dt><a class="reference internal" href="reference/celery.task.base.html#celery.task.base.Task.on_retry" title="celery.task.base.Task.on_retry"><tt class="xref py py-meth docutils literal"><span class="pre">celery.task.base.Task.on_retry()</span></tt></a>,</dt>
+<dd><p class="first last"><a class="reference internal" href="reference/celery.task.base.html#celery.task.base.Task.on_failure" title="celery.task.base.Task.on_failure"><tt class="xref py py-meth docutils literal"><span class="pre">celery.task.base.Task.on_failure()</span></tt></a>,</p>
 </dd>
 </dl>
 </dd>
@@ -1337,8 +1640,8 @@ incredibly fast!</p>
 </li>
 <li><dl class="first docutils">
 <dt>You can now customize what happens at worker start, at process init, etc</dt>
-<dd><p class="first last">by creating your own loaders. (see <a title="" class="reference external" href="reference/celery.loaders.default.html#module-celery.loaders.default"><tt class="xref docutils literal"><span class="pre">celery.loaders.default</span></tt></a>,
-<tt class="xref docutils literal"><span class="pre">celery.loaders.djangoapp</span></tt>, <a title="" class="reference external" href="reference/celery.loaders.html#module-celery.loaders"><tt class="xref docutils literal"><span class="pre">celery.loaders</span></tt></a>.)</p>
+<dd><p class="first last">by creating your own loaders. (see <a class="reference internal" href="reference/celery.loaders.default.html#module-celery.loaders.default"><tt class="xref py py-mod docutils literal"><span class="pre">celery.loaders.default</span></tt></a>,
+<tt class="xref py py-mod docutils literal"><span class="pre">celery.loaders.djangoapp</span></tt>, <a class="reference internal" href="reference/celery.loaders.html#module-celery.loaders"><tt class="xref py py-mod docutils literal"><span class="pre">celery.loaders</span></tt></a>.)</p>
 </dd>
 </dl>
 </li>
@@ -1370,8 +1673,8 @@ is encouraged to improve this situation.</p>
 </li>
 </ul>
 </div>
-<div class="section" id="id12">
-<h3>NEWS<a class="headerlink" href="#id12" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id15">
+<h3>NEWS<a class="headerlink" href="#id15" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><dl class="first docutils">
 <dt>Fix an incompatibility between python-daemon and multiprocessing,</dt>
@@ -1396,7 +1699,7 @@ detaching.</p>
 </li>
 <li><dl class="first docutils">
 <dt>New signals introduced: <tt class="docutils literal"><span class="pre">task_sent</span></tt>, <tt class="docutils literal"><span class="pre">task_prerun</span></tt> and</dt>
-<dd><p class="first last"><tt class="docutils literal"><span class="pre">task_postrun</span></tt>, see <tt class="xref docutils literal"><span class="pre">celery.signals</span></tt> for more information.</p>
+<dd><p class="first last"><tt class="docutils literal"><span class="pre">task_postrun</span></tt>, see <tt class="xref py py-mod docutils literal"><span class="pre">celery.signals</span></tt> for more information.</p>
 </dd>
 </dl>
 </li>
@@ -1430,7 +1733,7 @@ detaching.</p>
 </dd>
 </dl>
 </li>
-<li><p class="first">jail() refactored into <tt class="xref docutils literal"><span class="pre">celery.execute.ExecuteWrapper</span></tt>.</p>
+<li><p class="first">jail() refactored into <tt class="xref py py-class docutils literal"><span class="pre">celery.execute.ExecuteWrapper</span></tt>.</p>
 </li>
 <li><p class="first"><tt class="docutils literal"><span class="pre">views.apply</span></tt> now correctly sets mimetype to &#8220;application/json&#8221;</p>
 </li>
@@ -1457,8 +1760,8 @@ detaching.</p>
 </div>
 <div class="section" id="a-m-cet">
 <h2>0.6.0 [2009-08-07 06:54 A.M CET]<a class="headerlink" href="#a-m-cet" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="id13">
-<h3>IMPORTANT CHANGES<a class="headerlink" href="#id13" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id16">
+<h3>IMPORTANT CHANGES<a class="headerlink" href="#id16" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><dl class="first docutils">
 <dt>Fixed a bug where tasks raising unpickleable exceptions crashed pool</dt>
@@ -1487,8 +1790,8 @@ specify a task name.</p>
 </li>
 </ul>
 </div>
-<div class="section" id="id14">
-<h3>NEWS<a class="headerlink" href="#id14" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id17">
+<h3>NEWS<a class="headerlink" href="#id17" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first">Tested with Django 1.1</p>
 </li>
@@ -1569,15 +1872,15 @@ includes the ETA for the task (if any).</p>
 </ul>
 </div>
 </div>
-<div class="section" id="id15">
-<h2>0.4.1 [2009-07-02 01:42 P.M CET]<a class="headerlink" href="#id15" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id18">
+<h2>0.4.1 [2009-07-02 01:42 P.M CET]<a class="headerlink" href="#id18" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Fixed a bug with parsing the message options (<tt class="docutils literal"><span class="pre">mandatory</span></tt>,
 <tt class="docutils literal"><span class="pre">routing_key</span></tt>, <tt class="docutils literal"><span class="pre">priority</span></tt>, <tt class="docutils literal"><span class="pre">immediate</span></tt>)</li>
 </ul>
 </div>
-<div class="section" id="id16">
-<h2>0.4.0 [2009-07-01 07:29 P.M CET]<a class="headerlink" href="#id16" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id19">
+<h2>0.4.0 [2009-07-01 07:29 P.M CET]<a class="headerlink" href="#id19" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Adds eager execution. <tt class="docutils literal"><span class="pre">celery.execute.apply``|``Task.apply</span></tt> executes the
 function blocking until the task is done, for API compatiblity it
@@ -1588,8 +1891,8 @@ celery to always run tasks locally by setting the
 <li>99% coverage using python <tt class="docutils literal"><span class="pre">coverage</span></tt> 3.0.</li>
 </ul>
 </div>
-<div class="section" id="id17">
-<h2>0.3.20 [2009-06-25 08:42 P.M CET]<a class="headerlink" href="#id17" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id20">
+<h2>0.3.20 [2009-06-25 08:42 P.M CET]<a class="headerlink" href="#id20" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><p class="first">New arguments to <tt class="docutils literal"><span class="pre">apply_async</span></tt> (the advanced version of
 <tt class="docutils literal"><span class="pre">delay_task</span></tt>), <tt class="docutils literal"><span class="pre">countdown</span></tt> and <tt class="docutils literal"><span class="pre">eta</span></tt>;</p>
@@ -1674,8 +1977,8 @@ shortcuts, plus imports objects from <tt class="docutils literal"><span class="p
 </blockquote>
 </li>
 </ul>
-<div class="section" id="id18">
-<h3>0.3.7 [2008-06-16 11:41 P.M CET]<a class="headerlink" href="#id18" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id21">
+<h3>0.3.7 [2008-06-16 11:41 P.M CET]<a class="headerlink" href="#id21" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first"><strong>IMPORTANT</strong> Now uses AMQP&#8217;s <tt class="docutils literal"><span class="pre">basic.consume</span></tt> instead of
 <tt class="docutils literal"><span class="pre">basic.get</span></tt>. This means we&#8217;re no longer polling the broker for
@@ -1742,31 +2045,31 @@ executed.</p>
 </ul>
 </div>
 </div>
-<div class="section" id="id19">
-<h2>0.3.3 [2009-06-08 01:07 P.M CET]<a class="headerlink" href="#id19" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id22">
+<h2>0.3.3 [2009-06-08 01:07 P.M CET]<a class="headerlink" href="#id22" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>The <tt class="docutils literal"><span class="pre">PeriodicWorkController</span></tt> now sleeps for 1 second between checking
 for periodic tasks to execute.</li>
 </ul>
 </div>
-<div class="section" id="id20">
-<h2>0.3.2 [2009-06-08 01:07 P.M CET]<a class="headerlink" href="#id20" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id23">
+<h2>0.3.2 [2009-06-08 01:07 P.M CET]<a class="headerlink" href="#id23" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>celeryd: Added option <tt class="docutils literal"><span class="pre">--discard</span></tt>: Discard (delete!) all waiting
 messages in the queue.</li>
 <li>celeryd: The <tt class="docutils literal"><span class="pre">--wakeup-after</span></tt> option was not handled as a float.</li>
 </ul>
 </div>
-<div class="section" id="id21">
-<h2>0.3.1 [2009-06-08 01:07 P.M CET]<a class="headerlink" href="#id21" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id24">
+<h2>0.3.1 [2009-06-08 01:07 P.M CET]<a class="headerlink" href="#id24" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>The <cite>PeriodicTask`</cite> worker is now running in its own thread instead
 of blocking the <tt class="docutils literal"><span class="pre">TaskController</span></tt> loop.</li>
 <li>Default <tt class="docutils literal"><span class="pre">QUEUE_WAKEUP_AFTER</span></tt> has been lowered to <tt class="docutils literal"><span class="pre">0.1</span></tt> (was <tt class="docutils literal"><span class="pre">0.3</span></tt>)</li>
 </ul>
 </div>
-<div class="section" id="id22">
-<h2>0.3.0 [2009-06-08 12:41 P.M CET]<a class="headerlink" href="#id22" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id25">
+<h2>0.3.0 [2009-06-08 12:41 P.M CET]<a class="headerlink" href="#id25" title="Permalink to this headline">¶</a></h2>
 <p><strong>NOTE</strong> This is a development version, for the stable release, please
 see versions 0.2.x.</p>
 <p><strong>VERY IMPORTANT:</strong> Pickle is now the encoder used for serializing task
@@ -1825,8 +2128,8 @@ Thanks Vitaly Babiy.</li>
 stability.</li>
 </ul>
 </div>
-<div class="section" id="id23">
-<h2>0.2.0 [2009-05-20 05:14 P.M CET]<a class="headerlink" href="#id23" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id26">
+<h2>0.2.0 [2009-05-20 05:14 P.M CET]<a class="headerlink" href="#id26" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Final release of 0.2.0</li>
 <li>Compatible with carrot version 0.4.0.</li>
@@ -1859,23 +2162,23 @@ been removed. Use <tt class="docutils literal"><span class="pre">celery.backends
 and <tt class="docutils literal"><span class="pre">celery.backends.default_backend.mark_as_failure()</span></tt> instead.</li>
 </ul>
 </div>
-<div class="section" id="id24">
-<h2>0.1.15 [2009-05-19 04:13 P.M CET]<a class="headerlink" href="#id24" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id27">
+<h2>0.1.15 [2009-05-19 04:13 P.M CET]<a class="headerlink" href="#id27" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>The celery daemon was leaking AMQP connections, this should be fixed,
 if you have any problems with too many files open (like <tt class="docutils literal"><span class="pre">emfile</span></tt>
 errors in <tt class="docutils literal"><span class="pre">rabbit.log</span></tt>, please contact us!</li>
 </ul>
 </div>
-<div class="section" id="id25">
-<h2>0.1.14 [2009-05-19 01:08 P.M CET]<a class="headerlink" href="#id25" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id28">
+<h2>0.1.14 [2009-05-19 01:08 P.M CET]<a class="headerlink" href="#id28" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Fixed a syntax error in the <tt class="docutils literal"><span class="pre">TaskSet</span></tt> class.  (No such variable
 <tt class="docutils literal"><span class="pre">TimeOutError</span></tt>).</li>
 </ul>
 </div>
-<div class="section" id="id26">
-<h2>0.1.13 [2009-05-19 12:36 P.M CET]<a class="headerlink" href="#id26" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id29">
+<h2>0.1.13 [2009-05-19 12:36 P.M CET]<a class="headerlink" href="#id29" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><p class="first">Forgot to add <tt class="docutils literal"><span class="pre">yadayada</span></tt> to install requirements.</p>
 </li>
@@ -1896,8 +2199,8 @@ $ make html</pre>
 </li>
 </ul>
 </div>
-<div class="section" id="id27">
-<h2>0.1.12 [2009-05-18 04:38 P.M CET]<a class="headerlink" href="#id27" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id30">
+<h2>0.1.12 [2009-05-18 04:38 P.M CET]<a class="headerlink" href="#id30" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><p class="first"><tt class="docutils literal"><span class="pre">delay_task()</span></tt> etc. now returns <tt class="docutils literal"><span class="pre">celery.task.AsyncResult</span></tt> object,
 which lets you check the result and any failure that might have
@@ -1941,23 +2244,23 @@ settings file. e.g:</p>
 </li>
 </ul>
 </div>
-<div class="section" id="id28">
-<h2>0.1.11 [2009-05-12 02:08 P.M CET]<a class="headerlink" href="#id28" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id31">
+<h2>0.1.11 [2009-05-12 02:08 P.M CET]<a class="headerlink" href="#id31" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>The logging system was leaking file descriptors, resulting in
 servers stopping with the EMFILES (too many open files) error. (fixed)</li>
 </ul>
 </div>
-<div class="section" id="id29">
-<h2>0.1.10 [2009-05-11 12:46 P.M CET]<a class="headerlink" href="#id29" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id32">
+<h2>0.1.10 [2009-05-11 12:46 P.M CET]<a class="headerlink" href="#id32" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Tasks now supports both positional arguments and keyword arguments.</li>
 <li>Requires carrot 0.3.8.</li>
 <li>The daemon now tries to reconnect if the connection is lost.</li>
 </ul>
 </div>
-<div class="section" id="id30">
-<h2>0.1.8 [2009-05-07 12:27 P.M CET]<a class="headerlink" href="#id30" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id33">
+<h2>0.1.8 [2009-05-07 12:27 P.M CET]<a class="headerlink" href="#id33" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Better test coverage</li>
 <li>More documentation</li>
@@ -1965,8 +2268,8 @@ servers stopping with the EMFILES (too many open files) error. (fixed)</li>
 <tt class="docutils literal"><span class="pre">settings.CELERYD_EMPTY_MSG_EMIT_EVERY</span></tt> is 0.</li>
 </ul>
 </div>
-<div class="section" id="id31">
-<h2>0.1.7 [2009-04-30 1:50 P.M CET]<a class="headerlink" href="#id31" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id34">
+<h2>0.1.7 [2009-04-30 1:50 P.M CET]<a class="headerlink" href="#id34" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Added some unittests</li>
 <li>Can now use the database for task metadata (like if the task has
@@ -1978,8 +2281,8 @@ within the <tt class="docutils literal"><span class="pre">tests</span></tt> proj
 and <tt class="docutils literal"><span class="pre">settings.CELERY_AMQP_CONSUMER_QUEUE</span></tt>.</li>
 </ul>
 </div>
-<div class="section" id="id32">
-<h2>0.1.6 [2009-04-28 2:13 P.M CET]<a class="headerlink" href="#id32" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id35">
+<h2>0.1.6 [2009-04-28 2:13 P.M CET]<a class="headerlink" href="#id35" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><p class="first">Introducing <tt class="docutils literal"><span class="pre">TaskSet</span></tt>. A set of subtasks is executed and you can
 find out how many, or if all them, are done (excellent for progress
@@ -2022,8 +2325,8 @@ the name change request is in <tt class="docutils literal"><span class="pre">doc
 </li>
 </ul>
 </div>
-<div class="section" id="id33">
-<h2>0.1.0 [2009-04-24 11:28 A.M CET]<a class="headerlink" href="#id33" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id36">
+<h2>0.1.0 [2009-04-24 11:28 A.M CET]<a class="headerlink" href="#id36" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Initial release</li>
 </ul>
@@ -2037,7 +2340,7 @@ the name change request is in <tt class="docutils literal"><span class="pre">doc
     <div class="footer">
     <p>
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
 	</p>
     </div>
       <div class="clearer"></div>

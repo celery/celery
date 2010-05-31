@@ -1,3 +1,4 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -12,12 +13,13 @@
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
         VERSION:     '1.1.0 (unstable)',
-        COLLAPSE_MODINDEX: false,
+        COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
     <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
@@ -35,7 +37,7 @@
 		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
 		<li id="page_buttons">
 			<div class="headerButton"><a href="../genindex.html" title="General Index" accesskey="I">index</a></div>
-			<div class="headerButton"><a href="../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="../py-modindex.html" title="Python Module Index" >modules</a></div>
 			<div class="headerButton"><a href="celery.task.html" title="Task Information and Utilities - celery.task" accesskey="N">next</a></div>
 			<div class="headerButton"><a href="celery.execute.html" title="Executing Tasks - celery.execute" accesskey="P">previous</a></div>
 		</li>
@@ -46,41 +48,42 @@
   <div class="sphinxsidebarwrapper">
 	<ul><li class="toctree-l1"><a href="../index.html">Main Page</a></li></ul>
 	<ul class="current">
-<li class="toctree-l1"><a class="reference external" href="../getting-started/index.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference external" href="../userguide/index.html">User Guide</a></li>
-<li class="toctree-l1"><a class="reference external" href="../configuration.html">Configuration and defaults</a></li>
-<li class="toctree-l1"><a class="reference external" href="../cookbook/index.html">Cookbook</a></li>
-<li class="toctree-l1"><a class="reference external" href="../tutorials/index.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1 current"><a class="reference external" href="index.html">API Reference</a><ul class="current">
-<li class="toctree-l2"><a class="reference external" href="celery.decorators.html">Task Decorators - celery.decorators</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.base.html">Defining Tasks - celery.task.base</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.execute.html">Executing Tasks - celery.execute</a></li>
-<li class="toctree-l2 current"><a class="current reference external" href="">Task Result - celery.result</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.html">Task Information and Utilities - celery.task</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.conf.html">Configuration - celery.conf</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.control.html">Remote Management of Workers - celery.task.control</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.http.html">HTTP Callback Tasks - celery.task.http</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.schedules.html">Periodic Task Schedule Behaviors - celery.task.schedules</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.signals.html">Signals - celery.signals</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.exceptions.html">Exceptions - celery.exceptions</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.builtins.html">Built-in Task Classes - celery.task.builtins</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.loaders.html">Loaders - celery.loaders</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.loaders.base.html">Loader Base Classes - celery.loaders.base</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.registry.html">Task Registry - celery.registry</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.states.html">Task States - celery.states</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.messaging.html">Messaging - celery.messaging</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.contrib.abortable.html">Contrib: Abortable tasks - celery.contrib.abortable</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.events.html">Events - celery.events</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.bin.celerybeat.html">Celery Periodic Task Server - celery.bin.celerybeat</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.bin.camqadm.html">caqmadm: AMQP API Command-line Shell - celery.bin.camqadm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting-started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="celery.decorators.html">Task Decorators - celery.decorators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.base.html">Defining Tasks - celery.task.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.execute.html">Executing Tasks - celery.execute</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">Task Result - celery.result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.html">Task Information and Utilities - celery.task</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.conf.html">Configuration - celery.conf</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.control.html">Remote Management of Workers - celery.task.control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.http.html">HTTP Callback Tasks - celery.task.http</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.schedules.html">Periodic Task Schedule Behaviors - celery.task.schedules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.signals.html">Signals - celery.signals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.exceptions.html">Exceptions - celery.exceptions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.builtins.html">Built-in Task Classes - celery.task.builtins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.loaders.html">Loaders - celery.loaders</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.loaders.base.html">Loader Base Classes - celery.loaders.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.registry.html">Task Registry - celery.registry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.states.html">Task States - celery.states</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.messaging.html">Messaging - celery.messaging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.contrib.abortable.html">Contrib: Abortable tasks - celery.contrib.abortable</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.events.html">Events - celery.events</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.celerybeat.html">Celery Periodic Task Server - celery.bin.celerybeat</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.camqadm.html">caqmadm: AMQP API Command-line Shell - celery.bin.camqadm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.celeryd_multi.html">Celeryd Multi Tool - celery.bin.celeryd_multi</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference external" href="../internals/index.html">Internals</a></li>
-<li class="toctree-l1"><a class="reference external" href="../changelog.html">Change history</a></li>
-<li class="toctree-l1"><a class="reference external" href="../links.html">Interesting Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../internals/index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../links.html">Interesting Links</a></li>
 </ul>
 
       <h3>This Page</h3>
@@ -116,7 +119,7 @@
           <div class="body">
             
   <div class="section" id="module-celery.result">
-<h1>Task Result - celery.result<a class="headerlink" href="#module-celery.result" title="Permalink to this headline">¶</a></h1>
+<span id="task-result-celery-result"></span><h1>Task Result - celery.result<a class="headerlink" href="#module-celery.result" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="celery.result.AsyncResult">
 <em class="property">class </em><tt class="descclassname">celery.result.</tt><tt class="descname">AsyncResult</tt><big>(</big><em>task_id</em>, <em>backend=None</em><big>)</big><a class="headerlink" href="#celery.result.AsyncResult" title="Permalink to this definition">¶</a></dt>
@@ -125,19 +128,24 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>task_id</em> &#8211; see <a title="celery.result.AsyncResult.task_id" class="reference internal" href="#celery.result.AsyncResult.task_id"><tt class="xref docutils literal"><span class="pre">task_id</span></tt></a>.</td>
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>task_id</strong> &#8211; see <a class="reference internal" href="#celery.result.AsyncResult.task_id" title="celery.result.AsyncResult.task_id"><tt class="xref py py-attr docutils literal"><span class="pre">task_id</span></tt></a>.</li>
+</ul>
+</td>
 </tr>
 </tbody>
 </table>
 <dl class="attribute">
 <dt id="celery.result.AsyncResult.task_id">
 <tt class="descname">task_id</tt><a class="headerlink" href="#celery.result.AsyncResult.task_id" title="Permalink to this definition">¶</a></dt>
-<dd>The unique identifier for this task.</dd></dl>
+<dd><p>The unique identifier for this task.</p>
+</dd></dl>
 
 <dl class="attribute">
 <dt id="celery.result.AsyncResult.backend">
 <tt class="descname">backend</tt><a class="headerlink" href="#celery.result.AsyncResult.backend" title="Permalink to this definition">¶</a></dt>
-<dd>Instance of <a title="celery.backends.DefaultBackend" class="reference external" href="../internals/reference/celery.backends.html#celery.backends.DefaultBackend"><tt class="xref docutils literal"><span class="pre">celery.backends.DefaultBackend</span></tt></a>.</dd></dl>
+<dd><p>Instance of <a class="reference internal" href="../internals/reference/celery.backends.html#celery.backends.DefaultBackend" title="celery.backends.DefaultBackend"><tt class="xref py py-class docutils literal"><span class="pre">celery.backends.DefaultBackend</span></tt></a>.</p>
+</dd></dl>
 
 </dd></dl>
 
@@ -150,8 +158,8 @@
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><em>task_id</em> &#8211; see <a title="celery.result.BaseAsyncResult.task_id" class="reference internal" href="#celery.result.BaseAsyncResult.task_id"><tt class="xref docutils literal"><span class="pre">task_id</span></tt></a>.</li>
-<li><em>backend</em> &#8211; see <a title="celery.result.BaseAsyncResult.backend" class="reference internal" href="#celery.result.BaseAsyncResult.backend"><tt class="xref docutils literal"><span class="pre">backend</span></tt></a>.</li>
+<li><strong>task_id</strong> &#8211; see <a class="reference internal" href="#celery.result.BaseAsyncResult.task_id" title="celery.result.BaseAsyncResult.task_id"><tt class="xref py py-attr docutils literal"><span class="pre">task_id</span></tt></a>.</li>
+<li><strong>backend</strong> &#8211; see <a class="reference internal" href="#celery.result.BaseAsyncResult.backend" title="celery.result.BaseAsyncResult.backend"><tt class="xref py py-attr docutils literal"><span class="pre">backend</span></tt></a>.</li>
 </ul>
 </td>
 </tr>
@@ -160,22 +168,26 @@
 <dl class="attribute">
 <dt id="celery.result.BaseAsyncResult.task_id">
 <tt class="descname">task_id</tt><a class="headerlink" href="#celery.result.BaseAsyncResult.task_id" title="Permalink to this definition">¶</a></dt>
-<dd>The unique identifier for this task.</dd></dl>
+<dd><p>The unique identifier for this task.</p>
+</dd></dl>
 
 <dl class="attribute">
 <dt id="celery.result.BaseAsyncResult.backend">
 <tt class="descname">backend</tt><a class="headerlink" href="#celery.result.BaseAsyncResult.backend" title="Permalink to this definition">¶</a></dt>
-<dd>The task result backend used.</dd></dl>
+<dd><p>The task result backend used.</p>
+</dd></dl>
 
 <dl class="exception">
 <dt id="celery.result.BaseAsyncResult.TimeoutError">
 <em class="property">exception </em><tt class="descname">TimeoutError</tt><a class="headerlink" href="#celery.result.BaseAsyncResult.TimeoutError" title="Permalink to this definition">¶</a></dt>
-<dd>The operation timed out.</dd></dl>
+<dd><p>The operation timed out.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.result.BaseAsyncResult.get">
 <tt class="descclassname">BaseAsyncResult.</tt><tt class="descname">get</tt><big>(</big><em>timeout=None</em><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult.get" title="Permalink to this definition">¶</a></dt>
-<dd>Alias to <a title="celery.result.BaseAsyncResult.wait" class="reference internal" href="#celery.result.BaseAsyncResult.wait"><tt class="xref docutils literal"><span class="pre">wait()</span></tt></a>.</dd></dl>
+<dd><p>Alias to <a class="reference internal" href="#celery.result.BaseAsyncResult.wait" title="celery.result.BaseAsyncResult.wait"><tt class="xref py py-meth docutils literal"><span class="pre">wait()</span></tt></a>.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.result.BaseAsyncResult.ready">
@@ -225,11 +237,11 @@ The task is to be retried, possibly because of failure.</blockquote>
 <p><em>FAILURE</em></p>
 <blockquote>
 The task raised an exception, or has been retried more times
-than its limit. The <a title="celery.result.BaseAsyncResult.result" class="reference internal" href="#celery.result.BaseAsyncResult.result"><tt class="xref docutils literal"><span class="pre">result</span></tt></a> attribute contains the
+than its limit. The <a class="reference internal" href="#celery.result.BaseAsyncResult.result" title="celery.result.BaseAsyncResult.result"><tt class="xref py py-attr docutils literal"><span class="pre">result</span></tt></a> attribute contains the
 exception raised.</blockquote>
 <p><em>SUCCESS</em></p>
 <blockquote>
-The task executed successfully. The <a title="celery.result.BaseAsyncResult.result" class="reference internal" href="#celery.result.BaseAsyncResult.result"><tt class="xref docutils literal"><span class="pre">result</span></tt></a> attribute
+The task executed successfully. The <a class="reference internal" href="#celery.result.BaseAsyncResult.result" title="celery.result.BaseAsyncResult.result"><tt class="xref py py-attr docutils literal"><span class="pre">result</span></tt></a> attribute
 contains the resulting value.</blockquote>
 </blockquote>
 </dd></dl>
@@ -251,7 +263,8 @@ contains the resulting value.</blockquote>
 <dl class="attribute">
 <dt id="celery.result.BaseAsyncResult.traceback">
 <tt class="descclassname">BaseAsyncResult.</tt><tt class="descname">traceback</tt><a class="headerlink" href="#celery.result.BaseAsyncResult.traceback" title="Permalink to this definition">¶</a></dt>
-<dd>Get the traceback of a failed task.</dd></dl>
+<dd><p>Get the traceback of a failed task.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.result.BaseAsyncResult.wait">
@@ -261,12 +274,16 @@ contains the resulting value.</blockquote>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>timeout</em> &#8211; How long to wait, in seconds, before the
-operation times out.</td>
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>timeout</strong> &#8211; How long to wait, in seconds, before the
+operation times out.</li>
+</ul>
+</td>
 </tr>
-<tr class="field"><th class="field-name" colspan="2">Raises <a title="celery.exceptions.TimeoutError" class="reference external" href="celery.exceptions.html#celery.exceptions.TimeoutError">celery.exceptions.TimeoutError</a>:</th></tr>
-<tr><td>&nbsp;</td><td class="field-body">if <tt class="docutils literal"><span class="pre">timeout</span></tt> is not <tt class="xref docutils literal"><span class="pre">None</span></tt>
-and the result does not arrive within <tt class="docutils literal"><span class="pre">timeout</span></tt> seconds.</td>
+<tr class="field"><th class="field-name" colspan="2">Raises <a class="reference internal" href="celery.exceptions.html#celery.exceptions.TimeoutError" title="celery.exceptions.TimeoutError">celery.exceptions.TimeoutError</a>:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first last">if <tt class="docutils literal"><span class="pre">timeout</span></tt> is not <tt class="xref docutils literal"><span class="pre">None</span></tt>
+and the result does not arrive within <tt class="docutils literal"><span class="pre">timeout</span></tt> seconds.</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -283,68 +300,77 @@ exception will be re-raised.</p>
 <dl class="exception">
 <dt id="celery.result.EagerResult.TimeoutError">
 <em class="property">exception </em><tt class="descname">TimeoutError</tt><a class="headerlink" href="#celery.result.EagerResult.TimeoutError" title="Permalink to this definition">¶</a></dt>
-<dd>The operation timed out.</dd></dl>
+<dd><p>The operation timed out.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.result.EagerResult.ready">
 <tt class="descclassname">EagerResult.</tt><tt class="descname">ready</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.EagerResult.ready" title="Permalink to this definition">¶</a></dt>
-<dd>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task has been executed.</dd></dl>
+<dd><p>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task has been executed.</p>
+</dd></dl>
 
 <dl class="attribute">
 <dt id="celery.result.EagerResult.result">
 <tt class="descclassname">EagerResult.</tt><tt class="descname">result</tt><a class="headerlink" href="#celery.result.EagerResult.result" title="Permalink to this definition">¶</a></dt>
-<dd>The tasks return value</dd></dl>
+<dd><p>The tasks return value</p>
+</dd></dl>
 
 <dl class="attribute">
 <dt id="celery.result.EagerResult.status">
 <tt class="descclassname">EagerResult.</tt><tt class="descname">status</tt><a class="headerlink" href="#celery.result.EagerResult.status" title="Permalink to this definition">¶</a></dt>
-<dd>The tasks status</dd></dl>
+<dd><p>The tasks status</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.result.EagerResult.successful">
 <tt class="descclassname">EagerResult.</tt><tt class="descname">successful</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.EagerResult.successful" title="Permalink to this definition">¶</a></dt>
-<dd>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task executed without failure.</dd></dl>
+<dd><p>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task executed without failure.</p>
+</dd></dl>
 
 <dl class="attribute">
 <dt id="celery.result.EagerResult.traceback">
 <tt class="descclassname">EagerResult.</tt><tt class="descname">traceback</tt><a class="headerlink" href="#celery.result.EagerResult.traceback" title="Permalink to this definition">¶</a></dt>
-<dd>The traceback if the task failed.</dd></dl>
+<dd><p>The traceback if the task failed.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.result.EagerResult.wait">
 <tt class="descclassname">EagerResult.</tt><tt class="descname">wait</tt><big>(</big><em>timeout=None</em><big>)</big><a class="headerlink" href="#celery.result.EagerResult.wait" title="Permalink to this definition">¶</a></dt>
-<dd>Wait until the task has been executed and return its result.</dd></dl>
+<dd><p>Wait until the task has been executed and return its result.</p>
+</dd></dl>
 
 </dd></dl>
 
 <dl class="class">
 <dt id="celery.result.TaskSetResult">
 <em class="property">class </em><tt class="descclassname">celery.result.</tt><tt class="descname">TaskSetResult</tt><big>(</big><em>taskset_id</em>, <em>subtasks</em><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult" title="Permalink to this definition">¶</a></dt>
-<dd><p>Working with <a title="celery.task.TaskSet" class="reference external" href="celery.task.html#celery.task.TaskSet"><tt class="xref docutils literal"><span class="pre">celery.task.TaskSet</span></tt></a> results.</p>
+<dd><p>Working with <a class="reference internal" href="celery.task.html#celery.task.TaskSet" title="celery.task.TaskSet"><tt class="xref py py-class docutils literal"><span class="pre">celery.task.TaskSet</span></tt></a> results.</p>
 <p>An instance of this class is returned by
-<a title="celery.task.TaskSet.apply_async" class="reference external" href="celery.task.html#celery.task.TaskSet.apply_async"><tt class="xref docutils literal"><span class="pre">celery.task.TaskSet.apply_async()</span></tt></a>. It lets you inspect the
+<a class="reference internal" href="celery.task.html#celery.task.TaskSet.apply_async" title="celery.task.TaskSet.apply_async"><tt class="xref py py-meth docutils literal"><span class="pre">celery.task.TaskSet.apply_async()</span></tt></a>. It lets you inspect the
 status and return values of the taskset as a single entity.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name" colspan="2">Option taskset_id:</th></tr>
-<tr><td>&nbsp;</td><td class="field-body">see <a title="celery.result.TaskSetResult.taskset_id" class="reference internal" href="#celery.result.TaskSetResult.taskset_id"><tt class="xref docutils literal"><span class="pre">taskset_id</span></tt></a>.</td>
+<tr><td>&nbsp;</td><td class="field-body">see <a class="reference internal" href="#celery.result.TaskSetResult.taskset_id" title="celery.result.TaskSetResult.taskset_id"><tt class="xref py py-attr docutils literal"><span class="pre">taskset_id</span></tt></a>.</td>
 </tr>
 <tr class="field"><th class="field-name" colspan="2">Option subtasks:</th></tr>
-<tr><td>&nbsp;</td><td class="field-body">see <a title="celery.result.TaskSetResult.subtasks" class="reference internal" href="#celery.result.TaskSetResult.subtasks"><tt class="xref docutils literal"><span class="pre">subtasks</span></tt></a>.</td>
+<tr><td>&nbsp;</td><td class="field-body">see <a class="reference internal" href="#celery.result.TaskSetResult.subtasks" title="celery.result.TaskSetResult.subtasks"><tt class="xref py py-attr docutils literal"><span class="pre">subtasks</span></tt></a>.</td>
 </tr>
 </tbody>
 </table>
 <dl class="attribute">
 <dt id="celery.result.TaskSetResult.taskset_id">
 <tt class="descname">taskset_id</tt><a class="headerlink" href="#celery.result.TaskSetResult.taskset_id" title="Permalink to this definition">¶</a></dt>
-<dd>The UUID of the taskset itself.</dd></dl>
+<dd><p>The UUID of the taskset itself.</p>
+</dd></dl>
 
 <dl class="attribute">
 <dt id="celery.result.TaskSetResult.subtasks">
 <tt class="descname">subtasks</tt><a class="headerlink" href="#celery.result.TaskSetResult.subtasks" title="Permalink to this definition">¶</a></dt>
-<dd>A list of <a title="celery.result.AsyncResult" class="reference internal" href="#celery.result.AsyncResult"><tt class="xref docutils literal"><span class="pre">AsyncResult</span></tt></a> instances for all of the subtasks.</dd></dl>
+<dd><p>A list of <a class="reference internal" href="#celery.result.AsyncResult" title="celery.result.AsyncResult"><tt class="xref py py-class docutils literal"><span class="pre">AsyncResult</span></tt></a> instances for all of the subtasks.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.result.TaskSetResult.completed_count">
@@ -368,7 +394,7 @@ status and return values of the taskset as a single entity.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><tt class="xref docutils literal"><span class="pre">True</span></tt> if any of the tasks in the taskset failed.
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body">&lt;literal&gt;True&lt;/literal&gt; if any of the tasks in the taskset failed.
 (i.e., raised an exception)</td>
 </tr>
 </tbody>
@@ -384,7 +410,7 @@ one by one.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Raises:</th><td class="field-body">The exception if any of the tasks raised an exception.</td>
+<tr class="field"><th class="field-name">Raises :</th><td class="field-body">The exception if any of the tasks raised an exception.</td>
 </tr>
 </tbody>
 </table>
@@ -399,7 +425,7 @@ one by one.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Returns:</th><td class="field-body">an iterator for iterating over the tasksets
-<a title="celery.result.AsyncResult" class="reference internal" href="#celery.result.AsyncResult"><tt class="xref docutils literal"><span class="pre">AsyncResult</span></tt></a> objects.</td>
+<a class="reference internal" href="#celery.result.AsyncResult" title="celery.result.AsyncResult"><tt class="xref py py-class docutils literal"><span class="pre">AsyncResult</span></tt></a> objects.</td>
 </tr>
 </tbody>
 </table>
@@ -415,17 +441,21 @@ were called.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>timeout</em> &#8211; The time in seconds, how long
-it will wait for results, before the operation times out.</td>
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>timeout</strong> &#8211; The time in seconds, how long
+it will wait for results, before the operation times out.</li>
+</ul>
+</td>
 </tr>
-<tr class="field"><th class="field-name" colspan="2">Raises <a title="celery.exceptions.TimeoutError" class="reference external" href="celery.exceptions.html#celery.exceptions.TimeoutError">celery.exceptions.TimeoutError</a>:</th></tr>
-<tr><td>&nbsp;</td><td class="field-body">if <tt class="docutils literal"><span class="pre">timeout</span></tt> is not <tt class="xref docutils literal"><span class="pre">None</span></tt>
-and the operation takes longer than <tt class="docutils literal"><span class="pre">timeout</span></tt> seconds.</td>
+<tr class="field"><th class="field-name" colspan="2">Raises <a class="reference internal" href="celery.exceptions.html#celery.exceptions.TimeoutError" title="celery.exceptions.TimeoutError">celery.exceptions.TimeoutError</a>:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first last">if <tt class="docutils literal"><span class="pre">timeout</span></tt> is not <tt class="xref docutils literal"><span class="pre">None</span></tt>
+and the operation takes longer than <tt class="docutils literal"><span class="pre">timeout</span></tt> seconds.</p>
+</td>
 </tr>
 </tbody>
 </table>
 <p>If any of the tasks raises an exception, the exception
-will be reraised by <a title="celery.result.TaskSetResult.join" class="reference internal" href="#celery.result.TaskSetResult.join"><tt class="xref docutils literal"><span class="pre">join()</span></tt></a>.</p>
+will be reraised by <a class="reference internal" href="#celery.result.TaskSetResult.join" title="celery.result.TaskSetResult.join"><tt class="xref py py-meth docutils literal"><span class="pre">join()</span></tt></a>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -444,7 +474,7 @@ will be reraised by <a title="celery.result.TaskSetResult.join" class="reference
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><tt class="xref docutils literal"><span class="pre">True</span></tt> if all of the tasks in the taskset has been
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body">&lt;literal&gt;True&lt;/literal&gt; if all of the tasks in the taskset has been
 executed.</td>
 </tr>
 </tbody>
@@ -453,13 +483,14 @@ executed.</td>
 
 <dl class="classmethod">
 <dt id="celery.result.TaskSetResult.restore">
-<em class="property">classmethod </em><tt class="descname">restore</tt><big>(</big><em>taskset_id</em>, <em>backend=&lt;celery.backends.database.DatabaseBackend object at 0x103caf710&gt;</em><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult.restore" title="Permalink to this definition">¶</a></dt>
-<dd>Restore previously saved taskset result.</dd></dl>
+<em class="property">classmethod </em><tt class="descname">restore</tt><big>(</big><em>taskset_id</em>, <em>backend=&lt;celery.backends.database.DatabaseBackend object at 0x103e637d0&gt;</em><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult.restore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Restore previously saved taskset result.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.result.TaskSetResult.save">
-<tt class="descname">save</tt><big>(</big><em>backend=&lt;celery.backends.database.DatabaseBackend object at 0x103caf710&gt;</em><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult.save" title="Permalink to this definition">¶</a></dt>
-<dd><p>Save taskset result for later retrieval using <a title="celery.result.TaskSetResult.restore" class="reference internal" href="#celery.result.TaskSetResult.restore"><tt class="xref docutils literal"><span class="pre">restore()</span></tt></a>.</p>
+<tt class="descname">save</tt><big>(</big><em>backend=&lt;celery.backends.database.DatabaseBackend object at 0x103e637d0&gt;</em><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save taskset result for later retrieval using <a class="reference internal" href="#celery.result.TaskSetResult.restore" title="celery.result.TaskSetResult.restore"><tt class="xref py py-meth docutils literal"><span class="pre">restore()</span></tt></a>.</p>
 <p>Example:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">TaskSetResult</span><span class="o">.</span><span class="n">restore</span><span class="p">(</span><span class="n">task_id</span><span class="p">)</span>
@@ -475,7 +506,7 @@ executed.</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><tt class="xref docutils literal"><span class="pre">True</span></tt> if all of the tasks in the taskset finished
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body">&lt;literal&gt;True&lt;/literal&gt; if all of the tasks in the taskset finished
 successfully (i.e. did not raise an exception).</td>
 </tr>
 </tbody>
@@ -485,7 +516,8 @@ successfully (i.e. did not raise an exception).</td>
 <dl class="attribute">
 <dt id="celery.result.TaskSetResult.total">
 <tt class="descname">total</tt><a class="headerlink" href="#celery.result.TaskSetResult.total" title="Permalink to this definition">¶</a></dt>
-<dd>The total number of tasks in the <a title="celery.task.TaskSet" class="reference external" href="celery.task.html#celery.task.TaskSet"><tt class="xref docutils literal"><span class="pre">celery.task.TaskSet</span></tt></a>.</dd></dl>
+<dd><p>The total number of tasks in the <a class="reference internal" href="celery.task.html#celery.task.TaskSet" title="celery.task.TaskSet"><tt class="xref py py-class docutils literal"><span class="pre">celery.task.TaskSet</span></tt></a>.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.result.TaskSetResult.waiting">
@@ -495,7 +527,7 @@ successfully (i.e. did not raise an exception).</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><tt class="xref docutils literal"><span class="pre">True</span></tt> if any of the tasks in the taskset is still
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body">&lt;literal&gt;True&lt;/literal&gt; if any of the tasks in the taskset is still
 waiting for execution.</td>
 </tr>
 </tbody>
@@ -513,7 +545,7 @@ waiting for execution.</td>
     <div class="footer">
     <p>
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
 	</p>
     </div>
       <div class="clearer"></div>

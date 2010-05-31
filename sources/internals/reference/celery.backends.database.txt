@@ -1,6 +1,6 @@
-=============================================
-Backend: Database - celery.backends.database
-=============================================
+=========================================================
+ Backend: SQLAlchemy Database - celery.backends.database
+=========================================================
 
 .. currentmodule:: celery.backends.database
 

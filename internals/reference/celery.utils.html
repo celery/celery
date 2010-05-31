@@ -1,3 +1,4 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -12,17 +13,18 @@
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
         VERSION:     '1.1.0 (unstable)',
-        COLLAPSE_MODINDEX: false,
+        COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="../../static/jquery.js"></script>
+    <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
     <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="Time and Date Utilities - celery.utils.timeutils" href="celery.utils.timeutils.html" />
-    <link rel="prev" title="Logging - celery.log" href="celery.log.html" />
+    <link rel="prev" title="SQLAlchemy Session - celery.db.session" href="celery.db.session.html" />
     <link media="only screen and (max-device-width: 480px)" href="../../static/mobile.css" type="text/css" rel="stylesheet" /> 
   </head>
   <body>
@@ -35,9 +37,9 @@
 		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
 		<li id="page_buttons">
 			<div class="headerButton"><a href="../../genindex.html" title="General Index" accesskey="I">index</a></div>
-			<div class="headerButton"><a href="../../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="../../py-modindex.html" title="Python Module Index" >modules</a></div>
 			<div class="headerButton"><a href="celery.utils.timeutils.html" title="Time and Date Utilities - celery.utils.timeutils" accesskey="N">next</a></div>
-			<div class="headerButton"><a href="celery.log.html" title="Logging - celery.log" accesskey="P">previous</a></div>
+			<div class="headerButton"><a href="celery.db.session.html" title="SQLAlchemy Session - celery.db.session" accesskey="P">previous</a></div>
 		</li>
 	</ul>
 </div>
@@ -46,16 +48,16 @@
   <div class="sphinxsidebarwrapper">
 	<ul><li class="toctree-l1"><a href="../../index.html">Main Page</a></li></ul>
 	<ul>
-<li class="toctree-l1"><a class="reference external" href="../../getting-started/index.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../userguide/index.html">User Guide</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../configuration.html">Configuration and defaults</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../cookbook/index.html">Cookbook</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../tutorials/index.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../reference/index.html">API Reference</a></li>
-<li class="toctree-l1"><a class="reference external" href="../index.html">Internals</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../changelog.html">Change history</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../links.html">Interesting Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting-started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../links.html">Interesting Links</a></li>
 </ul>
 
       <h3>This Page</h3>
@@ -91,7 +93,7 @@
           <div class="body">
             
   <div class="section" id="module-celery.utils">
-<h1>Multiprocessing Worker - celery.worker<a class="headerlink" href="#module-celery.utils" title="Permalink to this headline">¶</a></h1>
+<span id="multiprocessing-worker-celery-worker"></span><h1>Multiprocessing Worker - celery.worker<a class="headerlink" href="#module-celery.utils" title="Permalink to this headline">¶</a></h1>
 <dl class="function">
 <dt id="celery.utils.chunks">
 <tt class="descclassname">celery.utils.</tt><tt class="descname">chunks</tt><big>(</big><em>it</em>, <em>n</em><big>)</big><a class="headerlink" href="#celery.utils.chunks" title="Permalink to this definition">¶</a></dt>
@@ -112,8 +114,9 @@
 <dl class="function">
 <dt id="celery.utils.first">
 <tt class="descclassname">celery.utils.</tt><tt class="descname">first</tt><big>(</big><em>predicate</em>, <em>iterable</em><big>)</big><a class="headerlink" href="#celery.utils.first" title="Permalink to this definition">¶</a></dt>
-<dd>Returns the first element in <tt class="docutils literal"><span class="pre">iterable</span></tt> that <tt class="docutils literal"><span class="pre">predicate</span></tt> returns a
-<tt class="xref docutils literal"><span class="pre">True</span></tt> value for.</dd></dl>
+<dd><p>Returns the first element in <tt class="docutils literal"><span class="pre">iterable</span></tt> that <tt class="docutils literal"><span class="pre">predicate</span></tt> returns a
+<tt class="xref docutils literal"><span class="pre">True</span></tt> value for.</p>
+</dd></dl>
 
 <dl class="function">
 <dt id="celery.utils.fun_takes_kwargs">
@@ -121,14 +124,14 @@
 <dd><p>With a function, and a list of keyword arguments, returns arguments
 in the list which the function takes.</p>
 <p>If the object has an <tt class="docutils literal"><span class="pre">argspec</span></tt> attribute that is used instead
-of using the <tt class="xref docutils literal"><span class="pre">inspect.getargspec`()</span></tt> introspection.</p>
+of using the <tt class="xref py py-meth docutils literal"><span class="pre">inspect.getargspec`()</span></tt> introspection.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><em>fun</em> &#8211; The function to inspect arguments of.</li>
-<li><em>kwlist</em> &#8211; The list of keyword arguments.</li>
+<li><strong>fun</strong> &#8211; The function to inspect arguments of.</li>
+<li><strong>kwlist</strong> &#8211; The list of keyword arguments.</li>
 </ul>
 </td>
 </tr>
@@ -155,7 +158,7 @@ of using the <tt class="xref docutils literal"><span class="pre">inspect.getargs
 <tt class="descclassname">celery.utils.</tt><tt class="descname">gen_unique_id</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.utils.gen_unique_id" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generate a unique id, having - hopefully - a very small chance of
 collission.</p>
-<p>For now this is provided by <tt class="xref docutils literal"><span class="pre">uuid.uuid4()</span></tt>.</p>
+<p>For now this is provided by <tt class="xref py py-func docutils literal"><span class="pre">uuid.uuid4()</span></tt>.</p>
 </dd></dl>
 
 <dl class="function">
@@ -193,26 +196,29 @@ True</p>
 <dl class="function">
 <dt id="celery.utils.get_full_cls_name">
 <tt class="descclassname">celery.utils.</tt><tt class="descname">get_full_cls_name</tt><big>(</big><em>cls</em><big>)</big><a class="headerlink" href="#celery.utils.get_full_cls_name" title="Permalink to this definition">¶</a></dt>
-<dd>With a class, get its full module and class name.</dd></dl>
+<dd><p>With a class, get its full module and class name.</p>
+</dd></dl>
 
 <dl class="function">
 <dt id="celery.utils.instantiate">
 <tt class="descclassname">celery.utils.</tt><tt class="descname">instantiate</tt><big>(</big><em>name</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.utils.instantiate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Instantiate class by name.</p>
-<p>See <a title="celery.utils.get_cls_by_name" class="reference internal" href="#celery.utils.get_cls_by_name"><tt class="xref docutils literal"><span class="pre">get_cls_by_name()</span></tt></a>.</p>
+<p>See <a class="reference internal" href="#celery.utils.get_cls_by_name" title="celery.utils.get_cls_by_name"><tt class="xref py py-func docutils literal"><span class="pre">get_cls_by_name()</span></tt></a>.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="celery.utils.mattrgetter">
 <tt class="descclassname">celery.utils.</tt><tt class="descname">mattrgetter</tt><big>(</big><em>*attrs</em><big>)</big><a class="headerlink" href="#celery.utils.mattrgetter" title="Permalink to this definition">¶</a></dt>
-<dd>Like <tt class="xref docutils literal"><span class="pre">operator.itemgetter()</span></tt> but returns <tt class="xref docutils literal"><span class="pre">None</span></tt> on missing
-attributes instead of raising <tt class="xref docutils literal"><span class="pre">AttributeError</span></tt>.</dd></dl>
+<dd><p>Like <tt class="xref py py-func docutils literal"><span class="pre">operator.itemgetter()</span></tt> but returns <tt class="xref docutils literal"><span class="pre">None</span></tt> on missing
+attributes instead of raising <tt class="xref py py-exc docutils literal"><span class="pre">AttributeError</span></tt>.</p>
+</dd></dl>
 
 <dl class="function">
 <dt id="celery.utils.mitemgetter">
 <tt class="descclassname">celery.utils.</tt><tt class="descname">mitemgetter</tt><big>(</big><em>*items</em><big>)</big><a class="headerlink" href="#celery.utils.mitemgetter" title="Permalink to this definition">¶</a></dt>
-<dd>Like <tt class="xref docutils literal"><span class="pre">operator.itemgetter()</span></tt> but returns <tt class="xref docutils literal"><span class="pre">None</span></tt> on missing items
-instead of raising <tt class="xref docutils literal"><span class="pre">KeyError</span></tt>.</dd></dl>
+<dd><p>Like <tt class="xref py py-func docutils literal"><span class="pre">operator.itemgetter()</span></tt> but returns <tt class="xref docutils literal"><span class="pre">None</span></tt> on missing items
+instead of raising <tt class="xref py py-exc docutils literal"><span class="pre">KeyError</span></tt>.</p>
+</dd></dl>
 
 <dl class="function">
 <dt id="celery.utils.noop">
@@ -240,12 +246,13 @@ instead of raising <tt class="xref docutils literal"><span class="pre">KeyError<
 <dl class="function">
 <dt id="celery.utils.repeatlast">
 <tt class="descclassname">celery.utils.</tt><tt class="descname">repeatlast</tt><big>(</big><em>it</em><big>)</big><a class="headerlink" href="#celery.utils.repeatlast" title="Permalink to this definition">¶</a></dt>
-<dd>Iterate over all elements in the iterator, and when its exhausted
-yield the last value infinitely.</dd></dl>
+<dd><p>Iterate over all elements in the iterator, and when its exhausted
+yield the last value infinitely.</p>
+</dd></dl>
 
 <dl class="function">
 <dt id="celery.utils.retry_over_time">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">retry_over_time</tt><big>(</big><em>fun</em>, <em>catch</em>, <em>args=</em><span class="optional">[</span><span class="optional">]</span>, <em>kwargs={}</em>, <em>errback=&lt;function noop at 0x103c9fc80&gt;</em>, <em>max_retries=None</em>, <em>interval_start=2</em>, <em>interval_step=2</em>, <em>interval_max=30</em><big>)</big><a class="headerlink" href="#celery.utils.retry_over_time" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.utils.</tt><tt class="descname">retry_over_time</tt><big>(</big><em>fun</em>, <em>catch</em>, <em>args=</em><span class="optional">[</span><span class="optional">]</span>, <em>kwargs={}</em>, <em>errback=&lt;function noop at 0x10308f938&gt;</em>, <em>max_retries=None</em>, <em>interval_start=2</em>, <em>interval_step=2</em>, <em>interval_max=30</em><big>)</big><a class="headerlink" href="#celery.utils.retry_over_time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retry the function over and over until max retries is exceeded.</p>
 <p>For each retry we sleep a for a while before we try again, this interval
 is increased for every retry until the max seconds is reached.</p>
@@ -254,22 +261,22 @@ is increased for every retry until the max seconds is reached.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><em>fun</em> &#8211; The function to try</li>
-<li><em>catch</em> &#8211; Exceptions to catch, can be either tuple or a single
+<li><strong>fun</strong> &#8211; The function to try</li>
+<li><strong>catch</strong> &#8211; Exceptions to catch, can be either tuple or a single
 exception class.</li>
-<li><em>args</em> &#8211; Positional arguments passed on to the function.</li>
-<li><em>kwargs</em> &#8211; Keyword arguments passed on to the function.</li>
-<li><em>errback</em> &#8211; Callback for when an exception in <tt class="docutils literal"><span class="pre">catch</span></tt> is raised.
+<li><strong>args</strong> &#8211; Positional arguments passed on to the function.</li>
+<li><strong>kwargs</strong> &#8211; Keyword arguments passed on to the function.</li>
+<li><strong>errback</strong> &#8211; Callback for when an exception in <tt class="docutils literal"><span class="pre">catch</span></tt> is raised.
 The callback must take two arguments: <tt class="docutils literal"><span class="pre">exc</span></tt> and <tt class="docutils literal"><span class="pre">interval</span></tt>, where
 <tt class="docutils literal"><span class="pre">exc</span></tt> is the exception instance, and <tt class="docutils literal"><span class="pre">interval</span></tt> is the time in
 seconds to sleep next..</li>
-<li><em>max_retries</em> &#8211; Maximum number of retries before we give up.
+<li><strong>max_retries</strong> &#8211; Maximum number of retries before we give up.
 If this is not set, we will retry forever.</li>
-<li><em>interval_start</em> &#8211; How long (in seconds) we start sleeping between
+<li><strong>interval_start</strong> &#8211; How long (in seconds) we start sleeping between
 retries.</li>
-<li><em>interval_step</em> &#8211; By how much the interval is increased for each
+<li><strong>interval_step</strong> &#8211; By how much the interval is increased for each
 retry.</li>
-<li><em>interval_max</em> &#8211; Maximum number of seconds to sleep between retries.</li>
+<li><strong>interval_max</strong> &#8211; Maximum number of seconds to sleep between retries.</li>
 </ul>
 </td>
 </tr>
@@ -286,7 +293,7 @@ retry.</li>
     <div class="footer">
     <p>
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
 	</p>
     </div>
       <div class="clearer"></div>

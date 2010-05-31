@@ -1,3 +1,4 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -12,12 +13,13 @@
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
         VERSION:     '1.1.0 (unstable)',
-        COLLAPSE_MODINDEX: false,
+        COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
     <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
@@ -35,7 +37,7 @@
 		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
 		<li id="page_buttons">
 			<div class="headerButton"><a href="../genindex.html" title="General Index" accesskey="I">index</a></div>
-			<div class="headerButton"><a href="../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="../py-modindex.html" title="Python Module Index" >modules</a></div>
 			<div class="headerButton"><a href="celery.task.http.html" title="HTTP Callback Tasks - celery.task.http" accesskey="N">next</a></div>
 			<div class="headerButton"><a href="celery.conf.html" title="Configuration - celery.conf" accesskey="P">previous</a></div>
 		</li>
@@ -46,41 +48,42 @@
   <div class="sphinxsidebarwrapper">
 	<ul><li class="toctree-l1"><a href="../index.html">Main Page</a></li></ul>
 	<ul class="current">
-<li class="toctree-l1"><a class="reference external" href="../getting-started/index.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference external" href="../userguide/index.html">User Guide</a></li>
-<li class="toctree-l1"><a class="reference external" href="../configuration.html">Configuration and defaults</a></li>
-<li class="toctree-l1"><a class="reference external" href="../cookbook/index.html">Cookbook</a></li>
-<li class="toctree-l1"><a class="reference external" href="../tutorials/index.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1 current"><a class="reference external" href="index.html">API Reference</a><ul class="current">
-<li class="toctree-l2"><a class="reference external" href="celery.decorators.html">Task Decorators - celery.decorators</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.base.html">Defining Tasks - celery.task.base</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.execute.html">Executing Tasks - celery.execute</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.result.html">Task Result - celery.result</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.html">Task Information and Utilities - celery.task</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.conf.html">Configuration - celery.conf</a></li>
-<li class="toctree-l2 current"><a class="current reference external" href="">Remote Management of Workers - celery.task.control</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.http.html">HTTP Callback Tasks - celery.task.http</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.schedules.html">Periodic Task Schedule Behaviors - celery.task.schedules</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.signals.html">Signals - celery.signals</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.exceptions.html">Exceptions - celery.exceptions</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.builtins.html">Built-in Task Classes - celery.task.builtins</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.loaders.html">Loaders - celery.loaders</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.loaders.base.html">Loader Base Classes - celery.loaders.base</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.registry.html">Task Registry - celery.registry</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.states.html">Task States - celery.states</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.messaging.html">Messaging - celery.messaging</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.contrib.abortable.html">Contrib: Abortable tasks - celery.contrib.abortable</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.events.html">Events - celery.events</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.bin.celerybeat.html">Celery Periodic Task Server - celery.bin.celerybeat</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.bin.camqadm.html">caqmadm: AMQP API Command-line Shell - celery.bin.camqadm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting-started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="celery.decorators.html">Task Decorators - celery.decorators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.base.html">Defining Tasks - celery.task.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.execute.html">Executing Tasks - celery.execute</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.result.html">Task Result - celery.result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.html">Task Information and Utilities - celery.task</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.conf.html">Configuration - celery.conf</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">Remote Management of Workers - celery.task.control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.http.html">HTTP Callback Tasks - celery.task.http</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.schedules.html">Periodic Task Schedule Behaviors - celery.task.schedules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.signals.html">Signals - celery.signals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.exceptions.html">Exceptions - celery.exceptions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.builtins.html">Built-in Task Classes - celery.task.builtins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.loaders.html">Loaders - celery.loaders</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.loaders.base.html">Loader Base Classes - celery.loaders.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.registry.html">Task Registry - celery.registry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.states.html">Task States - celery.states</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.messaging.html">Messaging - celery.messaging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.contrib.abortable.html">Contrib: Abortable tasks - celery.contrib.abortable</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.events.html">Events - celery.events</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.celerybeat.html">Celery Periodic Task Server - celery.bin.celerybeat</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.camqadm.html">caqmadm: AMQP API Command-line Shell - celery.bin.camqadm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.celeryd_multi.html">Celeryd Multi Tool - celery.bin.celeryd_multi</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference external" href="../internals/index.html">Internals</a></li>
-<li class="toctree-l1"><a class="reference external" href="../changelog.html">Change history</a></li>
-<li class="toctree-l1"><a class="reference external" href="../links.html">Interesting Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../internals/index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../links.html">Interesting Links</a></li>
 </ul>
 
       <h3>This Page</h3>
@@ -116,7 +119,7 @@
           <div class="body">
             
   <div class="section" id="module-celery.task.control">
-<h1>Remote Management of Workers - celery.task.control<a class="headerlink" href="#module-celery.task.control" title="Permalink to this headline">¶</a></h1>
+<span id="remote-management-of-workers-celery-task-control"></span><h1>Remote Management of Workers - celery.task.control<a class="headerlink" href="#module-celery.task.control" title="Permalink to this headline">¶</a></h1>
 <dl class="function">
 <dt id="celery.task.control.broadcast">
 <tt class="descclassname">celery.task.control.</tt><tt class="descname">broadcast</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.control.broadcast" title="Permalink to this definition">¶</a></dt>
@@ -126,17 +129,17 @@
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><em>command</em> &#8211; Name of command to send.</li>
-<li><em>arguments</em> &#8211; Keyword arguments for the command.</li>
-<li><em>destination</em> &#8211; If set, a list of the hosts to send the command to,
+<li><strong>command</strong> &#8211; Name of command to send.</li>
+<li><strong>arguments</strong> &#8211; Keyword arguments for the command.</li>
+<li><strong>destination</strong> &#8211; If set, a list of the hosts to send the command to,
 when empty broadcast to all workers.</li>
-<li><em>connection</em> &#8211; Custom broker connection to use, if not set,
+<li><strong>connection</strong> &#8211; Custom broker connection to use, if not set,
 a connection will be established automatically.</li>
-<li><em>connect_timeout</em> &#8211; Timeout for new connection if a custom
+<li><strong>connect_timeout</strong> &#8211; Timeout for new connection if a custom
 connection is not provided.</li>
-<li><em>reply</em> &#8211; Wait for and return the reply.</li>
-<li><em>timeout</em> &#8211; Timeout in seconds to wait for the reply.</li>
-<li><em>limit</em> &#8211; Limit number of replies.</li>
+<li><strong>reply</strong> &#8211; Wait for and return the reply.</li>
+<li><strong>timeout</strong> &#8211; Timeout in seconds to wait for the reply.</li>
+<li><strong>limit</strong> &#8211; Limit number of replies.</li>
 </ul>
 </td>
 </tr>
@@ -170,15 +173,15 @@ be deleted from the messaging server.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><em>destination</em> &#8211; If set, a list of the hosts to send the command to,
+<li><strong>destination</strong> &#8211; If set, a list of the hosts to send the command to,
 when empty broadcast to all workers.</li>
-<li><em>connection</em> &#8211; Custom broker connection to use, if not set,
+<li><strong>connection</strong> &#8211; Custom broker connection to use, if not set,
 a connection will be established automatically.</li>
-<li><em>connect_timeout</em> &#8211; Timeout for new connection if a custom
+<li><strong>connect_timeout</strong> &#8211; Timeout for new connection if a custom
 connection is not provided.</li>
-<li><em>reply</em> &#8211; Wait for and return the reply.</li>
-<li><em>timeout</em> &#8211; Timeout in seconds to wait for the reply.</li>
-<li><em>limit</em> &#8211; Limit number of replies.</li>
+<li><strong>reply</strong> &#8211; Wait for and return the reply.</li>
+<li><strong>timeout</strong> &#8211; Timeout in seconds to wait for the reply.</li>
+<li><strong>limit</strong> &#8211; Limit number of replies.</li>
 </ul>
 </td>
 </tr>
@@ -195,19 +198,19 @@ connection is not provided.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><em>task_name</em> &#8211; Type of task to change rate limit for.</li>
-<li><em>rate_limit</em> &#8211; The rate limit as tasks per second, or a rate limit
-string (<tt class="docutils literal"><span class="pre">&quot;100/m&quot;</span></tt>, etc. see <a title="celery.task.base.Task.rate_limit" class="reference external" href="celery.task.base.html#celery.task.base.Task.rate_limit"><tt class="xref docutils literal"><span class="pre">celery.task.base.Task.rate_limit</span></tt></a>
+<li><strong>task_name</strong> &#8211; Type of task to change rate limit for.</li>
+<li><strong>rate_limit</strong> &#8211; The rate limit as tasks per second, or a rate limit
+string (<tt class="docutils literal"><span class="pre">&quot;100/m&quot;</span></tt>, etc. see <a class="reference internal" href="celery.task.base.html#celery.task.base.Task.rate_limit" title="celery.task.base.Task.rate_limit"><tt class="xref py py-attr docutils literal"><span class="pre">celery.task.base.Task.rate_limit</span></tt></a>
 for more information).</li>
-<li><em>destination</em> &#8211; If set, a list of the hosts to send the command to,
+<li><strong>destination</strong> &#8211; If set, a list of the hosts to send the command to,
 when empty broadcast to all workers.</li>
-<li><em>connection</em> &#8211; Custom broker connection to use, if not set,
+<li><strong>connection</strong> &#8211; Custom broker connection to use, if not set,
 a connection will be established automatically.</li>
-<li><em>connect_timeout</em> &#8211; Timeout for new connection if a custom
+<li><strong>connect_timeout</strong> &#8211; Timeout for new connection if a custom
 connection is not provided.</li>
-<li><em>reply</em> &#8211; Wait for and return the reply.</li>
-<li><em>timeout</em> &#8211; Timeout in seconds to wait for the reply.</li>
-<li><em>limit</em> &#8211; Limit number of replies.</li>
+<li><strong>reply</strong> &#8211; Wait for and return the reply.</li>
+<li><strong>timeout</strong> &#8211; Timeout in seconds to wait for the reply.</li>
+<li><strong>limit</strong> &#8211; Limit number of replies.</li>
 </ul>
 </td>
 </tr>
@@ -226,16 +229,16 @@ it after all.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><em>task_id</em> &#8211; Id of the task to revoke.</li>
-<li><em>destination</em> &#8211; If set, a list of the hosts to send the command to,
+<li><strong>task_id</strong> &#8211; Id of the task to revoke.</li>
+<li><strong>destination</strong> &#8211; If set, a list of the hosts to send the command to,
 when empty broadcast to all workers.</li>
-<li><em>connection</em> &#8211; Custom broker connection to use, if not set,
+<li><strong>connection</strong> &#8211; Custom broker connection to use, if not set,
 a connection will be established automatically.</li>
-<li><em>connect_timeout</em> &#8211; Timeout for new connection if a custom
+<li><strong>connect_timeout</strong> &#8211; Timeout for new connection if a custom
 connection is not provided.</li>
-<li><em>reply</em> &#8211; Wait for and return the reply.</li>
-<li><em>timeout</em> &#8211; Timeout in seconds to wait for the reply.</li>
-<li><em>limit</em> &#8211; Limit number of replies.</li>
+<li><strong>reply</strong> &#8211; Wait for and return the reply.</li>
+<li><strong>timeout</strong> &#8211; Timeout in seconds to wait for the reply.</li>
+<li><strong>limit</strong> &#8211; Limit number of replies.</li>
 </ul>
 </td>
 </tr>
@@ -252,7 +255,7 @@ connection is not provided.</li>
     <div class="footer">
     <p>
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
 	</p>
     </div>
       <div class="clearer"></div>

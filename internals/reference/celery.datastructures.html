@@ -1,3 +1,4 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -12,16 +13,17 @@
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
         VERSION:     '1.1.0 (unstable)',
-        COLLAPSE_MODINDEX: false,
+        COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="../../static/jquery.js"></script>
+    <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
     <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
-    <link rel="next" title="Logging - celery.log" href="celery.log.html" />
+    <link rel="next" title="Message Routers - celery.routes" href="celery.routes.html" />
     <link rel="prev" title="Tracing Execution - celery.execute.trace" href="celery.execute.trace.html" />
     <link media="only screen and (max-device-width: 480px)" href="../../static/mobile.css" type="text/css" rel="stylesheet" /> 
   </head>
@@ -35,8 +37,8 @@
 		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
 		<li id="page_buttons">
 			<div class="headerButton"><a href="../../genindex.html" title="General Index" accesskey="I">index</a></div>
-			<div class="headerButton"><a href="../../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
-			<div class="headerButton"><a href="celery.log.html" title="Logging - celery.log" accesskey="N">next</a></div>
+			<div class="headerButton"><a href="../../py-modindex.html" title="Python Module Index" >modules</a></div>
+			<div class="headerButton"><a href="celery.routes.html" title="Message Routers - celery.routes" accesskey="N">next</a></div>
 			<div class="headerButton"><a href="celery.execute.trace.html" title="Tracing Execution - celery.execute.trace" accesskey="P">previous</a></div>
 		</li>
 	</ul>
@@ -46,16 +48,16 @@
   <div class="sphinxsidebarwrapper">
 	<ul><li class="toctree-l1"><a href="../../index.html">Main Page</a></li></ul>
 	<ul>
-<li class="toctree-l1"><a class="reference external" href="../../getting-started/index.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../userguide/index.html">User Guide</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../configuration.html">Configuration and defaults</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../cookbook/index.html">Cookbook</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../tutorials/index.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../reference/index.html">API Reference</a></li>
-<li class="toctree-l1"><a class="reference external" href="../index.html">Internals</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../changelog.html">Change history</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../links.html">Interesting Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting-started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../links.html">Interesting Links</a></li>
 </ul>
 
       <h3>This Page</h3>
@@ -91,7 +93,7 @@
           <div class="body">
             
   <div class="section" id="module-celery.datastructures">
-<h1>Datastructures - celery.datastructures<a class="headerlink" href="#module-celery.datastructures" title="Permalink to this headline">¶</a></h1>
+<span id="datastructures-celery-datastructures"></span><h1>Datastructures - celery.datastructures<a class="headerlink" href="#module-celery.datastructures" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="celery.datastructures.ExceptionInfo">
 <em class="property">class </em><tt class="descclassname">celery.datastructures.</tt><tt class="descname">ExceptionInfo</tt><big>(</big><em>exc_info</em><big>)</big><a class="headerlink" href="#celery.datastructures.ExceptionInfo" title="Permalink to this definition">¶</a></dt>
@@ -100,20 +102,25 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>exc_info</em> &#8211; The exception tuple info as returned by
-<tt class="xref docutils literal"><span class="pre">traceback.format_exception()</span></tt>.</td>
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>exc_info</strong> &#8211; The exception tuple info as returned by
+<tt class="xref py py-func docutils literal"><span class="pre">traceback.format_exception()</span></tt>.</li>
+</ul>
+</td>
 </tr>
 </tbody>
 </table>
 <dl class="attribute">
 <dt id="celery.datastructures.ExceptionInfo.exception">
 <tt class="descname">exception</tt><a class="headerlink" href="#celery.datastructures.ExceptionInfo.exception" title="Permalink to this definition">¶</a></dt>
-<dd>The original exception.</dd></dl>
+<dd><p>The original exception.</p>
+</dd></dl>
 
 <dl class="attribute">
 <dt id="celery.datastructures.ExceptionInfo.traceback">
 <tt class="descname">traceback</tt><a class="headerlink" href="#celery.datastructures.ExceptionInfo.traceback" title="Permalink to this definition">¶</a></dt>
-<dd>A traceback from the point when <a title="celery.datastructures.ExceptionInfo.exception" class="reference internal" href="#celery.datastructures.ExceptionInfo.exception"><tt class="xref docutils literal"><span class="pre">exception</span></tt></a> was raised.</dd></dl>
+<dd><p>A traceback from the point when <a class="reference internal" href="#celery.datastructures.ExceptionInfo.exception" title="celery.datastructures.ExceptionInfo.exception"><tt class="xref py py-attr docutils literal"><span class="pre">exception</span></tt></a> was raised.</p>
+</dd></dl>
 
 </dd></dl>
 
@@ -129,9 +136,9 @@ consume too much resources.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><em>maxlen</em> &#8211; Maximum number of members before we start
+<li><strong>maxlen</strong> &#8211; Maximum number of members before we start
 deleting expired members.</li>
-<li><em>expires</em> &#8211; Time in seconds, before a membership expires.</li>
+<li><strong>expires</strong> &#8211; Time in seconds, before a membership expires.</li>
 </ul>
 </td>
 </tr>
@@ -140,17 +147,20 @@ deleting expired members.</li>
 <dl class="method">
 <dt id="celery.datastructures.LimitedSet.add">
 <tt class="descname">add</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#celery.datastructures.LimitedSet.add" title="Permalink to this definition">¶</a></dt>
-<dd>Add a new member.</dd></dl>
+<dd><p>Add a new member.</p>
+</dd></dl>
 
 <dl class="attribute">
 <dt id="celery.datastructures.LimitedSet.first">
 <tt class="descname">first</tt><a class="headerlink" href="#celery.datastructures.LimitedSet.first" title="Permalink to this definition">¶</a></dt>
-<dd>Get the oldest member.</dd></dl>
+<dd><p>Get the oldest member.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.datastructures.LimitedSet.pop_value">
 <tt class="descname">pop_value</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#celery.datastructures.LimitedSet.pop_value" title="Permalink to this definition">¶</a></dt>
-<dd>Remove membership by finding value.</dd></dl>
+<dd><p>Remove membership by finding value.</p>
+</dd></dl>
 
 </dd></dl>
 
@@ -166,34 +176,41 @@ deleting expired members.</li>
 <em class="property">class </em><tt class="descclassname">celery.datastructures.</tt><tt class="descname">PositionQueue</tt><big>(</big><em>length</em><big>)</big><a class="headerlink" href="#celery.datastructures.PositionQueue" title="Permalink to this definition">¶</a></dt>
 <dd><p>A positional queue of a specific length, with slots that are either
 filled or unfilled. When all of the positions are filled, the queue
-is considered <a title="celery.datastructures.PositionQueue.full" class="reference internal" href="#celery.datastructures.PositionQueue.full"><tt class="xref docutils literal"><span class="pre">full()</span></tt></a>.</p>
+is considered <a class="reference internal" href="#celery.datastructures.PositionQueue.full" title="celery.datastructures.PositionQueue.full"><tt class="xref py py-meth docutils literal"><span class="pre">full()</span></tt></a>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>length</em> &#8211; see <a title="celery.datastructures.PositionQueue.length" class="reference internal" href="#celery.datastructures.PositionQueue.length"><tt class="xref docutils literal"><span class="pre">length</span></tt></a>.</td>
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>length</strong> &#8211; see <a class="reference internal" href="#celery.datastructures.PositionQueue.length" title="celery.datastructures.PositionQueue.length"><tt class="xref py py-attr docutils literal"><span class="pre">length</span></tt></a>.</li>
+</ul>
+</td>
 </tr>
 </tbody>
 </table>
 <dl class="attribute">
 <dt id="celery.datastructures.PositionQueue.length">
 <tt class="descname">length</tt><a class="headerlink" href="#celery.datastructures.PositionQueue.length" title="Permalink to this definition">¶</a></dt>
-<dd>The number of items required for the queue to be considered full.</dd></dl>
+<dd><p>The number of items required for the queue to be considered full.</p>
+</dd></dl>
 
 <dl class="class">
 <dt id="celery.datastructures.PositionQueue.UnfilledPosition">
 <em class="property">class </em><tt class="descname">UnfilledPosition</tt><big>(</big><em>position</em><big>)</big><a class="headerlink" href="#celery.datastructures.PositionQueue.UnfilledPosition" title="Permalink to this definition">¶</a></dt>
-<dd>Describes an unfilled slot.</dd></dl>
+<dd><p>Describes an unfilled slot.</p>
+</dd></dl>
 
 <dl class="attribute">
 <dt id="celery.datastructures.PositionQueue.filled">
 <tt class="descclassname">PositionQueue.</tt><tt class="descname">filled</tt><a class="headerlink" href="#celery.datastructures.PositionQueue.filled" title="Permalink to this definition">¶</a></dt>
-<dd>Returns the filled slots as a list.</dd></dl>
+<dd><p>Returns the filled slots as a list.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.datastructures.PositionQueue.full">
 <tt class="descclassname">PositionQueue.</tt><tt class="descname">full</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.datastructures.PositionQueue.full" title="Permalink to this definition">¶</a></dt>
-<dd>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if all of the slots has been filled.</dd></dl>
+<dd><p>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if all of the slots has been filled.</p>
+</dd></dl>
 
 </dd></dl>
 
@@ -223,12 +240,14 @@ reliable operations are increment and decrement.</p>
 <dl class="method">
 <dt id="celery.datastructures.SharedCounter.decrement">
 <tt class="descname">decrement</tt><big>(</big><em>n=1</em><big>)</big><a class="headerlink" href="#celery.datastructures.SharedCounter.decrement" title="Permalink to this definition">¶</a></dt>
-<dd>Decrement value.</dd></dl>
+<dd><p>Decrement value.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.datastructures.SharedCounter.increment">
 <tt class="descname">increment</tt><big>(</big><em>n=1</em><big>)</big><a class="headerlink" href="#celery.datastructures.SharedCounter.increment" title="Permalink to this definition">¶</a></dt>
-<dd>Increment value.</dd></dl>
+<dd><p>Increment value.</p>
+</dd></dl>
 
 </dd></dl>
 
@@ -236,8 +255,8 @@ reliable operations are increment and decrement.</p>
 <dt id="celery.datastructures.consume_queue">
 <tt class="descclassname">celery.datastructures.</tt><tt class="descname">consume_queue</tt><big>(</big><em>queue</em><big>)</big><a class="headerlink" href="#celery.datastructures.consume_queue" title="Permalink to this definition">¶</a></dt>
 <dd><p>Iterator yielding all immediately available items in a
-<tt class="xref docutils literal"><span class="pre">Queue.Queue</span></tt>.</p>
-<p>The iterator stops as soon as the queue raises <tt class="xref docutils literal"><span class="pre">Queue.Empty</span></tt>.</p>
+<tt class="xref py py-class docutils literal"><span class="pre">Queue.Queue</span></tt>.</p>
+<p>The iterator stops as soon as the queue raises <tt class="xref py py-exc docutils literal"><span class="pre">Queue.Empty</span></tt>.</p>
 <p>Example</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">Queue</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">map</span><span class="p">(</span><span class="n">q</span><span class="o">.</span><span class="n">put</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
@@ -258,7 +277,7 @@ reliable operations are increment and decrement.</p>
     <div class="footer">
     <p>
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
 	</p>
     </div>
       <div class="clearer"></div>

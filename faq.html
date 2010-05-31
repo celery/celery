@@ -1,3 +1,4 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -10,14 +11,15 @@
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '#',
+        URL_ROOT:    '',
         VERSION:     '1.1.0 (unstable)',
-        COLLAPSE_MODINDEX: false,
+        COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="static/jquery.js"></script>
+    <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
     <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="index.html" />
     <link rel="next" title="API Reference" href="reference/index.html" />
@@ -34,7 +36,7 @@
 		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
 		<li id="page_buttons">
 			<div class="headerButton"><a href="genindex.html" title="General Index" accesskey="I">index</a></div>
-			<div class="headerButton"><a href="modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="py-modindex.html" title="Python Module Index" >modules</a></div>
 			<div class="headerButton"><a href="reference/index.html" title="API Reference" accesskey="N">next</a></div>
 			<div class="headerButton"><a href="tutorials/clickcounter.html" title="Tutorial: Creating a click counter using carrot and celery" accesskey="P">previous</a></div>
 		</li>
@@ -45,25 +47,25 @@
   <div class="sphinxsidebarwrapper">
 	<ul><li class="toctree-l1"><a href="index.html">Main Page</a></li></ul>
 	<ul class="current">
-<li class="toctree-l1"><a class="reference external" href="getting-started/index.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference external" href="userguide/index.html">User Guide</a></li>
-<li class="toctree-l1"><a class="reference external" href="configuration.html">Configuration and defaults</a></li>
-<li class="toctree-l1"><a class="reference external" href="cookbook/index.html">Cookbook</a></li>
-<li class="toctree-l1"><a class="reference external" href="tutorials/index.html">Tutorials</a></li>
-<li class="toctree-l1 current"><a class="current reference external" href="">Frequently Asked Questions</a><ul>
-<li class="toctree-l2"><a class="reference external" href="#general">General</a></li>
-<li class="toctree-l2"><a class="reference external" href="#misconceptions">Misconceptions</a></li>
-<li class="toctree-l2"><a class="reference external" href="#troubleshooting">Troubleshooting</a></li>
-<li class="toctree-l2"><a class="reference external" href="#tasks">Tasks</a></li>
-<li class="toctree-l2"><a class="reference external" href="#results">Results</a></li>
-<li class="toctree-l2"><a class="reference external" href="#brokers">Brokers</a></li>
-<li class="toctree-l2"><a class="reference external" href="#features">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting-started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Frequently Asked Questions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#general">General</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#misconceptions">Misconceptions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tasks">Tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#results">Results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#brokers">Brokers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#features">Features</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference external" href="reference/index.html">API Reference</a></li>
-<li class="toctree-l1"><a class="reference external" href="internals/index.html">Internals</a></li>
-<li class="toctree-l1"><a class="reference external" href="changelog.html">Change history</a></li>
-<li class="toctree-l1"><a class="reference external" href="links.html">Interesting Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="internals/index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference internal" href="links.html">Interesting Links</a></li>
 </ul>
 
       <h3>This Page</h3>
@@ -190,7 +192,7 @@ Transaction Model and Locking</a> in the MySQL user manual.</p>
 <div class="section" id="celeryd-is-not-doing-anything-just-hanging">
 <h3>celeryd is not doing anything, just hanging<a class="headerlink" href="#celeryd-is-not-doing-anything-just-hanging" title="Permalink to this headline">¶</a></h3>
 <dl class="docutils">
-<dt><strong>Answer:</strong> See <a class="reference internal" href="#mysql-is-throwing-deadlock-errors-what-can-i-do">MySQL is throwing deadlock errors, what can I do?</a>.</dt>
+<dt><strong>Answer:</strong> See <a class="reference external" href="#mysql-is-throwing-deadlock-errors-what-can-i-do">MySQL is throwing deadlock errors, what can I do?</a>.</dt>
 <dd>or <cite>Why is Task.delay/apply* just hanging?</cite>.</dd>
 </dl>
 </div>
@@ -213,7 +215,7 @@ Celery on FreeBSD here:
 </div>
 <div class="section" id="i-m-having-integrityerror-duplicate-key-errors-why">
 <h3>I&#8217;m having <tt class="docutils literal"><span class="pre">IntegrityError:</span> <span class="pre">Duplicate</span> <span class="pre">Key</span></tt> errors. Why?<a class="headerlink" href="#i-m-having-integrityerror-duplicate-key-errors-why" title="Permalink to this headline">¶</a></h3>
-<p><strong>Answer:</strong> See <a class="reference internal" href="#mysql-is-throwing-deadlock-errors-what-can-i-do">MySQL is throwing deadlock errors, what can I do?</a>.
+<p><strong>Answer:</strong> See <a class="reference external" href="#mysql-is-throwing-deadlock-errors-what-can-i-do">MySQL is throwing deadlock errors, what can I do?</a>.
 Thanks to howsthedotcom.</p>
 </div>
 <div class="section" id="why-aren-t-my-tasks-processed">
@@ -257,7 +259,7 @@ other error is happening.</p>
 </div>
 <div class="section" id="why-won-t-my-periodic-task-run">
 <h3>Why won&#8217;t my Periodic Task run?<a class="headerlink" href="#why-won-t-my-periodic-task-run" title="Permalink to this headline">¶</a></h3>
-<p><strong>Answer:</strong> See <a class="reference internal" href="#why-won-t-my-task-run">Why won&#8217;t my Task run?</a>.</p>
+<p><strong>Answer:</strong> See <a class="reference external" href="#why-won-t-my-task-run">Why won&#8217;t my Task run?</a>.</p>
 </div>
 <div class="section" id="how-do-i-discard-all-waiting-tasks">
 <h3>How do I discard all waiting tasks?<a class="headerlink" href="#how-do-i-discard-all-waiting-tasks" title="Permalink to this headline">¶</a></h3>
@@ -294,11 +296,11 @@ services instead.</p>
 <h2>Tasks<a class="headerlink" href="#tasks" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="how-can-i-reuse-the-same-connection-when-applying-tasks">
 <h3>How can I reuse the same connection when applying tasks?<a class="headerlink" href="#how-can-i-reuse-the-same-connection-when-applying-tasks" title="Permalink to this headline">¶</a></h3>
-<p><strong>Answer</strong>: See <a class="reference external" href="userguide/executing.html"><em>Executing Tasks</em></a>.</p>
+<p><strong>Answer</strong>: See <a class="reference internal" href="userguide/executing.html"><em>Executing Tasks</em></a>.</p>
 </div>
 <div class="section" id="can-i-execute-a-task-by-name">
 <h3>Can I execute a task by name?<a class="headerlink" href="#can-i-execute-a-task-by-name" title="Permalink to this headline">¶</a></h3>
-<p><strong>Answer</strong>: Yes. Use <tt class="xref docutils literal"><span class="pre">celery.execute.send_task()</span></tt>.
+<p><strong>Answer</strong>: Yes. Use <tt class="xref py py-func docutils literal"><span class="pre">celery.execute.send_task()</span></tt>.
 You can also execute a task by name from any language
 that has an AMQP client.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.execute</span> <span class="kn">import</span> <span class="n">send_task</span>
@@ -317,10 +319,10 @@ that has an AMQP client.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
 </pre></div>
 </div>
-<p>This will give you a <a title="celery.result.BaseAsyncResult" class="reference external" href="reference/celery.result.html#celery.result.BaseAsyncResult"><tt class="xref docutils literal"><span class="pre">celery.result.BaseAsyncResult</span></tt></a> instance
+<p>This will give you a <a class="reference internal" href="reference/celery.result.html#celery.result.BaseAsyncResult" title="celery.result.BaseAsyncResult"><tt class="xref py py-class docutils literal"><span class="pre">celery.result.BaseAsyncResult</span></tt></a> instance
 using the tasks current result backend.</p>
 <p>If you need to specify a custom result backend you should use
-<a title="celery.result.BaseAsyncResult" class="reference external" href="reference/celery.result.html#celery.result.BaseAsyncResult"><tt class="xref docutils literal"><span class="pre">celery.result.BaseAsyncResult</span></tt></a> directly:</p>
+<a class="reference internal" href="reference/celery.result.html#celery.result.BaseAsyncResult" title="celery.result.BaseAsyncResult"><tt class="xref py py-class docutils literal"><span class="pre">celery.result.BaseAsyncResult</span></tt></a> directly:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.result</span> <span class="kn">import</span> <span class="n">BaseAsyncResult</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">BaseAsyncResult</span><span class="p">(</span><span class="n">task_id</span><span class="p">,</span> <span class="n">backend</span><span class="o">=...</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
@@ -531,7 +533,7 @@ if you don&#8217;t set exchange or exchange type, they will be taken from the
 </pre></div>
 </div>
 <p>You can also override this using the <tt class="docutils literal"><span class="pre">routing_key</span></tt> argument to
-<tt class="xref docutils literal"><span class="pre">celery.task.apply_async()</span></tt>:</p>
+<tt class="xref py py-func docutils literal"><span class="pre">celery.task.apply_async()</span></tt>:</p>
 <blockquote>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">myapp.tasks</span> <span class="kn">import</span> <span class="n">RefreshFeedTask</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">RefreshFeedTask</span><span class="o">.</span><span class="n">apply_async</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="s">&quot;http://cnn.com/rss&quot;</span><span class="p">],</span>
@@ -635,10 +637,10 @@ combine that with <tt class="docutils literal"><span class="pre">acks_late</span
 is required.</p>
 </div>
 <div class="section" id="module-celery.task.base">
-<h3>Can I schedule tasks to execute at a specific time?<a class="headerlink" href="#module-celery.task.base" title="Permalink to this headline">¶</a></h3>
-<p><strong>Answer</strong>: Yes. You can use the <tt class="docutils literal"><span class="pre">eta</span></tt> argument of <a title="celery.task.base.Task.apply_async" class="reference external" href="reference/celery.task.base.html#celery.task.base.Task.apply_async"><tt class="xref docutils literal"><span class="pre">Task.apply_async()</span></tt></a>.</p>
+<span id="can-i-schedule-tasks-to-execute-at-a-specific-time"></span><h3>Can I schedule tasks to execute at a specific time?<a class="headerlink" href="#module-celery.task.base" title="Permalink to this headline">¶</a></h3>
+<p><strong>Answer</strong>: Yes. You can use the <tt class="docutils literal"><span class="pre">eta</span></tt> argument of <a class="reference internal" href="reference/celery.task.base.html#celery.task.base.Task.apply_async" title="celery.task.base.Task.apply_async"><tt class="xref py py-meth docutils literal"><span class="pre">Task.apply_async()</span></tt></a>.</p>
 <p>Or to schedule a periodic task at a specific time, use the
-<a title="celery.task.schedules.crontab" class="reference external" href="reference/celery.task.schedules.html#celery.task.schedules.crontab"><tt class="xref docutils literal"><span class="pre">celery.task.schedules.crontab</span></tt></a> schedule behavior:</p>
+<a class="reference internal" href="reference/celery.task.schedules.html#celery.task.schedules.crontab" title="celery.task.schedules.crontab"><tt class="xref py py-class docutils literal"><span class="pre">celery.task.schedules.crontab</span></tt></a> schedule behavior:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.task.schedules</span> <span class="kn">import</span> <span class="n">crontab</span>
 <span class="kn">from</span> <span class="nn">celery.decorators</span> <span class="kn">import</span> <span class="n">periodic_task</span>
 
@@ -660,7 +662,7 @@ and they will not be re-run unless you have the <tt class="docutils literal"><sp
 </div>
 <div class="section" id="how-do-i-run-celeryd-in-the-background-on-platform">
 <h3>How do I run celeryd in the background on [platform]?<a class="headerlink" href="#how-do-i-run-celeryd-in-the-background-on-platform" title="Permalink to this headline">¶</a></h3>
-<p><strong>Answer</strong>: Please see <a class="reference external" href="cookbook/daemonizing.html"><em>Running celeryd as a daemon</em></a>.</p>
+<p><strong>Answer</strong>: Please see <a class="reference internal" href="cookbook/daemonizing.html"><em>Running celeryd as a daemon</em></a>.</p>
 </div>
 </div>
 </div>
@@ -672,7 +674,7 @@ and they will not be re-run unless you have the <tt class="docutils literal"><sp
     <div class="footer">
     <p>
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
 	</p>
     </div>
       <div class="clearer"></div>

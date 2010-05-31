@@ -1,3 +1,4 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -12,12 +13,13 @@
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
         VERSION:     '1.1.0 (unstable)',
-        COLLAPSE_MODINDEX: false,
+        COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="../../static/jquery.js"></script>
+    <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
     <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
@@ -35,7 +37,7 @@
 		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
 		<li id="page_buttons">
 			<div class="headerButton"><a href="../../genindex.html" title="General Index" accesskey="I">index</a></div>
-			<div class="headerButton"><a href="../../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="../../py-modindex.html" title="Python Module Index" >modules</a></div>
 			<div class="headerButton"><a href="celery.worker.job.html" title="Executable Jobs - celery.worker.job" accesskey="N">next</a></div>
 			<div class="headerButton"><a href="celery.worker.html" title="Multiprocessing Worker - celery.worker" accesskey="P">previous</a></div>
 		</li>
@@ -46,16 +48,16 @@
   <div class="sphinxsidebarwrapper">
 	<ul><li class="toctree-l1"><a href="../../index.html">Main Page</a></li></ul>
 	<ul>
-<li class="toctree-l1"><a class="reference external" href="../../getting-started/index.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../userguide/index.html">User Guide</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../configuration.html">Configuration and defaults</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../cookbook/index.html">Cookbook</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../tutorials/index.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../reference/index.html">API Reference</a></li>
-<li class="toctree-l1"><a class="reference external" href="../index.html">Internals</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../changelog.html">Change history</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../links.html">Interesting Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting-started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../links.html">Interesting Links</a></li>
 </ul>
 
       <h3>This Page</h3>
@@ -91,10 +93,10 @@
           <div class="body">
             
   <div class="section" id="module-celery.worker.listener">
-<h1>Worker Message Listener - celery.worker.listener<a class="headerlink" href="#module-celery.worker.listener" title="Permalink to this headline">¶</a></h1>
+<span id="worker-message-listener-celery-worker-listener"></span><h1>Worker Message Listener - celery.worker.listener<a class="headerlink" href="#module-celery.worker.listener" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="celery.worker.listener.CarrotListener">
-<em class="property">class </em><tt class="descclassname">celery.worker.listener.</tt><tt class="descname">CarrotListener</tt><big>(</big><em>ready_queue</em>, <em>eta_schedule</em>, <em>logger</em>, <em>init_callback=&lt;function noop at 0x103c9fc80&gt;</em>, <em>send_events=False</em>, <em>hostname=None</em>, <em>initial_prefetch_count=2</em><big>)</big><a class="headerlink" href="#celery.worker.listener.CarrotListener" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.worker.listener.</tt><tt class="descname">CarrotListener</tt><big>(</big><em>ready_queue</em>, <em>eta_schedule</em>, <em>logger</em>, <em>init_callback=&lt;function noop at 0x10308f938&gt;</em>, <em>send_events=False</em>, <em>hostname=None</em>, <em>initial_prefetch_count=2</em><big>)</big><a class="headerlink" href="#celery.worker.listener.CarrotListener" title="Permalink to this definition">¶</a></dt>
 <dd><p>Listen for messages received from the broker and
 move them the the ready queue for task processing.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -102,8 +104,8 @@ move them the the ready queue for task processing.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><em>ready_queue</em> &#8211; See <a title="celery.worker.listener.CarrotListener.ready_queue" class="reference internal" href="#celery.worker.listener.CarrotListener.ready_queue"><tt class="xref docutils literal"><span class="pre">ready_queue</span></tt></a>.</li>
-<li><em>eta_schedule</em> &#8211; See <a title="celery.worker.listener.CarrotListener.eta_schedule" class="reference internal" href="#celery.worker.listener.CarrotListener.eta_schedule"><tt class="xref docutils literal"><span class="pre">eta_schedule</span></tt></a>.</li>
+<li><strong>ready_queue</strong> &#8211; See <a class="reference internal" href="#celery.worker.listener.CarrotListener.ready_queue" title="celery.worker.listener.CarrotListener.ready_queue"><tt class="xref py py-attr docutils literal"><span class="pre">ready_queue</span></tt></a>.</li>
+<li><strong>eta_schedule</strong> &#8211; See <a class="reference internal" href="#celery.worker.listener.CarrotListener.eta_schedule" title="celery.worker.listener.CarrotListener.eta_schedule"><tt class="xref py py-attr docutils literal"><span class="pre">eta_schedule</span></tt></a>.</li>
 </ul>
 </td>
 </tr>
@@ -112,23 +114,27 @@ move them the the ready queue for task processing.</p>
 <dl class="attribute">
 <dt id="celery.worker.listener.CarrotListener.ready_queue">
 <tt class="descname">ready_queue</tt><a class="headerlink" href="#celery.worker.listener.CarrotListener.ready_queue" title="Permalink to this definition">¶</a></dt>
-<dd>The queue that holds tasks ready for processing immediately.</dd></dl>
+<dd><p>The queue that holds tasks ready for processing immediately.</p>
+</dd></dl>
 
 <dl class="attribute">
 <dt id="celery.worker.listener.CarrotListener.eta_schedule">
 <tt class="descname">eta_schedule</tt><a class="headerlink" href="#celery.worker.listener.CarrotListener.eta_schedule" title="Permalink to this definition">¶</a></dt>
-<dd>Scheduler for paused tasks. Reasons for being paused include
-a countdown/eta or that it&#8217;s waiting for retry.</dd></dl>
+<dd><p>Scheduler for paused tasks. Reasons for being paused include
+a countdown/eta or that it&#8217;s waiting for retry.</p>
+</dd></dl>
 
 <dl class="attribute">
 <dt id="celery.worker.listener.CarrotListener.logger">
 <tt class="descname">logger</tt><a class="headerlink" href="#celery.worker.listener.CarrotListener.logger" title="Permalink to this definition">¶</a></dt>
-<dd>The logger used.</dd></dl>
+<dd><p>The logger used.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.worker.listener.CarrotListener.consume_messages">
 <tt class="descname">consume_messages</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.listener.CarrotListener.consume_messages" title="Permalink to this definition">¶</a></dt>
-<dd>Consume messages forever (or until an exception is raised).</dd></dl>
+<dd><p>Consume messages forever (or until an exception is raised).</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.worker.listener.CarrotListener.on_decode_error">
@@ -139,8 +145,8 @@ a countdown/eta or that it&#8217;s waiting for retry.</dd></dl>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><em>message</em> &#8211; The message with errors.</li>
-<li><em>exc</em> &#8211; The original exception instance.</li>
+<li><strong>message</strong> &#8211; The message with errors.</li>
+<li><strong>exc</strong> &#8211; The original exception instance.</li>
 </ul>
 </td>
 </tr>
@@ -159,7 +165,8 @@ otherwise we move it the ready queue for immediate processing.</p>
 <dl class="method">
 <dt id="celery.worker.listener.CarrotListener.receive_message">
 <tt class="descname">receive_message</tt><big>(</big><em>message_data</em>, <em>message</em><big>)</big><a class="headerlink" href="#celery.worker.listener.CarrotListener.receive_message" title="Permalink to this definition">¶</a></dt>
-<dd>The callback called when a new message is received.</dd></dl>
+<dd><p>The callback called when a new message is received.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.worker.listener.CarrotListener.start">
@@ -180,7 +187,7 @@ and restarts consuming messages.</p>
     <div class="footer">
     <p>
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
 	</p>
     </div>
       <div class="clearer"></div>

@@ -1,3 +1,4 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -5,39 +6,40 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Backend: Database - celery.backends.database &mdash; Celery v1.0.3 (stable) documentation</title>
+    <title>Backend: SQLAlchemy Database - celery.backends.database &mdash; Celery v1.1.0 (unstable) documentation</title>
     <link rel="stylesheet" href="../../static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.0.3 (stable)',
-        COLLAPSE_MODINDEX: false,
+        VERSION:     '1.1.0 (unstable)',
+        COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="../../static/jquery.js"></script>
+    <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v1.0.3 (stable) documentation" href="../../index.html" />
+    <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
-    <link rel="next" title="Backend: Cache - celery.backends.cache" href="celery.backends.cache.html" />
-    <link rel="prev" title="Backend: AMQP - celery.backends.amqp" href="celery.backends.amqp.html" />
+    <link rel="next" title="Backend: AMQP - celery.backends.amqp" href="celery.backends.amqp.html" />
+    <link rel="prev" title="Backend: Base - celery.backends.base" href="celery.backends.base.html" />
     <link media="only screen and (max-device-width: 480px)" href="../../static/mobile.css" type="text/css" rel="stylesheet" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v1.0.3 (stable) documentation</p>
+	<p>Celery v1.1.0 (unstable) documentation</p>
 </div>
 <div id="header">
-	<div id="title"><h1>Backend: Database - celery.backends.database</h1></div>
+	<div id="title"><h1>Backend: SQLAlchemy Database - celery.backends.database</h1></div>
 	<ul id="headerButtons">
 		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
 		<li id="page_buttons">
 			<div class="headerButton"><a href="../../genindex.html" title="General Index" accesskey="I">index</a></div>
-			<div class="headerButton"><a href="../../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
-			<div class="headerButton"><a href="celery.backends.cache.html" title="Backend: Cache - celery.backends.cache" accesskey="N">next</a></div>
-			<div class="headerButton"><a href="celery.backends.amqp.html" title="Backend: AMQP - celery.backends.amqp" accesskey="P">previous</a></div>
+			<div class="headerButton"><a href="../../py-modindex.html" title="Python Module Index" >modules</a></div>
+			<div class="headerButton"><a href="celery.backends.amqp.html" title="Backend: AMQP - celery.backends.amqp" accesskey="N">next</a></div>
+			<div class="headerButton"><a href="celery.backends.base.html" title="Backend: Base - celery.backends.base" accesskey="P">previous</a></div>
 		</li>
 	</ul>
 </div>
@@ -46,16 +48,16 @@
   <div class="sphinxsidebarwrapper">
 	<ul><li class="toctree-l1"><a href="../../index.html">Main Page</a></li></ul>
 	<ul>
-<li class="toctree-l1"><a class="reference external" href="../../getting-started/index.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../userguide/index.html">User Guide</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../configuration.html">Configuration and defaults</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../cookbook/index.html">Cookbook</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../tutorials/index.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../reference/index.html">API Reference</a></li>
-<li class="toctree-l1"><a class="reference external" href="../index.html">Internals</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../changelog.html">Change history</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../links.html">Interesting Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting-started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../links.html">Interesting Links</a></li>
 </ul>
 
       <h3>This Page</h3>
@@ -91,15 +93,16 @@
           <div class="body">
             
   <div class="section" id="module-celery.backends.database">
-<h1>Backend: Database - celery.backends.database<a class="headerlink" href="#module-celery.backends.database" title="Permalink to this headline">¶</a></h1>
+<span id="backend-sqlalchemy-database-celery-backends-database"></span><h1>Backend: SQLAlchemy Database - celery.backends.database<a class="headerlink" href="#module-celery.backends.database" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="celery.backends.database.DatabaseBackend">
-<em class="property">class </em><tt class="descclassname">celery.backends.database.</tt><tt class="descname">DatabaseBackend</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.backends.database.DatabaseBackend" title="Permalink to this definition">¶</a></dt>
-<dd><p>The database backends. Using Django models to store task metadata.</p>
+<em class="property">class </em><tt class="descclassname">celery.backends.database.</tt><tt class="descname">DatabaseBackend</tt><big>(</big><em>dburi=None</em>, <em>engine_options=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.backends.database.DatabaseBackend" title="Permalink to this definition">¶</a></dt>
+<dd><p>The database result backend.</p>
 <dl class="method">
 <dt id="celery.backends.database.DatabaseBackend.cleanup">
 <tt class="descname">cleanup</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.backends.database.DatabaseBackend.cleanup" title="Permalink to this definition">¶</a></dt>
-<dd>Delete expired metadata.</dd></dl>
+<dd><p>Delete expired metadata.</p>
+</dd></dl>
 
 </dd></dl>
 
@@ -112,7 +115,7 @@
     <div class="footer">
     <p>
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
 	</p>
     </div>
       <div class="clearer"></div>
@@ -120,7 +123,7 @@
 	<div id="breadcrumbs">
 		<a href="../index.html" accesskey="U">Internals</a><img src="../../static/triangle_closed.png" height="9" width="9" alt="&gt;">
 		<a href="index.html" >Internal Module Reference</a><img src="../../static/triangle_closed.png" height="9" width="9" alt="&gt;">
-		Backend: Database - celery.backends.database
+		Backend: SQLAlchemy Database - celery.backends.database
 		</ul>
 	</div>
 	<script type="text/javascript" charset="utf-8" src="../../static/toc.js"></script>

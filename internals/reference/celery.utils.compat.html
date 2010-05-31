@@ -1,3 +1,4 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -12,16 +13,17 @@
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
         VERSION:     '1.1.0 (unstable)',
-        COLLAPSE_MODINDEX: false,
+        COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="../../static/jquery.js"></script>
+    <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
     <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
-    <link rel="next" title="Compatibility Patches - celery.utils.patch" href="celery.utils.patch.html" />
+    <link rel="next" title="Sending E-mail - celery.utils.mail" href="celery.utils.mail.html" />
     <link rel="prev" title="Debugging Info - celery.utils.info" href="celery.utils.info.html" />
     <link media="only screen and (max-device-width: 480px)" href="../../static/mobile.css" type="text/css" rel="stylesheet" /> 
   </head>
@@ -35,8 +37,8 @@
 		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
 		<li id="page_buttons">
 			<div class="headerButton"><a href="../../genindex.html" title="General Index" accesskey="I">index</a></div>
-			<div class="headerButton"><a href="../../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
-			<div class="headerButton"><a href="celery.utils.patch.html" title="Compatibility Patches - celery.utils.patch" accesskey="N">next</a></div>
+			<div class="headerButton"><a href="../../py-modindex.html" title="Python Module Index" >modules</a></div>
+			<div class="headerButton"><a href="celery.utils.mail.html" title="Sending E-mail - celery.utils.mail" accesskey="N">next</a></div>
 			<div class="headerButton"><a href="celery.utils.info.html" title="Debugging Info - celery.utils.info" accesskey="P">previous</a></div>
 		</li>
 	</ul>
@@ -46,16 +48,16 @@
   <div class="sphinxsidebarwrapper">
 	<ul><li class="toctree-l1"><a href="../../index.html">Main Page</a></li></ul>
 	<ul>
-<li class="toctree-l1"><a class="reference external" href="../../getting-started/index.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../userguide/index.html">User Guide</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../configuration.html">Configuration and defaults</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../cookbook/index.html">Cookbook</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../tutorials/index.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../reference/index.html">API Reference</a></li>
-<li class="toctree-l1"><a class="reference external" href="../index.html">Internals</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../changelog.html">Change history</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../links.html">Interesting Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting-started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../links.html">Interesting Links</a></li>
 </ul>
 
       <h3>This Page</h3>
@@ -91,7 +93,7 @@
           <div class="body">
             
   <div class="section" id="module-celery.utils.compat">
-<h1>Python Compatibility - celery.utils.compat<a class="headerlink" href="#module-celery.utils.compat" title="Permalink to this headline">¶</a></h1>
+<span id="python-compatibility-celery-utils-compat"></span><h1>Python Compatibility - celery.utils.compat<a class="headerlink" href="#module-celery.utils.compat" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="celery.utils.compat.OrderedDict">
 <em class="property">class </em><tt class="descclassname">celery.utils.compat.</tt><tt class="descname">OrderedDict</tt><big>(</big><em>*args</em>, <em>**kwds</em><big>)</big><a class="headerlink" href="#celery.utils.compat.OrderedDict" title="Permalink to this definition">¶</a></dt>
@@ -99,18 +101,21 @@
 <dl class="method">
 <dt id="celery.utils.compat.OrderedDict.clear">
 <tt class="descname">clear</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.utils.compat.OrderedDict.clear" title="Permalink to this definition">¶</a></dt>
-<dd>od.clear() -&gt; None.  Remove all items from od.</dd></dl>
+<dd><p>od.clear() -&gt; None.  Remove all items from od.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.utils.compat.OrderedDict.copy">
 <tt class="descname">copy</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.utils.compat.OrderedDict.copy" title="Permalink to this definition">¶</a></dt>
-<dd>od.copy() -&gt; a shallow copy of od</dd></dl>
+<dd><p>od.copy() -&gt; a shallow copy of od</p>
+</dd></dl>
 
 <dl class="classmethod">
 <dt id="celery.utils.compat.OrderedDict.fromkeys">
 <em class="property">classmethod </em><tt class="descname">fromkeys</tt><big>(</big><em>iterable</em>, <em>value=None</em><big>)</big><a class="headerlink" href="#celery.utils.compat.OrderedDict.fromkeys" title="Permalink to this definition">¶</a></dt>
-<dd>OD.fromkeys(S[, v]) -&gt; New ordered dictionary with keys from S
-and values equal to v (which defaults to None).</dd></dl>
+<dd><p>OD.fromkeys(S[, v]) -&gt; New ordered dictionary with keys from S
+and values equal to v (which defaults to None).</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.utils.compat.OrderedDict.popitem">
@@ -132,7 +137,7 @@ order if false.</p>
     <div class="footer">
     <p>
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
 	</p>
     </div>
       <div class="clearer"></div>

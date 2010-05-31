@@ -1,3 +1,4 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -12,12 +13,13 @@
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
         VERSION:     '1.1.0 (unstable)',
-        COLLAPSE_MODINDEX: false,
+        COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
     <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
@@ -35,7 +37,7 @@
 		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
 		<li id="page_buttons">
 			<div class="headerButton"><a href="../genindex.html" title="General Index" accesskey="I">index</a></div>
-			<div class="headerButton"><a href="../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="../py-modindex.html" title="Python Module Index" >modules</a></div>
 			<div class="headerButton"><a href="celery.task.schedules.html" title="Periodic Task Schedule Behaviors - celery.task.schedules" accesskey="N">next</a></div>
 			<div class="headerButton"><a href="celery.task.control.html" title="Remote Management of Workers - celery.task.control" accesskey="P">previous</a></div>
 		</li>
@@ -46,41 +48,42 @@
   <div class="sphinxsidebarwrapper">
 	<ul><li class="toctree-l1"><a href="../index.html">Main Page</a></li></ul>
 	<ul class="current">
-<li class="toctree-l1"><a class="reference external" href="../getting-started/index.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference external" href="../userguide/index.html">User Guide</a></li>
-<li class="toctree-l1"><a class="reference external" href="../configuration.html">Configuration and defaults</a></li>
-<li class="toctree-l1"><a class="reference external" href="../cookbook/index.html">Cookbook</a></li>
-<li class="toctree-l1"><a class="reference external" href="../tutorials/index.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1 current"><a class="reference external" href="index.html">API Reference</a><ul class="current">
-<li class="toctree-l2"><a class="reference external" href="celery.decorators.html">Task Decorators - celery.decorators</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.base.html">Defining Tasks - celery.task.base</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.execute.html">Executing Tasks - celery.execute</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.result.html">Task Result - celery.result</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.html">Task Information and Utilities - celery.task</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.conf.html">Configuration - celery.conf</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.control.html">Remote Management of Workers - celery.task.control</a></li>
-<li class="toctree-l2 current"><a class="current reference external" href="">HTTP Callback Tasks - celery.task.http</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.schedules.html">Periodic Task Schedule Behaviors - celery.task.schedules</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.signals.html">Signals - celery.signals</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.exceptions.html">Exceptions - celery.exceptions</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.builtins.html">Built-in Task Classes - celery.task.builtins</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.loaders.html">Loaders - celery.loaders</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.loaders.base.html">Loader Base Classes - celery.loaders.base</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.registry.html">Task Registry - celery.registry</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.states.html">Task States - celery.states</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.messaging.html">Messaging - celery.messaging</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.contrib.abortable.html">Contrib: Abortable tasks - celery.contrib.abortable</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.events.html">Events - celery.events</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.bin.celerybeat.html">Celery Periodic Task Server - celery.bin.celerybeat</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.bin.camqadm.html">caqmadm: AMQP API Command-line Shell - celery.bin.camqadm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting-started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="celery.decorators.html">Task Decorators - celery.decorators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.base.html">Defining Tasks - celery.task.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.execute.html">Executing Tasks - celery.execute</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.result.html">Task Result - celery.result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.html">Task Information and Utilities - celery.task</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.conf.html">Configuration - celery.conf</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.control.html">Remote Management of Workers - celery.task.control</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">HTTP Callback Tasks - celery.task.http</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.schedules.html">Periodic Task Schedule Behaviors - celery.task.schedules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.signals.html">Signals - celery.signals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.exceptions.html">Exceptions - celery.exceptions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.builtins.html">Built-in Task Classes - celery.task.builtins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.loaders.html">Loaders - celery.loaders</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.loaders.base.html">Loader Base Classes - celery.loaders.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.registry.html">Task Registry - celery.registry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.states.html">Task States - celery.states</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.messaging.html">Messaging - celery.messaging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.contrib.abortable.html">Contrib: Abortable tasks - celery.contrib.abortable</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.events.html">Events - celery.events</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.celerybeat.html">Celery Periodic Task Server - celery.bin.celerybeat</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.camqadm.html">caqmadm: AMQP API Command-line Shell - celery.bin.camqadm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.celeryd_multi.html">Celeryd Multi Tool - celery.bin.celeryd_multi</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference external" href="../internals/index.html">Internals</a></li>
-<li class="toctree-l1"><a class="reference external" href="../changelog.html">Change history</a></li>
-<li class="toctree-l1"><a class="reference external" href="../links.html">Interesting Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../internals/index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../links.html">Interesting Links</a></li>
 </ul>
 
       <h3>This Page</h3>
@@ -116,7 +119,7 @@
           <div class="body">
             
   <div class="section" id="module-celery.task.http">
-<h1>HTTP Callback Tasks - celery.task.http<a class="headerlink" href="#module-celery.task.http" title="Permalink to this headline">¶</a></h1>
+<span id="http-callback-tasks-celery-task-http"></span><h1>HTTP Callback Tasks - celery.task.http<a class="headerlink" href="#module-celery.task.http" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="celery.task.http.HttpDispatch">
 <em class="property">class </em><tt class="descclassname">celery.task.http.</tt><tt class="descname">HttpDispatch</tt><big>(</big><em>url</em>, <em>method</em>, <em>task_kwargs</em>, <em>logger</em><big>)</big><a class="headerlink" href="#celery.task.http.HttpDispatch" title="Permalink to this definition">¶</a></dt>
@@ -126,11 +129,11 @@
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><em>url</em> &#8211; The URL to request.</li>
-<li><em>method</em> &#8211; HTTP method used. Currently supported methods are <tt class="docutils literal"><span class="pre">GET</span></tt>
+<li><strong>url</strong> &#8211; The URL to request.</li>
+<li><strong>method</strong> &#8211; HTTP method used. Currently supported methods are <tt class="docutils literal"><span class="pre">GET</span></tt>
 and <tt class="docutils literal"><span class="pre">POST</span></tt>.</li>
-<li><em>task_kwargs</em> &#8211; Task keyword arguments.</li>
-<li><em>logger</em> &#8211; Logger used for user/system feedback.</li>
+<li><strong>task_kwargs</strong> &#8211; Task keyword arguments.</li>
+<li><strong>logger</strong> &#8211; Logger used for user/system feedback.</li>
 </ul>
 </td>
 </tr>
@@ -139,12 +142,14 @@ and <tt class="docutils literal"><span class="pre">POST</span></tt>.</li>
 <dl class="method">
 <dt id="celery.task.http.HttpDispatch.dispatch">
 <tt class="descname">dispatch</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.http.HttpDispatch.dispatch" title="Permalink to this definition">¶</a></dt>
-<dd>Dispatch callback and return result.</dd></dl>
+<dd><p>Dispatch callback and return result.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.task.http.HttpDispatch.make_request">
 <tt class="descname">make_request</tt><big>(</big><em>url</em>, <em>method</em>, <em>params</em><big>)</big><a class="headerlink" href="#celery.task.http.HttpDispatch.make_request" title="Permalink to this definition">¶</a></dt>
-<dd>Makes an HTTP request and returns the response.</dd></dl>
+<dd><p>Makes an HTTP request and returns the response.</p>
+</dd></dl>
 
 </dd></dl>
 
@@ -157,10 +162,10 @@ and <tt class="docutils literal"><span class="pre">POST</span></tt>.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><em>url</em> &#8211; The URL location of the HTTP callback task.</li>
-<li><em>method</em> &#8211; Method to use when dispatching the callback. Usually
+<li><strong>url</strong> &#8211; The URL location of the HTTP callback task.</li>
+<li><strong>method</strong> &#8211; Method to use when dispatching the callback. Usually
 <tt class="docutils literal"><span class="pre">GET</span></tt> or <tt class="docutils literal"><span class="pre">POST</span></tt>.</li>
-<li><em>**kwargs</em> &#8211; Keyword arguments to pass on to the HTTP callback.</li>
+<li><strong>**kwargs</strong> &#8211; Keyword arguments to pass on to the HTTP callback.</li>
 </ul>
 </td>
 </tr>
@@ -169,23 +174,26 @@ and <tt class="docutils literal"><span class="pre">POST</span></tt>.</li>
 <dl class="attribute">
 <dt id="celery.task.http.HttpDispatchTask.url">
 <tt class="descname">url</tt><a class="headerlink" href="#celery.task.http.HttpDispatchTask.url" title="Permalink to this definition">¶</a></dt>
-<dd>If this is set, this is used as the default URL for requests.
+<dd><p>If this is set, this is used as the default URL for requests.
 Default is to require the user of the task to supply the url as an
-argument, as this attribute is intended for subclasses.</dd></dl>
+argument, as this attribute is intended for subclasses.</p>
+</dd></dl>
 
 <dl class="attribute">
 <dt id="celery.task.http.HttpDispatchTask.method">
 <tt class="descname">method</tt><a class="headerlink" href="#celery.task.http.HttpDispatchTask.method" title="Permalink to this definition">¶</a></dt>
-<dd>If this is set, this is the default method used for requests.
+<dd><p>If this is set, this is the default method used for requests.
 Default is to require the user of the task to supply the method as an
-argument, as this attribute is intended for subclasses.</dd></dl>
+argument, as this attribute is intended for subclasses.</p>
+</dd></dl>
 
 </dd></dl>
 
 <dl class="exception">
 <dt id="celery.task.http.InvalidResponseError">
 <em class="property">exception </em><tt class="descclassname">celery.task.http.</tt><tt class="descname">InvalidResponseError</tt><a class="headerlink" href="#celery.task.http.InvalidResponseError" title="Permalink to this definition">¶</a></dt>
-<dd>The remote server gave an invalid response.</dd></dl>
+<dd><p>The remote server gave an invalid response.</p>
+</dd></dl>
 
 <dl class="class">
 <dt id="celery.task.http.MutableURL">
@@ -211,7 +219,8 @@ properly urlencoded.</p>
 <dl class="exception">
 <dt id="celery.task.http.RemoteExecuteError">
 <em class="property">exception </em><tt class="descclassname">celery.task.http.</tt><tt class="descname">RemoteExecuteError</tt><a class="headerlink" href="#celery.task.http.RemoteExecuteError" title="Permalink to this definition">¶</a></dt>
-<dd>The remote task gave a custom error.</dd></dl>
+<dd><p>The remote task gave a custom error.</p>
+</dd></dl>
 
 <dl class="class">
 <dt id="celery.task.http.URL">
@@ -223,9 +232,9 @@ properly urlencoded.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><em>url</em> &#8211; URL to request.</li>
-<li><em>dispatcher</em> &#8211; Class used to dispatch the request.
-By default this is <a title="celery.task.http.HttpDispatchTask" class="reference internal" href="#celery.task.http.HttpDispatchTask"><tt class="xref docutils literal"><span class="pre">HttpDispatchTask</span></tt></a>.</li>
+<li><strong>url</strong> &#8211; URL to request.</li>
+<li><strong>dispatcher</strong> &#8211; Class used to dispatch the request.
+By default this is <a class="reference internal" href="#celery.task.http.HttpDispatchTask" title="celery.task.http.HttpDispatchTask"><tt class="xref py py-class docutils literal"><span class="pre">HttpDispatchTask</span></tt></a>.</li>
 </ul>
 </td>
 </tr>
@@ -234,25 +243,29 @@ By default this is <a title="celery.task.http.HttpDispatchTask" class="reference
 <dl class="attribute">
 <dt id="celery.task.http.URL.dispatcher">
 <tt class="descname">dispatcher</tt><a class="headerlink" href="#celery.task.http.URL.dispatcher" title="Permalink to this definition">¶</a></dt>
-<dd>alias of <a title="celery.task.http.HttpDispatchTask" class="reference internal" href="#celery.task.http.HttpDispatchTask"><tt class="xref docutils literal"><span class="pre">HttpDispatchTask</span></tt></a></dd></dl>
+<dd><p>alias of <a class="reference internal" href="#celery.task.http.HttpDispatchTask" title="celery.task.http.HttpDispatchTask"><tt class="xref py py-class docutils literal"><span class="pre">HttpDispatchTask</span></tt></a></p>
+</dd></dl>
 
 </dd></dl>
 
 <dl class="exception">
 <dt id="celery.task.http.UnknownStatusError">
 <em class="property">exception </em><tt class="descclassname">celery.task.http.</tt><tt class="descname">UnknownStatusError</tt><a class="headerlink" href="#celery.task.http.UnknownStatusError" title="Permalink to this definition">¶</a></dt>
-<dd>The remote server gave an unknown status.</dd></dl>
+<dd><p>The remote server gave an unknown status.</p>
+</dd></dl>
 
 <dl class="function">
 <dt id="celery.task.http.maybe_utf8">
 <tt class="descclassname">celery.task.http.</tt><tt class="descname">maybe_utf8</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#celery.task.http.maybe_utf8" title="Permalink to this definition">¶</a></dt>
-<dd>Encode utf-8 value, only if the value is actually utf-8.</dd></dl>
+<dd><p>Encode utf-8 value, only if the value is actually utf-8.</p>
+</dd></dl>
 
 <dl class="function">
 <dt id="celery.task.http.utf8dict">
 <tt class="descclassname">celery.task.http.</tt><tt class="descname">utf8dict</tt><big>(</big><em>tup</em><big>)</big><a class="headerlink" href="#celery.task.http.utf8dict" title="Permalink to this definition">¶</a></dt>
-<dd>With a dict&#8217;s items() tuple return a new dict with any utf-8
-keys/values encoded.</dd></dl>
+<dd><p>With a dict&#8217;s items() tuple return a new dict with any utf-8
+keys/values encoded.</p>
+</dd></dl>
 
 </div>
 
@@ -263,7 +276,7 @@ keys/values encoded.</dd></dl>
     <div class="footer">
     <p>
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
 	</p>
     </div>
       <div class="clearer"></div>

@@ -1,3 +1,4 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -12,12 +13,13 @@
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
         VERSION:     '1.1.0 (unstable)',
-        COLLAPSE_MODINDEX: false,
+        COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
     <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
@@ -35,7 +37,7 @@
 		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
 		<li id="page_buttons">
 			<div class="headerButton"><a href="../genindex.html" title="General Index" accesskey="I">index</a></div>
-			<div class="headerButton"><a href="../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="../py-modindex.html" title="Python Module Index" >modules</a></div>
 			<div class="headerButton"><a href="celery.result.html" title="Task Result - celery.result" accesskey="N">next</a></div>
 			<div class="headerButton"><a href="celery.task.base.html" title="Defining Tasks - celery.task.base" accesskey="P">previous</a></div>
 		</li>
@@ -46,41 +48,42 @@
   <div class="sphinxsidebarwrapper">
 	<ul><li class="toctree-l1"><a href="../index.html">Main Page</a></li></ul>
 	<ul class="current">
-<li class="toctree-l1"><a class="reference external" href="../getting-started/index.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference external" href="../userguide/index.html">User Guide</a></li>
-<li class="toctree-l1"><a class="reference external" href="../configuration.html">Configuration and defaults</a></li>
-<li class="toctree-l1"><a class="reference external" href="../cookbook/index.html">Cookbook</a></li>
-<li class="toctree-l1"><a class="reference external" href="../tutorials/index.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference external" href="../faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1 current"><a class="reference external" href="index.html">API Reference</a><ul class="current">
-<li class="toctree-l2"><a class="reference external" href="celery.decorators.html">Task Decorators - celery.decorators</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.base.html">Defining Tasks - celery.task.base</a></li>
-<li class="toctree-l2 current"><a class="current reference external" href="">Executing Tasks - celery.execute</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.result.html">Task Result - celery.result</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.html">Task Information and Utilities - celery.task</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.conf.html">Configuration - celery.conf</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.control.html">Remote Management of Workers - celery.task.control</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.http.html">HTTP Callback Tasks - celery.task.http</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.schedules.html">Periodic Task Schedule Behaviors - celery.task.schedules</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.signals.html">Signals - celery.signals</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.exceptions.html">Exceptions - celery.exceptions</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.task.builtins.html">Built-in Task Classes - celery.task.builtins</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.loaders.html">Loaders - celery.loaders</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.loaders.base.html">Loader Base Classes - celery.loaders.base</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.registry.html">Task Registry - celery.registry</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.states.html">Task States - celery.states</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.messaging.html">Messaging - celery.messaging</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.contrib.abortable.html">Contrib: Abortable tasks - celery.contrib.abortable</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.events.html">Events - celery.events</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.bin.celerybeat.html">Celery Periodic Task Server - celery.bin.celerybeat</a></li>
-<li class="toctree-l2"><a class="reference external" href="celery.bin.camqadm.html">caqmadm: AMQP API Command-line Shell - celery.bin.camqadm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting-started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="celery.decorators.html">Task Decorators - celery.decorators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.base.html">Defining Tasks - celery.task.base</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="">Executing Tasks - celery.execute</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.result.html">Task Result - celery.result</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.html">Task Information and Utilities - celery.task</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.conf.html">Configuration - celery.conf</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.control.html">Remote Management of Workers - celery.task.control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.http.html">HTTP Callback Tasks - celery.task.http</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.schedules.html">Periodic Task Schedule Behaviors - celery.task.schedules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.signals.html">Signals - celery.signals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.exceptions.html">Exceptions - celery.exceptions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.task.builtins.html">Built-in Task Classes - celery.task.builtins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.loaders.html">Loaders - celery.loaders</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.loaders.base.html">Loader Base Classes - celery.loaders.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.registry.html">Task Registry - celery.registry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.states.html">Task States - celery.states</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.messaging.html">Messaging - celery.messaging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.contrib.abortable.html">Contrib: Abortable tasks - celery.contrib.abortable</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.events.html">Events - celery.events</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.celerybeat.html">Celery Periodic Task Server - celery.bin.celerybeat</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.camqadm.html">caqmadm: AMQP API Command-line Shell - celery.bin.camqadm</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.celeryd_multi.html">Celeryd Multi Tool - celery.bin.celeryd_multi</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference external" href="../internals/index.html">Internals</a></li>
-<li class="toctree-l1"><a class="reference external" href="../changelog.html">Change history</a></li>
-<li class="toctree-l1"><a class="reference external" href="../links.html">Interesting Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../internals/index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../links.html">Interesting Links</a></li>
 </ul>
 
       <h3>This Page</h3>
@@ -116,13 +119,25 @@
           <div class="body">
             
   <div class="section" id="module-celery.execute">
-<h1>Executing Tasks - celery.execute<a class="headerlink" href="#module-celery.execute" title="Permalink to this headline">¶</a></h1>
+<span id="executing-tasks-celery-execute"></span><h1>Executing Tasks - celery.execute<a class="headerlink" href="#module-celery.execute" title="Permalink to this headline">¶</a></h1>
 <dl class="function">
 <dt id="celery.execute.apply">
 <tt class="descclassname">celery.execute.</tt><tt class="descname">apply</tt><big>(</big><em>task</em>, <em>args</em>, <em>kwargs</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.execute.apply" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apply the task locally.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>throw</strong> &#8211; Re-raise task exceptions. Defaults to
+the <tt class="docutils literal"><span class="pre">CELERY_EAGER_PROPAGATES_EXCEPTIONS</span></tt> setting.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 <p>This will block until the task completes, and returns a
-<a title="celery.result.EagerResult" class="reference external" href="celery.result.html#celery.result.EagerResult"><tt class="xref docutils literal"><span class="pre">celery.result.EagerResult</span></tt></a> instance.</p>
+<a class="reference internal" href="celery.result.html#celery.result.EagerResult" title="celery.result.EagerResult"><tt class="xref py py-class docutils literal"><span class="pre">celery.result.EagerResult</span></tt></a> instance.</p>
 </dd></dl>
 
 <dl class="function">
@@ -134,48 +149,48 @@
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><em>task</em> &#8211; The task to run (a callable object, or a <tt class="xref docutils literal"><span class="pre">Task</span></tt>
+<li><strong>task</strong> &#8211; The task to run (a callable object, or a <tt class="xref py py-class docutils literal"><span class="pre">Task</span></tt>
 instance</li>
-<li><em>args</em> &#8211; The positional arguments to pass on to the
+<li><strong>args</strong> &#8211; The positional arguments to pass on to the
 task (a <tt class="docutils literal"><span class="pre">list</span></tt>).</li>
-<li><em>kwargs</em> &#8211; The keyword arguments to pass on to the task (a <tt class="docutils literal"><span class="pre">dict</span></tt>)</li>
-<li><em>countdown</em> &#8211; Number of seconds into the future that the task should
+<li><strong>kwargs</strong> &#8211; The keyword arguments to pass on to the task (a <tt class="docutils literal"><span class="pre">dict</span></tt>)</li>
+<li><strong>countdown</strong> &#8211; Number of seconds into the future that the task should
 execute. Defaults to immediate delivery (Do not confuse that with
 the <tt class="docutils literal"><span class="pre">immediate</span></tt> setting, they are unrelated).</li>
-<li><em>eta</em> &#8211; A <tt class="xref docutils literal"><span class="pre">datetime.datetime</span></tt> object that describes the
+<li><strong>eta</strong> &#8211; A <tt class="xref py py-class docutils literal"><span class="pre">datetime.datetime</span></tt> object that describes the
 absolute time when the task should execute. May not be specified
 if <tt class="docutils literal"><span class="pre">countdown</span></tt> is also supplied. (Do not confuse this with the
 <tt class="docutils literal"><span class="pre">immediate</span></tt> setting, they are unrelated).</li>
-<li><em>routing_key</em> &#8211; The routing key used to route the task to a worker
+<li><strong>routing_key</strong> &#8211; The routing key used to route the task to a worker
 server.</li>
-<li><em>exchange</em> &#8211; The named exchange to send the task to. Defaults to
-<a title="celery.task.base.Task.exchange" class="reference external" href="celery.task.base.html#celery.task.base.Task.exchange"><tt class="xref docutils literal"><span class="pre">celery.task.base.Task.exchange</span></tt></a>.</li>
-<li><em>exchange_type</em> &#8211; The exchange type to initalize the exchange as
+<li><strong>exchange</strong> &#8211; The named exchange to send the task to. Defaults to
+<a class="reference internal" href="celery.task.base.html#celery.task.base.Task.exchange" title="celery.task.base.Task.exchange"><tt class="xref py py-attr docutils literal"><span class="pre">celery.task.base.Task.exchange</span></tt></a>.</li>
+<li><strong>exchange_type</strong> &#8211; The exchange type to initalize the exchange as
 if not already declared.
-Defaults to <a title="celery.task.base.Task.exchange_type" class="reference external" href="celery.task.base.html#celery.task.base.Task.exchange_type"><tt class="xref docutils literal"><span class="pre">celery.task.base.Task.exchange_type</span></tt></a>.</li>
-<li><em>immediate</em> &#8211; Request immediate delivery. Will raise an exception
+Defaults to <a class="reference internal" href="celery.task.base.html#celery.task.base.Task.exchange_type" title="celery.task.base.Task.exchange_type"><tt class="xref py py-attr docutils literal"><span class="pre">celery.task.base.Task.exchange_type</span></tt></a>.</li>
+<li><strong>immediate</strong> &#8211; Request immediate delivery. Will raise an exception
 if the task cannot be routed to a worker immediately.
 (Do not confuse this parameter with the <tt class="docutils literal"><span class="pre">countdown</span></tt> and <tt class="docutils literal"><span class="pre">eta</span></tt>
 settings, as they are unrelated).</li>
-<li><em>mandatory</em> &#8211; Mandatory routing. Raises an exception if there&#8217;s
+<li><strong>mandatory</strong> &#8211; Mandatory routing. Raises an exception if there&#8217;s
 no running workers able to take on this task.</li>
-<li><em>connection</em> &#8211; Re-use existing AMQP connection.
+<li><strong>connection</strong> &#8211; Re-use existing AMQP connection.
 The <tt class="docutils literal"><span class="pre">connect_timeout</span></tt> argument is not respected if this is set.</li>
-<li><em>connect_timeout</em> &#8211; The timeout in seconds, before we give up
+<li><strong>connect_timeout</strong> &#8211; The timeout in seconds, before we give up
 on establishing a connection to the AMQP server.</li>
-<li><em>priority</em> &#8211; The task priority, a number between <tt class="docutils literal"><span class="pre">0</span></tt> and <tt class="docutils literal"><span class="pre">9</span></tt>.</li>
-<li><em>serializer</em> &#8211; A string identifying the default serialization
+<li><strong>priority</strong> &#8211; The task priority, a number between <tt class="docutils literal"><span class="pre">0</span></tt> and <tt class="docutils literal"><span class="pre">9</span></tt>.</li>
+<li><strong>serializer</strong> &#8211; A string identifying the default serialization
 method to use. Defaults to the <tt class="docutils literal"><span class="pre">CELERY_TASK_SERIALIZER</span></tt> setting.
 Can be <tt class="docutils literal"><span class="pre">pickle</span></tt> <tt class="docutils literal"><span class="pre">json</span></tt>, <tt class="docutils literal"><span class="pre">yaml</span></tt>, or any custom serialization
 methods that have been registered with
-<tt class="xref docutils literal"><span class="pre">carrot.serialization.registry</span></tt>.</li>
+<tt class="xref py py-mod docutils literal"><span class="pre">carrot.serialization.registry</span></tt>.</li>
 </ul>
 </td>
 </tr>
 </tbody>
 </table>
 <p><strong>Note</strong>: If the <tt class="docutils literal"><span class="pre">CELERY_ALWAYS_EAGER</span></tt> setting is set, it will be
-replaced by a local <a title="celery.execute.apply" class="reference internal" href="#celery.execute.apply"><tt class="xref docutils literal"><span class="pre">apply()</span></tt></a> call instead.</p>
+replaced by a local <a class="reference internal" href="#celery.execute.apply" title="celery.execute.apply"><tt class="xref py py-func docutils literal"><span class="pre">apply()</span></tt></a> call instead.</p>
 </dd></dl>
 
 <dl class="function">
@@ -187,18 +202,18 @@ replaced by a local <a title="celery.execute.apply" class="reference internal" h
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><em>task_name</em> &#8211; the name of a task registered in the task registry.</li>
-<li><em>*args</em> &#8211; positional arguments to pass on to the task.</li>
-<li><em>**kwargs</em> &#8211; keyword arguments to pass on to the task.</li>
+<li><strong>task_name</strong> &#8211; the name of a task registered in the task registry.</li>
+<li><strong>*args</strong> &#8211; positional arguments to pass on to the task.</li>
+<li><strong>**kwargs</strong> &#8211; keyword arguments to pass on to the task.</li>
 </ul>
 </td>
 </tr>
-<tr class="field"><th class="field-name" colspan="2">Raises <a title="celery.exceptions.NotRegistered" class="reference external" href="celery.exceptions.html#celery.exceptions.NotRegistered">celery.exceptions.NotRegistered</a>:</th></tr>
+<tr class="field"><th class="field-name" colspan="2">Raises <a class="reference internal" href="celery.exceptions.html#celery.exceptions.NotRegistered" title="celery.exceptions.NotRegistered">celery.exceptions.NotRegistered</a>:</th></tr>
 <tr><td>&nbsp;</td><td class="field-body"><p class="first">exception if no such task
 has been registered in the task registry.</p>
 </td>
 </tr>
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><a title="celery.result.AsyncResult" class="reference external" href="celery.result.html#celery.result.AsyncResult"><tt class="xref docutils literal"><span class="pre">celery.result.AsyncResult</span></tt></a>.</p>
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">&lt;pending_xref py:class py:module=&#8221;celery.execute&#8221; refdoc=&#8221;reference/celery.execute&#8221; refdomain=&#8221;py&#8221; refexplicit=&#8221;False&#8221; reftarget=&#8221;celery.result.AsyncResult&#8221; reftype=&#8221;class&#8221;&gt;&lt;literal classes=&#8221;xref py py-class&#8221;&gt;celery.result.AsyncResult&lt;/literal&gt;&lt;/pending_xref&gt;.</p>
 </td>
 </tr>
 </tbody>
@@ -222,7 +237,7 @@ has been registered in the task registry.</p>
     <div class="footer">
     <p>
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
 	</p>
     </div>
       <div class="clearer"></div>

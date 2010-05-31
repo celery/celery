@@ -1,3 +1,4 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -10,14 +11,15 @@
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '#',
+        URL_ROOT:    '',
         VERSION:     '1.1.0 (unstable)',
-        COLLAPSE_MODINDEX: false,
+        COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="static/jquery.js"></script>
+    <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
     <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="index.html" />
     <link rel="next" title="Cookbook" href="cookbook/index.html" />
@@ -34,7 +36,7 @@
 		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
 		<li id="page_buttons">
 			<div class="headerButton"><a href="genindex.html" title="General Index" accesskey="I">index</a></div>
-			<div class="headerButton"><a href="modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="py-modindex.html" title="Python Module Index" >modules</a></div>
 			<div class="headerButton"><a href="cookbook/index.html" title="Cookbook" accesskey="N">next</a></div>
 			<div class="headerButton"><a href="userguide/routing.html" title="Routing Tasks" accesskey="P">previous</a></div>
 		</li>
@@ -45,32 +47,32 @@
   <div class="sphinxsidebarwrapper">
 	<ul><li class="toctree-l1"><a href="index.html">Main Page</a></li></ul>
 	<ul class="current">
-<li class="toctree-l1"><a class="reference external" href="getting-started/index.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference external" href="userguide/index.html">User Guide</a></li>
-<li class="toctree-l1 current"><a class="current reference external" href="">Configuration and defaults</a><ul>
-<li class="toctree-l2"><a class="reference external" href="#example-configuration-file">Example configuration file</a></li>
-<li class="toctree-l2"><a class="reference external" href="#concurrency-settings">Concurrency settings</a></li>
-<li class="toctree-l2"><a class="reference external" href="#task-result-backend-settings">Task result backend settings</a></li>
-<li class="toctree-l2"><a class="reference external" href="#database-backend-settings">Database backend settings</a></li>
-<li class="toctree-l2"><a class="reference external" href="#amqp-backend-settings">AMQP backend settings</a></li>
-<li class="toctree-l2"><a class="reference external" href="#cache-backend-settings">Cache backend settings</a></li>
-<li class="toctree-l2"><a class="reference external" href="#tokyo-tyrant-backend-settings">Tokyo Tyrant backend settings</a></li>
-<li class="toctree-l2"><a class="reference external" href="#redis-backend-settings">Redis backend settings</a></li>
-<li class="toctree-l2"><a class="reference external" href="#mongodb-backend-settings">MongoDB backend settings</a></li>
-<li class="toctree-l2"><a class="reference external" href="#messaging-settings">Messaging settings</a></li>
-<li class="toctree-l2"><a class="reference external" href="#task-execution-settings">Task execution settings</a></li>
-<li class="toctree-l2"><a class="reference external" href="#worker-celeryd">Worker: celeryd</a></li>
-<li class="toctree-l2"><a class="reference external" href="#periodic-task-server-celerybeat">Periodic Task Server: celerybeat</a></li>
-<li class="toctree-l2"><a class="reference external" href="#monitor-server-celerymon">Monitor Server: celerymon</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting-started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="userguide/index.html">User Guide</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Configuration and defaults</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#example-configuration-file">Example configuration file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#concurrency-settings">Concurrency settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#task-result-backend-settings">Task result backend settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#database-backend-settings">Database backend settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#amqp-backend-settings">AMQP backend settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cache-backend-settings">Cache backend settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tokyo-tyrant-backend-settings">Tokyo Tyrant backend settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#redis-backend-settings">Redis backend settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mongodb-backend-settings">MongoDB backend settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#messaging-settings">Messaging settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#task-execution-settings">Task execution settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#worker-celeryd">Worker: celeryd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#periodic-task-server-celerybeat">Periodic Task Server: celerybeat</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#monitor-server-celerymon">Monitor Server: celerymon</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference external" href="cookbook/index.html">Cookbook</a></li>
-<li class="toctree-l1"><a class="reference external" href="tutorials/index.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference external" href="faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1"><a class="reference external" href="reference/index.html">API Reference</a></li>
-<li class="toctree-l1"><a class="reference external" href="internals/index.html">Internals</a></li>
-<li class="toctree-l1"><a class="reference external" href="changelog.html">Change history</a></li>
-<li class="toctree-l1"><a class="reference external" href="links.html">Interesting Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="internals/index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference internal" href="links.html">Interesting Links</a></li>
 </ul>
 
       <h3>This Page</h3>
@@ -108,18 +110,14 @@
   <div class="section" id="configuration-and-defaults">
 <h1>Configuration and defaults<a class="headerlink" href="#configuration-and-defaults" title="Permalink to this headline">¶</a></h1>
 <p>This document describes the configuration options available.</p>
-<p>If you&#8217;re using celery in a Django project these settings should be defined
-in the project&#8217;s <tt class="docutils literal"><span class="pre">settings.py</span></tt> file.</p>
-<p>In a regular Python environment, that is using the default loader, you must create
-the <tt class="docutils literal"><span class="pre">celeryconfig.py</span></tt> module and make sure it is available on the
-Python path.</p>
+<p>If you&#8217;re using the default loader, you must create the <tt class="docutils literal"><span class="pre">celeryconfig.py</span></tt>
+module and make sure it is available on the Python path.</p>
 <div class="section" id="example-configuration-file">
 <h2>Example configuration file<a class="headerlink" href="#example-configuration-file" title="Permalink to this headline">¶</a></h2>
 <p>This is an example configuration file to get you started.
 It should contain all you need to run a basic celery set-up.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_RESULT_BACKEND</span> <span class="o">=</span> <span class="s">&quot;database&quot;</span>
-<span class="n">DATABASE_ENGINE</span> <span class="o">=</span> <span class="s">&quot;sqlite3&quot;</span>
-<span class="n">DATABASE_NAME</span> <span class="o">=</span> <span class="s">&quot;mydatabase.db&quot;</span>
+<span class="n">CELERY_RESULT_DBURI</span> <span class="o">=</span> <span class="s">&quot;sqlite:///mydatabase.db&quot;</span>
 
 <span class="n">BROKER_HOST</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>
 <span class="n">BROKER_PORT</span> <span class="o">=</span> <span class="mi">5672</span>
@@ -141,38 +139,36 @@ It should contain all you need to run a basic celery set-up.</p>
 <div class="section" id="concurrency-settings">
 <h2>Concurrency settings<a class="headerlink" href="#concurrency-settings" title="Permalink to this headline">¶</a></h2>
 <ul>
-<li><dl class="first docutils">
-<dt>CELERYD_CONCURRENCY</dt>
-<dd><p class="first">The number of concurrent worker processes, executing tasks simultaneously.</p>
-<p class="last">Defaults to the number of CPUs/cores available.</p>
-</dd>
-</dl>
+<li><p class="first">CELERYD_CONCURRENCY</p>
+<blockquote>
+<p>The number of concurrent worker processes, executing tasks simultaneously.</p>
+<p>Defaults to the number of CPUs/cores available.</p>
+</blockquote>
 </li>
-<li><dl class="first docutils">
-<dt>CELERYD_PREFETCH_MULTIPLIER</dt>
-<dd><p class="first last">How many messages to prefetch at a time multiplied by the number of
+<li><p class="first">CELERYD_PREFETCH_MULTIPLIER</p>
+<blockquote>
+<p>How many messages to prefetch at a time multiplied by the number of
 concurrent processes. The default is 4 (four messages for each
 process). The default setting seems pretty good here. However, if you have
 very long running tasks waiting in the queue and you have to start the
 workers, note that the first worker to start will receive four times the
 number of messages initially. Thus the tasks may not be fairly balanced among the
 workers.</p>
-</dd>
-</dl>
+</blockquote>
 </li>
 </ul>
 </div>
 <div class="section" id="task-result-backend-settings">
 <h2>Task result backend settings<a class="headerlink" href="#task-result-backend-settings" title="Permalink to this headline">¶</a></h2>
 <ul>
-<li><dl class="first docutils">
-<dt>CELERY_RESULT_BACKEND</dt>
-<dd><p class="first">The backend used to store task results (tombstones).
+<li><p class="first">CELERY_RESULT_BACKEND</p>
+<blockquote>
+<p>The backend used to store task results (tombstones).
 Can be one of the following:</p>
-<ul class="last">
+<ul>
 <li><dl class="first docutils">
 <dt>database (default)</dt>
-<dd><p class="first last">Use a relational database supported by the Django ORM.</p>
+<dd><p class="first last">Use a relational database supported by <a class="reference external" href="http://sqlalchemy.org">SQLAlchemy</a>.</p>
 </dd>
 </dl>
 </li>
@@ -204,43 +200,82 @@ Can be one of the following:</p>
 <dt>amqp</dt>
 <dd><p class="first last">Send results back as AMQP messages
 (<strong>WARNING</strong> While very fast, you must make sure you only
-receive the result once. See <a class="reference external" href="userguide/executing.html"><em>Executing Tasks</em></a>).</p>
+receive the result once. See <a class="reference internal" href="userguide/executing.html"><em>Executing Tasks</em></a>).</p>
 </dd>
 </dl>
 </li>
 </ul>
-</dd>
-</dl>
+</blockquote>
 </li>
 </ul>
 </div>
 <div class="section" id="database-backend-settings">
 <h2>Database backend settings<a class="headerlink" href="#database-backend-settings" title="Permalink to this headline">¶</a></h2>
+<p>Please see <a class="reference external" href="http://www.sqlalchemy.org/docs/dbengine.html#supported-databases">Supported Databases</a> for a table of supported databases.
+To use this backend you need to configure it with an
+<a class="reference external" href="http://www.sqlalchemy.org/docs/dbengine.html#create-engine-url-arguments">Connection String</a>, some examples include:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># sqlite (filename)</span>
+<span class="n">CELERY_RESULT_DBURI</span> <span class="o">=</span> <span class="s">&quot;sqlite:///celerydb.sqlite&quot;</span>
+
+<span class="c"># mysql</span>
+<span class="n">CELERY_RESULT_DBURI</span> <span class="o">=</span> <span class="s">&quot;mysql://scott:tiger@localhost/foo&quot;</span>
+
+<span class="c"># postgresql</span>
+<span class="n">CELERY_RESULT_DBURI</span> <span class="o">=</span> <span class="s">&quot;postgresql://scott:tiger@localhost/mydatabase&quot;</span>
+
+<span class="c"># oracle</span>
+<span class="n">CELERY_RESULT_DBURI</span> <span class="o">=</span> <span class="s">&quot;oracle://scott:tiger@127.0.0.1:1521/sidname&quot;</span>
+</pre></div>
+</div>
+<p>See <a class="reference external" href="http://www.sqlalchemy.org/docs/dbengine.html#create-engine-url-arguments">Connection String</a> for more information about connection
+strings.</p>
+<p>To specify additional SQLAlchemy database engine options you can use
+the <tt class="docutils literal"><span class="pre">CELERY_RESULT_ENGINE_OPTIONS</span></tt> setting:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># echo enables verbose logging from SQLAlchemy.</span>
+<span class="n">CELERY_RESULT_ENGINE_OPTIONS</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;echo&quot;</span><span class="p">:</span> <span class="bp">True</span><span class="p">}</span>
+</pre></div>
+</div>
 <p>Please see the Django ORM database settings documentation:
 <a class="reference external" href="http://docs.djangoproject.com/en/dev/ref/settings/#database-engine">http://docs.djangoproject.com/en/dev/ref/settings/#database-engine</a></p>
 <p>If you use this backend, make sure to initialize the database tables
-after configuration. When using celery with a Django project this
-means executing:</p>
-<div class="highlight-python"><pre>$ python manage.py syncdb</pre>
-</div>
-<p>When using celery in a regular Python environment you have to execute:</p>
+after configuration. Use the <tt class="docutils literal"><span class="pre">celeryinit</span></tt> command to do so:</p>
 <div class="highlight-python"><pre>$ celeryinit</pre>
 </div>
 <div class="section" id="example-configuration">
 <h3>Example configuration<a class="headerlink" href="#example-configuration" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_RESULT_BACKEND</span> <span class="o">=</span> <span class="s">&quot;database&quot;</span>
-<span class="n">DATABASE_ENGINE</span> <span class="o">=</span> <span class="s">&quot;mysql&quot;</span>
-<span class="n">DATABASE_USER</span> <span class="o">=</span> <span class="s">&quot;myusername&quot;</span>
-<span class="n">DATABASE_PASSWORD</span> <span class="o">=</span> <span class="s">&quot;mypassword&quot;</span>
-<span class="n">DATABASE_NAME</span> <span class="o">=</span> <span class="s">&quot;mydatabase&quot;</span>
-<span class="n">DATABASE_HOST</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>
+<span class="n">CELERY_RESULT_DBURI</span> <span class="o">=</span> <span class="s">&quot;mysql://user:password@host/dbname&quot;</span>
 </pre></div>
 </div>
 </div>
 </div>
 <div class="section" id="amqp-backend-settings">
 <h2>AMQP backend settings<a class="headerlink" href="#amqp-backend-settings" title="Permalink to this headline">¶</a></h2>
-<p>The AMQP backend does not have any settings yet.</p>
+<ul>
+<li><p class="first">CELERY_RESULT_EXCHANGE</p>
+<blockquote>
+<p>Name of the exchange to publish results in. Default is <tt class="docutils literal"><span class="pre">&quot;celeryresults&quot;</span></tt>.</p>
+</blockquote>
+</li>
+<li><p class="first">CELERY_RESULT_EXCHANGE_TYPE</p>
+<blockquote>
+<p>The exchange type of the result exchange. Default is to use a <tt class="docutils literal"><span class="pre">direct</span></tt>
+exchange.</p>
+</blockquote>
+</li>
+<li><p class="first">CELERY_RESULT_SERIALIZER</p>
+<blockquote>
+<p>Result message serialization format. Default is <tt class="docutils literal"><span class="pre">&quot;pickle&quot;</span></tt>.</p>
+</blockquote>
+</li>
+<li><p class="first">CELERY_RESULTS_PERSISTENT</p>
+<blockquote>
+<p>If set to <tt class="xref docutils literal"><span class="pre">True</span></tt>, result messages will be persistent. This means the
+messages will not be lost after a broker restart. The default is for the
+results to be transient.</p>
+</blockquote>
+</li>
+</ul>
 <div class="section" id="id1">
 <h3>Example configuration<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
 <blockquote>
@@ -270,7 +305,7 @@ django <tt class="docutils literal"><span class="pre">CACHE_BACKEND</span></tt> 
 <div class="section" id="tokyo-tyrant-backend-settings">
 <h2>Tokyo Tyrant backend settings<a class="headerlink" href="#tokyo-tyrant-backend-settings" title="Permalink to this headline">¶</a></h2>
 <dl class="docutils">
-<dt><strong>NOTE</strong> The Tokyo Tyrant backend requires the <tt class="xref docutils literal"><span class="pre">pytyrant</span></tt> library:</dt>
+<dt><strong>NOTE</strong> The Tokyo Tyrant backend requires the <tt class="xref py py-mod docutils literal"><span class="pre">pytyrant</span></tt> library:</dt>
 <dd><a class="reference external" href="http://pypi.python.org/pypi/pytyrant/">http://pypi.python.org/pypi/pytyrant/</a></dd>
 </dl>
 <p>This backend requires the following configuration directives to be set:</p>
@@ -300,7 +335,7 @@ django <tt class="docutils literal"><span class="pre">CACHE_BACKEND</span></tt> 
 <div class="section" id="redis-backend-settings">
 <h2>Redis backend settings<a class="headerlink" href="#redis-backend-settings" title="Permalink to this headline">¶</a></h2>
 <dl class="docutils">
-<dt><strong>NOTE</strong> The Redis backend requires the <tt class="xref docutils literal"><span class="pre">redis</span></tt> library:</dt>
+<dt><strong>NOTE</strong> The Redis backend requires the <tt class="xref py py-mod docutils literal"><span class="pre">redis</span></tt> library:</dt>
 <dd><a class="reference external" href="http://pypi.python.org/pypi/redis/0.5.5">http://pypi.python.org/pypi/redis/0.5.5</a></dd>
 </dl>
 <p>To install the redis package use <tt class="docutils literal"><span class="pre">pip</span></tt> or <tt class="docutils literal"><span class="pre">easy_install</span></tt>:</p>
@@ -346,7 +381,7 @@ django <tt class="docutils literal"><span class="pre">CACHE_BACKEND</span></tt> 
 <div class="section" id="mongodb-backend-settings">
 <h2>MongoDB backend settings<a class="headerlink" href="#mongodb-backend-settings" title="Permalink to this headline">¶</a></h2>
 <dl class="docutils">
-<dt><strong>NOTE</strong> The MongoDB backend requires the <tt class="xref docutils literal"><span class="pre">pymongo</span></tt> library:</dt>
+<dt><strong>NOTE</strong> The MongoDB backend requires the <tt class="xref py py-mod docutils literal"><span class="pre">pymongo</span></tt> library:</dt>
 <dd><a class="reference external" href="http://github.com/mongodb/mongo-python-driver/tree/master">http://github.com/mongodb/mongo-python-driver/tree/master</a></dd>
 </dl>
 <ul>
@@ -415,7 +450,7 @@ Defaults to &#8220;celery_taskmeta&#8221;.</p>
 <ul>
 <li><p class="first">CELERY_QUEUES
 The mapping of queues the worker consumes from. This is a dictionary
-of queue name/options. See <a class="reference external" href="userguide/routing.html"><em>Routing Tasks</em></a> for more information.</p>
+of queue name/options. See <a class="reference internal" href="userguide/routing.html"><em>Routing Tasks</em></a> for more information.</p>
 <p>The default is a queue/exchange/binding key of <tt class="docutils literal"><span class="pre">&quot;celery&quot;</span></tt>, with
 exchange type <tt class="docutils literal"><span class="pre">direct</span></tt>.</p>
 <p>You don&#8217;t have to care about this unless you want custom routing facilities.</p>
@@ -449,6 +484,12 @@ The default is: <tt class="docutils literal"><span class="pre">direct</span></tt
 The default is: <tt class="docutils literal"><span class="pre">celery</span></tt>.</p>
 </dd>
 </dl>
+</li>
+<li><p class="first">CELERY_DEFAULT_DELIVERY_MODE</p>
+<blockquote>
+<p>Can be <tt class="docutils literal"><span class="pre">transient</span></tt> or <tt class="docutils literal"><span class="pre">persistent</span></tt>. Default is to send
+persistent messages.</p>
+</blockquote>
 </li>
 </ul>
 </div>
@@ -491,13 +532,20 @@ to the AMQP broker.</p>
 <dt>CELERY_ALWAYS_EAGER</dt>
 <dd><p class="first">If this is <tt class="xref docutils literal"><span class="pre">True</span></tt>, all tasks will be executed locally by blocking
 until it is finished. <tt class="docutils literal"><span class="pre">apply_async</span></tt> and <tt class="docutils literal"><span class="pre">Task.delay</span></tt> will return
-a <a title="celery.result.EagerResult" class="reference external" href="reference/celery.result.html#celery.result.EagerResult"><tt class="xref docutils literal"><span class="pre">celery.result.EagerResult</span></tt></a> which emulates the behavior of
-<a title="celery.result.AsyncResult" class="reference external" href="reference/celery.result.html#celery.result.AsyncResult"><tt class="xref docutils literal"><span class="pre">celery.result.AsyncResult</span></tt></a>, except the result has already
+a <a class="reference internal" href="reference/celery.result.html#celery.result.EagerResult" title="celery.result.EagerResult"><tt class="xref py py-class docutils literal"><span class="pre">celery.result.EagerResult</span></tt></a> which emulates the behavior of
+<a class="reference internal" href="reference/celery.result.html#celery.result.AsyncResult" title="celery.result.AsyncResult"><tt class="xref py py-class docutils literal"><span class="pre">celery.result.AsyncResult</span></tt></a>, except the result has already
 been evaluated.</p>
 <p class="last">Tasks will never be sent to the queue, but executed locally
 instead.</p>
 </dd>
 </dl>
+</li>
+<li><p class="first">CELERY_EAGER_PROPAGATES_EXCEPTIONS</p>
+<blockquote>
+<p>If this is <tt class="xref docutils literal"><span class="pre">True</span></tt>, eagerly executed tasks (using <tt class="docutils literal"><span class="pre">.apply</span></tt>, or with
+<tt class="docutils literal"><span class="pre">CELERY_ALWAYS_EAGER</span></tt> on), will raise exceptions.</p>
+<p>It&#8217;s the same as always running <tt class="docutils literal"><span class="pre">apply</span></tt> with <tt class="docutils literal"><span class="pre">throw=True</span></tt>.</p>
+</blockquote>
 </li>
 <li><p class="first">CELERY_IGNORE_RESULT</p>
 <blockquote>
@@ -508,11 +556,19 @@ you can set <tt class="docutils literal"><span class="pre">CELERY_STORE_ERRORS_E
 </li>
 <li><dl class="first docutils">
 <dt>CELERY_TASK_RESULT_EXPIRES</dt>
-<dd><p class="first">Time (in seconds, or a <tt class="xref docutils literal"><span class="pre">datetime.timedelta</span></tt> object) for when after
-stored task tombstones are deleted.</p>
-<p class="last"><strong>NOTE</strong>: For the moment this only works with the database, cache and MongoDB</p>
+<dd><p class="first">Time (in seconds, or a <tt class="xref py py-class docutils literal"><span class="pre">datetime.timedelta</span></tt> object) for when after
+stored task tombstones will be deleted.</p>
+<p>A built-in periodic task will delete the results after this time
+(<a class="reference internal" href="reference/celery.task.builtins.html#celery.task.builtins.DeleteExpiredTaskMetaTask" title="celery.task.builtins.DeleteExpiredTaskMetaTask"><tt class="xref py py-class docutils literal"><span class="pre">celery.task.builtins.DeleteExpiredTaskMetaTask</span></tt></a>).</p>
+<p><strong>NOTE</strong>: For the moment this only works with the database, cache and MongoDB
+backends.</p>
+<p class="last"><strong>NOTE</strong>: <tt class="docutils literal"><span class="pre">celerybeat</span></tt> must be running for the results to be expired.</p>
 </dd>
 </dl>
+</li>
+<li><p class="first">CELERY_MAX_CACHED_RESULTS</p>
+<p>Total number of results to store before results are evicted from the
+result cache. The default is <tt class="docutils literal"><span class="pre">5000</span></tt>.</p>
 </li>
 <li><p class="first">CELERY_TRACK_STARTED</p>
 <blockquote>
@@ -531,7 +587,7 @@ backends.</p>
 <dd><p class="first">A string identifying the default serialization
 method to use. Can be <tt class="docutils literal"><span class="pre">pickle</span></tt> (default),
 <tt class="docutils literal"><span class="pre">json</span></tt>, <tt class="docutils literal"><span class="pre">yaml</span></tt>, or any custom serialization methods that have
-been registered with <tt class="xref docutils literal"><span class="pre">carrot.serialization.registry</span></tt>.</p>
+been registered with <tt class="xref py py-mod docutils literal"><span class="pre">carrot.serialization.registry</span></tt>.</p>
 <p class="last">Default is <tt class="docutils literal"><span class="pre">pickle</span></tt>.</p>
 </dd>
 </dl>
@@ -546,40 +602,125 @@ The default is no rate limit.</p>
 <p>Disable all rate limits, even if tasks has explicit rate limits set.</p>
 </blockquote>
 </li>
+<li><p class="first">CELERY_ACKS_LATE</p>
+<blockquote>
+<p>Late ack means the task messages will be acknowledged <strong>after</strong> the task
+has been executed, not <em>just before</em>, which is the default behavior.</p>
+<p>See <a class="reference external" href="http://ask.github.com/celery/faq.html#should-i-use-retry-or-acks-late">http://ask.github.com/celery/faq.html#should-i-use-retry-or-acks-late</a></p>
+</blockquote>
+</li>
 </ul>
 </div>
 <div class="section" id="worker-celeryd">
 <h2>Worker: celeryd<a class="headerlink" href="#worker-celeryd" title="Permalink to this headline">¶</a></h2>
 <ul>
-<li><dl class="first docutils">
-<dt>CELERY_IMPORTS</dt>
-<dd><p class="first last">A sequence of modules to import when the celery daemon starts.  This is
+<li><p class="first">CELERY_IMPORTS</p>
+<blockquote>
+<p>A sequence of modules to import when the celery daemon starts.  This is
 useful to add tasks if you are not using django or cannot use task
 auto-discovery.</p>
-</dd>
-</dl>
+</blockquote>
 </li>
-<li><dl class="first docutils">
-<dt>CELERY_SEND_EVENTS</dt>
-<dd><p class="first last">Send events so the worker can be monitored by tools like <tt class="docutils literal"><span class="pre">celerymon</span></tt>.</p>
-</dd>
-</dl>
+<li><p class="first">CELERYD_MAX_TASKS_PER_CHILD</p>
+<p>Maximum number of tasks a pool worker process can execute before
+it&#8217;s replaced with a new one. Default is no limit.</p>
 </li>
-<li><dl class="first docutils">
-<dt>CELERY_SEND_TASK_ERROR_EMAILS</dt>
-<dd><p class="first last">If set to <tt class="xref docutils literal"><span class="pre">True</span></tt>, errors in tasks will be sent to admins by e-mail.
+<li><p class="first">CELERYD_TASK_TIME_LIMIT</p>
+<blockquote>
+<p>Task hard time limit in seconds. The worker processing the task will
+be killed and replaced with a new one when this is exceeded.</p>
+</blockquote>
+</li>
+<li><p class="first">CELERYD_SOFT_TASK_TIME_LIMIT</p>
+<blockquote>
+<p>Task soft time limit in seconds.
+The <a class="reference internal" href="reference/celery.exceptions.html#celery.exceptions.SoftTimeLimitExceeded" title="celery.exceptions.SoftTimeLimitExceeded"><tt class="xref py py-exc docutils literal"><span class="pre">celery.exceptions.SoftTimeLimitExceeded</span></tt></a> exception will be
+raised when this is exceeded. The task can catch this to
+e.g. clean up before the hard time limit comes.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.decorators</span> <span class="kn">import</span> <span class="n">task</span>
+<span class="kn">from</span> <span class="nn">celery.exceptions</span> <span class="kn">import</span> <span class="n">SoftTimeLimitExceeded</span>
+
+<span class="nd">@task</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">mytask</span><span class="p">():</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">do_work</span><span class="p">()</span>
+    <span class="k">except</span> <span class="n">SoftTimeLimitExceeded</span><span class="p">:</span>
+        <span class="n">cleanup_in_a_hurry</span><span class="p">()</span>
+</pre></div>
+</div>
+</blockquote>
+</li>
+<li><p class="first">CELERY_SEND_TASK_ERROR_EMAILS</p>
+<blockquote>
+<p>If set to <tt class="xref docutils literal"><span class="pre">True</span></tt>, errors in tasks will be sent to admins by e-mail.
 If unset, it will send the e-mails if <tt class="docutils literal"><span class="pre">settings.DEBUG</span></tt> is False.</p>
-</dd>
-</dl>
+</blockquote>
 </li>
-<li><dl class="first docutils">
-<dt>CELERY_STORE_ERRORS_EVEN_IF_IGNORED</dt>
-<dd><p class="first last">If set, the worker stores all task errors in the result store even if
+<li><p class="first">CELERY_STORE_ERRORS_EVEN_IF_IGNORED</p>
+<blockquote>
+<p>If set, the worker stores all task errors in the result store even if
 <tt class="docutils literal"><span class="pre">Task.ignore_result</span></tt> is on.</p>
-</dd>
-</dl>
+</blockquote>
 </li>
 </ul>
+<div class="section" id="events">
+<h3>Events<a class="headerlink" href="#events" title="Permalink to this headline">¶</a></h3>
+<ul>
+<li><p class="first">CELERY_SEND_EVENTS</p>
+<blockquote>
+<p>Send events so the worker can be monitored by tools like <tt class="docutils literal"><span class="pre">celerymon</span></tt>.</p>
+</blockquote>
+</li>
+<li><p class="first">CELERY_EVENT_EXCHANGE</p>
+<blockquote>
+<p>Name of the exchange to send event messages to. Default is
+<tt class="docutils literal"><span class="pre">&quot;celeryevent&quot;</span></tt>.</p>
+</blockquote>
+</li>
+<li><p class="first">CELERY_EVENT_EXCHANGE_TYPE</p>
+<blockquote>
+<p>The exchange type of the event exchange. Default is to use a <tt class="docutils literal"><span class="pre">direct</span></tt>
+exchange.</p>
+</blockquote>
+</li>
+<li><p class="first">CELERY_EVENT_ROUTING_KEY</p>
+<blockquote>
+<p>Routing key used when sending event messages. Default is
+<tt class="docutils literal"><span class="pre">&quot;celeryevent&quot;</span></tt>.</p>
+</blockquote>
+</li>
+<li><p class="first">CELERY_EVENT_SERIALIZER</p>
+<blockquote>
+<p>Message serialization format used when sending event messages. Default is
+<tt class="docutils literal"><span class="pre">&quot;json&quot;</span></tt>.</p>
+</blockquote>
+</li>
+</ul>
+</div>
+<div class="section" id="broadcast-commands">
+<h3>Broadcast Commands<a class="headerlink" href="#broadcast-commands" title="Permalink to this headline">¶</a></h3>
+<ul>
+<li><p class="first">CELERY_BROADCAST_QUEUE</p>
+<blockquote>
+<p>Name prefix for the queue used when listening for
+broadcast messages. The workers hostname will be appended
+to the prefix to create the final queue name.</p>
+<p>Default is <tt class="docutils literal"><span class="pre">&quot;celeryctl&quot;</span></tt>.</p>
+</blockquote>
+</li>
+<li><p class="first">CELERY_BROADCAST_EXCHANGE</p>
+<blockquote>
+<p>Name of the exchange used for broadcast messages.</p>
+<p>Default is <tt class="docutils literal"><span class="pre">&quot;celeryctl&quot;</span></tt>.</p>
+</blockquote>
+</li>
+<li><p class="first">CELERY_BROADCAST_EXCHANGE_TYPE</p>
+<blockquote>
+<p>Exchange type used for broadcast messages. Default is <tt class="docutils literal"><span class="pre">&quot;fanout&quot;</span></tt>.</p>
+</blockquote>
+</li>
+</ul>
+</div>
 <div class="section" id="logging">
 <h3>Logging<a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h3>
 <ul>
@@ -592,24 +733,62 @@ Can also be set via the <tt class="docutils literal"><span class="pre">--logfile
 </dd>
 </dl>
 </li>
-<li><dl class="first docutils">
-<dt>CELERYD_LOG_LEVEL</dt>
-<dd><p class="first">Worker log level, can be any of <tt class="docutils literal"><span class="pre">DEBUG</span></tt>, <tt class="docutils literal"><span class="pre">INFO</span></tt>, <tt class="docutils literal"><span class="pre">WARNING</span></tt>,
+<li><p class="first">CELERYD_LOG_LEVEL</p>
+<blockquote>
+<p>Worker log level, can be any of <tt class="docutils literal"><span class="pre">DEBUG</span></tt>, <tt class="docutils literal"><span class="pre">INFO</span></tt>, <tt class="docutils literal"><span class="pre">WARNING</span></tt>,
 <tt class="docutils literal"><span class="pre">ERROR</span></tt>, <tt class="docutils literal"><span class="pre">CRITICAL</span></tt>.</p>
 <p>Can also be set via the <tt class="docutils literal"><span class="pre">--loglevel</span></tt> argument.</p>
-<p class="last">See the <tt class="xref docutils literal"><span class="pre">logging</span></tt> module for more information.</p>
-</dd>
-</dl>
+<p>See the <tt class="xref py py-mod docutils literal"><span class="pre">logging</span></tt> module for more information.</p>
+</blockquote>
 </li>
-<li><dl class="first docutils">
-<dt>CELERYD_LOG_FORMAT</dt>
-<dd><p class="first">The format to use for log messages. Can be overridden using
-the <tt class="docutils literal"><span class="pre">--loglevel</span></tt> option to <tt class="docutils literal"><span class="pre">celeryd</span></tt>.</p>
+<li><p class="first">CELERYD_LOG_FORMAT</p>
+<blockquote>
+<p>The format to use for log messages.</p>
 <p>Default is <tt class="docutils literal"><span class="pre">[%(asctime)s:</span> <span class="pre">%(levelname)s/%(processName)s]</span> <span class="pre">%(message)s</span></tt></p>
-<p class="last">See the Python <tt class="xref docutils literal"><span class="pre">logging</span></tt> module for more information about log
+<p>See the Python <tt class="xref py py-mod docutils literal"><span class="pre">logging</span></tt> module for more information about log
 formats.</p>
-</dd>
-</dl>
+</blockquote>
+</li>
+<li><p class="first">CELERYD_TASK_LOG_FORMAT</p>
+<blockquote>
+<p>The format to use for log messages logged in tasks. Can be overridden using
+the <tt class="docutils literal"><span class="pre">--loglevel</span></tt> option to <tt class="docutils literal"><span class="pre">celeryd</span></tt>.</p>
+<p>Default is:</p>
+<div class="highlight-python"><pre>[%(asctime)s: %(levelname)s/%(processName)s]
+    [%(task_name)s(%(task_id)s)] %(message)s</pre>
+</div>
+<p>See the Python <tt class="xref py py-mod docutils literal"><span class="pre">logging</span></tt> module for more information about log
+formats.</p>
+</blockquote>
+</li>
+</ul>
+</div>
+<div class="section" id="custom-component-classes-advanced">
+<h3>Custom Component Classes (advanced)<a class="headerlink" href="#custom-component-classes-advanced" title="Permalink to this headline">¶</a></h3>
+<ul>
+<li><p class="first">CELERYD_POOL</p>
+<blockquote>
+<p>Name of the task pool class used by the worker.
+Default is <tt class="docutils literal"><span class="pre">&quot;celery.worker.pool.TaskPool&quot;</span></tt>.</p>
+</blockquote>
+</li>
+<li><p class="first">CELERYD_LISTENER</p>
+<blockquote>
+<p>Name of the listener class used by the worker.
+Default is <tt class="docutils literal"><span class="pre">&quot;celery.worker.listener.CarrotListener&quot;</span></tt>.</p>
+</blockquote>
+</li>
+<li><p class="first">CELERYD_MEDIATOR</p>
+<blockquote>
+<p>Name of the mediator class used by the worker.
+Default is <tt class="docutils literal"><span class="pre">&quot;celery.worker.controllers.Mediator&quot;</span></tt>.</p>
+</blockquote>
+</li>
+<li><p class="first">CELERYD_ETA_SCHEDULER</p>
+<blockquote>
+<p>Name of the ETA scheduler class used by the worker.
+Default is <tt class="docutils literal"><span class="pre">&quot;celery.worker.controllers.ScheduleController&quot;</span></tt>.</p>
+</blockquote>
 </li>
 </ul>
 </div>
@@ -645,7 +824,7 @@ Can also be set via the <tt class="docutils literal"><span class="pre">--logfile
 <dd><p class="first">Logging level. Can be any of <tt class="docutils literal"><span class="pre">DEBUG</span></tt>, <tt class="docutils literal"><span class="pre">INFO</span></tt>, <tt class="docutils literal"><span class="pre">WARNING</span></tt>,
 <tt class="docutils literal"><span class="pre">ERROR</span></tt>, or <tt class="docutils literal"><span class="pre">CRITICAL</span></tt>.</p>
 <p>Can also be set via the <tt class="docutils literal"><span class="pre">--loglevel</span></tt> argument.</p>
-<p class="last">See the <tt class="xref docutils literal"><span class="pre">logging</span></tt> module for more information.</p>
+<p class="last">See the <tt class="xref py py-mod docutils literal"><span class="pre">logging</span></tt> module for more information.</p>
 </dd>
 </dl>
 </li>
@@ -667,7 +846,7 @@ Can also be set via the <tt class="docutils literal"><span class="pre">--logfile
 <dt>CELERYMON_LOG_LEVEL</dt>
 <dd><p class="first">Logging level. Can be any of <tt class="docutils literal"><span class="pre">DEBUG</span></tt>, <tt class="docutils literal"><span class="pre">INFO</span></tt>, <tt class="docutils literal"><span class="pre">WARNING</span></tt>,
 <tt class="docutils literal"><span class="pre">ERROR</span></tt>, or <tt class="docutils literal"><span class="pre">CRITICAL</span></tt>.</p>
-<p class="last">See the <tt class="xref docutils literal"><span class="pre">logging</span></tt> module for more information.</p>
+<p class="last">See the <tt class="xref py py-mod docutils literal"><span class="pre">logging</span></tt> module for more information.</p>
 </dd>
 </dl>
 </li>
@@ -682,7 +861,7 @@ Can also be set via the <tt class="docutils literal"><span class="pre">--logfile
     <div class="footer">
     <p>
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
 	</p>
     </div>
       <div class="clearer"></div>

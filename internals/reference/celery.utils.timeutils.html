@@ -1,3 +1,4 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -12,12 +13,13 @@
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
         VERSION:     '1.1.0 (unstable)',
-        COLLAPSE_MODINDEX: false,
+        COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="../../static/jquery.js"></script>
+    <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
     <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
@@ -35,7 +37,7 @@
 		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
 		<li id="page_buttons">
 			<div class="headerButton"><a href="../../genindex.html" title="General Index" accesskey="I">index</a></div>
-			<div class="headerButton"><a href="../../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
+			<div class="headerButton"><a href="../../py-modindex.html" title="Python Module Index" >modules</a></div>
 			<div class="headerButton"><a href="celery.utils.info.html" title="Debugging Info - celery.utils.info" accesskey="N">next</a></div>
 			<div class="headerButton"><a href="celery.utils.html" title="Multiprocessing Worker - celery.worker" accesskey="P">previous</a></div>
 		</li>
@@ -46,16 +48,16 @@
   <div class="sphinxsidebarwrapper">
 	<ul><li class="toctree-l1"><a href="../../index.html">Main Page</a></li></ul>
 	<ul>
-<li class="toctree-l1"><a class="reference external" href="../../getting-started/index.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../userguide/index.html">User Guide</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../configuration.html">Configuration and defaults</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../cookbook/index.html">Cookbook</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../tutorials/index.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../reference/index.html">API Reference</a></li>
-<li class="toctree-l1"><a class="reference external" href="../index.html">Internals</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../changelog.html">Change history</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../links.html">Interesting Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting-started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../links.html">Interesting Links</a></li>
 </ul>
 
       <h3>This Page</h3>
@@ -91,7 +93,7 @@
           <div class="body">
             
   <div class="section" id="module-celery.utils.timeutils">
-<h1>Time and Date Utilities - celery.utils.timeutils<a class="headerlink" href="#module-celery.utils.timeutils" title="Permalink to this headline">¶</a></h1>
+<span id="time-and-date-utilities-celery-utils-timeutils"></span><h1>Time and Date Utilities - celery.utils.timeutils<a class="headerlink" href="#module-celery.utils.timeutils" title="Permalink to this headline">¶</a></h1>
 <dl class="function">
 <dt id="celery.utils.timeutils.delta_resolution">
 <tt class="descclassname">celery.utils.timeutils.</tt><tt class="descname">delta_resolution</tt><big>(</big><em>dt</em>, <em>delta</em><big>)</big><a class="headerlink" href="#celery.utils.timeutils.delta_resolution" title="Permalink to this definition">¶</a></dt>
@@ -119,8 +121,9 @@ which will just return the original datetime.</p>
 <dl class="function">
 <dt id="celery.utils.timeutils.rate">
 <tt class="descclassname">celery.utils.timeutils.</tt><tt class="descname">rate</tt><big>(</big><em>rate</em><big>)</big><a class="headerlink" href="#celery.utils.timeutils.rate" title="Permalink to this definition">¶</a></dt>
-<dd>Parses rate strings, such as <tt class="docutils literal"><span class="pre">&quot;100/m&quot;</span></tt> or <tt class="docutils literal"><span class="pre">&quot;2/h&quot;</span></tt>
-and converts them to seconds.</dd></dl>
+<dd><p>Parses rate strings, such as <tt class="docutils literal"><span class="pre">&quot;100/m&quot;</span></tt> or <tt class="docutils literal"><span class="pre">&quot;2/h&quot;</span></tt>
+and converts them to seconds.</p>
+</dd></dl>
 
 <dl class="function">
 <dt id="celery.utils.timeutils.remaining">
@@ -132,14 +135,14 @@ and converts them to seconds.</dd></dl>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><em>start</em> &#8211; Start <tt class="xref docutils literal"><span class="pre">datetime.datetime</span></tt>.</li>
-<li><em>ends_in</em> &#8211; The end delta as a <tt class="xref docutils literal"><span class="pre">datetime.timedelta</span></tt>.</li>
-<li><em>relative</em> &#8211; <p>If set to <tt class="xref docutils literal"><span class="pre">False</span></tt>, the end time will be calculated
-using <a title="celery.utils.timeutils.delta_resolution" class="reference internal" href="#celery.utils.timeutils.delta_resolution"><tt class="xref docutils literal"><span class="pre">delta_resolution()</span></tt></a> (i.e. rounded to the resolution</p>
+<li><strong>start</strong> &#8211; Start <tt class="xref py py-class docutils literal"><span class="pre">datetime.datetime</span></tt>.</li>
+<li><strong>ends_in</strong> &#8211; The end delta as a <tt class="xref py py-class docutils literal"><span class="pre">datetime.timedelta</span></tt>.</li>
+<li><strong>relative</strong> &#8211; <p>If set to <tt class="xref docutils literal"><span class="pre">False</span></tt>, the end time will be calculated
+using <a class="reference internal" href="#celery.utils.timeutils.delta_resolution" title="celery.utils.timeutils.delta_resolution"><tt class="xref py py-func docutils literal"><span class="pre">delta_resolution()</span></tt></a> (i.e. rounded to the resolution</p>
 <blockquote>
 of <tt class="docutils literal"><span class="pre">ends_in</span></tt>).</blockquote>
 </li>
-<li><em>now</em> &#8211; The current time, defaults to <tt class="xref docutils literal"><span class="pre">datetime.now()</span></tt>.</li>
+<li><strong>now</strong> &#8211; The current time, defaults to <tt class="xref py py-func docutils literal"><span class="pre">datetime.now()</span></tt>.</li>
 </ul>
 </td>
 </tr>
@@ -164,7 +167,7 @@ of <tt class="docutils literal"><span class="pre">ends_in</span></tt>).</blockqu
 <dl class="function">
 <dt id="celery.utils.timeutils.timedelta_seconds">
 <tt class="descclassname">celery.utils.timeutils.</tt><tt class="descname">timedelta_seconds</tt><big>(</big><em>delta</em><big>)</big><a class="headerlink" href="#celery.utils.timeutils.timedelta_seconds" title="Permalink to this definition">¶</a></dt>
-<dd><p>Convert <tt class="xref docutils literal"><span class="pre">datetime.timedelta</span></tt> to seconds.</p>
+<dd><p>Convert <tt class="xref py py-class docutils literal"><span class="pre">datetime.timedelta</span></tt> to seconds.</p>
 <p>Doesn&#8217;t account for negative values.</p>
 </dd></dl>
 
@@ -191,7 +194,7 @@ of <tt class="docutils literal"><span class="pre">ends_in</span></tt>).</blockqu
     <div class="footer">
     <p>
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
 	</p>
     </div>
       <div class="clearer"></div>
