@@ -285,12 +285,7 @@ class Worker(object):
         install_worker_int_handler(worker)
 
         signals.worker_init.send(sender=worker)
-        try:
-            worker.start()
-        except Exception, exc:
-            emergency_error(self.logfile,
-                    "celeryd raised exception %s: %s\n%s" % (
-                        exc.__class__, exc, traceback.format_exc()))
+        worker.start()
 
 
 def install_worker_int_handler(worker):
