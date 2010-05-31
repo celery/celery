@@ -1,3 +1,4 @@
+import sys
 import logging
 import warnings
 from datetime import timedelta
@@ -51,7 +52,7 @@ _DEFAULTS = {
     "CELERYD_PREFETCH_MULTIPLIER": 4,
     "CELERYD_LOG_FORMAT": DEFAULT_PROCESS_LOG_FMT,
     "CELERYD_TASK_LOG_FORMAT": DEFAULT_TASK_LOG_FMT,
-    "CELERYD_LOG_COLOR": True,
+    "CELERYD_LOG_COLOR": False,
     "CELERYD_LOG_LEVEL": "WARN",
     "CELERYD_LOG_FILE": None, # stderr
     "CELERYBEAT_SCHEDULE_FILENAME": "celerybeat-schedule",
@@ -136,8 +137,9 @@ CELERY_SEND_TASK_ERROR_EMAILS = _get("CELERY_SEND_TASK_ERROR_EMAILS",
 CELERYD_LOG_FORMAT = _get("CELERYD_LOG_FORMAT",
                           compat=["CELERYD_DAEMON_LOG_FORMAT"])
 CELERYD_TASK_LOG_FORMAT = _get("CELERYD_TASK_LOG_FORMAT")
-CELERYD_LOG_COLOR = _get("CELERYD_LOG_COLOR")
 CELERYD_LOG_FILE = _get("CELERYD_LOG_FILE")
+CELERYD_LOG_COLOR = _get("CELERYD_LOG_COLOR", \
+                       CELERYD_LOG_FILE is None and sys.stderr.isatty())
 CELERYD_LOG_LEVEL = _get("CELERYD_LOG_LEVEL",
                             compat=["CELERYD_DAEMON_LOG_LEVEL"])
 CELERYD_LOG_LEVEL = LOG_LEVELS[CELERYD_LOG_LEVEL.upper()]
