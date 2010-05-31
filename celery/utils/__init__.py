@@ -90,6 +90,14 @@ def padlist(container, size, default=None):
     return list(container)[:size] + [default] * (size - len(container))
 
 
+def is_iterable(obj):
+    try:
+        iter(obj)
+    except TypeError:
+        return False
+    return True
+
+
 def mitemgetter(*items):
     """Like :func:`operator.itemgetter` but returns ``None`` on missing items
     instead of raising :exc:`KeyError`."""
