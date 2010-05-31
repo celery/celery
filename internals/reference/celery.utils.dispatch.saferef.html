@@ -1,0 +1,237 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Signals: Safe References - celery.utils.dispatch.saferef &mdash; Celery v1.1.0 (unstable) documentation</title>
+    <link rel="stylesheet" href="../../static/adctheme.css" type="text/css" />
+    <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.1.0 (unstable)',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../static/jquery.js"></script>
+    <script type="text/javascript" src="../../static/underscore.js"></script>
+    <script type="text/javascript" src="../../static/doctools.js"></script>
+    <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="../../index.html" />
+    <link rel="up" title="Internal Module Reference" href="index.html" />
+    <link rel="next" title="Platform Specific - celery.platform" href="celery.platform.html" />
+    <link rel="prev" title="Signals: Dispatcher - celery.utils.dispatch.signal" href="celery.utils.dispatch.signal.html" />
+    <link media="only screen and (max-device-width: 480px)" href="../../static/mobile.css" type="text/css" rel="stylesheet" /> 
+  </head>
+  <body>
+<div id="docstitle">
+	<p>Celery v1.1.0 (unstable) documentation</p>
+</div>
+<div id="header">
+	<div id="title"><h1>Signals: Safe References - celery.utils.dispatch.saferef</h1></div>
+	<ul id="headerButtons">
+		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
+		<li id="page_buttons">
+			<div class="headerButton"><a href="../../genindex.html" title="General Index" accesskey="I">index</a></div>
+			<div class="headerButton"><a href="../../py-modindex.html" title="Python Module Index" >modules</a></div>
+			<div class="headerButton"><a href="celery.platform.html" title="Platform Specific - celery.platform" accesskey="N">next</a></div>
+			<div class="headerButton"><a href="celery.utils.dispatch.signal.html" title="Signals: Dispatcher - celery.utils.dispatch.signal" accesskey="P">previous</a></div>
+		</li>
+	</ul>
+</div>
+
+<div id="sphinxsidebar">
+  <div class="sphinxsidebarwrapper">
+	<ul><li class="toctree-l1"><a href="../../index.html">Main Page</a></li></ul>
+	<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../getting-started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../links.html">Interesting Links</a></li>
+</ul>
+
+      <h3>This Page</h3>
+      <ul class="this-page-menu">
+        <li><a href="../../sources/internals/reference/celery.utils.dispatch.saferef.txt"
+               rel="nofollow">Show Source</a></li>
+      </ul>
+    <div id="searchbox" style="display: none">
+      
+        <form class="search" action="../../search.html" method="get">
+			<div class="search-wrapper">
+			<span class="search-left"></span>
+			<input class="prettysearch" type="text" name="q" size="18" />
+			<span class="search-right">&nbsp;</span>
+			</div>
+          <input type="submit" value="Search" class="searchbutton" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </form>
+        <p class="searchtip" style="font-size: 90%">
+        Enter search terms or a module, class or function name.
+        </p>
+    </div>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+  </div>
+</div>
+
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-celery.utils.dispatch.saferef">
+<span id="signals-safe-references-celery-utils-dispatch-saferef"></span><h1>Signals: Safe References - celery.utils.dispatch.saferef<a class="headerlink" href="#module-celery.utils.dispatch.saferef" title="Permalink to this headline">¶</a></h1>
+<p>&#8220;Safe weakrefs&#8221;, originally from pyDispatcher.</p>
+<p>Provides a way to safely weakref any function, including bound methods (which
+aren&#8217;t handled by the core weakref module).</p>
+<dl class="class">
+<dt id="celery.utils.dispatch.saferef.BoundMethodWeakref">
+<em class="property">class </em><tt class="descclassname">celery.utils.dispatch.saferef.</tt><tt class="descname">BoundMethodWeakref</tt><big>(</big><em>target</em>, <em>on_delete=None</em><big>)</big><a class="headerlink" href="#celery.utils.dispatch.saferef.BoundMethodWeakref" title="Permalink to this definition">¶</a></dt>
+<dd><p>&#8216;Safe&#8217; and reusable weak references to instance methods.</p>
+<p>BoundMethodWeakref objects provide a mechanism for
+referencing a bound method without requiring that the
+method object itself (which is normally a transient
+object) is kept alive.  Instead, the BoundMethodWeakref
+object keeps weak references to both the object and the
+function which together define the instance method.</p>
+<dl class="attribute">
+<dt id="celery.utils.dispatch.saferef.BoundMethodWeakref.key">
+<tt class="descname">key</tt><a class="headerlink" href="#celery.utils.dispatch.saferef.BoundMethodWeakref.key" title="Permalink to this definition">¶</a></dt>
+<dd><p>the identity key for the reference, calculated
+by the class&#8217;s <a class="reference internal" href="#celery.utils.dispatch.saferef.BoundMethodWeakref.calculate_key" title="celery.utils.dispatch.saferef.BoundMethodWeakref.calculate_key"><tt class="xref py py-meth docutils literal"><span class="pre">calculate_key()</span></tt></a> method applied to the
+target instance method</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.utils.dispatch.saferef.BoundMethodWeakref.deletion_methods">
+<tt class="descname">deletion_methods</tt><a class="headerlink" href="#celery.utils.dispatch.saferef.BoundMethodWeakref.deletion_methods" title="Permalink to this definition">¶</a></dt>
+<dd><p>sequence of callable objects taking
+single argument, a reference to this object which
+will be called when <em>either</em> the target object or
+target function is garbage collected (i.e. when
+this object becomes invalid).  These are specified
+as the on_delete parameters of <a class="reference internal" href="#celery.utils.dispatch.saferef.safe_ref" title="celery.utils.dispatch.saferef.safe_ref"><tt class="xref py py-func docutils literal"><span class="pre">safe_ref()</span></tt></a> calls.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.utils.dispatch.saferef.BoundMethodWeakref.weak_self">
+<tt class="descname">weak_self</tt><a class="headerlink" href="#celery.utils.dispatch.saferef.BoundMethodWeakref.weak_self" title="Permalink to this definition">¶</a></dt>
+<dd><p>weak reference to the target object</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.utils.dispatch.saferef.BoundMethodWeakref.weak_func">
+<tt class="descname">weak_func</tt><a class="headerlink" href="#celery.utils.dispatch.saferef.BoundMethodWeakref.weak_func" title="Permalink to this definition">¶</a></dt>
+<dd><p>weak reference to the target function</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.utils.dispatch.saferef.BoundMethodWeakref._all_instances">
+<tt class="descname">_all_instances</tt><a class="headerlink" href="#celery.utils.dispatch.saferef.BoundMethodWeakref._all_instances" title="Permalink to this definition">¶</a></dt>
+<dd><p>class attribute pointing to all live
+BoundMethodWeakref objects indexed by the class&#8217;s
+<tt class="docutils literal"><span class="pre">calculate_key(target)</span></tt> method applied to the target
+objects. This weak value dictionary is used to
+short-circuit creation so that multiple references
+to the same (object, function) pair produce the
+same BoundMethodWeakref instance.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="celery.utils.dispatch.saferef.BoundMethodWeakref.calculate_key">
+<em class="property">classmethod </em><tt class="descname">calculate_key</tt><big>(</big><em>target</em><big>)</big><a class="headerlink" href="#celery.utils.dispatch.saferef.BoundMethodWeakref.calculate_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the reference key for this reference</p>
+<p>Currently this is a two-tuple of the <tt class="docutils literal"><span class="pre">id()</span></tt>&#8216;s of the
+target object and the target function respectively.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.utils.dispatch.saferef.BoundNonDescriptorMethodWeakref">
+<em class="property">class </em><tt class="descclassname">celery.utils.dispatch.saferef.</tt><tt class="descname">BoundNonDescriptorMethodWeakref</tt><big>(</big><em>target</em>, <em>on_delete=None</em><big>)</big><a class="headerlink" href="#celery.utils.dispatch.saferef.BoundNonDescriptorMethodWeakref" title="Permalink to this definition">¶</a></dt>
+<dd><p>A specialized <a class="reference internal" href="#celery.utils.dispatch.saferef.BoundMethodWeakref" title="celery.utils.dispatch.saferef.BoundMethodWeakref"><tt class="xref py py-class docutils literal"><span class="pre">BoundMethodWeakref</span></tt></a>, for platforms where
+instance methods are not descriptors.</p>
+<p>It assumes that the function name and the target attribute name are the
+same, instead of assuming that the function is a descriptor. This approach
+is equally fast, but not 100% reliable because functions can be stored on
+an attribute named differenty than the function&#8217;s name such as in:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">A</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">pass</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">foo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="s">&quot;foo&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">A</span><span class="o">.</span><span class="n">bar</span> <span class="o">=</span> <span class="n">foo</span>
+</pre></div>
+</div>
+<p>But this shouldn&#8217;t be a common use case. So, on platforms where methods
+aren&#8217;t descriptors (such as Jython) this implementation has the advantage
+of working in the most cases.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.dispatch.saferef.get_bound_method_weakref">
+<tt class="descclassname">celery.utils.dispatch.saferef.</tt><tt class="descname">get_bound_method_weakref</tt><big>(</big><em>target</em>, <em>on_delete</em><big>)</big><a class="headerlink" href="#celery.utils.dispatch.saferef.get_bound_method_weakref" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instantiates the appropiate <tt class="xref py py-class docutils literal"><span class="pre">BoundMethodWeakRef</span></tt>, depending
+on the details of the underlying class method implementation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.dispatch.saferef.safe_ref">
+<tt class="descclassname">celery.utils.dispatch.saferef.</tt><tt class="descname">safe_ref</tt><big>(</big><em>target</em>, <em>on_delete=None</em><big>)</big><a class="headerlink" href="#celery.utils.dispatch.saferef.safe_ref" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a <em>safe</em> weak reference to a callable target</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>target</strong> &#8211; the object to be weakly referenced, if it&#8217;s a
+bound method reference, will create a <a class="reference internal" href="#celery.utils.dispatch.saferef.BoundMethodWeakref" title="celery.utils.dispatch.saferef.BoundMethodWeakref"><tt class="xref py py-class docutils literal"><span class="pre">BoundMethodWeakref</span></tt></a>,
+otherwise creates a simple <tt class="xref py py-class docutils literal"><span class="pre">weakref.ref</span></tt>.</li>
+<li><strong>on_delete</strong> &#8211; if provided, will have a hard reference stored
+to the callable to be called after the safe reference
+goes out of scope with the reference object, (either a
+<tt class="xref py py-class docutils literal"><span class="pre">weakref.ref</span></tt> or a <a class="reference internal" href="#celery.utils.dispatch.saferef.BoundMethodWeakref" title="celery.utils.dispatch.saferef.BoundMethodWeakref"><tt class="xref py py-class docutils literal"><span class="pre">BoundMethodWeakref</span></tt></a>) as argument.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+          </div> 
+        </div>
+      </div>
+    <div class="footer">
+    <p>
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
+	</p>
+    </div>
+      <div class="clearer"></div>
+    </div>
+	<div id="breadcrumbs">
+		<a href="../index.html" accesskey="U">Internals</a><img src="../../static/triangle_closed.png" height="9" width="9" alt="&gt;">
+		<a href="index.html" >Internal Module Reference</a><img src="../../static/triangle_closed.png" height="9" width="9" alt="&gt;">
+		Signals: Safe References - celery.utils.dispatch.saferef
+		</ul>
+	</div>
+	<script type="text/javascript" charset="utf-8" src="../../static/toc.js"></script>
+  </body>
+</html>

@@ -1,0 +1,252 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Signals: Dispatcher - celery.utils.dispatch.signal &mdash; Celery v1.1.0 (unstable) documentation</title>
+    <link rel="stylesheet" href="../../static/adctheme.css" type="text/css" />
+    <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.1.0 (unstable)',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../static/jquery.js"></script>
+    <script type="text/javascript" src="../../static/underscore.js"></script>
+    <script type="text/javascript" src="../../static/doctools.js"></script>
+    <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="../../index.html" />
+    <link rel="up" title="Internal Module Reference" href="index.html" />
+    <link rel="next" title="Signals: Safe References - celery.utils.dispatch.saferef" href="celery.utils.dispatch.saferef.html" />
+    <link rel="prev" title="Signal Dispatch - celery.utils.dispatch" href="celery.utils.dispatch.html" />
+    <link media="only screen and (max-device-width: 480px)" href="../../static/mobile.css" type="text/css" rel="stylesheet" /> 
+  </head>
+  <body>
+<div id="docstitle">
+	<p>Celery v1.1.0 (unstable) documentation</p>
+</div>
+<div id="header">
+	<div id="title"><h1>Signals: Dispatcher - celery.utils.dispatch.signal</h1></div>
+	<ul id="headerButtons">
+		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
+		<li id="page_buttons">
+			<div class="headerButton"><a href="../../genindex.html" title="General Index" accesskey="I">index</a></div>
+			<div class="headerButton"><a href="../../py-modindex.html" title="Python Module Index" >modules</a></div>
+			<div class="headerButton"><a href="celery.utils.dispatch.saferef.html" title="Signals: Safe References - celery.utils.dispatch.saferef" accesskey="N">next</a></div>
+			<div class="headerButton"><a href="celery.utils.dispatch.html" title="Signal Dispatch - celery.utils.dispatch" accesskey="P">previous</a></div>
+		</li>
+	</ul>
+</div>
+
+<div id="sphinxsidebar">
+  <div class="sphinxsidebarwrapper">
+	<ul><li class="toctree-l1"><a href="../../index.html">Main Page</a></li></ul>
+	<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../getting-started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../links.html">Interesting Links</a></li>
+</ul>
+
+      <h3>This Page</h3>
+      <ul class="this-page-menu">
+        <li><a href="../../sources/internals/reference/celery.utils.dispatch.signal.txt"
+               rel="nofollow">Show Source</a></li>
+      </ul>
+    <div id="searchbox" style="display: none">
+      
+        <form class="search" action="../../search.html" method="get">
+			<div class="search-wrapper">
+			<span class="search-left"></span>
+			<input class="prettysearch" type="text" name="q" size="18" />
+			<span class="search-right">&nbsp;</span>
+			</div>
+          <input type="submit" value="Search" class="searchbutton" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </form>
+        <p class="searchtip" style="font-size: 90%">
+        Enter search terms or a module, class or function name.
+        </p>
+    </div>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+  </div>
+</div>
+
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-celery.utils.dispatch.signal">
+<span id="signals-dispatcher-celery-utils-dispatch-signal"></span><h1>Signals: Dispatcher - celery.utils.dispatch.signal<a class="headerlink" href="#module-celery.utils.dispatch.signal" title="Permalink to this headline">¶</a></h1>
+<p>Signal class.</p>
+<dl class="class">
+<dt id="celery.utils.dispatch.signal.Signal">
+<em class="property">class </em><tt class="descclassname">celery.utils.dispatch.signal.</tt><tt class="descname">Signal</tt><big>(</big><em>providing_args=None</em><big>)</big><a class="headerlink" href="#celery.utils.dispatch.signal.Signal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class for all signals</p>
+<dl class="attribute">
+<dt id="celery.utils.dispatch.signal.Signal.receivers">
+<tt class="descname">receivers</tt><a class="headerlink" href="#celery.utils.dispatch.signal.Signal.receivers" title="Permalink to this definition">¶</a></dt>
+<dt>
+<tt class="descname">Internal attribute, holds a dictionary of</tt></dt>
+<dt>
+<tt class="descname">``{receriverkey (id): weakref(receiver)}`` mappings.</tt></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.utils.dispatch.signal.Signal.connect">
+<tt class="descname">connect</tt><big>(</big><em>receiver</em>, <em>sender=None</em>, <em>weak=True</em>, <em>dispatch_uid=None</em><big>)</big><a class="headerlink" href="#celery.utils.dispatch.signal.Signal.connect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Connect receiver to sender for signal.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>receiver</strong> &#8211; <p>A function or an instance method which is to
+receive signals. Receivers must be hashable objects.</p>
+<p>if weak is <tt class="xref docutils literal"><span class="pre">True</span></tt>, then receiver must be weak-referencable (more
+precisely <tt class="xref py py-func docutils literal"><span class="pre">saferef.safe_ref()</span></tt> must be able to create a
+reference to the receiver).</p>
+<p>Receivers must be able to accept keyword arguments.</p>
+<p>If receivers have a <tt class="docutils literal"><span class="pre">dispatch_uid</span></tt> attribute, the receiver will
+not be added if another receiver already exists with that
+<tt class="docutils literal"><span class="pre">dispatch_uid</span></tt>.</p>
+</li>
+<li><strong>sender</strong> &#8211; The sender to which the receiver should respond.
+Must either be of type <a class="reference internal" href="#celery.utils.dispatch.signal.Signal" title="celery.utils.dispatch.signal.Signal"><tt class="xref py py-class docutils literal"><span class="pre">Signal</span></tt></a>, or <tt class="xref docutils literal"><span class="pre">None</span></tt> to receive
+events from any sender.</li>
+<li><strong>weak</strong> &#8211; Whether to use weak references to the receiver.
+By default, the module will attempt to use weak references to the
+receiver objects. If this parameter is false, then strong
+references will be used.</li>
+<li><strong>dispatch_uid</strong> &#8211; An identifier used to uniquely identify a
+particular instance of a receiver. This will usually be a
+string, though it may be anything hashable.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.utils.dispatch.signal.Signal.disconnect">
+<tt class="descname">disconnect</tt><big>(</big><em>receiver=None</em>, <em>sender=None</em>, <em>weak=True</em>, <em>dispatch_uid=None</em><big>)</big><a class="headerlink" href="#celery.utils.dispatch.signal.Signal.disconnect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disconnect receiver from sender for signal.</p>
+<p>If weak references are used, disconnect need not be called. The
+receiver will be removed from dispatch automatically.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>receiver</strong> &#8211; The registered receiver to disconnect. May be
+none if <tt class="docutils literal"><span class="pre">dispatch_uid</span></tt> is specified.</li>
+<li><strong>sender</strong> &#8211; The registered sender to disconnect.</li>
+<li><strong>weak</strong> &#8211; The weakref state to disconnect.</li>
+<li><strong>dispatch_uid</strong> &#8211; the unique identifier of the receiver
+to disconnect</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.utils.dispatch.signal.Signal.send">
+<tt class="descname">send</tt><big>(</big><em>sender</em>, <em>**named</em><big>)</big><a class="headerlink" href="#celery.utils.dispatch.signal.Signal.send" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send signal from sender to all connected receivers.</p>
+<p>If any receiver raises an error, the error propagates back through
+send, terminating the dispatch loop, so it is quite possible to not
+have all receivers called if a raises an error.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sender</strong> &#8211; The sender of the signal. Either a specific
+object or <tt class="xref docutils literal"><span class="pre">None</span></tt>.</li>
+<li><strong>**named</strong> &#8211; Named arguments which will be passed to receivers.</li>
+</ul>
+</td>
+</tr>
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a list of tuple pairs: <tt class="docutils literal"><span class="pre">[(receiver,</span> <span class="pre">response),</span> <span class="pre">...</span> <span class="pre">]</span></tt>.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.utils.dispatch.signal.Signal.send_robust">
+<tt class="descname">send_robust</tt><big>(</big><em>sender</em>, <em>**named</em><big>)</big><a class="headerlink" href="#celery.utils.dispatch.signal.Signal.send_robust" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send signal from sender to all connected receivers catching errors.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sender</strong> &#8211; The sender of the signal. Can be any python object
+(normally one registered with a connect if you actually want
+something to occur).</li>
+<li><strong>**named</strong> &#8211; Named arguments which will be passed to receivers.
+These arguments must be a subset of the argument names defined in
+<tt class="xref py py-attr docutils literal"><span class="pre">providing_args</span></tt>.</li>
+</ul>
+</td>
+</tr>
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">a list of tuple pairs: <tt class="docutils literal"><span class="pre">[(receiver,</span> <span class="pre">response),</span> <span class="pre">...</span> <span class="pre">]</span></tt>.</p>
+</td>
+</tr>
+<tr class="field"><th class="field-name" colspan="2">Raises DispatcherKeyError:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>if any receiver raises an error (specifically any subclass of
+<tt class="xref py py-exc docutils literal"><span class="pre">Exception</span></tt>), the error instance is returned as the result
+for that receiver.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div> 
+        </div>
+      </div>
+    <div class="footer">
+    <p>
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
+	</p>
+    </div>
+      <div class="clearer"></div>
+    </div>
+	<div id="breadcrumbs">
+		<a href="../index.html" accesskey="U">Internals</a><img src="../../static/triangle_closed.png" height="9" width="9" alt="&gt;">
+		<a href="index.html" >Internal Module Reference</a><img src="../../static/triangle_closed.png" height="9" width="9" alt="&gt;">
+		Signals: Dispatcher - celery.utils.dispatch.signal
+		</ul>
+	</div>
+	<script type="text/javascript" charset="utf-8" src="../../static/toc.js"></script>
+  </body>
+</html>
