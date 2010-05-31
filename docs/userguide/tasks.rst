@@ -17,7 +17,7 @@ Given a function ``create_user``, that takes two arguments: ``username`` and
             create_user(username, password)
 
 For convenience there is a shortcut decorator that turns any function into
-a task, ``celery.decorators.task``:
+a task, :func:`celery.decorators.task`:
 
 .. code-block:: python
 
@@ -28,7 +28,8 @@ a task, ``celery.decorators.task``:
     def create_user(username, password):
         User.objects.create(username=username, password=password)
 
-The task decorator takes the same execution options the ``Task`` class does:
+The task decorator takes the same execution options as the
+:class:`~celery.task.base.Task` class does:
 
 .. code-block:: python
 
@@ -36,9 +37,8 @@ The task decorator takes the same execution options the ``Task`` class does:
     def create_user(username, password):
         User.objects.create(username=username, password=password)
 
-
 An alternative way to use the decorator is to give the function as an argument
-instead, but if you do this be sure to set the resulting tasks ``__name__``
+instead, but if you do this be sure to set the resulting tasks :attr:`__name__`
 attribute, so pickle is able to find it in reverse:
 
 .. code-block:: python
@@ -58,8 +58,9 @@ The current default keyword arguments are:
 
 * logfile
 
-    The log file, can be passed on to ``self.get_logger``
-    to gain access to the workers log file. See `Logging`_.
+    The log file, can be passed on to
+    :meth:`~celery.task.base.Task.get_logger` to gain access to
+    the workers log file. See `Logging`_.
 
 * loglevel
 
@@ -80,14 +81,15 @@ The current default keyword arguments are:
 
 * task_is_eager
 
-    Set to ``True`` if the task is executed locally in the client,
+    Set to :const:`True` if the task is executed locally in the client,
     and not by a worker.
 
 * delivery_info
 
   Additional message delivery information. This is a mapping containing
   the exchange and routing key used to deliver this task. It's used
-  by e.g. :meth:`retry` to resend the task to the same destination queue.
+  by e.g. :meth:`~celery.task.base.Task.retry` to resend the task to the
+  same destination queue.
 
   **NOTE** As some messaging backends doesn't have advanced routing
   capabilities, you can't trust the availability of keys in this mapping.
@@ -124,9 +126,9 @@ setting decides whether or not they will be written to the log file.
 Retrying a task if something fails
 ==================================
 
-Simply use :meth:`Task.retry` to re-send the task. It will
-do the right thing, and respect the :attr:`Task.max_retries`
-attribute:
+Simply use :meth:`~celery.task.base.Task.retry` to re-send the task.
+It will do the right thing, and respect the
+:attr:`~celery.task.base.Task.max_retries` attribute:
 
 .. code-block:: python
 
@@ -161,7 +163,7 @@ attribute on the task. By default this is set to 3 minutes. Note that the
 unit for setting the delay is in seconds (int or float).
 
 You can also provide the ``countdown`` argument to
-:meth:`Task.retry` to override this default.
+:meth:`~celery.task.base.Task.retry` to override this default.
 
 .. code-block:: python
 
@@ -195,7 +197,7 @@ Task options
 * max_retries
 
     The maximum number of attempted retries before giving up.
-    If this is exceeded the :exc`celery.execptions.MaxRetriesExceeded`
+    If this is exceeded the :exc`~celery.execptions.MaxRetriesExceeded`
     exception will be raised. Note that you have to retry manually, it's
     not something that happens automatically.
 
@@ -433,9 +435,10 @@ The default loader imports any modules listed in the
 ``CELERY_IMPORTS`` setting. 
 
 The entity responsible for registering your task in the registry is a
-meta class, :class:`TaskType`. This is the default meta class for
-``Task``. If you want to register your task manually you can set the
-``abstract`` attribute:
+meta class, :class:`~celery.task.base.TaskType`. This is the default
+meta class for :class:`~celery.task.base.Task`. If you want to register
+your task manually you can set the :attr:`~celery.task.base.Task.abstract`
+attribute:
 
 .. code-block:: python
 
@@ -459,7 +462,8 @@ Ignore results you don't want
 -----------------------------
 
 If you don't care about the results of a task, be sure to set the
-``ignore_result`` option, as storing results wastes time and resources.
+:attr:`~celery.task.base.Task.ignore_result` option, as storing results
+wastes time and resources.
 
 .. code-block:: python
 
@@ -543,8 +547,6 @@ Good:
     @task(ignore_result=True)
     def store_page_info(url, info):
         PageInfo.objects.create(url, info)
-
-
 
 
 
