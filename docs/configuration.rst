@@ -93,7 +93,7 @@ Database backend settings
 
 Please see `Supported Databases`_ for a table of supported databases.
 To use this backend you need to configure it with an
-`SQLAlchemy Connection String`_, some examples include:
+`Connection String`_, some examples include:
 
 .. code-block:: python
 
@@ -109,7 +109,7 @@ To use this backend you need to configure it with an
     # oracle
     CELERY_RESULT_DBURI = "oracle://scott:tiger@127.0.0.1:1521/sidname"
 
-See `SQLAlchemy Connection Strings`_ for more information about connection
+See `Connection String`_ for more information about connection
 strings.
 
 To specify additional SQLAlchemy database engine options you can use
@@ -118,14 +118,12 @@ the ``CELERY_RESULT_ENGINE_OPTIONS`` setting::
     # echo enables verbose logging from SQLAlchemy.
     CELERY_RESULT_ENGINE_OPTIONS = {"echo": True}
 
-.. _`SQLAlchemy`:
-    http://www.sqlalchemy.org
 .. _`Supported Databases`:
     http://www.sqlalchemy.org/docs/dbengine.html#supported-databases
-.. _`SQLAlchemy Connection String`:
+
+.. _`Connection String`:
     http://www.sqlalchemy.org/docs/dbengine.html#create-engine-url-arguments
-.. _`SQLAlchemy Connection Strings`:
-    http://www.sqlalchemy.org/docs/dbengine.html#create-engine-url-arguments
+
 Please see the Django ORM database settings documentation:
 http://docs.djangoproject.com/en/dev/ref/settings/#database-engine
 

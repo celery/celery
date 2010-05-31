@@ -46,6 +46,7 @@ class BoundMethodWeakref(object):
     function which together define the instance method.
 
     .. attribute:: key
+
         the identity key for the reference, calculated
         by the class's :meth:`calculate_key` method applied to the
         target instance method
@@ -60,15 +61,18 @@ class BoundMethodWeakref(object):
         as the on_delete parameters of :func:`safe_ref` calls.
 
     .. attribute:: weak_self
+
         weak reference to the target object
 
     .. attribute:: weak_func
+
         weak reference to the target function
 
     .. attribute:: _all_instances
+
         class attribute pointing to all live
         BoundMethodWeakref objects indexed by the class's
-        :meth:`calculate_key(target)` method applied to the target
+        ``calculate_key(target)`` method applied to the target
         objects. This weak value dictionary is used to
         short-circuit creation so that multiple references
         to the same (object, function) pair produce the
