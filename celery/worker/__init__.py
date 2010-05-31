@@ -27,6 +27,7 @@ def process_initializer():
     _hijack_multiprocessing_logger()
 
     platform.reset_signal("SIGTERM")
+    platform.ignore_signal("SIGINT")
     platform.set_mp_process_title("celeryd")
 
     # This is for windows and other platforms not supporting
@@ -126,7 +127,7 @@ class WorkController(object):
         self.task_time_limit = task_time_limit
         self.task_soft_time_limit = task_soft_time_limit
         self.max_tasks_per_child = max_tasks_per_child
-        self._finalize = Finalize(self, self.stop, exitpriority=20)
+        self._finalize = Finalize(self, self.stop, exitpriority=1)
 
         # Queues
         if conf.DISABLE_RATE_LIMITS:
@@ -214,6 +215,7 @@ class WorkController(object):
 
     def terminate(self):
         """Not so gracefully shutdown the worker server."""
+        return self.stop()
         if self._state != "RUN":
             return
 
