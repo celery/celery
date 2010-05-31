@@ -3,6 +3,7 @@
 The Multiprocessing Worker Server
 
 """
+import time
 import socket
 import logging
 import traceback
@@ -113,7 +114,8 @@ class WorkController(object):
             schedule_filename=conf.CELERYBEAT_SCHEDULE_FILENAME,
             task_time_limit=conf.CELERYD_TASK_TIME_LIMIT,
             task_soft_time_limit=conf.CELERYD_TASK_SOFT_TIME_LIMIT,
-            max_tasks_per_child=conf.CELERYD_MAX_TASKS_PER_CHILD):
+            max_tasks_per_child=conf.CELERYD_MAX_TASKS_PER_CHILD,
+            pool_putlocks=conf.CELERYD_POOL_PUTLOCKS):
 
         # Options
         self.loglevel = loglevel or self.loglevel
@@ -127,6 +129,7 @@ class WorkController(object):
         self.task_time_limit = task_time_limit
         self.task_soft_time_limit = task_soft_time_limit
         self.max_tasks_per_child = max_tasks_per_child
+        self.pool_putlocks = pool_putlocks
         self._finalize = Finalize(self, self.stop, exitpriority=1)
 
         # Queues
@@ -144,7 +147,8 @@ class WorkController(object):
                                 initializer=process_initializer,
                                 maxtasksperchild=self.max_tasks_per_child,
                                 timeout=self.task_time_limit,
-                                soft_timeout=self.task_soft_time_limit)
+                                soft_timeout=self.task_soft_time_limit,
+                                putlocks=self.pool_putlocks)
         self.mediator = instantiate(mediator_cls, self.ready_queue,
                                     callback=self.process_task,
                                     logger=self.logger)
@@ -192,7 +196,7 @@ class WorkController(object):
         try:
             try:
                 wrapper.task.execute(wrapper, self.pool,
-                                     self.loglevel, self.logfile)
+                    self.loglevel, self.logfile)
             except Exception, exc:
                 self.logger.critical("Internal error %s: %s\n%s" % (
                                 exc.__class__, exc, traceback.format_exc()))

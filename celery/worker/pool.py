@@ -28,13 +28,15 @@ class TaskPool(object):
     """
 
     def __init__(self, limit, logger=None, initializer=None,
-            maxtasksperchild=None, timeout=None, soft_timeout=None):
+            maxtasksperchild=None, timeout=None, soft_timeout=None,
+            putlocks=True):
         self.limit = limit
         self.logger = logger or log.get_default_logger()
         self.initializer = initializer
         self.maxtasksperchild = maxtasksperchild
         self.timeout = timeout
         self.soft_timeout = soft_timeout
+        self.putlocks = putlocks
         self._pool = None
 
     def start(self):
@@ -78,7 +80,8 @@ class TaskPool(object):
         return self._pool.apply_async(target, args, kwargs,
                                       callback=on_ready,
                                       accept_callback=accept_callback,
-                                      timeout_callback=timeout_callback)
+                                      timeout_callback=timeout_callback,
+                                      waitforslot=self.putlocks)
 
     def on_ready(self, callbacks, errbacks, ret_value):
         """What to do when a worker task is ready and its return value has
