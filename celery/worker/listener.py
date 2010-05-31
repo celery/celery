@@ -56,10 +56,12 @@ class CarrotListener(object):
         self.init_callback = init_callback
         self.logger = logger
         self.hostname = hostname or socket.gethostname()
+        self.initial_prefetch_count = initial_prefetch_count
         self.control_dispatch = ControlDispatch(logger=logger,
                                                 hostname=self.hostname,
                                                 listener=self)
-        self.prefetch_count = SharedCounter(initial_prefetch_count)
+        self.prefetch_count = None
+        self.prev_pcount = None
         self.event_dispatcher = None
         self.heart = None
         self._state = None
@@ -90,14 +92,14 @@ class CarrotListener(object):
         wait_for_message = self._detect_wait_method()(limit=None).next
         self.logger.debug("CarrotListener: Ready to accept tasks!")
 
-        prev_pcount = None
         while 1:
             pcount = int(self.prefetch_count) # SharedCounter() -> int()
-            if not prev_pcount or pcount != prev_pcount:
+            if not self.prev_pcount or pcount != self.prev_pcount:
+                self.logger.debug("basic.qos: prefetch_count->%s" % pcount)
                 task_consumer.qos(prefetch_count=pcount)
-                prev_pcount = pcount
-
+                self.prev_pcount = pcount
             wait_for_message()
+
 
     def on_task(self, task, eta=None):
         """Handle received task.
@@ -210,6 +212,10 @@ class CarrotListener(object):
         # Clear internal queues.
         self.ready_queue.clear()
         self.eta_schedule.clear()
+
+        # Reset prefetch window.
+        self.prefetch_count = SharedCounter(self.initial_prefetch_count)
+        self.prev_pcount = None
 
         self.connection = self._open_connection()
         self.logger.debug("CarrotListener: Connection Established.")
