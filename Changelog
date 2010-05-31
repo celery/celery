@@ -32,7 +32,7 @@ Changes
 
 * Running unittests: :envvar:`NOSE_VERBOSE` environment var now enables verbose output from Nose.
 
-* :fun:`celery.execute.apply`: Pass logfile/loglevel arguments as task kwargs.
+* :func:`celery.execute.apply`: Pass logfile/loglevel arguments as task kwargs.
 
     Issue #110 http://github.com/ask/celery/issues/issue/110
 
@@ -41,9 +41,9 @@ Changes
 
     Issue #111 http://github.com/ask/celery/issues/issue/111
 
-* Added FAQs:
+* Added new entries to the :doc:`FAQs <faq>`:
 
-    * Should I use retry or acks_late
+    * Should I use retry or acks_late?
     * Can I execute a task by name?
 
 1.0.3 [2010-05-15 03:00 P.M CEST]

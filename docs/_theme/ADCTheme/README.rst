@@ -14,12 +14,6 @@ If you want to install this theme somewhere else, you will have to modify the ``
 
     templates_path = ['/absolute/path/to/dir/','relative/path/']
 
-<<<<<<< HEAD
-Making Sphinx Use the Theme
----------------------------
-
-Edit the ``conf.py`` file and make the following setting: ::
-=======
 Install Directly in Your Documentation
 --------------------------------------
 
@@ -40,7 +34,6 @@ Making Sphinx Use the Theme
 ---------------------------
 
 If you aren't installing the files directly into your documentation, edit the ``conf.py`` file and make the following setting: ::
->>>>>>> 12ce4b1... Updated docs/_theme/ADCTheme
 
     html_theme = 'ADCtheme'
 
