@@ -217,7 +217,7 @@ class crontab(schedule):
         last = now - last_run_at
         due, when = False, 1
         if last.days > 0 or last.seconds > 60:
-            due = now.isoweekday() in self.day_of_week and \
+            due = now.isoweekday() % 7 in self.day_of_week and \
                   now.hour in self.hour and \
                   now.minute in self.minute
         return due, when

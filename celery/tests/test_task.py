@@ -636,6 +636,30 @@ class test_crontab_is_due(unittest.TestCase):
         self.assertFalse(due)
         self.assertEquals(remaining, 1)
 
+    # 29th of May 2010 is a saturday
+    @patch_crontab_nowfun(HourlyPeriodic, datetime(2010, 5, 29, 10, 30))
+    def test_execution_is_due_on_saturday(self):
+        last_ran = datetime.now() - timedelta(seconds=61)
+        due, remaining = EveryMinutePeriodic().is_due(last_ran)
+        self.assertTrue(due)
+        self.assertEquals(remaining, 1)
+
+    # 30th of May 2010 is a sunday
+    @patch_crontab_nowfun(HourlyPeriodic, datetime(2010, 5, 30, 10, 30))
+    def test_execution_is_due_on_sunday(self):
+        last_ran = datetime.now() - timedelta(seconds=61)
+        due, remaining = EveryMinutePeriodic().is_due(last_ran)
+        self.assertTrue(due)
+        self.assertEquals(remaining, 1)
+
+    # 31st of May 2010 is a monday
+    @patch_crontab_nowfun(HourlyPeriodic, datetime(2010, 5, 31, 10, 30))
+    def test_execution_is_due_on_monday(self):
+        last_ran = datetime.now() - timedelta(seconds=61)
+        due, remaining = EveryMinutePeriodic().is_due(last_ran)
+        self.assertTrue(due)
+        self.assertEquals(remaining, 1)
+
     @patch_crontab_nowfun(HourlyPeriodic, datetime(2010, 5, 10, 10, 30))
     def test_every_hour_execution_is_due(self):
         due, remaining = HourlyPeriodic().is_due(datetime(2010, 5, 10, 6, 30))
