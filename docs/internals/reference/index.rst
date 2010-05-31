@@ -29,10 +29,17 @@
     celery.backends.tyrant
     celery.execute.trace
     celery.datastructures
+    celery.routes
     celery.log
+    celery.db.models
+    celery.db.session
     celery.utils
     celery.utils.timeutils
     celery.utils.info
     celery.utils.compat
+    celery.utils.mail
     celery.utils.patch
+    celery.utils.dispatch
+    celery.utils.dispatch.signal
+    celery.utils.dispatch.saferef
     celery.platform

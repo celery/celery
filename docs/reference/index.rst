@@ -31,3 +31,4 @@
     celery.bin.celeryd
     celery.bin.celerybeat
     celery.bin.camqadm
+    celery.bin.celeryd_multi
