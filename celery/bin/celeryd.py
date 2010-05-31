@@ -97,11 +97,20 @@ Configuration ->
 
 TASK_LIST_FMT = """    . tasks ->\n%s"""
 
+
+def dump_version(*args):
+    print("celeryd v%s" % celery.__version__)
+    sys.exit(0)
+
+
 OPTION_LIST = (
     optparse.make_option('-c', '--concurrency',
             default=conf.CELERYD_CONCURRENCY,
             action="store", dest="concurrency", type="int",
             help="Number of child processes processing the queue."),
+    optparse.make_option('-V', '--version',
+            action="callback", callback=dump_version,
+            help="Show version information and exit."),
     optparse.make_option('--discard', default=False,
             action="store_true", dest="discard",
             help="Discard all waiting tasks before the server is started. "
