@@ -34,12 +34,12 @@ Django integration has been moved to a separate package: `django-celery`_.
     ``celery.backends.cache``              ``djcelery.backends.cache``
     =====================================  =====================================
 
-Importing ``djcelery`` will automatically setup celery to use the Django
+Importing :mod:`djcelery` will automatically setup celery to use the Django
 loader by setting the :envvar:`CELERY_LOADER`` environment variable (it won't
 change it if it's already defined).
 
 When the Django loader is used, the "database" and "cache" backend aliases
-will point to the ``djcelery`` backends instead of the built-in backends.
+will point to the :mod:`djcelery` backends instead of the built-in backends.
 
 .. _`django-celery`: http://pypi.python.org/pypi/django-celery
 
@@ -52,8 +52,8 @@ see `Supported Databases`_ for a table of supported databases.
 
 
 The ``DATABASE_*`` settings has been replaced by a single setting:
-``CELERY_RESULT_DBURI``. The value here should be an `SQLAlchemy Connection
-String`_, some examples include:
+``CELERY_RESULT_DBURI``. The value here should be an
+`SQLAlchemy Connection String`_, some examples include:
 
 .. code-block:: python
 
@@ -107,7 +107,7 @@ Backward incompatible changes
 .. _`deprecation timeline`:
     http://ask.github.com/celery/internals/deprecation.html
 
-* The ``celery.task.rest`` module has been removed, use ``celery.task.http``
+* The ``celery.task.rest`` module has been removed, use :mod:`celery.task.http`
   instead (as scheduled by the `deprecation timeline`_).
 
 * It's no longer allowed to skip the class name in loader names.
@@ -152,6 +152,232 @@ News
 
     Also when the hard time limit is exceeded, the task result should
     be a ``TimeLimitExceeded`` exception.
+
+* celeryd now waits for available pool processes before applying new tasks to the pool.
+
+    This means it doesn't have to wait for dozens of tasks to finish at shutdown
+    because it applied n prefetched tasks at once.
+
+    Some overhead for very short tasks though, then the shutdown probably doesn't
+    matter either so the feature can disable by the  ``CELERYD_POOL_PUTLOCKS``
+    setting::
+
+        CELERYD_POOL_PUTLOCKS = False
+
+    See http://github.com/ask/celery/issues/#issue/122
+
+* Log output is now available in colors.
+
+    =====================================  =====================================
+    **Log level**                          **Color**
+    =====================================  =====================================
+    ``DEBUG``                              Blue
+    ``WARNING``                            Yellow
+    ``CRITICAL``                           Magenta
+    ``ERROR``                              Red
+    =====================================  =====================================
+
+    This is only enabled when the log output is a tty.
+    You can explicitly enable/disable this feature using the
+    ``CELERYD_LOG_COLOR`` setting.
+
+* Added support for task router classes (like the django multidb routers)
+
+    * New setting: CELERY_ROUTES
+
+    This is a single, or a list of routers to traverse when
+    sending tasks. Dicts in this list converts to a
+    :class:`celery.routes.MapRoute` instance.
+
+    Examples:
+
+        >>> CELERY_ROUTES = {"celery.ping": "default",
+                             "mytasks.add": "cpu-bound",
+                             "video.encode": {
+                                 "queue": "video",
+                                 "exchange": "media"
+                                 "routing_key": "media.video.encode"}}
+
+        >>> CELERY_ROUTES = ("myapp.tasks.Router",
+                             {"celery.ping": "default})
+
+    Where ``myapp.tasks.Router`` could be:
+
+    .. code-block:: python
+
+        class Router(object):
+
+            def route_for_task(self, task, task_id=None, args=None, kwargs=None):
+                if task == "celery.ping":
+                    return "default"
+
+    route_for_task may return a string or a dict. A string then means
+    it's a queue name in ``CELERY_QUEUES``, a dict means it's a custom route.
+
+    When sending tasks, the routers are consulted in order. The first
+    router that doesn't return ``None`` is the route to use. The message options
+    is then merged with the found route settings, where the routers settings
+    have priority.
+
+    Example if :func:`~celery.execute.apply_async` has these arguments::
+
+       >>> Task.apply_async(immediate=False, exchange="video",
+       ...                  routing_key="video.compress")
+
+    and a router returns::
+
+        {"immediate": True,
+         "exchange": "urgent"}
+
+    the final message options will be::
+
+        immediate=True, exchange="urgent", routing_key="video.compress"
+
+    (and any default message options defined in the
+    :class:`~celery.task.base.Task` class)
+
+* New Task handler called after the task returns:
+  :meth:`~celery.task.base.Task.after_return`.
+
+* :class:`~celery.datastructures.ExceptionInfo` now passed to
+   :meth:`~celery.task.base.Task.on_retry`/
+   :meth:`~celery.task.base.Task.on_failure` as einfo keyword argument.
+
+* celeryd: Added ``CELERYD_MAX_TASKS_PER_CHILD`` /
+  :option:`--maxtasksperchild`
+
+    Defineds the maximum number of tasks a pool worker can process before
+    the process is terminated and replaced by a new one.
+
+* Revoked tasks now marked with state ``REVOKED``, and ``result.get()``
+  will now raise :exc:`~celery.exceptions.TaskRevokedError`.
+
+* :func:`celery.task.control.ping` now works as expected.
+
+* ``apply(throw=True)`` / ``CELERY_EAGER_PROPAGATES_EXCEPTIONS``: Makes eager
+  execution re-raise task errors.
+
+* New signal: :data:`~celery.signals.worker_process_init`: Sent inside the
+  pool worker process at init.
+
+* celeryd :option:`-Q` option: Ability to specifiy list of queues to use,
+  disabling other configured queues.
+
+    For example, if ``CELERY_QUEUES`` defines four queues: ``image``, ``video``,
+    ``data`` and ``default``, the following command would make celeryd only
+    consume from the ``image`` and ``video`` queues::
+
+        $ celeryd -Q image,video
+
+* :mod:`celeryd-multi <celeryd.bin.celeryd_multi>`: Tool for shell scripts
+  to start multiple workers.
+
+ Some examples::
+
+        # Advanced example with 10 workers:
+        #   * Three of the workers processes the images and video queue
+        #   * Two of the workers processes the data queue with loglevel DEBUG
+        #   * the rest processes the default' queue.
+        $ celeryd-multi start 10 -l INFO -Q:1-3 images,video -Q:4,5:data
+            -Q default -L:4,5 DEBUG
+
+        # get commands to start 10 workers, with 3 processes each
+        $ celeryd-multi start 3 -c 3
+        celeryd -n celeryd1.myhost -c 3
+        celeryd -n celeryd2.myhost -c 3
+        celeryd- n celeryd3.myhost -c 3
+
+        # start 3 named workers
+        $ celeryd-multi start image video data -c 3
+        celeryd -n image.myhost -c 3
+        celeryd -n video.myhost -c 3
+        celeryd -n data.myhost -c 3
+
+        # specify custom hostname
+        $ celeryd-multi start 2 -n worker.example.com -c 3
+        celeryd -n celeryd1.worker.example.com -c 3
+        celeryd -n celeryd2.worker.example.com -c 3
+
+        # Additionl options are added to each celeryd',
+        # but you can also modify the options for ranges of or single workers
+
+        # 3 workers: Two with 3 processes, and one with 10 processes.
+        $ celeryd-multi start 3 -c 3 -c:1 10
+        celeryd -n celeryd1.myhost -c 10
+        celeryd -n celeryd2.myhost -c 3
+        celeryd -n celeryd3.myhost -c 3
+
+        # can also specify options for named workers
+        $ celeryd-multi start image video data -c 3 -c:image 10
+        celeryd -n image.myhost -c 10
+        celeryd -n video.myhost -c 3
+        celeryd -n data.myhost -c 3
+
+        # ranges and lists of workers in options is also allowed:
+        # (-c:1-3 can also be written as -c:1,2,3)
+        $ celeryd-multi start 5 -c 3  -c:1-3 10
+        celeryd-multi -n celeryd1.myhost -c 10
+        celeryd-multi -n celeryd2.myhost -c 10
+        celeryd-multi -n celeryd3.myhost -c 10
+        celeryd-multi -n celeryd4.myhost -c 3
+        celeryd-multi -n celeryd5.myhost -c 3
+
+        # lists also works with named workers
+        $ celeryd-multi start foo bar baz xuzzy -c 3 -c:foo,bar,baz 10
+        celeryd-multi -n foo.myhost -c 10
+        celeryd-multi -n bar.myhost -c 10
+        celeryd-multi -n baz.myhost -c 10
+        celeryd-multi -n xuzzy.myhost -c 3
+
+
+
+
+
+
+
+1.0.4 [2010-05-31 09:54 A.M CEST]
+=================================
+
+Critical
+--------
+
+* SIGINT/Ctrl+C killed the pool, abrubtly terminating the currently executing
+  tasks.
+
+    Fixed by making the pool worker processes ignore :const:`SIGINT`.
+
+* Should not close the consumers before the pool is terminated, just cancel the consumers.
+
+    Issue #122. http://github.com/ask/celery/issues/issue/122
+
+* Now depends on :mod:`billiard` >= 0.3.1
+
+Changes
+-------
+
+* :mod:`celery.contrib.abortable`: Abortable tasks.
+
+    Tasks that defines steps of execution, the task can then
+    be aborted after each step has completed.
+
+* Added required RPM package names under ``[bdist_rpm]`` section, to support building RPMs
+  from the sources using setup.py
+
+* Running unittests: :envvar:`NOSE_VERBOSE` environment var now enables verbose output from Nose.
+
+* :func:`celery.execute.apply`: Pass logfile/loglevel arguments as task kwargs.
+
+    Issue #110 http://github.com/ask/celery/issues/issue/110
+
+* celery.execute.apply: Should return exception, not :class:`~celery.datastructures.ExceptionInfo`
+  on error.
+
+    Issue #111 http://github.com/ask/celery/issues/issue/111
+
+* Added new entries to the :doc:`FAQs <faq>`:
+
+    * Should I use retry or acks_late?
+    * Can I execute a task by name?
 
 1.0.3 [2010-05-15 03:00 P.M CEST]
 =================================
