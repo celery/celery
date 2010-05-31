@@ -2,6 +2,50 @@
  Change history
 ================
 
+1.0.4 [2010-05-31 09:54 A.M CEST]
+=================================
+
+Critical
+--------
+
+* SIGINT/Ctrl+C killed the pool, abrubtly terminating the currently executing
+  tasks.
+
+    Fixed by making the pool worker processes ignore :const:`SIGINT`.
+
+* Should not close the consumers before the pool is terminated, just cancel the consumers.
+
+    Issue #122. http://github.com/ask/celery/issues/issue/122
+
+* Now depends on :mod:`billiard` >= 0.3.1
+
+Changes
+-------
+
+* :mod:`celery.contrib.abortable`: Abortable tasks.
+
+    Tasks that defines steps of execution, the task can then
+    be aborted after each step has completed.
+
+* Added required RPM package names under ``[bdist_rpm]`` section, to support building RPMs
+  from the sources using setup.py
+
+* Running unittests: :envvar:`NOSE_VERBOSE` environment var now enables verbose output from Nose.
+
+* :fun:`celery.execute.apply`: Pass logfile/loglevel arguments as task kwargs.
+
+    Issue #110 http://github.com/ask/celery/issues/issue/110
+
+* celery.execute.apply: Should return exception, not :class:`~celery.datastructures.ExceptionInfo`
+  on error.
+
+    Issue #111 http://github.com/ask/celery/issues/issue/111
+
+* Added FAQs:
+
+    * Should I use retry or acks_late
+    * Can I execute a task by name?
+
 1.0.3 [2010-05-15 03:00 P.M CEST]
 =================================
 
