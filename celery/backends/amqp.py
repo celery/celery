@@ -52,6 +52,10 @@ class AMQPBackend(BaseDictBackend):
     serializer = conf.RESULT_SERIALIZER
     _connection = None
 
+    def __init__(self, *args, **kwargs):
+        self._connection = kwargs.get("connection", None)
+        super(AMQPBackend, self).__init__(*args, **kwargs)
+
     def _create_publisher(self, task_id, connection):
         delivery_mode = self.persistent and 2 or 1
 

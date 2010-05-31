@@ -15,6 +15,10 @@ DEFAULT_SETTINGS = {
     "CELERY_IMPORTS": (),
 }
 
+DEFAULT_UNCONFIGURED_SETTINGS = {
+    "CELERY_RESULT_BACKEND": "amqp",
+}
+
 
 class NotConfigured(UserWarning):
     """Celery has not been configured, as no config module has been found."""
@@ -62,7 +66,7 @@ class Loader(BaseLoader):
             warnings.warn("No celeryconfig.py module found! Please make "
                           "sure it exists and is available to Python.",
                           NotConfigured)
-            return self.setup_settings({})
+            return self.setup_settings(DEFAULT_UNCONFIGURED_SETTINGS)
         else:
             usercfg = dict((key, getattr(celeryconfig, key))
                             for key in dir(celeryconfig)
