@@ -188,7 +188,7 @@ class WorkController(object):
             for i, component in enumerate(self.components):
                 self.logger.debug("Starting thread %s..." % \
                         component.__class__.__name__)
-                self._running = i
+                self._running = i + 1
                 component.start()
         finally:
             self.stop()

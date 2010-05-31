@@ -18,9 +18,6 @@ class TestControlPanel(unittest.TestCase):
     def create_panel(self, **kwargs):
         return control.ControlDispatch(hostname=hostname, **kwargs)
 
-    def test_shutdown(self):
-        self.assertRaises(SystemExit, self.panel.execute, "shutdown")
-
     def test_dump_tasks(self):
         self.panel.execute("dump_tasks")
 

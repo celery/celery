@@ -60,7 +60,7 @@ class CarrotListener(object):
         self.control_dispatch = ControlDispatch(logger=logger,
                                                 hostname=self.hostname,
                                                 listener=self)
-        self.prefetch_count = None
+        self.prefetch_count = SharedCounter(self.initial_prefetch_count)
         self.prev_pcount = None
         self.event_dispatcher = None
         self.heart = None
