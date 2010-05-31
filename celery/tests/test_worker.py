@@ -379,5 +379,7 @@ class TestWorkController(unittest.TestCase):
         worker.start()
         for w in (w1, w2, w3, w4):
             self.assertTrue(w["started"])
+        self.assertTrue(worker._running, len(worker.components))
+        worker.stop()
         for component in worker.components:
             self.assertTrue(component._stopped)
