@@ -80,6 +80,7 @@ from celery.task import discard_all
 from celery.utils import info
 from celery.utils import get_full_cls_name
 from celery.worker import WorkController
+from celery.exceptions import ImproperlyConfigured
 
 STARTUP_INFO_FMT = """
 Configuration ->
