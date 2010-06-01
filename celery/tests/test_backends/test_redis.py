@@ -2,6 +2,8 @@ import sys
 import socket
 import unittest2 as unittest
 
+from nose import SkipTest
+
 from celery.exceptions import ImproperlyConfigured
 
 from celery import states
@@ -27,7 +29,7 @@ class SomeClass(object):
         self.data = data
 
 
-def get_redis_or_None():
+def get_redis_or_SkipTest():
 
     def emit_no_redis_msg(reason):
         global _no_redis_msg_emitted
@@ -36,7 +38,8 @@ def get_redis_or_None():
             _no_redis_msg_emitted = True
 
     if pyredis.redis is None:
-        return emit_no_redis_msg("not installed")
+        emit_no_redis_msg("not installed")
+        raise SkipTest("redis library not installed")
     try:
         tb = RedisBackend(redis_db="celery_unittest")
         try:
@@ -44,7 +47,8 @@ def get_redis_or_None():
             # Evaluate lazy connection
             tb._connection.connection.connect(tb._connection)
         except ConnectionError, exc:
-            return emit_no_redis_msg("not running")
+            emit_no_redis_msg("not running")
+            raise SkipTest("can't connect to redis: %s" % (exc, ))
         return tb
     except ImproperlyConfigured, exc:
         if "need to install" in str(exc):
@@ -55,9 +59,7 @@ def get_redis_or_None():
 class TestRedisBackend(unittest.TestCase):
 
     def test_cached_connection(self):
-        tb = get_redis_or_None()
-        if not tb:
-            return # Skip test
+        tb = get_redis_or_SkipTest()
 
         self.assertIsNotNone(tb._connection)
         tb.close()
@@ -66,9 +68,7 @@ class TestRedisBackend(unittest.TestCase):
         self.assertIsNotNone(tb._connection)
 
     def test_mark_as_done(self):
-        tb = get_redis_or_None()
-        if not tb:
-            return
+        tb = get_redis_or_SkipTest()
 
         tid = gen_unique_id()
 
@@ -82,9 +82,7 @@ class TestRedisBackend(unittest.TestCase):
         self.assertEqual(tb.get_result(tid), 42)
 
     def test_is_pickled(self):
-        tb = get_redis_or_None()
-        if not tb:
-            return
+        tb = get_redis_or_SkipTest()
 
         tid2 = gen_unique_id()
         result = {"foo": "baz", "bar": SomeClass(12345)}
@@ -95,9 +93,7 @@ class TestRedisBackend(unittest.TestCase):
         self.assertEqual(rindb.get("bar").data, 12345)
 
     def test_mark_as_failure(self):
-        tb = get_redis_or_None()
-        if not tb:
-            return
+        tb = get_redis_or_SkipTest()
 
         tid3 = gen_unique_id()
         try:
@@ -110,18 +106,14 @@ class TestRedisBackend(unittest.TestCase):
         self.assertIsInstance(tb.get_result(tid3), KeyError)
 
     def test_process_cleanup(self):
-        tb = get_redis_or_None()
-        if not tb:
-            return
+        tb = get_redis_or_SkipTest()
 
         tb.process_cleanup()
 
         self.assertIsNone(tb._connection)
 
     def test_connection_close_if_connected(self):
-        tb = get_redis_or_None()
-        if not tb:
-            return
+        tb = get_redis_or_SkipTest()
 
         tb.open()
         self.assertIsNotNone(tb._connection)
