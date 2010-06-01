@@ -2,7 +2,7 @@
  Change history
 ================
 
-1.0.4 [2010-05-31 09:54 A.M CEST]
+1.0.5 [2010-06-01 02:36 P.M CEST]
 =================================
 
 Critical
@@ -19,6 +19,12 @@ Critical
 
 * Now depends on :mod:`billiard` >= 0.3.1
 
+* celeryd: Previously exceptions raised by worker components could stall startup,
+  now it correctly logs the exceptions and shuts down.
+
+* celeryd: Prefetch counts was set too late. QoS is now set as early as possible,
+  so celeryd can't slurp in all the messages at start-up.
+
 Changes
 -------
 
@@ -26,6 +32,9 @@ Changes
 
     Tasks that defines steps of execution, the task can then
     be aborted after each step has completed.
+
+* :class:`~celery.events.EventDispatcher`: No longer creates AMQP channel
+  if events are disabled
 
 * Added required RPM package names under ``[bdist_rpm]`` section, to support building RPMs
   from the sources using setup.py
@@ -45,6 +54,11 @@ Changes
 
     * Should I use retry or acks_late?
     * Can I execute a task by name?
+
+1.0.4 [2010-05-31 09:54 A.M CEST]
+=================================
+
+* Changlog merged with 1.0.5 as the release was never announced.
 
 1.0.3 [2010-05-15 03:00 P.M CEST]
 =================================
