@@ -29,6 +29,48 @@ type:
         logger = self.get_logger(\*\*kwargs)
         logger.info("Execute every Monday at 7:30AM.")
 
+The syntax of these crontab expressions is very flexible.  Some examples:
+
++-------------------------------------+--------------------------------------------+
+| **Example**                         | **Meaning**                                |
++-------------------------------------+--------------------------------------------+
+| crontab()                           | Execute every minute.                      |
++-------------------------------------+--------------------------------------------+
+| crontab(minute=0, hour=0)           | Execute daily at midnight.                 |
++-------------------------------------+--------------------------------------------+
+| crontab(minute=0,                   | Execute every three hours---at midnight,   |
+|                                     | 3am, 6am, 9am, noon, 3pm, 6pm, 9pm.        |
++-------------------------------------+--------------------------------------------+
+| crontab(minute=0,                   | Same as previous.                          |
+|         hour=[0,3,6,9,12,15,18,21]) |                                            |
++-------------------------------------+--------------------------------------------+
+| crontab(minute="\*/15")             | Execute every 15 minutes.                  |
++-------------------------------------+--------------------------------------------+
+| crontab(day_of_week="sunday")       | Execute every minute (!) at sundays.       |
++-------------------------------------+--------------------------------------------+
+| crontab(minute="*",                 | Same as previous.                          |
+|         hour="*",                   |                                            |
+|         day_of_week="sun")          |                                            |
++-------------------------------------+--------------------------------------------+
+| crontab(minute="\*/10",             | Execute every ten minutes, but only        |
+|         hour="3,17,22",             | between 3-4 am, 5-6 pm and 10-11 pm on     |
+|         day_of_week="thu,fri")      | thursdays or fridays.                      |
++-------------------------------------+--------------------------------------------+
+| crontab(minute=0, hour="\*/2,\*/3") | Execute every even hour, and every hour    |
+|                                     | divisable by three. This means:            |
+|                                     | at every hour *except*: 1am,               |
+|                                     | 5am, 7am, 11am, 1pm, 5pm, 7pm,             |
+|                                     | 11pm                                       |
++-------------------------------------+--------------------------------------------+
+| crontab(minute=0, hour="\*/5")      | Execute hour divisable by 5. This means    |
+|                                     | that it is triggered at 3pm, not 5pm       |
+|                                     | (since 3pm equals the 24-hour clock        |
+|                                     | value of "15", which is divisable by 5).   |
++-------------------------------------+--------------------------------------------+
+| crontab(minute=0, hour="\*/3,8-17") | Execute every hour divisable by 3, and     |
+|                                     | every hour during office hours (8am-5pm).  |
++-------------------------------------+--------------------------------------------+
+
 If you want to use periodic tasks you need to start the ``celerybeat``
 service. You have to make sure only one instance of this server is running at
 any time, or else you will end up with multiple executions of the same task.
