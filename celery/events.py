@@ -38,10 +38,13 @@ class EventDispatcher(object):
     def __init__(self, connection, hostname=None, enabled=True,
             publisher=None):
         self.connection = connection
-        self.publisher = publisher or EventPublisher(self.connection)
         self.hostname = hostname or socket.gethostname()
         self.enabled = enabled
         self._lock = threading.Lock()
+
+        self.publisher = None
+        if self.enabled:
+            self.publisher = publisher or EventPublisher(self.connection)
 
     def send(self, type, **fields):
         """Send event.
