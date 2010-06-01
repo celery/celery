@@ -140,10 +140,12 @@ class SharedCounter(object):
     def increment(self, n=1):
         """Increment value."""
         self += n
+        return int(self)
 
     def decrement(self, n=1):
         """Decrement value."""
         self -= n
+        return int(self)
 
     def _update_value(self):
         self._value += sum(consume_queue(self._modify_queue))
