@@ -23,6 +23,39 @@ RUN = 0x0
 CLOSE = 0x1
 
 
+class QoS(object):
+    prev = None
+
+    def __init__(self, consumer, initial_value, logger):
+        self.consumer = consumer
+        self.logger = logger
+        self.value = SharedCounter(initial_value)
+
+        self.set(int(self.value))
+
+    def increment(self):
+        return self.set(self.value.increment())
+
+    def decrement(self):
+        return self.set(self.value.decrement())
+
+    def decrement_eventually(self):
+        self.value.decrement()
+
+    def set(self, pcount):
+        self.logger.debug("basic.qos: prefetch_count->%s" % pcount)
+        self.consumer.qos(prefetch_count=pcount)
+        self.prev = pcount
+        return pcount
+
+    def update(self):
+        return self.set(self.next)
+
+    @property
+    def next(self):
+        return int(self.value)
+
+
 class CarrotListener(object):
     """Listen for messages received from the broker and
     move them the the ready queue for task processing.
@@ -60,8 +93,6 @@ class CarrotListener(object):
         self.control_dispatch = ControlDispatch(logger=logger,
                                                 hostname=self.hostname,
                                                 listener=self)
-        self.prefetch_count = SharedCounter(self.initial_prefetch_count)
-        self.prev_pcount = None
         self.event_dispatcher = None
         self.heart = None
         self._state = None
@@ -93,21 +124,9 @@ class CarrotListener(object):
         self.logger.debug("CarrotListener: Ready to accept tasks!")
 
         while 1:
-            pcount = int(self.prefetch_count) # SharedCounter() -> int()
-            if not self.prev_pcount or pcount != self.prev_pcount:
-                self.update_task_qos(pcount)
+            if self.qos.prev != self.qos.next:
+                self.qos.update()
             wait_for_message()
-
-    def task_qos_increment(self):
-        self.update_task_qos(self.prefetch_count.increment())
-
-    def task_qos_decrement(self):
-        self.update_task_qos(self.prefetch_count.decrement())
-
-    def update_task_qos(self, pcount):
-        self.logger.debug("basic.qos: prefetch_count->%s" % pcount)
-        self.task_consumer.qos(prefetch_count=pcount)
-        self.prev_pcount = pcount
 
     def on_task(self, task, eta=None):
         """Handle received task.
@@ -129,11 +148,11 @@ class CarrotListener(object):
         if eta:
             if not isinstance(eta, datetime):
                 eta = parse_iso8601(eta)
-            self.task_qos_increment()
+            self.qos.increment()
             self.logger.info("Got task from broker: %s[%s] eta:[%s]" % (
                     task.task_name, task.task_id, eta))
             self.eta_schedule.enter(task, eta=eta,
-                                    callback=self.task_qos_decrement)
+                    callback=self.qos.decrement_eventually)
         else:
             self.logger.info("Got task from broker: %s[%s]" % (
                     task.task_name, task.task_id))
@@ -221,13 +240,12 @@ class CarrotListener(object):
         self.ready_queue.clear()
         self.eta_schedule.clear()
 
-
         self.connection = self._open_connection()
         self.logger.debug("CarrotListener: Connection Established.")
         self.task_consumer = get_consumer_set(connection=self.connection)
         # QoS: Reset prefetch window.
-        self.prefetch_count = SharedCounter(self.initial_prefetch_count)
-        self.update_task_qos(int(self.prefetch_count))
+        self.qos = QoS(self.task_consumer,
+                       self.initial_prefetch_count, self.logger)
 
         self.task_consumer.on_decode_error = self.on_decode_error
         self.broadcast_consumer = BroadcastConsumer(self.connection,

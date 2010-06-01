@@ -117,6 +117,6 @@ class ScheduleController(BackgroundThread):
         if delay is None:
             delay = 1
 
-        self.debug("ScheduleController: Scheduler wake-up",
-              "ScheduleController: Next wake-up eta %s seconds..." % delay)
+        self.debug("ScheduleController: Scheduler wake-up"
+                "ScheduleController: Next wake-up eta %s seconds..." % delay)
         time.sleep(delay)

@@ -12,7 +12,7 @@ from celery.utils import gen_unique_id
 from celery.worker import WorkController
 from celery.worker.job import TaskWrapper
 from celery.worker.buckets import FastQueue
-from celery.worker.listener import CarrotListener, RUN
+from celery.worker.listener import CarrotListener, QoS, RUN
 from celery.worker.scheduler import Scheduler
 from celery.decorators import task as task_dec
 from celery.decorators import periodic_task as periodic_task_dec
@@ -249,6 +249,13 @@ class TestCarrotListener(unittest.TestCase):
         self.assertTrue(self.eta_schedule.empty())
 
     def test_receieve_message_eta_isoformat(self):
+
+        class MockConsumer(object):
+            prefetch_count_incremented = False
+
+            def qos(self, **kwargs):
+                self.prefetch_count_incremented = True
+
         l = CarrotListener(self.ready_queue, self.eta_schedule, self.logger,
                            send_events=False)
         backend = MockBackend()
@@ -257,6 +264,8 @@ class TestCarrotListener(unittest.TestCase):
                            args=[2, 4, 8], kwargs={})
 
         l.event_dispatcher = MockEventDispatcher()
+        l.task_consumer = MockConsumer()
+        l.qos = QoS(l.task_consumer, l.initial_prefetch_count, l.logger)
         l.receive_message(m.decode(), m)
 
         items = [entry[2] for entry in self.eta_schedule.queue]
@@ -265,6 +274,7 @@ class TestCarrotListener(unittest.TestCase):
             if item.task_name == foo_task.name:
                 found = True
         self.assertTrue(found)
+        self.assertTrue(l.task_consumer.prefetch_count_incremented)
 
     def test_revoke(self):
         ready_queue = FastQueue()
