@@ -24,7 +24,7 @@ type:
     from celery.task.schedules import crontab
     from celery.decorators import periodic_task
 
-    @periodoc_task(run_every=crontab(hour=7, minute=30, day_of_week=1))
+    @periodic_task(run_every=crontab(hour=7, minute=30, day_of_week=1))
     def every_monday_morning(\*\*kwargs):
         logger = self.get_logger(\*\*kwargs)
         logger.info("Execute every Monday at 7:30AM.")
