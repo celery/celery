@@ -27,6 +27,24 @@ def revoke(panel, task_id, task_name=None, **kwargs):
 
 
 @Panel.register
+def enable_events(panel):
+    dispatcher = panel.listener.event_dispatcher
+    dispatcher.enable()
+    dispatcher.send("worker-online")
+    panel.logger.warn("Events enabled by remote.")
+    return {"ok": "events enabled"}
+
+
+@Panel.register
+def disable_events(panel):
+    dispatcher = panel.listener.event_dispatcher
+    dispatcher.send("worker-offline")
+    dispatcher.disable()
+    panel.logger.warn("Events disabled by remote.")
+    return {"ok": "events disabled"}
+
+
+@Panel.register
 def rate_limit(panel, task_name, rate_limit, **kwargs):
     """Set new rate limit for a task type.
 

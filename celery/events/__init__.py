@@ -35,16 +35,25 @@ class EventDispatcher(object):
 
     """
 
-    def __init__(self, connection, hostname=None, enabled=True,
-            publisher=None):
+    def __init__(self, connection, hostname=None, enabled=True):
         self.connection = connection
         self.hostname = hostname or socket.gethostname()
         self.enabled = enabled
         self._lock = threading.Lock()
-
         self.publisher = None
+
         if self.enabled:
-            self.publisher = publisher or EventPublisher(self.connection)
+            self.enable()
+
+    def enable(self):
+        self.enabled = True
+        self.publisher = EventPublisher(self.connection)
+
+    def disable(self):
+        self.enabled = False
+        if self.publisher is not None:
+            self.publisher.close()
+            self.publisher = None
 
     def send(self, type, **fields):
         """Send event.
