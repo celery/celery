@@ -98,7 +98,7 @@ class CursesMonitor(object):
     background = curses.COLOR_WHITE
     online_str = "Workers online: "
     help_title = "Keys: "
-    help = ("j:up k:down c:revoke t:traceback r:result q: quit")
+    help = ("j:up k:down i:info t:traceback r:result c:revoke ^c: quit")
     greet = "celeryev %s" % celery.__version__
     info_str = "Info: "
 
@@ -133,20 +133,20 @@ class CursesMonitor(object):
         if not self.tasks:
             return
         incr = reverse and -1 or 1
-        pos = self.find_position() + incr
+        pos = self.find_position()
         try:
-            self.selected_task = self.tasks[pos][0]
+            self.selected_task = self.tasks[pos + incr][0]
         except IndexError:
-            self.selected_task = self.tasks[0][0]
+            self.selected_task = None
 
     def handle_keypress(self):
         try:
             key = self.win.getkey().upper()
         except:
             return
-        if key in ("KEY_DOWN", "J"):
+        if key in (curses.KEY_DOWN, "J"):
             self.move_selection()
-        elif key in ("KEY_UP", "K"):
+        elif key in (curses.KEY_UP, "K"):
             self.move_selection(reverse=True)
         elif key in ("C", ):
             self.revoke_selection()
@@ -154,8 +154,8 @@ class CursesMonitor(object):
             self.selection_traceback()
         elif key in ("R", ):
             self.selection_result()
-        elif key in ("Q", ):
-            raise SystemExit
+        elif key in ("I", curses.KEY_ENTER):
+            self.selection_info()
 
     def alert(self, callback):
         self.win.erase()
@@ -171,6 +171,32 @@ class CursesMonitor(object):
 
     def revoke_selection(self):
         control.revoke(self.selected_task)
+
+    def selection_info(self):
+        if not self.selected_task:
+            return
+
+        def alert_callback(mx, my):
+            y = count(2).next
+            task = self.state.tasks[self.selected_task]
+            info = task.info(extra=["state"])
+            infoitems = [("args", info.pop("args", None)),
+                         ("kwargs", info.pop("kwargs", None))] + info.items()
+            for key, value in infoitems:
+                if key is None:
+                    continue
+                curline = y()
+                keys = key + ": "
+                self.win.addstr(curline, 3, keys, curses.A_BOLD)
+                wrapped = wrap(str(value), mx - 2)
+                if len(wrapped) == 1:
+                    self.win.addstr(curline, len(keys) + 3, wrapped[0])
+                else:
+                    for subline in wrapped:
+                        self.win.addstr(y(), 3, " " * 4 + subline,
+                                curses.A_NORMAL)
+
+        return self.alert(alert_callback)
 
     def selection_traceback(self):
         if not self.selected_task:
@@ -250,7 +276,8 @@ class CursesMonitor(object):
             except KeyError:
                 pass
             else:
-                info = selection.info
+                info = selection.info(["args", "kwargs",
+                                       "result", "runtime", "eta"])
                 if "runtime" in info:
                     info["runtime"] = "%.2fs" % info["runtime"]
                 if "result" in info:
@@ -309,6 +336,7 @@ class CursesMonitor(object):
 
     def resetscreen(self):
         curses.nocbreak()
+        self.win.keypad(False)
         curses.echo()
         curses.endwin()
 

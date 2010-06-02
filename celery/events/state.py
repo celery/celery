@@ -49,10 +49,12 @@ class Task(Thing):
     worker = None
     timestamp = None
 
-    @property
-    def info(self):
+    def info(self, fields=None, extra=[]):
+        if fields is None:
+            fields = self._info_fields
+        fields = list(fields) + list(extra)
         return dict((key, getattr(self, key, None))
-                        for key in self._info_fields
+                        for key in fields
                             if getattr(self, key, None) is not None)
 
     @property
