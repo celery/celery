@@ -88,6 +88,7 @@ def abbrtask(S, max):
 class CursesMonitor(object):
     win = None
     screen_width = None
+    screen_delay = 0.1
     selected_task = None
     selected_position = 0
     selected_str = "Selected: "
@@ -289,6 +290,9 @@ class CursesMonitor(object):
         curses.echo()
         curses.endwin()
 
+    def nap(self):
+        curses.napms(int(self.screen_delay * 1000))
+
     @property
     def tasks(self):
         return self.state.tasks_by_timestamp()[:self.limit]
@@ -310,6 +314,7 @@ class DisplayThread(threading.Thread):
     def run(self):
         while not self.shutdown:
             self.display.draw()
+            self.display.nap()
 
 
 def eventtop():
