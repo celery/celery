@@ -143,7 +143,7 @@ class State(object):
             handler(**fields)
 
     def event(self, event):
-        fields = dict((key.encode("utf-8"), value)
+        event = dict((key.encode("utf-8"), value)
                         for key, value in event.items())
         self.event_count += 1
         group, _, type = partition(event.pop("type"), "-")
