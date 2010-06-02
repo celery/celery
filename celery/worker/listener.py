@@ -249,6 +249,7 @@ class CarrotListener(object):
                                                     hostname=self.hostname)
         self.task_consumer.register_callback(self.receive_message)
         self.event_dispatcher = EventDispatcher(self.connection,
+                                                hostname=self.hostname,
                                                 enabled=self.send_events)
         self.heart = Heart(self.event_dispatcher)
         self.heart.start()

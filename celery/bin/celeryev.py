@@ -96,7 +96,7 @@ class CursesMonitor(object):
     background = curses.COLOR_WHITE
     online_str = "Workers online: "
     help_title = "Keys: "
-    help = ("j, k: sel up/down r: revoke sel q: quit")
+    help = ("j:up k:down c:revoke t:traceback r:result q: quit")
     greet = "celeryev %s" % celery.__version__
     info_str = "Info: "
 
@@ -146,13 +146,38 @@ class CursesMonitor(object):
             self.move_selection()
         elif key in ("KEY_UP", "K"):
             self.move_selection(reverse=True)
-        elif key in ("R", ):
+        elif key in ("C", ):
             self.revoke_selection()
+        elif key in ("T", ):
+            self.selection_traceback()
         elif key in ("Q", ):
-            raise KeyboardInterrupt
+            raise SystemExit
+
+    def alert(self, callback):
+        self.win.erase()
+        my, mx = self.win.getmaxyx()
+        callback(my, mx)
+        self.win.addstr(my - 1, 0, "Press any key to continue...", curses.A_BOLD)
+        self.win.refresh()
+        while 1:
+            try:
+                return self.win.getkey().upper()
+            except:
+                pass
 
     def revoke_selection(self):
         control.revoke(self.selected_task)
+
+    def selection_traceback(self):
+
+        def alert_callback(my, mx):
+            y = count(2).next
+            task = self.state.tasks[self.selected_task]
+            for line in task.traceback.split("\n"):
+                self.win.addstr(y(), 3, line)
+
+        return self.alert(alert_callback)
+
 
     def draw(self):
         win = self.win
@@ -205,6 +230,8 @@ class CursesMonitor(object):
                 info = selection.info
                 if "runtime" in info:
                     info["runtime"] = "%.2fs" % info["runtime"]
+                if "result" in info:
+                    info["result"] = abbr(result["info"], 16)
                 info = " ".join("%s=%s" % (key, value)
                             for key, value in info.items())
             win.addstr(my - 5, x + len(self.selected_str), info)
