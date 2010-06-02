@@ -70,6 +70,13 @@ aborted immediately. In fact, it is not guaranteed to abort at all. Keep
 checking the ``async_result`` status, or call ``async_result.wait()`` to
 have it block until the task is finished.
 
+.. note::
+
+   In order to abort tasks, there needs to be communication between the
+   producer and the consumer.  This is currently implemented through the
+   database backend.  Therefore, this class will only work with the
+   database backends.
+
 """
 from celery.task.base import Task
 from celery.result import AsyncResult
