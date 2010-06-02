@@ -3,11 +3,13 @@ import time
 import curses
 import atexit
 import socket
+import optparse
 import threading
 
 from datetime import datetime
 from itertools import count
 
+from celery.task import control
 from celery.events import EventReceiver
 from celery.events.state import State
 from celery.messaging import establish_connection
@@ -17,6 +19,12 @@ TASK_NAMES = LocalCache(0xFFF)
 HUMAN_TYPES = {"worker-offline": "shutdown",
                "worker-online": "started",
                "worker-heartbeat": "heartbeat"}
+OPTION_LIST = (
+    optparse.make_option('-d', '--DUMP',
+        action="store_true", dest="dump",
+        help="Dump events to stdout."),
+)
+
 
 
 def humanize_type(type):
@@ -26,43 +34,35 @@ def humanize_type(type):
         return type.lower().replace("-", " ")
 
 
-def dump_event(event):
-    timestamp = datetime.fromtimestamp(event.pop("timestamp"))
-    type = event.pop("type").lower()
-    hostname = event.pop("hostname")
-    if type.startswith("task-"):
-        uuid = event.pop("uuid")
-        if type.startswith("task-received"):
-            task = TASK_NAMES[uuid] = "%s(%s) args=%s kwargs=%s" % (
-                    event.pop("name"), uuid,
-                    event.pop("args"),
-                    event.pop("kwargs"))
-        else:
-            task = TASK_NAMES.get(uuid, "")
-        return format_task_event(hostname, timestamp, type, task, event)
-    fields = ", ".join("%s=%s" % (key, event[key])
-                    for key in sorted(event.keys()))
-    sep = fields and ":" or ""
-    print("%s [%s] %s%s %s" % (hostname, timestamp,
-                                humanize_type(type), sep, fields))
+class Dumper(object):
 
+    def on_event(self, event):
+        timestamp = datetime.fromtimestamp(event.pop("timestamp"))
+        type = event.pop("type").lower()
+        hostname = event.pop("hostname")
+        if type.startswith("task-"):
+            uuid = event.pop("uuid")
+            if type.startswith("task-received"):
+                task = TASK_NAMES[uuid] = "%s(%s) args=%s kwargs=%s" % (
+                        event.pop("name"), uuid,
+                        event.pop("args"),
+                        event.pop("kwargs"))
+            else:
+                task = TASK_NAMES.get(uuid, "")
+            return self.format_task_event(hostname, timestamp,
+                                          type, task, event)
+        fields = ", ".join("%s=%s" % (key, event[key])
+                        for key in sorted(event.keys()))
+        sep = fields and ":" or ""
+        print("%s [%s] %s%s %s" % (hostname, timestamp,
+                                    humanize_type(type), sep, fields))
 
-def format_task_event(hostname, timestamp, type, task, event):
-    fields = ", ".join("%s=%s" % (key, event[key])
-                    for key in sorted(event.keys()))
-    sep = fields and ":" or ""
-    print("%s [%s] %s%s %s %s" % (hostname, timestamp,
-                                humanize_type(type), sep, task, fields))
-
-def eventdump():
-    sys.stderr.write("-> celeryev: starting capture...\n")
-    conn = establish_connection()
-    recv = EventReceiver(conn, handlers={"*": dump_event})
-    try:
-        recv.capture()
-    except (KeyboardInterrupt, SystemExit):
-        conn and conn.close()
-
+    def format_task_event(self, hostname, timestamp, type, task, event):
+        fields = ", ".join("%s=%s" % (key, event[key])
+                        for key in sorted(event.keys()))
+        sep = fields and ":" or ""
+        print("%s [%s] %s%s %s %s" % (hostname, timestamp,
+                                    humanize_type(type), sep, task, fields))
 
 
 def abbr(S, max, dots=True):
@@ -92,6 +92,8 @@ class CursesMonitor(object):
     foreground = curses.COLOR_BLACK
     background = curses.COLOR_WHITE
     online_str = "Workers online: "
+    help = ("Keys: j, k: Move selection up/down. "
+            "r: revoke selected task. q: quit")
 
     def __init__(self, state):
         self.state = state
@@ -133,8 +135,13 @@ class CursesMonitor(object):
             self.move_selection()
         elif key in ("KEY_UP", "K"):
             self.move_selection(reverse=True)
+        elif key in ("R", ):
+            self.revoke_selection()
         elif key in ("Q", ):
             raise KeyboardInterrupt
+
+    def revoke_selection(self):
+        control.revoke(self.selected_task)
 
     def draw(self):
         self.handle_keypress()
@@ -159,7 +166,7 @@ class CursesMonitor(object):
                     task.visited = time.time()
 
         if self.selected_task:
-            win.addstr(my - 3, x, self.selected_str, curses.A_BOLD)
+            win.addstr(my - 4, x, self.selected_str, curses.A_BOLD)
             info = "Missing extended info"
             try:
                 selection = self.state.tasks[self.selected_task]
@@ -171,16 +178,17 @@ class CursesMonitor(object):
                     info["runtime"] = "%.2fs" % info["runtime"]
                 info = " ".join("%s=%s" % (key, value)
                             for key, value in info.items())
-            win.addstr(my - 3, x + len(self.selected_str), info)
-
+            win.addstr(my - 4, x + len(self.selected_str), info)
         else:
-            win.addstr(my - 3, x, "No task selected", curses.A_NORMAL)
+            win.addstr(my - 4, x, "No task selected", curses.A_NORMAL)
+
         if self.workers:
-            win.addstr(my - 2, x, self.online_str, curses.A_BOLD)
-            win.addstr(my - 2, x + len(self.online_str),
+            win.addstr(my - 3, x, self.online_str, curses.A_BOLD)
+            win.addstr(my - 3, x + len(self.online_str),
                     ", ".join(self.workers), curses.A_NORMAL)
         else:
-            win.addstr(my - 2, x, "No workers discovered.")
+            win.addstr(my - 3, x, "No workers discovered.")
+        win.addstr(my - 2, x, self.help)
         win.refresh()
 
     def setupscreen(self):
@@ -218,7 +226,8 @@ class DisplayThread(threading.Thread):
         while not self.shutdown:
             self.display.draw()
 
-def main():
+
+def eventtop():
     sys.stderr.write("-> celeryev: starting capture...\n")
     state = State()
     display = CursesMonitor(state)
@@ -245,6 +254,35 @@ def main():
         refresher.shutdown = True
         refresher.join()
         display.resetscreen()
+
+
+def eventdump():
+    sys.stderr.write("-> celeryev: starting capture...\n")
+    dumper = Dumper()
+    conn = establish_connection()
+    recv = EventReceiver(conn, handlers={"*": dumper.on_event})
+    try:
+        recv.capture()
+    except (KeyboardInterrupt, SystemExit):
+        conn and conn.close()
+
+
+def run_celeryev(dump=False):
+    if dump:
+        return eventdump()
+    return eventtop()
+
+
+def parse_options(arguments):
+    """Parse the available options to ``celeryev``."""
+    parser = optparse.OptionParser(option_list=OPTION_LIST)
+    options, values = parser.parse_args(arguments)
+    return options
+
+
+def main():
+    options = parse_options(sys.argv[1:])
+    return run_celeryev(**vars(options))
 
 
 

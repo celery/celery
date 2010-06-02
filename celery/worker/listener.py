@@ -10,7 +10,6 @@ from carrot.connection import AMQPConnectionException
 from celery import conf
 from celery.utils import noop, retry_over_time
 from celery.worker.job import TaskWrapper, InvalidTaskError
-from celery.worker.revoke import revoked
 from celery.worker.control import ControlDispatch
 from celery.worker.heartbeat import Heart
 from celery.events import EventDispatcher
@@ -136,10 +135,8 @@ class CarrotListener(object):
 
         """
 
-        if task.task_id in revoked:
-            self.logger.warn("Got revoked task from broker: %s[%s]" % (
-                task.task_name, task.task_id))
-            return task.on_ack()
+        if task.revoked():
+            return
 
         self.event_dispatcher.send("task-received", uuid=task.task_id,
                 name=task.task_name, args=repr(task.args),

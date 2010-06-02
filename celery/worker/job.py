@@ -14,6 +14,7 @@ from celery import platform
 from celery.log import get_default_logger
 from celery.utils import noop, fun_takes_kwargs
 from celery.utils.mail import mail_admins
+from celery.worker.revoke import revoked
 from celery.loaders import current_loader
 from celery.execute.trace import TaskTrace
 from celery.registry import tasks
@@ -198,6 +199,7 @@ class TaskWrapper(object):
         self.on_ack = on_ack
         self.delivery_info = delivery_info or {}
         self.task = tasks[self.task_name]
+        self._already_revoked = False
 
         for opt in ("success_msg", "fail_msg", "fail_email_subject",
                 "fail_email_body", "logger", "eventer"):
@@ -210,6 +212,18 @@ class TaskWrapper(object):
                 self.__class__.__name__,
                 self.task_name, self.task_id,
                 self.args, self.kwargs)
+
+    def revoked(self):
+        if self._already_revoked:
+            return True
+        if self.task_id in revoked:
+            self.logger.warn("Skipping revoked task: %s[%s]" % (
+                self.task_name, self.task_id))
+            self.send_event("task-revoked", uuid=self.task_id)
+            self.on_ack()
+            self._already_revoked = True
+            return True
+        return False
 
     @classmethod
     def from_message(cls, message, message_data, logger=None, eventer=None):
@@ -290,6 +304,8 @@ class TaskWrapper(object):
         :keyword logfile: The logfile used by the task.
 
         """
+        if self.revoked():
+            return
         # Make sure task has not already been executed.
         self._set_executed_bit()
 
@@ -318,6 +334,8 @@ class TaskWrapper(object):
         :returns :class:`multiprocessing.AsyncResult` instance.
 
         """
+        if self.revoked():
+            return
         # Make sure task has not already been executed.
         self._set_executed_bit()
 

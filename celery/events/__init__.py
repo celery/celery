@@ -104,7 +104,7 @@ class EventReceiver(object):
         stop unless forced via :exc:`KeyboardInterrupt` or :exc:`SystemExit`.
 
         """
-        consumer = self.consume()
+        consumer = self.consumer()
         it = consumer.iterconsume(limit=limit)
         while True:
             it.next()

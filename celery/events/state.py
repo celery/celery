@@ -88,6 +88,9 @@ class Task(Thing):
         self.suceeded = timestamp
         self.update(fields, timestamp=timestamp)
 
+    def revoked(self, timestamp=None):
+        self.state = states.REVOKED
+
 
 class State(object):
 

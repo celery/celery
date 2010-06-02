@@ -8,7 +8,6 @@ import threading
 from Queue import Empty as QueueEmpty
 
 from celery import log
-from celery.worker.revoke import revoked
 
 
 class BackgroundThread(threading.Thread):
@@ -90,10 +89,7 @@ class Mediator(BackgroundThread):
         except QueueEmpty:
             time.sleep(0.2)
         else:
-            if task.task_id in revoked: # task revoked
-                task.on_ack()
-                self.logger.warn("Mediator: Skipping revoked task: %s[%s]" % (
-                        task.task_name, task.task_id))
+            if task.revoked():
                 return
 
             self.logger.debug(

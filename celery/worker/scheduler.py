@@ -3,7 +3,6 @@ from __future__ import generators
 import time
 import heapq
 
-from celery.worker.revoke import revoked
 from celery import log
 
 DEFAULT_MAX_INTERVAL = 2
@@ -51,16 +50,11 @@ class Scheduler(object):
                 eta, priority, item, callback = verify = self._queue[0]
                 now = nowfun()
 
-                # FIXME: Need a generic hook for this
-                if item.task_id in revoked:
+                if item.revoked():
                     event = pop(self._queue)
-                    if event is verify:
-                        item.on_ack()
-                        self.logger.warn(
-                                "Mediator: Skipping revoked task: %s[%s]" % (
-                                    item.task_name, item.task_id))
-                    else:
+                    if event is not verify:
                         heapq.heappush(self._queue, event)
+                    continue
 
                 if now < eta:
                     yield min(eta - now, self.max_interval)
