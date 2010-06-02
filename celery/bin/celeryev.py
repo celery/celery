@@ -7,6 +7,7 @@ import optparse
 import threading
 
 from datetime import datetime
+from textwrap import wrap
 from itertools import count
 
 import celery
@@ -151,6 +152,8 @@ class CursesMonitor(object):
             self.revoke_selection()
         elif key in ("T", ):
             self.selection_traceback()
+        elif key in ("R", ):
+            self.selection_result()
         elif key in ("Q", ):
             raise SystemExit
 
@@ -170,14 +173,33 @@ class CursesMonitor(object):
         control.revoke(self.selected_task)
 
     def selection_traceback(self):
+        if not self.selected_task:
+            return
+        task = self.state.tasks[self.selected_task]
+        if task.state not in states.EXCEPTION_STATES:
+            return
 
         def alert_callback(my, mx):
             y = count(2).next
-            task = self.state.tasks[self.selected_task]
             for line in task.traceback.split("\n"):
                 self.win.addstr(y(), 3, line)
 
         return self.alert(alert_callback)
+
+    def selection_result(self):
+        if not self.selected_task:
+            return
+
+        def alert_callback(my, mx):
+            y = count(2).next
+            task = self.state.tasks[self.selected_task]
+            result = getattr(task, "result", None) or getattr(task,
+                    "exception", None)
+            for line in wrap(result, mx - 2):
+                self.win.addstr(y(), 3, line)
+
+        return self.alert(alert_callback)
+
 
 
     def draw(self):
@@ -232,7 +254,7 @@ class CursesMonitor(object):
                 if "runtime" in info:
                     info["runtime"] = "%.2fs" % info["runtime"]
                 if "result" in info:
-                    info["result"] = abbr(result["info"], 16)
+                    info["result"] = abbr(info["result"], 16)
                 info = " ".join("%s=%s" % (key, value)
                             for key, value in info.items())
             win.addstr(my - 5, x + len(self.selected_str), info)
