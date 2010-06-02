@@ -137,14 +137,14 @@ class State(object):
         worker = self.get_worker(hostname)
         task = self.get_task(uuid, worker=worker)
         handler = getattr(task, type)
-        fields = dict((key.encode("utf-8"), value)
-                        for key, value in fields.items())
         if type == "received":
             self.task_count += 1
         if handler:
             handler(**fields)
 
     def event(self, event):
+        fields = dict((key.encode("utf-8"), value)
+                        for key, value in event.items())
         self.event_count += 1
         group, _, type = partition(event.pop("type"), "-")
         self.group_handlers[group](type, event)
