@@ -34,16 +34,24 @@ class Worker(Thing):
 
 
 class Task(Thing):
+    _info_fields = ("args", "kwargs", "retries", "result", "eta", "runtime")
     uuid = None
     name = None
     state = states.PENDING
     received = False
     accepted = False
-    args = '[]'
-    kwargs = '{}'
+    args = None
+    kwargs = None
     eta = None
     retries = 0
     worker = None
+    timestamp = None
+
+    @property
+    def info(self):
+        return dict((key, getattr(self, key, None))
+                        for key in self._info_fields
+                            if getattr(self, key, None) is not None)
 
     @property
     def ready(self):
@@ -130,6 +138,7 @@ class State(object):
             self.callback(self, event)
 
     def tasks_by_timestamp(self):
-        return sorted(self.tasks.items(), key=lambda t: t[1].timestamp)
+        return sorted(self.tasks.items(), key=lambda t: t[1].timestamp,
+                reverse=True)
 
 state = State()

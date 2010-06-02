@@ -92,6 +92,11 @@ class EventReceiver(object):
         handler = self.handlers.get(type) or self.handlers.get("*")
         handler and handler(event)
 
+    def consumer(self):
+        consumer = EventConsumer(self.connection)
+        consumer.register_callback(self._receive)
+        return consumer
+
     def capture(self, limit=None):
         """Open up a consumer capturing events.
 
@@ -99,8 +104,7 @@ class EventReceiver(object):
         stop unless forced via :exc:`KeyboardInterrupt` or :exc:`SystemExit`.
 
         """
-        consumer = EventConsumer(self.connection)
-        consumer.register_callback(self._receive)
+        consumer = self.consume()
         it = consumer.iterconsume(limit=limit)
         while True:
             it.next()
