@@ -176,7 +176,7 @@ class CursesMonitor(object):
                     attr = curses.A_NORMAL
                     if task.uuid == self.selected_task:
                         attr = curses.A_STANDOUT
-                    timestamp = datetime.fromtimestamp(task.timestamp)
+                    timestamp = datetime.fromtimestamp(task.timestamp or time.time())
                     timef = timestamp.strftime("%H:%M:%S")
                     line = self.format_row(uuid, task.name,
                                            task.worker.hostname,
