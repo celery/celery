@@ -34,7 +34,9 @@ class Worker(Thing):
 
 
 class Task(Thing):
-    _info_fields = ("args", "kwargs", "retries", "result", "eta", "runtime")
+    _info_fields = ("args", "kwargs", "retries",
+                    "result", "eta", "runtime",
+                    "exception")
     uuid = None
     name = None
     state = states.PENDING
@@ -93,6 +95,8 @@ class Task(Thing):
 
 
 class State(object):
+    event_count = 0
+    task_count = 0
 
     def __init__(self, callback=None):
         self.workers = {}
@@ -131,10 +135,13 @@ class State(object):
         worker = self.get_worker(hostname)
         task = self.get_task(uuid, worker=worker)
         handler = getattr(task, type)
+        if type == "received":
+            self.task_count += 1
         if handler:
             handler(**fields)
 
     def event(self, event):
+        self.event_count += 1
         group, _, type = partition(event.pop("type"), "-")
         self.group_handlers[group](type, event)
         if self.callback:
