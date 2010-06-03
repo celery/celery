@@ -45,7 +45,7 @@ install_requires.extend([
     "mailer",
     "sqlalchemy",
     "anyjson",
-    "carrot>=0.10.4",
+    "carrot>=0.10.5",
     "billiard>=0.3.0",
     "pyparsing"])
 

@@ -2,7 +2,7 @@ mailer
 python-dateutil
 sqlalchemy
 anyjson
-carrot>=0.10.4
+carrot>=0.10.5
 django-picklefield
 billiard>=0.3.0
 pyparsing
