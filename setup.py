@@ -74,7 +74,6 @@ setup(
              "bin/camqadm", "bin/celeryd-multi",
              "bin/celeryev"],
     zip_safe=False,
-    setup_requires=["nose", "nose-cover3", "unittest2>=0.4.0", "simplejson"],
     install_requires=install_requires,
     cmdclass = {"test": RunTests, "quicktest": QuickRunTests},
     test_suite="nose.collector",
