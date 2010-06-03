@@ -85,7 +85,7 @@ class Beat(object):
             self.install_sync_handler(beat)
             beat.start()
         except Exception, exc:
-            emergency_error(logfile,
+            emergency_error(self.logfile,
                     "celerybeat raised exception %s: %s\n%s" % (
                             exc.__class__, exc, traceback.format_exc()))
 
