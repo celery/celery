@@ -7,13 +7,14 @@ import time
 import shelve
 import threading
 import multiprocessing
-from datetime import datetime
+from datetime import datetime, timedelta
 from UserDict import UserDict
 
 from celery import log
 from celery import conf
 from celery import platform
 from celery.execute import send_task
+from celery.schedules import schedule
 from celery.messaging import establish_connection
 from celery.utils.info import humanize_seconds
 
@@ -159,15 +160,24 @@ class Scheduler(UserDict):
                     entry.name, exc))
         return result
 
+    def maybe_schedule(self, s, relative=False):
+        if isinstance(s, int):
+            return timedelta(seconds=s)
+        if isinstance(s, timedelta):
+            return schedule(s, relative)
+        return s
+
     def setup_schedule(self):
-        from datetime import timedelta
-        from celery.task.schedules import schedule
-        self.schedule["add.often"] = ScheduleEntry("tasks.add",
-                                      schedule(timedelta(seconds=5)),
-                                      args=(4, 4))
-        self.schedule["sleep.often"] = ScheduleEntry("tasks.sleeptask",
-                                      schedule(timedelta(minutes=1)),
-                                      args=(2, ))
+        self.schedule = self.dict_to_entries(conf.CELERYBEAT_SCHEDULE)
+
+    def dict_to_entries(self, dict_):
+        entries = {}
+        for name, entry in dict_.items():
+            relative = entry.pop("relative", None)
+            entry["schedule"] = self.maybe_schedule(entry["schedule"],
+                                                    relative)
+            entries[name] = ScheduleEntry(**entry)
+        return entries
 
     def cleanup(self):
         pass
@@ -183,25 +193,23 @@ class ClockService(object):
 
     def __init__(self, logger=None,
             max_interval=conf.CELERYBEAT_MAX_LOOP_INTERVAL,
+            schedule=conf.CELERYBEAT_SCHEDULE,
             schedule_filename=conf.CELERYBEAT_SCHEDULE_FILENAME):
         self.logger = logger or log.get_default_logger()
         self.max_interval = max_interval
-        self.schedule_filename = schedule_filename
         self._shutdown = threading.Event()
         self._stopped = threading.Event()
-        self._schedule = None
+        self.schedule = schedule
         self._scheduler = None
-        self._in_sync = False
         silence = self.max_interval < 60 and 10 or 1
         self.debug = log.SilenceRepeated(self.logger.debug,
                                          max_iterations=silence)
 
     def start(self, embedded_process=False):
-        self.logger.info("ClockService: Starting...")
-        self.logger.debug("ClockService: "
-            "Ticking with max interval->%s, schedule->%s" % (
-                    humanize_seconds(self.max_interval),
-                    self.schedule_filename))
+        self.logger.info("Celerybeat: Starting...")
+        self.logger.debug("Celerybeat: "
+            "Ticking with max interval->%s" % (
+                    humanize_seconds(self.max_interval)))
 
         if embedded_process:
             platform.set_process_title("celerybeat")
@@ -212,7 +220,7 @@ class ClockService(object):
                     if self._shutdown.isSet():
                         break
                     interval = self.scheduler.tick()
-                    self.debug("ClockService: Waking up %s." % (
+                    self.debug("Celerybeat: Waking up %s." % (
                             humanize_seconds(interval, prefix="in ")))
                     time.sleep(interval)
             except (KeyboardInterrupt, SystemExit):
@@ -221,24 +229,12 @@ class ClockService(object):
             self.sync()
 
     def sync(self):
-        if self._schedule is not None and not self._in_sync:
-            self.logger.debug("ClockService: Syncing schedule to disk...")
-            self._schedule.sync()
-            self._schedule.close()
-            self._in_sync = True
-            self._stopped.set()
+        self._stopped.set()
 
     def stop(self, wait=False):
-        self.logger.info("ClockService: Shutting down...")
+        self.logger.info("Celerybeat: Shutting down...")
         self._shutdown.set()
         wait and self._stopped.wait() # block until shutdown done.
-
-    @property
-    def schedule(self):
-        if self._schedule is None:
-            filename = self.schedule_filename
-            self._schedule = self.open_schedule(filename=filename)
-        return self._schedule
 
     @property
     def scheduler(self):

@@ -1,4 +1,5 @@
 import sys
+import warnings
 from datetime import timedelta
 
 from billiard.serialization import pickle
@@ -15,7 +16,20 @@ from celery.messaging import TaskPublisher, TaskConsumer
 from celery.messaging import establish_connection as _establish_connection
 from celery.exceptions import MaxRetriesExceededError, RetryTaskError
 
-from celery.task.schedules import schedule
+from celery.schedules import schedule
+
+PERIODIC_DEPRECATION_TEXT = """\
+Periodic task classes has been deprecated and will be removed
+in celery v1.4.
+
+Please use the CELERYBEAT_SCHEDULE setting instead:
+
+    CELERYBEAT_SCHEDULE = {
+        name: dict(name=task_name, schedule=run_every,
+                   args=(), kwargs={}, options={}, relative=False)
+    }
+
+"""
 
 
 class TaskType(type):
@@ -737,16 +751,17 @@ class PeriodicTask(Task):
             raise NotImplementedError(
                     "Periodic tasks must have a run_every attribute")
 
-        # If run_every is a integer, convert it to timedelta seconds.
-        # Operate on the original class attribute so anyone accessing
-        # it directly gets the right value.
-        if isinstance(self.__class__.run_every, int):
-            self.__class__.run_every = timedelta(seconds=self.run_every)
 
-        # Convert timedelta to instance of schedule.
-        if isinstance(self.__class__.run_every, timedelta):
-            self.__class__.run_every = schedule(self.__class__.run_every,
-                                                self.relative)
+        warnings.warn(PERIODIC_DEPRECATION_TEXT,
+                        DeprecationWarning)
+        conf.CELERYBEAT_SCHEDULE[self.name] = {
+                "name": self.name,
+                "schedule": self.run_every,
+                "args": (),
+                "kwargs": {},
+                "options": {},
+                "relative": self.relative,
+        }
 
         super(PeriodicTask, self).__init__()
 
