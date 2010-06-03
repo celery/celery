@@ -43,8 +43,10 @@ def get_tyrant_or_SkipTest():
         return tb
     except ImproperlyConfigured, exc:
         if "need to install" in str(exc):
-            return emit_no_tyrant_msg("not installed")
-        return emit_no_tyrant_msg("not configured")
+            emit_no_tyrant_msg("not installed")
+            raise SkipTest("Tokyo Tyrant is not installed")
+        emit_no_tyrant_msg("not configured")
+        raise SkipTest("Tokyo Tyrant not configured")
 
 
 class TestTyrantBackend(unittest.TestCase):
