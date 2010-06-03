@@ -23,7 +23,7 @@ def revoke(panel, task_id, task_name=None, **kwargs):
             pass
     backend.mark_as_revoked(task_id)
     panel.logger.warn("Task %s revoked" % (task_id, ))
-    return True
+    return {"ok": "task %s revoked" % (task_id, )}
 
 
 @Panel.register
