@@ -33,8 +33,7 @@ class TestEventDispatcher(unittest.TestCase):
 
     def test_send(self):
         publisher = MockPublisher()
-        eventer = events.EventDispatcher(object(), publisher=publisher)
-
+        eventer = events.EventDispatcher(object(), enabled=False)
         eventer.publisher = publisher
         eventer.enabled = True
         eventer.send("World War II", ended=True)

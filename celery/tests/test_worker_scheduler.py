@@ -8,9 +8,13 @@ from celery.worker.scheduler import Scheduler
 
 
 class MockItem(object):
+    is_revoked = False
 
     def __init__(self, value):
         self.task_id = value
+
+    def revoked(self):
+        return self.is_revoked
 
 
 class TestScheduler(unittest.TestCase):

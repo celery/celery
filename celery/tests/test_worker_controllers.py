@@ -5,6 +5,7 @@ from Queue import Queue
 from celery.utils import gen_unique_id
 from celery.worker.controllers import Mediator
 from celery.worker.controllers import BackgroundThread, ScheduleController
+from celery.worker.revoke import revoked as revoked_tasks
 
 
 class MockTask(object):
@@ -17,6 +18,12 @@ class MockTask(object):
 
     def on_ack(self):
         self.acked = True
+
+    def revoked(self):
+        if self.task_id in revoked_tasks:
+            self.on_ack()
+            return True
+        return False
 
 
 class MyBackgroundThread(BackgroundThread):
@@ -84,8 +91,7 @@ class TestMediator(unittest.TestCase):
         m = Mediator(ready_queue, mycallback)
         t = MockTask("Jerry Seinfeld")
         t.task_id = gen_unique_id()
-        from celery.worker.revoke import revoked
-        revoked.add(t.task_id)
+        revoked_tasks.add(t.task_id)
         ready_queue.put(t)
 
         m.on_iteration()
