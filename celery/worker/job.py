@@ -350,7 +350,7 @@ class TaskWrapper(object):
     def on_accepted(self):
         if not self.task.acks_late:
             self.acknowledge()
-        self.send_event("task-accepted", uuid=self.task_id)
+        self.send_event("task-started", uuid=self.task_id)
         self.logger.debug("Task accepted: %s[%s]" % (
             self.task_name, self.task_id))
 

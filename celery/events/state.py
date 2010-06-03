@@ -36,7 +36,8 @@ class Worker(Thing):
         self._heartpush(timestamp)
 
     def _heartpush(self, timestamp):
-        heapq.heappush(self.heartbeats, timestamp)
+        if timestamp:
+            heapq.heappush(self.heartbeats, timestamp)
 
     @property
     def alive(self):
@@ -52,7 +53,7 @@ class Task(Thing):
     name = None
     state = states.PENDING
     received = False
-    accepted = False
+    started = False
     args = None
     kwargs = None
     eta = None
@@ -83,9 +84,9 @@ class Task(Thing):
         self.state = "RECEIVED"
         self.update(fields, timestamp=timestamp)
 
-    def accepted(self, timestamp=None, **fields):
-        self.state = "ACCEPTED"
-        self.accepted = timestamp
+    def started(self, timestamp=None, **fields):
+        self.state = states.STARTED
+        self.started = timestamp
         self.update(fields)
 
     def failed(self, timestamp=None, **fields):
