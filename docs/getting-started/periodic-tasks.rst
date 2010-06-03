@@ -11,8 +11,8 @@ Here's an example of a periodic task:
     from datetime import timedelta
 
     @periodic_task(run_every=timedelta(seconds=30))
-    def every_30_seconds(\*\*kwargs):
-        logger = self.get_logger(\*\*kwargs)
+    def every_30_seconds(**kwargs):
+        logger = self.get_logger(**kwargs)
         logger.info("Running periodic task!")
 
 If you want a little more control over when the task is executed, for example,
@@ -25,8 +25,8 @@ type:
     from celery.decorators import periodic_task
 
     @periodic_task(run_every=crontab(hour=7, minute=30, day_of_week=1))
-    def every_monday_morning(\*\*kwargs):
-        logger = self.get_logger(\*\*kwargs)
+    def every_monday_morning(**kwargs):
+        logger = self.get_logger(**kwargs)
         logger.info("Execute every Monday at 7:30AM.")
 
 The syntax of these crontab expressions is very flexible.  Some examples:
