@@ -24,6 +24,7 @@ COLOURS = {
     'ERROR': RED
 }
 
+
 class ColourFormatter(logging.Formatter):
     def __init__(self, msg, use_colour=True):
         logging.Formatter.__init__(self, msg)
@@ -32,8 +33,10 @@ class ColourFormatter(logging.Formatter):
     def format(self, record):
         levelname = record.levelname
         if self.use_colour and levelname in COLOURS:
-            record.msg = COLOUR_SEQ % (30 + COLOURS[levelname]) + record.msg + RESET_SEQ
+            record.msg = COLOUR_SEQ % (
+                    30 + COLOURS[levelname]) + record.msg + RESET_SEQ
         return logging.Formatter.format(self, record)
+
 
 def get_task_logger(loglevel=None):
     ensure_process_aware_logger()

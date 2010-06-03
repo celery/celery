@@ -80,6 +80,12 @@ _DEFAULTS = {
 }
 
 
+def isatty(fh):
+    # Fixes bug with mod_wsgi:
+    #   mod_wsgi.Log object has no attribute isatty.
+    return getattr(fh, "isatty", None) and fh.isatty()
+
+
 _DEPRECATION_FMT = """
 %s is deprecated in favor of %s and is scheduled for removal in celery v1.4.
 """.strip()
@@ -139,8 +145,8 @@ CELERYD_LOG_FORMAT = _get("CELERYD_LOG_FORMAT",
                           compat=["CELERYD_DAEMON_LOG_FORMAT"])
 CELERYD_TASK_LOG_FORMAT = _get("CELERYD_TASK_LOG_FORMAT")
 CELERYD_LOG_FILE = _get("CELERYD_LOG_FILE")
-CELERYD_LOG_COLOR = _get("CELERYD_LOG_COLOR", \
-                       CELERYD_LOG_FILE is None and sys.stderr.isatty())
+CELERYD_LOG_COLOR = _get("CELERYD_LOG_COLOR",
+                       CELERYD_LOG_FILE is None and isatty(sys.stderr))
 CELERYD_LOG_LEVEL = _get("CELERYD_LOG_LEVEL",
                             compat=["CELERYD_DAEMON_LOG_LEVEL"])
 CELERYD_LOG_LEVEL = LOG_LEVELS[CELERYD_LOG_LEVEL.upper()]
