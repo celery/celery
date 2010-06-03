@@ -85,7 +85,7 @@ class NamespacedOptionParser(object):
                     self.process_long_opt(arg[2:])
                 else:
                     value = None
-                    if rargs[pos + 1][0] != '-':
+                    if len(rargs) > pos + 1 and rargs[pos + 1][0] != '-':
                         value = rargs[pos + 1]
                         pos += 1
                     self.process_short_opt(arg[1:], value)
@@ -143,8 +143,9 @@ def abbreviations(map):
 
     def expand(S):
         ret = S
-        for short, long in map.items():
-            ret = ret.replace(short, long)
+        if S is not None:
+            for short, long in map.items():
+                ret = ret.replace(short, long)
         return ret
 
     return expand
@@ -176,8 +177,9 @@ def multi_args(p, cmd="celeryd", append="", prefix="", suffix=""):
                                 "%n": name})
         line = expand(cmd) + " " + " ".join(
                 format_opt(opt, expand(value))
-                    for opt, value in p.optmerge(name, options).items()) + \
-               " " + expand(append)
+                    for opt, value in p.optmerge(name, options).items())
+        if append:
+            line += " %s" % expand(append)
         yield this_name, line, expand
 
 
