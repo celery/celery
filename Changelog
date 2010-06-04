@@ -5,6 +5,21 @@
 1.2.0 [xxxx-xx-xx xx:xx x.x xxxx]
 =================================
 
+Celery 1.2.0 contains backward incompatible changes, the most important
+is that the Django dependency has been removed, so Celery no longer
+supports Django out of the box, but instead provides this as an add-on
+package called `django-celery`_.
+
+We're very sorry for breaking backwards compatibility, but there's
+also many new and exciting features to make up for the time you lose
+upgrading, so be sure to read the `News`_ section.
+
+Quite a lot of potential users have been upset about the Django dependency,
+so maybe this is a chance to get wider adoption by the Python community as
+well.
+
+Big thanks to all contributors, testers and users!
+
 Upgrading for Django-users
 --------------------------
 
