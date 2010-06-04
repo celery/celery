@@ -1,7 +1,6 @@
-from billiard.utils.functional import curry
-
 from celery import conf
 from celery.utils import get_cls_by_name
+from celery.utils.functional import curry
 from celery.loaders import current_loader
 
 BACKEND_ALIASES = {

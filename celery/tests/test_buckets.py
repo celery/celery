@@ -6,11 +6,11 @@ import time
 import unittest2 as unittest
 from itertools import chain, izip
 
-from billiard.utils.functional import curry
 
 from celery.task.base import Task
 from celery.utils import timeutils
 from celery.utils import gen_unique_id
+from celery.utils.functional import curry
 from celery.worker import buckets
 from celery.registry import TaskRegistry
 

@@ -16,10 +16,10 @@ from inspect import getargspec
 from itertools import islice
 
 from carrot.utils import rpartition
-from billiard.utils.functional import curry
 
 from celery.utils.compat import all, any, defaultdict
 from celery.utils.timeutils import timedelta_seconds # was here before
+from celery.utils.functional import curry
 
 
 def noop(*args, **kwargs):

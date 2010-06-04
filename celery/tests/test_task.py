@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 
 from pyparsing import ParseException
 
-from billiard.utils.functional import wraps
 
 from celery import conf
 from celery import task
@@ -12,6 +11,7 @@ from celery import messaging
 from celery.task.schedules import crontab, crontab_parser
 from celery.utils import timeutils
 from celery.utils import gen_unique_id
+from celery.utils.functional import wraps
 from celery.result import EagerResult
 from celery.execute import send_task
 from celery.backends import default_backend

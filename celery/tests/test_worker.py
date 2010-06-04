@@ -5,7 +5,6 @@ from multiprocessing import get_logger
 
 from carrot.connection import BrokerConnection
 from carrot.backends.base import BaseMessage
-from billiard.serialization import pickle
 
 from celery import conf
 from celery.utils import gen_unique_id
@@ -16,6 +15,7 @@ from celery.worker.listener import CarrotListener, QoS, RUN
 from celery.worker.scheduler import Scheduler
 from celery.decorators import task as task_dec
 from celery.decorators import periodic_task as periodic_task_dec
+from celery.serialization import pickle
 
 from celery.tests.utils import execute_context
 from celery.tests.compat import catch_warnings

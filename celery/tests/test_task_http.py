@@ -13,10 +13,10 @@ try:
 except ImportError:
     from StringIO import StringIO
 
-from billiard.utils.functional import wraps
 from anyjson import serialize
 
 from celery.task import http
+from celery.utils.functional import wraps
 
 from celery.tests.utils import eager_tasks, execute_context
 

@@ -3,13 +3,13 @@
 Working with tasks and task sets.
 
 """
-from billiard.serialization import pickle
 
 from celery.execute import apply_async
 from celery.registry import tasks
+from celery.serialization import pickle
 from celery.task.base import Task, TaskSet, PeriodicTask, ExecuteRemoteTask
-from celery.task.control import discard_all
 from celery.task.builtins import PingTask
+from celery.task.control import discard_all
 from celery.task.http import HttpDispatchTask
 
 __all__ = ["Task", "TaskSet", "PeriodicTask", "tasks", "discard_all",

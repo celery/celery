@@ -5,8 +5,9 @@ import sys
 import __builtin__
 from StringIO import StringIO
 
-from billiard.utils.functional import wraps
 from nose import SkipTest
+
+from celery.utils.functional import wraps
 
 
 class GeneratorContextManager(object):

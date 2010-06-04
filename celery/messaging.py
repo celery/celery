@@ -9,11 +9,11 @@ from itertools import count
 
 from carrot.connection import DjangoBrokerConnection
 from carrot.messaging import Publisher, Consumer, ConsumerSet as _ConsumerSet
-from billiard.utils.functional import wraps
 
 from celery import conf
 from celery import signals
 from celery.utils import gen_unique_id, mitemgetter, noop
+from celery.utils.functional import wraps
 from celery.routes import lookup_route, expand_destination
 from celery.loaders import load_settings
 

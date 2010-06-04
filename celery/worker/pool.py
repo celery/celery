@@ -3,11 +3,11 @@
 Process Pools.
 
 """
-from billiard.pool import Pool, RUN
-from billiard.utils.functional import curry
 
 from celery import log
+from celery.concurrency.processing import Pool, RUN
 from celery.datastructures import ExceptionInfo
+from celery.utils.functional import curry
 
 
 class TaskPool(object):

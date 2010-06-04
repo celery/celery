@@ -2,10 +2,10 @@ import sys
 import types
 import unittest2 as unittest
 
-from billiard.serialization import subclass_exception
-from billiard.serialization import find_nearest_pickleable_exception as fnpe
-from billiard.serialization import UnpickleableExceptionWrapper
-from billiard.serialization import get_pickleable_exception as gpe
+from celery.serialization import subclass_exception
+from celery.serialization import find_nearest_pickleable_exception as fnpe
+from celery.serialization import UnpickleableExceptionWrapper
+from celery.serialization import get_pickleable_exception as gpe
 
 from celery import states
 from celery.backends.base import BaseBackend, KeyValueStoreBackend

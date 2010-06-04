@@ -1,13 +1,11 @@
 """celery.backends.base"""
 import time
 
-from billiard.serialization import pickle
-from billiard.serialization import get_pickled_exception
-from billiard.serialization import get_pickleable_exception
-
 from celery import conf
 from celery import states
 from celery.exceptions import TimeoutError, TaskRevokedError
+from celery.serialization import pickle, get_pickled_exception
+from celery.serialization import get_pickleable_exception
 from celery.datastructures import LocalCache
 
 

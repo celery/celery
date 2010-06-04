@@ -1,10 +1,10 @@
 import unittest2 as unittest
 
-from billiard.utils.functional import wraps
 
 from celery import conf
 from celery import routes
 from celery.utils import gen_unique_id
+from celery.utils.functional import wraps
 from celery.exceptions import RouteNotFound
 
 

@@ -1,9 +1,9 @@
 
 import threading
-from billiard.utils.functional import curry
 from threadpool import ThreadPool, WorkRequest
 
 from celery import log
+from celery.utils.functional import curry
 from celery.datastructures import ExceptionInfo
 
 

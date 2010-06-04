@@ -1,8 +1,6 @@
 import sys
 from datetime import timedelta
 
-from billiard.serialization import pickle
-
 from celery import conf
 from celery.log import setup_task_logger
 from celery.utils import gen_unique_id, padlist
@@ -14,6 +12,7 @@ from celery.backends import default_backend
 from celery.messaging import TaskPublisher, TaskConsumer
 from celery.messaging import establish_connection as _establish_connection
 from celery.exceptions import MaxRetriesExceededError, RetryTaskError
+from celery.serialization import pickle
 
 from celery.task.schedules import schedule
 
