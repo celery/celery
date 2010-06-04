@@ -1,6 +1,6 @@
 import unittest2 as unittest
 
-from celery.task.base import ExecuteRemoteTask
+from celery.task.builtins import ExecuteRemoteTask
 from celery.task.builtins import PingTask, DeleteExpiredTaskMetaTask
 from celery.serialization import pickle
 

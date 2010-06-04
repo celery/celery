@@ -19,6 +19,9 @@ from celery.decorators import task as task_dec
 from celery.exceptions import RetryTaskError
 from celery.worker.listener import parse_iso8601
 
+from celery.tests.utils import with_eager_tasks
+
+
 def return_True(*args, **kwargs):
     # Task run functions can't be closures/lambdas, as they're pickled.
     return True
@@ -216,36 +219,28 @@ class TestCeleryTasks(unittest.TestCase):
         self.assertEqual(result.backend, RetryTask.backend)
         self.assertEqual(result.task_id, task_id)
 
+    @with_eager_tasks
     def test_ping(self):
-        from celery import conf
-        conf.ALWAYS_EAGER = True
         self.assertEqual(task.ping(), 'pong')
-        conf.ALWAYS_EAGER = False
 
+    @with_eager_tasks
     def test_execute_remote(self):
-        from celery import conf
-        conf.ALWAYS_EAGER = True
         self.assertEqual(task.execute_remote(return_True, ["foo"]).get(),
-                          True)
-        conf.ALWAYS_EAGER = False
+                         True)
 
+    @with_eager_tasks
     def test_dmap(self):
-        from celery import conf
         import operator
-        conf.ALWAYS_EAGER = True
         res = task.dmap(operator.add, zip(xrange(10), xrange(10)))
         self.assertEqual(sum(res), sum(operator.add(x, x)
-                                        for x in xrange(10)))
-        conf.ALWAYS_EAGER = False
+                                    for x in xrange(10)))
 
+    @with_eager_tasks
     def test_dmap_async(self):
-        from celery import conf
         import operator
-        conf.ALWAYS_EAGER = True
         res = task.dmap_async(operator.add, zip(xrange(10), xrange(10)))
         self.assertEqual(sum(res.get()), sum(operator.add(x, x)
-                                                for x in xrange(10)))
-        conf.ALWAYS_EAGER = False
+                                            for x in xrange(10)))
 
     def assertNextTaskDataEqual(self, consumer, presult, task_name,
             test_eta=False, **kwargs):
@@ -355,15 +350,12 @@ class TestCeleryTasks(unittest.TestCase):
 
 class TestTaskSet(unittest.TestCase):
 
+    @with_eager_tasks
     def test_function_taskset(self):
-        from celery import conf
-        conf.ALWAYS_EAGER = True
         ts = task.TaskSet(return_True_task.name, [
-            ([1], {}), [[2], {}], [[3], {}], [[4], {}], [[5], {}]])
+              ([1], {}), [[2], {}], [[3], {}], [[4], {}], [[5], {}]])
         res = ts.apply_async()
         self.assertListEqual(res.join(), [True, True, True, True, True])
-
-        conf.ALWAYS_EAGER = False
 
     def test_counter_taskset(self):
         IncrementCounterTask.count = 0

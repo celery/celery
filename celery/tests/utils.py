@@ -79,6 +79,19 @@ def eager_tasks():
     conf.ALWAYS_EAGER = prev
 
 
+def with_eager_tasks(fun):
+
+    @wraps(fun)
+    def _inner(*args, **kwargs):
+        from celery import conf
+        prev = conf.ALWAYS_EAGER
+        conf.ALWAYS_EAGER = True
+        try:
+            return fun(*args, **kwargs)
+        finally:
+            conf.ALWAYS_EAGER = prev
+
+
 def with_environ(env_name, env_value):
 
     def _envpatched(fun):
