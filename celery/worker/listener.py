@@ -157,7 +157,7 @@ class CarrotListener(object):
 
     .. attribute:: ready_queue
 
-        The queue that holds tasks ready for processing immediately.
+        The queue that holds tasks ready for immediate processing.
 
     .. attribute:: eta_schedule
 
