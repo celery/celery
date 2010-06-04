@@ -90,6 +90,25 @@ the ``CELERY_RESULT_ENGINE_OPTIONS`` setting::
 Backward incompatible changes
 -----------------------------
 
+* Default (python) loader now prints warning on missing ``celeryconfig.py``
+  instead of raising :exc:`ImportError`.
+
+    celeryd raises :exc:`~celery.exceptions.ImproperlyConfigured` if the configuration
+    is not set up. This makes it possible to use ``--help`` etc, without having a
+    working configuration.
+
+    Also this makes it possible to use the client side of celery without being
+    configured::
+
+        >>> from carrot.connection import Connection
+        >>> conn = Connection("localhost", "guest", "guest", "/")
+        >>> from celery.execute import send_task
+        >>> r = send_task("celery.ping", args=(), kwargs={}, connection=conn)
+        >>> from celery.backends.amqp import AMQPBackend
+        >>> r.backend = AMQPBackend(connection=conn)
+        >>> r.get()
+        'pong'
+
 * The following deprecated settings has been removed (as scheduled by
   the `deprecation timeline`_):
 
@@ -125,7 +144,63 @@ Backward incompatible changes
 News
 ----
 
-* now depends on billiard >= 0.4.0
+* **celeryev**: Curses Celery Monitor and Event Viewer.
+
+    This is a simple monitor allowing you to see what tasks are
+    executing in real-time and investigate tracebacks and results of ready
+    tasks. It also enables you to set new rate limits and revoke tasks.
+
+    Screenshot:
+
+    .. image:: http://celeryproject.org/img/celeryevshotsm.jpg
+
+    If you run ``celeryev`` with the ``-d`` switch it will act as an event
+    dumper, simply dumping the events it receives to standard out::
+
+        $ celeryev -d
+        -> celeryev: starting capture...
+        casper.local [2010-06-04 10:42:07.020000] heartbeat
+        casper.local [2010-06-04 10:42:14.750000] task received:
+            tasks.add(61a68756-27f4-4879-b816-3cf815672b0e) args=[2, 2] kwargs={}
+            eta=2010-06-04T10:42:16.669290, retries=0
+        casper.local [2010-06-04 10:42:17.230000] task started
+            tasks.add(61a68756-27f4-4879-b816-3cf815672b0e) args=[2, 2] kwargs={}
+        casper.local [2010-06-04 10:42:17.960000] task succeeded:
+            tasks.add(61a68756-27f4-4879-b816-3cf815672b0e)
+            args=[2, 2] kwargs={} result=4, runtime=0.782663106918
+
+        The fields here are, in order: *sender hostname*, *timestamp*, *event type* and
+        *additional event fields*.
+
+* :mod:`billiard` has been moved back to the celery repository.
+
+    =====================================  =====================================
+    **Module name**                        **celery equivalent**
+    =====================================  =====================================
+    ``billiard.pool``                      ``celery.concurrency.processes``
+    ``billiard.serialization``             ``celery.serialization``
+    ``billiard.utils.functional``          ``celery.utils.functional``
+    =====================================  =====================================
+
+    The :mod:`billiard` distribution may be maintained, depending on interest.
+
+* now depends on :mod:`carrot` >= 0.10.5
+
+* now depends on :mod:`pyparsing`
+
+* celeryd: Now waits for available pool processes before applying new
+  tasks to the pool.
+
+    This means it doesn't have to wait for dozens of tasks to finish at shutdown
+    because it has already applied n prefetched tasks without any pool
+    processes to immediately accept them.
+
+    Some overhead for very short tasks though, then the shutdown probably doesn't
+    matter either so can disable with::
+
+        CELERYD_POOL_PUTLOCKS = False
+
+    See http://github.com/ask/celery/issues/closed#issue/122
 
 * Added support for task soft and hard timelimits.
 
@@ -165,6 +240,9 @@ News
         CELERYD_POOL_PUTLOCKS = False
 
     See http://github.com/ask/celery/issues/#issue/122
+
+* Test suite is now passing without a running broker, using the carrot
+  in-memory backend.
 
 * Log output is now available in colors.
 
@@ -269,6 +347,25 @@ News
 
         $ celeryd -Q image,video
 
+* celeryd: New return value for the ``revoke`` control command:
+
+    Now returns::
+
+        {"ok": "task $id revoked"}
+
+    instead of ``True``.
+
+* celeryd: Can now enable/disable events using remote control
+
+    Example usage:
+
+        >>> from celery.task.control import broadcast
+        >>> broadcast("enable_events")
+        >>> broadcast("disable_events")
+
+
+* celeryd: New option ``--version``: Dump version info and exit.
+
 * :mod:`celeryd-multi <celeryd.bin.celeryd_multi>`: Tool for shell scripts
   to start multiple workers.
 
@@ -328,12 +425,6 @@ News
         celeryd-multi -n bar.myhost -c 10
         celeryd-multi -n baz.myhost -c 10
         celeryd-multi -n xuzzy.myhost -c 3
-
-
-
-
-
-
 
 1.0.4 [2010-05-31 09:54 A.M CEST]
 =================================

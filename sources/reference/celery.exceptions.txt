@@ -6,3 +6,4 @@
 
 .. automodule:: celery.exceptions
     :members:
+    :undoc-members:

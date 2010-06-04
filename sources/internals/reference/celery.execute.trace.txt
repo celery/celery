@@ -6,3 +6,4 @@
 
 .. automodule:: celery.execute.trace
     :members:
+    :undoc-members:

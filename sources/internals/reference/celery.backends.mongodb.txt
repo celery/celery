@@ -6,3 +6,4 @@
 
 .. automodule:: celery.backends.mongodb
     :members:
+    :undoc-members:

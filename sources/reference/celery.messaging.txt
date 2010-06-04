@@ -6,3 +6,4 @@ Messaging - celery.messaging
 
 .. automodule:: celery.messaging
     :members:
+    :undoc-members:

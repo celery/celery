@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>caqmadm: AMQP API Command-line Shell - celery.bin.camqadm &mdash; Celery v1.1.0 (unstable) documentation</title>
+    <title>caqmadm: AMQP API Command-line Shell - celery.bin.camqadm &mdash; Celery v1.1.1 (unstable) documentation</title>
     <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.1.0 (unstable)',
+        VERSION:     '1.1.1 (unstable)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,15 +21,15 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v1.1.1 (unstable) documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="Celeryd Multi Tool - celery.bin.celeryd_multi" href="celery.bin.celeryd_multi.html" />
-    <link rel="prev" title="Celery Periodic Task Server - celery.bin.celerybeat" href="celery.bin.celerybeat.html" />
+    <link rel="prev" title="celeryev: Curses Event Viewer - celery.bin.celeryev" href="celery.bin.celeryev.html" />
     <link media="only screen and (max-device-width: 480px)" href="../static/mobile.css" type="text/css" rel="stylesheet" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v1.1.0 (unstable) documentation</p>
+	<p>Celery v1.1.1 (unstable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>caqmadm: AMQP API Command-line Shell - celery.bin.camqadm</h1></div>
@@ -39,7 +39,7 @@
 			<div class="headerButton"><a href="../genindex.html" title="General Index" accesskey="I">index</a></div>
 			<div class="headerButton"><a href="../py-modindex.html" title="Python Module Index" >modules</a></div>
 			<div class="headerButton"><a href="celery.bin.celeryd_multi.html" title="Celeryd Multi Tool - celery.bin.celeryd_multi" accesskey="N">next</a></div>
-			<div class="headerButton"><a href="celery.bin.celerybeat.html" title="Celery Periodic Task Server - celery.bin.celerybeat" accesskey="P">previous</a></div>
+			<div class="headerButton"><a href="celery.bin.celeryev.html" title="celeryev: Curses Event Viewer - celery.bin.celeryev" accesskey="P">previous</a></div>
 		</li>
 	</ul>
 </div>
@@ -75,8 +75,10 @@
 <li class="toctree-l2"><a class="reference internal" href="celery.messaging.html">Messaging - celery.messaging</a></li>
 <li class="toctree-l2"><a class="reference internal" href="celery.contrib.abortable.html">Contrib: Abortable tasks - celery.contrib.abortable</a></li>
 <li class="toctree-l2"><a class="reference internal" href="celery.events.html">Events - celery.events</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.events.state.html">In-memory Representation of Cluster State - celery.events.state</a></li>
 <li class="toctree-l2"><a class="reference internal" href="celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
 <li class="toctree-l2"><a class="reference internal" href="celery.bin.celerybeat.html">Celery Periodic Task Server - celery.bin.celerybeat</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.celeryev.html">celeryev: Curses Event Viewer - celery.bin.celeryev</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="">caqmadm: AMQP API Command-line Shell - celery.bin.camqadm</a></li>
 <li class="toctree-l2"><a class="reference internal" href="celery.bin.celeryd_multi.html">Celeryd Multi Tool - celery.bin.celeryd_multi</a></li>
 </ul>
@@ -125,6 +127,21 @@
 <dt id="celery.bin.camqadm.AMQPAdmin">
 <em class="property">class </em><tt class="descclassname">celery.bin.camqadm.</tt><tt class="descname">AMQPAdmin</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.bin.camqadm.AMQPAdmin" title="Permalink to this definition">¶</a></dt>
 <dd><p>The celery <tt class="docutils literal"><span class="pre">camqadm</span></tt> utility.</p>
+<dl class="method">
+<dt id="celery.bin.camqadm.AMQPAdmin.connect">
+<tt class="descname">connect</tt><big>(</big><em>conn=None</em><big>)</big><a class="headerlink" href="#celery.bin.camqadm.AMQPAdmin.connect" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.bin.camqadm.AMQPAdmin.run">
+<tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.camqadm.AMQPAdmin.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.bin.camqadm.AMQPAdmin.say">
+<tt class="descname">say</tt><big>(</big><em>m</em><big>)</big><a class="headerlink" href="#celery.bin.camqadm.AMQPAdmin.say" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -158,6 +175,11 @@ relevant when running in non-shell mode.</li>
 </dd></dl>
 
 <dl class="method">
+<dt id="celery.bin.camqadm.AMQShell.default">
+<tt class="descname">default</tt><big>(</big><em>line</em><big>)</big><a class="headerlink" href="#celery.bin.camqadm.AMQShell.default" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="celery.bin.camqadm.AMQShell.dispatch">
 <tt class="descname">dispatch</tt><big>(</big><em>cmd</em>, <em>argline</em><big>)</big><a class="headerlink" href="#celery.bin.camqadm.AMQShell.dispatch" title="Permalink to this definition">¶</a></dt>
 <dd><p>Dispatch and execute the command.</p>
@@ -165,10 +187,20 @@ relevant when running in non-shell mode.</li>
 </dd></dl>
 
 <dl class="method">
+<dt id="celery.bin.camqadm.AMQShell.display_command_help">
+<tt class="descname">display_command_help</tt><big>(</big><em>cmd</em>, <em>short=False</em><big>)</big><a class="headerlink" href="#celery.bin.camqadm.AMQShell.display_command_help" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="celery.bin.camqadm.AMQShell.do_exit">
 <tt class="descname">do_exit</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#celery.bin.camqadm.AMQShell.do_exit" title="Permalink to this definition">¶</a></dt>
 <dd><p>The <tt class="docutils literal"><span class="pre">&quot;exit&quot;</span></tt> command.</p>
 </dd></dl>
+
+<dl class="method">
+<dt id="celery.bin.camqadm.AMQShell.do_help">
+<tt class="descname">do_help</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#celery.bin.camqadm.AMQShell.do_help" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="celery.bin.camqadm.AMQShell.get_amqp_api_command">
@@ -192,6 +224,11 @@ object.</p>
 </pre></div>
 </div>
 </dd></dl>
+
+<dl class="method">
+<dt id="celery.bin.camqadm.AMQShell.get_names">
+<tt class="descname">get_names</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.camqadm.AMQShell.get_names" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="celery.bin.camqadm.AMQShell.onecmd">
@@ -218,6 +255,11 @@ object.</p>
 </pre></div>
 </div>
 </dd></dl>
+
+<dl class="attribute">
+<dt id="celery.bin.camqadm.AMQShell.prompt">
+<tt class="descname">prompt</tt><a class="headerlink" href="#celery.bin.camqadm.AMQShell.prompt" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="celery.bin.camqadm.AMQShell.respond">
@@ -263,10 +305,20 @@ and tooltips.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="celery.bin.camqadm.Spec.format_arg">
+<tt class="descname">format_arg</tt><big>(</big><em>name</em>, <em>type</em>, <em>default_value=None</em><big>)</big><a class="headerlink" href="#celery.bin.camqadm.Spec.format_arg" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="celery.bin.camqadm.Spec.format_response">
 <tt class="descname">format_response</tt><big>(</big><em>response</em><big>)</big><a class="headerlink" href="#celery.bin.camqadm.Spec.format_response" title="Permalink to this definition">¶</a></dt>
 <dd><p>Format the return value of this command in a human-friendly way.</p>
 </dd></dl>
+
+<dl class="method">
+<dt id="celery.bin.camqadm.Spec.format_signature">
+<tt class="descname">format_signature</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.camqadm.Spec.format_signature" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="celery.bin.camqadm.Spec.str_args_to_python">
@@ -283,10 +335,35 @@ and tooltips.</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="celery.bin.camqadm.camqadm">
+<tt class="descclassname">celery.bin.camqadm.</tt><tt class="descname">camqadm</tt><big>(</big><em>*args</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.bin.camqadm.camqadm" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="celery.bin.camqadm.dump_message">
+<tt class="descclassname">celery.bin.camqadm.</tt><tt class="descname">dump_message</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#celery.bin.camqadm.dump_message" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="celery.bin.camqadm.format_declare_queue">
+<tt class="descclassname">celery.bin.camqadm.</tt><tt class="descname">format_declare_queue</tt><big>(</big><em>ret</em><big>)</big><a class="headerlink" href="#celery.bin.camqadm.format_declare_queue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="celery.bin.camqadm.main">
+<tt class="descclassname">celery.bin.camqadm.</tt><tt class="descname">main</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.camqadm.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
 <dt id="celery.bin.camqadm.parse_options">
 <tt class="descclassname">celery.bin.camqadm.</tt><tt class="descname">parse_options</tt><big>(</big><em>arguments</em><big>)</big><a class="headerlink" href="#celery.bin.camqadm.parse_options" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parse the available options to <tt class="docutils literal"><span class="pre">celeryd</span></tt>.</p>
 </dd></dl>
+
+<dl class="function">
+<dt id="celery.bin.camqadm.say">
+<tt class="descclassname">celery.bin.camqadm.</tt><tt class="descname">say</tt><big>(</big><em>m</em><big>)</big><a class="headerlink" href="#celery.bin.camqadm.say" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </div>
 

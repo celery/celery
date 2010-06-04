@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Celeryd Multi Tool - celery.bin.celeryd_multi &mdash; Celery v1.1.0 (unstable) documentation</title>
+    <title>Celeryd Multi Tool - celery.bin.celeryd_multi &mdash; Celery v1.1.1 (unstable) documentation</title>
     <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.1.0 (unstable)',
+        VERSION:     '1.1.1 (unstable)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v1.1.1 (unstable) documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="Internals" href="../internals/index.html" />
     <link rel="prev" title="caqmadm: AMQP API Command-line Shell - celery.bin.camqadm" href="celery.bin.camqadm.html" />
@@ -29,7 +29,7 @@
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v1.1.0 (unstable) documentation</p>
+	<p>Celery v1.1.1 (unstable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Celeryd Multi Tool - celery.bin.celeryd_multi</h1></div>
@@ -75,8 +75,10 @@
 <li class="toctree-l2"><a class="reference internal" href="celery.messaging.html">Messaging - celery.messaging</a></li>
 <li class="toctree-l2"><a class="reference internal" href="celery.contrib.abortable.html">Contrib: Abortable tasks - celery.contrib.abortable</a></li>
 <li class="toctree-l2"><a class="reference internal" href="celery.events.html">Events - celery.events</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.events.state.html">In-memory Representation of Cluster State - celery.events.state</a></li>
 <li class="toctree-l2"><a class="reference internal" href="celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
 <li class="toctree-l2"><a class="reference internal" href="celery.bin.celerybeat.html">Celery Periodic Task Server - celery.bin.celerybeat</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.bin.celeryev.html">celeryev: Curses Event Viewer - celery.bin.celeryev</a></li>
 <li class="toctree-l2"><a class="reference internal" href="celery.bin.camqadm.html">caqmadm: AMQP API Command-line Shell - celery.bin.camqadm</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="">Celeryd Multi Tool - celery.bin.celeryd_multi</a></li>
 </ul>
@@ -120,6 +122,106 @@
             
   <div class="section" id="module-celery.bin.celeryd_multi">
 <span id="celeryd-multi-tool-celery-bin-celeryd-multi"></span><h1>Celeryd Multi Tool - celery.bin.celeryd_multi<a class="headerlink" href="#module-celery.bin.celeryd_multi" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="celery.bin.celeryd_multi.MultiTool">
+<em class="property">class </em><tt class="descclassname">celery.bin.celeryd_multi.</tt><tt class="descname">MultiTool</tt><a class="headerlink" href="#celery.bin.celeryd_multi.MultiTool" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.bin.celeryd_multi.MultiTool.expand">
+<tt class="descname">expand</tt><big>(</big><em>argv</em>, <em>cmd=None</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd_multi.MultiTool.expand" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.bin.celeryd_multi.MultiTool.get">
+<tt class="descname">get</tt><big>(</big><em>argv</em>, <em>cmd</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd_multi.MultiTool.get" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.bin.celeryd_multi.MultiTool.help">
+<tt class="descname">help</tt><big>(</big><em>argv</em>, <em>cmd=None</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd_multi.MultiTool.help" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.bin.celeryd_multi.MultiTool.names">
+<tt class="descname">names</tt><big>(</big><em>argv</em>, <em>cmd</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd_multi.MultiTool.names" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.bin.celeryd_multi.MultiTool.start">
+<tt class="descname">start</tt><big>(</big><em>argv</em>, <em>cmd</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd_multi.MultiTool.start" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.bin.celeryd_multi.MultiTool.usage">
+<tt class="descname">usage</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryd_multi.MultiTool.usage" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.bin.celeryd_multi.NamespacedOptionParser">
+<em class="property">class </em><tt class="descclassname">celery.bin.celeryd_multi.</tt><tt class="descname">NamespacedOptionParser</tt><big>(</big><em>args</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd_multi.NamespacedOptionParser" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.bin.celeryd_multi.NamespacedOptionParser.add_option">
+<tt class="descname">add_option</tt><big>(</big><em>name</em>, <em>value</em>, <em>short=False</em>, <em>ns=None</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd_multi.NamespacedOptionParser.add_option" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.bin.celeryd_multi.NamespacedOptionParser.optmerge">
+<tt class="descname">optmerge</tt><big>(</big><em>ns</em>, <em>defaults=None</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd_multi.NamespacedOptionParser.optmerge" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.bin.celeryd_multi.NamespacedOptionParser.parse">
+<tt class="descname">parse</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryd_multi.NamespacedOptionParser.parse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.bin.celeryd_multi.NamespacedOptionParser.process_long_opt">
+<tt class="descname">process_long_opt</tt><big>(</big><em>arg</em>, <em>value=None</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd_multi.NamespacedOptionParser.process_long_opt" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.bin.celeryd_multi.NamespacedOptionParser.process_short_opt">
+<tt class="descname">process_short_opt</tt><big>(</big><em>arg</em>, <em>value=None</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd_multi.NamespacedOptionParser.process_short_opt" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.bin.celeryd_multi.abbreviations">
+<tt class="descclassname">celery.bin.celeryd_multi.</tt><tt class="descname">abbreviations</tt><big>(</big><em>map</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd_multi.abbreviations" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="celery.bin.celeryd_multi.format_opt">
+<tt class="descclassname">celery.bin.celeryd_multi.</tt><tt class="descname">format_opt</tt><big>(</big><em>opt</em>, <em>value</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd_multi.format_opt" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="celery.bin.celeryd_multi.main">
+<tt class="descclassname">celery.bin.celeryd_multi.</tt><tt class="descname">main</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryd_multi.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="celery.bin.celeryd_multi.multi_args">
+<tt class="descclassname">celery.bin.celeryd_multi.</tt><tt class="descname">multi_args</tt><big>(</big><em>p</em>, <em>cmd='celeryd'</em>, <em>append=''</em>, <em>prefix=''</em>, <em>suffix=''</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd_multi.multi_args" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="celery.bin.celeryd_multi.parse_ns_range">
+<tt class="descclassname">celery.bin.celeryd_multi.</tt><tt class="descname">parse_ns_range</tt><big>(</big><em>ns</em>, <em>ranges=False</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd_multi.parse_ns_range" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="celery.bin.celeryd_multi.quote">
+<tt class="descclassname">celery.bin.celeryd_multi.</tt><tt class="descname">quote</tt><big>(</big><em>v</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd_multi.quote" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="celery.bin.celeryd_multi.say">
+<tt class="descclassname">celery.bin.celeryd_multi.</tt><tt class="descname">say</tt><big>(</big><em>m</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd_multi.say" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </div>
 
 

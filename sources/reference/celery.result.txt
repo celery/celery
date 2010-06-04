@@ -6,3 +6,4 @@ Task Result - celery.result
 
 .. automodule:: celery.result
     :members:
+    :undoc-members:

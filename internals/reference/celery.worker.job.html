@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Executable Jobs - celery.worker.job &mdash; Celery v1.1.0 (unstable) documentation</title>
+    <title>Executable Jobs - celery.worker.job &mdash; Celery v1.1.1 (unstable) documentation</title>
     <link rel="stylesheet" href="../../static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.1.0 (unstable)',
+        VERSION:     '1.1.1 (unstable)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="../../index.html" />
+    <link rel="top" title="Celery v1.1.1 (unstable) documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="Worker Controller Threads - celery.worker.controllers" href="celery.worker.controllers.html" />
     <link rel="prev" title="Worker Message Listener - celery.worker.listener" href="celery.worker.listener.html" />
@@ -29,7 +29,7 @@
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v1.1.0 (unstable) documentation</p>
+	<p>Celery v1.1.1 (unstable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Executable Jobs - celery.worker.job</h1></div>
@@ -110,7 +110,7 @@ world-wide state.</p>
 
 <dl class="class">
 <dt id="celery.worker.job.TaskWrapper">
-<em class="property">class </em><tt class="descclassname">celery.worker.job.</tt><tt class="descname">TaskWrapper</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>args</em>, <em>kwargs</em>, <em>on_ack=&lt;function noop at 0x10308f938&gt;</em>, <em>retries=0</em>, <em>delivery_info=None</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskWrapper" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.worker.job.</tt><tt class="descname">TaskWrapper</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>args</em>, <em>kwargs</em>, <em>on_ack=&lt;function noop at 0x10328bb90&gt;</em>, <em>retries=0</em>, <em>delivery_info=None</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskWrapper" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class wrapping a task to be passed around and finally
 executed inside of the worker.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -156,6 +156,11 @@ executed inside of the worker.</p>
 <tt class="descname">message</tt><a class="headerlink" href="#celery.worker.job.TaskWrapper.message" title="Permalink to this definition">¶</a></dt>
 <dd><p>The original message sent. Used for acknowledging the message.</p>
 </dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.job.TaskWrapper.acknowledge">
+<tt class="descname">acknowledge</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.job.TaskWrapper.acknowledge" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="celery.worker.job.TaskWrapper.execute">
@@ -224,6 +229,11 @@ the message is also rejected.</td>
 </dd></dl>
 
 <dl class="method">
+<dt id="celery.worker.job.TaskWrapper.on_accepted">
+<tt class="descname">on_accepted</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.job.TaskWrapper.on_accepted" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="celery.worker.job.TaskWrapper.on_failure">
 <tt class="descname">on_failure</tt><big>(</big><em>exc_info</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskWrapper.on_failure" title="Permalink to this definition">¶</a></dt>
 <dd><p>The handler used if the task raised an exception.</p>
@@ -235,6 +245,21 @@ the message is also rejected.</td>
 <dd><p>The handler used if the task was successfully processed (
 without raising an exception).</p>
 </dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.job.TaskWrapper.on_timeout">
+<tt class="descname">on_timeout</tt><big>(</big><em>soft</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskWrapper.on_timeout" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.job.TaskWrapper.revoked">
+<tt class="descname">revoked</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.job.TaskWrapper.revoked" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.job.TaskWrapper.send_event">
+<tt class="descname">send_event</tt><big>(</big><em>type</em>, <em>**fields</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskWrapper.send_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 
@@ -300,6 +325,11 @@ the exception instance on failure.</p>
 </dd></dl>
 
 </dd></dl>
+
+<dl class="function">
+<dt id="celery.worker.job.execute_and_trace">
+<tt class="descclassname">celery.worker.job.</tt><tt class="descname">execute_and_trace</tt><big>(</big><em>task_name</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.worker.job.execute_and_trace" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </div>
 

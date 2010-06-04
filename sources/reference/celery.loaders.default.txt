@@ -6,3 +6,4 @@
 
 .. automodule:: celery.loaders.default
     :members:
+    :undoc-members:

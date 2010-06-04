@@ -6,3 +6,4 @@
 
  .. automodule:: celery.contrib.abortable
      :members:
+     :undoc-members:

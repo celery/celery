@@ -6,3 +6,4 @@
 
 .. automodule:: celery.bin.celeryd_multi
     :members:
+    :undoc-members:

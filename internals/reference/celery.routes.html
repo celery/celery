@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Message Routers - celery.routes &mdash; Celery v1.1.0 (unstable) documentation</title>
+    <title>Message Routers - celery.routes &mdash; Celery v1.1.1 (unstable) documentation</title>
     <link rel="stylesheet" href="../../static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.1.0 (unstable)',
+        VERSION:     '1.1.1 (unstable)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="../../index.html" />
+    <link rel="top" title="Celery v1.1.1 (unstable) documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="Logging - celery.log" href="celery.log.html" />
     <link rel="prev" title="Datastructures - celery.datastructures" href="celery.datastructures.html" />
@@ -29,7 +29,7 @@
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v1.1.0 (unstable) documentation</p>
+	<p>Celery v1.1.1 (unstable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Message Routers - celery.routes</h1></div>
@@ -94,12 +94,37 @@
             
   <div class="section" id="module-celery.routes">
 <span id="message-routers-celery-routes"></span><h1>Message Routers - celery.routes<a class="headerlink" href="#module-celery.routes" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="celery.routes.MapRoute">
+<em class="property">class </em><tt class="descclassname">celery.routes.</tt><tt class="descname">MapRoute</tt><big>(</big><em>map</em><big>)</big><a class="headerlink" href="#celery.routes.MapRoute" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.routes.MapRoute.route_for_task">
+<tt class="descname">route_for_task</tt><big>(</big><em>task</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.routes.MapRoute.route_for_task" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.routes.expand_destination">
+<tt class="descclassname">celery.routes.</tt><tt class="descname">expand_destination</tt><big>(</big><em>route</em>, <em>routing_table</em><big>)</big><a class="headerlink" href="#celery.routes.expand_destination" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="function">
 <dt id="celery.routes.firstmatcher">
 <tt class="descclassname">celery.routes.</tt><tt class="descname">firstmatcher</tt><big>(</big><em>method</em><big>)</big><a class="headerlink" href="#celery.routes.firstmatcher" title="Permalink to this definition">¶</a></dt>
 <dd><p>With a list of instances, find the first instance that returns a
 value for the given method.</p>
 </dd></dl>
+
+<dl class="function">
+<dt id="celery.routes.lookup_disabled">
+<tt class="descclassname">celery.routes.</tt><tt class="descname">lookup_disabled</tt><big>(</big><em>routes</em>, <em>task</em>, <em>task_id=None</em>, <em>args=None</em>, <em>kwargs=None</em><big>)</big><a class="headerlink" href="#celery.routes.lookup_disabled" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="celery.routes.lookup_route">
+<tt class="descclassname">celery.routes.</tt><tt class="descname">lookup_route</tt><big>(</big><em>routes</em>, <em>task</em>, <em>task_id=None</em>, <em>args=None</em>, <em>kwargs=None</em><big>)</big><a class="headerlink" href="#celery.routes.lookup_route" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="function">
 <dt id="celery.routes.prepare">

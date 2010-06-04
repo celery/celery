@@ -6,3 +6,4 @@ Datastructures - celery.datastructures
 
 .. automodule:: celery.datastructures
     :members:
+    :undoc-members:

@@ -6,3 +6,4 @@ Clock Service - celery.beat
 
 .. automodule:: celery.beat
     :members:
+    :undoc-members:

@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Clock Service - celery.beat &mdash; Celery v1.1.0 (unstable) documentation</title>
+    <title>Clock Service - celery.beat &mdash; Celery v1.1.1 (unstable) documentation</title>
     <link rel="stylesheet" href="../../static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.1.0 (unstable)',
+        VERSION:     '1.1.1 (unstable)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="../../index.html" />
+    <link rel="top" title="Celery v1.1.1 (unstable) documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="Backends - celery.backends" href="celery.backends.html" />
     <link rel="prev" title="Worker Revoked Tasks - celery.worker.revoke" href="celery.worker.revoke.html" />
@@ -29,7 +29,7 @@
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v1.1.0 (unstable) documentation</p>
+	<p>Celery v1.1.1 (unstable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Clock Service - celery.beat</h1></div>
@@ -95,6 +95,47 @@
   <div class="section" id="module-celery.beat">
 <span id="clock-service-celery-beat"></span><h1>Clock Service - celery.beat<a class="headerlink" href="#module-celery.beat" title="Permalink to this headline">¶</a></h1>
 <p>Periodic Task Scheduler</p>
+<dl class="class">
+<dt id="celery.beat.ClockService">
+<em class="property">class </em><tt class="descclassname">celery.beat.</tt><tt class="descname">ClockService</tt><big>(</big><em>logger=None</em>, <em>max_interval=300</em>, <em>schedule_filename='celerybeat-schedule'</em><big>)</big><a class="headerlink" href="#celery.beat.ClockService" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.beat.ClockService.open_schedule">
+<tt class="descname">open_schedule</tt><big>(</big><em>filename</em><big>)</big><a class="headerlink" href="#celery.beat.ClockService.open_schedule" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.beat.ClockService.schedule">
+<tt class="descname">schedule</tt><a class="headerlink" href="#celery.beat.ClockService.schedule" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.beat.ClockService.scheduler">
+<tt class="descname">scheduler</tt><a class="headerlink" href="#celery.beat.ClockService.scheduler" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.beat.ClockService.scheduler_cls">
+<tt class="descname">scheduler_cls</tt><a class="headerlink" href="#celery.beat.ClockService.scheduler_cls" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="#celery.beat.Scheduler" title="celery.beat.Scheduler"><tt class="xref py py-class docutils literal"><span class="pre">Scheduler</span></tt></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.beat.ClockService.start">
+<tt class="descname">start</tt><big>(</big><em>embedded_process=False</em><big>)</big><a class="headerlink" href="#celery.beat.ClockService.start" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.beat.ClockService.stop">
+<tt class="descname">stop</tt><big>(</big><em>wait=False</em><big>)</big><a class="headerlink" href="#celery.beat.ClockService.stop" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.beat.ClockService.sync">
+<tt class="descname">sync</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.beat.ClockService.sync" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 <dl class="function">
 <dt id="celery.beat.EmbeddedClockService">
 <tt class="descclassname">celery.beat.</tt><tt class="descname">EmbeddedClockService</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.beat.EmbeddedClockService" title="Permalink to this definition">¶</a></dt>
@@ -204,6 +245,31 @@ its date and count fields updated.</p>
 <tt class="descname">max_interval</tt><a class="headerlink" href="#celery.beat.Scheduler.max_interval" title="Permalink to this definition">¶</a></dt>
 <dd><p>Maximum time to sleep between re-checking the schedule.</p>
 </dd></dl>
+
+<dl class="method">
+<dt id="celery.beat.Scheduler.apply_async">
+<tt class="descname">apply_async</tt><big>(</big><em>entry</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.beat.Scheduler.apply_async" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.beat.Scheduler.cleanup">
+<tt class="descname">cleanup</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.beat.Scheduler.cleanup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.beat.Scheduler.get_task">
+<tt class="descname">get_task</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#celery.beat.Scheduler.get_task" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.beat.Scheduler.is_due">
+<tt class="descname">is_due</tt><big>(</big><em>entry</em><big>)</big><a class="headerlink" href="#celery.beat.Scheduler.is_due" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt>
+<tt class="descname">schedule</tt></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="celery.beat.Scheduler.schedule_registry">

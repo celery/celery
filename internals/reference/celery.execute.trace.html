@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Tracing Execution - celery.execute.trace &mdash; Celery v1.1.0 (unstable) documentation</title>
+    <title>Tracing Execution - celery.execute.trace &mdash; Celery v1.1.1 (unstable) documentation</title>
     <link rel="stylesheet" href="../../static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.1.0 (unstable)',
+        VERSION:     '1.1.1 (unstable)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,15 +21,15 @@
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v1.1.0 (unstable) documentation" href="../../index.html" />
+    <link rel="top" title="Celery v1.1.1 (unstable) documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
-    <link rel="next" title="Datastructures - celery.datastructures" href="celery.datastructures.html" />
+    <link rel="next" title="Multiprocessing Pool Support - celery.concurrency.processes" href="celery.concurrency.processes.html" />
     <link rel="prev" title="Backend: Tokyo Tyrant - celery.backends.tyrant" href="celery.backends.tyrant.html" />
     <link media="only screen and (max-device-width: 480px)" href="../../static/mobile.css" type="text/css" rel="stylesheet" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v1.1.0 (unstable) documentation</p>
+	<p>Celery v1.1.1 (unstable) documentation</p>
 </div>
 <div id="header">
 	<div id="title"><h1>Tracing Execution - celery.execute.trace</h1></div>
@@ -38,7 +38,7 @@
 		<li id="page_buttons">
 			<div class="headerButton"><a href="../../genindex.html" title="General Index" accesskey="I">index</a></div>
 			<div class="headerButton"><a href="../../py-modindex.html" title="Python Module Index" >modules</a></div>
-			<div class="headerButton"><a href="celery.datastructures.html" title="Datastructures - celery.datastructures" accesskey="N">next</a></div>
+			<div class="headerButton"><a href="celery.concurrency.processes.html" title="Multiprocessing Pool Support - celery.concurrency.processes" accesskey="N">next</a></div>
 			<div class="headerButton"><a href="celery.backends.tyrant.html" title="Backend: Tokyo Tyrant - celery.backends.tyrant" accesskey="P">previous</a></div>
 		</li>
 	</ul>
@@ -94,6 +94,51 @@
             
   <div class="section" id="module-celery.execute.trace">
 <span id="tracing-execution-celery-execute-trace"></span><h1>Tracing Execution - celery.execute.trace<a class="headerlink" href="#module-celery.execute.trace" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="celery.execute.trace.TaskTrace">
+<em class="property">class </em><tt class="descclassname">celery.execute.trace.</tt><tt class="descname">TaskTrace</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>args</em>, <em>kwargs</em>, <em>task=None</em><big>)</big><a class="headerlink" href="#celery.execute.trace.TaskTrace" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.execute.trace.TaskTrace.execute">
+<tt class="descname">execute</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.execute.trace.TaskTrace.execute" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.execute.trace.TaskTrace.handle_after_return">
+<tt class="descname">handle_after_return</tt><big>(</big><em>status</em>, <em>retval</em>, <em>type_</em>, <em>tb</em>, <em>strtb</em><big>)</big><a class="headerlink" href="#celery.execute.trace.TaskTrace.handle_after_return" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.execute.trace.TaskTrace.handle_failure">
+<tt class="descname">handle_failure</tt><big>(</big><em>exc</em>, <em>type_</em>, <em>tb</em>, <em>strtb</em><big>)</big><a class="headerlink" href="#celery.execute.trace.TaskTrace.handle_failure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Handle exception.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.execute.trace.TaskTrace.handle_retry">
+<tt class="descname">handle_retry</tt><big>(</big><em>exc</em>, <em>type_</em>, <em>tb</em>, <em>strtb</em><big>)</big><a class="headerlink" href="#celery.execute.trace.TaskTrace.handle_retry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Handle retry exception.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.execute.trace.TaskTrace.handle_success">
+<tt class="descname">handle_success</tt><big>(</big><em>retval</em>, <em>*args</em><big>)</big><a class="headerlink" href="#celery.execute.trace.TaskTrace.handle_success" title="Permalink to this definition">¶</a></dt>
+<dd><p>Handle successful execution.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.execute.trace.TraceInfo">
+<em class="property">class </em><tt class="descclassname">celery.execute.trace.</tt><tt class="descname">TraceInfo</tt><big>(</big><em>status='PENDING'</em>, <em>retval=None</em>, <em>exc_info=None</em><big>)</big><a class="headerlink" href="#celery.execute.trace.TraceInfo" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="classmethod">
+<dt id="celery.execute.trace.TraceInfo.trace">
+<em class="property">classmethod </em><tt class="descname">trace</tt><big>(</big><em>fun</em>, <em>args</em>, <em>kwargs</em><big>)</big><a class="headerlink" href="#celery.execute.trace.TraceInfo.trace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Trace the execution of a function, calling the appropiate callback
+if the function raises retry, an failure or returned successfully.</p>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 
 

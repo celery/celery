@@ -1,3 +1,4 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -5,38 +6,35 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Compat Functional Utils - celery.utils.functional &mdash; Celery v0.9.0 (unstable) documentation</title>
+    <title>functools compat - celery.utils.functional &mdash; Celery v1.1.1 (unstable) documentation</title>
     <link rel="stylesheet" href="../../static/adctheme.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '0.9.0 (unstable)',
-        COLLAPSE_MODINDEX: false,
+        VERSION:     '1.1.1 (unstable)',
+        COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="../../static/jquery.js"></script>
+    <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v0.9.0 (unstable) documentation" href="../../index.html" />
-    <link rel="up" title="Internal Module Reference" href="index.html" />
-    <link rel="next" title="Platform Specific - celery.platform" href="celery.platform.html" />
-    <link rel="prev" title="Task Discovery - celery.discovery" href="celery.discovery.html" /> 
+    <link rel="top" title="Celery v1.1.1 (unstable) documentation" href="../../index.html" />
+    <link media="only screen and (max-device-width: 480px)" href="../../static/mobile.css" type="text/css" rel="stylesheet" /> 
   </head>
   <body>
 <div id="docstitle">
-	<p>Celery v0.9.0 (unstable) documentation</p>
+	<p>Celery v1.1.1 (unstable) documentation</p>
 </div>
 <div id="header">
-	<div id="title"><h1>Compat Functional Utils - celery.utils.functional</h1></div>
+	<div id="title"><h1>functools compat - celery.utils.functional</h1></div>
 	<ul id="headerButtons">
 		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
 		<li id="page_buttons">
 			<div class="headerButton"><a href="../../genindex.html" title="General Index" accesskey="I">index</a></div>
-			<div class="headerButton"><a href="../../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
-			<div class="headerButton"><a href="celery.platform.html" title="Platform Specific - celery.platform" accesskey="N">next</a></div>
-			<div class="headerButton"><a href="celery.discovery.html" title="Task Discovery - celery.discovery" accesskey="P">previous</a></div>
+			<div class="headerButton"><a href="../../py-modindex.html" title="Python Module Index" >modules</a></div>
 		</li>
 	</ul>
 </div>
@@ -45,16 +43,16 @@
   <div class="sphinxsidebarwrapper">
 	<ul><li class="toctree-l1"><a href="../../index.html">Main Page</a></li></ul>
 	<ul>
-<li class="toctree-l1"><a class="reference external" href="../../introduction.html">celery - Distributed Task Queue</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../configuration.html">Configuration and defaults</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../userguide/index.html">User Guide</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../cookbook/index.html">Cookbook</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../tutorials/index.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../reference/index.html">API Reference</a></li>
-<li class="toctree-l1"><a class="reference external" href="../index.html">Internals</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../changelog.html">Change history</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../links.html">Interesting Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting-started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../links.html">Interesting Links</a></li>
 </ul>
 
       <h3>This Page</h3>
@@ -90,7 +88,7 @@
           <div class="body">
             
   <div class="section" id="module-celery.utils.functional">
-<h1>Compat Functional Utils - celery.utils.functional<a class="headerlink" href="#module-celery.utils.functional" title="Permalink to this headline">¶</a></h1>
+<span id="functools-compat-celery-utils-functional"></span><h1>functools compat - celery.utils.functional<a class="headerlink" href="#module-celery.utils.functional" title="Permalink to this headline">¶</a></h1>
 <p>Functional utilities for Python 2.4 compatibility.</p>
 </div>
 
@@ -101,16 +99,15 @@
     <div class="footer">
     <p>
       &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.3.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
 	</p>
     </div>
       <div class="clearer"></div>
     </div>
 	<div id="breadcrumbs">
-		<a href="../index.html" accesskey="U">Internals</a><img src="triangle_closed.png" alt="Right arrow">
-		<a href="index.html" >Internal Module Reference</a><img src="triangle_closed.png" alt="Right arrow">
-		<a href="../../index.html">Celery v0.9.0 (unstable) documentation</a>
+		functools compat - celery.utils.functional
 		</ul>
 	</div>
+	<script type="text/javascript" charset="utf-8" src="../../static/toc.js"></script>
   </body>
 </html>

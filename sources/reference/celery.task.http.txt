@@ -6,3 +6,4 @@
 
 .. automodule:: celery.task.http
     :members:
+    :undoc-members:
