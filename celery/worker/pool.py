@@ -5,7 +5,7 @@ Process Pools.
 """
 
 from celery import log
-from celery.concurrency.processing import Pool, RUN
+from celery.concurrency.processes import Pool, RUN
 from celery.datastructures import ExceptionInfo
 from celery.utils.functional import curry
 
