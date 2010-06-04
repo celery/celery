@@ -144,11 +144,49 @@ Backward incompatible changes
 News
 ----
 
-* now depends on carrot >= 0.10.5
+* **celeryev**: Curses Celery Monitor and Event Viewer.
 
-* now depends on billiard >= 0.4.0
+    This is a simple monitor allowing you to see what tasks are
+    executing in real-time and investigate tracebacks and results of ready
+    tasks. It also enables you to set new rate limits and revoke tasks.
 
-* now depends on pyparsing
+    Screenshot:
+
+    .. image:: http://celeryproject.org/img/celeryevshotsm.jpg
+
+    If you run ``celeryev`` with the ``-d`` switch it will act as an event
+    dumper, simply dumping the events it receives to standard out::
+
+        $ celeryev -d
+        -> celeryev: starting capture...
+        casper.local [2010-06-04 10:42:07.020000] heartbeat
+        casper.local [2010-06-04 10:42:14.750000] task received:
+            tasks.add(61a68756-27f4-4879-b816-3cf815672b0e) args=[2, 2] kwargs={}
+            eta=2010-06-04T10:42:16.669290, retries=0
+        casper.local [2010-06-04 10:42:17.230000] task started
+            tasks.add(61a68756-27f4-4879-b816-3cf815672b0e) args=[2, 2] kwargs={}
+        casper.local [2010-06-04 10:42:17.960000] task succeeded:
+            tasks.add(61a68756-27f4-4879-b816-3cf815672b0e)
+            args=[2, 2] kwargs={} result=4, runtime=0.782663106918
+
+        The fields here are, in order: *sender hostname*, *timestamp*, *event type* and
+        *additional event fields*.
+
+* :mod:`billiard` has been moved back to the celery repository.
+
+    =====================================  =====================================
+    **Module name**                        **celery equivalent**
+    =====================================  =====================================
+    ``billiard.pool``                      ``celery.concurrency.processes``
+    ``billiard.serialization``             ``celery.serialization``
+    ``billiard.utils.functional``          ``celery.utils.functional``
+    =====================================  =====================================
+
+    The :mod:`billiard` distribution may be maintained, depending on interest.
+
+* now depends on :mod:`carrot` >= 0.10.5
+
+* now depends on :mod:`pyparsing`
 
 * celeryd: Now waits for available pool processes before applying new
   tasks to the pool.
