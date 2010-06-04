@@ -1,0 +1,223 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Serialization Tools - celery.serialization &mdash; Celery v1.1.1 (unstable) documentation</title>
+    <link rel="stylesheet" href="../../static/adctheme.css" type="text/css" />
+    <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.1.1 (unstable)',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../static/jquery.js"></script>
+    <script type="text/javascript" src="../../static/underscore.js"></script>
+    <script type="text/javascript" src="../../static/doctools.js"></script>
+    <link rel="top" title="Celery v1.1.1 (unstable) documentation" href="../../index.html" />
+    <link rel="up" title="Internal Module Reference" href="index.html" />
+    <link rel="next" title="Datastructures - celery.datastructures" href="celery.datastructures.html" />
+    <link rel="prev" title="Thread Pool Support EXPERIMENTAL - celery.concurrency.threads" href="celery.concurrency.threads.html" />
+    <link media="only screen and (max-device-width: 480px)" href="../../static/mobile.css" type="text/css" rel="stylesheet" /> 
+  </head>
+  <body>
+<div id="docstitle">
+	<p>Celery v1.1.1 (unstable) documentation</p>
+</div>
+<div id="header">
+	<div id="title"><h1>Serialization Tools - celery.serialization</h1></div>
+	<ul id="headerButtons">
+		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
+		<li id="page_buttons">
+			<div class="headerButton"><a href="../../genindex.html" title="General Index" accesskey="I">index</a></div>
+			<div class="headerButton"><a href="../../py-modindex.html" title="Python Module Index" >modules</a></div>
+			<div class="headerButton"><a href="celery.datastructures.html" title="Datastructures - celery.datastructures" accesskey="N">next</a></div>
+			<div class="headerButton"><a href="celery.concurrency.threads.html" title="Thread Pool Support EXPERIMENTAL - celery.concurrency.threads" accesskey="P">previous</a></div>
+		</li>
+	</ul>
+</div>
+
+<div id="sphinxsidebar">
+  <div class="sphinxsidebarwrapper">
+	<ul><li class="toctree-l1"><a href="../../index.html">Main Page</a></li></ul>
+	<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../getting-started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../userguide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Configuration and defaults</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cookbook/index.html">Cookbook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Internals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Change history</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../links.html">Interesting Links</a></li>
+</ul>
+
+      <h3>This Page</h3>
+      <ul class="this-page-menu">
+        <li><a href="../../sources/internals/reference/celery.serialization.txt"
+               rel="nofollow">Show Source</a></li>
+      </ul>
+    <div id="searchbox" style="display: none">
+      
+        <form class="search" action="../../search.html" method="get">
+			<div class="search-wrapper">
+			<span class="search-left"></span>
+			<input class="prettysearch" type="text" name="q" size="18" />
+			<span class="search-right">&nbsp;</span>
+			</div>
+          <input type="submit" value="Search" class="searchbutton" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </form>
+        <p class="searchtip" style="font-size: 90%">
+        Enter search terms or a module, class or function name.
+        </p>
+    </div>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+  </div>
+</div>
+
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-celery.serialization">
+<span id="serialization-tools-celery-serialization"></span><h1>Serialization Tools - celery.serialization<a class="headerlink" href="#module-celery.serialization" title="Permalink to this headline">¶</a></h1>
+<dl class="exception">
+<dt id="celery.serialization.UnpickleableExceptionWrapper">
+<em class="property">exception </em><tt class="descclassname">celery.serialization.</tt><tt class="descname">UnpickleableExceptionWrapper</tt><big>(</big><em>exc_module</em>, <em>exc_cls_name</em>, <em>exc_args</em><big>)</big><a class="headerlink" href="#celery.serialization.UnpickleableExceptionWrapper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wraps unpickleable exceptions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>exc_module</strong> &#8211; see <a class="reference internal" href="#celery.serialization.UnpickleableExceptionWrapper.exc_module" title="celery.serialization.UnpickleableExceptionWrapper.exc_module"><tt class="xref py py-attr docutils literal"><span class="pre">exc_module</span></tt></a>.</li>
+<li><strong>exc_cls_name</strong> &#8211; see <a class="reference internal" href="#celery.serialization.UnpickleableExceptionWrapper.exc_cls_name" title="celery.serialization.UnpickleableExceptionWrapper.exc_cls_name"><tt class="xref py py-attr docutils literal"><span class="pre">exc_cls_name</span></tt></a>.</li>
+<li><strong>exc_args</strong> &#8211; see <a class="reference internal" href="#celery.serialization.UnpickleableExceptionWrapper.exc_args" title="celery.serialization.UnpickleableExceptionWrapper.exc_args"><tt class="xref py py-attr docutils literal"><span class="pre">exc_args</span></tt></a></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="celery.serialization.UnpickleableExceptionWrapper.exc_module">
+<tt class="descname">exc_module</tt><a class="headerlink" href="#celery.serialization.UnpickleableExceptionWrapper.exc_module" title="Permalink to this definition">¶</a></dt>
+<dd><p>The module of the original exception.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.serialization.UnpickleableExceptionWrapper.exc_cls_name">
+<tt class="descname">exc_cls_name</tt><a class="headerlink" href="#celery.serialization.UnpickleableExceptionWrapper.exc_cls_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of the original exception class.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.serialization.UnpickleableExceptionWrapper.exc_args">
+<tt class="descname">exc_args</tt><a class="headerlink" href="#celery.serialization.UnpickleableExceptionWrapper.exc_args" title="Permalink to this definition">¶</a></dt>
+<dd><p>The arguments for the original exception.</p>
+</dd></dl>
+
+<p>Example</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">try</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">something_raising_unpickleable_exc</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">exc</span> <span class="o">=</span> <span class="n">UnpickleableException</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__module__</span><span class="p">,</span>
+<span class="gp">... </span>                                <span class="n">e</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+<span class="gp">... </span>                                <span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span> <span class="c"># Works fine.</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.serialization.create_exception_cls">
+<tt class="descclassname">celery.serialization.</tt><tt class="descname">create_exception_cls</tt><big>(</big><em>name</em>, <em>module</em>, <em>parent=None</em><big>)</big><a class="headerlink" href="#celery.serialization.create_exception_cls" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dynamically create an exception class.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.serialization.find_nearest_pickleable_exception">
+<tt class="descclassname">celery.serialization.</tt><tt class="descname">find_nearest_pickleable_exception</tt><big>(</big><em>exc</em><big>)</big><a class="headerlink" href="#celery.serialization.find_nearest_pickleable_exception" title="Permalink to this definition">¶</a></dt>
+<dd><p>With an exception instance, iterate over its super classes (by mro)
+and find the first super exception that is pickleable. It does
+not go below <tt class="xref py py-exc docutils literal"><span class="pre">Exception</span></tt> (i.e. it skips <tt class="xref py py-exc docutils literal"><span class="pre">Exception</span></tt>,
+<tt class="xref py py-class docutils literal"><span class="pre">BaseException</span></tt> and <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt>). If that happens
+you should use <tt class="xref py py-exc docutils literal"><span class="pre">UnpickleableException</span></tt> instead.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>exc</strong> &#8211; An exception instance.</li>
+</ul>
+</td>
+</tr>
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">the nearest exception if it&#8217;s not <tt class="xref py py-exc docutils literal"><span class="pre">Exception</span></tt> or below,
+if it is it returns <tt class="xref docutils literal"><span class="pre">None</span></tt>.</p>
+</td>
+</tr>
+<tr class="field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">&lt;pending_xref py:class py:module=&#8221;celery.serialization&#8221; refdoc=&#8221;internals/reference/celery.serialization&#8221; refdomain=&#8221;py&#8221; refexplicit=&#8221;False&#8221; reftarget=&#8221;Exception&#8221; reftype=&#8221;exc&#8221;&gt;&lt;literal classes=&#8221;xref py py-exc&#8221;&gt;Exception&lt;/literal&gt;&lt;/pending_xref&gt;</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.serialization.get_pickleable_exception">
+<tt class="descclassname">celery.serialization.</tt><tt class="descname">get_pickleable_exception</tt><big>(</big><em>exc</em><big>)</big><a class="headerlink" href="#celery.serialization.get_pickleable_exception" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make sure exception is pickleable.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.serialization.get_pickled_exception">
+<tt class="descclassname">celery.serialization.</tt><tt class="descname">get_pickled_exception</tt><big>(</big><em>exc</em><big>)</big><a class="headerlink" href="#celery.serialization.get_pickled_exception" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get original exception from exception pickled using
+<a class="reference internal" href="#celery.serialization.get_pickleable_exception" title="celery.serialization.get_pickleable_exception"><tt class="xref py py-meth docutils literal"><span class="pre">get_pickleable_exception()</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.serialization.is_unwanted_exception_cls">
+<tt class="descclassname">celery.serialization.</tt><tt class="descname">is_unwanted_exception_cls</tt><big>(</big><em>exc_cls</em><big>)</big><a class="headerlink" href="#celery.serialization.is_unwanted_exception_cls" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="celery.serialization.subclass_exception">
+<tt class="descclassname">celery.serialization.</tt><tt class="descname">subclass_exception</tt><big>(</big><em>name</em>, <em>parent</em>, <em>module</em><big>)</big><a class="headerlink" href="#celery.serialization.subclass_exception" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+
+
+          </div> 
+        </div>
+      </div>
+    <div class="footer">
+    <p>
+      &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
+	</p>
+    </div>
+      <div class="clearer"></div>
+    </div>
+	<div id="breadcrumbs">
+		<a href="../index.html" accesskey="U">Internals</a><img src="../../static/triangle_closed.png" height="9" width="9" alt="&gt;">
+		<a href="index.html" >Internal Module Reference</a><img src="../../static/triangle_closed.png" height="9" width="9" alt="&gt;">
+		Serialization Tools - celery.serialization
+		</ul>
+	</div>
+	<script type="text/javascript" charset="utf-8" src="../../static/toc.js"></script>
+  </body>
+</html>
