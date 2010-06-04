@@ -16,8 +16,17 @@ def clean_docs(options):
 
 
 @task
-@needs("paver.doctools.html")
+@needs("clean_docs", "paver.doctools.html")
 def html(options):
+    destdir = path("Documentation")
+    destdir.rmtree()
+    builtdocs = sphinx_builddir(options)
+    builtdocs.move(destdir)
+
+
+@task
+@needs("paver.doctools.html")
+def qhtml(options):
     destdir = path("Documentation")
     builtdocs = sphinx_builddir(options)
     sh("rsync -az %s/ %s" % (builtdocs, destdir))
