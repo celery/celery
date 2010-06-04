@@ -177,7 +177,7 @@ News
     =====================================  =====================================
     **Module name**                        **celery equivalent**
     =====================================  =====================================
-    ``billiard.pool``                      ``celery.concurrency.processes``
+    ``billiard.pool``                      ``celery.concurrency.processes.pool``
     ``billiard.serialization``             ``celery.serialization``
     ``billiard.utils.functional``          ``celery.utils.functional``
     =====================================  =====================================
@@ -756,7 +756,7 @@ Fixes
 
     .. code-block:: python
 
-        CELERYD_POOL = "celery.worker.pool.TaskPool"
+        CELERYD_POOL = "celery.concurrency.processes.TaskPool"
         CELERYD_MEDIATOR = "celery.worker.controllers.Mediator"
         CELERYD_ETA_SCHEDULER = "celery.worker.controllers.ScheduleController"
         CELERYD_LISTENER = "celery.worker.listener.CarrotListener"

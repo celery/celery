@@ -45,7 +45,7 @@ _DEFAULTS = {
     "CELERY_BROKER_CONNECTION_MAX_RETRIES": 100,
     "CELERY_ACKS_LATE": False,
     "CELERYD_POOL_PUTLOCKS": True,
-    "CELERYD_POOL": "celery.worker.pool.TaskPool",
+    "CELERYD_POOL": "celery.concurrency.processes.TaskPool",
     "CELERYD_MEDIATOR": "celery.worker.controllers.Mediator",
     "CELERYD_ETA_SCHEDULER": "celery.worker.controllers.ScheduleController",
     "CELERYD_LISTENER": "celery.worker.listener.CarrotListener",

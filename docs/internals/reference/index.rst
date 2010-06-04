@@ -14,12 +14,14 @@
     celery.worker.controllers
     celery.worker.buckets
     celery.worker.scheduler
-    celery.worker.pool
     celery.worker.heartbeat
     celery.worker.control
     celery.worker.control.builtins
     celery.worker.control.registry
     celery.worker.revoke
+    celery.concurrency.processes
+    celery.concurrency.processes.pool
+    celery.concurrency.threads
     celery.beat
     celery.backends
     celery.backends.base
@@ -29,8 +31,6 @@
     celery.backends.pyredis
     celery.backends.tyrant
     celery.execute.trace
-    celery.concurrency.processes
-    celery.concurrency.threads
     celery.serialization
     celery.datastructures
     celery.routes
