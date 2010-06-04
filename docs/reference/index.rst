@@ -28,7 +28,9 @@
     celery.messaging
     celery.contrib.abortable
     celery.events
+    celery.events.state
     celery.bin.celeryd
     celery.bin.celerybeat
+    celery.bin.celeryev
     celery.bin.camqadm
     celery.bin.celeryd_multi

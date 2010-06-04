@@ -1,6 +1,6 @@
-========================================
-Multiprocessing Worker - celery.worker
-========================================
+==========================
+ Utilities - celery.utils
+==========================
 
 .. currentmodule:: celery.utils
 

@@ -29,6 +29,9 @@
     celery.backends.pyredis
     celery.backends.tyrant
     celery.execute.trace
+    celery.concurrency.processes
+    celery.concurrency.threads
+    celery.serialization
     celery.datastructures
     celery.routes
     celery.log
