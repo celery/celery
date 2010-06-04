@@ -1,10 +1,10 @@
+from UserList import UserList
+
 from celery import conf
-from celery.execute import apply_async
 from celery.messaging import establish_connection, with_connection
 from celery.messaging import TaskPublisher
-from celery.registry import tasks
 from celery.result import TaskSetResult
-from celery.utils import gen_unique_id, padlist
+from celery.utils import gen_unique_id
 
 
 class subtask(object):
@@ -36,7 +36,7 @@ class subtask(object):
                                      publisher=publisher, **self.options)
 
 
-class TaskSet(object):
+class TaskSet(UserList):
     """A task containing several subtasks, making it possible
     to track how many, or when all of the tasks has been completed.
 
@@ -72,7 +72,7 @@ class TaskSet(object):
             self.task = task
             self.task_name = task.name
 
-        self.tasks = tasks
+        self.data = list(tasks)
         self.total = len(self.tasks)
 
     @with_connection
@@ -129,3 +129,7 @@ class TaskSet(object):
         # This will be filled with EagerResults.
         return TaskSetResult(taskset_id, [task.apply(taskset_id)
                                             for task in self.tasks])
+
+    @property
+    def tasks(self):
+        return self.data

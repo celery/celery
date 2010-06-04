@@ -135,16 +135,12 @@ def execute_and_trace(task_name, *args, **kwargs):
         platform.set_mp_process_title("celeryd")
 
 
-class TaskWrapper(object):
-    """Class wrapping a task to be passed around and finally
-    executed inside of the worker.
+class TaskRequest(object):
+    """A request for task execution.
 
     :param task_name: see :attr:`task_name`.
-
     :param task_id: see :attr:`task_id`.
-
     :param args: see :attr:`args`
-
     :param kwargs: see :attr:`kwargs`.
 
     .. attribute:: task_name
@@ -163,16 +159,25 @@ class TaskWrapper(object):
 
         Mapping of keyword arguments to apply to the task.
 
+    .. attribute:: on_ack
+
+        Callback called when the task should be acknowledged.
+
     .. attribute:: message
 
         The original message sent. Used for acknowledging the message.
 
-    .. attribute executed
+    .. attribute:: executed
 
         Set to ``True`` if the task has been executed.
         A task should only be executed once.
 
-    .. attribute acknowledged
+    .. attribute:: delivery_info
+
+        Additional delivery info, e.g. the contains the path
+        from producer to consumer.
+
+    .. attribute:: acknowledged
 
         Set to ``True`` if the task has been acknowledged.
 
@@ -202,8 +207,9 @@ class TaskWrapper(object):
         self._already_revoked = False
 
         for opt in ("success_msg", "fail_msg", "fail_email_subject",
-                "fail_email_body", "logger", "eventer"):
+                    "fail_email_body", "logger", "eventer"):
             setattr(self, opt, opts.get(opt, getattr(self, opt, None)))
+
         if not self.logger:
             self.logger = get_default_logger()
 
@@ -227,13 +233,13 @@ class TaskWrapper(object):
 
     @classmethod
     def from_message(cls, message, message_data, logger=None, eventer=None):
-        """Create a :class:`TaskWrapper` from a task message sent by
+        """Create a :class:`TaskRequest` from a task message sent by
         :class:`celery.messaging.TaskPublisher`.
 
         :raises UnknownTaskError: if the message does not describe a task,
             the message is also rejected.
 
-        :returns: :class:`TaskWrapper` instance.
+        :returns: :class:`TaskRequest` instance.
 
         """
         task_name = message_data["task"]

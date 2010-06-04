@@ -9,7 +9,7 @@ from carrot.backends.base import BaseMessage
 from celery import conf
 from celery.utils import gen_unique_id
 from celery.worker import WorkController
-from celery.worker.job import TaskWrapper
+from celery.worker.job import TaskRequest
 from celery.worker.buckets import FastQueue
 from celery.worker.listener import CarrotListener, QoS, RUN
 from celery.worker.scheduler import Scheduler
@@ -243,7 +243,7 @@ class TestCarrotListener(unittest.TestCase):
         l.receive_message(m.decode(), m)
 
         in_bucket = self.ready_queue.get_nowait()
-        self.assertIsInstance(in_bucket, TaskWrapper)
+        self.assertIsInstance(in_bucket, TaskRequest)
         self.assertEqual(in_bucket.task_name, foo_task.name)
         self.assertEqual(in_bucket.execute(), 2 * 4 * 8)
         self.assertTrue(self.eta_schedule.empty())
@@ -325,7 +325,7 @@ class TestCarrotListener(unittest.TestCase):
         in_hold = self.eta_schedule.queue[0]
         self.assertEqual(len(in_hold), 4)
         eta, priority, task, on_accept = in_hold
-        self.assertIsInstance(task, TaskWrapper)
+        self.assertIsInstance(task, TaskRequest)
         self.assertTrue(callable(on_accept))
         self.assertEqual(task.task_name, foo_task.name)
         self.assertEqual(task.execute(), 2 * 4 * 8)
@@ -353,7 +353,7 @@ class TestWorkController(unittest.TestCase):
         backend = MockBackend()
         m = create_message(backend, task=foo_task.name, args=[4, 8, 10],
                            kwargs={})
-        task = TaskWrapper.from_message(m, m.decode())
+        task = TaskRequest.from_message(m, m.decode())
         worker.process_task(task)
         worker.pool.stop()
 
@@ -363,7 +363,7 @@ class TestWorkController(unittest.TestCase):
         backend = MockBackend()
         m = create_message(backend, task=foo_task.name, args=[4, 8, 10],
                            kwargs={})
-        task = TaskWrapper.from_message(m, m.decode())
+        task = TaskRequest.from_message(m, m.decode())
         worker.process_task(task)
         worker.pool.stop()
 
@@ -373,7 +373,7 @@ class TestWorkController(unittest.TestCase):
         backend = MockBackend()
         m = create_message(backend, task=foo_task.name, args=[4, 8, 10],
                            kwargs={})
-        task = TaskWrapper.from_message(m, m.decode())
+        task = TaskRequest.from_message(m, m.decode())
         worker.process_task(task)
         worker.pool.stop()
 

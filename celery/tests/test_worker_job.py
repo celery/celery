@@ -12,7 +12,7 @@ from celery.log import setup_logger
 from celery.task.base import Task
 from celery.utils import gen_unique_id
 from celery.result import AsyncResult
-from celery.worker.job import WorkerTaskTrace, TaskWrapper
+from celery.worker.job import WorkerTaskTrace, TaskRequest
 from celery.concurrency.processes import TaskPool
 from celery.backends import default_backend
 from celery.exceptions import RetryTaskError, NotRegistered
@@ -102,14 +102,14 @@ class MockEventDispatcher(object):
         self.sent.append(event)
 
 
-class TestTaskWrapper(unittest.TestCase):
+class TestTaskRequest(unittest.TestCase):
 
     def test_task_wrapper_repr(self):
-        tw = TaskWrapper(mytask.name, gen_unique_id(), [1], {"f": "x"})
+        tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
         self.assertTrue(repr(tw))
 
     def test_send_event(self):
-        tw = TaskWrapper(mytask.name, gen_unique_id(), [1], {"f": "x"})
+        tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
         tw.eventer = MockEventDispatcher()
         tw.send_event("task-frobulated")
         self.assertIn("task-frobulated", tw.eventer.sent)
@@ -127,7 +127,7 @@ class TestTaskWrapper(unittest.TestCase):
         job.mail_admins = mock_mail_admins
         conf.CELERY_SEND_TASK_ERROR_EMAILS = True
         try:
-            tw = TaskWrapper(mytask.name, gen_unique_id(), [1], {"f": "x"})
+            tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
             try:
                 raise KeyError("foo")
             except KeyError:
@@ -206,14 +206,14 @@ class TestTaskWrapper(unittest.TestCase):
 
     def test_executed_bit(self):
         from celery.worker.job import AlreadyExecutedError
-        tw = TaskWrapper(mytask.name, gen_unique_id(), [], {})
+        tw = TaskRequest(mytask.name, gen_unique_id(), [], {})
         self.assertFalse(tw.executed)
         tw._set_executed_bit()
         self.assertTrue(tw.executed)
         self.assertRaises(AlreadyExecutedError, tw._set_executed_bit)
 
     def test_task_wrapper_mail_attrs(self):
-        tw = TaskWrapper(mytask.name, gen_unique_id(), [], {})
+        tw = TaskRequest(mytask.name, gen_unique_id(), [], {})
         x = tw.success_msg % {"name": tw.task_name,
                               "id": tw.task_id,
                               "return_value": 10}
@@ -235,8 +235,8 @@ class TestTaskWrapper(unittest.TestCase):
         m = BaseMessage(body=simplejson.dumps(body), backend="foo",
                         content_type="application/json",
                         content_encoding="utf-8")
-        tw = TaskWrapper.from_message(m, m.decode())
-        self.assertIsInstance(tw, TaskWrapper)
+        tw = TaskRequest.from_message(m, m.decode())
+        self.assertIsInstance(tw, TaskRequest)
         self.assertEqual(tw.task_name, body["task"])
         self.assertEqual(tw.task_id, body["id"])
         self.assertEqual(tw.args, body["args"])
@@ -251,12 +251,12 @@ class TestTaskWrapper(unittest.TestCase):
         m = BaseMessage(body=simplejson.dumps(body), backend="foo",
                         content_type="application/json",
                         content_encoding="utf-8")
-        self.assertRaises(NotRegistered, TaskWrapper.from_message,
+        self.assertRaises(NotRegistered, TaskRequest.from_message,
                           m, m.decode())
 
     def test_execute(self):
         tid = gen_unique_id()
-        tw = TaskWrapper(mytask.name, tid, [4], {"f": "x"})
+        tw = TaskRequest(mytask.name, tid, [4], {"f": "x"})
         self.assertEqual(tw.execute(), 256)
         meta = default_backend._get_task_meta_for(tid)
         self.assertEqual(meta["result"], 256)
@@ -264,7 +264,7 @@ class TestTaskWrapper(unittest.TestCase):
 
     def test_execute_success_no_kwargs(self):
         tid = gen_unique_id()
-        tw = TaskWrapper(mytask_no_kwargs.name, tid, [4], {})
+        tw = TaskRequest(mytask_no_kwargs.name, tid, [4], {})
         self.assertEqual(tw.execute(), 256)
         meta = default_backend._get_task_meta_for(tid)
         self.assertEqual(meta["result"], 256)
@@ -272,7 +272,7 @@ class TestTaskWrapper(unittest.TestCase):
 
     def test_execute_success_some_kwargs(self):
         tid = gen_unique_id()
-        tw = TaskWrapper(mytask_some_kwargs.name, tid, [4], {})
+        tw = TaskRequest(mytask_some_kwargs.name, tid, [4], {})
         self.assertEqual(tw.execute(logfile="foobaz.log"), 256)
         meta = default_backend._get_task_meta_for(tid)
         self.assertEqual(some_kwargs_scratchpad.get("logfile"), "foobaz.log")
@@ -281,7 +281,7 @@ class TestTaskWrapper(unittest.TestCase):
 
     def test_execute_ack(self):
         tid = gen_unique_id()
-        tw = TaskWrapper(mytask.name, tid, [4], {"f": "x"},
+        tw = TaskRequest(mytask.name, tid, [4], {"f": "x"},
                         on_ack=on_ack)
         self.assertEqual(tw.execute(), 256)
         meta = default_backend._get_task_meta_for(tid)
@@ -291,7 +291,7 @@ class TestTaskWrapper(unittest.TestCase):
 
     def test_execute_fail(self):
         tid = gen_unique_id()
-        tw = TaskWrapper(mytask_raising.name, tid, [4], {"f": "x"})
+        tw = TaskRequest(mytask_raising.name, tid, [4], {"f": "x"})
         self.assertIsInstance(tw.execute(), ExceptionInfo)
         meta = default_backend._get_task_meta_for(tid)
         self.assertEqual(meta["status"], states.FAILURE)
@@ -299,7 +299,7 @@ class TestTaskWrapper(unittest.TestCase):
 
     def test_execute_using_pool(self):
         tid = gen_unique_id()
-        tw = TaskWrapper(mytask.name, tid, [4], {"f": "x"})
+        tw = TaskRequest(mytask.name, tid, [4], {"f": "x"})
 
         class MockPool(object):
             target = None
@@ -326,7 +326,7 @@ class TestTaskWrapper(unittest.TestCase):
 
     def test_default_kwargs(self):
         tid = gen_unique_id()
-        tw = TaskWrapper(mytask.name, tid, [4], {"f": "x"})
+        tw = TaskRequest(mytask.name, tid, [4], {"f": "x"})
         self.assertDictEqual(
                 tw.extend_with_default_kwargs(10, "some_logfile"), {
                     "f": "x",
@@ -340,7 +340,7 @@ class TestTaskWrapper(unittest.TestCase):
 
     def _test_on_failure(self, exception):
         tid = gen_unique_id()
-        tw = TaskWrapper(mytask.name, tid, [4], {"f": "x"})
+        tw = TaskRequest(mytask.name, tid, [4], {"f": "x"})
         try:
             raise exception
         except Exception:

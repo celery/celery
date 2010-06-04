@@ -484,7 +484,7 @@ class Task(object):
     def execute(self, wrapper, pool, loglevel, logfile):
         """The method the worker calls to execute the task.
 
-        :param wrapper: A :class:`celery.worker.job.TaskWrapper`.
+        :param wrapper: A :class:`~celery.worker.job.TaskRequest`.
         :param pool: A task pool.
         :param loglevel: Current loglevel.
         :param logfile: Name of the currently used logfile.

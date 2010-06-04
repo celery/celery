@@ -36,7 +36,7 @@ CarrotListener
 Receives messages from the broker using ``carrot``.
 
 When a message is received it's converted into a
-:class:`celery.worker.job.TaskWrapper` object.
+:class:`celery.worker.job.TaskRequest` object.
 
 Tasks with an ETA are entered into the ``eta_schedule``, messages that can
 be immediately processed are moved directly to the ``ready_queue``.
@@ -53,7 +53,7 @@ Mediator
 --------
 The mediator simply moves tasks in the ``ready_queue`` over to the
 task pool for execution using
-:meth:`celery.worker.job.TaskWrapper.execute_using_pool`.
+:meth:`celery.worker.job.TaskRequest.execute_using_pool`.
 
 TaskPool
 --------

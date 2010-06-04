@@ -705,7 +705,7 @@ Remote control commands
 
         >>> from celery.task.control import broadcast
         >>> broadcast("dump_reserved", reply=True)
-        [{'myworker1': [<TaskWrapper ....>]}]
+        [{'myworker1': [<TaskRequest ....>]}]
 
 * New remote control command: ``dump_schedule``
 
@@ -717,19 +717,19 @@ Remote control commands
         >>> broadcast("dump_schedule", reply=True)
         [{'w1': []},
          {'w3': []},
-         {'w2': ['0. 2010-05-12 11:06:00 pri0 <TaskWrapper:
+         {'w2': ['0. 2010-05-12 11:06:00 pri0 <TaskRequest
                     {name:"opalfeeds.tasks.refresh_feed_slice",
                      id:"95b45760-4e73-4ce8-8eac-f100aa80273a",
                      args:"(<Feeds freq_max:3600 freq_min:60
                                    start:2184.0 stop:3276.0>,)",
                      kwargs:"{'page': 2}"}>']},
-         {'w4': ['0. 2010-05-12 11:00:00 pri0 <TaskWrapper:
+         {'w4': ['0. 2010-05-12 11:00:00 pri0 <TaskRequest
                     {name:"opalfeeds.tasks.refresh_feed_slice",
                      id:"c053480b-58fb-422f-ae68-8d30a464edfe",
                      args:"(<Feeds freq_max:3600 freq_min:60
                                    start:1092.0 stop:2184.0>,)",
                      kwargs:"{\'page\': 1}"}>',
-                '1. 2010-05-12 11:12:00 pri0 <TaskWrapper:
+                '1. 2010-05-12 11:12:00 pri0 <TaskRequest
                     {name:"opalfeeds.tasks.refresh_feed_slice",
                      id:"ab8bc59e-6cf8-44b8-88d0-f1af57789758",
                      args:"(<Feeds freq_max:3600 freq_min:60
@@ -749,7 +749,7 @@ Fixes
   (http://github.com/ask/celery/issues/issue/98)
 
 * Now handles exceptions with unicode messages correctly in
-  ``TaskWrapper.on_failure``.
+  ``TaskRequest.on_failure``.
 
 * Database backend: ``TaskMeta.result``: default value should be ``None``
   not empty string.

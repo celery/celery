@@ -9,7 +9,7 @@ from carrot.connection import AMQPConnectionException
 
 from celery import conf
 from celery.utils import noop, retry_over_time
-from celery.worker.job import TaskWrapper, InvalidTaskError
+from celery.worker.job import TaskRequest, InvalidTaskError
 from celery.worker.control import ControlDispatch
 from celery.worker.heartbeat import Heart
 from celery.events import EventDispatcher
@@ -161,7 +161,7 @@ class CarrotListener(object):
         # Handle task
         if message_data.get("task"):
             try:
-                task = TaskWrapper.from_message(message, message_data,
+                task = TaskRequest.from_message(message, message_data,
                                                 logger=self.logger,
                                                 eventer=self.event_dispatcher)
             except NotRegistered, exc:
