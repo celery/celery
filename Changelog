@@ -5,14 +5,14 @@
 1.2.0 [xxxx-xx-xx xx:xx x.x xxxx]
 =================================
 
-Celery 1.2.0 contains backward incompatible changes, the most important
-is that the Django dependency has been removed, so Celery no longer
-supports Django out of the box, but instead provides this as an add-on
-package called `django-celery`_.
+Celery 1.2 contains backward incompatible changes, the most important
+being that the Django dependency has been removed, so Celery no longer
+supports Django out of the box, but instead as an add-on package
+called `django-celery`_.
 
 We're very sorry for breaking backwards compatibility, but there's
 also many new and exciting features to make up for the time you lose
-upgrading, so be sure to read the `News`_ section.
+upgrading, so be sure to read the :ref:`News <120news>` section.
 
 Quite a lot of potential users have been upset about the Django dependency,
 so maybe this is a chance to get wider adoption by the Python community as
@@ -155,6 +155,8 @@ Backward incompatible changes
     You need to include the loader class name, like this::
 
         CELERY_LOADER = "myapp.loaders.Loader"
+
+.. _120news:
 
 News
 ----
@@ -441,7 +443,7 @@ News
         celeryd-multi -n baz.myhost -c 10
         celeryd-multi -n xuzzy.myhost -c 3
 
-1.0.4 [2010-05-31 09:54 A.M CEST]
+1.0.5 [2010-06-01 02:36 P.M CEST]
 =================================
 
 Critical
@@ -458,6 +460,12 @@ Critical
 
 * Now depends on :mod:`billiard` >= 0.3.1
 
+* celeryd: Previously exceptions raised by worker components could stall startup,
+  now it correctly logs the exceptions and shuts down.
+
+* celeryd: Prefetch counts was set too late. QoS is now set as early as possible,
+  so celeryd can't slurp in all the messages at start-up.
+
 Changes
 -------
 
@@ -465,6 +473,9 @@ Changes
 
     Tasks that defines steps of execution, the task can then
     be aborted after each step has completed.
+
+* :class:`~celery.events.EventDispatcher`: No longer creates AMQP channel
+  if events are disabled
 
 * Added required RPM package names under ``[bdist_rpm]`` section, to support building RPMs
   from the sources using setup.py
@@ -484,6 +495,11 @@ Changes
 
     * Should I use retry or acks_late?
     * Can I execute a task by name?
+
+1.0.4 [2010-05-31 09:54 A.M CEST]
+=================================
+
+* Changlog merged with 1.0.5 as the release was never announced.
 
 1.0.3 [2010-05-15 03:00 P.M CEST]
 =================================
