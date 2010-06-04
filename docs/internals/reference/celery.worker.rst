@@ -6,3 +6,4 @@ Multiprocessing Worker - celery.worker
 
 .. automodule:: celery.worker
     :members:
+    :undoc-members:

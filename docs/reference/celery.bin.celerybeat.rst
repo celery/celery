@@ -6,3 +6,4 @@ Celery Periodic Task Server - celery.bin.celerybeat
 
 .. automodule:: celery.bin.celerybeat
     :members:
+    :undoc-members:

@@ -6,3 +6,4 @@
 
 .. automodule:: celery.serialization
     :members:
+    :undoc-members:

@@ -6,3 +6,4 @@
 
 .. automodule:: celery.events.state
     :members:
+    :undoc-members:

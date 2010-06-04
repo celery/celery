@@ -6,3 +6,4 @@
 
 .. automodule:: celery.concurrency.processes
     :members:
+    :undoc-members:

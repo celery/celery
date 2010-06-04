@@ -6,3 +6,4 @@
 
 .. automodule:: celery.worker.buckets
     :members:
+    :undoc-members:

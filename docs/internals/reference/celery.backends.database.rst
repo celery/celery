@@ -6,3 +6,4 @@
 
 .. automodule:: celery.backends.database
     :members:
+    :undoc-members:

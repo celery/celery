@@ -6,3 +6,4 @@
 
 .. automodule:: celery.utils.timeutils
     :members:
+    :undoc-members:

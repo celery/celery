@@ -173,15 +173,14 @@ class AsyncResult(BaseAsyncResult):
 
 
 class TaskSetResult(object):
-    """Working with :class:`celery.task.TaskSet` results.
+    """Working with :class:`~celery.task.TaskSet` results.
 
     An instance of this class is returned by
-    :meth:`celery.task.TaskSet.apply_async()`. It lets you inspect the
-    status and return values of the taskset as a single entity.
+    ``TaskSet``'s :meth:`~celery.task.TaskSet.apply_async()`. It enables
+    inspection of the subtasks status and return values as a single entity.
 
     :option taskset_id: see :attr:`taskset_id`.
     :option subtasks: see :attr:`subtasks`.
-
 
     .. attribute:: taskset_id
 
@@ -344,7 +343,7 @@ class TaskSetResult(object):
 
     @property
     def total(self):
-        """The total number of tasks in the :class:`celery.task.TaskSet`."""
+        """The total number of tasks in the :class:`~celery.task.TaskSet`."""
         return len(self.subtasks)
 
 

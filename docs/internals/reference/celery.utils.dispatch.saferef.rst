@@ -6,3 +6,4 @@
 
 .. automodule:: celery.utils.dispatch.saferef
     :members:
+    :undoc-members:

@@ -6,3 +6,4 @@
 
 .. automodule:: celery.decorators
     :members:
+    :undoc-members:

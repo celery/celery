@@ -6,3 +6,4 @@ Task Registry - celery.registry
 
 .. automodule:: celery.registry
     :members:
+    :undoc-members:

@@ -5,4 +5,4 @@
 .. currentmodule:: celery.task.base
 
 .. automodule:: celery.task.base
-    :members:
+    :members: Task, PeriodicTask, TaskType

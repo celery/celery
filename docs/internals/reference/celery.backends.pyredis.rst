@@ -6,3 +6,4 @@
 
 .. automodule:: celery.backends.pyredis
     :members:
+    :undoc-members:

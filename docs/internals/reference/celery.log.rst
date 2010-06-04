@@ -6,3 +6,4 @@ Logging - celery.log
 
 .. automodule:: celery.log
     :members:
+    :undoc-members:

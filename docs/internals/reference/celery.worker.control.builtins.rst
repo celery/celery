@@ -6,3 +6,4 @@
 
 .. automodule:: celery.worker.control.builtins
     :members:
+    :undoc-members:

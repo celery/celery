@@ -6,3 +6,4 @@
 
 .. automodule:: celery.worker.job
     :members:
+    :undoc-members:

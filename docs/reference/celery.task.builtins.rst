@@ -6,3 +6,4 @@
 
 .. automodule:: celery.task.builtins
     :members:
+    :undoc-members:

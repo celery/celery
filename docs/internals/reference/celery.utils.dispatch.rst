@@ -6,3 +6,4 @@
 
 .. automodule:: celery.utils.dispatch
     :members:
+    :undoc-members:

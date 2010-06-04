@@ -493,7 +493,7 @@ def eventdump():
         conn and conn.close()
 
 
-def run_celeryev(dump=False):
+def run_celeryev(dump=False, **kwargs):
     if dump:
         return eventdump()
     return eventtop()

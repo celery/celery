@@ -67,9 +67,11 @@ class Task(object):
     :meth:`run` method.
 
     .. attribute:: name
+
         Name of the task.
 
     .. attribute:: abstract
+
         If ``True`` the task is an abstract base class.
 
     .. attribute:: type
@@ -147,6 +149,7 @@ class Task(object):
         The result store backend used for this task.
 
     .. attribute:: autoregister
+
         If ``True`` the task is automatically registered in the task
         registry, which is the default behaviour.
 
@@ -325,15 +328,15 @@ class Task(object):
         :param args: Positional arguments to retry with.
         :param kwargs: Keyword arguments to retry with.
         :keyword exc: Optional exception to raise instead of
-            :exc:`MaxRestartsExceededError` when the max restart limit has
-            been exceeded.
+            :exc:`~celery.exceptions.MaxRetriesExceededError` when the max
+            restart limit has been exceeded.
         :keyword countdown: Time in seconds to delay the retry for.
         :keyword eta: Explicit time and date to run the retry at (must be a
             :class:`datetime.datetime` instance).
         :keyword \*\*options: Any extra options to pass on to
             meth:`apply_async`. See :func:`celery.execute.apply_async`.
         :keyword throw: If this is ``False``, do not raise the
-            :exc:`celery.exceptions.RetryTaskError` exception,
+            :exc:`~celery.exceptions.RetryTaskError` exception,
             that tells the worker to mark the task as being retried.
             Note that this means the task will be marked as failed
             if the task raises an exception, or successful if it
@@ -420,7 +423,7 @@ class Task(object):
         :param args: Original arguments for the retried task.
         :param kwargs: Original keyword arguments for the retried task.
 
-        :keyword einfo: :class:`celery.datastructures.ExceptionInfo` instance,
+        :keyword einfo: :class:`~celery.datastructures.ExceptionInfo` instance,
            containing the traceback.
 
         The return value of this handler is ignored.
@@ -437,7 +440,7 @@ class Task(object):
         :param args: Original arguments for the task that failed.
         :param kwargs: Original keyword arguments for the task that failed.
 
-        :keyword einfo: :class:`celery.datastructures.ExceptionInfo` instance,
+        :keyword einfo: :class:`~celery.datastructures.ExceptionInfo` instance,
            containing the traceback (if any).
 
         The return value of this handler is ignored.
@@ -455,7 +458,7 @@ class Task(object):
         :param args: Original arguments for the task that failed.
         :param kwargs: Original keyword arguments for the task that failed.
 
-        :keyword einfo: :class:`celery.datastructures.ExceptionInfo` instance,
+        :keyword einfo: :class:`~celery.datastructures.ExceptionInfo` instance,
            containing the traceback.
 
         The return value of this handler is ignored.
@@ -506,8 +509,9 @@ class PeriodicTask(Task):
     .. attribute:: run_every
 
         *REQUIRED* Defines how often the task is run (its interval),
-        it can be a :class:`datetime.timedelta` object, a :class:`crontab`
-        object or an integer specifying the time in seconds.
+        it can be a :class:`~datetime.timedelta` object, a
+        :class:`~celery.task.schedules.crontab` object or an integer
+        specifying the time in seconds.
 
     .. attribute:: relative
 
@@ -578,7 +582,7 @@ class PeriodicTask(Task):
         super(PeriodicTask, self).__init__()
 
     def timedelta_seconds(self, delta):
-        """Convert :class:`datetime.timedelta` to seconds.
+        """Convert :class:`~datetime.timedelta` to seconds.
 
         Doesn't account for negative timedeltas.
 

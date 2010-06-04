@@ -6,3 +6,4 @@
 
 .. automodule:: celery.worker.heartbeat
     :members:
+    :undoc-members:

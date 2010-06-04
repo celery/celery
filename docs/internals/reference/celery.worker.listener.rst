@@ -6,3 +6,4 @@
 
 .. automodule:: celery.worker.listener
     :members:
+    :undoc-members:
