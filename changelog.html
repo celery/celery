@@ -795,6 +795,9 @@ allow the result field to be <tt class="docutils literal"><span class="pre">NULL
 <p>MySQL:</p>
 <div class="highlight-python"><pre>ALTER TABLE celery_taskmeta MODIFY result TEXT NULL</pre>
 </div>
+<p>PostgreSQL:</p>
+<div class="highlight-python"><pre>ALTER TABLE celery_taskmeta ALTER COLUMN result DROP NOT NULL</pre>
+</div>
 </blockquote>
 </li>
 <li><p class="first">Removed <tt class="docutils literal"><span class="pre">Task.rate_limit_queue_type</span></tt>, as it was not really useful

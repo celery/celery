@@ -103,17 +103,18 @@ again if the connection is lost. For each iteration (at start, or if the
 connection is lost) it calls <a class="reference internal" href="#celery.worker.listener.CarrotListener.reset_connection" title="celery.worker.listener.CarrotListener.reset_connection"><tt class="xref py py-meth docutils literal"><span class="pre">reset_connection()</span></tt></a>,
 and starts the consumer by calling <a class="reference internal" href="#celery.worker.listener.CarrotListener.consume_messages" title="celery.worker.listener.CarrotListener.consume_messages"><tt class="xref py py-meth docutils literal"><span class="pre">consume_messages()</span></tt></a>.</p>
 </li>
-<li><p class="first"><tt class="xref py py-meth docutils literal"><span class="pre">reset_connection`()</span></tt>, clears the internal queues,
-establishes a new connection to the broker, sets up the task queues (+ QoS),
-the broadcast remote control command consumer, the event dispatcher and the
-heartbeat.</p>
+<li><p class="first"><a class="reference internal" href="#celery.worker.listener.CarrotListener.reset_connection" title="celery.worker.listener.CarrotListener.reset_connection"><tt class="xref py py-meth docutils literal"><span class="pre">reset_connection()</span></tt></a>, clears the internal queues,
+establishes a new connection to the broker, sets up the task
+consumer (+ QoS), and the broadcast remote control command consumer.</p>
+<p>Also if events are enabled it configures the event dispatcher and starts
+up the hartbeat thread.</p>
 </li>
 <li><p class="first">Finally it can consume messages. <a class="reference internal" href="#celery.worker.listener.CarrotListener.consume_messages" title="celery.worker.listener.CarrotListener.consume_messages"><tt class="xref py py-meth docutils literal"><span class="pre">consume_messages()</span></tt></a>
 is simply an infinite loop waiting for events on the AMQP channels.</p>
 <p>Both the task consumer and the broadcast consumer uses the same
 callback: <a class="reference internal" href="#celery.worker.listener.CarrotListener.receive_message" title="celery.worker.listener.CarrotListener.receive_message"><tt class="xref py py-meth docutils literal"><span class="pre">receive_message()</span></tt></a>.
-The reason for this is that not all carrot backends supports receiving
-on different channels, so we use a little nasty trick
+The reason is that some carrot backends doesn&#8217;t support consuming
+from several channels simultaneously, so we use a little nasty trick
 (<tt class="xref py py-meth docutils literal"><span class="pre">_detect_wait_method()</span></tt>) to select the best
 possible channel distribution depending on the functionality supported
 by the carrot backend.</p>
@@ -126,20 +127,20 @@ converts it to a <a class="reference internal" href="celery.worker.job.html#cele
 it to <a class="reference internal" href="#celery.worker.listener.CarrotListener.on_task" title="celery.worker.listener.CarrotListener.on_task"><tt class="xref py py-meth docutils literal"><span class="pre">on_task()</span></tt></a>.</p>
 <p>If the message is a control command the message is passed to
 <a class="reference internal" href="#celery.worker.listener.CarrotListener.on_control" title="celery.worker.listener.CarrotListener.on_control"><tt class="xref py py-meth docutils literal"><span class="pre">on_control()</span></tt></a>, which in turn dispatches
-the control command using the <tt class="xref py py-attr docutils literal"><span class="pre">control_dispatcher</span></tt>.</p>
-<p>It also tried to handle malformed or invalid messages properly,
+the control command using the control dispatcher.</p>
+<p>It also tries to handle malformed or invalid messages properly,
 so the worker doesn&#8217;t choke on them and die. Any invalid messages
 are acknowledged immediately and logged, so the message is not resent
-again and again.</p>
+again, and again.</p>
 </li>
 <li><p class="first">If the task has an ETA/countdown, the task is moved to the <tt class="docutils literal"><span class="pre">eta_schedule</span></tt>
-so the <a class="reference internal" href="celery.worker.scheduler.html#celery.worker.scheduler.Scheduler" title="celery.worker.scheduler.Scheduler"><tt class="xref py py-class docutils literal"><span class="pre">celery.worker.scheduler.Scheduler</span></tt></a> can schedule it at its
-deadline. Tasks without eta are moved immediately to the <tt class="docutils literal"><span class="pre">ready_queue</span></tt>,
-so it can be picked up by the <a class="reference internal" href="celery.worker.controllers.html#celery.worker.controllers.Mediator" title="celery.worker.controllers.Mediator"><tt class="xref py py-class docutils literal"><span class="pre">celery.worker.controllers.Mediator</span></tt></a>
-and sent to the pool.</p>
+so the <a class="reference internal" href="celery.worker.scheduler.html#celery.worker.scheduler.Scheduler" title="celery.worker.scheduler.Scheduler"><tt class="xref py py-class docutils literal"><span class="pre">Scheduler</span></tt></a> can schedule it at its
+deadline. Tasks without an eta are moved immediately to the <tt class="docutils literal"><span class="pre">ready_queue</span></tt>,
+so they can be picked up by the <a class="reference internal" href="celery.worker.controllers.html#celery.worker.controllers.Mediator" title="celery.worker.controllers.Mediator"><tt class="xref py py-class docutils literal"><span class="pre">Mediator</span></tt></a>
+to be sent to the pool.</p>
 </li>
 <li><p class="first">When a task with an ETA is received the QoS prefetch count is also
-incremented so we can reserve another message. When the ETA is met
+incremented, so another message can be reserved. When the ETA is met
 the prefetch count is decremented again, though this cannot happen
 immediately because amqplib doesn&#8217;t support doing broker requests
 across threads. Instead the current prefetch count is kept as a
@@ -161,7 +162,7 @@ early, <em>then</em> close the connection.</p>
 </ul>
 <dl class="class">
 <dt id="celery.worker.listener.CarrotListener">
-<em class="property">class </em><tt class="descclassname">celery.worker.listener.</tt><tt class="descname">CarrotListener</tt><big>(</big><em>ready_queue</em>, <em>eta_schedule</em>, <em>logger</em>, <em>init_callback=&lt;function noop at 0x1034dd398&gt;</em>, <em>send_events=False</em>, <em>hostname=None</em>, <em>initial_prefetch_count=2</em><big>)</big><a class="headerlink" href="#celery.worker.listener.CarrotListener" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.worker.listener.</tt><tt class="descname">CarrotListener</tt><big>(</big><em>ready_queue</em>, <em>eta_schedule</em>, <em>logger</em>, <em>init_callback=&lt;function noop at 0x1041672a8&gt;</em>, <em>send_events=False</em>, <em>hostname=None</em>, <em>initial_prefetch_count=2</em><big>)</big><a class="headerlink" href="#celery.worker.listener.CarrotListener" title="Permalink to this definition">¶</a></dt>
 <dd><p>Listen for messages received from the broker and
 move them the the ready queue for task processing.</p>
 <table class="docutils field-list" frame="void" rules="none">

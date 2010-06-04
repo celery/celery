@@ -542,6 +542,10 @@ Important notes
 
         ALTER TABLE celery_taskmeta MODIFY result TEXT NULL
 
+    PostgreSQL::
+
+        ALTER TABLE celery_taskmeta ALTER COLUMN result DROP NOT NULL
+
 * Removed ``Task.rate_limit_queue_type``, as it was not really useful
   and made it harder to refactor some parts.
 
