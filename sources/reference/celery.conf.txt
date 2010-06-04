@@ -235,7 +235,7 @@ Configuration - celery.conf
 .. data:: CELERYD_POOL
 
     Name of the task pool class used by the worker.
-    Default is ``"celery.worker.pool.TaskPool"``.
+    Default is ``"celery.concurrency.processes.TaskPool"``.
 
 .. data:: CELERYD_LISTENER
 

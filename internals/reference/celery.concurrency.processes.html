@@ -23,8 +23,8 @@
     <script type="text/javascript" src="../../static/doctools.js"></script>
     <link rel="top" title="Celery v1.1.1 (unstable) documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
-    <link rel="next" title="Thread Pool Support EXPERIMENTAL - celery.concurrency.threads" href="celery.concurrency.threads.html" />
-    <link rel="prev" title="Tracing Execution - celery.execute.trace" href="celery.execute.trace.html" />
+    <link rel="next" title="extended multiprocessing.pool - celery.concurrency.processes.pool" href="celery.concurrency.processes.pool.html" />
+    <link rel="prev" title="Worker Revoked Tasks - celery.worker.revoke" href="celery.worker.revoke.html" />
     <link media="only screen and (max-device-width: 480px)" href="../../static/mobile.css" type="text/css" rel="stylesheet" /> 
   </head>
   <body>
@@ -38,8 +38,8 @@
 		<li id="page_buttons">
 			<div class="headerButton"><a href="../../genindex.html" title="General Index" accesskey="I">index</a></div>
 			<div class="headerButton"><a href="../../py-modindex.html" title="Python Module Index" >modules</a></div>
-			<div class="headerButton"><a href="celery.concurrency.threads.html" title="Thread Pool Support EXPERIMENTAL - celery.concurrency.threads" accesskey="N">next</a></div>
-			<div class="headerButton"><a href="celery.execute.trace.html" title="Tracing Execution - celery.execute.trace" accesskey="P">previous</a></div>
+			<div class="headerButton"><a href="celery.concurrency.processes.pool.html" title="extended multiprocessing.pool - celery.concurrency.processes.pool" accesskey="N">next</a></div>
+			<div class="headerButton"><a href="celery.worker.revoke.html" title="Worker Revoked Tasks - celery.worker.revoke" accesskey="P">previous</a></div>
 		</li>
 	</ul>
 </div>
@@ -94,198 +94,62 @@
             
   <div class="section" id="module-celery.concurrency.processes">
 <span id="multiprocessing-pool-support-celery-concurrency-processes"></span><h1>Multiprocessing Pool Support - celery.concurrency.processes<a class="headerlink" href="#module-celery.concurrency.processes" title="Permalink to this headline">¶</a></h1>
+<p>Process Pools.</p>
 <dl class="class">
-<dt id="celery.concurrency.processes.Pool">
-<em class="property">class </em><tt class="descclassname">celery.concurrency.processes.</tt><tt class="descname">Pool</tt><big>(</big><em>processes=None</em>, <em>initializer=None</em>, <em>initargs=()</em>, <em>maxtasksperchild=None</em>, <em>timeout=None</em>, <em>soft_timeout=None</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.Pool" title="Permalink to this definition">¶</a></dt>
-<dd><p>Class which supports an async version of the <cite>apply()</cite> builtin</p>
-<dl class="class">
-<dt id="celery.concurrency.processes.Pool.AckHandler">
-<em class="property">class </em><tt class="descname">AckHandler</tt><big>(</big><em>ackqueue</em>, <em>get</em>, <em>cache</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.Pool.AckHandler" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
-<dt id="celery.concurrency.processes.Pool.AckHandler.run">
-<tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.processes.Pool.AckHandler.run" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="celery.concurrency.processes.Pool.Process">
-<em class="property">class </em><tt class="descclassname">Pool.</tt><tt class="descname">Process</tt><big>(</big><em>group=None</em>, <em>target=None</em>, <em>name=None</em>, <em>args=()</em>, <em>kwargs={}</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.Pool.Process" title="Permalink to this definition">¶</a></dt>
-<dd><p>Process objects represent activity that is run in a separate process</p>
-<p>The class is analagous to <cite>threading.Thread</cite></p>
+<dt id="celery.concurrency.processes.TaskPool">
+<em class="property">class </em><tt class="descclassname">celery.concurrency.processes.</tt><tt class="descname">TaskPool</tt><big>(</big><em>limit</em>, <em>logger=None</em>, <em>initializer=None</em>, <em>maxtasksperchild=None</em>, <em>timeout=None</em>, <em>soft_timeout=None</em>, <em>putlocks=True</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.TaskPool" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process Pool for processing tasks in parallel.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>limit</strong> &#8211; see <a class="reference internal" href="#celery.concurrency.processes.TaskPool.limit" title="celery.concurrency.processes.TaskPool.limit"><tt class="xref py py-attr docutils literal"><span class="pre">limit</span></tt></a>.</li>
+<li><strong>logger</strong> &#8211; see <a class="reference internal" href="#celery.concurrency.processes.TaskPool.logger" title="celery.concurrency.processes.TaskPool.logger"><tt class="xref py py-attr docutils literal"><span class="pre">logger</span></tt></a>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 <dl class="attribute">
-<dt id="celery.concurrency.processes.Pool.Process.authkey">
-<tt class="descname">authkey</tt><a class="headerlink" href="#celery.concurrency.processes.Pool.Process.authkey" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="celery.concurrency.processes.Pool.Process.daemon">
-<tt class="descname">daemon</tt><a class="headerlink" href="#celery.concurrency.processes.Pool.Process.daemon" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return whether process is a daemon</p>
+<dt id="celery.concurrency.processes.TaskPool.limit">
+<tt class="descname">limit</tt><a class="headerlink" href="#celery.concurrency.processes.TaskPool.limit" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of processes that can run simultaneously.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="celery.concurrency.processes.Pool.Process.exitcode">
-<tt class="descname">exitcode</tt><a class="headerlink" href="#celery.concurrency.processes.Pool.Process.exitcode" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return exit code of process or <cite>None</cite> if it has yet to stop</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.concurrency.processes.Pool.Process.ident">
-<tt class="descname">ident</tt><a class="headerlink" href="#celery.concurrency.processes.Pool.Process.ident" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return indentifier (PID) of process or <cite>None</cite> if it has yet to start</p>
+<dt id="celery.concurrency.processes.TaskPool.logger">
+<tt class="descname">logger</tt><a class="headerlink" href="#celery.concurrency.processes.TaskPool.logger" title="Permalink to this definition">¶</a></dt>
+<dd><p>The logger used for debugging.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="celery.concurrency.processes.Pool.Process.is_alive">
-<tt class="descname">is_alive</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.processes.Pool.Process.is_alive" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return whether process is alive</p>
+<dt id="celery.concurrency.processes.TaskPool.apply_async">
+<tt class="descname">apply_async</tt><big>(</big><em>target</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>callbacks=None</em>, <em>errbacks=None</em>, <em>accept_callback=None</em>, <em>timeout_callback=None</em>, <em>**compat</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.TaskPool.apply_async" title="Permalink to this definition">¶</a></dt>
+<dd><p>Equivalent of the :func:<tt class="docutils literal"><span class="pre">apply</span></tt> built-in function.</p>
+<p>All <tt class="docutils literal"><span class="pre">callbacks</span></tt> and <tt class="docutils literal"><span class="pre">errbacks</span></tt> should complete immediately since
+otherwise the thread which handles the result will get blocked.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="celery.concurrency.processes.Pool.Process.join">
-<tt class="descname">join</tt><big>(</big><em>timeout=None</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.Pool.Process.join" title="Permalink to this definition">¶</a></dt>
-<dd><p>Wait until child process terminates</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.concurrency.processes.Pool.Process.name">
-<tt class="descname">name</tt><a class="headerlink" href="#celery.concurrency.processes.Pool.Process.name" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="celery.concurrency.processes.Pool.Process.pid">
-<tt class="descname">pid</tt><a class="headerlink" href="#celery.concurrency.processes.Pool.Process.pid" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return indentifier (PID) of process or <cite>None</cite> if it has yet to start</p>
+<dt id="celery.concurrency.processes.TaskPool.on_ready">
+<tt class="descname">on_ready</tt><big>(</big><em>callbacks</em>, <em>errbacks</em>, <em>ret_value</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.TaskPool.on_ready" title="Permalink to this definition">¶</a></dt>
+<dd><p>What to do when a worker task is ready and its return value has
+been collected.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="celery.concurrency.processes.Pool.Process.run">
-<tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.processes.Pool.Process.run" title="Permalink to this definition">¶</a></dt>
-<dd><p>Method to be run in sub-process; can be overridden in sub-class</p>
+<dt id="celery.concurrency.processes.TaskPool.start">
+<tt class="descname">start</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.processes.TaskPool.start" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run the task pool.</p>
+<p>Will pre-fork all workers so they&#8217;re ready to accept tasks.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="celery.concurrency.processes.Pool.Process.start">
-<tt class="descname">start</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.processes.Pool.Process.start" title="Permalink to this definition">¶</a></dt>
-<dd><p>Start child process</p>
+<dt id="celery.concurrency.processes.TaskPool.stop">
+<tt class="descname">stop</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.processes.TaskPool.stop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Terminate the pool.</p>
 </dd></dl>
-
-<dl class="method">
-<dt id="celery.concurrency.processes.Pool.Process.terminate">
-<tt class="descname">terminate</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.processes.Pool.Process.terminate" title="Permalink to this definition">¶</a></dt>
-<dd><p>Terminate process; sends SIGTERM signal or uses TerminateProcess()</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="celery.concurrency.processes.Pool.ResultHandler">
-<em class="property">class </em><tt class="descclassname">Pool.</tt><tt class="descname">ResultHandler</tt><big>(</big><em>outqueue</em>, <em>get</em>, <em>cache</em>, <em>putlock</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.Pool.ResultHandler" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
-<dt id="celery.concurrency.processes.Pool.ResultHandler.run">
-<tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.processes.Pool.ResultHandler.run" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="exception">
-<dt id="celery.concurrency.processes.Pool.SoftTimeLimitExceeded">
-<em class="property">exception </em><tt class="descclassname">Pool.</tt><tt class="descname">SoftTimeLimitExceeded</tt><a class="headerlink" href="#celery.concurrency.processes.Pool.SoftTimeLimitExceeded" title="Permalink to this definition">¶</a></dt>
-<dd><p>The soft time limit has been exceeded. This exception is raised
-to give the job a chance to clean up.</p>
-</dd></dl>
-
-<dl class="class">
-<dt id="celery.concurrency.processes.Pool.Supervisor">
-<em class="property">class </em><tt class="descclassname">Pool.</tt><tt class="descname">Supervisor</tt><big>(</big><em>pool</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.Pool.Supervisor" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
-<dt id="celery.concurrency.processes.Pool.Supervisor.run">
-<tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.processes.Pool.Supervisor.run" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="celery.concurrency.processes.Pool.TaskHandler">
-<em class="property">class </em><tt class="descclassname">Pool.</tt><tt class="descname">TaskHandler</tt><big>(</big><em>taskqueue</em>, <em>put</em>, <em>outqueue</em>, <em>pool</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.Pool.TaskHandler" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
-<dt id="celery.concurrency.processes.Pool.TaskHandler.run">
-<tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.processes.Pool.TaskHandler.run" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="celery.concurrency.processes.Pool.TimeoutHandler">
-<em class="property">class </em><tt class="descclassname">Pool.</tt><tt class="descname">TimeoutHandler</tt><big>(</big><em>processes</em>, <em>sentinel_event</em>, <em>cache</em>, <em>t_soft</em>, <em>t_hard</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.Pool.TimeoutHandler" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
-<dt id="celery.concurrency.processes.Pool.TimeoutHandler.run">
-<tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.processes.Pool.TimeoutHandler.run" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.concurrency.processes.Pool.apply">
-<tt class="descclassname">Pool.</tt><tt class="descname">apply</tt><big>(</big><em>func</em>, <em>args=()</em>, <em>kwds={}</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.Pool.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Equivalent of <cite>apply()</cite> builtin</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.concurrency.processes.Pool.apply_async">
-<tt class="descclassname">Pool.</tt><tt class="descname">apply_async</tt><big>(</big><em>func</em>, <em>args=()</em>, <em>kwds={}</em>, <em>callback=None</em>, <em>accept_callback=None</em>, <em>timeout_callback=None</em>, <em>waitforslot=False</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.Pool.apply_async" title="Permalink to this definition">¶</a></dt>
-<dd><p>Asynchronous equivalent of <cite>apply()</cite> builtin.</p>
-<p>Callback is called when the functions return value is ready.
-The accept callback is called when the job is accepted to be executed.</p>
-<p>Simplified the flow is like this:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">if</span> <span class="n">accept_callback</span><span class="p">:</span>
-<span class="gp">... </span>    <span class="n">accept_callback</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">retval</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">if</span> <span class="n">callback</span><span class="p">:</span>
-<span class="gp">... </span>    <span class="n">callback</span><span class="p">(</span><span class="n">retval</span><span class="p">)</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.concurrency.processes.Pool.close">
-<tt class="descclassname">Pool.</tt><tt class="descname">close</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.processes.Pool.close" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.concurrency.processes.Pool.imap">
-<tt class="descclassname">Pool.</tt><tt class="descname">imap</tt><big>(</big><em>func</em>, <em>iterable</em>, <em>chunksize=1</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.Pool.imap" title="Permalink to this definition">¶</a></dt>
-<dd><p>Equivalent of <cite>itertools.imap()</cite> &#8211; can be MUCH slower than <cite>Pool.map()</cite></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.concurrency.processes.Pool.imap_unordered">
-<tt class="descclassname">Pool.</tt><tt class="descname">imap_unordered</tt><big>(</big><em>func</em>, <em>iterable</em>, <em>chunksize=1</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.Pool.imap_unordered" title="Permalink to this definition">¶</a></dt>
-<dd><p>Like <cite>imap()</cite> method but ordering of results is arbitrary</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.concurrency.processes.Pool.join">
-<tt class="descclassname">Pool.</tt><tt class="descname">join</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.processes.Pool.join" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.concurrency.processes.Pool.map">
-<tt class="descclassname">Pool.</tt><tt class="descname">map</tt><big>(</big><em>func</em>, <em>iterable</em>, <em>chunksize=None</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.Pool.map" title="Permalink to this definition">¶</a></dt>
-<dd><p>Equivalent of <cite>map()</cite> builtin</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.concurrency.processes.Pool.map_async">
-<tt class="descclassname">Pool.</tt><tt class="descname">map_async</tt><big>(</big><em>func</em>, <em>iterable</em>, <em>chunksize=None</em>, <em>callback=None</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.Pool.map_async" title="Permalink to this definition">¶</a></dt>
-<dd><p>Asynchronous equivalent of <cite>map()</cite> builtin</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.concurrency.processes.Pool.terminate">
-<tt class="descclassname">Pool.</tt><tt class="descname">terminate</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.processes.Pool.terminate" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 </dd></dl>
 

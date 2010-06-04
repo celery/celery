@@ -126,7 +126,7 @@ with two data structures: the ready queue and the ETA schedule.</p>
 <h3>CarrotListener<a class="headerlink" href="#carrotlistener" title="Permalink to this headline">¶</a></h3>
 <p>Receives messages from the broker using <tt class="docutils literal"><span class="pre">carrot</span></tt>.</p>
 <p>When a message is received it&#8217;s converted into a
-<a class="reference internal" href="reference/celery.worker.job.html#celery.worker.job.TaskWrapper" title="celery.worker.job.TaskWrapper"><tt class="xref py py-class docutils literal"><span class="pre">celery.worker.job.TaskWrapper</span></tt></a> object.</p>
+<a class="reference internal" href="reference/celery.worker.job.html#celery.worker.job.TaskRequest" title="celery.worker.job.TaskRequest"><tt class="xref py py-class docutils literal"><span class="pre">celery.worker.job.TaskRequest</span></tt></a> object.</p>
 <p>Tasks with an ETA are entered into the <tt class="docutils literal"><span class="pre">eta_schedule</span></tt>, messages that can
 be immediately processed are moved directly to the <tt class="docutils literal"><span class="pre">ready_queue</span></tt>.</p>
 </div>
@@ -141,7 +141,7 @@ is sorted by time).</p>
 <h3>Mediator<a class="headerlink" href="#mediator" title="Permalink to this headline">¶</a></h3>
 <p>The mediator simply moves tasks in the <tt class="docutils literal"><span class="pre">ready_queue</span></tt> over to the
 task pool for execution using
-<a class="reference internal" href="reference/celery.worker.job.html#celery.worker.job.TaskWrapper.execute_using_pool" title="celery.worker.job.TaskWrapper.execute_using_pool"><tt class="xref py py-meth docutils literal"><span class="pre">celery.worker.job.TaskWrapper.execute_using_pool()</span></tt></a>.</p>
+<a class="reference internal" href="reference/celery.worker.job.html#celery.worker.job.TaskRequest.execute_using_pool" title="celery.worker.job.TaskRequest.execute_using_pool"><tt class="xref py py-meth docutils literal"><span class="pre">celery.worker.job.TaskRequest.execute_using_pool()</span></tt></a>.</p>
 </div>
 <div class="section" id="taskpool">
 <h3>TaskPool<a class="headerlink" href="#taskpool" title="Permalink to this headline">¶</a></h3>

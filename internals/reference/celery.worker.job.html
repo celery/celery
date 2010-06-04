@@ -109,62 +109,87 @@ world-wide state.</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="celery.worker.job.TaskWrapper">
-<em class="property">class </em><tt class="descclassname">celery.worker.job.</tt><tt class="descname">TaskWrapper</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>args</em>, <em>kwargs</em>, <em>on_ack=&lt;function noop at 0x10328bb90&gt;</em>, <em>retries=0</em>, <em>delivery_info=None</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskWrapper" title="Permalink to this definition">¶</a></dt>
-<dd><p>Class wrapping a task to be passed around and finally
-executed inside of the worker.</p>
+<dt id="celery.worker.job.TaskRequest">
+<em class="property">class </em><tt class="descclassname">celery.worker.job.</tt><tt class="descname">TaskRequest</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>args</em>, <em>kwargs</em>, <em>on_ack=&lt;function noop at 0x101238b90&gt;</em>, <em>retries=0</em>, <em>delivery_info=None</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest" title="Permalink to this definition">¶</a></dt>
+<dd><p>A request for task execution.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>task_name</strong> &#8211; see <a class="reference internal" href="#celery.worker.job.TaskWrapper.task_name" title="celery.worker.job.TaskWrapper.task_name"><tt class="xref py py-attr docutils literal"><span class="pre">task_name</span></tt></a>.</li>
-<li><strong>task_id</strong> &#8211; see <a class="reference internal" href="#celery.worker.job.TaskWrapper.task_id" title="celery.worker.job.TaskWrapper.task_id"><tt class="xref py py-attr docutils literal"><span class="pre">task_id</span></tt></a>.</li>
-<li><strong>args</strong> &#8211; see <a class="reference internal" href="#celery.worker.job.TaskWrapper.args" title="celery.worker.job.TaskWrapper.args"><tt class="xref py py-attr docutils literal"><span class="pre">args</span></tt></a></li>
-<li><strong>kwargs</strong> &#8211; see <a class="reference internal" href="#celery.worker.job.TaskWrapper.kwargs" title="celery.worker.job.TaskWrapper.kwargs"><tt class="xref py py-attr docutils literal"><span class="pre">kwargs</span></tt></a>.</li>
+<li><strong>task_name</strong> &#8211; see <a class="reference internal" href="#celery.worker.job.TaskRequest.task_name" title="celery.worker.job.TaskRequest.task_name"><tt class="xref py py-attr docutils literal"><span class="pre">task_name</span></tt></a>.</li>
+<li><strong>task_id</strong> &#8211; see <a class="reference internal" href="#celery.worker.job.TaskRequest.task_id" title="celery.worker.job.TaskRequest.task_id"><tt class="xref py py-attr docutils literal"><span class="pre">task_id</span></tt></a>.</li>
+<li><strong>args</strong> &#8211; see <a class="reference internal" href="#celery.worker.job.TaskRequest.args" title="celery.worker.job.TaskRequest.args"><tt class="xref py py-attr docutils literal"><span class="pre">args</span></tt></a></li>
+<li><strong>kwargs</strong> &#8211; see <a class="reference internal" href="#celery.worker.job.TaskRequest.kwargs" title="celery.worker.job.TaskRequest.kwargs"><tt class="xref py py-attr docutils literal"><span class="pre">kwargs</span></tt></a>.</li>
 </ul>
 </td>
 </tr>
 </tbody>
 </table>
 <dl class="attribute">
-<dt id="celery.worker.job.TaskWrapper.task_name">
-<tt class="descname">task_name</tt><a class="headerlink" href="#celery.worker.job.TaskWrapper.task_name" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.worker.job.TaskRequest.task_name">
+<tt class="descname">task_name</tt><a class="headerlink" href="#celery.worker.job.TaskRequest.task_name" title="Permalink to this definition">¶</a></dt>
 <dd><p>Kind of task. Must be a name registered in the task registry.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="celery.worker.job.TaskWrapper.task_id">
-<tt class="descname">task_id</tt><a class="headerlink" href="#celery.worker.job.TaskWrapper.task_id" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.worker.job.TaskRequest.task_id">
+<tt class="descname">task_id</tt><a class="headerlink" href="#celery.worker.job.TaskRequest.task_id" title="Permalink to this definition">¶</a></dt>
 <dd><p>UUID of the task.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="celery.worker.job.TaskWrapper.args">
-<tt class="descname">args</tt><a class="headerlink" href="#celery.worker.job.TaskWrapper.args" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.worker.job.TaskRequest.args">
+<tt class="descname">args</tt><a class="headerlink" href="#celery.worker.job.TaskRequest.args" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of positional arguments to apply to the task.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="celery.worker.job.TaskWrapper.kwargs">
-<tt class="descname">kwargs</tt><a class="headerlink" href="#celery.worker.job.TaskWrapper.kwargs" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.worker.job.TaskRequest.kwargs">
+<tt class="descname">kwargs</tt><a class="headerlink" href="#celery.worker.job.TaskRequest.kwargs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Mapping of keyword arguments to apply to the task.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="celery.worker.job.TaskWrapper.message">
-<tt class="descname">message</tt><a class="headerlink" href="#celery.worker.job.TaskWrapper.message" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.worker.job.TaskRequest.on_ack">
+<tt class="descname">on_ack</tt><a class="headerlink" href="#celery.worker.job.TaskRequest.on_ack" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback called when the task should be acknowledged.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.worker.job.TaskRequest.message">
+<tt class="descname">message</tt><a class="headerlink" href="#celery.worker.job.TaskRequest.message" title="Permalink to this definition">¶</a></dt>
 <dd><p>The original message sent. Used for acknowledging the message.</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="celery.worker.job.TaskRequest.executed">
+<tt class="descname">executed</tt><a class="headerlink" href="#celery.worker.job.TaskRequest.executed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set to <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task has been executed.
+A task should only be executed once.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.worker.job.TaskRequest.delivery_info">
+<tt class="descname">delivery_info</tt><a class="headerlink" href="#celery.worker.job.TaskRequest.delivery_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Additional delivery info, e.g. the contains the path
+from producer to consumer.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.worker.job.TaskRequest.acknowledged">
+<tt class="descname">acknowledged</tt><a class="headerlink" href="#celery.worker.job.TaskRequest.acknowledged" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set to <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task has been acknowledged.</p>
+</dd></dl>
+
 <dl class="method">
-<dt id="celery.worker.job.TaskWrapper.acknowledge">
-<tt class="descname">acknowledge</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.job.TaskWrapper.acknowledge" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.worker.job.TaskRequest.acknowledge">
+<tt class="descname">acknowledge</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest.acknowledge" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="celery.worker.job.TaskWrapper.execute">
-<tt class="descname">execute</tt><big>(</big><em>loglevel=None</em>, <em>logfile=None</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskWrapper.execute" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.worker.job.TaskRequest.execute">
+<tt class="descname">execute</tt><big>(</big><em>loglevel=None</em>, <em>logfile=None</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest.execute" title="Permalink to this definition">¶</a></dt>
 <dd><p>Execute the task in a <a class="reference internal" href="#celery.worker.job.WorkerTaskTrace" title="celery.worker.job.WorkerTaskTrace"><tt class="xref py py-class docutils literal"><span class="pre">WorkerTaskTrace</span></tt></a>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -181,9 +206,9 @@ executed inside of the worker.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="celery.worker.job.TaskWrapper.execute_using_pool">
-<tt class="descname">execute_using_pool</tt><big>(</big><em>pool</em>, <em>loglevel=None</em>, <em>logfile=None</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskWrapper.execute_using_pool" title="Permalink to this definition">¶</a></dt>
-<dd><p>Like <a class="reference internal" href="#celery.worker.job.TaskWrapper.execute" title="celery.worker.job.TaskWrapper.execute"><tt class="xref py py-meth docutils literal"><span class="pre">execute()</span></tt></a>, but using the <tt class="xref py py-mod docutils literal"><span class="pre">multiprocessing</span></tt> pool.</p>
+<dt id="celery.worker.job.TaskRequest.execute_using_pool">
+<tt class="descname">execute_using_pool</tt><big>(</big><em>pool</em>, <em>loglevel=None</em>, <em>logfile=None</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest.execute_using_pool" title="Permalink to this definition">¶</a></dt>
+<dd><p>Like <a class="reference internal" href="#celery.worker.job.TaskRequest.execute" title="celery.worker.job.TaskRequest.execute"><tt class="xref py py-meth docutils literal"><span class="pre">execute()</span></tt></a>, but using the <tt class="xref py py-mod docutils literal"><span class="pre">multiprocessing</span></tt> pool.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -201,8 +226,8 @@ executed inside of the worker.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="celery.worker.job.TaskWrapper.extend_with_default_kwargs">
-<tt class="descname">extend_with_default_kwargs</tt><big>(</big><em>loglevel</em>, <em>logfile</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskWrapper.extend_with_default_kwargs" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.worker.job.TaskRequest.extend_with_default_kwargs">
+<tt class="descname">extend_with_default_kwargs</tt><big>(</big><em>loglevel</em>, <em>logfile</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest.extend_with_default_kwargs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Extend the tasks keyword arguments with standard task arguments.</p>
 <p>Currently these are <tt class="docutils literal"><span class="pre">logfile</span></tt>, <tt class="docutils literal"><span class="pre">loglevel</span></tt>, <tt class="docutils literal"><span class="pre">task_id</span></tt>,
 <tt class="docutils literal"><span class="pre">task_name</span></tt>, <tt class="docutils literal"><span class="pre">task_retries</span></tt>, and <tt class="docutils literal"><span class="pre">delivery_info</span></tt>.</p>
@@ -210,9 +235,9 @@ executed inside of the worker.</p>
 </dd></dl>
 
 <dl class="classmethod">
-<dt id="celery.worker.job.TaskWrapper.from_message">
-<em class="property">classmethod </em><tt class="descname">from_message</tt><big>(</big><em>message</em>, <em>message_data</em>, <em>logger=None</em>, <em>eventer=None</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskWrapper.from_message" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a <a class="reference internal" href="#celery.worker.job.TaskWrapper" title="celery.worker.job.TaskWrapper"><tt class="xref py py-class docutils literal"><span class="pre">TaskWrapper</span></tt></a> from a task message sent by
+<dt id="celery.worker.job.TaskRequest.from_message">
+<em class="property">classmethod </em><tt class="descname">from_message</tt><big>(</big><em>message</em>, <em>message_data</em>, <em>logger=None</em>, <em>eventer=None</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest.from_message" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a <a class="reference internal" href="#celery.worker.job.TaskRequest" title="celery.worker.job.TaskRequest"><tt class="xref py py-class docutils literal"><span class="pre">TaskRequest</span></tt></a> from a task message sent by
 <a class="reference internal" href="../../reference/celery.messaging.html#celery.messaging.TaskPublisher" title="celery.messaging.TaskPublisher"><tt class="xref py py-class docutils literal"><span class="pre">celery.messaging.TaskPublisher</span></tt></a>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -222,43 +247,43 @@ executed inside of the worker.</p>
 <tr><td>&nbsp;</td><td class="field-body">if the message does not describe a task,
 the message is also rejected.</td>
 </tr>
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body">&lt;pending_xref py:class=&#8221;TaskWrapper&#8221; py:module=&#8221;celery.worker.job&#8221; refdoc=&#8221;internals/reference/celery.worker.job&#8221; refdomain=&#8221;py&#8221; refexplicit=&#8221;False&#8221; reftarget=&#8221;TaskWrapper&#8221; reftype=&#8221;class&#8221;&gt;&lt;literal classes=&#8221;xref py py-class&#8221;&gt;TaskWrapper&lt;/literal&gt;&lt;/pending_xref&gt; instance.</td>
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body">&lt;pending_xref py:class=&#8221;TaskRequest&#8221; py:module=&#8221;celery.worker.job&#8221; refdoc=&#8221;internals/reference/celery.worker.job&#8221; refdomain=&#8221;py&#8221; refexplicit=&#8221;False&#8221; reftarget=&#8221;TaskRequest&#8221; reftype=&#8221;class&#8221;&gt;&lt;literal classes=&#8221;xref py py-class&#8221;&gt;TaskRequest&lt;/literal&gt;&lt;/pending_xref&gt; instance.</td>
 </tr>
 </tbody>
 </table>
 </dd></dl>
 
 <dl class="method">
-<dt id="celery.worker.job.TaskWrapper.on_accepted">
-<tt class="descname">on_accepted</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.job.TaskWrapper.on_accepted" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.worker.job.TaskRequest.on_accepted">
+<tt class="descname">on_accepted</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest.on_accepted" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="celery.worker.job.TaskWrapper.on_failure">
-<tt class="descname">on_failure</tt><big>(</big><em>exc_info</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskWrapper.on_failure" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.worker.job.TaskRequest.on_failure">
+<tt class="descname">on_failure</tt><big>(</big><em>exc_info</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest.on_failure" title="Permalink to this definition">¶</a></dt>
 <dd><p>The handler used if the task raised an exception.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="celery.worker.job.TaskWrapper.on_success">
-<tt class="descname">on_success</tt><big>(</big><em>ret_value</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskWrapper.on_success" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.worker.job.TaskRequest.on_success">
+<tt class="descname">on_success</tt><big>(</big><em>ret_value</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest.on_success" title="Permalink to this definition">¶</a></dt>
 <dd><p>The handler used if the task was successfully processed (
 without raising an exception).</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="celery.worker.job.TaskWrapper.on_timeout">
-<tt class="descname">on_timeout</tt><big>(</big><em>soft</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskWrapper.on_timeout" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.worker.job.TaskRequest.on_timeout">
+<tt class="descname">on_timeout</tt><big>(</big><em>soft</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest.on_timeout" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="celery.worker.job.TaskWrapper.revoked">
-<tt class="descname">revoked</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.job.TaskWrapper.revoked" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.worker.job.TaskRequest.revoked">
+<tt class="descname">revoked</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest.revoked" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="celery.worker.job.TaskWrapper.send_event">
-<tt class="descname">send_event</tt><big>(</big><em>type</em>, <em>**fields</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskWrapper.send_event" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.worker.job.TaskRequest.send_event">
+<tt class="descname">send_event</tt><big>(</big><em>type</em>, <em>**fields</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest.send_event" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
