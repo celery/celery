@@ -485,7 +485,7 @@ class Task(object):
         """The method the worker calls to execute the task.
 
         :param wrapper: A :class:`celery.worker.job.TaskWrapper`.
-        :param pool: A :class:`celery.worker.pool.TaskPool` object.
+        :param pool: A task pool.
         :param loglevel: Current loglevel.
         :param logfile: Name of the currently used logfile.
 

@@ -5,6 +5,21 @@
 1.2.0 [xxxx-xx-xx xx:xx x.x xxxx]
 =================================
 
+Celery 1.2 contains backward incompatible changes, the most important
+being that the Django dependency has been removed, so Celery no longer
+supports Django out of the box, but instead as an add-on package
+called `django-celery`_.
+
+We're very sorry for breaking backwards compatibility, but there's
+also many new and exciting features to make up for the time you lose
+upgrading, so be sure to read the :ref:`News <120news>` section.
+
+Quite a lot of potential users have been upset about the Django dependency,
+so maybe this is a chance to get wider adoption by the Python community as
+well.
+
+Big thanks to all contributors, testers and users!
+
 Upgrading for Django-users
 --------------------------
 
@@ -141,6 +156,8 @@ Backward incompatible changes
 
         CELERY_LOADER = "myapp.loaders.Loader"
 
+.. _120news:
+
 News
 ----
 
@@ -177,7 +194,7 @@ News
     =====================================  =====================================
     **Module name**                        **celery equivalent**
     =====================================  =====================================
-    ``billiard.pool``                      ``celery.concurrency.processes``
+    ``billiard.pool``                      ``celery.concurrency.processes.pool``
     ``billiard.serialization``             ``celery.serialization``
     ``billiard.utils.functional``          ``celery.utils.functional``
     =====================================  =====================================
@@ -188,16 +205,16 @@ News
 
 * now depends on :mod:`pyparsing`
 
-* Added support for using complex crontab-expressions in periodic tasks.  For
+* Added support for using complex crontab-expressions in periodic tasks. For
   example, you can now use::
-  
-    crontab(minute="*/15")
+
+    >>> crontab(minute="*/15")
 
   or even::
 
-    crontab(minute="*/30", hour="8-17,1-2", day_of_week="thu-fri")
+    >>> crontab(minute="*/30", hour="8-17,1-2", day_of_week="thu-fri")
 
-  See also http://ask.github.com/celery/getting-started/periodic-tasks.html
+  See :doc:`getting-started/periodic-tasks`.
 
 * celeryd: Now waits for available pool processes before applying new
   tasks to the pool.
@@ -437,7 +454,7 @@ News
         celeryd-multi -n baz.myhost -c 10
         celeryd-multi -n xuzzy.myhost -c 3
 
-1.0.4 [2010-05-31 09:54 A.M CEST]
+1.0.5 [2010-06-01 02:36 P.M CEST]
 =================================
 
 Critical
@@ -454,6 +471,12 @@ Critical
 
 * Now depends on :mod:`billiard` >= 0.3.1
 
+* celeryd: Previously exceptions raised by worker components could stall startup,
+  now it correctly logs the exceptions and shuts down.
+
+* celeryd: Prefetch counts was set too late. QoS is now set as early as possible,
+  so celeryd can't slurp in all the messages at start-up.
+
 Changes
 -------
 
@@ -461,6 +484,9 @@ Changes
 
     Tasks that defines steps of execution, the task can then
     be aborted after each step has completed.
+
+* :class:`~celery.events.EventDispatcher`: No longer creates AMQP channel
+  if events are disabled
 
 * Added required RPM package names under ``[bdist_rpm]`` section, to support building RPMs
   from the sources using setup.py
@@ -480,6 +506,11 @@ Changes
 
     * Should I use retry or acks_late?
     * Can I execute a task by name?
+
+1.0.4 [2010-05-31 09:54 A.M CEST]
+=================================
+
+* Changlog merged with 1.0.5 as the release was never announced.
 
 1.0.3 [2010-05-15 03:00 P.M CEST]
 =================================
@@ -767,7 +798,7 @@ Fixes
 
     .. code-block:: python
 
-        CELERYD_POOL = "celery.worker.pool.TaskPool"
+        CELERYD_POOL = "celery.concurrency.processes.TaskPool"
         CELERYD_MEDIATOR = "celery.worker.controllers.Mediator"
         CELERYD_ETA_SCHEDULER = "celery.worker.controllers.ScheduleController"
         CELERYD_LISTENER = "celery.worker.listener.CarrotListener"

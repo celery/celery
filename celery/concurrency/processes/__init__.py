@@ -5,9 +5,10 @@ Process Pools.
 """
 
 from celery import log
-from celery.concurrency.processes import Pool, RUN
 from celery.datastructures import ExceptionInfo
 from celery.utils.functional import curry
+
+from celery.concurrency.processes.pool import Pool, RUN
 
 
 class TaskPool(object):

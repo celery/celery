@@ -588,7 +588,7 @@ Custom Component Classes (advanced)
 * CELERYD_POOL
 
     Name of the task pool class used by the worker.
-    Default is ``"celery.worker.pool.TaskPool"``.
+    Default is ``"celery.concurrency.processes.TaskPool"``.
 
 * CELERYD_LISTENER
 

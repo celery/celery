@@ -1,10 +1,11 @@
-import unittest2 as unittest
+import sys
+import time
 import logging
 import itertools
-import time
-from celery.worker.pool import TaskPool
+import unittest2 as unittest
+
+from celery.concurrency.processes import TaskPool
 from celery.datastructures import ExceptionInfo
-import sys
 
 
 def do_something(i):

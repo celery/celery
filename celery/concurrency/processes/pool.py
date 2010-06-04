@@ -24,6 +24,8 @@ import signal
 from multiprocessing import Process, cpu_count, TimeoutError
 from multiprocessing.util import Finalize, debug
 
+from celery.exceptions import SoftTimeLimitExceeded, TimeLimitExceeded
+
 #
 # Constants representing the state of a pool
 #
@@ -47,13 +49,6 @@ def mapstar(args):
 #
 # Code run by worker processes
 #
-
-class TimeLimitExceeded(Exception):
-    """The time limit has been exceeded and the job has been terminated."""
-
-class SoftTimeLimitExceeded(Exception):
-    """The soft time limit has been exceeded. This exception is raised
-    to give the job a chance to clean up."""
 
 def soft_timeout_sighandler(signum, frame):
     raise SoftTimeLimitExceeded()

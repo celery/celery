@@ -207,23 +207,23 @@ def get_cls_by_name(name, aliases={}):
 
     Example::
 
-        celery.worker.pool.TaskPool
-                           ^- class name
+        celery.concurrency.processes.TaskPool
+                                    ^- class name
 
     If ``aliases`` is provided, a dict containing short name/long name
     mappings, the name is looked up in the aliases first.
 
     Examples:
 
-        >>> get_cls_by_name("celery.worker.pool.TaskPool")
-        <class 'celery.worker.pool.TaskPool'>
+        >>> get_cls_by_name("celery.concurrency.processes.TaskPool")
+        <class 'celery.concurrency.processes.TaskPool'>
 
         >>> get_cls_by_name("default", {
-        ...     "default": "celery.worker.pool.TaskPool"})
-        <class 'celery.worker.pool.TaskPool'>
+        ...     "default": "celery.concurrency.processes.TaskPool"})
+        <class 'celery.concurrency.processes.TaskPool'>
 
         # Does not try to look up non-string names.
-        >>> from celery.worker.pool import TaskPool
+        >>> from celery.concurrency.processes import TaskPool
         >>> get_cls_by_name(TaskPool) is TaskPool
         True
 
