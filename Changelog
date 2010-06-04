@@ -205,6 +205,17 @@ News
 
 * now depends on :mod:`pyparsing`
 
+* Added support for using complex crontab-expressions in periodic tasks.  For
+  example, you can now use::
+  
+    crontab(minute="*/15")
+
+  or even::
+
+    crontab(minute="*/30", hour="8-17,1-2", day_of_week="thu-fri")
+
+  See also http://ask.github.com/celery/getting-started/periodic-tasks.html
+
 * celeryd: Now waits for available pool processes before applying new
   tasks to the pool.
 
