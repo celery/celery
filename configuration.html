@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>Configuration and defaults &mdash; Celery v1.1.1 (unstable) documentation</title>
-    <link rel="stylesheet" href="static/adctheme.css" type="text/css" />
+    <link rel="stylesheet" href="static/classy.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
@@ -23,84 +23,27 @@
     <script type="text/javascript" src="static/doctools.js"></script>
     <link rel="top" title="Celery v1.1.1 (unstable) documentation" href="index.html" />
     <link rel="next" title="Cookbook" href="cookbook/index.html" />
-    <link rel="prev" title="Routing Tasks" href="userguide/routing.html" />
-    <link media="only screen and (max-device-width: 480px)" href="static/mobile.css" type="text/css" rel="stylesheet" /> 
+    <link rel="prev" title="Routing Tasks" href="userguide/routing.html" /> 
   </head>
   <body>
-<div id="docstitle">
-	<p>Celery v1.1.1 (unstable) documentation</p>
-</div>
-<div id="header">
-	<div id="title"><h1>Configuration and defaults</h1></div>
-	<ul id="headerButtons">
-		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
-		<li id="page_buttons">
-			<div class="headerButton"><a href="genindex.html" title="General Index" accesskey="I">index</a></div>
-			<div class="headerButton"><a href="py-modindex.html" title="Python Module Index" >modules</a></div>
-			<div class="headerButton"><a href="cookbook/index.html" title="Cookbook" accesskey="N">next</a></div>
-			<div class="headerButton"><a href="userguide/routing.html" title="Routing Tasks" accesskey="P">previous</a></div>
-		</li>
-	</ul>
-</div>
-
-<div id="sphinxsidebar">
-  <div class="sphinxsidebarwrapper">
-	<ul><li class="toctree-l1"><a href="index.html">Main Page</a></li></ul>
-	<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="getting-started/index.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference internal" href="userguide/index.html">User Guide</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="">Configuration and defaults</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#example-configuration-file">Example configuration file</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#concurrency-settings">Concurrency settings</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#task-result-backend-settings">Task result backend settings</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#database-backend-settings">Database backend settings</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#amqp-backend-settings">AMQP backend settings</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#cache-backend-settings">Cache backend settings</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#tokyo-tyrant-backend-settings">Tokyo Tyrant backend settings</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#redis-backend-settings">Redis backend settings</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#mongodb-backend-settings">MongoDB backend settings</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#messaging-settings">Messaging settings</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#task-execution-settings">Task execution settings</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#worker-celeryd">Worker: celeryd</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#periodic-task-server-celerybeat">Periodic Task Server: celerybeat</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#monitor-server-celerymon">Monitor Server: celerymon</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="cookbook/index.html">Cookbook</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/index.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="reference/index.html">API Reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="internals/index.html">Internals</a></li>
-<li class="toctree-l1"><a class="reference internal" href="changelog.html">Change history</a></li>
-<li class="toctree-l1"><a class="reference internal" href="links.html">Interesting Links</a></li>
-</ul>
-
-      <h3>This Page</h3>
-      <ul class="this-page-menu">
-        <li><a href="sources/configuration.txt"
-               rel="nofollow">Show Source</a></li>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="cookbook/index.html" title="Cookbook"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="userguide/routing.html" title="Routing Tasks"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Celery v1.1.1 (unstable) documentation</a> &raquo;</li> 
       </ul>
-    <div id="searchbox" style="display: none">
-      
-        <form class="search" action="search.html" method="get">
-			<div class="search-wrapper">
-			<span class="search-left"></span>
-			<input class="prettysearch" type="text" name="q" size="18" />
-			<span class="search-right">&nbsp;</span>
-			</div>
-          <input type="submit" value="Search" class="searchbutton" />
-          <input type="hidden" name="check_keywords" value="yes" />
-          <input type="hidden" name="area" value="default" />
-        </form>
-        <p class="searchtip" style="font-size: 90%">
-        Enter search terms or a module, class or function name.
-        </p>
     </div>
-    <script type="text/javascript">$('#searchbox').show(0);</script>
-  </div>
-</div>
-
-
 
     <div class="document">
       <div class="documentwrapper">
@@ -855,21 +798,32 @@ Can also be set via the <tt class="docutils literal"><span class="pre">--logfile
 </div>
 
 
-          </div> 
+          </div>
         </div>
       </div>
-    <div class="footer">
-    <p>
-      &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
-	</p>
-    </div>
       <div class="clearer"></div>
     </div>
-	<div id="breadcrumbs">
-		Configuration and defaults
-		</ul>
-	</div>
-	<script type="text/javascript" charset="utf-8" src="static/toc.js"></script>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="cookbook/index.html" title="Cookbook"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="userguide/routing.html" title="Routing Tasks"
+             >previous</a> |</li>
+        <li><a href="index.html">Celery v1.1.1 (unstable) documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
+    </div>
   </body>
 </html>

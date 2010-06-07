@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>Signals: Safe References - celery.utils.dispatch.saferef &mdash; Celery v1.1.1 (unstable) documentation</title>
-    <link rel="stylesheet" href="../../static/adctheme.css" type="text/css" />
+    <link rel="stylesheet" href="../../static/classy.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
@@ -24,68 +24,29 @@
     <link rel="top" title="Celery v1.1.1 (unstable) documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="Platform Specific - celery.platform" href="celery.platform.html" />
-    <link rel="prev" title="Signals: Dispatcher - celery.utils.dispatch.signal" href="celery.utils.dispatch.signal.html" />
-    <link media="only screen and (max-device-width: 480px)" href="../../static/mobile.css" type="text/css" rel="stylesheet" /> 
+    <link rel="prev" title="Signals: Dispatcher - celery.utils.dispatch.signal" href="celery.utils.dispatch.signal.html" /> 
   </head>
   <body>
-<div id="docstitle">
-	<p>Celery v1.1.1 (unstable) documentation</p>
-</div>
-<div id="header">
-	<div id="title"><h1>Signals: Safe References - celery.utils.dispatch.saferef</h1></div>
-	<ul id="headerButtons">
-		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
-		<li id="page_buttons">
-			<div class="headerButton"><a href="../../genindex.html" title="General Index" accesskey="I">index</a></div>
-			<div class="headerButton"><a href="../../py-modindex.html" title="Python Module Index" >modules</a></div>
-			<div class="headerButton"><a href="celery.platform.html" title="Platform Specific - celery.platform" accesskey="N">next</a></div>
-			<div class="headerButton"><a href="celery.utils.dispatch.signal.html" title="Signals: Dispatcher - celery.utils.dispatch.signal" accesskey="P">previous</a></div>
-		</li>
-	</ul>
-</div>
-
-<div id="sphinxsidebar">
-  <div class="sphinxsidebarwrapper">
-	<ul><li class="toctree-l1"><a href="../../index.html">Main Page</a></li></ul>
-	<ul>
-<li class="toctree-l1"><a class="reference internal" href="../../getting-started/index.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../userguide/index.html">User Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Configuration and defaults</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../cookbook/index.html">Cookbook</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">API Reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../index.html">Internals</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Change history</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../links.html">Interesting Links</a></li>
-</ul>
-
-      <h3>This Page</h3>
-      <ul class="this-page-menu">
-        <li><a href="../../sources/internals/reference/celery.utils.dispatch.saferef.txt"
-               rel="nofollow">Show Source</a></li>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.platform.html" title="Platform Specific - celery.platform"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.utils.dispatch.signal.html" title="Signals: Dispatcher - celery.utils.dispatch.signal"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">Celery v1.1.1 (unstable) documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Internals</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
-    <div id="searchbox" style="display: none">
-      
-        <form class="search" action="../../search.html" method="get">
-			<div class="search-wrapper">
-			<span class="search-left"></span>
-			<input class="prettysearch" type="text" name="q" size="18" />
-			<span class="search-right">&nbsp;</span>
-			</div>
-          <input type="submit" value="Search" class="searchbutton" />
-          <input type="hidden" name="check_keywords" value="yes" />
-          <input type="hidden" name="area" value="default" />
-        </form>
-        <p class="searchtip" style="font-size: 90%">
-        Enter search terms or a module, class or function name.
-        </p>
     </div>
-    <script type="text/javascript">$('#searchbox').show(0);</script>
-  </div>
-</div>
-
-
 
     <div class="document">
       <div class="documentwrapper">
@@ -215,23 +176,34 @@ goes out of scope with the reference object, (either a
 </div>
 
 
-          </div> 
+          </div>
         </div>
       </div>
-    <div class="footer">
-    <p>
-      &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
-	</p>
-    </div>
       <div class="clearer"></div>
     </div>
-	<div id="breadcrumbs">
-		<a href="../index.html" accesskey="U">Internals</a><img src="../../static/triangle_closed.png" height="9" width="9" alt="&gt;">
-		<a href="index.html" >Internal Module Reference</a><img src="../../static/triangle_closed.png" height="9" width="9" alt="&gt;">
-		Signals: Safe References - celery.utils.dispatch.saferef
-		</ul>
-	</div>
-	<script type="text/javascript" charset="utf-8" src="../../static/toc.js"></script>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.platform.html" title="Platform Specific - celery.platform"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.utils.dispatch.signal.html" title="Signals: Dispatcher - celery.utils.dispatch.signal"
+             >previous</a> |</li>
+        <li><a href="../../index.html">Celery v1.1.1 (unstable) documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Internals</a> &raquo;</li>
+          <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
+    </div>
   </body>
 </html>

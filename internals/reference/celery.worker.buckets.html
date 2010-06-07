@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>Token Bucket (rate limiting) - celery.worker.buckets &mdash; Celery v1.1.1 (unstable) documentation</title>
-    <link rel="stylesheet" href="../../static/adctheme.css" type="text/css" />
+    <link rel="stylesheet" href="../../static/classy.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
@@ -24,68 +24,29 @@
     <link rel="top" title="Celery v1.1.1 (unstable) documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="Worker Scheduler - celery.worker.scheduler" href="celery.worker.scheduler.html" />
-    <link rel="prev" title="Worker Controller Threads - celery.worker.controllers" href="celery.worker.controllers.html" />
-    <link media="only screen and (max-device-width: 480px)" href="../../static/mobile.css" type="text/css" rel="stylesheet" /> 
+    <link rel="prev" title="Worker Controller Threads - celery.worker.controllers" href="celery.worker.controllers.html" /> 
   </head>
   <body>
-<div id="docstitle">
-	<p>Celery v1.1.1 (unstable) documentation</p>
-</div>
-<div id="header">
-	<div id="title"><h1>Token Bucket (rate limiting) - celery.worker.buckets</h1></div>
-	<ul id="headerButtons">
-		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
-		<li id="page_buttons">
-			<div class="headerButton"><a href="../../genindex.html" title="General Index" accesskey="I">index</a></div>
-			<div class="headerButton"><a href="../../py-modindex.html" title="Python Module Index" >modules</a></div>
-			<div class="headerButton"><a href="celery.worker.scheduler.html" title="Worker Scheduler - celery.worker.scheduler" accesskey="N">next</a></div>
-			<div class="headerButton"><a href="celery.worker.controllers.html" title="Worker Controller Threads - celery.worker.controllers" accesskey="P">previous</a></div>
-		</li>
-	</ul>
-</div>
-
-<div id="sphinxsidebar">
-  <div class="sphinxsidebarwrapper">
-	<ul><li class="toctree-l1"><a href="../../index.html">Main Page</a></li></ul>
-	<ul>
-<li class="toctree-l1"><a class="reference internal" href="../../getting-started/index.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../userguide/index.html">User Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Configuration and defaults</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../cookbook/index.html">Cookbook</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">API Reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../index.html">Internals</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Change history</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../links.html">Interesting Links</a></li>
-</ul>
-
-      <h3>This Page</h3>
-      <ul class="this-page-menu">
-        <li><a href="../../sources/internals/reference/celery.worker.buckets.txt"
-               rel="nofollow">Show Source</a></li>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.worker.scheduler.html" title="Worker Scheduler - celery.worker.scheduler"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.worker.controllers.html" title="Worker Controller Threads - celery.worker.controllers"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">Celery v1.1.1 (unstable) documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Internals</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
-    <div id="searchbox" style="display: none">
-      
-        <form class="search" action="../../search.html" method="get">
-			<div class="search-wrapper">
-			<span class="search-left"></span>
-			<input class="prettysearch" type="text" name="q" size="18" />
-			<span class="search-right">&nbsp;</span>
-			</div>
-          <input type="submit" value="Search" class="searchbutton" />
-          <input type="hidden" name="check_keywords" value="yes" />
-          <input type="hidden" name="area" value="default" />
-        </form>
-        <p class="searchtip" style="font-size: 90%">
-        Enter search terms or a module, class or function name.
-        </p>
     </div>
-    <script type="text/javascript">$('#searchbox').show(0);</script>
-  </div>
-</div>
-
-
 
     <div class="document">
       <div class="documentwrapper">
@@ -137,7 +98,8 @@
 <em class="property">class </em><tt class="descclassname">celery.worker.buckets.</tt><tt class="descname">TaskBucket</tt><big>(</big><em>task_registry</em><big>)</big><a class="headerlink" href="#celery.worker.buckets.TaskBucket" title="Permalink to this definition">¶</a></dt>
 <dd><p>This is a collection of token buckets, each task type having
 its own token bucket. If the task type doesn&#8217;t have a rate limit,
-it will have a plain Queue object instead of a token bucket queue.</p>
+it will have a plain <tt class="xref py py-class docutils literal"><span class="pre">Queue</span></tt> object instead of a
+<a class="reference internal" href="#celery.worker.buckets.TokenBucketQueue" title="celery.worker.buckets.TokenBucketQueue"><tt class="xref py py-class docutils literal"><span class="pre">TokenBucketQueue</span></tt></a>.</p>
 <p>The <a class="reference internal" href="#celery.worker.buckets.TaskBucket.put" title="celery.worker.buckets.TaskBucket.put"><tt class="xref py py-meth docutils literal"><span class="pre">put()</span></tt></a> operation forwards the task to its appropriate bucket,
 while the <a class="reference internal" href="#celery.worker.buckets.TaskBucket.get" title="celery.worker.buckets.TaskBucket.get"><tt class="xref py py-meth docutils literal"><span class="pre">get()</span></tt></a> operation iterates over the buckets and retrieves
 the first available item.</p>
@@ -215,14 +177,16 @@ consume tokens from it.</p>
 
 <dl class="method">
 <dt id="celery.worker.buckets.TaskBucket.put">
-<tt class="descname">put</tt><big>(</big><em>job</em><big>)</big><a class="headerlink" href="#celery.worker.buckets.TaskBucket.put" title="Permalink to this definition">¶</a></dt>
-<dd><p>Put a task into the appropiate bucket.</p>
+<tt class="descname">put</tt><big>(</big><em>request</em><big>)</big><a class="headerlink" href="#celery.worker.buckets.TaskBucket.put" title="Permalink to this definition">¶</a></dt>
+<dd><p>Put a <a class="reference internal" href="celery.worker.job.html#celery.worker.job.TaskRequest" title="celery.worker.job.TaskRequest"><tt class="xref py py-class docutils literal"><span class="pre">TaskRequest</span></tt></a> into
+the appropiate bucket.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="celery.worker.buckets.TaskBucket.put_nowait">
-<tt class="descname">put_nowait</tt><big>(</big><em>job</em><big>)</big><a class="headerlink" href="#celery.worker.buckets.TaskBucket.put_nowait" title="Permalink to this definition">¶</a></dt>
-<dd><p>Put a task into the appropiate bucket.</p>
+<tt class="descname">put_nowait</tt><big>(</big><em>request</em><big>)</big><a class="headerlink" href="#celery.worker.buckets.TaskBucket.put_nowait" title="Permalink to this definition">¶</a></dt>
+<dd><p>Put a <a class="reference internal" href="celery.worker.job.html#celery.worker.job.TaskRequest" title="celery.worker.job.TaskRequest"><tt class="xref py py-class docutils literal"><span class="pre">TaskRequest</span></tt></a> into
+the appropiate bucket.</p>
 </dd></dl>
 
 <dl class="method">
@@ -400,23 +364,34 @@ the next item.</p>
 </div>
 
 
-          </div> 
+          </div>
         </div>
       </div>
-    <div class="footer">
-    <p>
-      &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
-	</p>
-    </div>
       <div class="clearer"></div>
     </div>
-	<div id="breadcrumbs">
-		<a href="../index.html" accesskey="U">Internals</a><img src="../../static/triangle_closed.png" height="9" width="9" alt="&gt;">
-		<a href="index.html" >Internal Module Reference</a><img src="../../static/triangle_closed.png" height="9" width="9" alt="&gt;">
-		Token Bucket (rate limiting) - celery.worker.buckets
-		</ul>
-	</div>
-	<script type="text/javascript" charset="utf-8" src="../../static/toc.js"></script>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.worker.scheduler.html" title="Worker Scheduler - celery.worker.scheduler"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.worker.controllers.html" title="Worker Controller Threads - celery.worker.controllers"
+             >previous</a> |</li>
+        <li><a href="../../index.html">Celery v1.1.1 (unstable) documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Internals</a> &raquo;</li>
+          <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
+    </div>
   </body>
 </html>

@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>API Reference &mdash; Celery v1.1.1 (unstable) documentation</title>
-    <link rel="stylesheet" href="../static/adctheme.css" type="text/css" />
+    <link rel="stylesheet" href="../static/classy.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
@@ -23,96 +23,27 @@
     <script type="text/javascript" src="../static/doctools.js"></script>
     <link rel="top" title="Celery v1.1.1 (unstable) documentation" href="../index.html" />
     <link rel="next" title="Task Decorators - celery.decorators" href="celery.decorators.html" />
-    <link rel="prev" title="Frequently Asked Questions" href="../faq.html" />
-    <link media="only screen and (max-device-width: 480px)" href="../static/mobile.css" type="text/css" rel="stylesheet" /> 
+    <link rel="prev" title="Frequently Asked Questions" href="../faq.html" /> 
   </head>
   <body>
-<div id="docstitle">
-	<p>Celery v1.1.1 (unstable) documentation</p>
-</div>
-<div id="header">
-	<div id="title"><h1>API Reference</h1></div>
-	<ul id="headerButtons">
-		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
-		<li id="page_buttons">
-			<div class="headerButton"><a href="../genindex.html" title="General Index" accesskey="I">index</a></div>
-			<div class="headerButton"><a href="../py-modindex.html" title="Python Module Index" >modules</a></div>
-			<div class="headerButton"><a href="celery.decorators.html" title="Task Decorators - celery.decorators" accesskey="N">next</a></div>
-			<div class="headerButton"><a href="../faq.html" title="Frequently Asked Questions" accesskey="P">previous</a></div>
-		</li>
-	</ul>
-</div>
-
-<div id="sphinxsidebar">
-  <div class="sphinxsidebarwrapper">
-	<ul><li class="toctree-l1"><a href="../index.html">Main Page</a></li></ul>
-	<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="../getting-started/index.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../userguide/index.html">User Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../configuration.html">Configuration and defaults</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../cookbook/index.html">Cookbook</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="">API Reference</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="celery.decorators.html">Task Decorators - celery.decorators</a></li>
-<li class="toctree-l2"><a class="reference internal" href="celery.task.base.html">Defining Tasks - celery.task.base</a></li>
-<li class="toctree-l2"><a class="reference internal" href="celery.execute.html">Executing Tasks - celery.execute</a></li>
-<li class="toctree-l2"><a class="reference internal" href="celery.result.html">Task Result - celery.result</a></li>
-<li class="toctree-l2"><a class="reference internal" href="celery.task.html">Task Information and Utilities - celery.task</a></li>
-<li class="toctree-l2"><a class="reference internal" href="celery.conf.html">Configuration - celery.conf</a></li>
-<li class="toctree-l2"><a class="reference internal" href="celery.task.control.html">Remote Management of Workers - celery.task.control</a></li>
-<li class="toctree-l2"><a class="reference internal" href="celery.task.http.html">HTTP Callback Tasks - celery.task.http</a></li>
-<li class="toctree-l2"><a class="reference internal" href="celery.task.schedules.html">Periodic Task Schedule Behaviors - celery.task.schedules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="celery.signals.html">Signals - celery.signals</a></li>
-<li class="toctree-l2"><a class="reference internal" href="celery.exceptions.html">Exceptions - celery.exceptions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="celery.task.builtins.html">Built-in Task Classes - celery.task.builtins</a></li>
-<li class="toctree-l2"><a class="reference internal" href="celery.loaders.html">Loaders - celery.loaders</a></li>
-<li class="toctree-l2"><a class="reference internal" href="celery.loaders.base.html">Loader Base Classes - celery.loaders.base</a></li>
-<li class="toctree-l2"><a class="reference internal" href="celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
-<li class="toctree-l2"><a class="reference internal" href="celery.registry.html">Task Registry - celery.registry</a></li>
-<li class="toctree-l2"><a class="reference internal" href="celery.states.html">Task States - celery.states</a></li>
-<li class="toctree-l2"><a class="reference internal" href="celery.messaging.html">Messaging - celery.messaging</a></li>
-<li class="toctree-l2"><a class="reference internal" href="celery.contrib.abortable.html">Contrib: Abortable tasks - celery.contrib.abortable</a></li>
-<li class="toctree-l2"><a class="reference internal" href="celery.events.html">Events - celery.events</a></li>
-<li class="toctree-l2"><a class="reference internal" href="celery.events.state.html">In-memory Representation of Cluster State - celery.events.state</a></li>
-<li class="toctree-l2"><a class="reference internal" href="celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
-<li class="toctree-l2"><a class="reference internal" href="celery.bin.celerybeat.html">Celery Periodic Task Server - celery.bin.celerybeat</a></li>
-<li class="toctree-l2"><a class="reference internal" href="celery.bin.celeryev.html">celeryev: Curses Event Viewer - celery.bin.celeryev</a></li>
-<li class="toctree-l2"><a class="reference internal" href="celery.bin.camqadm.html">caqmadm: AMQP API Command-line Shell - celery.bin.camqadm</a></li>
-<li class="toctree-l2"><a class="reference internal" href="celery.bin.celeryd_multi.html">Celeryd Multi Tool - celery.bin.celeryd_multi</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="../internals/index.html">Internals</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change history</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../links.html">Interesting Links</a></li>
-</ul>
-
-      <h3>This Page</h3>
-      <ul class="this-page-menu">
-        <li><a href="../sources/reference/index.txt"
-               rel="nofollow">Show Source</a></li>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.decorators.html" title="Task Decorators - celery.decorators"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../faq.html" title="Frequently Asked Questions"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Celery v1.1.1 (unstable) documentation</a> &raquo;</li> 
       </ul>
-    <div id="searchbox" style="display: none">
-      
-        <form class="search" action="../search.html" method="get">
-			<div class="search-wrapper">
-			<span class="search-left"></span>
-			<input class="prettysearch" type="text" name="q" size="18" />
-			<span class="search-right">&nbsp;</span>
-			</div>
-          <input type="submit" value="Search" class="searchbutton" />
-          <input type="hidden" name="check_keywords" value="yes" />
-          <input type="hidden" name="area" value="default" />
-        </form>
-        <p class="searchtip" style="font-size: 90%">
-        Enter search terms or a module, class or function name.
-        </p>
     </div>
-    <script type="text/javascript">$('#searchbox').show(0);</script>
-  </div>
-</div>
-
-
 
     <div class="document">
       <div class="documentwrapper">
@@ -127,7 +58,7 @@
 <tbody valign="top">
 <tr class="field"><th class="field-name">Release:</th><td class="field-body">1.1</td>
 </tr>
-<tr class="field"><th class="field-name">Date:</th><td class="field-body">June 04, 2010</td>
+<tr class="field"><th class="field-name">Date:</th><td class="field-body">June 07, 2010</td>
 </tr>
 </tbody>
 </table>
@@ -149,7 +80,11 @@
 <li class="toctree-l1"><a class="reference internal" href="celery.loaders.base.html">Loader Base Classes - celery.loaders.base</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.loaders.default.html">Default Loader - celery.loaders.default</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.registry.html">Task Registry - celery.registry</a></li>
-<li class="toctree-l1"><a class="reference internal" href="celery.states.html">Task States - celery.states</a></li>
+<li class="toctree-l1"><a class="reference internal" href="celery.states.html">Task States - celery.states</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="celery.states.html#states">States</a></li>
+<li class="toctree-l2"><a class="reference internal" href="celery.states.html#sets">Sets</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="celery.messaging.html">Messaging - celery.messaging</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.contrib.abortable.html">Contrib: Abortable tasks - celery.contrib.abortable</a></li>
 <li class="toctree-l1"><a class="reference internal" href="celery.events.html">Events - celery.events</a></li>
@@ -164,21 +99,32 @@
 </div>
 
 
-          </div> 
+          </div>
         </div>
       </div>
-    <div class="footer">
-    <p>
-      &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
-	</p>
-    </div>
       <div class="clearer"></div>
     </div>
-	<div id="breadcrumbs">
-		API Reference
-		</ul>
-	</div>
-	<script type="text/javascript" charset="utf-8" src="../static/toc.js"></script>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.decorators.html" title="Task Decorators - celery.decorators"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../faq.html" title="Frequently Asked Questions"
+             >previous</a> |</li>
+        <li><a href="../index.html">Celery v1.1.1 (unstable) documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
+    </div>
   </body>
 </html>
