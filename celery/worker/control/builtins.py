@@ -1,5 +1,3 @@
-import os
-import signal
 from datetime import datetime
 
 from celery import conf
@@ -142,4 +140,4 @@ def ping(panel, **kwargs):
 @Panel.register
 def shutdown(panel, **kwargs):
     panel.logger.critical("Got shutdown from remote.")
-    os.kill(os.getpid(), signal.SIGTERM)
+    raise SystemExit
