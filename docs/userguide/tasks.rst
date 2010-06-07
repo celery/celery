@@ -528,7 +528,7 @@ Good:
     def update_page_info(url):
         # fetch_page -> parse_page -> store_page
         fetch_page.delay(url, callback=callback,
-                         callback_args=(store_page_info, ))
+                         callback_args=(store_page_info.delay, ))
 
     @task(ignore_result=True)
     def fetch_page(url, callback=None, callback_args=()):
