@@ -256,19 +256,6 @@ News
     Also when the hard time limit is exceeded, the task result should
     be a ``TimeLimitExceeded`` exception.
 
-* celeryd now waits for available pool processes before applying new tasks to the pool.
-
-    This means it doesn't have to wait for dozens of tasks to finish at shutdown
-    because it applied n prefetched tasks at once.
-
-    Some overhead for very short tasks though, then the shutdown probably doesn't
-    matter either so the feature can disable by the  ``CELERYD_POOL_PUTLOCKS``
-    setting::
-
-        CELERYD_POOL_PUTLOCKS = False
-
-    See http://github.com/ask/celery/issues/#issue/122
-
 * Test suite is now passing without a running broker, using the carrot
   in-memory backend.
 
