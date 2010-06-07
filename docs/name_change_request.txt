@@ -1,7 +1,7 @@
 From: andre.roberge@gmail.com
 Subject: Request for name change
 Date: April 25, 2009 6:02:51 PM GMT+02:00
-To: askh@opera.com
+To: ask@celeryproject.org
 
 
 Hi,
