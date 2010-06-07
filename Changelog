@@ -352,7 +352,7 @@ News
 * celeryd: Added ``CELERYD_MAX_TASKS_PER_CHILD`` /
   :option:`--maxtasksperchild`
 
-    Defineds the maximum number of tasks a pool worker can process before
+    Defines the maximum number of tasks a pool worker can process before
     the process is terminated and replaced by a new one.
 
 * Revoked tasks now marked with state ``REVOKED``, and ``result.get()``

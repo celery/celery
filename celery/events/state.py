@@ -8,7 +8,8 @@ from celery import states
 HEARTBEAT_EXPIRE = 150 # 2 minutes, 30 seconds
 
 
-class Thing(object):
+class Element(object):
+    """Base class for types."""
     visited = False
 
     def __init__(self, **fields):
@@ -20,7 +21,8 @@ class Thing(object):
 
 
 
-class Worker(Thing):
+class Worker(Element):
+    """Worker State."""
 
     def __init__(self, **fields):
         super(Worker, self).__init__(**fields)
@@ -45,7 +47,8 @@ class Worker(Thing):
                 time.time() < self.heartbeats[0] + HEARTBEAT_EXPIRE)
 
 
-class Task(Thing):
+class Task(Element):
+    """Task State."""
     _info_fields = ("args", "kwargs", "retries",
                     "result", "eta", "runtime",
                     "exception")
