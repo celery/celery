@@ -1,4 +1,7 @@
-""" Task States
+"""
+
+States
+------
 
 .. data:: PENDING
 
@@ -24,16 +27,9 @@
 
     Task has been revoked.
 
-"""
-PENDING = "PENDING"
-STARTED = "STARTED"
-SUCCESS = "SUCCESS"
-FAILURE = "FAILURE"
-REVOKED = "REVOKED"
-RETRY = "RETRY"
+Sets
+----
 
-
-"""
 .. data:: READY_STATES
 
     Set of states meaning the task result is ready (has been executed).
@@ -55,6 +51,13 @@ RETRY = "RETRY"
     Set of all possible states.
 
 """
+PENDING = "PENDING"
+STARTED = "STARTED"
+SUCCESS = "SUCCESS"
+FAILURE = "FAILURE"
+REVOKED = "REVOKED"
+RETRY = "RETRY"
+
 READY_STATES = frozenset([SUCCESS, FAILURE, REVOKED])
 UNREADY_STATES = frozenset([PENDING, STARTED, RETRY])
 EXCEPTION_STATES = frozenset([RETRY, FAILURE, REVOKED])
