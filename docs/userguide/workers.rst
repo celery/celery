@@ -56,6 +56,65 @@ restart the worker using the ``HUP`` signal::
 The worker will then replace itself using the same arguments as it was
 started with.
 
+Concurrency
+===========
+
+Multiprocessing is used to perform concurrent execution of tasks. The number
+of worker processes can be changed using the ``--concurrency`` argument, and
+defaults to the number of CPUs in the system.
+
+More worker processes are usually better, but there's a cut-off point where
+adding more processes affects performance in negative ways.
+There is even some evidence to support that having multiple celeryd's running,
+may perform better than having a single worker. For example 3 celeryd's with
+10 worker processes each, but you need to experiment to find the values that
+works best for you, as this varies based on application, work load, task
+runtimes and other factors.
+
+Time limits
+===========
+
+A single task can potentially run forever, if you have lots of tasks
+waiting for some event that will never happen you will block the worker
+from processing new tasks indefinitely. The best way to defend against
+this scenario happening is enabling time limits.
+
+The time limit (``--time-limit``) is the maximum number of seconds a task
+may run before the process executing it is terminated and replaced by a
+new process. You can also enable a soft time limit (``--soft-time-limit``),
+this raises an exception that the task can catch to clean up before the hard
+time limit kills it:
+
+.. code-block:: python
+
+    from celery.decorators import task
+    from celery.exceptions import SoftTimeLimitExceeded
+
+    @task()
+    def mytask():
+        try:
+            do_work()
+        except SoftTimeLimitExceeded:
+            clean_up_in_a_hurry()
+
+Time limits can also be set using the ``CELERYD_TASK_TIME_LIMIT`` /
+``CELERYD_SOFT_TASK_TIME_LIMIT`` settings.
+
+**NOTE** Time limits does not currently work on Windows.
+
+
+Max tasks per child setting
+===========================
+
+With this option you can configure the maximum number of tasks
+a worker can execute before it's replaced by a new process.
+
+This is useful if you have memory leaks you have no control over,
+for example closed source C extensions.
+
+The option can be set using the ``--maxtasksperchild`` argument
+to ``celeryd`` or using the ``CELERYD_MAX_TASKS_PER_CHILD`` setting.
+
 Remote control
 ==============
 
@@ -160,6 +219,16 @@ so you can specify which workers to ping::
     >>> ping(['worker2.example.com', 'worker3.example.com'])
     [{'worker2.example.com': 'pong'},
      {'worker3.example.com': 'pong'}]
+
+Enable/disable events
+---------------------
+
+You can enable/disable events by using the ``enable_events``,
+``disable_events`` commands. This is useful to temporarily monitor
+a worker using celeryev/celerymon.
+
+    >>> broadcast("enable_events")
+    >>> broadcast("disable_events")
 
 Writing your own remote control commands
 ----------------------------------------
