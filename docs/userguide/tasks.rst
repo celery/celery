@@ -524,19 +524,17 @@ Good:
 
 .. code-block:: python
 
-    from functools import curry
-
     @task(ignore_result=True)
     def update_page_info(url):
         # fetch_page -> parse_page -> store_page
-        callback = curry(parse_page.delay, callback=store_page_info)
-        fetch_page.delay(url, callback=callback)
+        fetch_page.delay(url, callback=callback,
+                         callback_args=(store_page_info, ))
 
     @task(ignore_result=True)
-    def fetch_page(url, callback=None):
+    def fetch_page(url, callback=None, callback_args=()):
         page = myparser.parse_document(page)
         if callback:
-            callback(page)
+            callback(page, \*callback_args)
 
     @task(ignore_result=True)
     def parse_page(url, page, callback=None):
