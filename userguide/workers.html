@@ -1,0 +1,362 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Workers Guide &mdash; Celery v1.1.1 (unstable) documentation</title>
+    <link rel="stylesheet" href="../static/classy.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.1.1 (unstable)',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v1.1.1 (unstable) documentation" href="../index.html" />
+    <link rel="up" title="User Guide" href="index.html" />
+    <link rel="next" title="HTTP Callback Tasks (Webhooks)" href="remote-tasks.html" />
+    <link rel="prev" title="Executing Tasks" href="executing.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="remote-tasks.html" title="HTTP Callback Tasks (Webhooks)"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="executing.html" title="Executing Tasks"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Celery v1.1.1 (unstable) documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">User Guide</a> &raquo;</li> 
+      </ul>
+    </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="workers-guide">
+<h1>Workers Guide<a class="headerlink" href="#workers-guide" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="starting-the-worker">
+<h2>Starting the worker<a class="headerlink" href="#starting-the-worker" title="Permalink to this headline">¶</a></h2>
+<p>Starting celeryd in the foreground:</p>
+<div class="highlight-python"><pre>$ celeryd --loglevel=INFO</pre>
+</div>
+<p>You probably want to use a daemonization tool to start and stop
+<tt class="docutils literal"><span class="pre">celeryd</span></tt> in the background, see <a class="reference internal" href="../cookbook/daemonizing.html"><em>Running celeryd as a daemon</em></a> for help using
+some of the most popular solutions.</p>
+<p>For a full list of available command line options see <a class="reference internal" href="../reference/celery.bin.celeryd.html#module-celery.bin.celeryd"><tt class="xref py py-mod docutils literal"><span class="pre">celeryd</span></tt></a>.</p>
+<p>You can also start multiple celeryd&#8217;s on the same machine, but if you do so
+be sure to give a unique name to each individual worker by specifying the
+<tt class="docutils literal"><span class="pre">-hostname</span></tt> argument:</p>
+<div class="highlight-python"><pre>$ celeryd --loglevel=INFO --concurrency=10 -n worker1.example.com
+$ celeryd --loglevel=INFO --concurrency=10 -n worker2.example.com
+$ celeryd --loglevel=INFO --concurrency=10 -n worker3.example.com</pre>
+</div>
+</div>
+<div class="section" id="stopping-the-worker">
+<h2>Stopping the worker<a class="headerlink" href="#stopping-the-worker" title="Permalink to this headline">¶</a></h2>
+<p>Shutdown should be accomplished using the <tt class="docutils literal"><span class="pre">TERM</span></tt> signal (although <tt class="docutils literal"><span class="pre">INT</span></tt>
+also works).</p>
+<p>When shutdown is initiated the worker will finish any tasks it&#8217;s currently
+executing before it terminates, so if these tasks are important you should
+wait for it to finish before doing anything drastic (like sending the <tt class="docutils literal"><span class="pre">KILL</span></tt>
+signal).</p>
+<p>If the worker won&#8217;t shutdown after considerate time, you probably have hanging
+tasks, in this case it&#8217;s safe to use the <tt class="docutils literal"><span class="pre">KILL</span></tt> signal but be aware that
+currently executing tasks will be lost (unless the tasks have the
+<a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.Task.acks_late" title="celery.task.base.Task.acks_late"><tt class="xref py py-attr docutils literal"><span class="pre">acks_late</span></tt></a> option set).</p>
+<p>Also, since the <tt class="docutils literal"><span class="pre">KILL</span></tt> signal can&#8217;t be catched by processes the worker will
+not be able to reap its children, so make sure you do it manually. This
+command usually does the trick:</p>
+<div class="highlight-python"><pre>$ ps auxww | grep celeryd | awk '{print $2}' | xargs kill -KILL</pre>
+</div>
+</div>
+<div class="section" id="restarting-the-worker">
+<h2>Restarting the worker<a class="headerlink" href="#restarting-the-worker" title="Permalink to this headline">¶</a></h2>
+<p>Other than stopping then starting the worker to restart, you can also
+restart the worker using the <tt class="docutils literal"><span class="pre">HUP</span></tt> signal:</p>
+<div class="highlight-python"><pre>$ kill -HUP $pid</pre>
+</div>
+<p>The worker will then replace itself using the same arguments as it was
+started with.</p>
+</div>
+<div class="section" id="concurrency">
+<h2>Concurrency<a class="headerlink" href="#concurrency" title="Permalink to this headline">¶</a></h2>
+<p>Multiprocessing is used to perform concurrent execution of tasks. The number
+of worker processes can be changed using the <tt class="docutils literal"><span class="pre">--concurrency</span></tt> argument, and
+defaults to the number of CPUs in the system.</p>
+<p>More worker processes are usually better, but there&#8217;s a cut-off point where
+adding more processes affects performance in negative ways.
+There is even some evidence to support that having multiple celeryd&#8217;s running,
+may perform better than having a single worker. For example 3 celeryd&#8217;s with
+10 worker processes each, but you need to experiment to find the values that
+works best for you, as this varies based on application, work load, task
+runtimes and other factors.</p>
+</div>
+<div class="section" id="time-limits">
+<h2>Time limits<a class="headerlink" href="#time-limits" title="Permalink to this headline">¶</a></h2>
+<p>A single task can potentially run forever, if you have lots of tasks
+waiting for some event that will never happen you will block the worker
+from processing new tasks indefinitely. The best way to defend against
+this scenario happening is enabling time limits.</p>
+<p>The time limit (<tt class="docutils literal"><span class="pre">--time-limit</span></tt>) is the maximum number of seconds a task
+may run before the process executing it is terminated and replaced by a
+new process. You can also enable a soft time limit (<tt class="docutils literal"><span class="pre">--soft-time-limit</span></tt>),
+this raises an exception that the task can catch to clean up before the hard
+time limit kills it:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.decorators</span> <span class="kn">import</span> <span class="n">task</span>
+<span class="kn">from</span> <span class="nn">celery.exceptions</span> <span class="kn">import</span> <span class="n">SoftTimeLimitExceeded</span>
+
+<span class="nd">@task</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">mytask</span><span class="p">():</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">do_work</span><span class="p">()</span>
+    <span class="k">except</span> <span class="n">SoftTimeLimitExceeded</span><span class="p">:</span>
+        <span class="n">clean_up_in_a_hurry</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Time limits can also be set using the <tt class="docutils literal"><span class="pre">CELERYD_TASK_TIME_LIMIT</span></tt> /
+<tt class="docutils literal"><span class="pre">CELERYD_SOFT_TASK_TIME_LIMIT</span></tt> settings.</p>
+<p><strong>NOTE</strong> Time limits does not currently work on Windows.</p>
+</div>
+<div class="section" id="max-tasks-per-child-setting">
+<h2>Max tasks per child setting<a class="headerlink" href="#max-tasks-per-child-setting" title="Permalink to this headline">¶</a></h2>
+<p>With this option you can configure the maximum number of tasks
+a worker can execute before it&#8217;s replaced by a new process.</p>
+<p>This is useful if you have memory leaks you have no control over,
+for example closed source C extensions.</p>
+<p>The option can be set using the <tt class="docutils literal"><span class="pre">--maxtasksperchild</span></tt> argument
+to <tt class="docutils literal"><span class="pre">celeryd</span></tt> or using the <tt class="docutils literal"><span class="pre">CELERYD_MAX_TASKS_PER_CHILD</span></tt> setting.</p>
+</div>
+<div class="section" id="remote-control">
+<h2>Remote control<a class="headerlink" href="#remote-control" title="Permalink to this headline">¶</a></h2>
+<p>Workers have the ability to be remote controlled using a broadcast message
+queue. The commands can be directed to all, or a specific list of workers.</p>
+<p>Commands can also have replies, the client can then wait for and collect
+those replies, but since there&#8217;s no central authority to know how many
+workers are available in the cluster, there is also no way to estimate
+how many workers may send a reply, therefore the client has a configurable
+timeout - the deadline in seconds for replies to arrive in. This timeout
+defaults to one second. If the worker didn&#8217;t reply within the deadline,
+it doesn&#8217;t necessarily mean the worker didn&#8217;t reply, or worse is dead, but
+may just be caused by network latency or the worker being slow at processing
+commands, so adjust the timeout accordingly.</p>
+<p>In addition to timeouts, the client can specify the maximum number
+of replies to wait for. If a destination is specified this limit is set
+to the number of destinations.</p>
+<div class="section" id="the-broadcast-function">
+<h3>The <a class="reference internal" href="../reference/celery.task.control.html#celery.task.control.broadcast" title="celery.task.control.broadcast"><tt class="xref py py-func docutils literal"><span class="pre">broadcast()</span></tt></a> function.<a class="headerlink" href="#the-broadcast-function" title="Permalink to this headline">¶</a></h3>
+<p>This is the client function used to send commands to the workers.
+Some remote control commands also have higher-level interfaces using
+<a class="reference internal" href="../reference/celery.task.control.html#celery.task.control.broadcast" title="celery.task.control.broadcast"><tt class="xref py py-func docutils literal"><span class="pre">broadcast()</span></tt></a> in the background, like
+<a class="reference internal" href="../reference/celery.task.control.html#celery.task.control.rate_limit" title="celery.task.control.rate_limit"><tt class="xref py py-func docutils literal"><span class="pre">rate_limit()</span></tt></a> and <a class="reference internal" href="../reference/celery.task.control.html#celery.task.control.ping" title="celery.task.control.ping"><tt class="xref py py-func docutils literal"><span class="pre">ping()</span></tt></a>.</p>
+<p>Sending the <tt class="docutils literal"><span class="pre">rate_limit</span></tt> command and keyword arguments:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task.control</span> <span class="kn">import</span> <span class="n">broadcast</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">broadcast</span><span class="p">(</span><span class="s">&quot;rate_limit&quot;</span><span class="p">,</span> <span class="n">arguments</span><span class="o">=</span><span class="p">{</span><span class="s">&quot;task_name&quot;</span><span class="p">:</span> <span class="s">&quot;myapp.mytask&quot;</span><span class="p">,</span>
+<span class="gp">... </span>                                   <span class="s">&quot;rate_limit&quot;</span><span class="p">:</span> <span class="s">&quot;200/m&quot;</span><span class="p">})</span>
+</pre></div>
+</div>
+<p>This will send the command asynchronously, without waiting for a reply.
+To request a reply you have to use the <tt class="docutils literal"><span class="pre">reply</span></tt> argument:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">broadcast</span><span class="p">(</span><span class="s">&quot;rate_limit&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s">&quot;task_name&quot;</span><span class="p">:</span> <span class="s">&quot;myapp.mytask&quot;</span><span class="p">,</span>
+<span class="gp">... </span>                         <span class="s">&quot;rate_limit&quot;</span><span class="p">:</span> <span class="s">&quot;200/m&quot;</span><span class="p">},</span> <span class="n">reply</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="go">[{&#39;worker1.example.com&#39;: &#39;New rate limit set successfully&#39;},</span>
+<span class="go"> {&#39;worker2.example.com&#39;: &#39;New rate limit set successfully&#39;},</span>
+<span class="go"> {&#39;worker3.example.com&#39;: &#39;New rate limit set successfully&#39;}]</span>
+</pre></div>
+</div>
+<p>Using the <tt class="docutils literal"><span class="pre">destination</span></tt> argument you can specify a list of workers
+to receive the command:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">broadcast</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">broadcast</span><span class="p">(</span><span class="s">&quot;rate_limit&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s">&quot;task_name&quot;</span><span class="p">:</span> <span class="s">&quot;myapp.mytask&quot;</span><span class="p">,</span>
+<span class="gp">... </span>                         <span class="s">&quot;rate_limit&quot;</span><span class="p">:</span> <span class="s">&quot;200/m&quot;</span><span class="p">},</span> <span class="n">reply</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+<span class="gp">... </span>          <span class="n">destination</span><span class="o">=</span><span class="p">[</span><span class="s">&quot;worker1.example.com&quot;</span><span class="p">])</span>
+<span class="go">[{&#39;worker1.example.com&#39;: &#39;New rate limit set successfully&#39;}]</span>
+</pre></div>
+</div>
+<p>Of course, using the higher-level interface to set rate limits is much
+more convenient, but there are commands that can only be requested
+using <a class="reference internal" href="../reference/celery.task.control.html#celery.task.control.broadcast" title="celery.task.control.broadcast"><tt class="xref py py-func docutils literal"><span class="pre">broadcast()</span></tt></a>.</p>
+</div>
+<div class="section" id="rate-limits">
+<h3>Rate limits<a class="headerlink" href="#rate-limits" title="Permalink to this headline">¶</a></h3>
+<p>Example changing the rate limit for the <tt class="docutils literal"><span class="pre">myapp.mytask</span></tt> task to accept
+200 tasks a minute on all servers:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task.control</span> <span class="kn">import</span> <span class="n">rate_limit</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rate_limit</span><span class="p">(</span><span class="s">&quot;myapp.mytask&quot;</span><span class="p">,</span> <span class="s">&quot;200/m&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Example changing the rate limit on a single host by specifying the
+destination hostname:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">rate_limit</span><span class="p">(</span><span class="s">&quot;myapp.mytask&quot;</span><span class="p">,</span> <span class="s">&quot;200/m&quot;</span><span class="p">,</span>
+<span class="gp">... </span>           <span class="n">destination</span><span class="o">=</span><span class="p">[</span><span class="s">&quot;worker1.example.com&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p><strong>NOTE</strong> This won&#8217;t affect workers with the <tt class="docutils literal"><span class="pre">CELERY_DISABLE_RATE_LIMITS</span></tt>
+setting on. To re-enable rate limits you have to restart the worker.</p>
+</div>
+<div class="section" id="remote-shutdown">
+<h3>Remote shutdown<a class="headerlink" href="#remote-shutdown" title="Permalink to this headline">¶</a></h3>
+<p>This command will gracefully shut down the worker from remote.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">broadcast</span><span class="p">(</span><span class="s">&quot;shutdown&quot;</span><span class="p">)</span> <span class="c"># shutdown all workers</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">broadcast</span><span class="p">(</span><span class="s">&quot;shutdown, destination=&quot;</span><span class="n">worker1</span><span class="o">.</span><span class="n">example</span><span class="o">.</span><span class="n">com</span><span class="s">&quot;)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="ping">
+<h3>Ping<a class="headerlink" href="#ping" title="Permalink to this headline">¶</a></h3>
+<p>This command requests a ping from alive workers.
+The workers reply with the string &#8216;pong&#8217;, and that&#8217;s just about it.
+It will use the default one second limit for replies unless you specify
+a custom <tt class="docutils literal"><span class="pre">timeout</span></tt>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task.control</span> <span class="kn">import</span> <span class="n">ping</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ping</span><span class="p">()</span>
+<span class="go">[{&#39;worker1.example.com&#39;: &#39;pong&#39;},</span>
+<span class="go"> {&#39;worker2.example.com&#39;: &#39;pong&#39;},</span>
+<span class="go"> {&#39;worker3.example.com&#39;: &#39;pong&#39;}]</span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="../reference/celery.task.control.html#celery.task.control.ping" title="celery.task.control.ping"><tt class="xref py py-func docutils literal"><span class="pre">ping()</span></tt></a> also supports the <tt class="docutils literal"><span class="pre">destination</span></tt> argument,
+so you can specify which workers to ping:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">ping</span><span class="p">([</span><span class="s">&#39;worker2.example.com&#39;</span><span class="p">,</span> <span class="s">&#39;worker3.example.com&#39;</span><span class="p">])</span>
+<span class="go">[{&#39;worker2.example.com&#39;: &#39;pong&#39;},</span>
+<span class="go"> {&#39;worker3.example.com&#39;: &#39;pong&#39;}]</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="enable-disable-events">
+<h3>Enable/disable events<a class="headerlink" href="#enable-disable-events" title="Permalink to this headline">¶</a></h3>
+<p>You can enable/disable events by using the <tt class="docutils literal"><span class="pre">enable_events</span></tt>,
+<tt class="docutils literal"><span class="pre">disable_events</span></tt> commands. This is useful to temporarily monitor
+a worker using celeryev/celerymon.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">broadcast</span><span class="p">(</span><span class="s">&quot;enable_events&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">broadcast</span><span class="p">(</span><span class="s">&quot;disable_events&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="writing-your-own-remote-control-commands">
+<h3>Writing your own remote control commands<a class="headerlink" href="#writing-your-own-remote-control-commands" title="Permalink to this headline">¶</a></h3>
+<p>Remote control commands are registered in the control panel and
+they take a single argument: the current
+<a class="reference internal" href="../internals/reference/celery.worker.control.html#celery.worker.control.ControlDispatch" title="celery.worker.control.ControlDispatch"><tt class="xref py py-class docutils literal"><span class="pre">ControlDispatch</span></tt></a> instance.
+From there you have access to the active
+<a class="reference internal" href="../internals/reference/celery.worker.listener.html#celery.worker.listener.CarrotListener" title="celery.worker.listener.CarrotListener"><tt class="xref py py-class docutils literal"><span class="pre">celery.worker.listener.CarrotListener</span></tt></a> if needed.</p>
+<p>Here&#8217;s an example control command that restarts the broker connection:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.worker.control</span> <span class="kn">import</span> <span class="n">Panel</span>
+
+<span class="nd">@Panel.register</span>
+<span class="k">def</span> <span class="nf">reset_connection</span><span class="p">(</span><span class="n">panel</span><span class="p">):</span>
+    <span class="n">panel</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="s">&quot;Connection reset by remote control.&quot;</span><span class="p">)</span>
+    <span class="n">panel</span><span class="o">.</span><span class="n">listener</span><span class="o">.</span><span class="n">reset_connection</span><span class="p">()</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s">&quot;ok&quot;</span><span class="p">:</span> <span class="s">&quot;connection reset&quot;</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>These can be added to task modules, or you can keep them in their own module
+then import them using the <tt class="docutils literal"><span class="pre">CELERY_IMPORTS</span></tt> setting:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_IMPORTS</span> <span class="o">=</span> <span class="p">(</span><span class="s">&quot;myapp.worker.control&quot;</span><span class="p">,</span> <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="debugging">
+<h2>Debugging<a class="headerlink" href="#debugging" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="dump-of-registered-tasks">
+<h3>Dump of registered tasks<a class="headerlink" href="#dump-of-registered-tasks" title="Permalink to this headline">¶</a></h3>
+<p>You can get a list of tasks registered in the worker using the
+<tt class="docutils literal"><span class="pre">dump_tasks</span></tt> remote control command:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">broadcast</span><span class="p">(</span><span class="s">&quot;dump_tasks&quot;</span><span class="p">,</span> <span class="n">reply</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="go">[{&#39;worker1.example.com&#39;: [&#39;celery.delete_expired_task_meta&#39;,</span>
+<span class="go">                          &#39;celery.execute_remote&#39;,</span>
+<span class="go">                          &#39;celery.map_async&#39;,</span>
+<span class="go">                          &#39;celery.ping&#39;,</span>
+<span class="go">                          &#39;celery.task.http.HttpDispatchTask&#39;,</span>
+<span class="go">                          &#39;tasks.add&#39;,</span>
+<span class="go">                          &#39;tasks.sleeptask&#39;]}]</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="dump-of-scheduled-eta-tasks">
+<h3>Dump of scheduled (ETA) tasks<a class="headerlink" href="#dump-of-scheduled-eta-tasks" title="Permalink to this headline">¶</a></h3>
+<p>You can get a list of tasks waiting to be scheduled by using
+the <tt class="docutils literal"><span class="pre">dump_schedule</span></tt> remote control command.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">broadcast</span><span class="p">(</span><span class="s">&quot;dump_schedule&quot;</span><span class="p">,</span> <span class="n">reply</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="go">[{&#39;worker1.example.com&#39;:</span>
+<span class="go">    [&#39;0. 2010-06-07 09:07:52 pri0 &lt;TaskRequest: {</span>
+<span class="go">        name:&quot;tasks.sleeptask&quot;,</span>
+<span class="go">        id:&quot;1a7980ea-8b19-413e-91d2-0b74f3844c4d&quot;,</span>
+<span class="go">        args:&quot;[1]&quot;, kwargs:&quot;{}&quot;}&gt;&#39;,</span>
+<span class="go">    &#39;1. 2010-06-07 09:07:53 pri0 &lt;TaskRequest: {</span>
+<span class="go">        name:&quot;tasks.sleeptask&quot;,</span>
+<span class="go">        id:&quot;49661b9a-aa22-4120-94b7-9ee8031d219d&quot;,</span>
+<span class="go">        args:&quot;[2]&quot;,</span>
+<span class="go">        kwargs:&quot;{}&quot;}&gt;&#39;,</span>
+</pre></div>
+</div>
+<p>The outputted fields are (in order): position, eta, priority, request.</p>
+<p>Note that these are tasks with an eta/countdown argument, not periodic tasks.</p>
+</div>
+<div class="section" id="dump-of-reserved-tasks">
+<h3>Dump of reserved tasks<a class="headerlink" href="#dump-of-reserved-tasks" title="Permalink to this headline">¶</a></h3>
+<p>Reserved tasks are tasks that has been received by the broker and is waiting
+for immediate execution.</p>
+<p>You can get a list of these using the <tt class="docutils literal"><span class="pre">dump_reserved</span></tt> remote control command.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">broadcast</span><span class="p">(</span><span class="s">&quot;dump_reserved&quot;</span><span class="p">,</span> <span class="n">reply</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="go">[{&#39;worker1.example.com&#39;:</span>
+<span class="go">    [&#39;&lt;TaskRequest: {name:&quot;tasks.sleeptask&quot;,</span>
+<span class="go">                     id:&quot;32666e9b-809c-41fa-8e93-5ae0c80afbbf&quot;,</span>
+<span class="go">                     args:&quot;(8,)&quot;, kwargs:&quot;{}&quot;}&gt;&#39;]}]</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="remote-tasks.html" title="HTTP Callback Tasks (Webhooks)"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="executing.html" title="Executing Tasks"
+             >previous</a> |</li>
+        <li><a href="../index.html">Celery v1.1.1 (unstable) documentation</a> &raquo;</li>
+          <li><a href="index.html" >User Guide</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
+    </div>
+  </body>
+</html>
