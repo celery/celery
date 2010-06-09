@@ -56,15 +56,21 @@
 <h1>List of Worker Events<a class="headerlink" href="#list-of-worker-events" title="Permalink to this headline">¶</a></h1>
 <p>This is the list of events sent by the worker.
 The monitor uses these to visualize the state of the cluster.</p>
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference external" href="#task-events" id="id1">Task Events</a></li>
+<li><a class="reference external" href="#worker-events" id="id2">Worker Events</a></li>
+</ul>
+</div>
 <div class="section" id="task-events">
-<h2>Task Events<a class="headerlink" href="#task-events" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id1">Task Events</a><a class="headerlink" href="#task-events" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><p class="first">task-received(uuid, name, args, kwargs, retries, eta, hostname, timestamp)</p>
 <blockquote>
 <p>Sent when the worker receives a task.</p>
 </blockquote>
 </li>
-<li><p class="first">task-accepted(uuid, hostname, timestamp)</p>
+<li><p class="first">task-started(uuid, hostname, timestamp)</p>
 <blockquote>
 <p>Sent just before the worker executes the task.</p>
 </blockquote>
@@ -82,6 +88,12 @@ pool result handlers callback is called).</p>
 <p>Sent if the execution of the task failed.</p>
 </blockquote>
 </li>
+<li><p class="first">task-revoked(uuid)</p>
+<blockquote>
+<p>Sent if the task has been revoked (Note that this is likely
+to be sent by more than one worker)</p>
+</blockquote>
+</li>
 <li><p class="first">task-retried(uuid, exception, traceback, hostname, delay, timestamp)</p>
 <blockquote>
 <p>Sent if the task failed, but will be retried in the future.
@@ -91,7 +103,7 @@ pool result handlers callback is called).</p>
 </ul>
 </div>
 <div class="section" id="worker-events">
-<h2>Worker Events<a class="headerlink" href="#worker-events" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id2">Worker Events</a><a class="headerlink" href="#worker-events" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><p class="first">worker-online(hostname, timestamp)</p>
 <blockquote>

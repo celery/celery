@@ -5,14 +5,18 @@
 This is the list of events sent by the worker.
 The monitor uses these to visualize the state of the cluster.
 
+.. contents::
+    :local:
+
+
 Task Events
------------
+===========
 
 * task-received(uuid, name, args, kwargs, retries, eta, hostname, timestamp)
 
     Sent when the worker receives a task.
 
-* task-accepted(uuid, hostname, timestamp)
+* task-started(uuid, hostname, timestamp)
 
     Sent just before the worker executes the task.
 
@@ -27,13 +31,18 @@ Task Events
 
     Sent if the execution of the task failed.
 
+* task-revoked(uuid)
+
+    Sent if the task has been revoked (Note that this is likely
+    to be sent by more than one worker)
+
 * task-retried(uuid, exception, traceback, hostname, delay, timestamp)
 
     Sent if the task failed, but will be retried in the future.
     (**NOT IMPLEMENTED**)
 
 Worker Events
--------------
+=============
 
 * worker-online(hostname, timestamp)
 

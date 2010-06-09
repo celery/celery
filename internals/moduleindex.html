@@ -54,10 +54,87 @@
             
   <div class="section" id="module-index">
 <h1>Module Index<a class="headerlink" href="#module-index" title="Permalink to this headline">¶</a></h1>
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference external" href="#worker" id="id1">Worker</a><ul>
+<li><a class="reference external" href="#celery-worker" id="id2">celery.worker</a></li>
+<li><a class="reference external" href="#celery-worker-job" id="id3">celery.worker.job</a></li>
+<li><a class="reference external" href="#celery-worker-pool" id="id4">celery.worker.pool</a></li>
+<li><a class="reference external" href="#celery-worker-listener" id="id5">celery.worker.listener</a></li>
+<li><a class="reference external" href="#celery-worker-controllers" id="id6">celery.worker.controllers</a></li>
+<li><a class="reference external" href="#celery-worker-scheduler" id="id7">celery.worker.scheduler</a></li>
+<li><a class="reference external" href="#celery-worker-buckets" id="id8">celery.worker.buckets</a></li>
+<li><a class="reference external" href="#celery-worker-heartbeat" id="id9">celery.worker.heartbeat</a></li>
+<li><a class="reference external" href="#celery-worker-revoke" id="id10">celery.worker.revoke</a></li>
+<li><a class="reference external" href="#celery-worker-control" id="id11">celery.worker.control</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#tasks" id="id12">Tasks</a><ul>
+<li><a class="reference external" href="#celery-decorators" id="id13">celery.decorators</a></li>
+<li><a class="reference external" href="#celery-registry" id="id14">celery.registry</a></li>
+<li><a class="reference external" href="#celery-task" id="id15">celery.task</a></li>
+<li><a class="reference external" href="#celery-task-base" id="id16">celery.task.base</a></li>
+<li><a class="reference external" href="#celery-task-http" id="id17">celery.task.http</a></li>
+<li><a class="reference external" href="#celery-task-control" id="id18">celery.task.control</a></li>
+<li><a class="reference external" href="#celery-task-builtins" id="id19">celery.task.builtins</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#execution" id="id20">Execution</a><ul>
+<li><a class="reference external" href="#celery-execute" id="id21">celery.execute</a></li>
+<li><a class="reference external" href="#celery-execute-trace" id="id22">celery.execute.trace</a></li>
+<li><a class="reference external" href="#celery-result" id="id23">celery.result</a></li>
+<li><a class="reference external" href="#celery-states" id="id24">celery.states</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#messaging" id="id25">Messaging</a><ul>
+<li><a class="reference external" href="#celery-messaging" id="id26">celery.messaging</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#result-backends" id="id27">Result backends</a><ul>
+<li><a class="reference external" href="#celery-backends" id="id28">celery.backends</a></li>
+<li><a class="reference external" href="#celery-backends-base" id="id29">celery.backends.base</a></li>
+<li><a class="reference external" href="#celery-backends-amqp" id="id30">celery.backends.amqp</a></li>
+<li><a class="reference external" href="#celery-backends-database" id="id31">celery.backends.database</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#loaders" id="id32">Loaders</a><ul>
+<li><a class="reference external" href="#celery-loaders" id="id33">celery.loaders</a></li>
+<li><a class="reference external" href="#celery-loaders-base-loader-base-classes" id="id34">celery.loaders.base - Loader base classes</a></li>
+<li><a class="reference external" href="#celery-loaders-default-the-default-loader" id="id35">celery.loaders.default - The default loader</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#celerybeat" id="id36">CeleryBeat</a><ul>
+<li><a class="reference external" href="#celery-beat" id="id37">celery.beat</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#events" id="id38">Events</a><ul>
+<li><a class="reference external" href="#celery-events" id="id39">celery.events</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#logging" id="id40">Logging</a><ul>
+<li><a class="reference external" href="#celery-log" id="id41">celery.log</a></li>
+<li><a class="reference external" href="#celery-utils-patch" id="id42">celery.utils.patch</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#configuration" id="id43">Configuration</a><ul>
+<li><a class="reference external" href="#celery-conf" id="id44">celery.conf</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#miscellaneous" id="id45">Miscellaneous</a><ul>
+<li><a class="reference external" href="#celery-datastructures" id="id46">celery.datastructures</a></li>
+<li><a class="reference external" href="#celery-exceptions" id="id47">celery.exceptions</a></li>
+<li><a class="reference external" href="#celery-platform" id="id48">celery.platform</a></li>
+<li><a class="reference external" href="#celery-utils" id="id49">celery.utils</a></li>
+<li><a class="reference external" href="#celery-utils-info" id="id50">celery.utils.info</a></li>
+<li><a class="reference external" href="#celery-utils-compat" id="id51">celery.utils.compat</a></li>
+</ul>
+</li>
+</ul>
+</div>
 <div class="section" id="worker">
-<h2>Worker<a class="headerlink" href="#worker" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id1">Worker</a><a class="headerlink" href="#worker" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="celery-worker">
-<h3>celery.worker<a class="headerlink" href="#celery-worker" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id2">celery.worker</a><a class="headerlink" href="#celery-worker" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li><a class="reference internal" href="reference/celery.worker.html#celery.worker.WorkController" title="celery.worker.WorkController"><tt class="xref py py-class docutils literal"><span class="pre">celery.worker.WorkController</span></tt></a></li>
 </ul>
@@ -65,31 +142,31 @@
 required by the worker: Pool, Mediator, Scheduler, ClockService, and Listener.</p>
 </div>
 <div class="section" id="celery-worker-job">
-<h3>celery.worker.job<a class="headerlink" href="#celery-worker-job" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id3">celery.worker.job</a><a class="headerlink" href="#celery-worker-job" title="Permalink to this headline">¶</a></h3>
 </div>
 <div class="section" id="celery-worker-pool">
-<h3>celery.worker.pool<a class="headerlink" href="#celery-worker-pool" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id4">celery.worker.pool</a><a class="headerlink" href="#celery-worker-pool" title="Permalink to this headline">¶</a></h3>
 </div>
 <div class="section" id="celery-worker-listener">
-<h3>celery.worker.listener<a class="headerlink" href="#celery-worker-listener" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id5">celery.worker.listener</a><a class="headerlink" href="#celery-worker-listener" title="Permalink to this headline">¶</a></h3>
 </div>
 <div class="section" id="celery-worker-controllers">
-<h3>celery.worker.controllers<a class="headerlink" href="#celery-worker-controllers" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id6">celery.worker.controllers</a><a class="headerlink" href="#celery-worker-controllers" title="Permalink to this headline">¶</a></h3>
 </div>
 <div class="section" id="celery-worker-scheduler">
-<h3>celery.worker.scheduler<a class="headerlink" href="#celery-worker-scheduler" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id7">celery.worker.scheduler</a><a class="headerlink" href="#celery-worker-scheduler" title="Permalink to this headline">¶</a></h3>
 </div>
 <div class="section" id="celery-worker-buckets">
-<h3>celery.worker.buckets<a class="headerlink" href="#celery-worker-buckets" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id8">celery.worker.buckets</a><a class="headerlink" href="#celery-worker-buckets" title="Permalink to this headline">¶</a></h3>
 </div>
 <div class="section" id="celery-worker-heartbeat">
-<h3>celery.worker.heartbeat<a class="headerlink" href="#celery-worker-heartbeat" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id9">celery.worker.heartbeat</a><a class="headerlink" href="#celery-worker-heartbeat" title="Permalink to this headline">¶</a></h3>
 </div>
 <div class="section" id="celery-worker-revoke">
-<h3>celery.worker.revoke<a class="headerlink" href="#celery-worker-revoke" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id10">celery.worker.revoke</a><a class="headerlink" href="#celery-worker-revoke" title="Permalink to this headline">¶</a></h3>
 </div>
 <div class="section" id="celery-worker-control">
-<h3>celery.worker.control<a class="headerlink" href="#celery-worker-control" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id11">celery.worker.control</a><a class="headerlink" href="#celery-worker-control" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li>celery.worker.registry</li>
 <li>celery.worker.builtins</li>
@@ -97,126 +174,126 @@ required by the worker: Pool, Mediator, Scheduler, ClockService, and Listener.</
 </div>
 </div>
 <div class="section" id="tasks">
-<h2>Tasks<a class="headerlink" href="#tasks" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id12">Tasks</a><a class="headerlink" href="#tasks" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="celery-decorators">
-<h3>celery.decorators<a class="headerlink" href="#celery-decorators" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id13">celery.decorators</a><a class="headerlink" href="#celery-decorators" title="Permalink to this headline">¶</a></h3>
 </div>
 <div class="section" id="celery-registry">
-<h3>celery.registry<a class="headerlink" href="#celery-registry" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id14">celery.registry</a><a class="headerlink" href="#celery-registry" title="Permalink to this headline">¶</a></h3>
 </div>
 <div class="section" id="celery-task">
-<h3>celery.task<a class="headerlink" href="#celery-task" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id15">celery.task</a><a class="headerlink" href="#celery-task" title="Permalink to this headline">¶</a></h3>
 </div>
 <div class="section" id="celery-task-base">
-<h3>celery.task.base<a class="headerlink" href="#celery-task-base" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id16">celery.task.base</a><a class="headerlink" href="#celery-task-base" title="Permalink to this headline">¶</a></h3>
 </div>
 <div class="section" id="celery-task-http">
-<h3>celery.task.http<a class="headerlink" href="#celery-task-http" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id17">celery.task.http</a><a class="headerlink" href="#celery-task-http" title="Permalink to this headline">¶</a></h3>
 </div>
 <div class="section" id="celery-task-control">
-<h3>celery.task.control<a class="headerlink" href="#celery-task-control" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id18">celery.task.control</a><a class="headerlink" href="#celery-task-control" title="Permalink to this headline">¶</a></h3>
 </div>
 <div class="section" id="celery-task-builtins">
-<h3>celery.task.builtins<a class="headerlink" href="#celery-task-builtins" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id19">celery.task.builtins</a><a class="headerlink" href="#celery-task-builtins" title="Permalink to this headline">¶</a></h3>
 </div>
 </div>
 <div class="section" id="execution">
-<h2>Execution<a class="headerlink" href="#execution" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id20">Execution</a><a class="headerlink" href="#execution" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="celery-execute">
-<h3>celery.execute<a class="headerlink" href="#celery-execute" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id21">celery.execute</a><a class="headerlink" href="#celery-execute" title="Permalink to this headline">¶</a></h3>
 </div>
 <div class="section" id="celery-execute-trace">
-<h3>celery.execute.trace<a class="headerlink" href="#celery-execute-trace" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id22">celery.execute.trace</a><a class="headerlink" href="#celery-execute-trace" title="Permalink to this headline">¶</a></h3>
 </div>
 <div class="section" id="celery-result">
-<h3>celery.result<a class="headerlink" href="#celery-result" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id23">celery.result</a><a class="headerlink" href="#celery-result" title="Permalink to this headline">¶</a></h3>
 </div>
 <div class="section" id="celery-states">
-<h3>celery.states<a class="headerlink" href="#celery-states" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id24">celery.states</a><a class="headerlink" href="#celery-states" title="Permalink to this headline">¶</a></h3>
 <p>celery.signals</p>
 </div>
 </div>
 <div class="section" id="messaging">
-<h2>Messaging<a class="headerlink" href="#messaging" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id25">Messaging</a><a class="headerlink" href="#messaging" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="celery-messaging">
-<h3>celery.messaging<a class="headerlink" href="#celery-messaging" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id26">celery.messaging</a><a class="headerlink" href="#celery-messaging" title="Permalink to this headline">¶</a></h3>
 </div>
 </div>
 <div class="section" id="result-backends">
-<h2>Result backends<a class="headerlink" href="#result-backends" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id27">Result backends</a><a class="headerlink" href="#result-backends" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="celery-backends">
-<h3>celery.backends<a class="headerlink" href="#celery-backends" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id28">celery.backends</a><a class="headerlink" href="#celery-backends" title="Permalink to this headline">¶</a></h3>
 </div>
 <div class="section" id="celery-backends-base">
-<h3>celery.backends.base<a class="headerlink" href="#celery-backends-base" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id29">celery.backends.base</a><a class="headerlink" href="#celery-backends-base" title="Permalink to this headline">¶</a></h3>
 </div>
 <div class="section" id="celery-backends-amqp">
-<h3>celery.backends.amqp<a class="headerlink" href="#celery-backends-amqp" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id30">celery.backends.amqp</a><a class="headerlink" href="#celery-backends-amqp" title="Permalink to this headline">¶</a></h3>
 </div>
 <div class="section" id="celery-backends-database">
-<h3>celery.backends.database<a class="headerlink" href="#celery-backends-database" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id31">celery.backends.database</a><a class="headerlink" href="#celery-backends-database" title="Permalink to this headline">¶</a></h3>
 </div>
 </div>
 <div class="section" id="loaders">
-<h2>Loaders<a class="headerlink" href="#loaders" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id32">Loaders</a><a class="headerlink" href="#loaders" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="celery-loaders">
-<h3>celery.loaders<a class="headerlink" href="#celery-loaders" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id33">celery.loaders</a><a class="headerlink" href="#celery-loaders" title="Permalink to this headline">¶</a></h3>
 <p>Loader autodetection, and working with the currently
 selected loader.</p>
 </div>
 <div class="section" id="celery-loaders-base-loader-base-classes">
-<h3>celery.loaders.base - Loader base classes<a class="headerlink" href="#celery-loaders-base-loader-base-classes" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id34">celery.loaders.base - Loader base classes</a><a class="headerlink" href="#celery-loaders-base-loader-base-classes" title="Permalink to this headline">¶</a></h3>
 </div>
 <div class="section" id="celery-loaders-default-the-default-loader">
-<h3>celery.loaders.default - The default loader<a class="headerlink" href="#celery-loaders-default-the-default-loader" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id35">celery.loaders.default - The default loader</a><a class="headerlink" href="#celery-loaders-default-the-default-loader" title="Permalink to this headline">¶</a></h3>
 </div>
 </div>
 <div class="section" id="celerybeat">
-<h2>CeleryBeat<a class="headerlink" href="#celerybeat" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id36">CeleryBeat</a><a class="headerlink" href="#celerybeat" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="celery-beat">
-<h3>celery.beat<a class="headerlink" href="#celery-beat" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id37">celery.beat</a><a class="headerlink" href="#celery-beat" title="Permalink to this headline">¶</a></h3>
 </div>
 </div>
 <div class="section" id="events">
-<h2>Events<a class="headerlink" href="#events" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id38">Events</a><a class="headerlink" href="#events" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="celery-events">
-<h3>celery.events<a class="headerlink" href="#celery-events" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id39">celery.events</a><a class="headerlink" href="#celery-events" title="Permalink to this headline">¶</a></h3>
 </div>
 </div>
 <div class="section" id="logging">
-<h2>Logging<a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id40">Logging</a><a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="celery-log">
-<h3>celery.log<a class="headerlink" href="#celery-log" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id41">celery.log</a><a class="headerlink" href="#celery-log" title="Permalink to this headline">¶</a></h3>
 </div>
 <div class="section" id="celery-utils-patch">
-<h3>celery.utils.patch<a class="headerlink" href="#celery-utils-patch" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id42">celery.utils.patch</a><a class="headerlink" href="#celery-utils-patch" title="Permalink to this headline">¶</a></h3>
 </div>
 </div>
 <div class="section" id="configuration">
-<h2>Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id43">Configuration</a><a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="celery-conf">
-<h3>celery.conf<a class="headerlink" href="#celery-conf" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id44">celery.conf</a><a class="headerlink" href="#celery-conf" title="Permalink to this headline">¶</a></h3>
 </div>
 </div>
 <div class="section" id="miscellaneous">
-<h2>Miscellaneous<a class="headerlink" href="#miscellaneous" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id45">Miscellaneous</a><a class="headerlink" href="#miscellaneous" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="celery-datastructures">
-<h3>celery.datastructures<a class="headerlink" href="#celery-datastructures" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id46">celery.datastructures</a><a class="headerlink" href="#celery-datastructures" title="Permalink to this headline">¶</a></h3>
 </div>
 <div class="section" id="celery-exceptions">
-<h3>celery.exceptions<a class="headerlink" href="#celery-exceptions" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id47">celery.exceptions</a><a class="headerlink" href="#celery-exceptions" title="Permalink to this headline">¶</a></h3>
 </div>
 <div class="section" id="celery-platform">
-<h3>celery.platform<a class="headerlink" href="#celery-platform" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id48">celery.platform</a><a class="headerlink" href="#celery-platform" title="Permalink to this headline">¶</a></h3>
 </div>
 <div class="section" id="celery-utils">
-<h3>celery.utils<a class="headerlink" href="#celery-utils" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id49">celery.utils</a><a class="headerlink" href="#celery-utils" title="Permalink to this headline">¶</a></h3>
 </div>
 <div class="section" id="celery-utils-info">
-<h3>celery.utils.info<a class="headerlink" href="#celery-utils-info" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id50">celery.utils.info</a><a class="headerlink" href="#celery-utils-info" title="Permalink to this headline">¶</a></h3>
 </div>
 <div class="section" id="celery-utils-compat">
-<h3>celery.utils.compat<a class="headerlink" href="#celery-utils-compat" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id51">celery.utils.compat</a><a class="headerlink" href="#celery-utils-compat" title="Permalink to this headline">¶</a></h3>
 </div>
 </div>
 </div>

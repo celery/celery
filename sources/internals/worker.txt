@@ -2,8 +2,11 @@
  Internals: The worker
 =======================
 
-**NOTE** This describes the internals of the development version, not the
-current release.
+.. contents::
+    :local:
+
+Introduction
+============
 
 The worker consists of 4 main components: the broker listener, the scheduler,
 the mediator and the task pool. All these components runs in parallel working
@@ -28,7 +31,6 @@ The ETA schedule is a heap queue sorted by time.
 
 Components
 ==========
-
 
 CarrotListener
 --------------

@@ -4,6 +4,9 @@
 
 .. module:: celery.task.base
 
+.. contents::
+    :local:
+
 A task is a class that encapsulates a function and its execution options.
 Given a function ``create_user``, that takes two arguments: ``username`` and
 ``password``, you can create a task like this:

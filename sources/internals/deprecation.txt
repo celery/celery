@@ -2,9 +2,13 @@
  Celery Deprecation Timeline
 =============================
 
-* 1.2
+.. contents::
+    :local:
 
-  * The following settings will be removed:
+Removals for version 1.2
+============================
+
+* The following settings will be removed:
 
     =====================================  =====================================
     **Setting name**                       **Replace with**
@@ -17,12 +21,12 @@
     ``CELERY_AMQP_PUBLISHER_ROUTING_KEY``  ``CELERY_DEFAULT_ROUTING_KEY``
     =====================================  =====================================
 
-  * ``CELERY_LOADER`` definitions without class name.
+* ``CELERY_LOADER`` definitions without class name.
 
     E.g. ``celery.loaders.default``, needs to include the class name:
     ``celery.loaders.default.Loader``.
 
-  * :meth:`TaskSet.run`. Use :meth:`celery.task.base.TaskSet.apply_async`
+* :meth:`TaskSet.run`. Use :meth:`celery.task.base.TaskSet.apply_async`
     instead.
 
-  * The module :mod:`celery.task.rest`; use :mod:`celery.task.http` instead.
+* The module :mod:`celery.task.rest`; use :mod:`celery.task.http` instead.

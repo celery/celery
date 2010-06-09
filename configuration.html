@@ -55,8 +55,54 @@
 <p>This document describes the configuration options available.</p>
 <p>If you&#8217;re using the default loader, you must create the <tt class="docutils literal"><span class="pre">celeryconfig.py</span></tt>
 module and make sure it is available on the Python path.</p>
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference external" href="#example-configuration-file" id="id6">Example configuration file</a></li>
+<li><a class="reference external" href="#concurrency-settings" id="id7">Concurrency settings</a></li>
+<li><a class="reference external" href="#task-result-backend-settings" id="id8">Task result backend settings</a></li>
+<li><a class="reference external" href="#database-backend-settings" id="id9">Database backend settings</a><ul>
+<li><a class="reference external" href="#example-configuration" id="id10">Example configuration</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#amqp-backend-settings" id="id11">AMQP backend settings</a><ul>
+<li><a class="reference external" href="#id1" id="id12">Example configuration</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#cache-backend-settings" id="id13">Cache backend settings</a><ul>
+<li><a class="reference external" href="#id2" id="id14">Example configuration</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#tokyo-tyrant-backend-settings" id="id15">Tokyo Tyrant backend settings</a><ul>
+<li><a class="reference external" href="#id3" id="id16">Example configuration</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#redis-backend-settings" id="id17">Redis backend settings</a><ul>
+<li><a class="reference external" href="#id4" id="id18">Example configuration</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#mongodb-backend-settings" id="id19">MongoDB backend settings</a><ul>
+<li><a class="reference external" href="#id5" id="id20">Example configuration</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#messaging-settings" id="id21">Messaging settings</a><ul>
+<li><a class="reference external" href="#routing" id="id22">Routing</a></li>
+<li><a class="reference external" href="#connection" id="id23">Connection</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#task-execution-settings" id="id24">Task execution settings</a></li>
+<li><a class="reference external" href="#worker-celeryd" id="id25">Worker: celeryd</a><ul>
+<li><a class="reference external" href="#events" id="id26">Events</a></li>
+<li><a class="reference external" href="#broadcast-commands" id="id27">Broadcast Commands</a></li>
+<li><a class="reference external" href="#logging" id="id28">Logging</a></li>
+<li><a class="reference external" href="#custom-component-classes-advanced" id="id29">Custom Component Classes (advanced)</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#periodic-task-server-celerybeat" id="id30">Periodic Task Server: celerybeat</a></li>
+<li><a class="reference external" href="#monitor-server-celerymon" id="id31">Monitor Server: celerymon</a></li>
+</ul>
+</div>
 <div class="section" id="example-configuration-file">
-<h2>Example configuration file<a class="headerlink" href="#example-configuration-file" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id6">Example configuration file</a><a class="headerlink" href="#example-configuration-file" title="Permalink to this headline">¶</a></h2>
 <p>This is an example configuration file to get you started.
 It should contain all you need to run a basic celery set-up.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_RESULT_BACKEND</span> <span class="o">=</span> <span class="s">&quot;database&quot;</span>
@@ -80,7 +126,7 @@ It should contain all you need to run a basic celery set-up.</p>
 </div>
 </div>
 <div class="section" id="concurrency-settings">
-<h2>Concurrency settings<a class="headerlink" href="#concurrency-settings" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id7">Concurrency settings</a><a class="headerlink" href="#concurrency-settings" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><p class="first">CELERYD_CONCURRENCY</p>
 <blockquote>
@@ -102,7 +148,7 @@ workers.</p>
 </ul>
 </div>
 <div class="section" id="task-result-backend-settings">
-<h2>Task result backend settings<a class="headerlink" href="#task-result-backend-settings" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id8">Task result backend settings</a><a class="headerlink" href="#task-result-backend-settings" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><p class="first">CELERY_RESULT_BACKEND</p>
 <blockquote>
@@ -153,7 +199,7 @@ receive the result once. See <a class="reference internal" href="userguide/execu
 </ul>
 </div>
 <div class="section" id="database-backend-settings">
-<h2>Database backend settings<a class="headerlink" href="#database-backend-settings" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id9">Database backend settings</a><a class="headerlink" href="#database-backend-settings" title="Permalink to this headline">¶</a></h2>
 <p>Please see <a class="reference external" href="http://www.sqlalchemy.org/docs/dbengine.html#supported-databases">Supported Databases</a> for a table of supported databases.
 To use this backend you need to configure it with an
 <a class="reference external" href="http://www.sqlalchemy.org/docs/dbengine.html#create-engine-url-arguments">Connection String</a>, some examples include:</p>
@@ -185,7 +231,7 @@ after configuration. Use the <tt class="docutils literal"><span class="pre">cele
 <div class="highlight-python"><pre>$ celeryinit</pre>
 </div>
 <div class="section" id="example-configuration">
-<h3>Example configuration<a class="headerlink" href="#example-configuration" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id10">Example configuration</a><a class="headerlink" href="#example-configuration" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_RESULT_BACKEND</span> <span class="o">=</span> <span class="s">&quot;database&quot;</span>
 <span class="n">CELERY_RESULT_DBURI</span> <span class="o">=</span> <span class="s">&quot;mysql://user:password@host/dbname&quot;</span>
 </pre></div>
@@ -193,7 +239,7 @@ after configuration. Use the <tt class="docutils literal"><span class="pre">cele
 </div>
 </div>
 <div class="section" id="amqp-backend-settings">
-<h2>AMQP backend settings<a class="headerlink" href="#amqp-backend-settings" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id11">AMQP backend settings</a><a class="headerlink" href="#amqp-backend-settings" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><p class="first">CELERY_RESULT_EXCHANGE</p>
 <blockquote>
@@ -220,20 +266,20 @@ results to be transient.</p>
 </li>
 </ul>
 <div class="section" id="id1">
-<h3>Example configuration<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id12">Example configuration</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 CELERY_RESULT_BACKEND = &#8220;amqp&#8221;</blockquote>
 </div>
 </div>
 <div class="section" id="cache-backend-settings">
-<h2>Cache backend settings<a class="headerlink" href="#cache-backend-settings" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id13">Cache backend settings</a><a class="headerlink" href="#cache-backend-settings" title="Permalink to this headline">¶</a></h2>
 <p>Please see the documentation for the Django cache framework settings:
 <a class="reference external" href="http://docs.djangoproject.com/en/dev/topics/cache/#memcached">http://docs.djangoproject.com/en/dev/topics/cache/#memcached</a></p>
 <p>To use a custom cache backend for Celery, while using another for Django,
 you should use the <tt class="docutils literal"><span class="pre">CELERY_CACHE_BACKEND</span></tt> setting instead of the regular
 django <tt class="docutils literal"><span class="pre">CACHE_BACKEND</span></tt> setting.</p>
 <div class="section" id="id2">
-<h3>Example configuration<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id14">Example configuration</a><a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
 <p>Using a single memcached server:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">CACHE_BACKEND</span> <span class="o">=</span> <span class="s">&#39;memcached://127.0.0.1:11211/&#39;</span>
 </pre></div>
@@ -246,7 +292,7 @@ django <tt class="docutils literal"><span class="pre">CACHE_BACKEND</span></tt> 
 </div>
 </div>
 <div class="section" id="tokyo-tyrant-backend-settings">
-<h2>Tokyo Tyrant backend settings<a class="headerlink" href="#tokyo-tyrant-backend-settings" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id15">Tokyo Tyrant backend settings</a><a class="headerlink" href="#tokyo-tyrant-backend-settings" title="Permalink to this headline">¶</a></h2>
 <dl class="docutils">
 <dt><strong>NOTE</strong> The Tokyo Tyrant backend requires the <tt class="xref py py-mod docutils literal"><span class="pre">pytyrant</span></tt> library:</dt>
 <dd><a class="reference external" href="http://pypi.python.org/pypi/pytyrant/">http://pypi.python.org/pypi/pytyrant/</a></dd>
@@ -267,7 +313,7 @@ django <tt class="docutils literal"><span class="pre">CACHE_BACKEND</span></tt> 
 </li>
 </ul>
 <div class="section" id="id3">
-<h3>Example configuration<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id16">Example configuration</a><a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_RESULT_BACKEND</span> <span class="o">=</span> <span class="s">&quot;tyrant&quot;</span>
 <span class="n">TT_HOST</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>
 <span class="n">TT_PORT</span> <span class="o">=</span> <span class="mi">1978</span>
@@ -276,7 +322,7 @@ django <tt class="docutils literal"><span class="pre">CACHE_BACKEND</span></tt> 
 </div>
 </div>
 <div class="section" id="redis-backend-settings">
-<h2>Redis backend settings<a class="headerlink" href="#redis-backend-settings" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id17">Redis backend settings</a><a class="headerlink" href="#redis-backend-settings" title="Permalink to this headline">¶</a></h2>
 <dl class="docutils">
 <dt><strong>NOTE</strong> The Redis backend requires the <tt class="xref py py-mod docutils literal"><span class="pre">redis</span></tt> library:</dt>
 <dd><a class="reference external" href="http://pypi.python.org/pypi/redis/0.5.5">http://pypi.python.org/pypi/redis/0.5.5</a></dd>
@@ -311,7 +357,7 @@ django <tt class="docutils literal"><span class="pre">CACHE_BACKEND</span></tt> 
 </li>
 </ul>
 <div class="section" id="id4">
-<h3>Example configuration<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id18">Example configuration</a><a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_RESULT_BACKEND</span> <span class="o">=</span> <span class="s">&quot;redis&quot;</span>
 <span class="n">REDIS_HOST</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>
 <span class="n">REDIS_PORT</span> <span class="o">=</span> <span class="mi">6379</span>
@@ -322,7 +368,7 @@ django <tt class="docutils literal"><span class="pre">CACHE_BACKEND</span></tt> 
 </div>
 </div>
 <div class="section" id="mongodb-backend-settings">
-<h2>MongoDB backend settings<a class="headerlink" href="#mongodb-backend-settings" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id19">MongoDB backend settings</a><a class="headerlink" href="#mongodb-backend-settings" title="Permalink to this headline">¶</a></h2>
 <dl class="docutils">
 <dt><strong>NOTE</strong> The MongoDB backend requires the <tt class="xref py py-mod docutils literal"><span class="pre">pymongo</span></tt> library:</dt>
 <dd><a class="reference external" href="http://github.com/mongodb/mongo-python-driver/tree/master">http://github.com/mongodb/mongo-python-driver/tree/master</a></dd>
@@ -374,7 +420,7 @@ Defaults to &#8220;celery_taskmeta&#8221;.</p>
 </li>
 </ul>
 <div class="section" id="id5">
-<h3>Example configuration<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id20">Example configuration</a><a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_RESULT_BACKEND</span> <span class="o">=</span> <span class="s">&quot;mongodb&quot;</span>
 <span class="n">CELERY_MONGODB_BACKEND_SETTINGS</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s">&quot;host&quot;</span><span class="p">:</span> <span class="s">&quot;192.168.1.100&quot;</span><span class="p">,</span>
@@ -387,9 +433,9 @@ Defaults to &#8220;celery_taskmeta&#8221;.</p>
 </div>
 </div>
 <div class="section" id="messaging-settings">
-<h2>Messaging settings<a class="headerlink" href="#messaging-settings" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id21">Messaging settings</a><a class="headerlink" href="#messaging-settings" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="routing">
-<h3>Routing<a class="headerlink" href="#routing" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id22">Routing</a><a class="headerlink" href="#routing" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first">CELERY_QUEUES
 The mapping of queues the worker consumes from. This is a dictionary
@@ -437,7 +483,7 @@ persistent messages.</p>
 </ul>
 </div>
 <div class="section" id="connection">
-<h3>Connection<a class="headerlink" href="#connection" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id23">Connection</a><a class="headerlink" href="#connection" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><dl class="first docutils">
 <dt>CELERY_BROKER_CONNECTION_TIMEOUT</dt>
@@ -469,7 +515,7 @@ to the AMQP broker.</p>
 </div>
 </div>
 <div class="section" id="task-execution-settings">
-<h2>Task execution settings<a class="headerlink" href="#task-execution-settings" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id24">Task execution settings</a><a class="headerlink" href="#task-execution-settings" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><dl class="first docutils">
 <dt>CELERY_ALWAYS_EAGER</dt>
@@ -555,7 +601,7 @@ has been executed, not <em>just before</em>, which is the default behavior.</p>
 </ul>
 </div>
 <div class="section" id="worker-celeryd">
-<h2>Worker: celeryd<a class="headerlink" href="#worker-celeryd" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id25">Worker: celeryd</a><a class="headerlink" href="#worker-celeryd" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><p class="first">CELERY_IMPORTS</p>
 <blockquote>
@@ -607,7 +653,7 @@ If unset, it will send the e-mails if <tt class="docutils literal"><span class="
 </li>
 </ul>
 <div class="section" id="events">
-<h3>Events<a class="headerlink" href="#events" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id26">Events</a><a class="headerlink" href="#events" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first">CELERY_SEND_EVENTS</p>
 <blockquote>
@@ -641,7 +687,7 @@ exchange.</p>
 </ul>
 </div>
 <div class="section" id="broadcast-commands">
-<h3>Broadcast Commands<a class="headerlink" href="#broadcast-commands" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id27">Broadcast Commands</a><a class="headerlink" href="#broadcast-commands" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first">CELERY_BROADCAST_QUEUE</p>
 <blockquote>
@@ -665,7 +711,7 @@ to the prefix to create the final queue name.</p>
 </ul>
 </div>
 <div class="section" id="logging">
-<h3>Logging<a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id28">Logging</a><a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><dl class="first docutils">
 <dt>CELERYD_LOG_FILE</dt>
@@ -707,7 +753,7 @@ formats.</p>
 </ul>
 </div>
 <div class="section" id="custom-component-classes-advanced">
-<h3>Custom Component Classes (advanced)<a class="headerlink" href="#custom-component-classes-advanced" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id29">Custom Component Classes (advanced)</a><a class="headerlink" href="#custom-component-classes-advanced" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first">CELERYD_POOL</p>
 <blockquote>
@@ -737,7 +783,7 @@ Default is <tt class="docutils literal"><span class="pre">&quot;celery.worker.co
 </div>
 </div>
 <div class="section" id="periodic-task-server-celerybeat">
-<h2>Periodic Task Server: celerybeat<a class="headerlink" href="#periodic-task-server-celerybeat" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id30">Periodic Task Server: celerybeat</a><a class="headerlink" href="#periodic-task-server-celerybeat" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><p class="first">CELERYBEAT_SCHEDULE_FILENAME</p>
 <blockquote>
@@ -774,7 +820,7 @@ Can also be set via the <tt class="docutils literal"><span class="pre">--logfile
 </ul>
 </div>
 <div class="section" id="monitor-server-celerymon">
-<h2>Monitor Server: celerymon<a class="headerlink" href="#monitor-server-celerymon" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id31">Monitor Server: celerymon</a><a class="headerlink" href="#monitor-server-celerymon" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><dl class="first docutils">
 <dt>CELERYMON_LOG_FILE</dt>

@@ -8,6 +8,9 @@ respective documenation for more information, or contact the `mailinglist`_.
 
 .. _`mailinglist`: http://groups.google.com/group/celery-users
 
+.. contents::
+    :local:
+
 AMQP Primer
 ===========
 

@@ -54,8 +54,33 @@
             
   <div class="section" id="workers-guide">
 <h1>Workers Guide<a class="headerlink" href="#workers-guide" title="Permalink to this headline">¶</a></h1>
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference external" href="#starting-the-worker" id="id1">Starting the worker</a></li>
+<li><a class="reference external" href="#stopping-the-worker" id="id2">Stopping the worker</a></li>
+<li><a class="reference external" href="#restarting-the-worker" id="id3">Restarting the worker</a></li>
+<li><a class="reference external" href="#concurrency" id="id4">Concurrency</a></li>
+<li><a class="reference external" href="#time-limits" id="id5">Time limits</a></li>
+<li><a class="reference external" href="#max-tasks-per-child-setting" id="id6">Max tasks per child setting</a></li>
+<li><a class="reference external" href="#remote-control" id="id7">Remote control</a><ul>
+<li><a class="reference external" href="#the-broadcast-function" id="id8">The <a class="reference internal" href="../reference/celery.task.control.html#celery.task.control.broadcast" title="celery.task.control.broadcast"><tt class="xref py py-func docutils literal"><span class="pre">broadcast()</span></tt></a> function.</a></li>
+<li><a class="reference external" href="#rate-limits" id="id9">Rate limits</a></li>
+<li><a class="reference external" href="#remote-shutdown" id="id10">Remote shutdown</a></li>
+<li><a class="reference external" href="#ping" id="id11">Ping</a></li>
+<li><a class="reference external" href="#enable-disable-events" id="id12">Enable/disable events</a></li>
+<li><a class="reference external" href="#writing-your-own-remote-control-commands" id="id13">Writing your own remote control commands</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#debugging" id="id14">Debugging</a><ul>
+<li><a class="reference external" href="#dump-of-registered-tasks" id="id15">Dump of registered tasks</a></li>
+<li><a class="reference external" href="#dump-of-scheduled-eta-tasks" id="id16">Dump of scheduled (ETA) tasks</a></li>
+<li><a class="reference external" href="#dump-of-reserved-tasks" id="id17">Dump of reserved tasks</a></li>
+</ul>
+</li>
+</ul>
+</div>
 <div class="section" id="starting-the-worker">
-<h2>Starting the worker<a class="headerlink" href="#starting-the-worker" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id1">Starting the worker</a><a class="headerlink" href="#starting-the-worker" title="Permalink to this headline">¶</a></h2>
 <p>Starting celeryd in the foreground:</p>
 <div class="highlight-python"><pre>$ celeryd --loglevel=INFO</pre>
 </div>
@@ -72,7 +97,7 @@ $ celeryd --loglevel=INFO --concurrency=10 -n worker3.example.com</pre>
 </div>
 </div>
 <div class="section" id="stopping-the-worker">
-<h2>Stopping the worker<a class="headerlink" href="#stopping-the-worker" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id2">Stopping the worker</a><a class="headerlink" href="#stopping-the-worker" title="Permalink to this headline">¶</a></h2>
 <p>Shutdown should be accomplished using the <tt class="docutils literal"><span class="pre">TERM</span></tt> signal (although <tt class="docutils literal"><span class="pre">INT</span></tt>
 also works).</p>
 <p>When shutdown is initiated the worker will finish any tasks it&#8217;s currently
@@ -90,7 +115,7 @@ command usually does the trick:</p>
 </div>
 </div>
 <div class="section" id="restarting-the-worker">
-<h2>Restarting the worker<a class="headerlink" href="#restarting-the-worker" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id3">Restarting the worker</a><a class="headerlink" href="#restarting-the-worker" title="Permalink to this headline">¶</a></h2>
 <p>Other than stopping then starting the worker to restart, you can also
 restart the worker using the <tt class="docutils literal"><span class="pre">HUP</span></tt> signal:</p>
 <div class="highlight-python"><pre>$ kill -HUP $pid</pre>
@@ -99,7 +124,7 @@ restart the worker using the <tt class="docutils literal"><span class="pre">HUP<
 started with.</p>
 </div>
 <div class="section" id="concurrency">
-<h2>Concurrency<a class="headerlink" href="#concurrency" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id4">Concurrency</a><a class="headerlink" href="#concurrency" title="Permalink to this headline">¶</a></h2>
 <p>Multiprocessing is used to perform concurrent execution of tasks. The number
 of worker processes can be changed using the <tt class="docutils literal"><span class="pre">--concurrency</span></tt> argument, and
 defaults to the number of CPUs in the system.</p>
@@ -112,7 +137,7 @@ works best for you, as this varies based on application, work load, task
 runtimes and other factors.</p>
 </div>
 <div class="section" id="time-limits">
-<h2>Time limits<a class="headerlink" href="#time-limits" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id5">Time limits</a><a class="headerlink" href="#time-limits" title="Permalink to this headline">¶</a></h2>
 <p>A single task can potentially run forever, if you have lots of tasks
 waiting for some event that will never happen you will block the worker
 from processing new tasks indefinitely. The best way to defend against
@@ -138,7 +163,7 @@ time limit kills it:</p>
 <p><strong>NOTE</strong> Time limits does not currently work on Windows.</p>
 </div>
 <div class="section" id="max-tasks-per-child-setting">
-<h2>Max tasks per child setting<a class="headerlink" href="#max-tasks-per-child-setting" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id6">Max tasks per child setting</a><a class="headerlink" href="#max-tasks-per-child-setting" title="Permalink to this headline">¶</a></h2>
 <p>With this option you can configure the maximum number of tasks
 a worker can execute before it&#8217;s replaced by a new process.</p>
 <p>This is useful if you have memory leaks you have no control over,
@@ -147,7 +172,7 @@ for example closed source C extensions.</p>
 to <tt class="docutils literal"><span class="pre">celeryd</span></tt> or using the <tt class="docutils literal"><span class="pre">CELERYD_MAX_TASKS_PER_CHILD</span></tt> setting.</p>
 </div>
 <div class="section" id="remote-control">
-<h2>Remote control<a class="headerlink" href="#remote-control" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id7">Remote control</a><a class="headerlink" href="#remote-control" title="Permalink to this headline">¶</a></h2>
 <p>Workers have the ability to be remote controlled using a broadcast message
 queue. The commands can be directed to all, or a specific list of workers.</p>
 <p>Commands can also have replies, the client can then wait for and collect
@@ -163,7 +188,7 @@ commands, so adjust the timeout accordingly.</p>
 of replies to wait for. If a destination is specified this limit is set
 to the number of destinations.</p>
 <div class="section" id="the-broadcast-function">
-<h3>The <a class="reference internal" href="../reference/celery.task.control.html#celery.task.control.broadcast" title="celery.task.control.broadcast"><tt class="xref py py-func docutils literal"><span class="pre">broadcast()</span></tt></a> function.<a class="headerlink" href="#the-broadcast-function" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id8">The <a class="reference internal" href="../reference/celery.task.control.html#celery.task.control.broadcast" title="celery.task.control.broadcast"><tt class="xref py py-func docutils literal"><span class="pre">broadcast()</span></tt></a> function.</a><a class="headerlink" href="#the-broadcast-function" title="Permalink to this headline">¶</a></h3>
 <p>This is the client function used to send commands to the workers.
 Some remote control commands also have higher-level interfaces using
 <a class="reference internal" href="../reference/celery.task.control.html#celery.task.control.broadcast" title="celery.task.control.broadcast"><tt class="xref py py-func docutils literal"><span class="pre">broadcast()</span></tt></a> in the background, like
@@ -197,7 +222,7 @@ more convenient, but there are commands that can only be requested
 using <a class="reference internal" href="../reference/celery.task.control.html#celery.task.control.broadcast" title="celery.task.control.broadcast"><tt class="xref py py-func docutils literal"><span class="pre">broadcast()</span></tt></a>.</p>
 </div>
 <div class="section" id="rate-limits">
-<h3>Rate limits<a class="headerlink" href="#rate-limits" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id9">Rate limits</a><a class="headerlink" href="#rate-limits" title="Permalink to this headline">¶</a></h3>
 <p>Example changing the rate limit for the <tt class="docutils literal"><span class="pre">myapp.mytask</span></tt> task to accept
 200 tasks a minute on all servers:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task.control</span> <span class="kn">import</span> <span class="n">rate_limit</span>
@@ -214,7 +239,7 @@ destination hostname:</p>
 setting on. To re-enable rate limits you have to restart the worker.</p>
 </div>
 <div class="section" id="remote-shutdown">
-<h3>Remote shutdown<a class="headerlink" href="#remote-shutdown" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id10">Remote shutdown</a><a class="headerlink" href="#remote-shutdown" title="Permalink to this headline">¶</a></h3>
 <p>This command will gracefully shut down the worker from remote.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">broadcast</span><span class="p">(</span><span class="s">&quot;shutdown&quot;</span><span class="p">)</span> <span class="c"># shutdown all workers</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">broadcast</span><span class="p">(</span><span class="s">&quot;shutdown, destination=&quot;</span><span class="n">worker1</span><span class="o">.</span><span class="n">example</span><span class="o">.</span><span class="n">com</span><span class="s">&quot;)</span>
@@ -222,7 +247,7 @@ setting on. To re-enable rate limits you have to restart the worker.</p>
 </div>
 </div>
 <div class="section" id="ping">
-<h3>Ping<a class="headerlink" href="#ping" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id11">Ping</a><a class="headerlink" href="#ping" title="Permalink to this headline">¶</a></h3>
 <p>This command requests a ping from alive workers.
 The workers reply with the string &#8216;pong&#8217;, and that&#8217;s just about it.
 It will use the default one second limit for replies unless you specify
@@ -243,7 +268,7 @@ so you can specify which workers to ping:</p>
 </div>
 </div>
 <div class="section" id="enable-disable-events">
-<h3>Enable/disable events<a class="headerlink" href="#enable-disable-events" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id12">Enable/disable events</a><a class="headerlink" href="#enable-disable-events" title="Permalink to this headline">¶</a></h3>
 <p>You can enable/disable events by using the <tt class="docutils literal"><span class="pre">enable_events</span></tt>,
 <tt class="docutils literal"><span class="pre">disable_events</span></tt> commands. This is useful to temporarily monitor
 a worker using celeryev/celerymon.</p>
@@ -253,7 +278,7 @@ a worker using celeryev/celerymon.</p>
 </div>
 </div>
 <div class="section" id="writing-your-own-remote-control-commands">
-<h3>Writing your own remote control commands<a class="headerlink" href="#writing-your-own-remote-control-commands" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id13">Writing your own remote control commands</a><a class="headerlink" href="#writing-your-own-remote-control-commands" title="Permalink to this headline">¶</a></h3>
 <p>Remote control commands are registered in the control panel and
 they take a single argument: the current
 <a class="reference internal" href="../internals/reference/celery.worker.control.html#celery.worker.control.ControlDispatch" title="celery.worker.control.ControlDispatch"><tt class="xref py py-class docutils literal"><span class="pre">ControlDispatch</span></tt></a> instance.
@@ -277,9 +302,9 @@ then import them using the <tt class="docutils literal"><span class="pre">CELERY
 </div>
 </div>
 <div class="section" id="debugging">
-<h2>Debugging<a class="headerlink" href="#debugging" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id14">Debugging</a><a class="headerlink" href="#debugging" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="dump-of-registered-tasks">
-<h3>Dump of registered tasks<a class="headerlink" href="#dump-of-registered-tasks" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id15">Dump of registered tasks</a><a class="headerlink" href="#dump-of-registered-tasks" title="Permalink to this headline">¶</a></h3>
 <p>You can get a list of tasks registered in the worker using the
 <tt class="docutils literal"><span class="pre">dump_tasks</span></tt> remote control command:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">broadcast</span><span class="p">(</span><span class="s">&quot;dump_tasks&quot;</span><span class="p">,</span> <span class="n">reply</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
@@ -294,7 +319,7 @@ then import them using the <tt class="docutils literal"><span class="pre">CELERY
 </div>
 </div>
 <div class="section" id="dump-of-scheduled-eta-tasks">
-<h3>Dump of scheduled (ETA) tasks<a class="headerlink" href="#dump-of-scheduled-eta-tasks" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id16">Dump of scheduled (ETA) tasks</a><a class="headerlink" href="#dump-of-scheduled-eta-tasks" title="Permalink to this headline">¶</a></h3>
 <p>You can get a list of tasks waiting to be scheduled by using
 the <tt class="docutils literal"><span class="pre">dump_schedule</span></tt> remote control command.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">broadcast</span><span class="p">(</span><span class="s">&quot;dump_schedule&quot;</span><span class="p">,</span> <span class="n">reply</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
@@ -314,7 +339,7 @@ the <tt class="docutils literal"><span class="pre">dump_schedule</span></tt> rem
 <p>Note that these are tasks with an eta/countdown argument, not periodic tasks.</p>
 </div>
 <div class="section" id="dump-of-reserved-tasks">
-<h3>Dump of reserved tasks<a class="headerlink" href="#dump-of-reserved-tasks" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id17">Dump of reserved tasks</a><a class="headerlink" href="#dump-of-reserved-tasks" title="Permalink to this headline">¶</a></h3>
 <p>Reserved tasks are tasks that has been received by the broker and is waiting
 for immediate execution.</p>
 <p>You can get a list of these using the <tt class="docutils literal"><span class="pre">dump_reserved</span></tt> remote control command.</p>

@@ -55,8 +55,8 @@
   <div class="section" id="signals-celery-signals">
 <h1>Signals - celery.signals<a class="headerlink" href="#signals-celery-signals" title="Permalink to this headline">¶</a></h1>
 <dl class="data">
-<dt id="task_sent">
-<tt class="descname">task_sent</tt><a class="headerlink" href="#task_sent" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.signals.task_sent">
+<tt class="descclassname">celery.signals.</tt><tt class="descname">task_sent</tt><a class="headerlink" href="#celery.signals.task_sent" title="Permalink to this definition">¶</a></dt>
 <dd><p>Triggered when a task has been sent to the broker.
 Note that this is executed in the client process, the one sending
 the task, not in the worker.</p>
@@ -102,8 +102,8 @@ the task, not in the worker.</p>
 </dd></dl>
 
 <dl class="data">
-<dt id="task_prerun">
-<tt class="descname">task_prerun</tt><a class="headerlink" href="#task_prerun" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.signals.task_prerun">
+<tt class="descclassname">celery.signals.</tt><tt class="descname">task_prerun</tt><a class="headerlink" href="#celery.signals.task_prerun" title="Permalink to this definition">¶</a></dt>
 <dd><p>Triggered before a task is executed.</p>
 <p>Provides arguments:</p>
 <ul>
@@ -135,8 +135,8 @@ the task, not in the worker.</p>
 </dd></dl>
 
 <dl class="data">
-<dt id="task_postrun">
-<tt class="descname">task_postrun</tt><a class="headerlink" href="#task_postrun" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.signals.task_postrun">
+<tt class="descclassname">celery.signals.</tt><tt class="descname">task_postrun</tt><a class="headerlink" href="#celery.signals.task_postrun" title="Permalink to this definition">¶</a></dt>
 <dd><p>Triggered after a task has been executed.</p>
 <p>Provides arguments:</p>
 <ul>
@@ -173,20 +173,20 @@ the task, not in the worker.</p>
 </dd></dl>
 
 <dl class="data">
-<dt id="worker_init">
-<tt class="descname">worker_init</tt><a class="headerlink" href="#worker_init" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.signals.worker_init">
+<tt class="descclassname">celery.signals.</tt><tt class="descname">worker_init</tt><a class="headerlink" href="#celery.signals.worker_init" title="Permalink to this definition">¶</a></dt>
 <dd><p>Triggered before the worker is started.</p>
 </dd></dl>
 
 <dl class="data">
-<dt id="worker_ready">
-<tt class="descname">worker_ready</tt><a class="headerlink" href="#worker_ready" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.signals.worker_ready">
+<tt class="descclassname">celery.signals.</tt><tt class="descname">worker_ready</tt><a class="headerlink" href="#celery.signals.worker_ready" title="Permalink to this definition">¶</a></dt>
 <dd><p>Triggered when the worker is ready to accept work.</p>
 </dd></dl>
 
 <dl class="data">
-<dt id="worker_shutdown">
-<tt class="descname">worker_shutdown</tt><a class="headerlink" href="#worker_shutdown" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.signals.worker_shutdown">
+<tt class="descclassname">celery.signals.</tt><tt class="descname">worker_shutdown</tt><a class="headerlink" href="#celery.signals.worker_shutdown" title="Permalink to this definition">¶</a></dt>
 <dd><p>Triggered when the worker is about to shut down.</p>
 </dd></dl>
 

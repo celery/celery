@@ -54,6 +54,39 @@
             
   <div class="section" id="module-celery.task.base">
 <span id="tasks"></span><h1>Tasks<a class="headerlink" href="#module-celery.task.base" title="Permalink to this headline">¶</a></h1>
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference external" href="#default-keyword-arguments" id="id1">Default keyword arguments</a></li>
+<li><a class="reference external" href="#logging" id="id2">Logging</a></li>
+<li><a class="reference external" href="#retrying-a-task-if-something-fails" id="id3">Retrying a task if something fails</a><ul>
+<li><a class="reference external" href="#using-a-custom-retry-delay" id="id4">Using a custom retry delay</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#task-options" id="id5">Task options</a><ul>
+<li><a class="reference external" href="#message-and-routing-options" id="id6">Message and routing options</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#example" id="id7">Example</a><ul>
+<li><a class="reference external" href="#blog-models-py" id="id8">blog/models.py</a></li>
+<li><a class="reference external" href="#blog-views-py" id="id9">blog/views.py</a></li>
+<li><a class="reference external" href="#blog-tasks-py" id="id10">blog/tasks.py</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#how-it-works" id="id11">How it works</a></li>
+<li><a class="reference external" href="#tips-and-best-practices" id="id12">Tips and Best Practices</a><ul>
+<li><a class="reference external" href="#ignore-results-you-don-t-want" id="id13">Ignore results you don&#8217;t want</a></li>
+<li><a class="reference external" href="#disable-rate-limits-if-they-re-not-used" id="id14">Disable rate limits if they&#8217;re not used</a></li>
+<li><a class="reference external" href="#avoid-launching-synchronous-subtasks" id="id15">Avoid launching synchronous subtasks</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#performance-and-strategies" id="id16">Performance and Strategies</a><ul>
+<li><a class="reference external" href="#granularity" id="id17">Granularity</a></li>
+<li><a class="reference external" href="#data-locality" id="id18">Data locality</a></li>
+<li><a class="reference external" href="#state" id="id19">State</a></li>
+</ul>
+</li>
+</ul>
+</div>
 <p>A task is a class that encapsulates a function and its execution options.
 Given a function <tt class="docutils literal"><span class="pre">create_user</span></tt>, that takes two arguments: <tt class="docutils literal"><span class="pre">username</span></tt> and
 <tt class="docutils literal"><span class="pre">password</span></tt>, you can create a task like this:</p>
@@ -89,7 +122,7 @@ attribute, so pickle is able to find it in reverse:</p>
 </pre></div>
 </div>
 <div class="section" id="default-keyword-arguments">
-<h2>Default keyword arguments<a class="headerlink" href="#default-keyword-arguments" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id1">Default keyword arguments</a><a class="headerlink" href="#default-keyword-arguments" title="Permalink to this headline">¶</a></h2>
 <p>Celery supports a set of default arguments that can be forwarded to any task.
 Tasks can choose not to take these, or list the ones they want.
 The worker will do the right thing.</p>
@@ -140,7 +173,7 @@ capabilities, you can&#8217;t trust the availability of keys in this mapping.</p
 </ul>
 </div>
 <div class="section" id="logging">
-<h2>Logging<a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id2">Logging</a><a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h2>
 <p>You can use the workers logger to add diagnostic output to
 the worker log:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">AddTask</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
@@ -162,7 +195,7 @@ the worker log:</p>
 setting decides whether or not they will be written to the log file.</p>
 </div>
 <div class="section" id="retrying-a-task-if-something-fails">
-<h2>Retrying a task if something fails<a class="headerlink" href="#retrying-a-task-if-something-fails" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id3">Retrying a task if something fails</a><a class="headerlink" href="#retrying-a-task-if-something-fails" title="Permalink to this headline">¶</a></h2>
 <p>Simply use <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.Task.retry" title="celery.task.base.Task.retry"><tt class="xref py py-meth docutils literal"><span class="pre">retry()</span></tt></a> to re-send the task.
 It will do the right thing, and respect the
 <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.Task.max_retries" title="celery.task.base.Task.max_retries"><tt class="xref py py-attr docutils literal"><span class="pre">max_retries</span></tt></a> attribute:</p>
@@ -188,7 +221,7 @@ passed on to the task. In addition, it also uses the <tt class="docutils literal
 argument to use the same task id, and <tt class="docutils literal"><span class="pre">delivery_info</span></tt> to route the
 retried task to the same destination.</p>
 <div class="section" id="using-a-custom-retry-delay">
-<h3>Using a custom retry delay<a class="headerlink" href="#using-a-custom-retry-delay" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id4">Using a custom retry delay</a><a class="headerlink" href="#using-a-custom-retry-delay" title="Permalink to this headline">¶</a></h3>
 <p>When a task is to be retried, it will wait for a given amount of time
 before doing so. The default delay is in the <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.Task.default_retry_delay" title="celery.task.base.Task.default_retry_delay"><tt class="xref py py-attr docutils literal"><span class="pre">Task.default_retry_delay</span></tt></a>
 attribute on the task. By default this is set to 3 minutes. Note that the
@@ -210,7 +243,7 @@ unit for setting the delay is in seconds (int or float).</p>
 </div>
 </div>
 <div class="section" id="task-options">
-<h2>Task options<a class="headerlink" href="#task-options" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id5">Task options</a><a class="headerlink" href="#task-options" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><p class="first">name</p>
 <blockquote>
@@ -280,7 +313,7 @@ methods that have been registered with
 </li>
 </ul>
 <div class="section" id="message-and-routing-options">
-<h3>Message and routing options<a class="headerlink" href="#message-and-routing-options" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id6">Message and routing options</a><a class="headerlink" href="#message-and-routing-options" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><dl class="first docutils">
 <dt>routing_key</dt>
@@ -326,7 +359,7 @@ available.</p>
 </div>
 </div>
 <div class="section" id="example">
-<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id7">Example</a><a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
 <p>Let&#8217;s take a real wold example; A blog where comments posted needs to be
 filtered for spam. When the comment is created, the spam filter runs in the
 background, so the user doesn&#8217;t have to wait for it to finish.</p>
@@ -334,7 +367,7 @@ background, so the user doesn&#8217;t have to wait for it to finish.</p>
 on blog posts. We&#8217;ll describe parts of the models/views and tasks for this
 application.</p>
 <div class="section" id="blog-models-py">
-<h3>blog/models.py<a class="headerlink" href="#blog-models-py" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id8">blog/models.py</a><a class="headerlink" href="#blog-models-py" title="Permalink to this headline">¶</a></h3>
 <p>The comment model looks like this:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">models</span>
 <span class="kn">from</span> <span class="nn">django.utils.translation</span> <span class="kn">import</span> <span class="n">ugettext_lazy</span> <span class="k">as</span> <span class="n">_</span>
@@ -360,7 +393,7 @@ application.</p>
 to the database, then we launch the spam filter task in the background.</p>
 </div>
 <div class="section" id="blog-views-py">
-<h3>blog/views.py<a class="headerlink" href="#blog-views-py" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id9">blog/views.py</a><a class="headerlink" href="#blog-views-py" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-python"><pre>from django import forms
 frmo django.http import HttpResponseRedirect
 from django.template.context import RequestContext
@@ -402,7 +435,7 @@ need to pay. You have to sign up to their service to get an API key.</p>
 Michael Foord.</p>
 </div>
 <div class="section" id="blog-tasks-py">
-<h3>blog/tasks.py<a class="headerlink" href="#blog-tasks-py" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id10">blog/tasks.py</a><a class="headerlink" href="#blog-tasks-py" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">akismet</span> <span class="kn">import</span> <span class="n">Akismet</span>
 <span class="kn">from</span> <span class="nn">celery.decorators</span> <span class="kn">import</span> <span class="n">task</span>
 
@@ -438,7 +471,7 @@ Michael Foord.</p>
 </div>
 </div>
 <div class="section" id="how-it-works">
-<h2>How it works<a class="headerlink" href="#how-it-works" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id11">How it works</a><a class="headerlink" href="#how-it-works" title="Permalink to this headline">¶</a></h2>
 <p>Here comes the technical details, this part isn&#8217;t something you need to know,
 but you may be interested.</p>
 <p>All defined tasks are listed in a registry. The registry contains
@@ -482,9 +515,9 @@ as the client. This is a drawback, but the alternative is a technical
 challenge that has yet to be solved.</p>
 </div>
 <div class="section" id="tips-and-best-practices">
-<h2>Tips and Best Practices<a class="headerlink" href="#tips-and-best-practices" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id12">Tips and Best Practices</a><a class="headerlink" href="#tips-and-best-practices" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="ignore-results-you-don-t-want">
-<h3>Ignore results you don&#8217;t want<a class="headerlink" href="#ignore-results-you-don-t-want" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id13">Ignore results you don&#8217;t want</a><a class="headerlink" href="#ignore-results-you-don-t-want" title="Permalink to this headline">¶</a></h3>
 <p>If you don&#8217;t care about the results of a task, be sure to set the
 <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.Task.ignore_result" title="celery.task.base.Task.ignore_result"><tt class="xref py py-attr docutils literal"><span class="pre">ignore_result</span></tt></a> option, as storing results
 wastes time and resources.</p>
@@ -496,7 +529,7 @@ def mytask(...)
 setting.</p>
 </div>
 <div class="section" id="disable-rate-limits-if-they-re-not-used">
-<h3>Disable rate limits if they&#8217;re not used<a class="headerlink" href="#disable-rate-limits-if-they-re-not-used" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id14">Disable rate limits if they&#8217;re not used</a><a class="headerlink" href="#disable-rate-limits-if-they-re-not-used" title="Permalink to this headline">¶</a></h3>
 <p>Disabling rate limits altogether is recommended if you don&#8217;t have
 any tasks using them. This is because the rate limit subsystem introduces
 quite a lot of complexity.</p>
@@ -507,7 +540,7 @@ rate limits:</p>
 </div>
 </div>
 <div class="section" id="avoid-launching-synchronous-subtasks">
-<h3>Avoid launching synchronous subtasks<a class="headerlink" href="#avoid-launching-synchronous-subtasks" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id15">Avoid launching synchronous subtasks</a><a class="headerlink" href="#avoid-launching-synchronous-subtasks" title="Permalink to this headline">¶</a></h3>
 <p>Having a task wait for the result of another task is really inefficient,
 and may even cause a deadlock if the worker pool is exhausted.</p>
 <p>Make your design asynchronous instead, for example by using <em>callbacks</em>.</p>
@@ -557,9 +590,9 @@ def store_page_info(url, info):
 </div>
 </div>
 <div class="section" id="performance-and-strategies">
-<h2>Performance and Strategies<a class="headerlink" href="#performance-and-strategies" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id16">Performance and Strategies</a><a class="headerlink" href="#performance-and-strategies" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="granularity">
-<h3>Granularity<a class="headerlink" href="#granularity" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id17">Granularity</a><a class="headerlink" href="#granularity" title="Permalink to this headline">¶</a></h3>
 <p>The task&#8217;s granularity is the degree of parallelization your task have.
 It&#8217;s better to have many small tasks, than a few long running ones.</p>
 <p>With smaller tasks, you can process more tasks in parallel and the tasks
@@ -570,7 +603,7 @@ just executing them in-line, you should reconsider your strategy. There is no
 universal answer here.</p>
 </div>
 <div class="section" id="data-locality">
-<h3>Data locality<a class="headerlink" href="#data-locality" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id18">Data locality</a><a class="headerlink" href="#data-locality" title="Permalink to this headline">¶</a></h3>
 <p>The worker processing the task should be as close to the data as
 possible. The best would be to have a copy in memory, the worst being a
 full transfer from another continent.</p>
@@ -583,7 +616,7 @@ system, like <a class="reference external" href="http://memcached.org/">memcache
 <a class="reference external" href="http://research.microsoft.com/pubs/70001/tr-2003-24.pdf">http://research.microsoft.com/pubs/70001/tr-2003-24.pdf</a></p>
 </div>
 <div class="section" id="state">
-<h3>State<a class="headerlink" href="#state" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id19">State</a><a class="headerlink" href="#state" title="Permalink to this headline">¶</a></h3>
 <p>Since celery is a distributed system, you can&#8217;t know in which process, or even
 on what machine the task will run. Indeed you can&#8217;t even know if the task will
 run in a timely manner, so please be wary of the state you pass on to tasks.</p>

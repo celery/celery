@@ -54,28 +54,46 @@
             
   <div class="section" id="internals-the-worker">
 <h1>Internals: The worker<a class="headerlink" href="#internals-the-worker" title="Permalink to this headline">¶</a></h1>
-<p><strong>NOTE</strong> This describes the internals of the development version, not the
-current release.</p>
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference external" href="#introduction" id="id1">Introduction</a></li>
+<li><a class="reference external" href="#data-structures" id="id2">Data structures</a><ul>
+<li><a class="reference external" href="#ready-queue" id="id3">ready_queue</a></li>
+<li><a class="reference external" href="#eta-schedule" id="id4">eta_schedule</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#components" id="id5">Components</a><ul>
+<li><a class="reference external" href="#carrotlistener" id="id6">CarrotListener</a></li>
+<li><a class="reference external" href="#schedulecontroller" id="id7">ScheduleController</a></li>
+<li><a class="reference external" href="#mediator" id="id8">Mediator</a></li>
+<li><a class="reference external" href="#taskpool" id="id9">TaskPool</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="introduction">
+<h2><a class="toc-backref" href="#id1">Introduction</a><a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
 <p>The worker consists of 4 main components: the broker listener, the scheduler,
 the mediator and the task pool. All these components runs in parallel working
 with two data structures: the ready queue and the ETA schedule.</p>
 <img alt="http://cloud.github.com/downloads/ask/celery/Celery1.0-inside-worker.jpg" src="http://cloud.github.com/downloads/ask/celery/Celery1.0-inside-worker.jpg" />
+</div>
 <div class="section" id="data-structures">
-<h2>Data structures<a class="headerlink" href="#data-structures" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id2">Data structures</a><a class="headerlink" href="#data-structures" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="ready-queue">
-<h3>ready_queue<a class="headerlink" href="#ready-queue" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id3">ready_queue</a><a class="headerlink" href="#ready-queue" title="Permalink to this headline">¶</a></h3>
 <p>The ready queue is either an instance of <tt class="xref py py-class docutils literal"><span class="pre">Queue.Queue</span></tt>, or
 <cite>celery.buckets.TaskBucket</cite>. The latter if rate limiting is enabled.</p>
 </div>
 <div class="section" id="eta-schedule">
-<h3>eta_schedule<a class="headerlink" href="#eta-schedule" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id4">eta_schedule</a><a class="headerlink" href="#eta-schedule" title="Permalink to this headline">¶</a></h3>
 <p>The ETA schedule is a heap queue sorted by time.</p>
 </div>
 </div>
 <div class="section" id="components">
-<h2>Components<a class="headerlink" href="#components" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id5">Components</a><a class="headerlink" href="#components" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="carrotlistener">
-<h3>CarrotListener<a class="headerlink" href="#carrotlistener" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id6">CarrotListener</a><a class="headerlink" href="#carrotlistener" title="Permalink to this headline">¶</a></h3>
 <p>Receives messages from the broker using <tt class="docutils literal"><span class="pre">carrot</span></tt>.</p>
 <p>When a message is received it&#8217;s converted into a
 <a class="reference internal" href="reference/celery.worker.job.html#celery.worker.job.TaskRequest" title="celery.worker.job.TaskRequest"><tt class="xref py py-class docutils literal"><span class="pre">celery.worker.job.TaskRequest</span></tt></a> object.</p>
@@ -83,20 +101,20 @@ with two data structures: the ready queue and the ETA schedule.</p>
 be immediately processed are moved directly to the <tt class="docutils literal"><span class="pre">ready_queue</span></tt>.</p>
 </div>
 <div class="section" id="schedulecontroller">
-<h3>ScheduleController<a class="headerlink" href="#schedulecontroller" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id7">ScheduleController</a><a class="headerlink" href="#schedulecontroller" title="Permalink to this headline">¶</a></h3>
 <p>The schedule controller is running the <tt class="docutils literal"><span class="pre">eta_schedule</span></tt>.
 If the scheduled tasks eta has passed it is moved to the <tt class="docutils literal"><span class="pre">ready_queue</span></tt>,
 otherwise the thread sleeps until the eta is met (remember that the schedule
 is sorted by time).</p>
 </div>
 <div class="section" id="mediator">
-<h3>Mediator<a class="headerlink" href="#mediator" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id8">Mediator</a><a class="headerlink" href="#mediator" title="Permalink to this headline">¶</a></h3>
 <p>The mediator simply moves tasks in the <tt class="docutils literal"><span class="pre">ready_queue</span></tt> over to the
 task pool for execution using
 <a class="reference internal" href="reference/celery.worker.job.html#celery.worker.job.TaskRequest.execute_using_pool" title="celery.worker.job.TaskRequest.execute_using_pool"><tt class="xref py py-meth docutils literal"><span class="pre">celery.worker.job.TaskRequest.execute_using_pool()</span></tt></a>.</p>
 </div>
 <div class="section" id="taskpool">
-<h3>TaskPool<a class="headerlink" href="#taskpool" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id9">TaskPool</a><a class="headerlink" href="#taskpool" title="Permalink to this headline">¶</a></h3>
 <p>This is a slightly modified <tt class="xref py py-class docutils literal"><span class="pre">multiprocessing.Pool</span></tt>.
 It mostly works the same way, except it makes sure all of the workers
 are running at all times. If a worker is missing, it replaces

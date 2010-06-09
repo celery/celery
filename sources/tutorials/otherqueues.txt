@@ -9,6 +9,9 @@ an extension to `carrot`_.
 .. _`carrot`: http://pypi.python.org/pypi/carrot
 .. _`ghettoq`: http://pypi.python.org/pypi/ghettoq
 
+.. contents::
+    :local:
+
 Installation
 ============
 

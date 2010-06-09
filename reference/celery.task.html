@@ -52,9 +52,9 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="module-celery.task">
-<span id="task-information-and-utilities-celery-task"></span><h1>Task Information and Utilities - celery.task<a class="headerlink" href="#module-celery.task" title="Permalink to this headline">¶</a></h1>
-<p>Working with tasks and task sets.</p>
+  <div class="section" id="task-information-and-utilities-celery-task">
+<h1>Task Information and Utilities - celery.task<a class="headerlink" href="#task-information-and-utilities-celery-task" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-celery.task"></span><p>Working with tasks and task sets.</p>
 <dl class="class">
 <dt id="celery.task.Task">
 <em class="property">class </em><tt class="descclassname">celery.task.</tt><tt class="descname">Task</tt><a class="headerlink" href="#celery.task.Task" title="Permalink to this definition">¶</a></dt>
@@ -338,7 +338,7 @@ but doesn&#8217;t support the extra options.</p>
 
 <dl class="classmethod">
 <dt id="celery.task.Task.establish_connection">
-<em class="property">classmethod </em><tt class="descclassname">Task.</tt><tt class="descname">establish_connection</tt><big>(</big><em>connect_timeout=4</em><big>)</big><a class="headerlink" href="#celery.task.Task.establish_connection" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><tt class="descclassname">Task.</tt><tt class="descname">establish_connection</tt><big>(</big><em>connect_timeout=None</em><big>)</big><a class="headerlink" href="#celery.task.Task.establish_connection" title="Permalink to this definition">¶</a></dt>
 <dd><p>Establish a connection to the message broker.</p>
 </dd></dl>
 
@@ -364,7 +364,7 @@ but doesn&#8217;t support the extra options.</p>
 
 <dl class="classmethod">
 <dt id="celery.task.Task.get_consumer">
-<em class="property">classmethod </em><tt class="descclassname">Task.</tt><tt class="descname">get_consumer</tt><big>(</big><em>connection=None</em>, <em>connect_timeout=4</em><big>)</big><a class="headerlink" href="#celery.task.Task.get_consumer" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><tt class="descclassname">Task.</tt><tt class="descname">get_consumer</tt><big>(</big><em>connection=None</em>, <em>connect_timeout=None</em><big>)</big><a class="headerlink" href="#celery.task.Task.get_consumer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a celery task message consumer.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -392,7 +392,7 @@ with this object. i.e.:</p>
 
 <dl class="classmethod">
 <dt id="celery.task.Task.get_publisher">
-<em class="property">classmethod </em><tt class="descclassname">Task.</tt><tt class="descname">get_publisher</tt><big>(</big><em>connection=None</em>, <em>exchange=None</em>, <em>connect_timeout=4</em>, <em>exchange_type=None</em><big>)</big><a class="headerlink" href="#celery.task.Task.get_publisher" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><tt class="descclassname">Task.</tt><tt class="descname">get_publisher</tt><big>(</big><em>connection=None</em>, <em>exchange=None</em>, <em>connect_timeout=None</em>, <em>exchange_type=None</em><big>)</big><a class="headerlink" href="#celery.task.Task.get_publisher" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a celery task message publisher.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />

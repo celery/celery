@@ -52,10 +52,67 @@
             
   <div class="section" id="frequently-asked-questions">
 <h1>Frequently Asked Questions<a class="headerlink" href="#frequently-asked-questions" title="Permalink to this headline">¶</a></h1>
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference external" href="#general" id="id1">General</a><ul>
+<li><a class="reference external" href="#what-kinds-of-things-should-i-use-celery-for" id="id2">What kinds of things should I use celery for?</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#misconceptions" id="id3">Misconceptions</a><ul>
+<li><a class="reference external" href="#is-celery-dependent-on-pickle" id="id4">Is celery dependent on pickle?</a></li>
+<li><a class="reference external" href="#is-celery-for-django-only" id="id5">Is celery for Django only?</a></li>
+<li><a class="reference external" href="#do-i-have-to-use-amqp-rabbitmq" id="id6">Do I have to use AMQP/RabbitMQ?</a></li>
+<li><a class="reference external" href="#is-celery-multi-lingual" id="id7">Is celery multi-lingual?</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#troubleshooting" id="id8">Troubleshooting</a><ul>
+<li><a class="reference external" href="#mysql-is-throwing-deadlock-errors-what-can-i-do" id="id9">MySQL is throwing deadlock errors, what can I do?</a></li>
+<li><a class="reference external" href="#celeryd-is-not-doing-anything-just-hanging" id="id10">celeryd is not doing anything, just hanging</a></li>
+<li><a class="reference external" href="#why-is-task-delay-apply-celeryd-just-hanging" id="id11">Why is Task.delay/apply*/celeryd just hanging?</a></li>
+<li><a class="reference external" href="#why-won-t-celeryd-run-on-freebsd" id="id12">Why won&#8217;t celeryd run on FreeBSD?</a></li>
+<li><a class="reference external" href="#i-m-having-integrityerror-duplicate-key-errors-why" id="id13">I&#8217;m having <tt class="docutils literal"><span class="pre">IntegrityError:</span> <span class="pre">Duplicate</span> <span class="pre">Key</span></tt> errors. Why?</a></li>
+<li><a class="reference external" href="#why-aren-t-my-tasks-processed" id="id14">Why aren&#8217;t my tasks processed?</a></li>
+<li><a class="reference external" href="#why-won-t-my-task-run" id="id15">Why won&#8217;t my Task run?</a></li>
+<li><a class="reference external" href="#why-won-t-my-periodic-task-run" id="id16">Why won&#8217;t my Periodic Task run?</a></li>
+<li><a class="reference external" href="#how-do-i-discard-all-waiting-tasks" id="id17">How do I discard all waiting tasks?</a></li>
+<li><a class="reference external" href="#i-ve-discarded-messages-but-there-are-still-messages-left-in-the-queue" id="id18">I&#8217;ve discarded messages, but there are still messages left in the queue?</a></li>
+<li><a class="reference external" href="#windows-the-b-beat-option-to-celeryd-doesn-t-work" id="id19">Windows: The <tt class="docutils literal"><span class="pre">-B</span></tt> / <tt class="docutils literal"><span class="pre">--beat</span></tt> option to celeryd doesn&#8217;t work?</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#tasks" id="id20">Tasks</a><ul>
+<li><a class="reference external" href="#how-can-i-reuse-the-same-connection-when-applying-tasks" id="id21">How can I reuse the same connection when applying tasks?</a></li>
+<li><a class="reference external" href="#can-i-execute-a-task-by-name" id="id22">Can I execute a task by name?</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#results" id="id23">Results</a><ul>
+<li><a class="reference external" href="#how-dow-i-get-the-result-of-a-task-if-i-have-the-id-that-points-there" id="id24">How dow I get the result of a task if I have the ID that points there?</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#brokers" id="id25">Brokers</a><ul>
+<li><a class="reference external" href="#why-is-rabbitmq-crashing" id="id26">Why is RabbitMQ crashing?</a></li>
+<li><a class="reference external" href="#can-i-use-celery-with-activemq-stomp" id="id27">Can I use celery with ActiveMQ/STOMP?</a></li>
+<li><a class="reference external" href="#what-features-are-not-supported-when-using-stomp" id="id28">What features are not supported when using STOMP?</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#features" id="id29">Features</a><ul>
+<li><a class="reference external" href="#how-can-i-run-a-task-once-another-task-has-finished" id="id30">How can I run a task once another task has finished?</a></li>
+<li><a class="reference external" href="#can-i-cancel-the-execution-of-a-task" id="id31">Can I cancel the execution of a task?</a></li>
+<li><a class="reference external" href="#why-aren-t-my-remote-control-commands-received-by-all-workers" id="id32">Why aren&#8217;t my remote control commands received by all workers?</a></li>
+<li><a class="reference external" href="#can-i-send-some-tasks-to-only-some-servers" id="id33">Can I send some tasks to only some servers?</a></li>
+<li><a class="reference external" href="#can-i-change-the-interval-of-a-periodic-task-at-runtime" id="id34">Can I change the interval of a periodic task at runtime?</a></li>
+<li><a class="reference external" href="#does-celery-support-task-priorities" id="id35">Does celery support task priorities?</a></li>
+<li><a class="reference external" href="#should-i-use-retry-or-acks-late" id="id36">Should I use retry or acks_late?</a></li>
+<li><a class="reference external" href="#module-celery.task.base" id="id37">Can I schedule tasks to execute at a specific time?</a></li>
+<li><a class="reference external" href="#how-do-i-shut-down-celeryd-safely" id="id38">How do I shut down <tt class="docutils literal"><span class="pre">celeryd</span></tt> safely?</a></li>
+<li><a class="reference external" href="#how-do-i-run-celeryd-in-the-background-on-platform" id="id39">How do I run celeryd in the background on [platform]?</a></li>
+</ul>
+</li>
+</ul>
+</div>
 <div class="section" id="general">
-<h2>General<a class="headerlink" href="#general" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id1">General</a><a class="headerlink" href="#general" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="what-kinds-of-things-should-i-use-celery-for">
-<h3>What kinds of things should I use celery for?<a class="headerlink" href="#what-kinds-of-things-should-i-use-celery-for" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id2">What kinds of things should I use celery for?</a><a class="headerlink" href="#what-kinds-of-things-should-i-use-celery-for" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> <a class="reference external" href="http://decafbad.com/blog/2008/07/04/queue-everything-and-delight-everyone">Queue everything and delight everyone</a> is a good article
 describing why you would use a queue in a web context.</p>
 <p>These are some common use cases:</p>
@@ -77,9 +134,9 @@ retries.</li>
 </div>
 </div>
 <div class="section" id="misconceptions">
-<h2>Misconceptions<a class="headerlink" href="#misconceptions" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id3">Misconceptions</a><a class="headerlink" href="#misconceptions" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="is-celery-dependent-on-pickle">
-<h3>Is celery dependent on pickle?<a class="headerlink" href="#is-celery-dependent-on-pickle" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id4">Is celery dependent on pickle?</a><a class="headerlink" href="#is-celery-dependent-on-pickle" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> No.</p>
 <p>Celery can support any serialization scheme and has support for JSON/YAML and
 Pickle by default. You can even send one task using pickle, and another one
@@ -91,13 +148,13 @@ particular Task, or even what serializer to use when sending a single task
 instance.</p>
 </div>
 <div class="section" id="is-celery-for-django-only">
-<h3>Is celery for Django only?<a class="headerlink" href="#is-celery-for-django-only" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id5">Is celery for Django only?</a><a class="headerlink" href="#is-celery-for-django-only" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> No.</p>
 <p>Celery does not depend on Django anymore. To use Celery with Django you have
 to use the <a class="reference external" href="http://pypi.python.org/pypi/django-celery">django-celery</a> package:</p>
 </div>
 <div class="section" id="do-i-have-to-use-amqp-rabbitmq">
-<h3>Do I have to use AMQP/RabbitMQ?<a class="headerlink" href="#do-i-have-to-use-amqp-rabbitmq" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id6">Do I have to use AMQP/RabbitMQ?</a><a class="headerlink" href="#do-i-have-to-use-amqp-rabbitmq" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer</strong>: No.</p>
 <p>You can also use Redis or an SQL database, see <a class="reference external" href="http://ask.github.com/celery/tutorials/otherqueues.html">Using other
 queues</a>.</p>
@@ -112,7 +169,7 @@ fine for you before, it probably will now. You can always upgrade later
 if you need to.</p>
 </div>
 <div class="section" id="is-celery-multi-lingual">
-<h3>Is celery multi-lingual?<a class="headerlink" href="#is-celery-multi-lingual" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id7">Is celery multi-lingual?</a><a class="headerlink" href="#is-celery-multi-lingual" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> Yes.</p>
 <p>celeryd is an implementation of celery in python. If the language has an AMQP
 client, there shouldn&#8217;t be much work to create a worker in your language.
@@ -125,9 +182,9 @@ code. See: <a class="reference external" href="http://ask.github.com/celery/user
 </div>
 </div>
 <div class="section" id="troubleshooting">
-<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id8">Troubleshooting</a><a class="headerlink" href="#troubleshooting" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="mysql-is-throwing-deadlock-errors-what-can-i-do">
-<h3>MySQL is throwing deadlock errors, what can I do?<a class="headerlink" href="#mysql-is-throwing-deadlock-errors-what-can-i-do" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id9">MySQL is throwing deadlock errors, what can I do?</a><a class="headerlink" href="#mysql-is-throwing-deadlock-errors-what-can-i-do" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> MySQL has default isolation level set to <tt class="docutils literal"><span class="pre">REPEATABLE-READ</span></tt>,
 if you don&#8217;t really need that, set it to <tt class="docutils literal"><span class="pre">READ-COMMITTED</span></tt>.
 You can do that by adding the following to your <tt class="docutils literal"><span class="pre">my.cnf</span></tt>:</p>
@@ -140,14 +197,14 @@ Transaction Model and Locking</a> in the MySQL user manual.</p>
 <p>(Thanks to Honza Kral and Anton Tsigularov for this solution)</p>
 </div>
 <div class="section" id="celeryd-is-not-doing-anything-just-hanging">
-<h3>celeryd is not doing anything, just hanging<a class="headerlink" href="#celeryd-is-not-doing-anything-just-hanging" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id10">celeryd is not doing anything, just hanging</a><a class="headerlink" href="#celeryd-is-not-doing-anything-just-hanging" title="Permalink to this headline">¶</a></h3>
 <dl class="docutils">
 <dt><strong>Answer:</strong> See <a class="reference external" href="#mysql-is-throwing-deadlock-errors-what-can-i-do">MySQL is throwing deadlock errors, what can I do?</a>.</dt>
 <dd>or <cite>Why is Task.delay/apply* just hanging?</cite>.</dd>
 </dl>
 </div>
 <div class="section" id="why-is-task-delay-apply-celeryd-just-hanging">
-<h3>Why is Task.delay/apply*/celeryd just hanging?<a class="headerlink" href="#why-is-task-delay-apply-celeryd-just-hanging" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id11">Why is Task.delay/apply*/celeryd just hanging?</a><a class="headerlink" href="#why-is-task-delay-apply-celeryd-just-hanging" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> There is a bug in some AMQP clients that will make it hang if
 it&#8217;s not able to authenticate the current user, the password doesn&#8217;t match or
 the user does not have access to the virtual host specified. Be sure to check
@@ -155,7 +212,7 @@ your broker logs (for RabbitMQ that is <tt class="docutils literal"><span class=
 most systems), it usually contains a message describing the reason.</p>
 </div>
 <div class="section" id="why-won-t-celeryd-run-on-freebsd">
-<h3>Why won&#8217;t celeryd run on FreeBSD?<a class="headerlink" href="#why-won-t-celeryd-run-on-freebsd" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id12">Why won&#8217;t celeryd run on FreeBSD?</a><a class="headerlink" href="#why-won-t-celeryd-run-on-freebsd" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> multiprocessing.Pool requires a working POSIX semaphore
 implementation which isn&#8217;t enabled in FreeBSD by default. You have to enable
 POSIX semaphores in the kernel and manually recompile multiprocessing.</p>
@@ -164,12 +221,12 @@ Celery on FreeBSD here:
 <a class="reference external" href="http://www.playingwithwire.com/2009/10/how-to-get-celeryd-to-work-on-freebsd/">http://www.playingwithwire.com/2009/10/how-to-get-celeryd-to-work-on-freebsd/</a></p>
 </div>
 <div class="section" id="i-m-having-integrityerror-duplicate-key-errors-why">
-<h3>I&#8217;m having <tt class="docutils literal"><span class="pre">IntegrityError:</span> <span class="pre">Duplicate</span> <span class="pre">Key</span></tt> errors. Why?<a class="headerlink" href="#i-m-having-integrityerror-duplicate-key-errors-why" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id13">I&#8217;m having <tt class="docutils literal"><span class="pre">IntegrityError:</span> <span class="pre">Duplicate</span> <span class="pre">Key</span></tt> errors. Why?</a><a class="headerlink" href="#i-m-having-integrityerror-duplicate-key-errors-why" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> See <a class="reference external" href="#mysql-is-throwing-deadlock-errors-what-can-i-do">MySQL is throwing deadlock errors, what can I do?</a>.
 Thanks to howsthedotcom.</p>
 </div>
 <div class="section" id="why-aren-t-my-tasks-processed">
-<h3>Why aren&#8217;t my tasks processed?<a class="headerlink" href="#why-aren-t-my-tasks-processed" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id14">Why aren&#8217;t my tasks processed?</a><a class="headerlink" href="#why-aren-t-my-tasks-processed" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> With RabbitMQ you can see how many consumers are currently
 receiving tasks by running the following command:</p>
 <div class="highlight-python"><pre>$ rabbitmqctl list_queues -p &lt;myvhost&gt; name messages consumers
@@ -196,7 +253,7 @@ with:</p>
 </div>
 </div>
 <div class="section" id="why-won-t-my-task-run">
-<h3>Why won&#8217;t my Task run?<a class="headerlink" href="#why-won-t-my-task-run" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id15">Why won&#8217;t my Task run?</a><a class="headerlink" href="#why-won-t-my-task-run" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> There might be syntax errors preventing the tasks module being imported.</p>
 <p>You can find out if celery is able to run the task by executing the
 task manually:</p>
@@ -208,11 +265,11 @@ task manually:</p>
 other error is happening.</p>
 </div>
 <div class="section" id="why-won-t-my-periodic-task-run">
-<h3>Why won&#8217;t my Periodic Task run?<a class="headerlink" href="#why-won-t-my-periodic-task-run" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id16">Why won&#8217;t my Periodic Task run?</a><a class="headerlink" href="#why-won-t-my-periodic-task-run" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> See <a class="reference external" href="#why-won-t-my-task-run">Why won&#8217;t my Task run?</a>.</p>
 </div>
 <div class="section" id="how-do-i-discard-all-waiting-tasks">
-<h3>How do I discard all waiting tasks?<a class="headerlink" href="#how-do-i-discard-all-waiting-tasks" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id17">How do I discard all waiting tasks?</a><a class="headerlink" href="#how-do-i-discard-all-waiting-tasks" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> Use <tt class="docutils literal"><span class="pre">celery.task.discard_all()</span></tt>, like this:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">discard_all</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">discard_all</span><span class="p">()</span>
@@ -224,7 +281,7 @@ other error is happening.</p>
 accomplish the same thing.</p>
 </div>
 <div class="section" id="i-ve-discarded-messages-but-there-are-still-messages-left-in-the-queue">
-<h3>I&#8217;ve discarded messages, but there are still messages left in the queue?<a class="headerlink" href="#i-ve-discarded-messages-but-there-are-still-messages-left-in-the-queue" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id18">I&#8217;ve discarded messages, but there are still messages left in the queue?</a><a class="headerlink" href="#i-ve-discarded-messages-but-there-are-still-messages-left-in-the-queue" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> Tasks are acknowledged (removed from the queue) as soon
 as they are actually executed. After the worker has received a task, it will
 take some time until it is actually executed, especially if there are a lot
@@ -237,19 +294,19 @@ waiting tasks you have to stop all the workers, and then discard the tasks
 using <tt class="docutils literal"><span class="pre">discard_all</span></tt>.</p>
 </div>
 <div class="section" id="windows-the-b-beat-option-to-celeryd-doesn-t-work">
-<h3>Windows: The <tt class="docutils literal"><span class="pre">-B</span></tt> / <tt class="docutils literal"><span class="pre">--beat</span></tt> option to celeryd doesn&#8217;t work?<a class="headerlink" href="#windows-the-b-beat-option-to-celeryd-doesn-t-work" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id19">Windows: The <tt class="docutils literal"><span class="pre">-B</span></tt> / <tt class="docutils literal"><span class="pre">--beat</span></tt> option to celeryd doesn&#8217;t work?</a><a class="headerlink" href="#windows-the-b-beat-option-to-celeryd-doesn-t-work" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer</strong>: That&#8217;s right. Run <tt class="docutils literal"><span class="pre">celerybeat</span></tt> and <tt class="docutils literal"><span class="pre">celeryd</span></tt> as separate
 services instead.</p>
 </div>
 </div>
 <div class="section" id="tasks">
-<h2>Tasks<a class="headerlink" href="#tasks" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id20">Tasks</a><a class="headerlink" href="#tasks" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="how-can-i-reuse-the-same-connection-when-applying-tasks">
-<h3>How can I reuse the same connection when applying tasks?<a class="headerlink" href="#how-can-i-reuse-the-same-connection-when-applying-tasks" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id21">How can I reuse the same connection when applying tasks?</a><a class="headerlink" href="#how-can-i-reuse-the-same-connection-when-applying-tasks" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer</strong>: See <a class="reference internal" href="userguide/executing.html"><em>Executing Tasks</em></a>.</p>
 </div>
 <div class="section" id="can-i-execute-a-task-by-name">
-<h3>Can I execute a task by name?<a class="headerlink" href="#can-i-execute-a-task-by-name" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id22">Can I execute a task by name?</a><a class="headerlink" href="#can-i-execute-a-task-by-name" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer</strong>: Yes. Use <a class="reference internal" href="reference/celery.execute.html#celery.execute.send_task" title="celery.execute.send_task"><tt class="xref py py-func docutils literal"><span class="pre">celery.execute.send_task()</span></tt></a>.
 You can also execute a task by name from any language
 that has an AMQP client.</p>
@@ -261,9 +318,9 @@ that has an AMQP client.</p>
 </div>
 </div>
 <div class="section" id="results">
-<h2>Results<a class="headerlink" href="#results" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id23">Results</a><a class="headerlink" href="#results" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="how-dow-i-get-the-result-of-a-task-if-i-have-the-id-that-points-there">
-<h3>How dow I get the result of a task if I have the ID that points there?<a class="headerlink" href="#how-dow-i-get-the-result-of-a-task-if-i-have-the-id-that-points-there" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id24">How dow I get the result of a task if I have the ID that points there?</a><a class="headerlink" href="#how-dow-i-get-the-result-of-a-task-if-i-have-the-id-that-points-there" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer</strong>: Use <tt class="docutils literal"><span class="pre">Task.AsyncResult</span></tt>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">MyTask</span><span class="o">.</span><span class="n">AsyncResult</span><span class="p">(</span><span class="n">task_id</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
@@ -281,9 +338,9 @@ using the tasks current result backend.</p>
 </div>
 </div>
 <div class="section" id="brokers">
-<h2>Brokers<a class="headerlink" href="#brokers" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id25">Brokers</a><a class="headerlink" href="#brokers" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="why-is-rabbitmq-crashing">
-<h3>Why is RabbitMQ crashing?<a class="headerlink" href="#why-is-rabbitmq-crashing" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id26">Why is RabbitMQ crashing?</a><a class="headerlink" href="#why-is-rabbitmq-crashing" title="Permalink to this headline">¶</a></h3>
 <p>RabbitMQ will crash if it runs out of memory. This will be fixed in a
 future release of RabbitMQ. please refer to the RabbitMQ FAQ:
 <a class="reference external" href="http://www.rabbitmq.com/faq.html#node-runs-out-of-memory">http://www.rabbitmq.com/faq.html#node-runs-out-of-memory</a></p>
@@ -307,7 +364,7 @@ RabbitMQ will eventually run out of memory.</p>
 setting.</p>
 </div>
 <div class="section" id="can-i-use-celery-with-activemq-stomp">
-<h3>Can I use celery with ActiveMQ/STOMP?<a class="headerlink" href="#can-i-use-celery-with-activemq-stomp" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id27">Can I use celery with ActiveMQ/STOMP?</a><a class="headerlink" href="#can-i-use-celery-with-activemq-stomp" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer</strong>: Yes, but this is somewhat experimental for now.
 It is working ok in a test configuration, but it has not
 been tested in production like RabbitMQ has. If you have any problems with
@@ -364,7 +421,7 @@ the one with the most capabilities won).</p>
 specific options.</p>
 </div>
 <div class="section" id="what-features-are-not-supported-when-using-stomp">
-<h3>What features are not supported when using STOMP?<a class="headerlink" href="#what-features-are-not-supported-when-using-stomp" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id28">What features are not supported when using STOMP?</a><a class="headerlink" href="#what-features-are-not-supported-when-using-stomp" title="Permalink to this headline">¶</a></h3>
 <p>This is a (possible incomplete) list of features not available when
 using the STOMP backend:</p>
 <blockquote>
@@ -378,9 +435,9 @@ using the STOMP backend:</p>
 </div>
 </div>
 <div class="section" id="features">
-<h2>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id29">Features</a><a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="how-can-i-run-a-task-once-another-task-has-finished">
-<h3>How can I run a task once another task has finished?<a class="headerlink" href="#how-can-i-run-a-task-once-another-task-has-finished" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id30">How can I run a task once another task has finished?</a><a class="headerlink" href="#how-can-i-run-a-task-once-another-task-has-finished" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer</strong>: You can safely launch a task inside a task.
 Also, a common pattern is to use callback tasks:</p>
 <div class="highlight-python"><pre>@task()
@@ -401,7 +458,7 @@ def log_result(result, **kwargs):
 </div>
 </div>
 <div class="section" id="can-i-cancel-the-execution-of-a-task">
-<h3>Can I cancel the execution of a task?<a class="headerlink" href="#can-i-cancel-the-execution-of-a-task" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id31">Can I cancel the execution of a task?</a><a class="headerlink" href="#can-i-cancel-the-execution-of-a-task" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer</strong>: Yes. Use <tt class="docutils literal"><span class="pre">result.revoke</span></tt>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">add</span><span class="o">.</span><span class="n">apply_async</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">countdown</span><span class="o">=</span><span class="mi">120</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">revoke</span><span class="p">()</span>
@@ -414,7 +471,7 @@ def log_result(result, **kwargs):
 </div>
 </div>
 <div class="section" id="why-aren-t-my-remote-control-commands-received-by-all-workers">
-<h3>Why aren&#8217;t my remote control commands received by all workers?<a class="headerlink" href="#why-aren-t-my-remote-control-commands-received-by-all-workers" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id32">Why aren&#8217;t my remote control commands received by all workers?</a><a class="headerlink" href="#why-aren-t-my-remote-control-commands-received-by-all-workers" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer</strong>: To receive broadcast remote control commands, every <tt class="docutils literal"><span class="pre">celeryd</span></tt>
 uses its hostname to create a unique queue name to listen to,
 so if you have more than one worker with the same hostname, the
@@ -427,7 +484,7 @@ $ celeryd --hostname=$(hostname).2</pre>
 <p>etc, etc.</p>
 </div>
 <div class="section" id="can-i-send-some-tasks-to-only-some-servers">
-<h3>Can I send some tasks to only some servers?<a class="headerlink" href="#can-i-send-some-tasks-to-only-some-servers" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id33">Can I send some tasks to only some servers?</a><a class="headerlink" href="#can-i-send-some-tasks-to-only-some-servers" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> Yes. You can route tasks to an arbitrary server using AMQP,
 and a worker can bind to as many queues as it wants.</p>
 <p>Say you have two servers, <tt class="docutils literal"><span class="pre">x</span></tt>, and <tt class="docutils literal"><span class="pre">y</span></tt> that handles regular tasks,
@@ -529,7 +586,7 @@ and <a class="reference external" href="http://bit.ly/EEWca">Standard Exchange T
 could also be useful as a source of information.</p>
 </div>
 <div class="section" id="can-i-change-the-interval-of-a-periodic-task-at-runtime">
-<h3>Can I change the interval of a periodic task at runtime?<a class="headerlink" href="#can-i-change-the-interval-of-a-periodic-task-at-runtime" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id34">Can I change the interval of a periodic task at runtime?</a><a class="headerlink" href="#can-i-change-the-interval-of-a-periodic-task-at-runtime" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer</strong>: Yes. You can override <tt class="docutils literal"><span class="pre">PeriodicTask.is_due</span></tt> or turn
 <tt class="docutils literal"><span class="pre">PeriodicTask.run_every</span></tt> into a property:</p>
 <div class="highlight-python"><pre>class MyPeriodic(PeriodicTask):
@@ -543,7 +600,7 @@ could also be useful as a source of information.</p>
 </div>
 </div>
 <div class="section" id="does-celery-support-task-priorities">
-<h3>Does celery support task priorities?<a class="headerlink" href="#does-celery-support-task-priorities" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id35">Does celery support task priorities?</a><a class="headerlink" href="#does-celery-support-task-priorities" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer</strong>: No. In theory, yes, as AMQP supports priorities. However
 RabbitMQ doesn&#8217;t implement them yet.</p>
 <p>The usual way to prioritize work in celery, is to route high priority tasks
@@ -552,7 +609,7 @@ priorities. You can use this in combination with rate limiting to achieve a
 highly performant system.</p>
 </div>
 <div class="section" id="should-i-use-retry-or-acks-late">
-<h3>Should I use retry or acks_late?<a class="headerlink" href="#should-i-use-retry-or-acks-late" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id36">Should I use retry or acks_late?</a><a class="headerlink" href="#should-i-use-retry-or-acks-late" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer</strong>: Depends. It&#8217;s not necessarily one or the other, you may want
 to use both.</p>
 <p><tt class="docutils literal"><span class="pre">Task.retry</span></tt> is used to retry tasks, notably for expected errors that
@@ -587,7 +644,7 @@ combine that with <tt class="docutils literal"><span class="pre">acks_late</span
 is required.</p>
 </div>
 <div class="section" id="module-celery.task.base">
-<span id="can-i-schedule-tasks-to-execute-at-a-specific-time"></span><h3>Can I schedule tasks to execute at a specific time?<a class="headerlink" href="#module-celery.task.base" title="Permalink to this headline">¶</a></h3>
+<span id="can-i-schedule-tasks-to-execute-at-a-specific-time"></span><h3><a class="toc-backref" href="#id37">Can I schedule tasks to execute at a specific time?</a><a class="headerlink" href="#module-celery.task.base" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer</strong>: Yes. You can use the <tt class="docutils literal"><span class="pre">eta</span></tt> argument of <a class="reference internal" href="reference/celery.task.base.html#celery.task.base.Task.apply_async" title="celery.task.base.Task.apply_async"><tt class="xref py py-meth docutils literal"><span class="pre">Task.apply_async()</span></tt></a>.</p>
 <p>Or to schedule a periodic task at a specific time, use the
 <a class="reference internal" href="reference/celery.task.schedules.html#celery.task.schedules.crontab" title="celery.task.schedules.crontab"><tt class="xref py py-class docutils literal"><span class="pre">celery.task.schedules.crontab</span></tt></a> schedule behavior:</p>
@@ -601,7 +658,7 @@ is required.</p>
 </div>
 </div>
 <div class="section" id="how-do-i-shut-down-celeryd-safely">
-<h3>How do I shut down <tt class="docutils literal"><span class="pre">celeryd</span></tt> safely?<a class="headerlink" href="#how-do-i-shut-down-celeryd-safely" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id38">How do I shut down <tt class="docutils literal"><span class="pre">celeryd</span></tt> safely?</a><a class="headerlink" href="#how-do-i-shut-down-celeryd-safely" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer</strong>: Use the <tt class="docutils literal"><span class="pre">TERM</span></tt> signal, and celery will finish all currently
 executing jobs and shut down as soon as possible. No tasks should be lost.</p>
 <p>You should never stop <tt class="docutils literal"><span class="pre">celeryd</span></tt> with the <tt class="docutils literal"><span class="pre">KILL</span></tt> signal (<tt class="docutils literal"><span class="pre">-9</span></tt>),
@@ -611,7 +668,7 @@ and they will not be re-run unless you have the <tt class="docutils literal"><sp
 (<tt class="docutils literal"><span class="pre">Task.acks_late</span></tt> / <tt class="docutils literal"><span class="pre">CELERY_ACKS_LATE</span></tt>).</p>
 </div>
 <div class="section" id="how-do-i-run-celeryd-in-the-background-on-platform">
-<h3>How do I run celeryd in the background on [platform]?<a class="headerlink" href="#how-do-i-run-celeryd-in-the-background-on-platform" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id39">How do I run celeryd in the background on [platform]?</a><a class="headerlink" href="#how-do-i-run-celeryd-in-the-background-on-platform" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer</strong>: Please see <a class="reference internal" href="cookbook/daemonizing.html"><em>Running celeryd as a daemon</em></a>.</p>
 </div>
 </div>

@@ -2,6 +2,10 @@
 Signals - celery.signals
 ========================================
 
+.. contents::
+    :local:
+.. currentmodule:: celery.signals
+
 .. data:: task_sent
 
     Triggered when a task has been sent to the broker.

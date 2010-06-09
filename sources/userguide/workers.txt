@@ -2,6 +2,9 @@
  Workers Guide
 ===============
 
+.. contents::
+    :local:
+
 Starting the worker
 ===================
 

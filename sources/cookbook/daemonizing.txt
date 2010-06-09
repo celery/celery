@@ -5,6 +5,9 @@
 Celery does not daemonize itself, please use one of the following
 daemonization tools.
 
+.. contents::
+    :local:
+
 
 start-stop-daemon
 =================

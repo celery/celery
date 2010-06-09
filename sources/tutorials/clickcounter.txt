@@ -2,6 +2,9 @@
  Tutorial: Creating a click counter using carrot and celery
 ============================================================
 
+.. contents::
+    :local:
+
 Introduction
 ============
 
@@ -147,7 +150,7 @@ On to the code...
                 messages_for_url[url].append(message)
             else:
                 messages_for_url[url] = [message]
-    
+
         # Then increment the clicks in the database so we only need
         # one UPDATE/INSERT for each URL.
         for url, click_count in clicks_for_urls.items():
@@ -155,7 +158,7 @@ On to the code...
             # Now that the clicks has been registered for this URL we can
             # acknowledge the messages
             [message.ack() for message in messages_for_url[url]]
-        
+
         consumer.close()
         connection.close()
 
@@ -214,7 +217,7 @@ Processing the clicks every 30 minutes is easy using celery periodic tasks.
 
     class ProcessClicksTask(PeriodicTask):
         run_every = timedelta(minutes=30)
-    
+
         def run(self, \*\*kwargs):
             process_clicks()
 

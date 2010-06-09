@@ -54,27 +54,39 @@
             
   <div class="section" id="periodic-tasks">
 <h1>Periodic Tasks<a class="headerlink" href="#periodic-tasks" title="Permalink to this headline">¶</a></h1>
-<p>You can schedule tasks to run at intervals like <tt class="docutils literal"><span class="pre">cron</span></tt>.
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference external" href="#introduction" id="id1">Introduction</a></li>
+<li><a class="reference external" href="#crontab-like-schedules" id="id2">Crontab-like schedules</a></li>
+<li><a class="reference external" href="#starting-celerybeat" id="id3">Starting celerybeat</a></li>
+</ul>
+</div>
+<div class="section" id="introduction">
+<h2><a class="toc-backref" href="#id1">Introduction</a><a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference internal" href="../reference/celery.bin.celerybeat.html#module-celery.bin.celerybeat"><tt class="xref py py-mod docutils literal"><span class="pre">celerybeat</span></tt></a> service enables you to schedule tasks to
+run at intervals.</p>
+<p>Periodic tasks are defined as special task classes.
 Here&#8217;s an example of a periodic task:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.decorators</span> <span class="kn">import</span> <span class="n">periodic_task</span>
 <span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">timedelta</span>
 
 <span class="nd">@periodic_task</span><span class="p">(</span><span class="n">run_every</span><span class="o">=</span><span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="mi">30</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">every_30_seconds</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Running periodic task!&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">every_30_seconds</span><span class="p">():</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Running periodic task!&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>If you want a little more control over when the task is executed, for example,
-a particular time of day or day of the week, you can use the <tt class="docutils literal"><span class="pre">crontab</span></tt> schedule
-type:</p>
+</div>
+<div class="section" id="crontab-like-schedules">
+<h2><a class="toc-backref" href="#id2">Crontab-like schedules</a><a class="headerlink" href="#crontab-like-schedules" title="Permalink to this headline">¶</a></h2>
+<p>If you want a little more control over when the task is executed, for
+example, a particular time of day or day of the week, you can use
+the <tt class="docutils literal"><span class="pre">crontab</span></tt> schedule type:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.task.schedules</span> <span class="kn">import</span> <span class="n">crontab</span>
 <span class="kn">from</span> <span class="nn">celery.decorators</span> <span class="kn">import</span> <span class="n">periodic_task</span>
 
 <span class="nd">@periodic_task</span><span class="p">(</span><span class="n">run_every</span><span class="o">=</span><span class="n">crontab</span><span class="p">(</span><span class="n">hour</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">minute</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">day_of_week</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">every_monday_morning</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Execute every Monday at 7:30AM.&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">every_monday_morning</span><span class="p">():</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Execute every Monday at 7:30AM.&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The syntax of these crontab expressions is very flexible.  Some examples:</p>
@@ -147,6 +159,9 @@ every hour during office hours (8am-5pm).</td>
 </tr>
 </tbody>
 </table>
+</div>
+<div class="section" id="starting-celerybeat">
+<h2><a class="toc-backref" href="#id3">Starting celerybeat</a><a class="headerlink" href="#starting-celerybeat" title="Permalink to this headline">¶</a></h2>
 <p>If you want to use periodic tasks you need to start the <tt class="docutils literal"><span class="pre">celerybeat</span></tt>
 service. You have to make sure only one instance of this server is running at
 any time, or else you will end up with multiple executions of the same task.</p>
@@ -156,6 +171,7 @@ any time, or else you will end up with multiple executions of the same task.</p>
 <p>You can also start <tt class="docutils literal"><span class="pre">celerybeat</span></tt> with <tt class="docutils literal"><span class="pre">celeryd</span></tt> by using the <tt class="docutils literal"><span class="pre">-B</span></tt> option,
 this is convenient if you only have one server:</p>
 <div class="highlight-python"><pre>$ celeryd -B</pre>
+</div>
 </div>
 </div>
 

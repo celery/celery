@@ -52,51 +52,80 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="module-celery.events.state">
-<span id="in-memory-representation-of-cluster-state-celery-events-state"></span><h1>In-memory Representation of Cluster State - celery.events.state<a class="headerlink" href="#module-celery.events.state" title="Permalink to this headline">¶</a></h1>
-<dl class="class">
+  <div class="section" id="in-memory-representation-of-cluster-state-celery-events-state">
+<h1>In-memory Representation of Cluster State - celery.events.state<a class="headerlink" href="#in-memory-representation-of-cluster-state-celery-events-state" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-celery.events.state"></span><dl class="class">
 <dt id="celery.events.state.Element">
 <em class="property">class </em><tt class="descclassname">celery.events.state.</tt><tt class="descname">Element</tt><big>(</big><em>**fields</em><big>)</big><a class="headerlink" href="#celery.events.state.Element" title="Permalink to this definition">¶</a></dt>
 <dd><p>Base class for types.</p>
-<dl class="method">
-<dt id="celery.events.state.Element.update">
-<tt class="descname">update</tt><big>(</big><em>fields</em>, <em>**extra</em><big>)</big><a class="headerlink" href="#celery.events.state.Element.update" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </dd></dl>
 
 <dl class="class">
 <dt id="celery.events.state.State">
-<em class="property">class </em><tt class="descclassname">celery.events.state.</tt><tt class="descname">State</tt><big>(</big><em>callback=None</em><big>)</big><a class="headerlink" href="#celery.events.state.State" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
+<em class="property">class </em><tt class="descclassname">celery.events.state.</tt><tt class="descname">State</tt><big>(</big><em>callback=None</em>, <em>max_workers_in_memory=5000</em>, <em>max_tasks_in_memory=10000</em><big>)</big><a class="headerlink" href="#celery.events.state.State" title="Permalink to this definition">¶</a></dt>
+<dd><p>Represents a snapshot of a clusters state.</p>
+<dl class="method">
+<dt id="celery.events.state.State.alive_workers">
+<tt class="descname">alive_workers</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.events.state.State.alive_workers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of (seemingly) alive workers.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="celery.events.state.State.event">
 <tt class="descname">event</tt><big>(</big><em>event</em><big>)</big><a class="headerlink" href="#celery.events.state.State.event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Process event.</p>
+</dd></dl>
 
 <dl class="method">
-<dt id="celery.events.state.State.get_task">
-<tt class="descname">get_task</tt><big>(</big><em>uuid</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.events.state.State.get_task" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dt id="celery.events.state.State.get_or_create_task">
+<tt class="descname">get_or_create_task</tt><big>(</big><em>uuid</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.events.state.State.get_or_create_task" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get or create task by uuid.</p>
+</dd></dl>
 
 <dl class="method">
-<dt id="celery.events.state.State.get_worker">
-<tt class="descname">get_worker</tt><big>(</big><em>hostname</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.events.state.State.get_worker" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dt id="celery.events.state.State.get_or_create_worker">
+<tt class="descname">get_or_create_worker</tt><big>(</big><em>hostname</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.events.state.State.get_or_create_worker" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get or create worker by hostname.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.events.state.State.task_event">
 <tt class="descname">task_event</tt><big>(</big><em>type</em>, <em>fields</em><big>)</big><a class="headerlink" href="#celery.events.state.State.task_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Process task event.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.events.state.State.task_types">
+<tt class="descname">task_types</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.events.state.State.task_types" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of all seen task types.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.events.state.State.tasks_by_timestamp">
 <tt class="descname">tasks_by_timestamp</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.events.state.State.tasks_by_timestamp" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Get tasks by timestamp.</p>
+<p>Returns a list of <tt class="docutils literal"><span class="pre">(uuid,</span> <span class="pre">task)</span></tt> tuples.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.events.state.State.tasks_by_type">
+<tt class="descname">tasks_by_type</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#celery.events.state.State.tasks_by_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get all tasks by type.</p>
+<p>Returns a list of <tt class="docutils literal"><span class="pre">(uuid,</span> <span class="pre">task)</span></tt> tuples.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.events.state.State.tasks_by_worker">
+<tt class="descname">tasks_by_worker</tt><big>(</big><em>hostname</em><big>)</big><a class="headerlink" href="#celery.events.state.State.tasks_by_worker" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get all tasks by worker.</p>
+<p>Returns a list of <tt class="docutils literal"><span class="pre">(uuid,</span> <span class="pre">task)</span></tt> tuples.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="celery.events.state.State.worker_event">
 <tt class="descname">worker_event</tt><big>(</big><em>type</em>, <em>fields</em><big>)</big><a class="headerlink" href="#celery.events.state.State.worker_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Process worker event.</p>
+</dd></dl>
 
 </dd></dl>
 
@@ -105,43 +134,43 @@
 <em class="property">class </em><tt class="descclassname">celery.events.state.</tt><tt class="descname">Task</tt><big>(</big><em>**fields</em><big>)</big><a class="headerlink" href="#celery.events.state.Task" title="Permalink to this definition">¶</a></dt>
 <dd><p>Task State.</p>
 <dl class="method">
-<dt id="celery.events.state.Task.failed">
-<tt class="descname">failed</tt><big>(</big><em>timestamp=None</em>, <em>**fields</em><big>)</big><a class="headerlink" href="#celery.events.state.Task.failed" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.events.state.Task.info">
+<tt class="descname">info</tt><big>(</big><em>fields=None</em>, <em>extra=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="headerlink" href="#celery.events.state.Task.info" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="celery.events.state.Task.info">
-<tt class="descname">info</tt><big>(</big><em>fields=None</em>, <em>extra=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="headerlink" href="#celery.events.state.Task.info" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.events.state.Task.on_failed">
+<tt class="descname">on_failed</tt><big>(</big><em>timestamp=None</em>, <em>**fields</em><big>)</big><a class="headerlink" href="#celery.events.state.Task.on_failed" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.events.state.Task.on_received">
+<tt class="descname">on_received</tt><big>(</big><em>timestamp=None</em>, <em>**fields</em><big>)</big><a class="headerlink" href="#celery.events.state.Task.on_received" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.events.state.Task.on_retried">
+<tt class="descname">on_retried</tt><big>(</big><em>timestamp=None</em>, <em>**fields</em><big>)</big><a class="headerlink" href="#celery.events.state.Task.on_retried" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.events.state.Task.on_revoked">
+<tt class="descname">on_revoked</tt><big>(</big><em>timestamp=None</em>, <em>**fields</em><big>)</big><a class="headerlink" href="#celery.events.state.Task.on_revoked" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.events.state.Task.on_started">
+<tt class="descname">on_started</tt><big>(</big><em>timestamp=None</em>, <em>**fields</em><big>)</big><a class="headerlink" href="#celery.events.state.Task.on_started" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.events.state.Task.on_succeeded">
+<tt class="descname">on_succeeded</tt><big>(</big><em>timestamp=None</em>, <em>**fields</em><big>)</big><a class="headerlink" href="#celery.events.state.Task.on_succeeded" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="celery.events.state.Task.ready">
 <tt class="descname">ready</tt><a class="headerlink" href="#celery.events.state.Task.ready" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.events.state.Task.received">
-<tt class="descname">received</tt><big>(</big><em>timestamp=None</em>, <em>**fields</em><big>)</big><a class="headerlink" href="#celery.events.state.Task.received" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.events.state.Task.retried">
-<tt class="descname">retried</tt><big>(</big><em>timestamp=None</em>, <em>**fields</em><big>)</big><a class="headerlink" href="#celery.events.state.Task.retried" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.events.state.Task.revoked">
-<tt class="descname">revoked</tt><big>(</big><em>timestamp=None</em><big>)</big><a class="headerlink" href="#celery.events.state.Task.revoked" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.events.state.Task.started">
-<tt class="descname">started</tt><big>(</big><em>timestamp=None</em>, <em>**fields</em><big>)</big><a class="headerlink" href="#celery.events.state.Task.started" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.events.state.Task.succeeded">
-<tt class="descname">succeeded</tt><big>(</big><em>timestamp=None</em>, <em>**fields</em><big>)</big><a class="headerlink" href="#celery.events.state.Task.succeeded" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -161,18 +190,18 @@
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="celery.events.state.Worker.heartbeat">
-<tt class="descname">heartbeat</tt><big>(</big><em>timestamp=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.events.state.Worker.heartbeat" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.events.state.Worker.on_heartbeat">
+<tt class="descname">on_heartbeat</tt><big>(</big><em>timestamp=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.events.state.Worker.on_heartbeat" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="celery.events.state.Worker.offline">
-<tt class="descname">offline</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.events.state.Worker.offline" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.events.state.Worker.on_offline">
+<tt class="descname">on_offline</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.events.state.Worker.on_offline" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="celery.events.state.Worker.online">
-<tt class="descname">online</tt><big>(</big><em>timestamp=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.events.state.Worker.online" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.events.state.Worker.on_online">
+<tt class="descname">on_online</tt><big>(</big><em>timestamp=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.events.state.Worker.on_online" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>

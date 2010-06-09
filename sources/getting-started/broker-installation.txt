@@ -2,6 +2,9 @@
  Broker Installation
 =====================
 
+.. contents::
+    :local:
+
 Installing RabbitMQ
 ===================
 

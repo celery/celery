@@ -2,6 +2,8 @@
  SQLAlchemy Session - celery.db.session
 ========================================
 
+.. contents::
+    :local:
 .. currentmodule:: celery.db.session
 
 .. automodule:: celery.db.session

@@ -54,8 +54,16 @@
             
   <div class="section" id="first-steps-with-celery">
 <h1>First steps with Celery<a class="headerlink" href="#first-steps-with-celery" title="Permalink to this headline">¶</a></h1>
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference external" href="#creating-a-simple-task" id="id1">Creating a simple task</a></li>
+<li><a class="reference external" href="#configuration" id="id2">Configuration</a></li>
+<li><a class="reference external" href="#running-the-celery-worker-server" id="id3">Running the celery worker server</a></li>
+<li><a class="reference external" href="#executing-the-task" id="id4">Executing the task</a></li>
+</ul>
+</div>
 <div class="section" id="creating-a-simple-task">
-<h2>Creating a simple task<a class="headerlink" href="#creating-a-simple-task" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id1">Creating a simple task</a><a class="headerlink" href="#creating-a-simple-task" title="Permalink to this headline">¶</a></h2>
 <p>In this example we are creating a simple task that adds two
 numbers. Tasks are defined in a normal python module. The module can
 be named whatever you like, but the convention is to call it
@@ -76,7 +84,7 @@ documentation on how to create tasks and task classes are in
 <a class="reference internal" href="../userguide/tasks.html"><em>Executing Tasks</em></a>.</p>
 </div>
 <div class="section" id="configuration">
-<h2>Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id2">Configuration</a><a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h2>
 <p>Celery is configured by using a configuration module. By convention,
 this module is called <tt class="docutils literal"><span class="pre">celeryconfig.py</span></tt>. This module must be in the
 Python path so it can be imported.</p>
@@ -117,7 +125,7 @@ do. For all of the options available, see the
 <a class="reference internal" href="../configuration.html"><em>configuration directive reference</em></a>.</p>
 </div>
 <div class="section" id="running-the-celery-worker-server">
-<h2>Running the celery worker server<a class="headerlink" href="#running-the-celery-worker-server" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id3">Running the celery worker server</a><a class="headerlink" href="#running-the-celery-worker-server" title="Permalink to this headline">¶</a></h2>
 <p>To test we will run the worker server in the foreground, so we can
 see what&#8217;s going on in the terminal:</p>
 <div class="highlight-python"><pre>$ PYTHONPATH="." celeryd --loglevel=INFO</pre>
@@ -133,7 +141,7 @@ help command:</p>
 <a class="reference internal" href="../cookbook/daemonizing.html"><em>daemon mode reference</em></a></p>
 </div>
 <div class="section" id="executing-the-task">
-<h2>Executing the task<a class="headerlink" href="#executing-the-task" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id4">Executing the task</a><a class="headerlink" href="#executing-the-task" title="Permalink to this headline">¶</a></h2>
 <p>Whenever we want to execute our task, we can use the <tt class="docutils literal"><span class="pre">delay</span></tt> method
 of the task class.</p>
 <p>This is a handy shortcut to the <tt class="docutils literal"><span class="pre">apply_async</span></tt> method which gives

@@ -54,7 +54,15 @@
             
   <div class="section" id="task-message-protocol">
 <h1>Task Message Protocol<a class="headerlink" href="#task-message-protocol" title="Permalink to this headline">¶</a></h1>
-<blockquote>
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference external" href="#message-format" id="id1">Message format</a></li>
+<li><a class="reference external" href="#example-message" id="id2">Example message</a></li>
+<li><a class="reference external" href="#serialization" id="id3">Serialization</a></li>
+</ul>
+</div>
+<div class="section" id="message-format">
+<h2><a class="toc-backref" href="#id1">Message format</a><a class="headerlink" href="#message-format" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><dl class="first docutils">
 <dt>task</dt>
@@ -103,21 +111,21 @@ executed asap.</p>
 </dl>
 </li>
 </ul>
-</blockquote>
-<div class="section" id="example">
-<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="example-message">
+<h2><a class="toc-backref" href="#id2">Example message</a><a class="headerlink" href="#example-message" title="Permalink to this headline">¶</a></h2>
 <p>This is an example invocation of the <tt class="docutils literal"><span class="pre">celery.task.PingTask</span></tt> task in JSON
 format:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span><span class="s">&quot;task&quot;</span><span class="p">:</span> <span class="s">&quot;celery.task.PingTask&quot;</span><span class="p">,</span>
- <span class="s">&quot;args&quot;</span><span class="p">:</span> <span class="p">[],</span>
- <span class="s">&quot;kwargs&quot;</span><span class="p">:</span> <span class="p">{},</span>
- <span class="s">&quot;retries&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
- <span class="s">&quot;eta&quot;</span><span class="p">:</span> <span class="s">&quot;2009-11-17T12:30:56.527191&quot;</span><span class="p">}</span>
+<div class="highlight-javascript"><div class="highlight"><pre><span class="p">{</span><span class="s2">&quot;task&quot;</span><span class="o">:</span> <span class="s2">&quot;celery.task.PingTask&quot;</span><span class="p">,</span>
+ <span class="s2">&quot;args&quot;</span><span class="o">:</span> <span class="p">[],</span>
+ <span class="s2">&quot;kwargs&quot;</span><span class="o">:</span> <span class="p">{},</span>
+ <span class="s2">&quot;retries&quot;</span><span class="o">:</span> <span class="mi">0</span><span class="p">,</span>
+ <span class="s2">&quot;eta&quot;</span><span class="o">:</span> <span class="s2">&quot;2009-11-17T12:30:56.527191&quot;</span><span class="p">}</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="serialization">
-<h2>Serialization<a class="headerlink" href="#serialization" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id3">Serialization</a><a class="headerlink" href="#serialization" title="Permalink to this headline">¶</a></h2>
 <p>The protocol supports several serialization formats using the
 <tt class="docutils literal"><span class="pre">content_type</span></tt> message header.</p>
 <p>The MIME-types supported by default are shown in the following table.</p>
@@ -141,6 +149,9 @@ format:</p>
 </tr>
 <tr><td>pickle</td>
 <td>application/x-python-serialize</td>
+</tr>
+<tr><td>msgpack</td>
+<td>application/x-msgpack</td>
 </tr>
 </tbody>
 </table>

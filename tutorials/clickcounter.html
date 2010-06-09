@@ -54,8 +54,18 @@
             
   <div class="section" id="tutorial-creating-a-click-counter-using-carrot-and-celery">
 <h1>Tutorial: Creating a click counter using carrot and celery<a class="headerlink" href="#tutorial-creating-a-click-counter-using-carrot-and-celery" title="Permalink to this headline">¶</a></h1>
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference external" href="#introduction" id="id1">Introduction</a></li>
+<li><a class="reference external" href="#the-model" id="id2">The model</a></li>
+<li><a class="reference external" href="#using-carrot-to-send-clicks-as-messages" id="id3">Using carrot to send clicks as messages</a></li>
+<li><a class="reference external" href="#view-and-urls" id="id4">View and URLs</a></li>
+<li><a class="reference external" href="#creating-the-periodic-task" id="id5">Creating the periodic task</a></li>
+<li><a class="reference external" href="#finishing" id="id6">Finishing</a></li>
+</ul>
+</div>
 <div class="section" id="introduction">
-<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id1">Introduction</a><a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
 <p>A click counter should be easy, right? Just a simple view that increments
 a click in the DB and forwards you to the real destination.</p>
 <p>This would work well for most sites, but when traffic starts to increase,
@@ -69,7 +79,7 @@ the perfect example, you&#8217;ll at least see one example how of they can be us
 to solve a task.</p>
 </div>
 <div class="section" id="the-model">
-<h2>The model<a class="headerlink" href="#the-model" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id2">The model</a><a class="headerlink" href="#the-model" title="Permalink to this headline">¶</a></h2>
 <p>The model is simple, <tt class="docutils literal"><span class="pre">Click</span></tt> has the URL as primary key and a number of
 clicks for that URL. Its manager, <tt class="docutils literal"><span class="pre">ClickManager</span></tt> implements the
 <tt class="docutils literal"><span class="pre">increment_clicks</span></tt> method, which takes a URL and by how much to increment
@@ -110,7 +120,7 @@ its count by.</p>
 </div>
 </div>
 <div class="section" id="using-carrot-to-send-clicks-as-messages">
-<h2>Using carrot to send clicks as messages<a class="headerlink" href="#using-carrot-to-send-clicks-as-messages" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id3">Using carrot to send clicks as messages</a><a class="headerlink" href="#using-carrot-to-send-clicks-as-messages" title="Permalink to this headline">¶</a></h2>
 <p>The model is normal django stuff, nothing new there. But now we get on to
 the messaging. It has been a tradition for me to put the projects messaging
 related code in its own <tt class="docutils literal"><span class="pre">messaging.py</span></tt> module, and I will continue to do so
@@ -199,7 +209,7 @@ without doing it.</p>
 </div>
 </div>
 <div class="section" id="view-and-urls">
-<h2>View and URLs<a class="headerlink" href="#view-and-urls" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id4">View and URLs</a><a class="headerlink" href="#view-and-urls" title="Permalink to this headline">¶</a></h2>
 <p>This is also simple stuff, don&#8217;t think I have to explain this code to you.
 The interface is as follows, if you have a link to <a class="reference external" href="http://google.com">http://google.com</a> you
 would want to count the clicks for, you replace the URL with:</p>
@@ -229,7 +239,7 @@ that site.</p>
 </div>
 </div>
 <div class="section" id="creating-the-periodic-task">
-<h2>Creating the periodic task<a class="headerlink" href="#creating-the-periodic-task" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id5">Creating the periodic task</a><a class="headerlink" href="#creating-the-periodic-task" title="Permalink to this headline">¶</a></h2>
 <p>Processing the clicks every 30 minutes is easy using celery periodic tasks.</p>
 <p><em>clickmuncher/tasks.py</em>:</p>
 <div class="highlight-python"><pre>from celery.task import PeriodicTask
@@ -248,7 +258,7 @@ attribute and in the body of the task just call the <tt class="docutils literal"
 function we wrote earlier.</p>
 </div>
 <div class="section" id="finishing">
-<h2>Finishing<a class="headerlink" href="#finishing" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id6">Finishing</a><a class="headerlink" href="#finishing" title="Permalink to this headline">¶</a></h2>
 <p>There are still ways to improve this application. The URLs could be cleaned
 so the URL <a class="reference external" href="http://google.com">http://google.com</a> and <a class="reference external" href="http://google.com/">http://google.com/</a> is the same. Maybe it&#8217;s
 even possible to update the click count using a single UPDATE query?</p>

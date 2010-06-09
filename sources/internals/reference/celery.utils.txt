@@ -2,6 +2,8 @@
  Utilities - celery.utils
 ==========================
 
+.. contents::
+    :local:
 .. currentmodule:: celery.utils
 
 .. automodule:: celery.utils

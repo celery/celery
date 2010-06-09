@@ -2,6 +2,8 @@
  caqmadm: AMQP API Command-line Shell - celery.bin.camqadm
 ===========================================================
 
+.. contents::
+    :local:
 .. currentmodule:: celery.bin.camqadm
 
 .. automodule:: celery.bin.camqadm
