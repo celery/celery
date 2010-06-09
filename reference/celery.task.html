@@ -556,6 +556,14 @@ it wants explicitly or just take an arbitrary list of keyword
 arguments (**kwargs).</p>
 </dd></dl>
 
+<dl class="classmethod">
+<dt id="celery.task.Task.subtask">
+<em class="property">classmethod </em><tt class="descclassname">Task.</tt><tt class="descname">subtask</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.Task.subtask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a <tt class="xref py py-class docutils literal"><span class="pre">subtask</span></tt> object for
+this task that wraps arguments and execution options
+for a single task invocation.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -568,7 +576,7 @@ to track how many, or when all of the tasks has been completed.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>tasks</strong> &#8211; A list of :class:<a href="#id1"><span class="problematic" id="id2">`</span></a>subtask`s.</li>
+<li><strong>tasks</strong> &#8211; A list of <tt class="xref py py-class docutils literal"><span class="pre">subtask</span></tt> instances.</li>
 </ul>
 </td>
 </tr>
@@ -580,7 +588,7 @@ to track how many, or when all of the tasks has been completed.</p>
 <dd><p>Total number of subtasks in this task set.</p>
 </dd></dl>
 
-<p>Example</p>
+<p>Example:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">djangofeeds.tasks</span> <span class="kn">import</span> <span class="n">RefreshFeedTask</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task.sets</span> <span class="kn">import</span> <span class="n">TaskSet</span><span class="p">,</span> <span class="n">subtask</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">urls</span> <span class="o">=</span> <span class="p">(</span><span class="s">&quot;http://cnn.com/rss&quot;</span><span class="p">,</span>
@@ -603,14 +611,7 @@ to track how many, or when all of the tasks has been completed.</p>
 <dt id="celery.task.TaskSet.apply_async">
 <tt class="descname">apply_async</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.TaskSet.apply_async" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run all tasks in the taskset.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body">A <a class="reference internal" href="celery.result.html#celery.result.TaskSetResult" title="celery.result.TaskSetResult"><tt class="xref py py-class docutils literal"><span class="pre">celery.result.TaskSetResult</span></tt></a> instance.</td>
-</tr>
-</tbody>
-</table>
+<p>Returns a <a class="reference internal" href="celery.result.html#celery.result.TaskSetResult" title="celery.result.TaskSetResult"><tt class="xref py py-class docutils literal"><span class="pre">celery.result.TaskSetResult</span></tt></a> instance.</p>
 <p>Example</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">ts</span> <span class="o">=</span> <span class="n">TaskSet</span><span class="p">(</span><span class="n">tasks</span><span class="o">=</span><span class="p">(</span>
 <span class="gp">... </span>        <span class="n">subtask</span><span class="p">(</span><span class="n">RefreshFeedTask</span><span class="p">,</span> <span class="p">[</span><span class="s">&quot;http://foo.com/rss&quot;</span><span class="p">]),</span>

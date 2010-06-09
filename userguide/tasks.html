@@ -176,20 +176,18 @@ capabilities, you can&#8217;t trust the availability of keys in this mapping.</p
 <h2><a class="toc-backref" href="#id2">Logging</a><a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h2>
 <p>You can use the workers logger to add diagnostic output to
 the worker log:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">AddTask</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="n">logger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Adding </span><span class="si">%s</span><span class="s"> + </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
-</pre></div>
+<div class="highlight-python"><pre>class AddTask(Task):
+    def run(self, x, y, \*\*kwargs):
+        logger = self.get_logger(\*\*kwargs)
+        logger.info("Adding %s + %s" % (x, y))
+        return x + y</pre>
 </div>
 <p>or using the decorator syntax:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="nd">@task</span><span class="p">()</span>
-<span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="n">logger</span> <span class="o">=</span> <span class="n">add</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Adding </span><span class="si">%s</span><span class="s"> + </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
-    <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
-</pre></div>
+<div class="highlight-python"><pre>@task()
+def add(x, y, \*\*kwargs):
+    logger = add.get_logger(\*\*kwargs)
+    logger.info("Adding %s + %s" % (x, y))
+    return x + y</pre>
 </div>
 <p>There are several logging levels available, and the workers <tt class="docutils literal"><span class="pre">loglevel</span></tt>
 setting decides whether or not they will be written to the log file.</p>
@@ -199,14 +197,13 @@ setting decides whether or not they will be written to the log file.</p>
 <p>Simply use <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.Task.retry" title="celery.task.base.Task.retry"><tt class="xref py py-meth docutils literal"><span class="pre">retry()</span></tt></a> to re-send the task.
 It will do the right thing, and respect the
 <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.Task.max_retries" title="celery.task.base.Task.max_retries"><tt class="xref py py-attr docutils literal"><span class="pre">max_retries</span></tt></a> attribute:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="nd">@task</span><span class="p">()</span>
-<span class="k">def</span> <span class="nf">send_twitter_status</span><span class="p">(</span><span class="n">oauth</span><span class="p">,</span> <span class="n">tweet</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">twitter</span> <span class="o">=</span> <span class="n">Twitter</span><span class="p">(</span><span class="n">oauth</span><span class="p">)</span>
-        <span class="n">twitter</span><span class="o">.</span><span class="n">update_status</span><span class="p">(</span><span class="n">tweet</span><span class="p">)</span>
-    <span class="k">except</span> <span class="p">(</span><span class="n">Twitter</span><span class="o">.</span><span class="n">FailWhaleError</span><span class="p">,</span> <span class="n">Twitter</span><span class="o">.</span><span class="n">LoginError</span><span class="p">),</span> <span class="n">exc</span><span class="p">:</span>
-        <span class="n">send_twitter_status</span><span class="o">.</span><span class="n">retry</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="n">oauth</span><span class="p">,</span> <span class="n">tweet</span><span class="p">],</span> <span class="n">kwargs</span><span class="o">=</span><span class="n">kwargs</span><span class="p">,</span> <span class="n">exc</span><span class="o">=</span><span class="n">exc</span><span class="p">)</span>
-</pre></div>
+<div class="highlight-python"><pre>@task()
+def send_twitter_status(oauth, tweet, \*\*kwargs):
+    try:
+        twitter = Twitter(oauth)
+        twitter.update_status(tweet)
+    except (Twitter.FailWhaleError, Twitter.LoginError), exc:
+        send_twitter_status.retry(args=[oauth, tweet], kwargs=kwargs, exc=exc)</pre>
 </div>
 <p>Here we used the <tt class="docutils literal"><span class="pre">exc</span></tt> argument to pass the current exception to
 <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.Task.retry" title="celery.task.base.Task.retry"><tt class="xref py py-meth docutils literal"><span class="pre">Task.retry()</span></tt></a>. At each step of the retry this exception
@@ -228,17 +225,16 @@ attribute on the task. By default this is set to 3 minutes. Note that the
 unit for setting the delay is in seconds (int or float).</p>
 <p>You can also provide the <tt class="docutils literal"><span class="pre">countdown</span></tt> argument to
 <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.Task.retry" title="celery.task.base.Task.retry"><tt class="xref py py-meth docutils literal"><span class="pre">retry()</span></tt></a> to override this default.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MyTask</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
-    <span class="n">default_retry_delay</span> <span class="o">=</span> <span class="mi">30</span> <span class="o">*</span> <span class="mi">60</span> <span class="c"># retry in 30 minutes</span>
+<div class="highlight-python"><pre>class MyTask(Task):
+    default_retry_delay = 30 * 60 # retry in 30 minutes
 
-    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="o">...</span>
-        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">exc</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">retry</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">,</span> <span class="n">exc</span><span class="o">=</span><span class="n">exc</span><span class="p">,</span>
-                       <span class="n">countdown</span><span class="o">=</span><span class="mi">60</span><span class="p">)</span> <span class="c"># override the default and</span>
-                                     <span class="c"># - retry in 1 minute</span>
-</pre></div>
+    def run(self, x, y, \*\*kwargs):
+        try:
+            ...
+        except Exception, exc:
+            self.retry([x, y], kwargs, exc=exc,
+                       countdown=60) # override the default and
+                                     # - retry in 1 minute</pre>
 </div>
 </div>
 </div>
@@ -436,37 +432,36 @@ Michael Foord.</p>
 </div>
 <div class="section" id="blog-tasks-py">
 <h3><a class="toc-backref" href="#id10">blog/tasks.py</a><a class="headerlink" href="#blog-tasks-py" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">akismet</span> <span class="kn">import</span> <span class="n">Akismet</span>
-<span class="kn">from</span> <span class="nn">celery.decorators</span> <span class="kn">import</span> <span class="n">task</span>
+<div class="highlight-python"><pre>from akismet import Akismet
+from celery.decorators import task
 
-<span class="kn">from</span> <span class="nn">django.core.exceptions</span> <span class="kn">import</span> <span class="n">ImproperlyConfigured</span>
-<span class="kn">from</span> <span class="nn">django.contrib.sites.models</span> <span class="kn">import</span> <span class="n">Site</span>
+from django.core.exceptions import ImproperlyConfigured
+from django.contrib.sites.models import Site
 
-<span class="kn">from</span> <span class="nn">blog.models</span> <span class="kn">import</span> <span class="n">Comment</span>
-
-
-<span class="nd">@task</span>
-<span class="k">def</span> <span class="nf">spam_filter</span><span class="p">(</span><span class="n">comment_id</span><span class="p">,</span> <span class="n">remote_addr</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="n">logger</span> <span class="o">=</span> <span class="n">spam_filter</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Running spam filter for comment </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">comment_id</span><span class="p">)</span>
-
-        <span class="n">comment</span> <span class="o">=</span> <span class="n">Comment</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">pk</span><span class="o">=</span><span class="n">comment_id</span><span class="p">)</span>
-        <span class="n">current_domain</span> <span class="o">=</span> <span class="n">Site</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_current</span><span class="p">()</span><span class="o">.</span><span class="n">domain</span>
-        <span class="n">akismet</span> <span class="o">=</span> <span class="n">Akismet</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">AKISMET_KEY</span><span class="p">,</span> <span class="s">&quot;http://</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">domain</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">akismet</span><span class="o">.</span><span class="n">verify_key</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="n">ImproperlyConfigured</span><span class="p">(</span><span class="s">&quot;Invalid AKISMET_KEY&quot;</span><span class="p">)</span>
+from blog.models import Comment
 
 
-        <span class="n">is_spam</span> <span class="o">=</span> <span class="n">akismet</span><span class="o">.</span><span class="n">comment_check</span><span class="p">(</span><span class="n">user_ip</span><span class="o">=</span><span class="n">remote_addr</span><span class="p">,</span>
-                            <span class="n">comment_content</span><span class="o">=</span><span class="n">comment</span><span class="o">.</span><span class="n">comment</span><span class="p">,</span>
-                            <span class="n">comment_author</span><span class="o">=</span><span class="n">comment</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
-                            <span class="n">comment_author_email</span><span class="o">=</span><span class="n">comment</span><span class="o">.</span><span class="n">email_address</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">is_spam</span><span class="p">:</span>
-            <span class="n">comment</span><span class="o">.</span><span class="n">is_spam</span> <span class="o">=</span> <span class="bp">True</span>
-            <span class="n">comment</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+@task
+def spam_filter(comment_id, remote_addr=None, \*\*kwargs):
+        logger = spam_filter.get_logger(\*\*kwargs)
+        logger.info("Running spam filter for comment %s" % comment_id)
 
-        <span class="k">return</span> <span class="n">is_spam</span>
-</pre></div>
+        comment = Comment.objects.get(pk=comment_id)
+        current_domain = Site.objects.get_current().domain
+        akismet = Akismet(settings.AKISMET_KEY, "http://%s" % domain)
+        if not akismet.verify_key():
+            raise ImproperlyConfigured("Invalid AKISMET_KEY")
+
+
+        is_spam = akismet.comment_check(user_ip=remote_addr,
+                            comment_content=comment.comment,
+                            comment_author=comment.name,
+                            comment_author_email=comment.email_address)
+        if is_spam:
+            comment.is_spam = True
+            comment.save()
+
+        return is_spam</pre>
 </div>
 </div>
 </div>
@@ -565,28 +560,36 @@ and may even cause a deadlock if the worker pool is exhausted.</p>
 </pre></div>
 </div>
 <p>Good:</p>
-<div class="highlight-python"><pre>@task(ignore_result=True)
-def update_page_info(url):
-    # fetch_page -&gt; parse_page -&gt; store_page
-    fetch_page.delay(url, callback=callback,
-                     callback_args=(store_page_info.delay, ))
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@task</span><span class="p">(</span><span class="n">ignore_result</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">update_page_info</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
+    <span class="c"># fetch_page -&gt; parse_page -&gt; store_page</span>
+    <span class="n">fetch_page</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="n">subtask</span><span class="p">(</span><span class="n">parse_page</span><span class="p">,</span>
+                                <span class="n">callback</span><span class="o">=</span><span class="n">subtask</span><span class="p">(</span><span class="n">store_page_info</span><span class="p">)))</span>
 
-@task(ignore_result=True)
-def fetch_page(url, callback=None, callback_args=()):
-    page = myparser.parse_document(page)
-    if callback:
-        callback(page, \*callback_args)
+<span class="nd">@task</span><span class="p">(</span><span class="n">ignore_result</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">fetch_page</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="n">page</span> <span class="o">=</span> <span class="n">myparser</span><span class="o">.</span><span class="n">parse_document</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">callback</span><span class="p">:</span>
+        <span class="c"># The callback may have been serialized with JSON,</span>
+        <span class="c"># so best practice is to convert the subtask dict back</span>
+        <span class="c"># into a subtask object.</span>
+        <span class="n">subtask</span><span class="p">(</span><span class="n">callback</span><span class="p">)</span><span class="o">.</span><span class="n">apply_async</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
 
-@task(ignore_result=True)
-def parse_page(url, page, callback=None):
-    info = myparser.parse_document(page)
-    if callback:
-        callback(url, info)
+<span class="nd">@task</span><span class="p">(</span><span class="n">ignore_result</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">parse_page</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">page</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="n">info</span> <span class="o">=</span> <span class="n">myparser</span><span class="o">.</span><span class="n">parse_document</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">callback</span><span class="p">:</span>
+        <span class="n">subtask</span><span class="p">(</span><span class="n">callback</span><span class="p">)</span><span class="o">.</span><span class="n">apply_async</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">info</span><span class="p">)</span>
 
-@task(ignore_result=True)
-def store_page_info(url, info):
-    PageInfo.objects.create(url, info)</pre>
+<span class="nd">@task</span><span class="p">(</span><span class="n">ignore_result</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">store_page_info</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">info</span><span class="p">):</span>
+    <span class="n">PageInfo</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">info</span><span class="p">)</span>
+</pre></div>
 </div>
+<p>We use <tt class="xref py py-class docutils literal"><span class="pre">subtask</span></tt> here to safely pass
+around the callback task. <tt class="xref py py-class docutils literal"><span class="pre">subtask</span></tt> is a
+subclass of dict used to wrap the arguments and execution options
+for a single task invocation.</p>
 </div>
 </div>
 <div class="section" id="performance-and-strategies">
