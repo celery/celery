@@ -2,8 +2,15 @@
  External tutorials and resources
 ==================================
 
+This is a list of external blog posts, tutorials and slides related
+to Celery. If you have a link that's missing from this list, please
+contact the mailing-list or submit a patch.
+
+.. contents::
+    :local:
+
 Introduction to Celery
-----------------------
+======================
 
 Awesome slides from when `Idan Gazit`_ had a talk about Celery at `PyWeb-IL`_:
 http://www.slideshare.net/idangazit/an-introduction-to-celery

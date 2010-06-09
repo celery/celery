@@ -40,13 +40,13 @@ class TaskSet(UserList):
     """A task containing several subtasks, making it possible
     to track how many, or when all of the tasks has been completed.
 
-    :param tasks: A list of :class:`subtask`s.
+    :param tasks: A list of :class:`subtask` instances.
 
     .. attribute:: total
 
         Total number of subtasks in this task set.
 
-    Example
+    Example::
 
         >>> from djangofeeds.tasks import RefreshFeedTask
         >>> from celery.task.sets import TaskSet, subtask
@@ -80,7 +80,7 @@ class TaskSet(UserList):
             connect_timeout=conf.BROKER_CONNECTION_TIMEOUT):
         """Run all tasks in the taskset.
 
-        :returns: A :class:`celery.result.TaskSetResult` instance.
+        Returns a :class:`celery.result.TaskSetResult` instance.
 
         Example
 
@@ -111,7 +111,8 @@ class TaskSet(UserList):
             return self.apply()
 
         taskset_id = gen_unique_id()
-        conn = connection or establish_connection(connect_timeout=connect_timeout)
+        conn = connection or establish_connection(
+                                    connect_timeout=connect_timeout)
         publisher = TaskPublisher(connection=conn)
         try:
             results = [task.apply_async(taskset_id, publisher)

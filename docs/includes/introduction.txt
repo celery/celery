@@ -34,6 +34,9 @@ via the `django-celery`_ package.
 .. _`operate with other languages using webhooks`:
     http://ask.github.com/celery/userguide/remote-tasks.html
 
+.. contents::
+    :local:
+
 Overview
 ========
 

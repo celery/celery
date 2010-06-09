@@ -2,6 +2,12 @@
  Executing Tasks
 =================
 
+.. contents::
+    :local:
+
+Basics
+======
+
 Executing tasks is done with :meth:`~celery.task.Base.Task.apply_async`,
 and its shortcut: :meth:`~celery.task.Base.Task.delay`.
 
@@ -43,7 +49,7 @@ task, which adds together two numbers:
 
 
 ETA and countdown
------------------
+=================
 
 The ETA (estimated time of arrival) lets you set a specific date and time that
 is the earliest time at which your task will execute. ``countdown`` is
@@ -75,7 +81,7 @@ have a :class:`~datetime.datetime`` object and need to modify it with a
 
 
 Serializers
------------
+===========
 
 Data passed between celery and workers has to be serialized to be
 transferred. The default serializer is :mod:`pickle`, but you can 
@@ -104,7 +110,7 @@ configuration directive.
     >>> add.apply_async(args=[10, 10], serializer="json")
 
 Connections and connection timeouts.
-------------------------------------
+====================================
 
 Currently there is no support for broker connection pools in celery,
 so this is something you need to be aware of when sending more than
@@ -165,7 +171,7 @@ Or if you handle the connection manually:
 
 
 Routing options
----------------
+===============
 
 Celery uses the AMQP routing mechanisms to route tasks to different workers.
 You can route tasks using the following entities: exchange, queue and routing key.
@@ -227,7 +233,7 @@ by creating a new queue that binds to ``"image.crop``".
 
 
 AMQP options
-------------
+============
 
 * mandatory
 

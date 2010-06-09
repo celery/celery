@@ -2,6 +2,8 @@
  HTTP Callback Tasks - celery.task.http
 ========================================
 
+.. contents::
+    :local:
 .. currentmodule:: celery.task.http
 
 .. automodule:: celery.task.http

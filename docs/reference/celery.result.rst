@@ -2,6 +2,8 @@
 Task Result - celery.result
 =============================
 
+.. contents::
+    :local:
 .. currentmodule:: celery.result
 
 .. automodule:: celery.result

@@ -2,6 +2,9 @@
  First steps with Celery
 ========================
 
+.. contents::
+    :local:
+
 Creating a simple task
 ======================
 

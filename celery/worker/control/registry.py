@@ -12,6 +12,7 @@ class Panel(UserDict):
     @classmethod
     def register(cls, method, name=None):
         cls.data[name or method.__name__] = method
+        return method
 
     @classmethod
     def unregister(cls, name_or_method):

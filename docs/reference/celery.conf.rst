@@ -2,6 +2,10 @@
 Configuration - celery.conf
 ============================
 
+.. contents::
+    :local:
+.. currentmodule:: celery.conf
+
 .. data:: QUEUES
 
     Queue name/options mapping.

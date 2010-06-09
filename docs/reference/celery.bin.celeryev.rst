@@ -2,6 +2,8 @@
  celeryev: Curses Event Viewer - celery.bin.celeryev
 =====================================================
 
+.. contents::
+    :local:
 .. currentmodule:: celery.bin.celeryev
 
 .. automodule:: celery.bin.celeryev

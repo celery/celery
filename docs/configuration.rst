@@ -7,6 +7,9 @@ This document describes the configuration options available.
 If you're using the default loader, you must create the ``celeryconfig.py``
 module and make sure it is available on the Python path.
 
+.. contents::
+    :local:
+
 Example configuration file
 ==========================
 

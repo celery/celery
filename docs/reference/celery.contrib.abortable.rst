@@ -2,8 +2,11 @@
  Contrib: Abortable tasks - celery.contrib.abortable
 =======================================================
 
- .. currentmodule:: celery.contrib.abortable
+.. contents::
+    :local:
 
- .. automodule:: celery.contrib.abortable
-     :members:
-     :undoc-members:
+.. currentmodule:: celery.contrib.abortable
+
+.. automodule:: celery.contrib.abortable
+    :members:
+    :undoc-members:

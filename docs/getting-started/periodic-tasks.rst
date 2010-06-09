@@ -2,7 +2,16 @@
  Periodic Tasks
 ================
 
-You can schedule tasks to run at intervals like ``cron``.
+.. contents::
+    :local:
+
+Introduction
+============
+
+The :mod:`~celery.bin.celerybeat` service enables you to schedule tasks to
+run at intervals.
+
+Periodic tasks are defined as special task classes.
 Here's an example of a periodic task:
 
 .. code-block:: python
@@ -11,13 +20,15 @@ Here's an example of a periodic task:
     from datetime import timedelta
 
     @periodic_task(run_every=timedelta(seconds=30))
-    def every_30_seconds(**kwargs):
-        logger = self.get_logger(**kwargs)
-        logger.info("Running periodic task!")
+    def every_30_seconds():
+        print("Running periodic task!")
 
-If you want a little more control over when the task is executed, for example,
-a particular time of day or day of the week, you can use the ``crontab`` schedule
-type:
+Crontab-like schedules
+======================
+
+If you want a little more control over when the task is executed, for
+example, a particular time of day or day of the week, you can use
+the ``crontab`` schedule type:
 
 .. code-block:: python
 
@@ -25,9 +36,8 @@ type:
     from celery.decorators import periodic_task
 
     @periodic_task(run_every=crontab(hour=7, minute=30, day_of_week=1))
-    def every_monday_morning(**kwargs):
-        logger = self.get_logger(**kwargs)
-        logger.info("Execute every Monday at 7:30AM.")
+    def every_monday_morning():
+        print("Execute every Monday at 7:30AM.")
 
 The syntax of these crontab expressions is very flexible.  Some examples:
 
@@ -70,6 +80,9 @@ The syntax of these crontab expressions is very flexible.  Some examples:
 | crontab(minute=0, hour="\*/3,8-17") | Execute every hour divisable by 3, and     |
 |                                     | every hour during office hours (8am-5pm).  |
 +-------------------------------------+--------------------------------------------+
+
+Starting celerybeat
+===================
 
 If you want to use periodic tasks you need to start the ``celerybeat``
 service. You have to make sure only one instance of this server is running at

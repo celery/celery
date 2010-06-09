@@ -4,8 +4,11 @@
 
 .. module:: celery.task.http
 
-Executing tasks on a web server
--------------------------------
+.. contents::
+    :local:
+
+Basics
+======
 
 If you need to call into another language, framework or similar, you can
 do so by using HTTP callback tasks.
@@ -31,6 +34,8 @@ or if there was an error::
 
     {"status": "failure": "reason": "Invalid moon alignment."}
 
+Django webhook example
+======================
 
 With this information you could define a simple task in Django:
 
@@ -47,6 +52,8 @@ With this information you could define a simple task in Django:
         response = {"status": "success", "retval": result}
         return HttpResponse(serialize(response), mimetype="application/json")
 
+Ruby on Rails webhook example
+=============================
 
 or in Ruby on Rails:
 
@@ -63,6 +70,9 @@ or in Ruby on Rails:
 
 You can easily port this scheme to any language/framework;
 new examples and libraries are very welcome.
+
+Executing webhook tasks
+=======================
 
 To execute the task you use the :class:`URL` class:
 
