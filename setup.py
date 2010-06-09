@@ -74,6 +74,7 @@ setup(
              "bin/celeryev"],
     zip_safe=False,
     install_requires=install_requires,
+    tests_require=['nose-cover3', 'unittest2', 'simplejson'],
     cmdclass = {"test": RunTests, "quicktest": QuickRunTests},
     test_suite="nose.collector",
     classifiers=[
