@@ -159,6 +159,21 @@ CELERYD_LISTENER = _get("CELERYD_LISTENER")
 CELERYD_MEDIATOR = _get("CELERYD_MEDIATOR")
 CELERYD_ETA_SCHEDULER = _get("CELERYD_ETA_SCHEDULER")
 
+# :--- Broker connections                           <-   --   --- - ----- -- #
+BROKER_HOST = _get("BROKER_HOST")
+BROKER_PORT = _get("BROKER_PORT")
+BROKER_USER = _get("BROKER_USER")
+BROKER_PASSWORD = _get("BROKER_PASSWORD")
+BROKER_VHOST = _get("BROKER_VHOST")
+BROKER_USE_SSL = _get("BROKER_USE_SSL")
+BROKER_INSIST = _get("BROKER_INSIST")
+BROKER_CONNECTION_TIMEOUT = _get("BROKER_CONNECTION_TIMEOUT",
+                                compat=["CELERY_BROKER_CONNECTION_TIMEOUT"])
+BROKER_CONNECTION_RETRY = _get("BROKER_CONNECTION_RETRY",
+                                compat=["CELERY_BROKER_CONNECTION_RETRY"])
+BROKER_CONNECTION_MAX_RETRIES = _get("BROKER_CONNECTION_MAX_RETRIES",
+                            compat=["CELERY_BROKER_CONNECTION_MAX_RETRIES"])
+
 # <--- Message routing                             <-   --   --- - ----- -- #
 DEFAULT_QUEUE = _get("CELERY_DEFAULT_QUEUE")
 DEFAULT_ROUTING_KEY = _get("CELERY_DEFAULT_ROUTING_KEY")
@@ -183,14 +198,6 @@ EVENT_EXCHANGE = _get("CELERY_EVENT_EXCHANGE")
 EVENT_EXCHANGE_TYPE = _get("CELERY_EVENT_EXCHANGE_TYPE")
 EVENT_ROUTING_KEY = _get("CELERY_EVENT_ROUTING_KEY")
 EVENT_SERIALIZER = _get("CELERY_EVENT_SERIALIZER")
-
-# :--- Broker connections                           <-   --   --- - ----- -- #
-BROKER_CONNECTION_TIMEOUT = _get("CELERY_BROKER_CONNECTION_TIMEOUT",
-                                compat=["CELERY_AMQP_CONNECTION_TIMEOUT"])
-BROKER_CONNECTION_RETRY = _get("CELERY_BROKER_CONNECTION_RETRY",
-                                compat=["CELERY_AMQP_CONNECTION_RETRY"])
-BROKER_CONNECTION_MAX_RETRIES = _get("CELERY_BROKER_CONNECTION_MAX_RETRIES",
-                                compat=["CELERY_AMQP_CONNECTION_MAX_RETRIES"])
 
 # :--- AMQP Backend settings                        <-   --   --- - ----- -- #
 
