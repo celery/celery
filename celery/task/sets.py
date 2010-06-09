@@ -1,39 +1,72 @@
 from UserList import UserList
 
 from celery import conf
+from celery import registry
+from celery.datastructures import AttributeDict
 from celery.messaging import establish_connection, with_connection
 from celery.messaging import TaskPublisher
 from celery.result import TaskSetResult
 from celery.utils import gen_unique_id
 
 
-class subtask(object):
-    """A subtask part of a :class:`TaskSet`.
+class subtask(AttributeDict):
+    """Class that wraps the arguments and execution options
+    for a single task invocation.
 
-    :param task: The task class.
+    Used as the parts in a :class:`TaskSet` or to safely
+    pass tasks around as callbacks.
+
+    :param task: Either a task class/instance, or the name of a task.
     :keyword args: Positional arguments to apply.
     :keyword kwargs: Keyword arguments to apply.
     :keyword options: Additional options to
       :func:`celery.execute.apply_async`.
 
+    Note that if the first argument is a :class:`dict`, the other
+    arguments will be ignored and the values in the dict will be used
+    instead.
+
+        >>> s = subtask("tasks.add", args=(2, 2))
+        >>> subtask(s)
+        {"task": "tasks.add", args=(2, 2), kwargs={}, options={}}
+
     """
 
-    def __init__(self, task, args=None, kwargs=None, options=None):
-        self.task = task
-        self.args = args or ()
-        self.kwargs = kwargs or {}
-        self.options = options or {}
+    def __init__(self, task=None, args=None, kwargs=None, options=None,
+            **extra):
+        init = super(subtask, self).__init__
 
-    def apply(self, taskset_id):
+        if isinstance(task, dict):
+            # Use the values from a dict.
+            return init(task)
+
+        # Also supports using task class/instance instead of string name.
+        try:
+            task_name = task.name
+        except AttributeError:
+            task_name = task
+
+        init(task=task_name, args=tuple(args or ()), kwargs=kwargs or (),
+             options=options or ())
+
+    def apply(self, *argmerge, **execopts):
         """Apply this task locally."""
-        return self.task.apply(self.args, self.kwargs,
-                               taskset_id=taskset_id, **self.options)
+        # For callbacks: extra args are prepended to the stored args.
+        args = tuple(argmerge) + tuple(self.args)
+        return self.get_type().apply(args, self.kwargs,
+                                     **dict(self.options, **execopts))
 
-    def apply_async(self, taskset_id, publisher):
+    def apply_async(self, *argmerge, **execopts):
         """Apply this task asynchronously."""
-        return self.task.apply_async(self.args, self.kwargs,
-                                     taskset_id=taskset_id,
-                                     publisher=publisher, **self.options)
+        # For callbacks: extra args are prepended to the stored args.
+        args = tuple(argmerge) + tuple(self.args)
+        return self.get_type().apply_async(args, self.kwargs,
+                                           **dict(self.options, **execopts))
+
+    def get_type(self):
+        # For JSON serialization, the task class is lazily loaded,
+        # and not stored in the dict itself.
+        return registry.tasks[self.task]
 
 
 class TaskSet(UserList):
@@ -115,7 +148,8 @@ class TaskSet(UserList):
                                     connect_timeout=connect_timeout)
         publisher = TaskPublisher(connection=conn)
         try:
-            results = [task.apply_async(taskset_id, publisher)
+            results = [task.apply_async(taskset_id=taskset_id,
+                                        publisher=publisher)
                             for task in self.tasks]
         finally:
             publisher.close()
@@ -128,7 +162,7 @@ class TaskSet(UserList):
         taskset_id = gen_unique_id()
 
         # This will be filled with EagerResults.
-        return TaskSetResult(taskset_id, [task.apply(taskset_id)
+        return TaskSetResult(taskset_id, [task.apply(taskset_id=taskset_id)
                                             for task in self.tasks])
 
     @property

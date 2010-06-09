@@ -13,7 +13,7 @@ from celery.messaging import establish_connection as _establish_connection
 from celery.exceptions import MaxRetriesExceededError, RetryTaskError
 
 from celery.task.schedules import schedule
-from celery.task.sets import TaskSet
+from celery.task.sets import TaskSet, subtask
 
 
 class TaskType(type):
@@ -499,6 +499,13 @@ class Task(object):
         except (AttributeError, IndexError):
             kind = "%s(Task)" % self.__class__.__name__
         return "<%s: %s (%s)>" % (kind, self.name, self.type)
+
+    @classmethod
+    def subtask(cls, *args, **kwargs):
+        """Returns a :class:`~celery.task.sets.subtask` object for
+        this task that wraps arguments and execution options
+        for a single task invocation."""
+        return subtask(cls, *args, **kwargs)
 
 
 class PeriodicTask(Task):
