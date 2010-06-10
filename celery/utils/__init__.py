@@ -31,6 +31,17 @@ def noop(*args, **kwargs):
     pass
 
 
+def kwdict(kwargs):
+    """Make sure keyword arguments are not in unicode.
+
+    This should be fixed in newer Python versions,
+      see: http://bugs.python.org/issue4978.
+
+    """
+    return dict((key.encode("utf-8"), value)
+                    for key, value in kwargs.items())
+
+
 def first(predicate, iterable):
     """Returns the first element in ``iterable`` that ``predicate`` returns a
     ``True`` value for."""

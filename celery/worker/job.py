@@ -12,7 +12,7 @@ import warnings
 from celery import conf
 from celery import platform
 from celery.log import get_default_logger
-from celery.utils import noop, fun_takes_kwargs
+from celery.utils import noop, kwdict, fun_takes_kwargs
 from celery.utils.mail import mail_admins
 from celery.worker.revoke import revoked
 from celery.loaders import current_loader
@@ -195,7 +195,7 @@ class TaskRequest(object):
     time_start = None
 
     def __init__(self, task_name, task_id, args, kwargs,
-            on_ack=noop, retries=0, delivery_info=None, **opts):
+            on_ack=noop, retries=0, delivery_info=None, hostname=None, **opts):
         self.task_name = task_name
         self.task_id = task_id
         self.retries = retries
@@ -204,6 +204,7 @@ class TaskRequest(object):
         self.on_ack = on_ack
         self.delivery_info = delivery_info or {}
         self.task = tasks[self.task_name]
+        self.hostname = hostname or socket.gethostname()
         self._already_revoked = False
 
         for opt in ("success_msg", "fail_msg", "fail_email_subject",
@@ -232,7 +233,8 @@ class TaskRequest(object):
         return False
 
     @classmethod
-    def from_message(cls, message, message_data, logger=None, eventer=None):
+    def from_message(cls, message, message_data, logger=None, eventer=None,
+            hostname=None):
         """Create a :class:`TaskRequest` from a task message sent by
         :class:`celery.messaging.TaskPublisher`.
 
@@ -256,14 +258,10 @@ class TaskRequest(object):
         if not hasattr(kwargs, "items"):
             raise InvalidTaskError("Task kwargs must be a dictionary.")
 
-        # Convert any unicode keys in the keyword arguments to ascii.
-        kwargs = dict((key.encode("utf-8"), value)
-                        for key, value in kwargs.items())
-
-        return cls(task_name, task_id, args, kwargs,
-                    retries=retries, on_ack=message.ack,
-                    delivery_info=delivery_info,
-                    logger=logger, eventer=eventer)
+        return cls(task_name, task_id, args, kwdict(kwargs),
+                   retries=retries, on_ack=message.ack,
+                   delivery_info=delivery_info, logger=logger,
+                   eventer=eventer, hostname=hostname)
 
     def extend_with_default_kwargs(self, loglevel, logfile):
         """Extend the tasks keyword arguments with standard task arguments.
@@ -401,7 +399,7 @@ class TaskRequest(object):
                                        traceback=exc_info.traceback)
 
         context = {
-            "hostname": socket.gethostname(),
+            "hostname": self.hostname,
             "id": self.task_id,
             "name": self.task_name,
             "exc": repr(exc_info.exception),

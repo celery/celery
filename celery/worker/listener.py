@@ -288,6 +288,7 @@ class CarrotListener(object):
             try:
                 task = TaskRequest.from_message(message, message_data,
                                                 logger=self.logger,
+                                                hostname=self.hostname,
                                                 eventer=self.event_dispatcher)
             except NotRegistered, exc:
                 self.logger.error("Unknown task ignored: %s: %s" % (

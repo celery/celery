@@ -5,6 +5,7 @@ from carrot.utils import partition
 
 from celery import states
 from celery.datastructures import LocalCache
+from celery.utils import kwdict
 
 HEARTBEAT_EXPIRE = 150 # 2 minutes, 30 seconds
 
@@ -183,11 +184,9 @@ class State(object):
 
     def event(self, event):
         """Process event."""
-        event = dict((key.encode("utf-8"), value)
-                        for key, value in event.items())
         self.event_count += 1
         group, _, type = partition(event.pop("type"), "-")
-        self.group_handlers[group](type, event)
+        self.group_handlers[group](type, kwdict(event))
         if self.event_callback:
             self.event_callback(self, event)
 
