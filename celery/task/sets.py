@@ -73,19 +73,25 @@ class subtask(AttributeDict):
         init(task=task_name, args=tuple(args or ()), kwargs=kwargs or (),
              options=options or ())
 
-    def apply(self, *argmerge, **execopts):
+    def delay(self, *argmerge, **kwmerge):
+        """Shortcut to ``apply_async(argmerge, kwargs)``."""
+        return self.apply_async(args=argmerge, kwargs=kwmerge)
+
+    def apply(self, args, kwargs, **options):
         """Apply this task locally."""
         # For callbacks: extra args are prepended to the stored args.
-        args = tuple(argmerge) + tuple(self.args)
-        return self.get_type().apply(args, self.kwargs,
-                                     **dict(self.options, **execopts))
+        args = tuple(args) + tuple(self.args)
+        kwargs = dict(self.kwargs, **kwargs)
+        options = dict(self.options, **options)
+        return self.get_type().apply(args, kwargs, options)
 
-    def apply_async(self, *argmerge, **execopts):
+    def apply_async(self, args, kwargs, **options):
         """Apply this task asynchronously."""
         # For callbacks: extra args are prepended to the stored args.
-        args = tuple(argmerge) + tuple(self.args)
-        return self.get_type().apply_async(args, self.kwargs,
-                                           **dict(self.options, **execopts))
+        args = tuple(args) + tuple(self.args)
+        kwargs = dict(self.kwargs, **kwargs)
+        options = dict(self.options, **options)
+        return self.get_type().apply_async(args, kwargs, options)
 
     def get_type(self):
         # For JSON serialization, the task class is lazily loaded,
