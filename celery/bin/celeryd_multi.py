@@ -1,9 +1,7 @@
 import sys
-import shlex
 import socket
 
 from celery.utils.compat import defaultdict
-from carrot.utils import rpartition
 
 EXAMPLES = """
 Some examples:
@@ -203,7 +201,7 @@ class MultiTool(object):
 
         try:
             return self.commands[argv[0]](argv[1:], cmd)
-        except KeyError, exc:
+        except KeyError:
             say("Invalid command: %s" % argv[0])
             self.usage()
             sys.exit(1)

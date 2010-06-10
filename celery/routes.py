@@ -16,7 +16,7 @@ def expand_destination(route, routing_table):
     if isinstance(route, basestring):
         try:
             dest = dict(routing_table[route])
-        except KeyError, exc:
+        except KeyError:
             raise RouteNotFound(
                 "Route %s does not exist in the routing table "
                 "(CELERY_QUEUES)" % route)

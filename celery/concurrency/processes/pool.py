@@ -189,7 +189,6 @@ class AckHandler(PoolThread):
 
     def run(self):
         debug('ack handler starting')
-        ackqueue = self.ackqueue
         get = self.get
         cache = self.cache
 
@@ -241,7 +240,6 @@ class AckHandler(PoolThread):
 class TimeoutHandler(PoolThread):
 
     def __init__(self, processes, sentinel_event, cache, t_soft, t_hard):
-        self.pool = pool
         self.sentinel_event = sentinel_event
         self.cache = cache
         self.t_soft = t_soft
@@ -946,7 +944,8 @@ class IMapUnorderedIterator(IMapIterator):
 
 class ThreadPool(Pool):
 
-    from multiprocessing.dummy import Process
+    from multiprocessing.dummy import Process as DummyProcess
+    Process = DummyProcess
 
     def __init__(self, processes=None, initializer=None, initargs=()):
         Pool.__init__(self, processes, initializer, initargs)

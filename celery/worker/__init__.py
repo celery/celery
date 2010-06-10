@@ -3,7 +3,6 @@
 The Multiprocessing Worker Server
 
 """
-import time
 import socket
 import logging
 import traceback
@@ -26,6 +25,11 @@ TERMINATE = 0x3
 
 
 def process_initializer():
+    """Initializes the process so it can be used to process tasks.
+
+    Used for multiprocessing environments.
+
+    """
     # There seems to a bug in multiprocessing (backport?)
     # when detached, where the worker gets EOFErrors from time to time
     # and the logger is left from the parent process causing a crash.
@@ -52,7 +56,6 @@ class WorkController(object):
     :param loglevel: see :attr:`loglevel`.
     :param embed_clockservice: see :attr:`run_clockservice`.
     :param send_events: see :attr:`send_events`.
-
 
     .. attribute:: concurrency
 

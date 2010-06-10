@@ -13,7 +13,6 @@ from celery.task.base import Task
 from celery.utils import gen_unique_id
 from celery.result import AsyncResult
 from celery.worker.job import WorkerTaskTrace, TaskRequest
-from celery.concurrency.processes import TaskPool
 from celery.backends import default_backend
 from celery.exceptions import RetryTaskError, NotRegistered
 from celery.decorators import task as task_dec

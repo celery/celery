@@ -1,15 +1,15 @@
 import sys
 import time
 import curses
-import atexit
 import socket
 import optparse
 import threading
 
-from pprint import pformat
 from datetime import datetime
 from textwrap import wrap
 from itertools import count
+
+from carrot.utils import rpartition
 
 import celery
 from celery import states
@@ -117,7 +117,7 @@ class CursesMonitor(object):
                           "L": self.selection_rate_limit}
         self.keymap = dict(default_keymap, **self.keymap)
 
-    def format_row(self, uuid, worker, task, time, state):
+    def format_row(self, uuid, worker, task, timestamp, state):
         my, mx = self.win.getmaxyx()
         mx = mx - 3
         uuid_max = 36
@@ -127,8 +127,8 @@ class CursesMonitor(object):
         worker = abbr(worker, 16).ljust(16)
         task = abbrtask(task, 16).ljust(16)
         state = abbr(state, 8).ljust(8)
-        time = time.ljust(8)
-        row = "%s %s %s %s %s " % (uuid, worker, task, time, state)
+        timestamp = timestamp.ljust(8)
+        row = "%s %s %s %s %s " % (uuid, worker, task, timestamp, state)
         if self.screen_width is None:
             self.screen_width = len(row[:mx])
         return row[:mx]
@@ -473,7 +473,7 @@ def eventtop():
                 conn.connection.drain_events()
             except socket.timeout:
                 pass
-    except Exception, exc:
+    except Exception:
         refresher.shutdown = True
         refresher.join()
         display.resetscreen()

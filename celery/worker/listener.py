@@ -239,8 +239,6 @@ class CarrotListener(object):
 
     def consume_messages(self):
         """Consume messages forever (or until an exception is raised)."""
-        task_consumer = self.task_consumer
-
         self.logger.debug("CarrotListener: Starting message consumer...")
         wait_for_message = self._detect_wait_method()(limit=None).next
         self.logger.debug("CarrotListener: Ready to accept tasks!")
