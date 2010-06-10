@@ -47,7 +47,6 @@ You are likely to see these terms used a lot in AMQP related material.
 
 Exchanges, queues and routing keys.
 -----------------------------------
-TODO Mindblowing one-line simple explanation here. TODO
 
 1. Messages are sent to exchanges.
 2. An exchange routes messages to one or more queues. Several exchange types
@@ -62,11 +61,11 @@ The steps required to send and receive messages are:
 3. Bind the queue to the exchange.
 
 Celery automatically creates the entities necessary for the queues in
-``CELERY_QUEUES`` to work (unless the queue's ``auto_declare`` setting
-is set)
+``CELERY_QUEUES`` to work (except if the queue's ``auto_declare`` setting
+is set to :const:`False`).
 
 Here's an example queue configuration with three queues;
-One for video, one for images and one default queue for everything else:
+One for video, one for images and finally, one default queue for everything else:
 
 .. code-block:: python
 
@@ -90,7 +89,7 @@ One for video, one for images and one default queue for everything else:
 
 **NOTE**: In Celery the ``routing_key`` is the key used to send the message,
 while ``binding_key`` is the key the queue is bound with. In the AMQP API
-they are both referred to as a routing key.
+they are both referred to as the routing key.
 
 Exchange types
 --------------
@@ -247,3 +246,110 @@ To clean up after our test session we should delete the entities we created::
     ok. 0 messages deleted.
     8> exchange.delete testexchange
     ok.
+
+
+Routing Tasks
+=============
+
+Defining queues
+---------------
+
+In Celery the queues are defined by the ``CELERY_QUEUES`` setting.
+
+Here's an example queue configuration with three queues;
+One for video, one for images and finally, one default queue for everything else:
+
+.. code-block:: python
+
+    CELERY_QUEUES = {
+        "default": {
+            "exchange": "default",
+            "binding_key": "default"},
+        "videos": {
+            "exchange": "media",
+            "exchange_type": "topic",
+            "binding_key": "media.video",
+        },
+        "images": {
+            "exchange": "media",
+            "exchange_type": "topic",
+            "binding_key": "media.image",
+        }
+    }
+    CELERY_DEFAULT_QUEUE = "default"
+    CELERY_DEFAULT_EXCHANGE = "default"
+    CELERY_DEFAULT_EXCHANGE_TYPE = "direct"
+    CELERY_DEFAULT_ROUTING_KEY = "default"
+
+Here, the ``CELERY_DEFAULT_QUEUE`` will be used to route tasks that doesn't
+have an explicit route.
+
+THe default exchange, exchange type and routing key, will be used as the
+default routing values for tasks, and as the default values for entries
+in ``CELERY_QUEUES``.
+
+Specifying task destination
+---------------------------
+
+The destination for a task is decided by the following (in order):
+
+# The :ref:`routers` defined in ``CELERY_ROUTES``.
+# The routing arguments to :func:`~celery.execute.apply_async`.
+# Routing related attributes defined on the :class:`~celery.task.base.Task` itself.
+
+It is considered best practice to not hard-code these settings, but rather
+leave that as an configuration option by using :ref:`routers`.
+This is the most flexible approach, but sensible defaults can still be set
+as task attributes.
+
+.. _routers:
+
+Routers
+-------
+
+A router is a class that decides the routing options for a task.
+
+All you need to define a new router, is to create a class with a
+``route_for_task`` method:
+
+.. code-block:: python
+
+    class MyRouter(object):
+
+        def route_for_task(task, task_id=None, args=None, kwargs=None):
+            if task == "myapp.tasks.compress_video":
+                return {"exchange": "video",
+                        "exchange_type": "topic",
+                        "routing_key": "video.compress"}
+
+If you return the ``queue`` key, it will expand with the defined settings of
+that queue in ``CELERY_QUEUES``::
+
+    {"queue": "video", "routing_key": "video.compress"}
+
+    becomes -->
+
+        {"queue": "video",
+         "exchange": "video",
+         "exchange_type": "topic",
+         "routing_key": "video.compress"}
+
+
+You install router classes by adding it to the ``CELERY_ROUTES`` setting::
+
+    CELERY_ROUTES = (MyRouter, )
+
+Router classes can also be added by name::
+
+    CELERY_ROUTES = ("myapp.routers.MyRouter", )
+
+
+For simple task name -> route mappings, like the router example above, you can simply
+drop a dict into ``CELERY_ROUTES`` to get the same result::
+
+    CELERY_ROUTES = ({"myapp.tasks.compress_video": {
+                        "queue": "video",
+                        "routing_key": "video.compress"}}, )
+
+The routers will then be traversed in order, it will stop at the first router
+returning a value and use that as the final route for the task.
