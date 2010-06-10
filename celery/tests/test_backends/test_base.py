@@ -28,7 +28,7 @@ class TestBaseBackendInterface(unittest.TestCase):
 
     def test_get_status(self):
         self.assertRaises(NotImplementedError,
-                b.is_successful, "SOMExx-N0Nex1stant-IDxx-")
+                b.get_status, "SOMExx-N0Nex1stant-IDxx-")
 
     def test_store_result(self):
         self.assertRaises(NotImplementedError,
