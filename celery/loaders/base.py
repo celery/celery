@@ -1,3 +1,5 @@
+from importlib import import_module
+
 BUILTIN_MODULES = ["celery.task"]
 
 
@@ -31,7 +33,7 @@ class BaseLoader(object):
         pass
 
     def import_task_module(self, module):
-        return __import__(module, [], [], [''])
+        return import_module(module)
 
     def import_default_modules(self):
         imports = getattr(self.conf, "CELERY_IMPORTS", None) or []
