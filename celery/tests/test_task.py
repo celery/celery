@@ -295,9 +295,9 @@ class TestCeleryTasks(unittest.TestCase):
         self.assertNextTaskDataEqual(consumer, presult, t1.name)
 
         # With arguments.
-        presult2 = t1.apply_async(kwargs=dict(name="George Constanza"))
+        presult2 = t1.apply_async(kwargs=dict(name="George Costanza"))
         self.assertNextTaskDataEqual(consumer, presult2, t1.name,
-                name="George Constanza")
+                name="George Costanza")
 
         # send_task
         sresult = send_task(t1.name, kwargs=dict(name="Elaine M. Benes"))
@@ -305,16 +305,16 @@ class TestCeleryTasks(unittest.TestCase):
                 name="Elaine M. Benes")
 
         # With eta.
-        presult2 = task.apply_async(t1, kwargs=dict(name="George Constanza"),
+        presult2 = task.apply_async(t1, kwargs=dict(name="George Costanza"),
                                     eta=datetime.now() + timedelta(days=1))
         self.assertNextTaskDataEqual(consumer, presult2, t1.name,
-                name="George Constanza", test_eta=True)
+                name="George Costanza", test_eta=True)
 
         # With countdown.
-        presult2 = task.apply_async(t1, kwargs=dict(name="George Constanza"),
+        presult2 = task.apply_async(t1, kwargs=dict(name="George Costanza"),
                                     countdown=10)
         self.assertNextTaskDataEqual(consumer, presult2, t1.name,
-                name="George Constanza", test_eta=True)
+                name="George Costanza", test_eta=True)
 
         # Discarding all tasks.
         consumer.discard_all()

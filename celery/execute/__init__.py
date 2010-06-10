@@ -139,7 +139,7 @@ def delay_task(task_name, *args, **kwargs):
 
     Example
 
-        >>> r = delay_task("update_record", name="George Constanza", age=32)
+        >>> r = delay_task("update_record", name="George Costanza", age=32)
         >>> r.ready()
         True
         >>> r.result

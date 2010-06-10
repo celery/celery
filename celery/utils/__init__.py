@@ -89,13 +89,13 @@ def padlist(container, size, default=None):
 
     Examples:
 
-        >>> first, last, city = padlist(["George", "Constanza", "NYC"], 3)
-        ("George", "Constanza", "NYC")
-        >>> first, last, city = padlist(["George", "Constanza"], 3)
-        ("George", "Constanza", None)
-        >>> first, last, city, planet = padlist(["George", "Constanza",
+        >>> first, last, city = padlist(["George", "Costanza", "NYC"], 3)
+        ("George", "Costanza", "NYC")
+        >>> first, last, city = padlist(["George", "Costanza"], 3)
+        ("George", "Costanza", None)
+        >>> first, last, city, planet = padlist(["George", "Costanza",
                                                  "NYC"], 4, default="Earth")
-        ("George", "Constanza", "NYC", "Earth")
+        ("George", "Costanza", "NYC", "Earth")
 
     """
     return list(container)[:size] + [default] * (size - len(container))

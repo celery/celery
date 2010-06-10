@@ -185,8 +185,9 @@ class State(object):
     def event(self, event):
         """Process event."""
         self.event_count += 1
+        event = kwdict(event)
         group, _, type = partition(event.pop("type"), "-")
-        self.group_handlers[group](type, kwdict(event))
+        self.group_handlers[group](type, event)
         if self.event_callback:
             self.event_callback(self, event)
 
