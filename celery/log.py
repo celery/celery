@@ -207,7 +207,8 @@ class LoggingProxy(object):
 
     def write(self, data):
         """Write message to logging object."""
-        if not self.closed:
+        data = data.strip()
+        if data and not self.closed:
             self.logger.log(self.loglevel, data)
 
     def writelines(self, sequence):

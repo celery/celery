@@ -190,11 +190,12 @@ class Worker(object):
             self.loglevel = conf.LOG_LEVELS[self.loglevel.upper()]
 
     def run(self):
+        self.init_loader()
+        self.init_queues()
+        self.redirect_stdouts_to_logger()
         print("celery@%s v%s is starting." % (self.hostname,
                                               celery.__version__))
 
-        self.init_loader()
-        self.init_queues()
 
         if conf.RESULT_BACKEND == "database" \
                 and self.settings.DATABASE_ENGINE == "sqlite3" and \
@@ -236,6 +237,14 @@ class Worker(object):
         if not self.loader.configured:
             raise ImproperlyConfigured(
                     "Celery needs to be configured to run celeryd.")
+
+    def redirect_stdouts_to_logger(self):
+        from celery import log
+        # Redirect stdout/stderr to our logger.
+        logger = log.setup_logger(loglevel=self.loglevel,
+                                  logfile=self.logfile)
+        log.redirect_stdouts_to_logger(logger, loglevel=logging.WARNING)
+
 
     def purge_messages(self):
         discarded_count = discard_all()
