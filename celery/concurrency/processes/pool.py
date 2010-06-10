@@ -50,8 +50,10 @@ def mapstar(args):
 # Code run by worker processes
 #
 
+
 def soft_timeout_sighandler(signum, frame):
     raise SoftTimeLimitExceeded()
+
 
 def worker(inqueue, outqueue, ackqueue, initializer=None, initargs=(),
         maxtasks=None):
@@ -482,14 +484,15 @@ class Pool(object):
                   self._worker_handler, self._task_handler,
                   self._result_handler, self._cache,
                   self._timeout_handler),
-            exitpriority=15
+            exitpriority=15,
             )
 
     def _create_worker_process(self):
         w = self.Process(
             target=worker,
             args=(self._inqueue, self._outqueue, self._ackqueue,
-                    self._initializer, self._initargs, self._maxtasksperchild)
+                    self._initializer, self._initargs,
+                    self._maxtasksperchild),
             )
         self._pool.append(w)
         w.name = w.name.replace('Process', 'PoolWorker')
@@ -551,7 +554,8 @@ class Pool(object):
 
     def imap(self, func, iterable, chunksize=1):
         '''
-        Equivalent of `itertools.imap()` -- can be MUCH slower than `Pool.map()`
+        Equivalent of `itertools.imap()` -- can be MUCH slower
+        than `Pool.map()`
         '''
         assert self._state == RUN
         if chunksize == 1:
@@ -643,8 +647,8 @@ class Pool(object):
 
     def __reduce__(self):
         raise NotImplementedError(
-              'pool objects cannot be passed between processes or pickled'
-              )
+              'pool objects cannot be passed between '
+              'processes or pickled')
 
     def close(self):
         debug('closing pool')

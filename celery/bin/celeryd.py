@@ -245,7 +245,6 @@ class Worker(object):
                                   logfile=self.logfile)
         log.redirect_stdouts_to_logger(logger, loglevel=logging.WARNING)
 
-
     def purge_messages(self):
         discarded_count = discard_all()
         what = discarded_count > 1 and "messages" or "message"

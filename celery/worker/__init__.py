@@ -192,6 +192,7 @@ class WorkController(object):
                 component.start()
         finally:
             self.stop()
+
     def process_task(self, wrapper):
         """Process task by sending it to the pool of workers."""
         try:

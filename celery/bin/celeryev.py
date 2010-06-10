@@ -20,15 +20,16 @@ from celery.messaging import establish_connection
 from celery.datastructures import LocalCache
 
 TASK_NAMES = LocalCache(0xFFF)
+
 HUMAN_TYPES = {"worker-offline": "shutdown",
                "worker-online": "started",
                "worker-heartbeat": "heartbeat"}
+
 OPTION_LIST = (
     optparse.make_option('-d', '--DUMP',
         action="store_true", dest="dump",
         help="Dump events to stdout."),
 )
-
 
 
 def humanize_type(type):
@@ -177,7 +178,8 @@ class CursesMonitor(object):
             self.win.addstr(y(), 3, title, curses.A_BOLD | curses.A_UNDERLINE)
             blank_line()
         callback(my, mx, y())
-        self.win.addstr(my - 1, 0, "Press any key to continue...", curses.A_BOLD)
+        self.win.addstr(my - 1, 0, "Press any key to continue...",
+                        curses.A_BOLD)
         self.win.refresh()
         while 1:
             try:
@@ -333,7 +335,8 @@ class CursesMonitor(object):
                     attr = curses.A_NORMAL
                     if task.uuid == self.selected_task:
                         attr = curses.A_STANDOUT
-                    timestamp = datetime.fromtimestamp(task.timestamp or time.time())
+                    timestamp = datetime.fromtimestamp(
+                                    task.timestamp or time.time())
                     timef = timestamp.strftime("%H:%M:%S")
                     line = self.format_row(uuid, task.name,
                                            task.worker.hostname,
@@ -509,10 +512,6 @@ def parse_options(arguments):
 def main():
     options = parse_options(sys.argv[1:])
     return run_celeryev(**vars(options))
-
-
-
-
 
 if __name__ == "__main__":
     main()

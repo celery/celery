@@ -66,6 +66,3 @@ class TaskPool(object):
             [errback(ret_value) for errback in errbacks]
         else:
             [callback(ret_value) for callback in callbacks]
-
-
-

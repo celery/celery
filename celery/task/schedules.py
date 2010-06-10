@@ -1,5 +1,6 @@
 from datetime import datetime
-from pyparsing import Word, Literal, ZeroOrMore, Optional, Group, StringEnd, alphas
+from pyparsing import (Word, Literal, ZeroOrMore, Optional,
+                       Group, StringEnd, alphas)
 
 from celery.utils import is_iterable
 from celery.utils.timeutils import timedelta_seconds, weekday, remaining
@@ -90,7 +91,7 @@ class crontab_parser(object):
     @staticmethod
     def _expand_range(toks):
         if len(toks) > 1:
-            return range(toks[0], int(toks[2])+1)
+            return range(toks[0], int(toks[2]) + 1)
         else:
             return toks[0]
 
@@ -188,15 +189,17 @@ class crontab(schedule):
         elif is_iterable(cronspec):
             result = set(cronspec)
         else:
-            raise TypeError("Argument cronspec needs to be of any of the " + \
-                    "following types: int, basestring, or an iterable type. " + \
+            raise TypeError(
+                    "Argument cronspec needs to be of any of the "
+                    "following types: int, basestring, or an iterable type. "
                     "'%s' was given." % type(cronspec))
 
         # assure the result does not exceed the max
         for number in result:
             if number >= max_:
-                raise ValueError("Invalid crontab pattern. Valid " + \
-                "range is 0-%d. '%d' was found." % (max_, number))
+                raise ValueError(
+                        "Invalid crontab pattern. Valid "
+                        "range is 0-%d. '%d' was found." % (max_, number))
 
         return result
 
@@ -217,7 +220,7 @@ class crontab(schedule):
         last = now - last_run_at
         due, when = False, 1
         if last.days > 0 or last.seconds > 60:
-            due = now.isoweekday() % 7 in self.day_of_week and \
-                  now.hour in self.hour and \
-                  now.minute in self.minute
+            due = (now.isoweekday() % 7 in self.day_of_week and
+                   now.hour in self.hour and
+                   now.minute in self.minute)
         return due, when
