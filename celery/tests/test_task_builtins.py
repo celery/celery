@@ -1,9 +1,8 @@
 import unittest2 as unittest
 
-from billiard.serialization import pickle
-
-from celery.task.base import ExecuteRemoteTask
+from celery.task.builtins import ExecuteRemoteTask
 from celery.task.builtins import PingTask, DeleteExpiredTaskMetaTask
+from celery.serialization import pickle
 
 
 def some_func(i):

@@ -52,9 +52,9 @@ class MutableURL(object):
         >>> str(url)
         'http://www.google.com:6580/foo/bar?y=4&x=3#foo'
         >>> url.query["x"] = 10
-        >>> url.query.update({"George": "Constanza"})
+        >>> url.query.update({"George": "Costanza"})
         >>> str(url)
-        'http://www.google.com:6580/foo/bar?y=4&x=10&George=Constanza#foo'
+        'http://www.google.com:6580/foo/bar?y=4&x=10&George=Costanza#foo'
 
     """
     def __init__(self, url):

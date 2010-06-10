@@ -2,10 +2,10 @@ import sys
 import types
 import unittest2 as unittest
 
-from billiard.serialization import subclass_exception
-from billiard.serialization import find_nearest_pickleable_exception as fnpe
-from billiard.serialization import UnpickleableExceptionWrapper
-from billiard.serialization import get_pickleable_exception as gpe
+from celery.serialization import subclass_exception
+from celery.serialization import find_nearest_pickleable_exception as fnpe
+from celery.serialization import UnpickleableExceptionWrapper
+from celery.serialization import get_pickleable_exception as gpe
 
 from celery import states
 from celery.backends.base import BaseBackend, KeyValueStoreBackend
@@ -28,7 +28,7 @@ class TestBaseBackendInterface(unittest.TestCase):
 
     def test_get_status(self):
         self.assertRaises(NotImplementedError,
-                b.is_successful, "SOMExx-N0Nex1stant-IDxx-")
+                b.get_status, "SOMExx-N0Nex1stant-IDxx-")
 
     def test_store_result(self):
         self.assertRaises(NotImplementedError,

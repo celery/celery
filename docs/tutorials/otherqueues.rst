@@ -6,8 +6,11 @@ There's a plug-in for celery that enables the use of Redis or an SQL database
 as the messaging queue. This is not part of celery itself, but exists as
 an extension to `carrot`_.
 
-.. _`carrot`: http://ask.github.com/carrot
-.. _`ghettoq`: http://ask.github.com/ghettoq
+.. _`carrot`: http://pypi.python.org/pypi/carrot
+.. _`ghettoq`: http://pypi.python.org/pypi/ghettoq
+
+.. contents::
+    :local:
 
 Installation
 ============

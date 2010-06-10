@@ -2,6 +2,9 @@
  Module Index
 ==============
 
+.. contents::
+    :local:
+
 Worker
 ======
 

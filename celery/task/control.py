@@ -110,6 +110,13 @@ def broadcast(command, arguments=None, destination=None, connection=None,
     arguments = arguments or {}
     reply_ticket = reply and gen_unique_id() or None
 
+    if destination is not None and not isinstance(destination, (list, tuple)):
+        raise ValueError("destination must be a list/tuple not %s" % (
+                type(destination)))
+
+    # Set reply limit to number of destinations (if specificed)
+    if limit is None and destination:
+        limit = destination and len(destination) or None
 
     broadcast = BroadcastPublisher(connection)
     try:

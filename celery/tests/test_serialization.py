@@ -7,10 +7,10 @@ from celery.tests.utils import execute_context, mask_modules
 class TestAAPickle(unittest.TestCase):
 
     def test_no_cpickle(self):
-        prev = sys.modules.pop("billiard.serialization")
+        prev = sys.modules.pop("celery.serialization")
         try:
             def with_cPickle_masked(_val):
-                from billiard.serialization import pickle
+                from celery.serialization import pickle
                 import pickle as orig_pickle
                 self.assertIs(pickle.dumps, orig_pickle.dumps)
 
@@ -18,4 +18,4 @@ class TestAAPickle(unittest.TestCase):
             execute_context(context, with_cPickle_masked)
 
         finally:
-            sys.modules["billiard.serialization"] = prev
+            sys.modules["celery.serialization"] = prev

@@ -75,11 +75,11 @@ class TestMediator(unittest.TestCase):
             got["value"] = value.value
 
         m = Mediator(ready_queue, mycallback)
-        ready_queue.put(MockTask("George Constanza"))
+        ready_queue.put(MockTask("George Costanza"))
 
         m.on_iteration()
 
-        self.assertEqual(got["value"], "George Constanza")
+        self.assertEqual(got["value"], "George Costanza")
 
     def test_mediator_on_iteration_revoked(self):
         ready_queue = Queue()

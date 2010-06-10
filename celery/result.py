@@ -1,19 +1,16 @@
 from __future__ import generators
-"""
 
-Asynchronous result types.
-
-"""
 import time
-from itertools import imap
+
 from copy import copy
+from itertools import imap
 
 from celery import states
-from celery.utils import any, all
 from celery.backends import default_backend
-from celery.messaging import with_connection
-from celery.exceptions import TimeoutError
 from celery.datastructures import PositionQueue
+from celery.exceptions import TimeoutError
+from celery.messaging import with_connection
+from celery.utils import any, all
 
 
 class BaseAsyncResult(object):
@@ -38,7 +35,6 @@ class BaseAsyncResult(object):
         self.task_id = task_id
         self.backend = backend
 
-    @with_connection
     def revoke(self, connection=None, connect_timeout=None):
         """Send revoke signal to all workers.
 
@@ -46,11 +42,8 @@ class BaseAsyncResult(object):
 
         """
         from celery.task import control
-        control.revoke(self.task_id)
-
-    def get(self, timeout=None):
-        """Alias to :meth:`wait`."""
-        return self.wait(timeout=timeout)
+        control.revoke(self.task_id, connection=connection,
+                       connect_timeout=connect_timeout)
 
     def wait(self, timeout=None):
         """Wait for task, and return the result when it arrives.
@@ -67,6 +60,10 @@ class BaseAsyncResult(object):
         """
         return self.backend.wait_for(self.task_id, timeout=timeout)
 
+    def get(self, timeout=None):
+        """Alias to :meth:`wait`."""
+        return self.wait(timeout=timeout)
+
     def ready(self):
         """Returns ``True`` if the task executed successfully, or raised
         an exception. If the task is still running, pending, or is waiting
@@ -75,8 +72,7 @@ class BaseAsyncResult(object):
         :rtype: bool
 
         """
-        status = self.backend.get_status(self.task_id)
-        return status not in self.backend.UNREADY_STATES
+        return self.status not in self.backend.UNREADY_STATES
 
     def successful(self):
         """Returns ``True`` if the task executed successfully.
@@ -84,13 +80,14 @@ class BaseAsyncResult(object):
         :rtype: bool
 
         """
-        return self.backend.is_successful(self.task_id)
+        return self.status == states.SUCCESS
 
     def __str__(self):
-        """``str(self)`` -> ``self.task_id``"""
+        """``str(self) -> self.task_id``"""
         return self.task_id
 
     def __hash__(self):
+        """``hash(self) -> hash(self.task_id)``"""
         return hash(self.task_id)
 
     def __repr__(self):
@@ -168,20 +165,18 @@ class AsyncResult(BaseAsyncResult):
     """
 
     def __init__(self, task_id, backend=None):
-        backend = backend or default_backend
-        super(AsyncResult, self).__init__(task_id, backend)
+        super(AsyncResult, self).__init__(task_id, backend or default_backend)
 
 
 class TaskSetResult(object):
-    """Working with :class:`celery.task.TaskSet` results.
+    """Working with :class:`~celery.task.TaskSet` results.
 
     An instance of this class is returned by
-    :meth:`celery.task.TaskSet.apply_async()`. It lets you inspect the
-    status and return values of the taskset as a single entity.
+    ``TaskSet``'s :meth:`~celery.task.TaskSet.apply_async()`. It enables
+    inspection of the subtasks status and return values as a single entity.
 
     :option taskset_id: see :attr:`taskset_id`.
     :option subtasks: see :attr:`subtasks`.
-
 
     .. attribute:: taskset_id
 
@@ -344,7 +339,7 @@ class TaskSetResult(object):
 
     @property
     def total(self):
-        """The total number of tasks in the :class:`celery.task.TaskSet`."""
+        """The total number of tasks in the :class:`~celery.task.TaskSet`."""
         return len(self.subtasks)
 
 
@@ -374,7 +369,7 @@ class EagerResult(BaseAsyncResult):
             raise self.result
 
     def revoke(self):
-        pass
+        self._status = states.REVOKED
 
     @property
     def result(self):

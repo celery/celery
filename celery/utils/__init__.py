@@ -16,10 +16,10 @@ from inspect import getargspec
 from itertools import islice
 
 from carrot.utils import rpartition
-from billiard.utils.functional import curry
 
 from celery.utils.compat import all, any, defaultdict
 from celery.utils.timeutils import timedelta_seconds # was here before
+from celery.utils.functional import curry
 
 
 def noop(*args, **kwargs):
@@ -29,6 +29,17 @@ def noop(*args, **kwargs):
 
     """
     pass
+
+
+def kwdict(kwargs):
+    """Make sure keyword arguments are not in unicode.
+
+    This should be fixed in newer Python versions,
+      see: http://bugs.python.org/issue4978.
+
+    """
+    return dict((key.encode("utf-8"), value)
+                    for key, value in kwargs.items())
 
 
 def first(predicate, iterable):
@@ -78,13 +89,13 @@ def padlist(container, size, default=None):
 
     Examples:
 
-        >>> first, last, city = padlist(["George", "Constanza", "NYC"], 3)
-        ("George", "Constanza", "NYC")
-        >>> first, last, city = padlist(["George", "Constanza"], 3)
-        ("George", "Constanza", None)
-        >>> first, last, city, planet = padlist(["George", "Constanza",
+        >>> first, last, city = padlist(["George", "Costanza", "NYC"], 3)
+        ("George", "Costanza", "NYC")
+        >>> first, last, city = padlist(["George", "Costanza"], 3)
+        ("George", "Costanza", None)
+        >>> first, last, city, planet = padlist(["George", "Costanza",
                                                  "NYC"], 4, default="Earth")
-        ("George", "Constanza", "NYC", "Earth")
+        ("George", "Costanza", "NYC", "Earth")
 
     """
     return list(container)[:size] + [default] * (size - len(container))
@@ -207,23 +218,23 @@ def get_cls_by_name(name, aliases={}):
 
     Example::
 
-        celery.worker.pool.TaskPool
-                           ^- class name
+        celery.concurrency.processes.TaskPool
+                                    ^- class name
 
     If ``aliases`` is provided, a dict containing short name/long name
     mappings, the name is looked up in the aliases first.
 
     Examples:
 
-        >>> get_cls_by_name("celery.worker.pool.TaskPool")
-        <class 'celery.worker.pool.TaskPool'>
+        >>> get_cls_by_name("celery.concurrency.processes.TaskPool")
+        <class 'celery.concurrency.processes.TaskPool'>
 
         >>> get_cls_by_name("default", {
-        ...     "default": "celery.worker.pool.TaskPool"})
-        <class 'celery.worker.pool.TaskPool'>
+        ...     "default": "celery.concurrency.processes.TaskPool"})
+        <class 'celery.concurrency.processes.TaskPool'>
 
         # Does not try to look up non-string names.
-        >>> from celery.worker.pool import TaskPool
+        >>> from celery.concurrency.processes import TaskPool
         >>> get_cls_by_name(TaskPool) is TaskPool
         True
 

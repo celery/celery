@@ -7,13 +7,13 @@ import socket
 from datetime import datetime, timedelta
 from itertools import count
 
-from carrot.connection import DjangoBrokerConnection
+from carrot.connection import BrokerConnection
 from carrot.messaging import Publisher, Consumer, ConsumerSet as _ConsumerSet
-from billiard.utils.functional import wraps
 
 from celery import conf
 from celery import signals
 from celery.utils import gen_unique_id, mitemgetter, noop
+from celery.utils.functional import wraps
 from celery.routes import lookup_route, expand_destination
 from celery.loaders import load_settings
 
@@ -219,10 +219,25 @@ class BroadcastConsumer(Consumer):
         super(BroadcastConsumer, self).__init__(*args, **kwargs)
 
 
-def establish_connection(connect_timeout=conf.BROKER_CONNECTION_TIMEOUT):
+def establish_connection(hostname=None, userid=None, password=None,
+        virtual_host=None, port=None, ssl=None, insist=None,
+        connect_timeout=None, backend_cls=None):
     """Establish a connection to the message broker."""
-    return DjangoBrokerConnection(connect_timeout=connect_timeout,
-                                  settings=load_settings())
+    if insist is None:
+        insist = conf.BROKER_INSIST
+    if ssl is None:
+        ssl = conf.BROKER_USE_SSL
+    if connect_timeout is None:
+        connect_timeout = conf.BROKER_CONNECTION_TIMEOUT
+
+    return BrokerConnection(hostname or conf.BROKER_HOST,
+                            userid or conf.BROKER_USER,
+                            password or conf.BROKER_PASSWORD,
+                            virtual_host or conf.BROKER_VHOST,
+                            port or conf.BROKER_PORT,
+                            backend_cls=backend_cls or conf.BROKER_BACKEND,
+                            insist=insist, ssl=ssl,
+                            connect_timeout=connect_timeout)
 
 
 def with_connection(fun):

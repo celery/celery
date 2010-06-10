@@ -3,7 +3,6 @@
 The Multiprocessing Worker Server
 
 """
-import time
 import socket
 import logging
 import traceback
@@ -20,8 +19,17 @@ from celery.utils import noop, instantiate
 from celery.worker.buckets import TaskBucket, FastQueue
 from celery.worker.scheduler import Scheduler
 
+RUN = 0x1
+CLOSE = 0x2
+TERMINATE = 0x3
+
 
 def process_initializer():
+    """Initializes the process so it can be used to process tasks.
+
+    Used for multiprocessing environments.
+
+    """
     # There seems to a bug in multiprocessing (backport?)
     # when detached, where the worker gets EOFErrors from time to time
     # and the logger is left from the parent process causing a crash.
@@ -48,7 +56,6 @@ class WorkController(object):
     :param loglevel: see :attr:`loglevel`.
     :param embed_clockservice: see :attr:`run_clockservice`.
     :param send_events: see :attr:`send_events`.
-
 
     .. attribute:: concurrency
 
@@ -182,7 +189,7 @@ class WorkController(object):
 
     def start(self):
         """Starts the workers main loop."""
-        self._state = "RUN"
+        self._state = RUN
 
         try:
             for i, component in enumerate(self.components):
@@ -192,6 +199,7 @@ class WorkController(object):
                 component.start()
         finally:
             self.stop()
+
     def process_task(self, wrapper):
         """Process task by sending it to the pool of workers."""
         try:
@@ -205,32 +213,31 @@ class WorkController(object):
             self.stop()
 
     def stop(self):
-        """Gracefully shutdown the worker server."""
-        if self._state != "RUN":
-            return
-        if self._running != len(self.components):
-            return
-
-        signals.worker_shutdown.send(sender=self)
-        for component in reversed(self.components):
-            self.logger.debug("Stopping thread %s..." % (
-                              component.__class__.__name__))
-            component.stop()
-
-        self.listener.close_connection()
-        self._state = "STOP"
+        """Graceful shutdown of the worker server."""
+        self._shutdown(warm=True)
 
     def terminate(self):
-        """Not so gracefully shutdown the worker server."""
-        if self._state != "RUN":
+        """Not so graceful shutdown of the worker server."""
+        self._shutdown(warm=False)
+
+    def _shutdown(self, warm=True):
+        """Gracefully shutdown the worker server."""
+        what = (warm and "stopping" or "terminating").capitalize()
+
+        if self._state != RUN or self._running != len(self.components):
+            # Not fully started, can safely exit.
             return
 
+        self._state = CLOSE
         signals.worker_shutdown.send(sender=self)
+
         for component in reversed(self.components):
-            self.logger.debug("Terminating thread %s..." % (
-                              component.__class__.__name__))
-            terminate = getattr(component, "terminate", component.stop)
-            terminate()
+            self.logger.debug("%s thread %s..." % (
+                    what, component.__class__.__name__))
+            stop = component.stop
+            if not warm:
+                stop = getattr(component, "terminate", stop)
+            stop()
 
         self.listener.close_connection()
-        self._state = "STOP"
+        self._state = TERMINATE

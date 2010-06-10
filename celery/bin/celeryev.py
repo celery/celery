@@ -1,15 +1,15 @@
 import sys
 import time
 import curses
-import atexit
 import socket
 import optparse
 import threading
 
-from pprint import pformat
 from datetime import datetime
 from textwrap import wrap
 from itertools import count
+
+from carrot.utils import rpartition
 
 import celery
 from celery import states
@@ -20,15 +20,16 @@ from celery.messaging import establish_connection
 from celery.datastructures import LocalCache
 
 TASK_NAMES = LocalCache(0xFFF)
+
 HUMAN_TYPES = {"worker-offline": "shutdown",
                "worker-online": "started",
                "worker-heartbeat": "heartbeat"}
+
 OPTION_LIST = (
     optparse.make_option('-d', '--DUMP',
         action="store_true", dest="dump",
         help="Dump events to stdout."),
 )
-
 
 
 def humanize_type(type):
@@ -116,7 +117,7 @@ class CursesMonitor(object):
                           "L": self.selection_rate_limit}
         self.keymap = dict(default_keymap, **self.keymap)
 
-    def format_row(self, uuid, worker, task, time, state):
+    def format_row(self, uuid, worker, task, timestamp, state):
         my, mx = self.win.getmaxyx()
         mx = mx - 3
         uuid_max = 36
@@ -126,8 +127,8 @@ class CursesMonitor(object):
         worker = abbr(worker, 16).ljust(16)
         task = abbrtask(task, 16).ljust(16)
         state = abbr(state, 8).ljust(8)
-        time = time.ljust(8)
-        row = "%s %s %s %s %s " % (uuid, worker, task, time, state)
+        timestamp = timestamp.ljust(8)
+        row = "%s %s %s %s %s " % (uuid, worker, task, timestamp, state)
         if self.screen_width is None:
             self.screen_width = len(row[:mx])
         return row[:mx]
@@ -177,7 +178,8 @@ class CursesMonitor(object):
             self.win.addstr(y(), 3, title, curses.A_BOLD | curses.A_UNDERLINE)
             blank_line()
         callback(my, mx, y())
-        self.win.addstr(my - 1, 0, "Press any key to continue...", curses.A_BOLD)
+        self.win.addstr(my - 1, 0, "Press any key to continue...",
+                        curses.A_BOLD)
         self.win.refresh()
         while 1:
             try:
@@ -333,7 +335,8 @@ class CursesMonitor(object):
                     attr = curses.A_NORMAL
                     if task.uuid == self.selected_task:
                         attr = curses.A_STANDOUT
-                    timestamp = datetime.fromtimestamp(task.timestamp or time.time())
+                    timestamp = datetime.fromtimestamp(
+                                    task.timestamp or time.time())
                     timef = timestamp.strftime("%H:%M:%S")
                     line = self.format_row(uuid, task.name,
                                            task.worker.hostname,
@@ -409,9 +412,12 @@ class CursesMonitor(object):
         curses.init_pair(4, curses.COLOR_MAGENTA, self.background)
         # greeting
         curses.init_pair(5, curses.COLOR_BLUE, self.background)
+        # started state
+        curses.init_pair(6, curses.COLOR_YELLOW, self.foreground)
 
         self.state_colors = {states.SUCCESS: curses.color_pair(3),
-                             states.REVOKED: curses.color_pair(4)}
+                             states.REVOKED: curses.color_pair(4),
+                             states.STARTED: curses.color_pair(6)}
         for state in states.EXCEPTION_STATES:
             self.state_colors[state] = curses.color_pair(2)
 
@@ -467,7 +473,7 @@ def eventtop():
                 conn.connection.drain_events()
             except socket.timeout:
                 pass
-    except Exception, exc:
+    except Exception:
         refresher.shutdown = True
         refresher.join()
         display.resetscreen()
@@ -490,7 +496,7 @@ def eventdump():
         conn and conn.close()
 
 
-def run_celeryev(dump=False):
+def run_celeryev(dump=False, **kwargs):
     if dump:
         return eventdump()
     return eventtop()
@@ -506,10 +512,6 @@ def parse_options(arguments):
 def main():
     options = parse_options(sys.argv[1:])
     return run_celeryev(**vars(options))
-
-
-
-
 
 if __name__ == "__main__":
     main()

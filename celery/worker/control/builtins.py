@@ -1,12 +1,11 @@
-import os
-import signal
 from datetime import datetime
 
 from celery import conf
+from celery.backends import default_backend
 from celery.registry import tasks
+from celery.utils import timeutils
 from celery.worker.revoke import revoked
 from celery.worker.control.registry import Panel
-from celery.backends import default_backend
 
 TASK_INFO_FIELDS = ("exchange", "routing_key", "rate_limit")
 
@@ -54,6 +53,12 @@ def rate_limit(panel, task_name, rate_limit, **kwargs):
     :param rate_limit: New rate limit.
 
     """
+
+    try:
+        timeutils.rate(rate_limit)
+    except ValueError, exc:
+        return {"error": "Invalid rate limit string: %s" % exc}
+
     try:
         tasks[task_name].rate_limit = rate_limit
     except KeyError:
@@ -135,4 +140,4 @@ def ping(panel, **kwargs):
 @Panel.register
 def shutdown(panel, **kwargs):
     panel.logger.critical("Got shutdown from remote.")
-    os.kill(os.getpid(), signal.SIGTERM)
+    raise SystemExit

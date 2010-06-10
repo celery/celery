@@ -10,5 +10,7 @@
 
     tasks
     executing
+    workers
+    tasksets
     remote-tasks
     routing

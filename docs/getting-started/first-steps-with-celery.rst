@@ -2,6 +2,9 @@
  First steps with Celery
 ========================
 
+.. contents::
+    :local:
+
 Creating a simple task
 ======================
 
@@ -26,22 +29,23 @@ Our addition task looks like this:
 All celery tasks are classes that inherit from the ``Task``
 class. In this case we're using a decorator that wraps the add
 function in an appropriate class for us automatically. The full
-documentation on how to create tasks and task classes are in
-:doc:`Executing Tasks<../userguide/tasks>`.
+documentation on how to create tasks and task classes is in the
+:doc:`../userguide/tasks>` part of the user guide.
 
 
 
 Configuration
 =============
 
-Celery is configured by using a configuration module. By convention,
-this module is called ``celeryconfig.py``. This module must be in the
-Python path so it can be imported.
+Celery is configured by using a configuration module. By default
+this module is called ``celeryconfig.py``.
+
+:Note: This configuration module must be on the Python path so it
+  can be imported.
 
 You can set a custom name for the configuration module with the
-``CELERY_CONFIG_MODULE`` variable. In these examples we use the
+``CELERY_CONFIG_MODULE`` variable, but in these examples we use the
 default name.
-
 
 Let's create our ``celeryconfig.py``.
 
@@ -58,10 +62,14 @@ Let's create our ``celeryconfig.py``.
 
         CELERY_RESULT_BACKEND = "amqp"
 
+   The AMQP backend is non-persistent by default, and you can only
+   fetch the result of a task once (as it's sent as a message).
+
 3. Finally, we list the modules to import, that is, all the modules
-   that contain tasks. This is so celery knows about what tasks it can
-   be asked to perform. We only have a single task module,
-   ``tasks.py``, which we added earlier::
+   that contain tasks. This is so Celery knows about what tasks it can
+   be asked to perform.
+
+   We only have a single task module, ``tasks.py``, which we added earlier::
 
         CELERY_IMPORTS = ("tasks", )
 
@@ -98,43 +106,51 @@ For info on how to run celery as standalone daemon, see
 Executing the task
 ==================
 
-Whenever we want to execute our task, we can use the ``delay`` method
-of the task class.
+Whenever we want to execute our task, we can use the
+:meth:`~celery.task.base.Task.delay` method of the task class.
 
-This is a handy shortcut to the ``apply_async`` method which gives
-greater control of the task execution.
-See :doc:`Executing Tasks<../userguide/executing>` for more information.
+This is a handy shortcut to the :meth:`~celery.task.base.Task.apply_async`
+method which gives greater control of the task execution. Read the
+:doc:`Executing Tasks<../userguide/executing>` part of the user guide
+for more information about executing tasks.
 
     >>> from tasks import add
     >>> add.delay(4, 4)
     <AsyncResult: 889143a6-39a2-4e52-837b-d80d33efb22d>
 
 At this point, the task has been sent to the message broker. The message
-broker will hold on to the task until a celery worker server has successfully
+broker will hold on to the task until a worker server has successfully
 picked it up.
 
 *Note:* If everything is just hanging when you execute ``delay``, please check
 that RabbitMQ is running, and that the user/password has access to the virtual
 host you configured earlier.
 
-Right now we have to check the celery worker log files to know what happened
-with the task. This is because we didn't keep the ``AsyncResult`` object
-returned by ``delay``.
+Right now we have to check the worker log files to know what happened
+with the task. This is because we didn't keep the :class:`~celery.result.AsyncResult`
+object returned by :meth:`~celery.task.base.Task.delay`.
 
-The ``AsyncResult`` lets us find the state of the task, wait for the task to
-finish and get its return value (or exception if the task failed).
+The :class:`~celery.result.AsyncResult` lets us find the state of the task, wait for
+the task to finish, get its return value (or exception if the task failed),
+and more.
 
-So, let's execute the task again, but this time we'll keep track of the task:
+So, let's execute the task again, but this time we'll keep track of the task
+by keeping the :class:`~celery.result.AsyncResult`::
 
     >>> result = add.delay(4, 4)
+
     >>> result.ready() # returns True if the task has finished processing.
     False
+
     >>> result.result # task is not ready, so no return value yet.
     None
+
     >>> result.get()   # Waits until the task is done and returns the retval.
     8
+
     >>> result.result # direct access to result, doesn't re-raise errors.
     8
+
     >>> result.successful() # returns True if the task didn't end in failure.
     True
 

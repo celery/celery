@@ -3,7 +3,6 @@
 Common Exceptions
 
 """
-from billiard.pool import SoftTimeLimitExceeded as _SoftTimeLimitExceeded
 
 UNREGISTERED_FMT = """
 Task of kind %s is not registered, please make sure it's imported.
@@ -14,7 +13,11 @@ class RouteNotFound(KeyError):
     """Task routed to a queue not in the routing table (CELERY_QUEUES)."""
 
 
-class SoftTimeLimitExceeded(_SoftTimeLimitExceeded):
+class TimeLimitExceeded(Exception):
+    """The time limit has been exceeded and the job has been terminated."""
+
+
+class SoftTimeLimitExceeded(Exception):
     """The soft time limit has been exceeded. This exception is raised
     to give the task a chance to clean up."""
     pass

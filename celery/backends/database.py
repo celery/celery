@@ -2,9 +2,10 @@ from datetime import datetime
 
 
 from celery import conf
+from celery.backends.base import BaseDictBackend
 from celery.db.models import Task, TaskSet
 from celery.db.session import ResultSession
-from celery.backends.base import BaseDictBackend
+from celery.exceptions import ImproperlyConfigured
 
 
 class DatabaseBackend(BaseDictBackend):
@@ -12,6 +13,10 @@ class DatabaseBackend(BaseDictBackend):
 
     def __init__(self, dburi=conf.RESULT_DBURI,
             engine_options=None, **kwargs):
+        if not dburi:
+            raise ImproperlyConfigured(
+                    "Missing connection string! Do you have "
+                    "CELERY_RESULT_DBURI set to a real value?")
         self.dburi = dburi
         self.engine_options = dict(engine_options or {},
                                    **conf.RESULT_ENGINE_OPTIONS or {})

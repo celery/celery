@@ -5,8 +5,9 @@ import sys
 import __builtin__
 from StringIO import StringIO
 
-from billiard.utils.functional import wraps
 from nose import SkipTest
+
+from celery.utils.functional import wraps
 
 
 class GeneratorContextManager(object):
@@ -76,6 +77,19 @@ def eager_tasks():
     yield True
 
     conf.ALWAYS_EAGER = prev
+
+
+def with_eager_tasks(fun):
+
+    @wraps(fun)
+    def _inner(*args, **kwargs):
+        from celery import conf
+        prev = conf.ALWAYS_EAGER
+        conf.ALWAYS_EAGER = True
+        try:
+            return fun(*args, **kwargs)
+        finally:
+            conf.ALWAYS_EAGER = prev
 
 
 def with_environ(env_name, env_value):

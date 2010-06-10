@@ -1,13 +1,11 @@
 """celery.backends.base"""
 import time
 
-from billiard.serialization import pickle
-from billiard.serialization import get_pickled_exception
-from billiard.serialization import get_pickleable_exception
-
 from celery import conf
 from celery import states
 from celery.exceptions import TimeoutError, TaskRevokedError
+from celery.serialization import pickle, get_pickled_exception
+from celery.serialization import get_pickleable_exception
 from celery.datastructures import LocalCache
 
 
@@ -68,10 +66,6 @@ class BaseBackend(object):
     def prepare_value(self, result):
         """Prepare value for storage."""
         return result
-
-    def is_successful(self, task_id):
-        """Returns ``True`` if the task was successfully executed."""
-        return self.get_status(task_id) == states.SUCCESS
 
     def wait_for(self, task_id, timeout=None):
         """Wait for task and return its result.

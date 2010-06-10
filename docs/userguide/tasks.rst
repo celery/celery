@@ -4,6 +4,12 @@
 
 .. module:: celery.task.base
 
+.. contents::
+    :local:
+
+Basics
+======
+
 A task is a class that encapsulates a function and its execution options.
 Given a function ``create_user``, that takes two arguments: ``username`` and
 ``password``, you can create a task like this:
@@ -104,8 +110,8 @@ the worker log:
 .. code-block:: python
 
     class AddTask(Task):
-        def run(self, x, y, **kwargs):
-            logger = self.get_logger(**kwargs)
+        def run(self, x, y, \*\*kwargs):
+            logger = self.get_logger(\*\*kwargs)
             logger.info("Adding %s + %s" % (x, y))
             return x + y
 
@@ -114,8 +120,8 @@ or using the decorator syntax:
 .. code-block:: python
 
     @task()
-    def add(x, y, **kwargs):
-        logger = add.get_logger(**kwargs)
+    def add(x, y, \*\*kwargs):
+        logger = add.get_logger(\*\*kwargs)
         logger.info("Adding %s + %s" % (x, y))
         return x + y
 
@@ -133,7 +139,7 @@ It will do the right thing, and respect the
 .. code-block:: python
 
     @task()
-    def send_twitter_status(oauth, tweet, **kwargs):
+    def send_twitter_status(oauth, tweet, \*\*kwargs):
         try:
             twitter = Twitter(oauth)
             twitter.update_status(tweet)
@@ -170,7 +176,7 @@ You can also provide the ``countdown`` argument to
     class MyTask(Task):
         default_retry_delay = 30 * 60 # retry in 30 minutes
 
-        def run(self, x, y, **kwargs):
+        def run(self, x, y, \*\*kwargs):
             try:
                 ...
             except Exception, exc:
@@ -377,8 +383,8 @@ blog/tasks.py
 
 
     @task
-    def spam_filter(comment_id, remote_addr=None, **kwargs):
-            logger = spam_filter.get_logger(**kwargs)
+    def spam_filter(comment_id, remote_addr=None, \*\*kwargs):
+            logger = spam_filter.get_logger(\*\*kwargs)
             logger.info("Running spam filter for comment %s" % comment_id)
 
             comment = Comment.objects.get(pk=comment_id)
@@ -524,30 +530,36 @@ Good:
 
 .. code-block:: python
 
-    from functools import curry
-
     @task(ignore_result=True)
     def update_page_info(url):
         # fetch_page -> parse_page -> store_page
-        callback = curry(parse_page.delay, callback=store_page_info)
-        fetch_page.delay(url, callback=callback)
+        fetch_page.delay(url, callback=subtask(parse_page,
+                                    callback=subtask(store_page_info)))
 
     @task(ignore_result=True)
     def fetch_page(url, callback=None):
         page = myparser.parse_document(page)
         if callback:
-            callback(page)
+            # The callback may have been serialized with JSON,
+            # so best practice is to convert the subtask dict back
+            # into a subtask object.
+            subtask(callback).apply_async(page)
 
     @task(ignore_result=True)
     def parse_page(url, page, callback=None):
         info = myparser.parse_document(page)
         if callback:
-            callback(url, info)
+            subtask(callback).apply_async(url, info)
 
     @task(ignore_result=True)
     def store_page_info(url, info):
         PageInfo.objects.create(url, info)
 
+
+We use :class:`~celery.task.sets.subtask` here to safely pass
+around the callback task. :class:`~celery.task.sets.subtask` is a 
+subclass of dict used to wrap the arguments and execution options
+for a single task invocation.
 
 
 Performance and Strategies

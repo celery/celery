@@ -40,12 +40,12 @@ _DEFAULTS = {
     "CELERY_DEFAULT_EXCHANGE": "celery",
     "CELERY_DEFAULT_EXCHANGE_TYPE": "direct",
     "CELERY_DEFAULT_DELIVERY_MODE": 2, # persistent
-    "CELERY_BROKER_CONNECTION_TIMEOUT": 4,
-    "CELERY_BROKER_CONNECTION_RETRY": True,
-    "CELERY_BROKER_CONNECTION_MAX_RETRIES": 100,
+    "BROKER_CONNECTION_TIMEOUT": 4,
+    "BROKER_CONNECTION_RETRY": True,
+    "BROKER_CONNECTION_MAX_RETRIES": 100,
     "CELERY_ACKS_LATE": False,
     "CELERYD_POOL_PUTLOCKS": True,
-    "CELERYD_POOL": "celery.worker.pool.TaskPool",
+    "CELERYD_POOL": "celery.concurrency.processes.TaskPool",
     "CELERYD_MEDIATOR": "celery.worker.controllers.Mediator",
     "CELERYD_ETA_SCHEDULER": "celery.worker.controllers.ScheduleController",
     "CELERYD_LISTENER": "celery.worker.listener.CarrotListener",
@@ -78,7 +78,19 @@ _DEFAULTS = {
     "CELERY_RESULT_PERSISTENT": False,
     "CELERY_MAX_CACHED_RESULTS": 5000,
     "CELERY_TRACK_STARTED": False,
+
+    # Default e-mail settings.
+    "SERVER_EMAIL": "celery@localhost",
+    "EMAIL_HOST": "localhost",
+    "EMAIL_PORT": 25,
+    "ADMINS": (),
 }
+
+
+def isatty(fh):
+    # Fixes bug with mod_wsgi:
+    #   mod_wsgi.Log object has no attribute isatty.
+    return getattr(fh, "isatty", None) and fh.isatty()
 
 
 _DEPRECATION_FMT = """
@@ -133,15 +145,14 @@ CELERYD_TASK_TIME_LIMIT = _get("CELERYD_TASK_TIME_LIMIT")
 CELERYD_TASK_SOFT_TIME_LIMIT = _get("CELERYD_TASK_SOFT_TIME_LIMIT")
 CELERYD_MAX_TASKS_PER_CHILD = _get("CELERYD_MAX_TASKS_PER_CHILD")
 STORE_ERRORS_EVEN_IF_IGNORED = _get("CELERY_STORE_ERRORS_EVEN_IF_IGNORED")
-CELERY_SEND_TASK_ERROR_EMAILS = _get("CELERY_SEND_TASK_ERROR_EMAILS",
-                                     not settings.DEBUG,
+CELERY_SEND_TASK_ERROR_EMAILS = _get("CELERY_SEND_TASK_ERROR_EMAILS", False,
                                      compat=["SEND_CELERY_TASK_ERROR_EMAILS"])
 CELERYD_LOG_FORMAT = _get("CELERYD_LOG_FORMAT",
                           compat=["CELERYD_DAEMON_LOG_FORMAT"])
 CELERYD_TASK_LOG_FORMAT = _get("CELERYD_TASK_LOG_FORMAT")
 CELERYD_LOG_FILE = _get("CELERYD_LOG_FILE")
-CELERYD_LOG_COLOR = _get("CELERYD_LOG_COLOR", \
-                       CELERYD_LOG_FILE is None and sys.stderr.isatty())
+CELERYD_LOG_COLOR = _get("CELERYD_LOG_COLOR",
+                       CELERYD_LOG_FILE is None and isatty(sys.stderr))
 CELERYD_LOG_LEVEL = _get("CELERYD_LOG_LEVEL",
                             compat=["CELERYD_DAEMON_LOG_LEVEL"])
 CELERYD_LOG_LEVEL = LOG_LEVELS[CELERYD_LOG_LEVEL.upper()]
@@ -153,6 +164,31 @@ CELERYD_POOL = _get("CELERYD_POOL")
 CELERYD_LISTENER = _get("CELERYD_LISTENER")
 CELERYD_MEDIATOR = _get("CELERYD_MEDIATOR")
 CELERYD_ETA_SCHEDULER = _get("CELERYD_ETA_SCHEDULER")
+
+# :--- Email settings                               <-   --   --- - ----- -- #
+ADMINS = _get("ADMINS")
+SERVER_EMAIL = _get("SERVER_EMAIL")
+EMAIL_HOST = _get("EMAIL_HOST")
+EMAIL_HOST_USER = _get("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = _get("EMAIL_HOST_PASSWORD")
+EMAIL_PORT = _get("EMAIL_PORT")
+
+
+# :--- Broker connections                           <-   --   --- - ----- -- #
+BROKER_HOST = _get("BROKER_HOST")
+BROKER_PORT = _get("BROKER_PORT")
+BROKER_USER = _get("BROKER_USER")
+BROKER_PASSWORD = _get("BROKER_PASSWORD")
+BROKER_VHOST = _get("BROKER_VHOST")
+BROKER_USE_SSL = _get("BROKER_USE_SSL")
+BROKER_INSIST = _get("BROKER_INSIST")
+BROKER_CONNECTION_TIMEOUT = _get("BROKER_CONNECTION_TIMEOUT",
+                                compat=["CELERY_BROKER_CONNECTION_TIMEOUT"])
+BROKER_CONNECTION_RETRY = _get("BROKER_CONNECTION_RETRY",
+                                compat=["CELERY_BROKER_CONNECTION_RETRY"])
+BROKER_CONNECTION_MAX_RETRIES = _get("BROKER_CONNECTION_MAX_RETRIES",
+                            compat=["CELERY_BROKER_CONNECTION_MAX_RETRIES"])
+BROKER_BACKEND = _get("BROKER_BACKEND") or _get("CARROT_BACKEND")
 
 # <--- Message routing                             <-   --   --- - ----- -- #
 DEFAULT_QUEUE = _get("CELERY_DEFAULT_QUEUE")
@@ -178,14 +214,6 @@ EVENT_EXCHANGE = _get("CELERY_EVENT_EXCHANGE")
 EVENT_EXCHANGE_TYPE = _get("CELERY_EVENT_EXCHANGE_TYPE")
 EVENT_ROUTING_KEY = _get("CELERY_EVENT_ROUTING_KEY")
 EVENT_SERIALIZER = _get("CELERY_EVENT_SERIALIZER")
-
-# :--- Broker connections                           <-   --   --- - ----- -- #
-BROKER_CONNECTION_TIMEOUT = _get("CELERY_BROKER_CONNECTION_TIMEOUT",
-                                compat=["CELERY_AMQP_CONNECTION_TIMEOUT"])
-BROKER_CONNECTION_RETRY = _get("CELERY_BROKER_CONNECTION_RETRY",
-                                compat=["CELERY_AMQP_CONNECTION_RETRY"])
-BROKER_CONNECTION_MAX_RETRIES = _get("CELERY_BROKER_CONNECTION_MAX_RETRIES",
-                                compat=["CELERY_AMQP_CONNECTION_MAX_RETRIES"])
 
 # :--- AMQP Backend settings                        <-   --   --- - ----- -- #
 

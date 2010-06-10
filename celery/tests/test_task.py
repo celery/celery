@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 
 from pyparsing import ParseException
 
-from billiard.utils.functional import wraps
 
 from celery import conf
 from celery import task
@@ -12,12 +11,16 @@ from celery import messaging
 from celery.task.schedules import crontab, crontab_parser
 from celery.utils import timeutils
 from celery.utils import gen_unique_id
+from celery.utils.functional import wraps
 from celery.result import EagerResult
 from celery.execute import send_task
 from celery.backends import default_backend
 from celery.decorators import task as task_dec
 from celery.exceptions import RetryTaskError
 from celery.worker.listener import parse_iso8601
+
+from celery.tests.utils import with_eager_tasks
+
 
 def return_True(*args, **kwargs):
     # Task run functions can't be closures/lambdas, as they're pickled.
@@ -216,36 +219,28 @@ class TestCeleryTasks(unittest.TestCase):
         self.assertEqual(result.backend, RetryTask.backend)
         self.assertEqual(result.task_id, task_id)
 
+    @with_eager_tasks
     def test_ping(self):
-        from celery import conf
-        conf.ALWAYS_EAGER = True
         self.assertEqual(task.ping(), 'pong')
-        conf.ALWAYS_EAGER = False
 
+    @with_eager_tasks
     def test_execute_remote(self):
-        from celery import conf
-        conf.ALWAYS_EAGER = True
         self.assertEqual(task.execute_remote(return_True, ["foo"]).get(),
-                          True)
-        conf.ALWAYS_EAGER = False
+                         True)
 
+    @with_eager_tasks
     def test_dmap(self):
-        from celery import conf
         import operator
-        conf.ALWAYS_EAGER = True
         res = task.dmap(operator.add, zip(xrange(10), xrange(10)))
         self.assertEqual(sum(res), sum(operator.add(x, x)
-                                        for x in xrange(10)))
-        conf.ALWAYS_EAGER = False
+                                    for x in xrange(10)))
 
+    @with_eager_tasks
     def test_dmap_async(self):
-        from celery import conf
         import operator
-        conf.ALWAYS_EAGER = True
         res = task.dmap_async(operator.add, zip(xrange(10), xrange(10)))
         self.assertEqual(sum(res.get()), sum(operator.add(x, x)
-                                                for x in xrange(10)))
-        conf.ALWAYS_EAGER = False
+                                            for x in xrange(10)))
 
     def assertNextTaskDataEqual(self, consumer, presult, task_name,
             test_eta=False, **kwargs):
@@ -300,9 +295,9 @@ class TestCeleryTasks(unittest.TestCase):
         self.assertNextTaskDataEqual(consumer, presult, t1.name)
 
         # With arguments.
-        presult2 = t1.apply_async(kwargs=dict(name="George Constanza"))
+        presult2 = t1.apply_async(kwargs=dict(name="George Costanza"))
         self.assertNextTaskDataEqual(consumer, presult2, t1.name,
-                name="George Constanza")
+                name="George Costanza")
 
         # send_task
         sresult = send_task(t1.name, kwargs=dict(name="Elaine M. Benes"))
@@ -310,16 +305,16 @@ class TestCeleryTasks(unittest.TestCase):
                 name="Elaine M. Benes")
 
         # With eta.
-        presult2 = task.apply_async(t1, kwargs=dict(name="George Constanza"),
+        presult2 = task.apply_async(t1, kwargs=dict(name="George Costanza"),
                                     eta=datetime.now() + timedelta(days=1))
         self.assertNextTaskDataEqual(consumer, presult2, t1.name,
-                name="George Constanza", test_eta=True)
+                name="George Costanza", test_eta=True)
 
         # With countdown.
-        presult2 = task.apply_async(t1, kwargs=dict(name="George Constanza"),
+        presult2 = task.apply_async(t1, kwargs=dict(name="George Costanza"),
                                     countdown=10)
         self.assertNextTaskDataEqual(consumer, presult2, t1.name,
-                name="George Constanza", test_eta=True)
+                name="George Costanza", test_eta=True)
 
         # Discarding all tasks.
         consumer.discard_all()
@@ -355,15 +350,12 @@ class TestCeleryTasks(unittest.TestCase):
 
 class TestTaskSet(unittest.TestCase):
 
+    @with_eager_tasks
     def test_function_taskset(self):
-        from celery import conf
-        conf.ALWAYS_EAGER = True
         ts = task.TaskSet(return_True_task.name, [
-            ([1], {}), [[2], {}], [[3], {}], [[4], {}], [[5], {}]])
+              ([1], {}), [[2], {}], [[3], {}], [[4], {}], [[5], {}]])
         res = ts.apply_async()
         self.assertListEqual(res.join(), [True, True, True, True, True])
-
-        conf.ALWAYS_EAGER = False
 
     def test_counter_taskset(self):
         IncrementCounterTask.count = 0
@@ -475,7 +467,8 @@ class TestPeriodicTask(unittest.TestCase):
     def test_is_due_not_due(self):
         due, remaining = MyPeriodic().is_due(datetime.now())
         self.assertFalse(due)
-        # TODO: This assertion may fail if executed in the first minute of an hour
+        # TODO This assertion may fail if executed in the
+        # first minute of an hour
         self.assertGreater(remaining, 60)
 
     def test_is_due(self):
@@ -532,25 +525,35 @@ class test_crontab_parser(unittest.TestCase):
         self.assertEquals(crontab_parser(7).parse('*'), set(range(7)))
 
     def test_parse_range(self):
-        self.assertEquals(crontab_parser(60).parse('1-10'), set(range(1,10+1)))
-        self.assertEquals(crontab_parser(24).parse('0-20'), set(range(0,20+1)))
-        self.assertEquals(crontab_parser().parse('2-10'), set(range(2,10+1)))
+        self.assertEquals(crontab_parser(60).parse('1-10'),
+                          set(range(1, 10 + 1)))
+        self.assertEquals(crontab_parser(24).parse('0-20'),
+                          set(range(0, 20 + 1)))
+        self.assertEquals(crontab_parser().parse('2-10'),
+                          set(range(2, 10 + 1)))
 
     def test_parse_groups(self):
-        self.assertEquals(crontab_parser().parse('1,2,3,4'), set([1,2,3,4]))
-        self.assertEquals(crontab_parser().parse('0,15,30,45'), set([0,15,30,45]))
+        self.assertEquals(crontab_parser().parse('1,2,3,4'),
+                          set([1, 2, 3, 4]))
+        self.assertEquals(crontab_parser().parse('0,15,30,45'),
+                          set([0, 15, 30, 45]))
 
     def test_parse_steps(self):
-        self.assertEquals(crontab_parser(8).parse('*/2'), set([0,2,4,6]))
-        self.assertEquals(crontab_parser().parse('*/2'), set([ i*2 for i in xrange(30) ]))
-        self.assertEquals(crontab_parser().parse('*/3'), set([ i*3 for i in xrange(20) ]))
+        self.assertEquals(crontab_parser(8).parse('*/2'),
+                          set([0, 2, 4, 6]))
+        self.assertEquals(crontab_parser().parse('*/2'),
+                          set(i * 2 for i in xrange(30)))
+        self.assertEquals(crontab_parser().parse('*/3'),
+                          set(i * 3 for i in xrange(20)))
 
     def test_parse_composite(self):
-        self.assertEquals(crontab_parser(8).parse('*/2'), set([0,2,4,6]))
+        self.assertEquals(crontab_parser(8).parse('*/2'), set([0, 2, 4, 6]))
         self.assertEquals(crontab_parser().parse('2-9/5'), set([5]))
-        self.assertEquals(crontab_parser().parse('2-10/5'), set([5,10]))
-        self.assertEquals(crontab_parser().parse('2-11/5,3'), set([3,5,10]))
-        self.assertEquals(crontab_parser().parse('2-4/3,*/5,0-21/4'), set([0,3,4,5,8,10,12,15,16,20,25,30,35,40,45,50,55]))
+        self.assertEquals(crontab_parser().parse('2-10/5'), set([5, 10]))
+        self.assertEquals(crontab_parser().parse('2-11/5,3'), set([3, 5, 10]))
+        self.assertEquals(crontab_parser().parse('2-4/3,*/5,0-21/4'),
+                set([0, 3, 4, 5, 8, 10, 12, 15, 16,
+                    20, 25, 30, 35, 40, 45, 50, 55]))
 
     def test_parse_errors_on_empty_string(self):
         self.assertRaises(ParseException, crontab_parser(60).parse, '')
@@ -584,10 +587,10 @@ class test_crontab_is_due(unittest.TestCase):
         self.assertEquals(c.minute, set([30]))
         c = crontab(minute='30')
         self.assertEquals(c.minute, set([30]))
-        c = crontab(minute=(30,40,50))
-        self.assertEquals(c.minute, set([30,40,50]))
-        c = crontab(minute=set([30,40,50]))
-        self.assertEquals(c.minute, set([30,40,50]))
+        c = crontab(minute=(30, 40, 50))
+        self.assertEquals(c.minute, set([30, 40, 50]))
+        c = crontab(minute=set([30, 40, 50]))
+        self.assertEquals(c.minute, set([30, 40, 50]))
 
     def test_crontab_spec_invalid_minute(self):
         self.assertRaises(ValueError, crontab, minute=60)
@@ -598,8 +601,8 @@ class test_crontab_is_due(unittest.TestCase):
         self.assertEquals(c.hour, set([6]))
         c = crontab(hour='5')
         self.assertEquals(c.hour, set([5]))
-        c = crontab(hour=(4,8,12))
-        self.assertEquals(c.hour, set([4,8,12]))
+        c = crontab(hour=(4, 8, 12))
+        self.assertEquals(c.hour, set([4, 8, 12]))
 
     def test_crontab_spec_invalid_hour(self):
         self.assertRaises(ValueError, crontab, hour=24)
@@ -613,11 +616,11 @@ class test_crontab_is_due(unittest.TestCase):
         c = crontab(day_of_week='fri')
         self.assertEquals(c.day_of_week, set([5]))
         c = crontab(day_of_week='tuesday,sunday,fri')
-        self.assertEquals(c.day_of_week, set([0,2,5]))
+        self.assertEquals(c.day_of_week, set([0, 2, 5]))
         c = crontab(day_of_week='mon-fri')
-        self.assertEquals(c.day_of_week, set([1,2,3,4,5]))
+        self.assertEquals(c.day_of_week, set([1, 2, 3, 4, 5]))
         c = crontab(day_of_week='*/2')
-        self.assertEquals(c.day_of_week, set([0,2,4,6]))
+        self.assertEquals(c.day_of_week, set([0, 2, 4, 6]))
 
     def test_crontab_spec_invalid_dow(self):
         self.assertRaises(ValueError, crontab, day_of_week='fooday-barday')
@@ -675,25 +678,29 @@ class test_crontab_is_due(unittest.TestCase):
 
     @patch_crontab_nowfun(QuarterlyPeriodic, datetime(2010, 5, 10, 10, 15))
     def test_first_quarter_execution_is_due(self):
-        due, remaining = QuarterlyPeriodic().is_due(datetime(2010, 5, 10, 6, 30))
+        due, remaining = QuarterlyPeriodic().is_due(
+                            datetime(2010, 5, 10, 6, 30))
         self.assertTrue(due)
         self.assertEquals(remaining, 1)
 
     @patch_crontab_nowfun(QuarterlyPeriodic, datetime(2010, 5, 10, 10, 30))
     def test_second_quarter_execution_is_due(self):
-        due, remaining = QuarterlyPeriodic().is_due(datetime(2010, 5, 10, 6, 30))
+        due, remaining = QuarterlyPeriodic().is_due(
+                            datetime(2010, 5, 10, 6, 30))
         self.assertTrue(due)
         self.assertEquals(remaining, 1)
 
     @patch_crontab_nowfun(QuarterlyPeriodic, datetime(2010, 5, 10, 10, 14))
     def test_first_quarter_execution_is_not_due(self):
-        due, remaining = QuarterlyPeriodic().is_due(datetime(2010, 5, 10, 6, 30))
+        due, remaining = QuarterlyPeriodic().is_due(
+                            datetime(2010, 5, 10, 6, 30))
         self.assertFalse(due)
         self.assertEquals(remaining, 1)
 
     @patch_crontab_nowfun(QuarterlyPeriodic, datetime(2010, 5, 10, 10, 29))
     def test_second_quarter_execution_is_not_due(self):
-        due, remaining = QuarterlyPeriodic().is_due(datetime(2010, 5, 10, 6, 30))
+        due, remaining = QuarterlyPeriodic().is_due(
+                            datetime(2010, 5, 10, 6, 30))
         self.assertFalse(due)
         self.assertEquals(remaining, 1)
 

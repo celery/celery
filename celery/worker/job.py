@@ -12,7 +12,7 @@ import warnings
 from celery import conf
 from celery import platform
 from celery.log import get_default_logger
-from celery.utils import noop, fun_takes_kwargs
+from celery.utils import noop, kwdict, fun_takes_kwargs
 from celery.utils.mail import mail_admins
 from celery.worker.revoke import revoked
 from celery.loaders import current_loader
@@ -135,16 +135,12 @@ def execute_and_trace(task_name, *args, **kwargs):
         platform.set_mp_process_title("celeryd")
 
 
-class TaskWrapper(object):
-    """Class wrapping a task to be passed around and finally
-    executed inside of the worker.
+class TaskRequest(object):
+    """A request for task execution.
 
     :param task_name: see :attr:`task_name`.
-
     :param task_id: see :attr:`task_id`.
-
     :param args: see :attr:`args`
-
     :param kwargs: see :attr:`kwargs`.
 
     .. attribute:: task_name
@@ -163,16 +159,25 @@ class TaskWrapper(object):
 
         Mapping of keyword arguments to apply to the task.
 
+    .. attribute:: on_ack
+
+        Callback called when the task should be acknowledged.
+
     .. attribute:: message
 
         The original message sent. Used for acknowledging the message.
 
-    .. attribute executed
+    .. attribute:: executed
 
         Set to ``True`` if the task has been executed.
         A task should only be executed once.
 
-    .. attribute acknowledged
+    .. attribute:: delivery_info
+
+        Additional delivery info, e.g. the contains the path
+        from producer to consumer.
+
+    .. attribute:: acknowledged
 
         Set to ``True`` if the task has been acknowledged.
 
@@ -190,7 +195,7 @@ class TaskWrapper(object):
     time_start = None
 
     def __init__(self, task_name, task_id, args, kwargs,
-            on_ack=noop, retries=0, delivery_info=None, **opts):
+            on_ack=noop, retries=0, delivery_info=None, hostname=None, **opts):
         self.task_name = task_name
         self.task_id = task_id
         self.retries = retries
@@ -199,11 +204,13 @@ class TaskWrapper(object):
         self.on_ack = on_ack
         self.delivery_info = delivery_info or {}
         self.task = tasks[self.task_name]
+        self.hostname = hostname or socket.gethostname()
         self._already_revoked = False
 
         for opt in ("success_msg", "fail_msg", "fail_email_subject",
-                "fail_email_body", "logger", "eventer"):
+                    "fail_email_body", "logger", "eventer"):
             setattr(self, opt, opts.get(opt, getattr(self, opt, None)))
+
         if not self.logger:
             self.logger = get_default_logger()
 
@@ -226,14 +233,15 @@ class TaskWrapper(object):
         return False
 
     @classmethod
-    def from_message(cls, message, message_data, logger=None, eventer=None):
-        """Create a :class:`TaskWrapper` from a task message sent by
+    def from_message(cls, message, message_data, logger=None, eventer=None,
+            hostname=None):
+        """Create a :class:`TaskRequest` from a task message sent by
         :class:`celery.messaging.TaskPublisher`.
 
         :raises UnknownTaskError: if the message does not describe a task,
             the message is also rejected.
 
-        :returns: :class:`TaskWrapper` instance.
+        :returns: :class:`TaskRequest` instance.
 
         """
         task_name = message_data["task"]
@@ -250,14 +258,10 @@ class TaskWrapper(object):
         if not hasattr(kwargs, "items"):
             raise InvalidTaskError("Task kwargs must be a dictionary.")
 
-        # Convert any unicode keys in the keyword arguments to ascii.
-        kwargs = dict((key.encode("utf-8"), value)
-                        for key, value in kwargs.items())
-
-        return cls(task_name, task_id, args, kwargs,
-                    retries=retries, on_ack=message.ack,
-                    delivery_info=delivery_info,
-                    logger=logger, eventer=eventer)
+        return cls(task_name, task_id, args, kwdict(kwargs),
+                   retries=retries, on_ack=message.ack,
+                   delivery_info=delivery_info, logger=logger,
+                   eventer=eventer, hostname=hostname)
 
     def extend_with_default_kwargs(self, loglevel, logfile):
         """Extend the tasks keyword arguments with standard task arguments.
@@ -350,7 +354,7 @@ class TaskWrapper(object):
     def on_accepted(self):
         if not self.task.acks_late:
             self.acknowledge()
-        self.send_event("task-accepted", uuid=self.task_id)
+        self.send_event("task-started", uuid=self.task_id)
         self.logger.debug("Task accepted: %s[%s]" % (
             self.task_name, self.task_id))
 
@@ -395,7 +399,7 @@ class TaskWrapper(object):
                                        traceback=exc_info.traceback)
 
         context = {
-            "hostname": socket.gethostname(),
+            "hostname": self.hostname,
             "id": self.task_id,
             "name": self.task_name,
             "exc": repr(exc_info.exception),

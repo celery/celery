@@ -15,25 +15,28 @@ _monkeypatched = False
 
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
 RESET_SEQ = "\033[0m"
-COLOUR_SEQ = "\033[1;%dm"
+COLOR_SEQ = "\033[1;%dm"
 BOLD_SEQ = "\033[1m"
-COLOURS = {
-    'WARNING': YELLOW,
-    'DEBUG': BLUE,
-    'CRITICAL': MAGENTA,
-    'ERROR': RED
+COLORS = {
+    "WARNING": YELLOW,
+    "DEBUG": BLUE,
+    "CRITICAL": MAGENTA,
+    "ERROR": RED,
 }
 
-class ColourFormatter(logging.Formatter):
-    def __init__(self, msg, use_colour=True):
+
+class ColorFormatter(logging.Formatter):
+    def __init__(self, msg, use_color=True):
         logging.Formatter.__init__(self, msg)
-        self.use_colour = use_colour
+        self.use_color = use_color
 
     def format(self, record):
         levelname = record.levelname
-        if self.use_colour and levelname in COLOURS:
-            record.msg = COLOUR_SEQ % (30 + COLOURS[levelname]) + record.msg + RESET_SEQ
+        if self.use_color and levelname in COLORS:
+            record.msg = COLOR_SEQ % (
+                    30 + COLORS[levelname]) + record.msg + RESET_SEQ
         return logging.Formatter.format(self, record)
+
 
 def get_task_logger(loglevel=None):
     ensure_process_aware_logger()
@@ -85,7 +88,7 @@ def get_default_logger(loglevel=None):
 
 
 def setup_logger(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
-        format=conf.CELERYD_LOG_FORMAT, colourize=conf.CELERYD_LOG_COLOR,
+        format=conf.CELERYD_LOG_FORMAT, colorize=conf.CELERYD_LOG_COLOR,
         **kwargs):
     """Setup the ``multiprocessing`` logger. If ``logfile`` is not specified,
     then ``stderr`` is used.
@@ -94,11 +97,11 @@ def setup_logger(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
 
     """
     return _setup_logger(get_default_logger(loglevel),
-                         logfile, format, colourize, **kwargs)
+                         logfile, format, colorize, **kwargs)
 
 
 def setup_task_logger(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
-        format=conf.CELERYD_TASK_LOG_FORMAT, colourize=conf.CELERYD_LOG_COLOR,
+        format=conf.CELERYD_TASK_LOG_FORMAT, colorize=conf.CELERYD_LOG_COLOR,
         task_kwargs=None, **kwargs):
     """Setup the task logger. If ``logfile`` is not specified, then
     ``stderr`` is used.
@@ -111,17 +114,17 @@ def setup_task_logger(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
     task_kwargs.setdefault("task_id", "-?-")
     task_kwargs.setdefault("task_name", "-?-")
     logger = _setup_logger(get_task_logger(loglevel),
-                           logfile, format, colourize, **kwargs)
+                           logfile, format, colorize, **kwargs)
     return LoggerAdapter(logger, task_kwargs)
 
 
-def _setup_logger(logger, logfile, format, colourize,
-        formatter=ColourFormatter, **kwargs):
+def _setup_logger(logger, logfile, format, colorize,
+        formatter=ColorFormatter, **kwargs):
 
     if logger.handlers: # Logger already configured
         return logger
     handler = _detect_handler(logfile)
-    handler.setFormatter(formatter(format, use_colour=colourize))
+    handler.setFormatter(formatter(format, use_color=colorize))
     logger.addHandler(handler)
     return logger
 
@@ -204,7 +207,8 @@ class LoggingProxy(object):
 
     def write(self, data):
         """Write message to logging object."""
-        if not self.closed:
+        data = data.strip()
+        if data and not self.closed:
             self.logger.log(self.loglevel, data)
 
     def writelines(self, sequence):

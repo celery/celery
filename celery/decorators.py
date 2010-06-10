@@ -5,9 +5,8 @@ Decorators
 """
 from inspect import getargspec
 
-from billiard.utils.functional import wraps
-
 from celery.task.base import Task, PeriodicTask
+from celery.utils.functional import wraps
 
 
 def task(*args, **options):

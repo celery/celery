@@ -1,22 +1,21 @@
 import sys
 import warnings
+
 from datetime import timedelta
 
-from billiard.serialization import pickle
-
 from celery import conf
-from celery.log import setup_task_logger
-from celery.utils import gen_unique_id, padlist
-from celery.utils.timeutils import timedelta_seconds
-from celery.result import BaseAsyncResult, TaskSetResult, EagerResult
-from celery.execute import apply_async, apply
-from celery.registry import tasks
 from celery.backends import default_backend
+from celery.exceptions import MaxRetriesExceededError, RetryTaskError
+from celery.execute import apply_async, apply
+from celery.log import setup_task_logger
 from celery.messaging import TaskPublisher, TaskConsumer
 from celery.messaging import establish_connection as _establish_connection
-from celery.exceptions import MaxRetriesExceededError, RetryTaskError
-
+from celery.registry import tasks
+from celery.result import BaseAsyncResult, EagerResult
 from celery.schedules import schedule
+from celery.utils.timeutils import timedelta_seconds
+
+from celery.task.sets import TaskSet, subtask
 
 PERIODIC_DEPRECATION_TEXT = """\
 Periodic task classes has been deprecated and will be removed
@@ -83,9 +82,11 @@ class Task(object):
     :meth:`run` method.
 
     .. attribute:: name
+
         Name of the task.
 
     .. attribute:: abstract
+
         If ``True`` the task is an abstract base class.
 
     .. attribute:: type
@@ -163,6 +164,7 @@ class Task(object):
         The result store backend used for this task.
 
     .. attribute:: autoregister
+
         If ``True`` the task is automatically registered in the task
         registry, which is the default behaviour.
 
@@ -341,15 +343,15 @@ class Task(object):
         :param args: Positional arguments to retry with.
         :param kwargs: Keyword arguments to retry with.
         :keyword exc: Optional exception to raise instead of
-            :exc:`MaxRestartsExceededError` when the max restart limit has
-            been exceeded.
+            :exc:`~celery.exceptions.MaxRetriesExceededError` when the max
+            restart limit has been exceeded.
         :keyword countdown: Time in seconds to delay the retry for.
         :keyword eta: Explicit time and date to run the retry at (must be a
             :class:`datetime.datetime` instance).
         :keyword \*\*options: Any extra options to pass on to
             meth:`apply_async`. See :func:`celery.execute.apply_async`.
         :keyword throw: If this is ``False``, do not raise the
-            :exc:`celery.exceptions.RetryTaskError` exception,
+            :exc:`~celery.exceptions.RetryTaskError` exception,
             that tells the worker to mark the task as being retried.
             Note that this means the task will be marked as failed
             if the task raises an exception, or successful if it
@@ -436,7 +438,7 @@ class Task(object):
         :param args: Original arguments for the retried task.
         :param kwargs: Original keyword arguments for the retried task.
 
-        :keyword einfo: :class:`celery.datastructures.ExceptionInfo` instance,
+        :keyword einfo: :class:`~celery.datastructures.ExceptionInfo` instance,
            containing the traceback.
 
         The return value of this handler is ignored.
@@ -453,7 +455,7 @@ class Task(object):
         :param args: Original arguments for the task that failed.
         :param kwargs: Original keyword arguments for the task that failed.
 
-        :keyword einfo: :class:`celery.datastructures.ExceptionInfo` instance,
+        :keyword einfo: :class:`~celery.datastructures.ExceptionInfo` instance,
            containing the traceback (if any).
 
         The return value of this handler is ignored.
@@ -471,7 +473,7 @@ class Task(object):
         :param args: Original arguments for the task that failed.
         :param kwargs: Original keyword arguments for the task that failed.
 
-        :keyword einfo: :class:`celery.datastructures.ExceptionInfo` instance,
+        :keyword einfo: :class:`~celery.datastructures.ExceptionInfo` instance,
            containing the traceback.
 
         The return value of this handler is ignored.
@@ -497,8 +499,8 @@ class Task(object):
     def execute(self, wrapper, pool, loglevel, logfile):
         """The method the worker calls to execute the task.
 
-        :param wrapper: A :class:`celery.worker.job.TaskWrapper`.
-        :param pool: A :class:`celery.worker.pool.TaskPool` object.
+        :param wrapper: A :class:`~celery.worker.job.TaskRequest`.
+        :param pool: A task pool.
         :param loglevel: Current loglevel.
         :param logfile: Name of the currently used logfile.
 
@@ -513,176 +515,12 @@ class Task(object):
             kind = "%s(Task)" % self.__class__.__name__
         return "<%s: %s (%s)>" % (kind, self.name, self.type)
 
-
-class ExecuteRemoteTask(Task):
-    """Execute an arbitrary function or object.
-
-    *Note* You probably want :func:`execute_remote` instead, which this
-    is an internal component of.
-
-    The object must be pickleable, so you can't use lambdas or functions
-    defined in the REPL (that is the python shell, or ``ipython``).
-
-    """
-    name = "celery.execute_remote"
-
-    def run(self, ser_callable, fargs, fkwargs, **kwargs):
-        """
-        :param ser_callable: A pickled function or callable object.
-        :param fargs: Positional arguments to apply to the function.
-        :param fkwargs: Keyword arguments to apply to the function.
-
-        """
-        return pickle.loads(ser_callable)(*fargs, **fkwargs)
-
-
-class AsynchronousMapTask(Task):
-    """Task used internally by :func:`dmap_async` and
-    :meth:`TaskSet.map_async`.  """
-    name = "celery.map_async"
-
-    def run(self, ser_callable, args, timeout=None, **kwargs):
-        """:see :meth:`TaskSet.dmap_async`."""
-        return TaskSet.map(pickle.loads(ser_callable), args, timeout=timeout)
-
-
-class TaskSet(object):
-    """A task containing several subtasks, making it possible
-    to track how many, or when all of the tasks has been completed.
-
-    :param task: The task class or name.
-        Can either be a fully qualified task name, or a task class.
-
-    :param args: A list of args, kwargs pairs.
-        e.g. ``[[args1, kwargs1], [args2, kwargs2], ..., [argsN, kwargsN]]``
-
-
-    .. attribute:: task_name
-
-        The name of the task.
-
-    .. attribute:: arguments
-
-        The arguments, as passed to the task set constructor.
-
-    .. attribute:: total
-
-        Total number of tasks in this task set.
-
-    Example
-
-        >>> from djangofeeds.tasks import RefreshFeedTask
-        >>> taskset = TaskSet(RefreshFeedTask, args=[
-        ...                 ([], {"feed_url": "http://cnn.com/rss"}),
-        ...                 ([], {"feed_url": "http://bbc.com/rss"}),
-        ...                 ([], {"feed_url": "http://xkcd.com/rss"})
-        ... ])
-
-        >>> taskset_result = taskset.apply_async()
-        >>> list_of_return_values = taskset_result.join()
-
-    """
-
-    def __init__(self, task, args):
-        try:
-            task_name = task.name
-            task_obj = task
-        except AttributeError:
-            task_name = task
-            task_obj = tasks[task_name]
-
-        # Get task instance
-        task_obj = tasks[task_obj.name]
-
-        self.task = task_obj
-        self.task_name = task_name
-        self.arguments = args
-        self.total = len(args)
-
-    def apply_async(self, connect_timeout=conf.BROKER_CONNECTION_TIMEOUT):
-        """Run all tasks in the taskset.
-
-        :returns: A :class:`celery.result.TaskSetResult` instance.
-
-        Example
-
-            >>> ts = TaskSet(RefreshFeedTask, args=[
-            ...         (["http://foo.com/rss"], {}),
-            ...         (["http://bar.com/rss"], {}),
-            ... ])
-            >>> result = ts.apply_async()
-            >>> result.taskset_id
-            "d2c9b261-8eff-4bfb-8459-1e1b72063514"
-            >>> result.subtask_ids
-            ["b4996460-d959-49c8-aeb9-39c530dcde25",
-            "598d2d18-ab86-45ca-8b4f-0779f5d6a3cb"]
-            >>> result.waiting()
-            True
-            >>> time.sleep(10)
-            >>> result.ready()
-            True
-            >>> result.successful()
-            True
-            >>> result.failed()
-            False
-            >>> result.join()
-            [True, True]
-
-        """
-        if conf.ALWAYS_EAGER:
-            return self.apply()
-
-        taskset_id = gen_unique_id()
-        conn = self.task.establish_connection(connect_timeout=connect_timeout)
-        publisher = self.task.get_publisher(connection=conn)
-        try:
-            subtasks = [self.apply_part(arglist, taskset_id, publisher)
-                            for arglist in self.arguments]
-        finally:
-            publisher.close()
-            conn.close()
-
-        return TaskSetResult(taskset_id, subtasks)
-
-    def apply_part(self, arglist, taskset_id, publisher):
-        """Apply a single part of the taskset."""
-        args, kwargs, opts = padlist(arglist, 3, default={})
-        return apply_async(self.task, args, kwargs,
-                           taskset_id=taskset_id, publisher=publisher, **opts)
-
-    def apply(self):
-        """Applies the taskset locally."""
-        taskset_id = gen_unique_id()
-        subtasks = [apply(self.task, args, kwargs)
-                        for args, kwargs in self.arguments]
-
-        # This will be filled with EagerResults.
-        return TaskSetResult(taskset_id, subtasks)
-
     @classmethod
-    def remote_execute(cls, func, args):
-        """Apply ``args`` to function by distributing the args to the
-        celery server(s)."""
-        pickled = pickle.dumps(func)
-        arguments = [((pickled, arg, {}), {}) for arg in args]
-        return cls(ExecuteRemoteTask, arguments)
-
-    @classmethod
-    def map(cls, func, args, timeout=None):
-        """Distribute processing of the arguments and collect the results."""
-        remote_task = cls.remote_execute(func, args)
-        return remote_task.apply_async().join(timeout=timeout)
-
-    @classmethod
-    def map_async(cls, func, args, timeout=None):
-        """Distribute processing of the arguments and collect the results
-        asynchronously.
-
-        :returns: :class:`celery.result.AsyncResult` instance.
-
-        """
-        serfunc = pickle.dumps(func)
-        return AsynchronousMapTask.delay(serfunc, args, timeout=timeout)
+    def subtask(cls, *args, **kwargs):
+        """Returns a :class:`~celery.task.sets.subtask` object for
+        this task that wraps arguments and execution options
+        for a single task invocation."""
+        return subtask(cls, *args, **kwargs)
 
 
 class PeriodicTask(Task):
@@ -693,8 +531,9 @@ class PeriodicTask(Task):
     .. attribute:: run_every
 
         *REQUIRED* Defines how often the task is run (its interval),
-        it can be a :class:`datetime.timedelta` object, a :class:`crontab`
-        object or an integer specifying the time in seconds.
+        it can be a :class:`~datetime.timedelta` object, a
+        :class:`~celery.task.schedules.crontab` object or an integer
+        specifying the time in seconds.
 
     .. attribute:: relative
 
@@ -751,7 +590,6 @@ class PeriodicTask(Task):
             raise NotImplementedError(
                     "Periodic tasks must have a run_every attribute")
 
-
         warnings.warn(PERIODIC_DEPRECATION_TEXT,
                         DeprecationWarning)
         conf.CELERYBEAT_SCHEDULE[self.name] = {
@@ -766,7 +604,7 @@ class PeriodicTask(Task):
         super(PeriodicTask, self).__init__()
 
     def timedelta_seconds(self, delta):
-        """Convert :class:`datetime.timedelta` to seconds.
+        """Convert :class:`~datetime.timedelta` to seconds.
 
         Doesn't account for negative timedeltas.
 

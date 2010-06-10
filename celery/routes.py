@@ -1,9 +1,9 @@
-from celery.utils import instantiate
 from celery.exceptions import RouteNotFound
+from celery.utils import instantiate
 
 
-# Route from mapping
 class MapRoute(object):
+    """Makes a router out of a :class:`dict`."""
 
     def __init__(self, map):
         self.map = map
@@ -16,7 +16,7 @@ def expand_destination(route, routing_table):
     if isinstance(route, basestring):
         try:
             dest = dict(routing_table[route])
-        except KeyError, exc:
+        except KeyError:
             raise RouteNotFound(
                 "Route %s does not exist in the routing table "
                 "(CELERY_QUEUES)" % route)
@@ -41,8 +41,8 @@ def prepare(routes):
 
 
 def firstmatcher(method):
-    """With a list of instances, find the first instance that returns a
-    value for the given method."""
+    """Returns a functions that with a list of instances,
+    finds the first instance that returns a value for the given method."""
 
     def _matcher(seq, *args, **kwargs):
         for cls in seq:

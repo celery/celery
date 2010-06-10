@@ -29,20 +29,6 @@ def delta_resolution(dt, delta):
     will be rounded to the nearest hour, and so on until seconds
     which will just return the original datetime.
 
-    Examples::
-
-        >>> now = datetime.now()
-        >>> now
-        datetime.datetime(2010, 3, 30, 11, 50, 58, 41065)
-        >>> delta_resolution(now, timedelta(days=2))
-        datetime.datetime(2010, 3, 30, 0, 0)
-        >>> delta_resolution(now, timedelta(hours=2))
-        datetime.datetime(2010, 3, 30, 11, 0)
-        >>> delta_resolution(now, timedelta(minutes=2))
-        datetime.datetime(2010, 3, 30, 11, 50)
-        >>> delta_resolution(now, timedelta(seconds=2))
-        datetime.datetime(2010, 3, 30, 11, 50, 58, 41065)
-
     """
     delta = timedelta_seconds(delta)
 
@@ -107,12 +93,8 @@ def rate(rate):
 def weekday(name):
     """Return the position of a weekday (0 - 7, where 0 is Sunday).
 
-        >>> weekday("sunday")
-        0
-        >>> weekday("sun")
-        0
-        >>> weekday("mon")
-        1
+        >>> weekday("sunday"), weekday("sun"), weekday("mon")
+        (0, 0, 1)
 
     """
     abbreviation = name[0:3].lower()

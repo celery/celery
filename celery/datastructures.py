@@ -1,15 +1,26 @@
 from __future__ import generators
-"""
 
-Custom Datastructures
-
-"""
 import time
 import traceback
+
 from UserList import UserList
 from Queue import Queue, Empty as QueueEmpty
 
 from celery.utils.compat import OrderedDict
+
+
+class AttributeDict(dict):
+    """Dict subclass with attribute access."""
+
+    def __getattr__(self, key):
+        try:
+            return self[key]
+        except KeyError:
+            raise AttributeError("'%s' object has no attribute '%s'" % (
+                    self.__class__.__name__, key))
+
+    def __setattr__(self, key, value):
+        self[key] = value
 
 
 class PositionQueue(UserList):

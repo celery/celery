@@ -19,54 +19,60 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
         **options):
     """Run a task asynchronously by the celery daemon(s).
 
-    :param task: The task to run (a callable object, or a :class:`Task`
-        instance
+    :param task: The :class:`~celery.task.base.Task` to run.
 
     :keyword args: The positional arguments to pass on to the
-        task (a ``list``).
+      task (a :class:`list` or :class:`tuple`).
 
-    :keyword kwargs: The keyword arguments to pass on to the task (a ``dict``)
+    :keyword kwargs: The keyword arguments to pass on to the
+      task (a :class:`dict`)
 
     :keyword countdown: Number of seconds into the future that the task should
-        execute. Defaults to immediate delivery (Do not confuse that with
-        the ``immediate`` setting, they are unrelated).
+      execute. Defaults to immediate delivery (Do not confuse that with
+      the ``immediate`` setting, they are unrelated).
 
-    :keyword eta: A :class:`datetime.datetime` object that describes the
-        absolute time when the task should execute. May not be specified
-        if ``countdown`` is also supplied. (Do not confuse this with the
-        ``immediate`` setting, they are unrelated).
+    :keyword eta: A :class:`~datetime.datetime` object that describes the
+      absolute time when the task should execute. May not be specified
+      if ``countdown`` is also supplied. (Do not confuse this with the
+      ``immediate`` setting, they are unrelated).
 
-    :keyword routing_key: The routing key used to route the task to a worker
-        server.
-
-    :keyword exchange: The named exchange to send the task to. Defaults to
-        :attr:`celery.task.base.Task.exchange`.
-
-    :keyword exchange_type: The exchange type to initalize the exchange as
-        if not already declared.
-        Defaults to :attr:`celery.task.base.Task.exchange_type`.
-
-    :keyword immediate: Request immediate delivery. Will raise an exception
-        if the task cannot be routed to a worker immediately.
-        (Do not confuse this parameter with the ``countdown`` and ``eta``
-        settings, as they are unrelated).
-
-    :keyword mandatory: Mandatory routing. Raises an exception if there's
-        no running workers able to take on this task.
-
-    :keyword connection: Re-use existing AMQP connection.
-        The ``connect_timeout`` argument is not respected if this is set.
+    :keyword connection: Re-use existing broker connection instead
+      of establishing a new one. The ``connect_timeout`` argument is
+      not respected if this is set.
 
     :keyword connect_timeout: The timeout in seconds, before we give up
-        on establishing a connection to the AMQP server.
+      on establishing a connection to the AMQP server.
+
+    :keyword routing_key: The routing key used to route the task to a worker
+      server. Defaults to the tasks :attr:`~celery.task.base.Task.exchange`
+      attribute.
+
+    :keyword exchange: The named exchange to send the task to. Defaults to
+      the tasks :attr:`~celery.task.base.Task.exchange` attribute.
+
+    :keyword exchange_type: The exchange type to initalize the exchange as
+      if not already declared. Defaults to the tasks
+      :attr:`~celery.task.base.Task.exchange_type` attribute.
+
+    :keyword immediate: Request immediate delivery. Will raise an exception
+      if the task cannot be routed to a worker immediately.
+      (Do not confuse this parameter with the ``countdown`` and ``eta``
+      settings, as they are unrelated). Defaults to the tasks
+      :attr:`~celery.task.base.Task.immediate` attribute.
+
+    :keyword mandatory: Mandatory routing. Raises an exception if there's
+      no running workers able to take on this task. Defaults to the tasks
+      :attr:`~celery.task.base.Task.mandatory` attribute.
 
     :keyword priority: The task priority, a number between ``0`` and ``9``.
+      Defaults to the tasks :attr:`~celery.task.base.Task.priority` attribute.
 
     :keyword serializer: A string identifying the default serialization
-        method to use. Defaults to the ``CELERY_TASK_SERIALIZER`` setting.
-        Can be ``pickle`` ``json``, ``yaml``, or any custom serialization
-        methods that have been registered with
-        :mod:`carrot.serialization.registry`.
+      method to use. Defaults to the ``CELERY_TASK_SERIALIZER`` setting.
+      Can be ``pickle`` ``json``, ``yaml``, or any custom serialization
+      methods that have been registered with
+      :mod:`carrot.serialization.registry`. Defaults to the tasks
+      :attr:`~celery.task.base.Task.serializer` attribute.
 
     **Note**: If the ``CELERY_ALWAYS_EAGER`` setting is set, it will be
     replaced by a local :func:`apply` call instead.
@@ -95,7 +101,16 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
 def send_task(name, args=None, kwargs=None, countdown=None, eta=None,
         task_id=None, publisher=None, connection=None, connect_timeout=None,
         result_cls=AsyncResult, **options):
+    """Send task by name.
 
+    Useful if you don't have access to the :class:`~celery.task.base.Task`
+    class.
+
+    :param name: Name of task to execute.
+
+    Supports the same arguments as :func:`apply_async`.
+
+    """
     exchange = options.get("exchange")
     exchange_type = options.get("exchange_type")
 
@@ -124,7 +139,7 @@ def delay_task(task_name, *args, **kwargs):
 
     Example
 
-        >>> r = delay_task("update_record", name="George Constanza", age=32)
+        >>> r = delay_task("update_record", name="George Costanza", age=32)
         >>> r.ready()
         True
         >>> r.result

@@ -2,9 +2,12 @@
  Creating Tasks
 ================
 
+.. contents::
+    :local:
+
 
 Ensuring a task is only executed one at a time
-----------------------------------------------
+==============================================
 
 You can accomplish this by using a lock.
 

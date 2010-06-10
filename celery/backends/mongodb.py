@@ -1,7 +1,6 @@
 """MongoDB backend for celery."""
 from datetime import datetime
 
-from billiard.serialization import pickle
 try:
     import pymongo
 except ImportError:
@@ -12,6 +11,7 @@ from celery import states
 from celery.loaders import load_settings
 from celery.backends.base import BaseDictBackend
 from celery.exceptions import ImproperlyConfigured
+from celery.serialization import pickle
 
 
 class Bunch:

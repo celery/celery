@@ -62,5 +62,5 @@ latex_documents = [
    ur'Ask Solem', 'manual'),
 ]
 
-html_theme = "ADCTheme"
+html_theme = "classy"
 html_theme_path = ["_theme"]

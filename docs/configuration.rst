@@ -7,6 +7,9 @@ This document describes the configuration options available.
 If you're using the default loader, you must create the ``celeryconfig.py``
 module and make sure it is available on the Python path.
 
+.. contents::
+    :local:
+
 Example configuration file
 ==========================
 
@@ -483,15 +486,69 @@ Worker: celeryd
             except SoftTimeLimitExceeded:
                 cleanup_in_a_hurry()
 
-* CELERY_SEND_TASK_ERROR_EMAILS
-
-    If set to ``True``, errors in tasks will be sent to admins by e-mail.
-    If unset, it will send the e-mails if ``settings.DEBUG`` is False.
-
 * CELERY_STORE_ERRORS_EVEN_IF_IGNORED
 
     If set, the worker stores all task errors in the result store even if
     ``Task.ignore_result`` is on.
+
+Error E-Mails
+-------------
+
+* CELERY_SEND_TASK_ERROR_EMAILS
+
+    If set to ``True``, errors in tasks will be sent to admins by e-mail.
+
+* ADMINS
+
+    List of ``(name, email_address)`` tuples for the admins that should
+    receive error e-mails.
+
+* SERVER_EMAIL
+
+    The e-mail address this worker sends e-mails from.
+    Default is ``"celery@localhost"``.
+
+* MAIL_HOST
+
+    The mail server to use. Default is ``"localhost"``.
+
+* MAIL_HOST_USER
+
+    Username (if required) to log on to the mail server with.
+
+* MAIL_HOST_PASSWORD
+
+    Password (if required) to log on to the mail server with.
+
+* MAIL_PORT
+
+    The port the mail server is listening on. Default is ``25``.
+
+Example E-Mail configuration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This configuration enables the sending of error e-mails to
+``george@vandelay.com`` and ``kramer@vandelay.com``:
+
+.. code-block:: python
+
+    # Enables error e-mails.
+    CELERY_SEND_TASK_ERROR_EMAILS = True
+
+    # Name and e-mail addresses of recipients
+    ADMINS = (
+        ("George Costanza", "george@vandelay.com"),
+        ("Cosmo Kramer", "kosmo@vandelay.com"),
+    )
+
+    # E-mail address used as sender (From field).
+    SERVER_EMAIL = "no-reply@vandelay.com"
+
+    # Mailserver configuration
+    EMAIL_HOST = "mail.vandelay.com"
+    EMAIL_PORT = 25
+    # EMAIL_HOST_USER = "servers"
+    # EMAIL_HOST_PASSWORD = "s3cr3t"
 
 Events
 ------
@@ -588,7 +645,7 @@ Custom Component Classes (advanced)
 * CELERYD_POOL
 
     Name of the task pool class used by the worker.
-    Default is ``"celery.worker.pool.TaskPool"``.
+    Default is ``"celery.concurrency.processes.TaskPool"``.
 
 * CELERYD_LISTENER
 

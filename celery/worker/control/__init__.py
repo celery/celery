@@ -1,7 +1,8 @@
 from celery import log
+from celery.messaging import ControlReplyPublisher, with_connection
+from celery.utils import kwdict
 from celery.worker.control.registry import Panel
 from celery.worker.control import builtins
-from celery.messaging import ControlReplyPublisher, with_connection
 
 
 class ControlDispatch(object):
@@ -55,12 +56,7 @@ class ControlDispatch(object):
         except KeyError:
             self.logger.error("No such control command: %s" % command)
         else:
-            # need to make sure keyword arguments are not in unicode
-            # this should be fixed in newer Python's
-            # (see: http://bugs.python.org/issue4978)
-            kwargs = dict((k.encode("utf8"), v)
-                            for k, v in kwargs.iteritems())
-            reply = control(self.panel, **kwargs)
+            reply = control(self.panel, **kwdict(kwargs))
             if reply_to:
                 self.reply({self.hostname: reply},
                            exchange=reply_to["exchange"],

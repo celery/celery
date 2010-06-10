@@ -2,8 +2,11 @@
  Internals: The worker
 =======================
 
-**NOTE** This describes the internals of the development version, not the
-current release.
+.. contents::
+    :local:
+
+Introduction
+============
 
 The worker consists of 4 main components: the broker listener, the scheduler,
 the mediator and the task pool. All these components runs in parallel working
@@ -29,14 +32,13 @@ The ETA schedule is a heap queue sorted by time.
 Components
 ==========
 
-
 CarrotListener
 --------------
 
 Receives messages from the broker using ``carrot``.
 
 When a message is received it's converted into a
-:class:`celery.worker.job.TaskWrapper` object.
+:class:`celery.worker.job.TaskRequest` object.
 
 Tasks with an ETA are entered into the ``eta_schedule``, messages that can
 be immediately processed are moved directly to the ``ready_queue``.
@@ -53,7 +55,7 @@ Mediator
 --------
 The mediator simply moves tasks in the ``ready_queue`` over to the
 task pool for execution using
-:meth:`celery.worker.job.TaskWrapper.execute_using_pool`.
+:meth:`celery.worker.job.TaskRequest.execute_using_pool`.
 
 TaskPool
 --------

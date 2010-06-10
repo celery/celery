@@ -42,7 +42,7 @@
 
     Send events that can be captured by monitors like ``celerymon``.
 
-.. cmdoption:: --discard
+.. cmdoption:: --purge, --discard
 
     Discard all waiting tasks before the daemon is started.
     **WARNING**: This is unrecoverable, and the tasks will be
@@ -68,14 +68,12 @@ import socket
 import logging
 import optparse
 import warnings
-import traceback
 import multiprocessing
 
 import celery
 from celery import conf
 from celery import signals
 from celery import platform
-from celery.log import emergency_error
 from celery.task import discard_all
 from celery.utils import info
 from celery.utils import get_full_cls_name
@@ -111,7 +109,7 @@ OPTION_LIST = (
     optparse.make_option('-V', '--version',
             action="callback", callback=dump_version,
             help="Show version information and exit."),
-    optparse.make_option('--discard', default=False,
+    optparse.make_option('--purge', '--discard', default=False,
             action="store_true", dest="discard",
             help="Discard all waiting tasks before the server is started. "
                  "WARNING: This is unrecoverable, and the tasks will be "
@@ -190,11 +188,12 @@ class Worker(object):
             self.loglevel = conf.LOG_LEVELS[self.loglevel.upper()]
 
     def run(self):
+        self.init_loader()
+        self.init_queues()
+        self.redirect_stdouts_to_logger()
         print("celery@%s v%s is starting." % (self.hostname,
                                               celery.__version__))
 
-        self.init_loader()
-        self.init_queues()
 
         if conf.RESULT_BACKEND == "database" \
                 and self.settings.DATABASE_ENGINE == "sqlite3" and \
@@ -236,6 +235,13 @@ class Worker(object):
         if not self.loader.configured:
             raise ImproperlyConfigured(
                     "Celery needs to be configured to run celeryd.")
+
+    def redirect_stdouts_to_logger(self):
+        from celery import log
+        # Redirect stdout/stderr to our logger.
+        logger = log.setup_logger(loglevel=self.loglevel,
+                                  logfile=self.logfile)
+        log.redirect_stdouts_to_logger(logger, loglevel=logging.WARNING)
 
     def purge_messages(self):
         discarded_count = discard_all()
@@ -302,12 +308,30 @@ def install_worker_int_handler(worker):
     def _stop(signum, frame):
         process_name = multiprocessing.current_process().name
         if process_name == "MainProcess":
+            worker.logger.warn(
+                "celeryd: Hitting Ctrl+C again will terminate "
+                "all running tasks!")
+            install_worker_int_again_handler(worker)
+            worker.logger.warn("celeryd: Warm shutdown (%s)" % (
+                process_name))
+            worker.stop()
+        raise SystemExit()
+
+    platform.install_signal_handler("SIGINT", _stop)
+
+
+def install_worker_int_again_handler(worker):
+
+    def _stop(signum, frame):
+        process_name = multiprocessing.current_process().name
+        if process_name == "MainProcess":
             worker.logger.warn("celeryd: Cold shutdown (%s)" % (
-                                    process_name))
+                process_name))
             worker.terminate()
         raise SystemExit()
 
     platform.install_signal_handler("SIGINT", _stop)
+
 
 
 def install_worker_term_handler(worker):
