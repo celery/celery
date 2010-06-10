@@ -84,7 +84,7 @@ class BaseAsyncResult(object):
         :rtype: bool
 
         """
-        return self.backend.is_successful(self.task_id)
+        return self.backend.get_status(self.task_id) == states.SUCCESS
 
     def __str__(self):
         """``str(self)`` -> ``self.task_id``"""

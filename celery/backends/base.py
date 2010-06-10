@@ -67,10 +67,6 @@ class BaseBackend(object):
         """Prepare value for storage."""
         return result
 
-    def is_successful(self, task_id):
-        """Returns ``True`` if the task was successfully executed."""
-        return self.get_status(task_id) == states.SUCCESS
-
     def wait_for(self, task_id, timeout=None):
         """Wait for task and return its result.
 
