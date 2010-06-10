@@ -77,6 +77,12 @@ _DEFAULTS = {
     "CELERY_RESULT_PERSISTENT": False,
     "CELERY_MAX_CACHED_RESULTS": 5000,
     "CELERY_TRACK_STARTED": False,
+
+    # Default e-mail settings.
+    "SERVER_EMAIL": "celery@localhost",
+    "EMAIL_HOST": "localhost",
+    "EMAIL_PORT": 25,
+    "ADMINS": (),
 }
 
 
@@ -138,8 +144,7 @@ CELERYD_TASK_TIME_LIMIT = _get("CELERYD_TASK_TIME_LIMIT")
 CELERYD_TASK_SOFT_TIME_LIMIT = _get("CELERYD_TASK_SOFT_TIME_LIMIT")
 CELERYD_MAX_TASKS_PER_CHILD = _get("CELERYD_MAX_TASKS_PER_CHILD")
 STORE_ERRORS_EVEN_IF_IGNORED = _get("CELERY_STORE_ERRORS_EVEN_IF_IGNORED")
-CELERY_SEND_TASK_ERROR_EMAILS = _get("CELERY_SEND_TASK_ERROR_EMAILS",
-                                     not settings.DEBUG,
+CELERY_SEND_TASK_ERROR_EMAILS = _get("CELERY_SEND_TASK_ERROR_EMAILS", False,
                                      compat=["SEND_CELERY_TASK_ERROR_EMAILS"])
 CELERYD_LOG_FORMAT = _get("CELERYD_LOG_FORMAT",
                           compat=["CELERYD_DAEMON_LOG_FORMAT"])
@@ -158,6 +163,15 @@ CELERYD_POOL = _get("CELERYD_POOL")
 CELERYD_LISTENER = _get("CELERYD_LISTENER")
 CELERYD_MEDIATOR = _get("CELERYD_MEDIATOR")
 CELERYD_ETA_SCHEDULER = _get("CELERYD_ETA_SCHEDULER")
+
+# :--- Email settings                               <-   --   --- - ----- -- #
+ADMINS = _get("ADMINS")
+SERVER_EMAIL = _get("SERVER_EMAIL")
+EMAIL_HOST = _get("EMAIL_HOST")
+EMAIL_HOST_USER = _get("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = _get("EMAIL_HOST_PASSWORD")
+EMAIL_PORT = _get("EMAIL_PORT")
+
 
 # :--- Broker connections                           <-   --   --- - ----- -- #
 BROKER_HOST = _get("BROKER_HOST")
