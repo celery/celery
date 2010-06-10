@@ -42,30 +42,23 @@ takes the result as an argument::
     def add(x, y, callback=None):
         result = x + y
         if callback is not None:
-            subtask(callback).apply_async(result)
+            subtask(callback).delay(result)
         return result
 
 See? :class:`~celery.task.sets.subtask` also knows how it should be applied,
-asynchronously by :meth:`~celery.task.sets.subtask.apply_async`, and
+asynchronously by :meth:`~celery.task.sets.subtask.delay`, and
 eagerly by :meth:`~celery.task.sets.subtask.apply`.
 
-The best thing is that any arguments you add to ``subtask.apply_async``,
+The best thing is that any arguments you add to ``subtask.delay``,
 will be prepended to the arguments specified by the subtask itself!
-
-:note: additional keyword arguments will be added to the
-  execution options, not the task keyword arguments.
 
 So if you have the subtask::
 
-    >>> add.subtask(args=(10, ), options={"ignore_result": True})
+    >>> add.subtask(args=(10, ))
 
-``subtask.apply_async(result)`` becomes::
+``subtask.delay(result)`` becomes::
 
-    >>> add.apply_async(args=(result, 10), ignore_result=True)
-
-and ``subtask.apply_async(result, ignore_result=False)`` becomes::
-
-    >>> add.apply_async(args=(result, 10), ignore_result=False)
+    >>> add.apply_async(args=(result, 10))
 
 Now let's execute our new ``add`` task with a callback::
 

@@ -440,22 +440,25 @@ using the STOMP backend:</p>
 <h3><a class="toc-backref" href="#id30">How can I run a task once another task has finished?</a><a class="headerlink" href="#how-can-i-run-a-task-once-another-task-has-finished" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer</strong>: You can safely launch a task inside a task.
 Also, a common pattern is to use callback tasks:</p>
-<div class="highlight-python"><pre>@task()
-def add(x, y, callback=None):
-    result = x + y
-    if callback:
-        callback.delay(result)
-    return result
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@task</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
+    <span class="k">if</span> <span class="n">callback</span><span class="p">:</span>
+        <span class="n">subtask</span><span class="p">(</span><span class="n">callback</span><span class="p">)</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span>
 
 
-@task(ignore_result=True)
-def log_result(result, **kwargs):
-    logger = log_result.get_logger(**kwargs)
-    logger.info("log_result got: %s" % (result, ))
-
-
-&gt;&gt;&gt; add.delay(2, 2, callback=log_result)</pre>
+<span class="nd">@task</span><span class="p">(</span><span class="n">ignore_result</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">log_result</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">log_result</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;log_result got: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="p">))</span>
+</pre></div>
 </div>
+<p>Invocation:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">add</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="n">log_result</span><span class="o">.</span><span class="n">subtask</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>See <a class="reference internal" href="userguide/tasksets.html"><em>Sets of tasks, Subtasks and Callbacks</em></a> for more information.</p>
 </div>
 <div class="section" id="can-i-cancel-the-execution-of-a-task">
 <h3><a class="toc-backref" href="#id31">Can I cancel the execution of a task?</a><a class="headerlink" href="#can-i-cancel-the-execution-of-a-task" title="Permalink to this headline">¶</a></h3>
@@ -487,103 +490,7 @@ $ celeryd --hostname=$(hostname).2</pre>
 <h3><a class="toc-backref" href="#id33">Can I send some tasks to only some servers?</a><a class="headerlink" href="#can-i-send-some-tasks-to-only-some-servers" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer:</strong> Yes. You can route tasks to an arbitrary server using AMQP,
 and a worker can bind to as many queues as it wants.</p>
-<p>Say you have two servers, <tt class="docutils literal"><span class="pre">x</span></tt>, and <tt class="docutils literal"><span class="pre">y</span></tt> that handles regular tasks,
-and one server <tt class="docutils literal"><span class="pre">z</span></tt>, that only handles feed related tasks, you can use this
-configuration:</p>
-<ul class="simple">
-<li>Servers <tt class="docutils literal"><span class="pre">x</span></tt> and <tt class="docutils literal"><span class="pre">y</span></tt>: settings.py:</li>
-</ul>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_DEFAULT_QUEUE</span> <span class="o">=</span> <span class="s">&quot;regular_tasks&quot;</span>
-<span class="n">CELERY_QUEUES</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s">&quot;regular_tasks&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s">&quot;binding_key&quot;</span><span class="p">:</span> <span class="s">&quot;task.#&quot;</span><span class="p">,</span>
-    <span class="p">},</span>
-<span class="p">}</span>
-<span class="n">CELERY_DEFAULT_EXCHANGE</span> <span class="o">=</span> <span class="s">&quot;tasks&quot;</span>
-<span class="n">CELERY_DEFAULT_EXCHANGE_TYPE</span> <span class="o">=</span> <span class="s">&quot;topic&quot;</span>
-<span class="n">CELERY_DEFAULT_ROUTING_KEY</span> <span class="o">=</span> <span class="s">&quot;task.regular&quot;</span>
-</pre></div>
-</div>
-<ul class="simple">
-<li>Server <tt class="docutils literal"><span class="pre">z</span></tt>: settings.py:</li>
-</ul>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_DEFAULT_QUEUE</span> <span class="o">=</span> <span class="s">&quot;feed_tasks&quot;</span>
-<span class="n">CELERY_QUEUES</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s">&quot;feed_tasks&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s">&quot;binding_key&quot;</span><span class="p">:</span> <span class="s">&quot;feed.#&quot;</span><span class="p">,</span>
-    <span class="p">},</span>
-<span class="p">}</span>
-<span class="n">CELERY_DEFAULT_EXCHANGE</span> <span class="o">=</span> <span class="s">&quot;tasks&quot;</span>
-<span class="n">CELERY_DEFAULT_ROUTING_KEY</span> <span class="o">=</span> <span class="s">&quot;task.regular&quot;</span>
-<span class="n">CELERY_DEFAULT_EXCHANGE_TYPE</span> <span class="o">=</span> <span class="s">&quot;topic&quot;</span>
-</pre></div>
-</div>
-<p><tt class="docutils literal"><span class="pre">CELERY_QUEUES</span></tt> is a map of queue names and their exchange/type/binding_key,
-if you don&#8217;t set exchange or exchange type, they will be taken from the
-<tt class="docutils literal"><span class="pre">CELERY_DEFAULT_EXCHANGE</span></tt>/<tt class="docutils literal"><span class="pre">CELERY_DEFAULT_EXCHANGE_TYPE</span></tt> settings.</p>
-<p>Now to make a Task run on the <tt class="docutils literal"><span class="pre">z</span></tt> server you need to set its
-<tt class="docutils literal"><span class="pre">routing_key</span></tt> attribute so it starts with the words <tt class="docutils literal"><span class="pre">&quot;task.feed.&quot;</span></tt>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">feedaggregator.models</span> <span class="kn">import</span> <span class="n">Feed</span>
-<span class="kn">from</span> <span class="nn">celery.decorators</span> <span class="kn">import</span> <span class="n">task</span>
-
-<span class="nd">@task</span><span class="p">(</span><span class="n">routing_key</span><span class="o">=</span><span class="s">&quot;feed.importer&quot;</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">import_feed</span><span class="p">(</span><span class="n">feed_url</span><span class="p">):</span>
-    <span class="n">Feed</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">import_feed</span><span class="p">(</span><span class="n">feed_url</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>or if subclassing the <tt class="docutils literal"><span class="pre">Task</span></tt> class directly:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">FeedImportTask</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
-    <span class="n">routing_key</span> <span class="o">=</span> <span class="s">&quot;feed.importer&quot;</span>
-
-    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feed_url</span><span class="p">):</span>
-        <span class="n">Feed</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">import_feed</span><span class="p">(</span><span class="n">feed_url</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>You can also override this using the <tt class="docutils literal"><span class="pre">routing_key</span></tt> argument to
-<tt class="xref py py-func docutils literal"><span class="pre">celery.task.apply_async()</span></tt>:</p>
-<blockquote>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">myapp.tasks</span> <span class="kn">import</span> <span class="n">RefreshFeedTask</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">RefreshFeedTask</span><span class="o">.</span><span class="n">apply_async</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="s">&quot;http://cnn.com/rss&quot;</span><span class="p">],</span>
-<span class="gp">... </span>                            <span class="n">routing_key</span><span class="o">=</span><span class="s">&quot;feed.importer&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>If you want, you can even have your feed processing worker handle regular
-tasks as well, maybe in times when there&#8217;s a lot of work to do.
-Just add a new queue to server <tt class="docutils literal"><span class="pre">z</span></tt>&#8216;s <tt class="docutils literal"><span class="pre">CELERY_QUEUES</span></tt>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_QUEUES</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s">&quot;feed_tasks&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s">&quot;binding_key&quot;</span><span class="p">:</span> <span class="s">&quot;feed.#&quot;</span><span class="p">,</span>
-    <span class="p">},</span>
-    <span class="s">&quot;regular_tasks&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s">&quot;binding_key&quot;</span><span class="p">:</span> <span class="s">&quot;task.#&quot;</span><span class="p">,</span>
-    <span class="p">},</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-</blockquote>
-<p>Since the default exchange is <tt class="docutils literal"><span class="pre">tasks</span></tt>, they will both use the same
-exchange.</p>
-<p>If you have another queue but on another exchange you want to add,
-just specify a custom exchange and exchange type:</p>
-<div class="highlight-python"><pre>CELERY_QUEUES = {
-        "feed_tasks": {
-            "binding_key": "feed.#",
-        },
-        "regular_tasks": {
-            "binding_key": "task.#",
-        }
-        "image_tasks": {
-            "binding_key": "image.compress",
-            "exchange": "mediatasks",
-            "exchange_type": "direct",
-        },
-    }</pre>
-</div>
-<p>If you&#8217;re confused about these terms, you should read up on AMQP and RabbitMQ.
-<a class="reference external" href="http://blogs.digitar.com/jjww/2009/01/rabbits-and-warrens/">Rabbits and Warrens</a> is an excellent blog post describing queues and
-exchanges. There&#8217;s also AMQP in 10 minutes*: <a class="reference external" href="http://bit.ly/95XFO1">Flexible Routing Model</a>,
-and <a class="reference external" href="http://bit.ly/EEWca">Standard Exchange Types</a>. For users of RabbitMQ the <a class="reference external" href="http://www.rabbitmq.com/faq.html">RabbitMQ FAQ</a>
-could also be useful as a source of information.</p>
+<p>See <a class="reference internal" href="userguide/routing.html"><em>Routing Tasks</em></a> for more information.</p>
 </div>
 <div class="section" id="can-i-change-the-interval-of-a-periodic-task-at-runtime">
 <h3><a class="toc-backref" href="#id34">Can I change the interval of a periodic task at runtime?</a><a class="headerlink" href="#can-i-change-the-interval-of-a-periodic-task-at-runtime" title="Permalink to this headline">¶</a></h3>

@@ -6,6 +6,9 @@ Configuration - celery.conf
     :local:
 .. currentmodule:: celery.conf
 
+Queues
+======
+
 .. data:: QUEUES
 
     Queue name/options mapping.
@@ -81,10 +84,41 @@ Configuration - celery.conf
     Exchange used by the AMQP result backend to publish task results.
     Default is ``"celeryresult"``.
 
+Sending E-Mails
+===============
+
 .. data:: CELERY_SEND_TASK_ERROR_EMAILS
 
-    If set to ``True``, errors in tasks will be sent to admins by e-mail.
-    If unset, it will send the e-mails if ``settings.DEBUG`` is ``True``.
+    If set to ``True``, errors in tasks will be sent to :data:`ADMINS` by e-mail.
+
+.. data:: ADMINS
+
+    List of ``(name, email_address)`` tuples for the admins that should
+    receive error e-mails.
+
+.. data:: SERVER_EMAIL
+
+    The e-mail address this worker sends e-mails from.
+    Default is ``"celery@localhost"``.
+
+.. data:: MAIL_HOST
+
+    The mail server to use. Default is ``"localhost"``.
+
+.. data:: MAIL_HOST_USER
+
+    Username (if required) to log on to the mail server with.
+
+.. data:: MAIL_HOST_PASSWORD
+
+    Password (if required) to log on to the mail server with.
+
+.. data:: MAIL_PORT
+
+    The port the mail server is listening on. Default is ``25``.
+
+Execution
+=========
 
 .. data:: ALWAYS_EAGER
 
@@ -123,20 +157,6 @@ Configuration - celery.conf
     Total number of results to store before results are evicted from the
     result cache.
 
-.. data:: BROKER_CONNECTION_RETRY
-
-    Automatically try to re-establish the connection to the AMQP broker if
-    it's lost.
-
-.. data:: BROKER_CONNECTION_MAX_RETRIES
-
-    Maximum number of retries before we give up re-establishing a connection
-    to the broker.
-
-    If this is set to ``0`` or ``None``, we will retry forever.
-
-    Default is ``100`` retries.
-
 .. data:: TASK_SERIALIZER
 
     A string identifying the default serialization
@@ -170,6 +190,26 @@ Configuration - celery.conf
     If ``True`` all rate limits will be disabled and all tasks will be executed
     as soon as possible.
 
+Broker
+======
+
+.. data:: BROKER_CONNECTION_RETRY
+
+    Automatically try to re-establish the connection to the AMQP broker if
+    it's lost.
+
+.. data:: BROKER_CONNECTION_MAX_RETRIES
+
+    Maximum number of retries before we give up re-establishing a connection
+    to the broker.
+
+    If this is set to ``0`` or ``None``, we will retry forever.
+
+    Default is ``100`` retries.
+
+Celerybeat
+==========
+
 .. data:: CELERYBEAT_LOG_LEVEL
 
     Default log level for celerybeat.
@@ -195,6 +235,9 @@ Configuration - celery.conf
     faster (A value of 5 minutes, means the changes will take effect in 5 minutes
     at maximum).
 
+Celerymon
+=========
+
 .. data:: CELERYMON_LOG_LEVEL
 
     Default log level for celerymon.
@@ -204,6 +247,9 @@ Configuration - celery.conf
 
     Default log file for celerymon.
     Default is: ``None`` (stderr)
+
+Celeryd
+=======
 
 .. data:: LOG_LEVELS
 

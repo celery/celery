@@ -98,34 +98,21 @@ takes the result as an argument:</p>
 <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="n">result</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
     <span class="k">if</span> <span class="n">callback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-        <span class="n">subtask</span><span class="p">(</span><span class="n">callback</span><span class="p">)</span><span class="o">.</span><span class="n">apply_async</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+        <span class="n">subtask</span><span class="p">(</span><span class="n">callback</span><span class="p">)</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">result</span>
 </pre></div>
 </div>
 <p>See? <a class="reference internal" href="../reference/celery.task.sets.html#celery.task.sets.subtask" title="celery.task.sets.subtask"><tt class="xref py py-class docutils literal"><span class="pre">subtask</span></tt></a> also knows how it should be applied,
-asynchronously by <a class="reference internal" href="../reference/celery.task.sets.html#celery.task.sets.subtask.apply_async" title="celery.task.sets.subtask.apply_async"><tt class="xref py py-meth docutils literal"><span class="pre">apply_async()</span></tt></a>, and
+asynchronously by <a class="reference internal" href="../reference/celery.task.sets.html#celery.task.sets.subtask.delay" title="celery.task.sets.subtask.delay"><tt class="xref py py-meth docutils literal"><span class="pre">delay()</span></tt></a>, and
 eagerly by <a class="reference internal" href="../reference/celery.task.sets.html#celery.task.sets.subtask.apply" title="celery.task.sets.subtask.apply"><tt class="xref py py-meth docutils literal"><span class="pre">apply()</span></tt></a>.</p>
-<p>The best thing is that any arguments you add to <tt class="docutils literal"><span class="pre">subtask.apply_async</span></tt>,
+<p>The best thing is that any arguments you add to <tt class="docutils literal"><span class="pre">subtask.delay</span></tt>,
 will be prepended to the arguments specified by the subtask itself!</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">note:</th><td class="field-body">additional keyword arguments will be added to the
-execution options, not the task keyword arguments.</td>
-</tr>
-</tbody>
-</table>
 <p>So if you have the subtask:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">add</span><span class="o">.</span><span class="n">subtask</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="p">),</span> <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s">&quot;ignore_result&quot;</span><span class="p">:</span> <span class="bp">True</span><span class="p">})</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">add</span><span class="o">.</span><span class="n">subtask</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="p">))</span>
 </pre></div>
 </div>
-<p><tt class="docutils literal"><span class="pre">subtask.apply_async(result)</span></tt> becomes:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">add</span><span class="o">.</span><span class="n">apply_async</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="n">ignore_result</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>and <tt class="docutils literal"><span class="pre">subtask.apply_async(result,</span> <span class="pre">ignore_result=False)</span></tt> becomes:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">add</span><span class="o">.</span><span class="n">apply_async</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="n">ignore_result</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<p><tt class="docutils literal"><span class="pre">subtask.delay(result)</span></tt> becomes:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">add</span><span class="o">.</span><span class="n">apply_async</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
 </pre></div>
 </div>
 <p>Now let&#8217;s execute our new <tt class="docutils literal"><span class="pre">add</span></tt> task with a callback:</p>

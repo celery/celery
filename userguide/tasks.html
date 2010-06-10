@@ -577,13 +577,13 @@ and may even cause a deadlock if the worker pool is exhausted.</p>
         <span class="c"># The callback may have been serialized with JSON,</span>
         <span class="c"># so best practice is to convert the subtask dict back</span>
         <span class="c"># into a subtask object.</span>
-        <span class="n">subtask</span><span class="p">(</span><span class="n">callback</span><span class="p">)</span><span class="o">.</span><span class="n">apply_async</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
+        <span class="n">subtask</span><span class="p">(</span><span class="n">callback</span><span class="p">)</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
 
 <span class="nd">@task</span><span class="p">(</span><span class="n">ignore_result</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">parse_page</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">page</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="n">info</span> <span class="o">=</span> <span class="n">myparser</span><span class="o">.</span><span class="n">parse_document</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">callback</span><span class="p">:</span>
-        <span class="n">subtask</span><span class="p">(</span><span class="n">callback</span><span class="p">)</span><span class="o">.</span><span class="n">apply_async</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">info</span><span class="p">)</span>
+        <span class="n">subtask</span><span class="p">(</span><span class="n">callback</span><span class="p">)</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">info</span><span class="p">)</span>
 
 <span class="nd">@task</span><span class="p">(</span><span class="n">ignore_result</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">store_page_info</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">info</span><span class="p">):</span>
@@ -593,7 +593,8 @@ and may even cause a deadlock if the worker pool is exhausted.</p>
 <p>We use <a class="reference internal" href="../reference/celery.task.sets.html#celery.task.sets.subtask" title="celery.task.sets.subtask"><tt class="xref py py-class docutils literal"><span class="pre">subtask</span></tt></a> here to safely pass
 around the callback task. <a class="reference internal" href="../reference/celery.task.sets.html#celery.task.sets.subtask" title="celery.task.sets.subtask"><tt class="xref py py-class docutils literal"><span class="pre">subtask</span></tt></a> is a
 subclass of dict used to wrap the arguments and execution options
-for a single task invocation.</p>
+for a single task invocation. See <a class="reference internal" href="tasksets.html"><em>Sets of tasks, Subtasks and Callbacks</em></a> for more information about
+subtasks.</p>
 </div>
 </div>
 <div class="section" id="performance-and-strategies">

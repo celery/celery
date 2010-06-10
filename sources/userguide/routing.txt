@@ -11,6 +11,103 @@ respective documenation for more information, or contact the `mailinglist`_.
 .. contents::
     :local:
 
+Basics
+======
+
+Say you have two servers, ``x``, and ``y`` that handles regular tasks,
+and one server ``z``, that only handles feed related tasks, you can use this
+configuration:
+
+.. code-block:: python
+
+    CELERY_DEFAULT_QUEUE = "default"
+    CELERY_QUEUES = {
+        "default": {
+            "binding_key": "task.#",
+        },
+        "feed_tasks": {
+            "binding_key": "feed.#",
+        },
+    }
+    CELERY_DEFAULT_EXCHANGE = "tasks"
+    CELERY_DEFAULT_EXCHANGE_TYPE = "topic"
+    CELERY_DEFAULT_ROUTING_KEY = "task.default"
+
+``CELERY_QUEUES`` is a map of queue names and their exchange/type/binding_key,
+if you don't set exchange or exchange type, they will be taken from the
+``CELERY_DEFAULT_EXCHANGE``/``CELERY_DEFAULT_EXCHANGE_TYPE`` settings.
+
+To route a task to the ``feed_tasks`` queue, you can add an entry in the
+``CELERY_ROUTES`` setting:
+
+.. code-block:: python
+
+    CELERY_ROUTES = {
+            "feeds.tasks.import_feed": {
+                "queue": "feed_tasks",
+                "routing_key": "feed.import",
+            },
+    }
+
+
+You can also override this using the ``routing_key`` argument to
+:func:`~celery.execute.apply_async`, or :func:`~celery.execute.send_task`:
+
+    >>> from feeds.tasks import import_feed
+    >>> import_feed.apply_async(args=["http://cnn.com/rss"],
+    ...                         queue="feed_tasks",
+    ...                         routing_key="feed.import")
+
+
+To make server ``z`` consume from the feed queue exclusively you can
+start it with the ``-Q`` option::
+
+    (z)$ celeryd -Q feed_tasks --hostname=z.example.com
+
+Servers ``x`` and ``y`` must be configured to consume from the default queue::
+
+    (x)$ celeryd -Q default --hostname=x.example.com
+    (y)$ celeryd -Q default --hostname=y.example.com
+
+If you want, you can even have your feed processing worker handle regular
+tasks as well, maybe in times when there's a lot of work to do::
+
+    (z)$ celeryd -Q feed_tasks,default --hostname=z.example.com
+
+If you have another queue but on another exchange you want to add,
+just specify a custom exchange and exchange type:
+
+.. code-block:: python
+
+    CELERY_QUEUES = {
+            "feed_tasks": {
+                "binding_key": "feed.#",
+            },
+            "regular_tasks": {
+                "binding_key": "task.#",
+            }
+            "image_tasks": {
+                "binding_key": "image.compress",
+                "exchange": "mediatasks",
+                "exchange_type": "direct",
+            },
+        }
+
+If you're confused about these terms, you should read up on AMQP concepts.
+
+In addition to the :ref:`AMQP Primer` below, there's
+`Rabbits and Warrens`_, an excellent blog post describing queues and
+exchanges. There's also AMQP in 10 minutes*: `Flexible Routing Model`_,
+and `Standard Exchange Types`_. For users of RabbitMQ the `RabbitMQ FAQ`_
+could be useful as a source of information.
+
+.. _`Rabbits and Warrens`: http://blogs.digitar.com/jjww/2009/01/rabbits-and-warrens/
+.. _`Flexible Routing Model`: http://bit.ly/95XFO1
+.. _`Standard Exchange Types`: http://bit.ly/EEWca
+.. _`RabbitMQ FAQ`: http://www.rabbitmq.com/faq.html
+
+.. _`AMQP Primer`:
+
 AMQP Primer
 ===========
 

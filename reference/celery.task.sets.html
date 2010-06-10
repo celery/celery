@@ -127,6 +127,16 @@ to track how many, or when all of the tasks has been completed.</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="celery.task.sets.TaskSet.task">
+<tt class="descname">task</tt><a class="headerlink" href="#celery.task.sets.TaskSet.task" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.task.sets.TaskSet.task_name">
+<tt class="descname">task_name</tt><a class="headerlink" href="#celery.task.sets.TaskSet.task_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
 <dt id="celery.task.sets.TaskSet.tasks">
 <tt class="descname">tasks</tt><a class="headerlink" href="#celery.task.sets.TaskSet.tasks" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -165,14 +175,20 @@ instead.</p>
 </div>
 <dl class="method">
 <dt id="celery.task.sets.subtask.apply">
-<tt class="descname">apply</tt><big>(</big><em>*argmerge</em>, <em>**execopts</em><big>)</big><a class="headerlink" href="#celery.task.sets.subtask.apply" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">apply</tt><big>(</big><em>args</em>, <em>kwargs</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.task.sets.subtask.apply" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apply this task locally.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="celery.task.sets.subtask.apply_async">
-<tt class="descname">apply_async</tt><big>(</big><em>*argmerge</em>, <em>**execopts</em><big>)</big><a class="headerlink" href="#celery.task.sets.subtask.apply_async" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">apply_async</tt><big>(</big><em>args</em>, <em>kwargs</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.task.sets.subtask.apply_async" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apply this task asynchronously.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.task.sets.subtask.delay">
+<tt class="descname">delay</tt><big>(</big><em>*argmerge</em>, <em>**kwmerge</em><big>)</big><a class="headerlink" href="#celery.task.sets.subtask.delay" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shortcut to <tt class="docutils literal"><span class="pre">apply_async(argmerge,</span> <span class="pre">kwargs)</span></tt>.</p>
 </dd></dl>
 
 <dl class="method">

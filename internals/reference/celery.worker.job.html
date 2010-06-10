@@ -71,7 +71,7 @@ world-wide state.</p>
 
 <dl class="class">
 <dt id="celery.worker.job.TaskRequest">
-<em class="property">class </em><tt class="descclassname">celery.worker.job.</tt><tt class="descname">TaskRequest</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>args</em>, <em>kwargs</em>, <em>on_ack=&lt;function noop at 0x103d72cf8&gt;</em>, <em>retries=0</em>, <em>delivery_info=None</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.worker.job.</tt><tt class="descname">TaskRequest</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>args</em>, <em>kwargs</em>, <em>on_ack=&lt;function noop at 0x103971e60&gt;</em>, <em>retries=0</em>, <em>delivery_info=None</em>, <em>hostname=None</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest" title="Permalink to this definition">¶</a></dt>
 <dd><p>A request for task execution.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -197,7 +197,7 @@ from producer to consumer.</p>
 
 <dl class="classmethod">
 <dt id="celery.worker.job.TaskRequest.from_message">
-<em class="property">classmethod </em><tt class="descname">from_message</tt><big>(</big><em>message</em>, <em>message_data</em>, <em>logger=None</em>, <em>eventer=None</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest.from_message" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><tt class="descname">from_message</tt><big>(</big><em>message</em>, <em>message_data</em>, <em>logger=None</em>, <em>eventer=None</em>, <em>hostname=None</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest.from_message" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a <a class="reference internal" href="#celery.worker.job.TaskRequest" title="celery.worker.job.TaskRequest"><tt class="xref py py-class docutils literal"><span class="pre">TaskRequest</span></tt></a> from a task message sent by
 <a class="reference internal" href="../../reference/celery.messaging.html#celery.messaging.TaskPublisher" title="celery.messaging.TaskPublisher"><tt class="xref py py-class docutils literal"><span class="pre">celery.messaging.TaskPublisher</span></tt></a>.</p>
 <table class="docutils field-list" frame="void" rules="none">

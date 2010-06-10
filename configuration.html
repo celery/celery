@@ -91,14 +91,18 @@ module and make sure it is available on the Python path.</p>
 </li>
 <li><a class="reference external" href="#task-execution-settings" id="id24">Task execution settings</a></li>
 <li><a class="reference external" href="#worker-celeryd" id="id25">Worker: celeryd</a><ul>
-<li><a class="reference external" href="#events" id="id26">Events</a></li>
-<li><a class="reference external" href="#broadcast-commands" id="id27">Broadcast Commands</a></li>
-<li><a class="reference external" href="#logging" id="id28">Logging</a></li>
-<li><a class="reference external" href="#custom-component-classes-advanced" id="id29">Custom Component Classes (advanced)</a></li>
+<li><a class="reference external" href="#error-e-mails" id="id26">Error E-Mails</a><ul>
+<li><a class="reference external" href="#example-e-mail-configuration" id="id27">Example E-Mail configuration</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#periodic-task-server-celerybeat" id="id30">Periodic Task Server: celerybeat</a></li>
-<li><a class="reference external" href="#monitor-server-celerymon" id="id31">Monitor Server: celerymon</a></li>
+<li><a class="reference external" href="#events" id="id28">Events</a></li>
+<li><a class="reference external" href="#broadcast-commands" id="id29">Broadcast Commands</a></li>
+<li><a class="reference external" href="#logging" id="id30">Logging</a></li>
+<li><a class="reference external" href="#custom-component-classes-advanced" id="id31">Custom Component Classes (advanced)</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#periodic-task-server-celerybeat" id="id32">Periodic Task Server: celerybeat</a></li>
+<li><a class="reference external" href="#monitor-server-celerymon" id="id33">Monitor Server: celerymon</a></li>
 </ul>
 </div>
 <div class="section" id="example-configuration-file">
@@ -639,12 +643,6 @@ e.g. clean up before the hard time limit comes.</p>
 </div>
 </blockquote>
 </li>
-<li><p class="first">CELERY_SEND_TASK_ERROR_EMAILS</p>
-<blockquote>
-<p>If set to <tt class="xref docutils literal"><span class="pre">True</span></tt>, errors in tasks will be sent to admins by e-mail.
-If unset, it will send the e-mails if <tt class="docutils literal"><span class="pre">settings.DEBUG</span></tt> is False.</p>
-</blockquote>
-</li>
 <li><p class="first">CELERY_STORE_ERRORS_EVEN_IF_IGNORED</p>
 <blockquote>
 <p>If set, the worker stores all task errors in the result store even if
@@ -652,8 +650,74 @@ If unset, it will send the e-mails if <tt class="docutils literal"><span class="
 </blockquote>
 </li>
 </ul>
+<div class="section" id="error-e-mails">
+<h3><a class="toc-backref" href="#id26">Error E-Mails</a><a class="headerlink" href="#error-e-mails" title="Permalink to this headline">¶</a></h3>
+<ul>
+<li><p class="first">CELERY_SEND_TASK_ERROR_EMAILS</p>
+<blockquote>
+<p>If set to <tt class="xref docutils literal"><span class="pre">True</span></tt>, errors in tasks will be sent to admins by e-mail.</p>
+</blockquote>
+</li>
+<li><p class="first">ADMINS</p>
+<blockquote>
+<p>List of <tt class="docutils literal"><span class="pre">(name,</span> <span class="pre">email_address)</span></tt> tuples for the admins that should
+receive error e-mails.</p>
+</blockquote>
+</li>
+<li><p class="first">SERVER_EMAIL</p>
+<blockquote>
+<p>The e-mail address this worker sends e-mails from.
+Default is <tt class="docutils literal"><span class="pre">&quot;celery&#64;localhost&quot;</span></tt>.</p>
+</blockquote>
+</li>
+<li><p class="first">MAIL_HOST</p>
+<blockquote>
+<p>The mail server to use. Default is <tt class="docutils literal"><span class="pre">&quot;localhost&quot;</span></tt>.</p>
+</blockquote>
+</li>
+<li><p class="first">MAIL_HOST_USER</p>
+<blockquote>
+<p>Username (if required) to log on to the mail server with.</p>
+</blockquote>
+</li>
+<li><p class="first">MAIL_HOST_PASSWORD</p>
+<blockquote>
+<p>Password (if required) to log on to the mail server with.</p>
+</blockquote>
+</li>
+<li><p class="first">MAIL_PORT</p>
+<blockquote>
+<p>The port the mail server is listening on. Default is <tt class="docutils literal"><span class="pre">25</span></tt>.</p>
+</blockquote>
+</li>
+</ul>
+<div class="section" id="example-e-mail-configuration">
+<h4><a class="toc-backref" href="#id27">Example E-Mail configuration</a><a class="headerlink" href="#example-e-mail-configuration" title="Permalink to this headline">¶</a></h4>
+<p>This configuration enables the sending of error e-mails to
+<tt class="docutils literal"><span class="pre">george&#64;vandelay.com</span></tt> and <tt class="docutils literal"><span class="pre">kramer&#64;vandelay.com</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># Enables error e-mails.</span>
+<span class="n">CELERY_SEND_TASK_ERROR_EMAILS</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="c"># Name and e-mail addresses of recipients</span>
+<span class="n">ADMINS</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="p">(</span><span class="s">&quot;George Costanza&quot;</span><span class="p">,</span> <span class="s">&quot;george@vandelay.com&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">&quot;Cosmo Kramer&quot;</span><span class="p">,</span> <span class="s">&quot;kosmo@vandelay.com&quot;</span><span class="p">),</span>
+<span class="p">)</span>
+
+<span class="c"># E-mail address used as sender (From field).</span>
+<span class="n">SERVER_EMAIL</span> <span class="o">=</span> <span class="s">&quot;no-reply@vandelay.com&quot;</span>
+
+<span class="c"># Mailserver configuration</span>
+<span class="n">EMAIL_HOST</span> <span class="o">=</span> <span class="s">&quot;mail.vandelay.com&quot;</span>
+<span class="n">EMAIL_PORT</span> <span class="o">=</span> <span class="mi">25</span>
+<span class="c"># EMAIL_HOST_USER = &quot;servers&quot;</span>
+<span class="c"># EMAIL_HOST_PASSWORD = &quot;s3cr3t&quot;</span>
+</pre></div>
+</div>
+</div>
+</div>
 <div class="section" id="events">
-<h3><a class="toc-backref" href="#id26">Events</a><a class="headerlink" href="#events" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id28">Events</a><a class="headerlink" href="#events" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first">CELERY_SEND_EVENTS</p>
 <blockquote>
@@ -687,7 +751,7 @@ exchange.</p>
 </ul>
 </div>
 <div class="section" id="broadcast-commands">
-<h3><a class="toc-backref" href="#id27">Broadcast Commands</a><a class="headerlink" href="#broadcast-commands" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id29">Broadcast Commands</a><a class="headerlink" href="#broadcast-commands" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first">CELERY_BROADCAST_QUEUE</p>
 <blockquote>
@@ -711,7 +775,7 @@ to the prefix to create the final queue name.</p>
 </ul>
 </div>
 <div class="section" id="logging">
-<h3><a class="toc-backref" href="#id28">Logging</a><a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id30">Logging</a><a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><dl class="first docutils">
 <dt>CELERYD_LOG_FILE</dt>
@@ -753,7 +817,7 @@ formats.</p>
 </ul>
 </div>
 <div class="section" id="custom-component-classes-advanced">
-<h3><a class="toc-backref" href="#id29">Custom Component Classes (advanced)</a><a class="headerlink" href="#custom-component-classes-advanced" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id31">Custom Component Classes (advanced)</a><a class="headerlink" href="#custom-component-classes-advanced" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first">CELERYD_POOL</p>
 <blockquote>
@@ -783,7 +847,7 @@ Default is <tt class="docutils literal"><span class="pre">&quot;celery.worker.co
 </div>
 </div>
 <div class="section" id="periodic-task-server-celerybeat">
-<h2><a class="toc-backref" href="#id30">Periodic Task Server: celerybeat</a><a class="headerlink" href="#periodic-task-server-celerybeat" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id32">Periodic Task Server: celerybeat</a><a class="headerlink" href="#periodic-task-server-celerybeat" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><p class="first">CELERYBEAT_SCHEDULE_FILENAME</p>
 <blockquote>
@@ -820,7 +884,7 @@ Can also be set via the <tt class="docutils literal"><span class="pre">--logfile
 </ul>
 </div>
 <div class="section" id="monitor-server-celerymon">
-<h2><a class="toc-backref" href="#id31">Monitor Server: celerymon</a><a class="headerlink" href="#monitor-server-celerymon" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id33">Monitor Server: celerymon</a><a class="headerlink" href="#monitor-server-celerymon" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><dl class="first docutils">
 <dt>CELERYMON_LOG_FILE</dt>

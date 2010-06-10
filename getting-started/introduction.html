@@ -73,7 +73,7 @@ python, webhooks, queue, distributed</td>
 </tbody>
 </table>
 <p>&#8211;</p>
-<p>Celery is a task queue/job queue based on distributed message passing.
+<p>Celery is an asynchronous task queue/job queue based on distributed message passing.
 It is focused on real-time operation, but supports scheduling as well.</p>
 <p>The execution units, called tasks, are executed concurrently on a single or
 more worker servers. Tasks can execute asynchronously (in the background) or synchronously
@@ -83,8 +83,8 @@ more worker servers. Tasks can execute asynchronously (in the background) or syn
 language. It can also <a class="reference external" href="http://ask.github.com/celery/userguide/remote-tasks.html">operate with other languages using webhooks</a>.</p>
 <p>The recommended message broker is <a class="reference external" href="http://www.rabbitmq.com/">RabbitMQ</a>, but support for <a class="reference external" href="http://code.google.com/p/redis/">Redis</a> and
 databases (<a class="reference external" href="http://www.sqlalchemy.org/">SQLAlchemy</a>) is also available.</p>
-<p>You may also be pleased to know that full Django integration exists
-via the <a class="reference external" href="http://pypi.python.org/pypi/django-celery">django-celery</a> package.</p>
+<p>You may also be pleased to know that full Django integration exists,
+delivered by the <a class="reference external" href="http://pypi.python.org/pypi/django-celery">django-celery</a> package.</p>
 <div class="contents local topic" id="contents">
 <ul class="simple">
 <li><a class="reference external" href="#overview" id="id1">Overview</a></li>
@@ -104,7 +104,7 @@ via the <a class="reference external" href="http://pypi.python.org/pypi/django-c
 <img alt="http://cloud.github.com/downloads/ask/celery/Celery-Overview-v4.jpg" src="http://cloud.github.com/downloads/ask/celery/Celery-Overview-v4.jpg" />
 <p>The broker pushes tasks to the worker servers.
 A worker server is a networked machine running <tt class="docutils literal"><span class="pre">celeryd</span></tt>. This can be one or
-more machines, depending on the workload.</p>
+more machines depending on the workload.</p>
 <p>The result of the task can be stored for later retrieval (called its
 &#8220;tombstone&#8221;).</p>
 </div>

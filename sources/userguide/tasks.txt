@@ -543,13 +543,13 @@ Good:
             # The callback may have been serialized with JSON,
             # so best practice is to convert the subtask dict back
             # into a subtask object.
-            subtask(callback).apply_async(page)
+            subtask(callback).delay(page)
 
     @task(ignore_result=True)
     def parse_page(url, page, callback=None):
         info = myparser.parse_document(page)
         if callback:
-            subtask(callback).apply_async(url, info)
+            subtask(callback).delay(url, info)
 
     @task(ignore_result=True)
     def store_page_info(url, info):
@@ -559,7 +559,8 @@ Good:
 We use :class:`~celery.task.sets.subtask` here to safely pass
 around the callback task. :class:`~celery.task.sets.subtask` is a 
 subclass of dict used to wrap the arguments and execution options
-for a single task invocation.
+for a single task invocation. See :doc:`tasksets` for more information about
+subtasks.
 
 
 Performance and Strategies
