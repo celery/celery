@@ -10,6 +10,7 @@
 
     celery.decorators
     celery.task.base
+    celery.task.sets
     celery.execute
     celery.result
     celery.task
