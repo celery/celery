@@ -352,25 +352,24 @@ class TestTaskSet(unittest.TestCase):
 
     @with_eager_tasks
     def test_function_taskset(self):
-        ts = task.TaskSet(return_True_task.name, [
-              ([1], {}), [[2], {}], [[3], {}], [[4], {}], [[5], {}]])
+        subtasks = [return_True_task.subtask([i]) for i in range(1, 6)]
+        ts = task.TaskSet(subtasks)
         res = ts.apply_async()
         self.assertListEqual(res.join(), [True, True, True, True, True])
 
     def test_counter_taskset(self):
         IncrementCounterTask.count = 0
-        ts = task.TaskSet(IncrementCounterTask, [
-            ([], {}),
-            ([], {"increment_by": 2}),
-            ([], {"increment_by": 3}),
-            ([], {"increment_by": 4}),
-            ([], {"increment_by": 5}),
-            ([], {"increment_by": 6}),
-            ([], {"increment_by": 7}),
-            ([], {"increment_by": 8}),
-            ([], {"increment_by": 9}),
+        ts = task.TaskSet(tasks=[
+            IncrementCounterTask.subtask((), {}),
+            IncrementCounterTask.subtask((), {"increment_by": 2}),
+            IncrementCounterTask.subtask((), {"increment_by": 3}),
+            IncrementCounterTask.subtask((), {"increment_by": 4}),
+            IncrementCounterTask.subtask((), {"increment_by": 5}),
+            IncrementCounterTask.subtask((), {"increment_by": 6}),
+            IncrementCounterTask.subtask((), {"increment_by": 7}),
+            IncrementCounterTask.subtask((), {"increment_by": 8}),
+            IncrementCounterTask.subtask((), {"increment_by": 9}),
         ])
-        self.assertEqual(ts.task_name, IncrementCounterTask.name)
         self.assertEqual(ts.total, 9)
 
 
