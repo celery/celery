@@ -1,12 +1,30 @@
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
 import inspect
 import sys
 import types
 
 from copy import deepcopy
+
+import pickle as pypickle
+try:
+    import cPickle as cpickle
+except ImportError:
+    cpickle = None
+
+if sys.version_info() < (2, 6):
+    # cPickle is broken in Python <= 2.5.
+    # It unsafely and incorrectly uses relative instead of absolute imports,
+    # so e.g.:
+    #       exceptions.KeyError
+    # becomes:
+    #       celery.exceptions.KeyError
+    #
+    # Your best choice is to upgrade to Python 2.6,
+    # as while the pure pickle version has worse performance,
+    # it is the only safe option for older Python versions.
+    pickle = pypickle
+else:
+    pickle = cpickle or pypickle
+
 
 # BaseException was introduced in Python 2.5.
 try:
@@ -55,7 +73,6 @@ def find_nearest_pickleable_exception(exc):
 
 
     for supercls in getmro_():
-        print("SUPERCLS: %s" % (supercls, ))
         if supercls in unwanted_base_classes:
             # only BaseException and object, from here on down,
             # we don't care about these.
