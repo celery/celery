@@ -86,7 +86,7 @@ class TaskSet(UserList):
         >>> urls = ("http://cnn.com/rss",
         ...         "http://bbc.co.uk/rss",
         ...         "http://xkcd.com/rss")
-        >>> subtasks = [subtask(RefreshFeedTask, kwargs={"feed_url": url})
+        >>> subtasks = [RefreshFeedTask.subtask(kwargs={"feed_url": url})
         ...                 for url in urls]
         >>> taskset = TaskSet(tasks=subtasks)
         >>> taskset_result = taskset.apply_async()
@@ -118,8 +118,8 @@ class TaskSet(UserList):
         Example
 
             >>> ts = TaskSet(tasks=(
-            ...         subtask(RefreshFeedTask, ["http://foo.com/rss"]),
-            ...         subtask(RefreshFeedTask, ["http://bar.com/rss"]),
+            ...         RefreshFeedTask.subtask(["http://foo.com/rss"]),
+            ...         RefreshFeedTask.subtask(["http://bar.com/rss"]),
             ... ))
             >>> result = ts.apply_async()
             >>> result.taskset_id
