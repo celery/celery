@@ -10,7 +10,7 @@ try:
 except ImportError:
     cpickle = None
 
-if sys.version_info() < (2, 6):
+if sys.version_info < (2, 6):
     # cPickle is broken in Python <= 2.5.
     # It unsafely and incorrectly uses relative instead of absolute imports,
     # so e.g.:
