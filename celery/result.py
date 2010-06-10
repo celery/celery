@@ -1,19 +1,16 @@
 from __future__ import generators
-"""
 
-Asynchronous result types.
-
-"""
 import time
-from itertools import imap
+
 from copy import copy
+from itertools import imap
 
 from celery import states
-from celery.utils import any, all
 from celery.backends import default_backend
-from celery.messaging import with_connection
-from celery.exceptions import TimeoutError
 from celery.datastructures import PositionQueue
+from celery.exceptions import TimeoutError
+from celery.messaging import with_connection
+from celery.utils import any, all
 
 
 class BaseAsyncResult(object):
@@ -38,7 +35,6 @@ class BaseAsyncResult(object):
         self.task_id = task_id
         self.backend = backend
 
-    @with_connection
     def revoke(self, connection=None, connect_timeout=None):
         """Send revoke signal to all workers.
 
@@ -46,7 +42,8 @@ class BaseAsyncResult(object):
 
         """
         from celery.task import control
-        control.revoke(self.task_id)
+        control.revoke(self.task_id, connection=connection,
+                       connect_timeout=connect_timeout)
 
     def get(self, timeout=None):
         """Alias to :meth:`wait`."""
