@@ -6,7 +6,7 @@ Subtasks
 ========
 
 The :class:`~celery.task.sets.subtask` class is used to wrap the arguments and
-execution options for a task invocation. The signature is the following::
+execution options for a single task invocation. The signature is the following::
 
     subtask(task_name_or_cls, args, kwargs, options)
 
@@ -44,9 +44,10 @@ asynchronously by :meth:`~celery.task.sets.subtask.apply_async`, and
 eagerly by :meth:`~celery.task.sets.subtask.apply`.
 
 The best thing is that any arguments you add to ``subtask.apply_async``,
-will be prepended to the arguments specified by the subtask itself
-Bbut please note: additional keyword arguments will be added to the
-execution options, not the task keyword arguments.
+will be prepended to the arguments specified by the subtask itself!
+
+:note: additional keyword arguments will be added to the
+  execution options, not the task keyword arguments.
 
 So if you have the subtask::
 
@@ -65,7 +66,8 @@ Now let's execute our new ``add`` task with a callback::
 
     >>> add.delay(2, 2, callback=add.subtask((8, )))
 
-As expected this will first execute ``2 + 2``, then ``4 + 8``.
+As expected this will first launch one task calculating ``2 + 2``, then 
+another task calculating ``4 + 8``.
 
 TaskSets
 =========
@@ -103,10 +105,10 @@ When a  :class:`~celery.task.sets.TaskSet` is applied it returns a
 :class:`~celery.result.TaskSetResult` object.
 
 :class:`~celery.result.TaskSetResult` takes a list of
-:class:`~celery.result.AsyncResult` instances and operates on them as if was a
+:class:`~celery.result.AsyncResult` instances and operates on them as if it was a
 single task.
 
-The following operations are available:
+It supports the following operations:
 
 * :meth:`~celery.result.TaskSetResult.successful`
 
@@ -122,26 +124,26 @@ The following operations are available:
     Returns :const:`True` if any of the subtasks
     is not ready.
 
-* meth:`~celery.result.TaskSetResult.ready`
+* :meth:`~celery.result.TaskSetResult.ready`
 
     Return :const:`True` if all of the subtasks
     are ready.
 
-* meth:`~celery.result.TaskSetResult.completed_count`
+* :meth:`~celery.result.TaskSetResult.completed_count`
 
     Returns the number of completed subtasks.
 
-* meth:`~celery.result.TaskSetResult.revoke`
+* :meth:`~celery.result.TaskSetResult.revoke`
 
     Revoke all of the subtasks.
 
-* meth:`~celery.result.TaskSetResult.iterate`
+* :meth:`~celery.result.TaskSetResult.iterate`
 
     Iterate over the return values of the subtasks
     as they finish, one by one.
 
-* meth:`~celery.result.TaskSetResult.join`
+* :meth:`~celery.result.TaskSetResult.join`
 
-  Gather the results for all of the subtasks,
-  and return a list with them ordered by the order of which they
-  were called.
+    Gather the results for all of the subtasks,
+    and return a list with them ordered by the order of which they
+    were called.
