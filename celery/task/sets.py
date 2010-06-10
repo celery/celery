@@ -144,16 +144,13 @@ class TaskSet(UserList):
             return self.apply()
 
         taskset_id = gen_unique_id()
-        conn = connection or establish_connection(
-                                    connect_timeout=connect_timeout)
-        publisher = TaskPublisher(connection=conn)
+        publisher = TaskPublisher(connection=connection)
         try:
             results = [task.apply_async(taskset_id=taskset_id,
                                         publisher=publisher)
                             for task in self.tasks]
         finally:
             publisher.close()
-            connection or conn.close()
 
         return TaskSetResult(taskset_id, results)
 
