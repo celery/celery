@@ -53,10 +53,16 @@ class TaskPool(object):
                           maxtasksperchild=self.maxtasksperchild)
 
     def stop(self):
-        """Terminate the pool."""
+        """Gracefully stop the pool."""
         if self._pool is not None and self._pool._state == RUN:
             self._pool.close()
             self._pool.join()
+            self._pool = None
+
+    def terminate(self):
+        """Force terminate the pool."""
+        if self._pool is not None:
+            self._pool.terminate()
             self._pool = None
 
     def apply_async(self, target, args=None, kwargs=None, callbacks=None,
