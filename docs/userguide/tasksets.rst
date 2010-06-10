@@ -29,6 +29,9 @@ Also it can be regarded as a type, as the following usage works::
 
 This makes it excellent as a means to pass callbacks around to tasks.
 
+Callbacks
+---------
+
 Let's improve our ``add`` task so it can accept a callback that
 takes the result as an argument::
 
@@ -64,7 +67,6 @@ and ``subtask.apply_async(result, ignore_result=False)`` becomes::
 
     >>> add.apply_async(args=(result, 10), ignore_result=False)
 
-
 Now let's execute our new ``add`` task with a callback::
 
     >>> add.delay(2, 2, callback=add.subtask((8, )))
@@ -72,7 +74,7 @@ Now let's execute our new ``add`` task with a callback::
 As expected this will first launch one task calculating ``2 + 2``, then 
 another task calculating ``4 + 8``.
 
-TaskSets
+Task Sets
 =========
 
 The :class:`~celery.task.sets.TaskSet` enables easy invocation of several
@@ -101,8 +103,8 @@ The task set works on a list of :class:`~celery.task.sets.subtask`'s::
     [4, 8, 16, 32, 64]
 
 
-TaskSet Results
-===============
+Results
+-------
 
 When a  :class:`~celery.task.sets.TaskSet` is applied it returns a
 :class:`~celery.result.TaskSetResult` object.

@@ -284,7 +284,7 @@ One for video, one for images and finally, one default queue for everything else
 Here, the ``CELERY_DEFAULT_QUEUE`` will be used to route tasks that doesn't
 have an explicit route.
 
-THe default exchange, exchange type and routing key, will be used as the
+The default exchange, exchange type and routing key will be used as the
 default routing values for tasks, and as the default values for entries
 in ``CELERY_QUEUES``.
 
@@ -293,12 +293,12 @@ Specifying task destination
 
 The destination for a task is decided by the following (in order):
 
-# The :ref:`routers` defined in ``CELERY_ROUTES``.
-# The routing arguments to :func:`~celery.execute.apply_async`.
-# Routing related attributes defined on the :class:`~celery.task.base.Task` itself.
+1. The :ref:`routers` defined in ``CELERY_ROUTES``.
+2. The routing arguments to :func:`~celery.execute.apply_async`.
+3. Routing related attributes defined on the :class:`~celery.task.base.Task` itself.
 
 It is considered best practice to not hard-code these settings, but rather
-leave that as an configuration option by using :ref:`routers`.
+leave that as configuration options by using :ref:`routers`;
 This is the most flexible approach, but sensible defaults can still be set
 as task attributes.
 
@@ -309,7 +309,7 @@ Routers
 
 A router is a class that decides the routing options for a task.
 
-All you need to define a new router, is to create a class with a
+All you need to define a new router is to create a class with a
 ``route_for_task`` method:
 
 .. code-block:: python
@@ -344,7 +344,7 @@ Router classes can also be added by name::
     CELERY_ROUTES = ("myapp.routers.MyRouter", )
 
 
-For simple task name -> route mappings, like the router example above, you can simply
+For simple task name -> route mappings like the router example above, you can simply
 drop a dict into ``CELERY_ROUTES`` to get the same result::
 
     CELERY_ROUTES = ({"myapp.tasks.compress_video": {
