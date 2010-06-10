@@ -1,6 +1,5 @@
 import math
 
-from celery import conf
 from celery.messaging import establish_connection
 
 ROUTE_FORMAT = """
@@ -31,9 +30,8 @@ def textindent(t, indent=0):
     return "\n".join(" " * indent + p for p in t.split("\n"))
 
 
-def format_routing_table(table=None, indent=0):
+def format_routing_table(table, indent=0):
     """Format routing table into string for log dumps."""
-    table = table or conf.get_routing_table()
     format = lambda **route: ROUTE_FORMAT.strip() % route
     routes = "\n".join(format(name=name, **route)
                             for name, route in table.items())

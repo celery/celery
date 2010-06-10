@@ -269,9 +269,11 @@ class Worker(object):
             include_builtins = self.loglevel <= logging.DEBUG
             tasklist = self.tasklist(include_builtins=include_builtins)
 
+        routing_table = conf.get_routing_table()
+
         return STARTUP_INFO_FMT % {
             "conninfo": info.format_broker_info(),
-            "queues": info.format_routing_table(indent=8),
+            "queues": info.format_routing_table(routing_table, indent=8),
             "concurrency": self.concurrency,
             "loglevel": conf.LOG_LEVELS[self.loglevel],
             "logfile": self.logfile or "[stderr]",
