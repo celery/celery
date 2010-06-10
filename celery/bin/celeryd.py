@@ -42,7 +42,7 @@
 
     Send events that can be captured by monitors like ``celerymon``.
 
-.. cmdoption:: --discard
+.. cmdoption:: --purge, --discard
 
     Discard all waiting tasks before the daemon is started.
     **WARNING**: This is unrecoverable, and the tasks will be
@@ -109,7 +109,7 @@ OPTION_LIST = (
     optparse.make_option('-V', '--version',
             action="callback", callback=dump_version,
             help="Show version information and exit."),
-    optparse.make_option('--discard', default=False,
+    optparse.make_option('--purge', '--discard', default=False,
             action="store_true", dest="discard",
             help="Discard all waiting tasks before the server is started. "
                  "WARNING: This is unrecoverable, and the tasks will be "
