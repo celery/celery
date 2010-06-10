@@ -77,7 +77,7 @@ class subtask(AttributeDict):
         """Shortcut to ``apply_async(argmerge, kwargs)``."""
         return self.apply_async(args=argmerge, kwargs=kwmerge)
 
-    def apply(self, args, kwargs, **options):
+    def apply(self, args=(), kwargs={}, **options):
         """Apply this task locally."""
         # For callbacks: extra args are prepended to the stored args.
         args = tuple(args) + tuple(self.args)
@@ -85,7 +85,7 @@ class subtask(AttributeDict):
         options = dict(self.options, **options)
         return self.get_type().apply(args, kwargs, options)
 
-    def apply_async(self, args, kwargs, **options):
+    def apply_async(self, args=(), kwargs={}, **options):
         """Apply this task asynchronously."""
         # For callbacks: extra args are prepended to the stored args.
         args = tuple(args) + tuple(self.args)
