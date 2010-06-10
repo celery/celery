@@ -111,8 +111,8 @@ appended to the filename.</p>
 </dd></dl>
 
 <dl class="cmdoption">
-<dt id="cmdoption-celeryd--discard">
-<tt class="descname">--discard</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd--discard" title="Permalink to this definition">¶</a></dt>
+<dt id="cmdoption-celeryd--purge">
+<tt class="descname">--purge</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">--discard</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd--purge" title="Permalink to this definition">¶</a></dt>
 <dd><p>Discard all waiting tasks before the daemon is started.
 <strong>WARNING</strong>: This is unrecoverable, and the tasks will be
 deleted from the messaging server.</p>
@@ -161,6 +161,11 @@ terminated and replaced by a new worker.</p>
 <dd></dd></dl>
 
 <dl class="method">
+<dt id="celery.bin.celeryd.Worker.redirect_stdouts_to_logger">
+<tt class="descname">redirect_stdouts_to_logger</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryd.Worker.redirect_stdouts_to_logger" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="celery.bin.celeryd.Worker.run">
 <tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryd.Worker.run" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -190,6 +195,11 @@ terminated and replaced by a new worker.</p>
 <dl class="function">
 <dt id="celery.bin.celeryd.dump_version">
 <tt class="descclassname">celery.bin.celeryd.</tt><tt class="descname">dump_version</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.dump_version" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="celery.bin.celeryd.install_worker_int_again_handler">
+<tt class="descclassname">celery.bin.celeryd.</tt><tt class="descname">install_worker_int_again_handler</tt><big>(</big><em>worker</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.install_worker_int_again_handler" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">

@@ -43,6 +43,7 @@
     celery.utils.compat
     celery.utils.mail
     celery.utils.patch
+    celery.utils.functional
     celery.utils.dispatch
     celery.utils.dispatch.signal
     celery.utils.dispatch.saferef

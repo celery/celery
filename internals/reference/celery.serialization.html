@@ -100,6 +100,16 @@
 <span class="gp">... </span>    <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span> <span class="c"># Works fine.</span>
 </pre></div>
 </div>
+<dl class="classmethod">
+<dt id="celery.serialization.UnpickleableExceptionWrapper.from_exception">
+<em class="property">classmethod </em><tt class="descname">from_exception</tt><big>(</big><em>exc</em><big>)</big><a class="headerlink" href="#celery.serialization.UnpickleableExceptionWrapper.from_exception" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.serialization.UnpickleableExceptionWrapper.restore">
+<tt class="descname">restore</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.serialization.UnpickleableExceptionWrapper.restore" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="function">
@@ -148,11 +158,6 @@ if it is it returns <tt class="xref docutils literal"><span class="pre">None</sp
 <dd><p>Get original exception from exception pickled using
 <a class="reference internal" href="#celery.serialization.get_pickleable_exception" title="celery.serialization.get_pickleable_exception"><tt class="xref py py-meth docutils literal"><span class="pre">get_pickleable_exception()</span></tt></a>.</p>
 </dd></dl>
-
-<dl class="function">
-<dt id="celery.serialization.is_unwanted_exception_cls">
-<tt class="descclassname">celery.serialization.</tt><tt class="descname">is_unwanted_exception_cls</tt><big>(</big><em>exc_cls</em><big>)</big><a class="headerlink" href="#celery.serialization.is_unwanted_exception_cls" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 <dl class="function">
 <dt id="celery.serialization.subclass_exception">

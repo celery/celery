@@ -54,12 +54,49 @@
             
   <div class="section" id="signals-celery-signals">
 <h1>Signals - celery.signals<a class="headerlink" href="#signals-celery-signals" title="Permalink to this headline">¶</a></h1>
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference external" href="#basics" id="id1">Basics</a></li>
+<li><a class="reference external" href="#signals" id="id2">Signals</a><ul>
+<li><a class="reference external" href="#task-signals" id="id3">Task Signals</a></li>
+<li><a class="reference external" href="#worker-signals" id="id4">Worker Signals</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="basics">
+<h2><a class="toc-backref" href="#id1">Basics</a><a class="headerlink" href="#basics" title="Permalink to this headline">¶</a></h2>
+<p>Several kinds of events trigger signals, you can connect to these signals
+to perform actions as they trigger.</p>
+<p>Example connecting to the <a class="reference internal" href="#celery.signals.task_sent" title="celery.signals.task_sent"><tt class="xref py py-data docutils literal"><span class="pre">task_sent</span></tt></a> signal:</p>
+<div class="highlight-python"><pre>from celery.signals import task_sent
+
+def task_sent_handler(sender=None, task_id=None, task=None, args=None,
+        kwargs=None, \*\*kwds):
+    print("Got signal task_sent for task id %s" % (task_id, ))
+
+task_sent.connect(task_sent_handler)</pre>
+</div>
+<p>Some signals also have a sender which you can filter by. For example the
+<a class="reference internal" href="#celery.signals.task_sent" title="celery.signals.task_sent"><tt class="xref py py-data docutils literal"><span class="pre">task_sent</span></tt></a> signal uses the task name as a sender, so you can
+connect your handler to be called only when tasks with name <tt class="docutils literal"><span class="pre">&quot;tasks.add&quot;</span></tt>
+has been sent by providing the <tt class="docutils literal"><span class="pre">sender</span></tt> argument to
+<a class="reference internal" href="../internals/reference/celery.utils.dispatch.signal.html#celery.utils.dispatch.signal.Signal.connect" title="celery.utils.dispatch.signal.Signal.connect"><tt class="xref py py-class docutils literal"><span class="pre">connect</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">task_sent</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">task_sent_handler</span><span class="p">,</span> <span class="n">sender</span><span class="o">=</span><span class="s">&quot;tasks.add&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="signals">
+<h2><a class="toc-backref" href="#id2">Signals</a><a class="headerlink" href="#signals" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="task-signals">
+<h3><a class="toc-backref" href="#id3">Task Signals</a><a class="headerlink" href="#task-signals" title="Permalink to this headline">¶</a></h3>
 <dl class="data">
 <dt id="celery.signals.task_sent">
 <tt class="descclassname">celery.signals.</tt><tt class="descname">task_sent</tt><a class="headerlink" href="#celery.signals.task_sent" title="Permalink to this definition">¶</a></dt>
 <dd><p>Triggered when a task has been sent to the broker.
 Note that this is executed in the client process, the one sending
 the task, not in the worker.</p>
+<p>Sender is the name of the task being sent.</p>
 <p>Provides arguments:</p>
 <ul>
 <li><dl class="first docutils">
@@ -105,6 +142,7 @@ the task, not in the worker.</p>
 <dt id="celery.signals.task_prerun">
 <tt class="descclassname">celery.signals.</tt><tt class="descname">task_prerun</tt><a class="headerlink" href="#celery.signals.task_prerun" title="Permalink to this definition">¶</a></dt>
 <dd><p>Triggered before a task is executed.</p>
+<p>Sender is the task class being executed.</p>
 <p>Provides arguments:</p>
 <ul>
 <li><dl class="first docutils">
@@ -138,6 +176,7 @@ the task, not in the worker.</p>
 <dt id="celery.signals.task_postrun">
 <tt class="descclassname">celery.signals.</tt><tt class="descname">task_postrun</tt><a class="headerlink" href="#celery.signals.task_postrun" title="Permalink to this definition">¶</a></dt>
 <dd><p>Triggered after a task has been executed.</p>
+<p>Sender is the task class executed.</p>
 <p>Provides arguments:</p>
 <ul>
 <li><dl class="first docutils">
@@ -172,6 +211,9 @@ the task, not in the worker.</p>
 </ul>
 </dd></dl>
 
+</div>
+<div class="section" id="worker-signals">
+<h3><a class="toc-backref" href="#id4">Worker Signals</a><a class="headerlink" href="#worker-signals" title="Permalink to this headline">¶</a></h3>
 <dl class="data">
 <dt id="celery.signals.worker_init">
 <tt class="descclassname">celery.signals.</tt><tt class="descname">worker_init</tt><a class="headerlink" href="#celery.signals.worker_init" title="Permalink to this definition">¶</a></dt>
@@ -190,6 +232,8 @@ the task, not in the worker.</p>
 <dd><p>Triggered when the worker is about to shut down.</p>
 </dd></dl>
 
+</div>
+</div>
 </div>
 
 

@@ -57,11 +57,11 @@
 <h1>Logging - celery.log<a class="headerlink" href="#logging-celery-log" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="module-celery.log"></span><p>celery.log</p>
 <dl class="class">
-<dt id="celery.log.ColourFormatter">
-<em class="property">class </em><tt class="descclassname">celery.log.</tt><tt class="descname">ColourFormatter</tt><big>(</big><em>msg</em>, <em>use_colour=True</em><big>)</big><a class="headerlink" href="#celery.log.ColourFormatter" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.log.ColorFormatter">
+<em class="property">class </em><tt class="descclassname">celery.log.</tt><tt class="descname">ColorFormatter</tt><big>(</big><em>msg</em>, <em>use_color=True</em><big>)</big><a class="headerlink" href="#celery.log.ColorFormatter" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="method">
-<dt id="celery.log.ColourFormatter.format">
-<tt class="descname">format</tt><big>(</big><em>record</em><big>)</big><a class="headerlink" href="#celery.log.ColourFormatter.format" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.log.ColorFormatter.format">
+<tt class="descname">format</tt><big>(</big><em>record</em><big>)</big><a class="headerlink" href="#celery.log.ColorFormatter.format" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -181,7 +181,7 @@ logging instance.</p>
 
 <dl class="function">
 <dt id="celery.log.setup_logger">
-<tt class="descclassname">celery.log.</tt><tt class="descname">setup_logger</tt><big>(</big><em>loglevel=30</em>, <em>logfile=None</em>, <em>format='</em><span class="optional">[</span>, <em>%(asctime)s: %(levelname)s/%(processName)s</em><span class="optional">]</span>, <em>%(message)s'</em>, <em>colourize=True</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.log.setup_logger" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.log.</tt><tt class="descname">setup_logger</tt><big>(</big><em>loglevel=30</em>, <em>logfile=None</em>, <em>format='</em><span class="optional">[</span>, <em>%(asctime)s: %(levelname)s/%(processName)s</em><span class="optional">]</span>, <em>%(message)s'</em>, <em>colorize=True</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.log.setup_logger" title="Permalink to this definition">¶</a></dt>
 <dd><p>Setup the <tt class="docutils literal"><span class="pre">multiprocessing</span></tt> logger. If <tt class="docutils literal"><span class="pre">logfile</span></tt> is not specified,
 then <tt class="docutils literal"><span class="pre">stderr</span></tt> is used.</p>
 <p>Returns logger object.</p>
@@ -189,7 +189,7 @@ then <tt class="docutils literal"><span class="pre">stderr</span></tt> is used.<
 
 <dl class="function">
 <dt id="celery.log.setup_task_logger">
-<tt class="descclassname">celery.log.</tt><tt class="descname">setup_task_logger</tt><big>(</big><em>loglevel=30</em>, <em>logfile=None</em>, <em>format='</em><span class="optional">[</span>, <em>%(asctime)s: %(levelname)s/%(processName)s</em><span class="optional">]</span><span class="optional">[</span>, <em>%(task_name)s(%(task_id)s)</em><span class="optional">]</span>, <em>%(message)s'</em>, <em>colourize=True</em>, <em>task_kwargs=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.log.setup_task_logger" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.log.</tt><tt class="descname">setup_task_logger</tt><big>(</big><em>loglevel=30</em>, <em>logfile=None</em>, <em>format='</em><span class="optional">[</span>, <em>%(asctime)s: %(levelname)s/%(processName)s</em><span class="optional">]</span><span class="optional">[</span>, <em>%(task_name)s(%(task_id)s)</em><span class="optional">]</span>, <em>%(message)s'</em>, <em>colorize=True</em>, <em>task_kwargs=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.log.setup_task_logger" title="Permalink to this definition">¶</a></dt>
 <dd><p>Setup the task logger. If <tt class="docutils literal"><span class="pre">logfile</span></tt> is not specified, then
 <tt class="docutils literal"><span class="pre">stderr</span></tt> is used.</p>
 <p>Returns logger object.</p>

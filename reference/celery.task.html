@@ -338,7 +338,7 @@ but doesn&#8217;t support the extra options.</p>
 
 <dl class="classmethod">
 <dt id="celery.task.Task.establish_connection">
-<em class="property">classmethod </em><tt class="descclassname">Task.</tt><tt class="descname">establish_connection</tt><big>(</big><em>connect_timeout=None</em><big>)</big><a class="headerlink" href="#celery.task.Task.establish_connection" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><tt class="descclassname">Task.</tt><tt class="descname">establish_connection</tt><big>(</big><em>connect_timeout=4</em><big>)</big><a class="headerlink" href="#celery.task.Task.establish_connection" title="Permalink to this definition">¶</a></dt>
 <dd><p>Establish a connection to the message broker.</p>
 </dd></dl>
 
@@ -364,7 +364,7 @@ but doesn&#8217;t support the extra options.</p>
 
 <dl class="classmethod">
 <dt id="celery.task.Task.get_consumer">
-<em class="property">classmethod </em><tt class="descclassname">Task.</tt><tt class="descname">get_consumer</tt><big>(</big><em>connection=None</em>, <em>connect_timeout=None</em><big>)</big><a class="headerlink" href="#celery.task.Task.get_consumer" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><tt class="descclassname">Task.</tt><tt class="descname">get_consumer</tt><big>(</big><em>connection=None</em>, <em>connect_timeout=4</em><big>)</big><a class="headerlink" href="#celery.task.Task.get_consumer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a celery task message consumer.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -392,7 +392,7 @@ with this object. i.e.:</p>
 
 <dl class="classmethod">
 <dt id="celery.task.Task.get_publisher">
-<em class="property">classmethod </em><tt class="descclassname">Task.</tt><tt class="descname">get_publisher</tt><big>(</big><em>connection=None</em>, <em>exchange=None</em>, <em>connect_timeout=None</em>, <em>exchange_type=None</em><big>)</big><a class="headerlink" href="#celery.task.Task.get_publisher" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><tt class="descclassname">Task.</tt><tt class="descname">get_publisher</tt><big>(</big><em>connection=None</em>, <em>exchange=None</em>, <em>connect_timeout=4</em>, <em>exchange_type=None</em><big>)</big><a class="headerlink" href="#celery.task.Task.get_publisher" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a celery task message publisher.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -559,7 +559,7 @@ arguments (**kwargs).</p>
 <dl class="classmethod">
 <dt id="celery.task.Task.subtask">
 <em class="property">classmethod </em><tt class="descclassname">Task.</tt><tt class="descname">subtask</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.Task.subtask" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a <tt class="xref py py-class docutils literal"><span class="pre">subtask</span></tt> object for
+<dd><p>Returns a <a class="reference internal" href="celery.task.sets.html#celery.task.sets.subtask" title="celery.task.sets.subtask"><tt class="xref py py-class docutils literal"><span class="pre">subtask</span></tt></a> object for
 this task that wraps arguments and execution options
 for a single task invocation.</p>
 </dd></dl>
@@ -594,7 +594,7 @@ to track how many, or when all of the tasks has been completed.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">urls</span> <span class="o">=</span> <span class="p">(</span><span class="s">&quot;http://cnn.com/rss&quot;</span><span class="p">,</span>
 <span class="gp">... </span>        <span class="s">&quot;http://bbc.co.uk/rss&quot;</span><span class="p">,</span>
 <span class="gp">... </span>        <span class="s">&quot;http://xkcd.com/rss&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">subtasks</span> <span class="o">=</span> <span class="p">[</span><span class="n">subtask</span><span class="p">(</span><span class="n">RefreshFeedTask</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s">&quot;feed_url&quot;</span><span class="p">:</span> <span class="n">url</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">subtasks</span> <span class="o">=</span> <span class="p">[</span><span class="n">RefreshFeedTask</span><span class="o">.</span><span class="n">subtask</span><span class="p">(</span><span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s">&quot;feed_url&quot;</span><span class="p">:</span> <span class="n">url</span><span class="p">})</span>
 <span class="gp">... </span>                <span class="k">for</span> <span class="n">url</span> <span class="ow">in</span> <span class="n">urls</span><span class="p">]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">taskset</span> <span class="o">=</span> <span class="n">TaskSet</span><span class="p">(</span><span class="n">tasks</span><span class="o">=</span><span class="n">subtasks</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">taskset_result</span> <span class="o">=</span> <span class="n">taskset</span><span class="o">.</span><span class="n">apply_async</span><span class="p">()</span>
@@ -614,8 +614,8 @@ to track how many, or when all of the tasks has been completed.</p>
 <p>Returns a <a class="reference internal" href="celery.result.html#celery.result.TaskSetResult" title="celery.result.TaskSetResult"><tt class="xref py py-class docutils literal"><span class="pre">celery.result.TaskSetResult</span></tt></a> instance.</p>
 <p>Example</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">ts</span> <span class="o">=</span> <span class="n">TaskSet</span><span class="p">(</span><span class="n">tasks</span><span class="o">=</span><span class="p">(</span>
-<span class="gp">... </span>        <span class="n">subtask</span><span class="p">(</span><span class="n">RefreshFeedTask</span><span class="p">,</span> <span class="p">[</span><span class="s">&quot;http://foo.com/rss&quot;</span><span class="p">]),</span>
-<span class="gp">... </span>        <span class="n">subtask</span><span class="p">(</span><span class="n">RefreshFeedTask</span><span class="p">,</span> <span class="p">[</span><span class="s">&quot;http://bar.com/rss&quot;</span><span class="p">]),</span>
+<span class="gp">... </span>        <span class="n">RefreshFeedTask</span><span class="o">.</span><span class="n">subtask</span><span class="p">([</span><span class="s">&quot;http://foo.com/rss&quot;</span><span class="p">]),</span>
+<span class="gp">... </span>        <span class="n">RefreshFeedTask</span><span class="o">.</span><span class="n">subtask</span><span class="p">([</span><span class="s">&quot;http://bar.com/rss&quot;</span><span class="p">]),</span>
 <span class="gp">... </span><span class="p">))</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">ts</span><span class="o">.</span><span class="n">apply_async</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">taskset_id</span>

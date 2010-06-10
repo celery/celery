@@ -58,7 +58,8 @@
 <span class="target" id="module-celery.routes"></span><dl class="class">
 <dt id="celery.routes.MapRoute">
 <em class="property">class </em><tt class="descclassname">celery.routes.</tt><tt class="descname">MapRoute</tt><big>(</big><em>map</em><big>)</big><a class="headerlink" href="#celery.routes.MapRoute" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
+<dd><p>Makes a router out of a <tt class="xref py py-class docutils literal"><span class="pre">dict</span></tt>.</p>
+<dl class="method">
 <dt id="celery.routes.MapRoute.route_for_task">
 <tt class="descname">route_for_task</tt><big>(</big><em>task</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.routes.MapRoute.route_for_task" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -73,8 +74,8 @@
 <dl class="function">
 <dt id="celery.routes.firstmatcher">
 <tt class="descclassname">celery.routes.</tt><tt class="descname">firstmatcher</tt><big>(</big><em>method</em><big>)</big><a class="headerlink" href="#celery.routes.firstmatcher" title="Permalink to this definition">¶</a></dt>
-<dd><p>With a list of instances, find the first instance that returns a
-value for the given method.</p>
+<dd><p>Returns a functions that with a list of instances,
+finds the first instance that returns a value for the given method.</p>
 </dd></dl>
 
 <dl class="function">

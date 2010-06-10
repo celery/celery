@@ -590,8 +590,8 @@ and may even cause a deadlock if the worker pool is exhausted.</p>
     <span class="n">PageInfo</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">info</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>We use <tt class="xref py py-class docutils literal"><span class="pre">subtask</span></tt> here to safely pass
-around the callback task. <tt class="xref py py-class docutils literal"><span class="pre">subtask</span></tt> is a
+<p>We use <a class="reference internal" href="../reference/celery.task.sets.html#celery.task.sets.subtask" title="celery.task.sets.subtask"><tt class="xref py py-class docutils literal"><span class="pre">subtask</span></tt></a> here to safely pass
+around the callback task. <a class="reference internal" href="../reference/celery.task.sets.html#celery.task.sets.subtask" title="celery.task.sets.subtask"><tt class="xref py py-class docutils literal"><span class="pre">subtask</span></tt></a> is a
 subclass of dict used to wrap the arguments and execution options
 for a single task invocation.</p>
 </div>

@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../static/doctools.js"></script>
     <link rel="top" title="Celery v1.1.1 (unstable) documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
-    <link rel="next" title="Executing Tasks - celery.execute" href="celery.execute.html" />
+    <link rel="next" title="Task Sets, Subtasks and Callbacks - celery.task.sets" href="celery.task.sets.html" />
     <link rel="prev" title="Task Decorators - celery.decorators" href="celery.decorators.html" /> 
   </head>
   <body>
@@ -37,7 +37,7 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="celery.execute.html" title="Executing Tasks - celery.execute"
+          <a href="celery.task.sets.html" title="Task Sets, Subtasks and Callbacks - celery.task.sets"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="celery.decorators.html" title="Task Decorators - celery.decorators"
@@ -337,7 +337,7 @@ but doesn&#8217;t support the extra options.</p>
 
 <dl class="classmethod">
 <dt id="celery.task.base.Task.establish_connection">
-<em class="property">classmethod </em><tt class="descclassname">Task.</tt><tt class="descname">establish_connection</tt><big>(</big><em>connect_timeout=None</em><big>)</big><a class="headerlink" href="#celery.task.base.Task.establish_connection" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><tt class="descclassname">Task.</tt><tt class="descname">establish_connection</tt><big>(</big><em>connect_timeout=4</em><big>)</big><a class="headerlink" href="#celery.task.base.Task.establish_connection" title="Permalink to this definition">¶</a></dt>
 <dd><p>Establish a connection to the message broker.</p>
 </dd></dl>
 
@@ -363,7 +363,7 @@ but doesn&#8217;t support the extra options.</p>
 
 <dl class="classmethod">
 <dt id="celery.task.base.Task.get_consumer">
-<em class="property">classmethod </em><tt class="descclassname">Task.</tt><tt class="descname">get_consumer</tt><big>(</big><em>connection=None</em>, <em>connect_timeout=None</em><big>)</big><a class="headerlink" href="#celery.task.base.Task.get_consumer" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><tt class="descclassname">Task.</tt><tt class="descname">get_consumer</tt><big>(</big><em>connection=None</em>, <em>connect_timeout=4</em><big>)</big><a class="headerlink" href="#celery.task.base.Task.get_consumer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a celery task message consumer.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -391,7 +391,7 @@ with this object. i.e.:</p>
 
 <dl class="classmethod">
 <dt id="celery.task.base.Task.get_publisher">
-<em class="property">classmethod </em><tt class="descclassname">Task.</tt><tt class="descname">get_publisher</tt><big>(</big><em>connection=None</em>, <em>exchange=None</em>, <em>connect_timeout=None</em>, <em>exchange_type=None</em><big>)</big><a class="headerlink" href="#celery.task.base.Task.get_publisher" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><tt class="descclassname">Task.</tt><tt class="descname">get_publisher</tt><big>(</big><em>connection=None</em>, <em>exchange=None</em>, <em>connect_timeout=4</em>, <em>exchange_type=None</em><big>)</big><a class="headerlink" href="#celery.task.base.Task.get_publisher" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a celery task message publisher.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -558,7 +558,7 @@ arguments (**kwargs).</p>
 <dl class="classmethod">
 <dt id="celery.task.base.Task.subtask">
 <em class="property">classmethod </em><tt class="descclassname">Task.</tt><tt class="descname">subtask</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.task.base.Task.subtask" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a <tt class="xref py py-class docutils literal"><span class="pre">subtask</span></tt> object for
+<dd><p>Returns a <a class="reference internal" href="celery.task.sets.html#celery.task.sets.subtask" title="celery.task.sets.subtask"><tt class="xref py py-class docutils literal"><span class="pre">subtask</span></tt></a> object for
 this task that wraps arguments and execution options
 for a single task invocation.</p>
 </dd></dl>
@@ -707,7 +707,7 @@ set to the name of the module it was defined in, and the class name.</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="celery.execute.html" title="Executing Tasks - celery.execute"
+          <a href="celery.task.sets.html" title="Task Sets, Subtasks and Callbacks - celery.task.sets"
              >next</a> |</li>
         <li class="right" >
           <a href="celery.decorators.html" title="Task Decorators - celery.decorators"
