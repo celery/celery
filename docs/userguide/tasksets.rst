@@ -2,11 +2,14 @@
  Sets of tasks, Subtasks and Callbacks
 =======================================
 
+.. contents::
+    :local:
+
 Subtasks
 ========
 
 The :class:`~celery.task.sets.subtask` class is used to wrap the arguments and
-execution options for a single task invocation. The signature is the following::
+execution options for a single task invocation::
 
     subtask(task_name_or_cls, args, kwargs, options)
 
