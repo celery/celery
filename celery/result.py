@@ -45,10 +45,6 @@ class BaseAsyncResult(object):
         control.revoke(self.task_id, connection=connection,
                        connect_timeout=connect_timeout)
 
-    def get(self, timeout=None):
-        """Alias to :meth:`wait`."""
-        return self.wait(timeout=timeout)
-
     def wait(self, timeout=None):
         """Wait for task, and return the result when it arrives.
 
@@ -64,6 +60,10 @@ class BaseAsyncResult(object):
         """
         return self.backend.wait_for(self.task_id, timeout=timeout)
 
+    def get(self, timeout=None):
+        """Alias to :meth:`wait`."""
+        return self.wait(timeout=timeout)
+
     def ready(self):
         """Returns ``True`` if the task executed successfully, or raised
         an exception. If the task is still running, pending, or is waiting
@@ -72,8 +72,7 @@ class BaseAsyncResult(object):
         :rtype: bool
 
         """
-        status = self.backend.get_status(self.task_id)
-        return status not in self.backend.UNREADY_STATES
+        return self.status not in self.backend.UNREADY_STATES
 
     def successful(self):
         """Returns ``True`` if the task executed successfully.
@@ -81,13 +80,14 @@ class BaseAsyncResult(object):
         :rtype: bool
 
         """
-        return self.backend.get_status(self.task_id) == states.SUCCESS
+        return self.status == states.SUCCESS
 
     def __str__(self):
-        """``str(self)`` -> ``self.task_id``"""
+        """``str(self) -> self.task_id``"""
         return self.task_id
 
     def __hash__(self):
+        """``hash(self) -> hash(self.task_id)``"""
         return hash(self.task_id)
 
     def __repr__(self):
@@ -165,8 +165,7 @@ class AsyncResult(BaseAsyncResult):
     """
 
     def __init__(self, task_id, backend=None):
-        backend = backend or default_backend
-        super(AsyncResult, self).__init__(task_id, backend)
+        super(AsyncResult, self).__init__(task_id, backend or default_backend)
 
 
 class TaskSetResult(object):
@@ -370,7 +369,7 @@ class EagerResult(BaseAsyncResult):
             raise self.result
 
     def revoke(self):
-        pass
+        self._status = states.REVOKED
 
     @property
     def result(self):
