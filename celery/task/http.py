@@ -36,6 +36,24 @@ def utf8dict(tup):
     return dict((key.encode("utf-8"), maybe_utf8(value))
                     for key, value in tup)
 
+def extract_response(raw_response):
+    """Extract the response text from a raw JSON response."""
+    if not raw_response:
+        raise InvalidResponseError("Empty response")
+    try:
+        payload = deserialize(raw_response)
+    except ValueError, exc:
+        raise InvalidResponseError(str(exc))
+
+        status = payload["status"]
+        if status == "success":
+            return payload["retval"]
+        elif status == "failure":
+            raise RemoteExecuteError(payload.get("reason"))
+        else:
+            raise UnknownStatusError(str(status))
+
+
 
 class MutableURL(object):
     """Object wrapping a Uniform Resource Locator.
@@ -110,33 +128,16 @@ class HttpDispatch(object):
         response = urllib2.urlopen(request) # user catches errors.
         return response.read()
 
-    def _dispatch_raw(self):
-        """Dispatches the callback and returns the raw response text."""
+    def dispatch(self):
+        """Dispatch callback and return result."""
         url = MutableURL(self.url)
         params = None
         if self.method in GET_METHODS:
             url.query.update(self.task_kwargs)
         else:
             params = urlencode(utf8dict(self.task_kwargs.items()))
-        return self.make_request(str(url), self.method, params)
-
-    def dispatch(self):
-        """Dispatch callback and return result."""
-        response = self._dispatch_raw()
-        if not response:
-            raise InvalidResponseError("Empty response")
-        try:
-            payload = deserialize(response)
-        except ValueError, exc:
-            raise InvalidResponseError(str(exc))
-
-        status = payload["status"]
-        if status == "success":
-            return payload["retval"]
-        elif status == "failure":
-            raise RemoteExecuteError(payload.get("reason"))
-        else:
-            raise UnknownStatusError(str(status))
+        raw_response = self.make_request(str(url), self.method, params)
+        return extract_response(raw_response)
 
     @property
     def http_headers(self):
