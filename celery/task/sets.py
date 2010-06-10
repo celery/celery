@@ -91,7 +91,7 @@ class subtask(AttributeDict):
         args = tuple(args) + tuple(self.args)
         kwargs = dict(self.kwargs, **kwargs)
         options = dict(self.options, **options)
-        return self.get_type().apply_async(args, kwargs, options)
+        return self.get_type().apply_async(args, kwargs, **options)
 
     def get_type(self):
         # For JSON serialization, the task class is lazily loaded,
