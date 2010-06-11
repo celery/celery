@@ -17,7 +17,7 @@ extract_exec_options = mattrgetter("queue", "routing_key", "exchange",
 @with_connection
 def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
         task_id=None, publisher=None, connection=None, connect_timeout=None,
-        routes=None, routing_table=None, **options):
+        routes=None, queues=None, **options):
     """Run a task asynchronously by the celery daemon(s).
 
     :param task: The :class:`~celery.task.base.Task` to run.
@@ -81,8 +81,8 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
     """
     if routes is None:
         routes = conf.ROUTES
-    if routing_table is None:
-        routing_table = conf.get_routing_table()
+    if queues is None:
+        queues = conf.get_queues()
 
     if conf.ALWAYS_EAGER:
         return apply(task, args, kwargs, task_id=task_id)
@@ -90,7 +90,7 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
     task = tasks[task.name] # get instance from registry
 
     options = dict(extract_exec_options(task), **options)
-    options = route(routes, options, routing_table,
+    options = route(routes, options, queues,
                     task.name, args, kwargs)
     exchange = options.get("exchange")
     exchange_type = options.get("exchange_type")

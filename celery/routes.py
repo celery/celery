@@ -12,7 +12,7 @@ class MapRoute(object):
         return self.map.get(task)
 
 
-def expand_destination(route, routing_table):
+def expand_destination(route, queues):
     # The route can simply be a queue name,
     # this is convenient for direct exchanges.
     if isinstance(route, basestring):
@@ -24,7 +24,7 @@ def expand_destination(route, routing_table):
 
     if queue:
         try:
-            dest = dict(routing_table[queue])
+            dest = dict(queues[queue])
         except KeyError:
             raise RouteNotFound(
                 "Route %s does not exist in the routing table "
@@ -50,13 +50,13 @@ def prepare(routes):
     return map(expand_route, routes)
 
 
-def route(routes, options, routing_table, task, args=(), kwargs={}):
+def route(routes, options, queues, task, args=(), kwargs={}):
     # Expand "queue" keys in options.
-    options = expand_destination(options, routing_table)
+    options = expand_destination(options, queues)
     if routes:
         route = lookup_route(routes, task, args, kwargs)
         # Also expand "queue" keys in route.
-        return dict(options, **expand_destination(route, routing_table))
+        return dict(options, **expand_destination(route, queues))
     return options
 
 

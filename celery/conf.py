@@ -232,7 +232,7 @@ CELERYMON_LOG_LEVEL = _get("CELERYMON_LOG_LEVEL")
 CELERYMON_LOG_FILE = _get("CELERYMON_LOG_FILE")
 
 
-def _init_routing_table(queues):
+def _init_queues(queues):
     """Convert configuration mapping to a table of queues digestible
     by a :class:`carrot.messaging.ConsumerSet`."""
 
@@ -246,5 +246,5 @@ def _init_routing_table(queues):
     return dict((queue, _defaults(opts)) for queue, opts in queues.items())
 
 
-def get_routing_table():
-    return _init_routing_table(QUEUES)
+def get_queues():
+    return _init_queues(QUEUES)
