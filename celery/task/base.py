@@ -80,6 +80,12 @@ class Task(object):
         however if you want a periodic task, you should subclass
         :class:`PeriodicTask` instead.
 
+    .. attribute:: queue
+
+        Select a destination queue for this task. The queue needs to exist
+        in ``CELERY_QUEUES``. The ``routing_key``, ``exchange`` and
+        ``exchange_type`` attributes will be ignored if this is set.
+
     .. attribute:: routing_key
 
         Override the global default ``routing_key`` for this task.
@@ -186,11 +192,16 @@ class Task(object):
     abstract = True
     autoregister = True
     type = "regular"
-    exchange = None
+
+    queue = None
     routing_key = None
+    exchange = None
+    exchange_type = conf.DEFAULT_EXCHANGE_TYPE
+    delivery_mode = conf.DEFAULT_DELIVERY_MODE
     immediate = False
     mandatory = False
     priority = None
+
     ignore_result = conf.IGNORE_RESULT
     disable_error_emails = False
     max_retries = 3
@@ -198,8 +209,6 @@ class Task(object):
     serializer = conf.TASK_SERIALIZER
     rate_limit = conf.DEFAULT_RATE_LIMIT
     backend = default_backend
-    exchange_type = conf.DEFAULT_EXCHANGE_TYPE
-    delivery_mode = conf.DEFAULT_DELIVERY_MODE
     track_started = conf.TRACK_STARTED
     acks_late = conf.ACKS_LATE
 
