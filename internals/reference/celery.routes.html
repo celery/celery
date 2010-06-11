@@ -66,27 +66,30 @@
 
 </dd></dl>
 
-<dl class="function">
-<dt id="celery.routes.expand_destination">
-<tt class="descclassname">celery.routes.</tt><tt class="descname">expand_destination</tt><big>(</big><em>route</em>, <em>routing_table</em><big>)</big><a class="headerlink" href="#celery.routes.expand_destination" title="Permalink to this definition">¶</a></dt>
+<dl class="class">
+<dt id="celery.routes.Router">
+<em class="property">class </em><tt class="descclassname">celery.routes.</tt><tt class="descname">Router</tt><big>(</big><em>routes=None</em>, <em>queues=None</em>, <em>create_missing=False</em><big>)</big><a class="headerlink" href="#celery.routes.Router" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.routes.Router.add_queue">
+<tt class="descname">add_queue</tt><big>(</big><em>queue</em><big>)</big><a class="headerlink" href="#celery.routes.Router.add_queue" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="function">
-<dt id="celery.routes.firstmatcher">
-<tt class="descclassname">celery.routes.</tt><tt class="descname">firstmatcher</tt><big>(</big><em>method</em><big>)</big><a class="headerlink" href="#celery.routes.firstmatcher" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a functions that with a list of instances,
-finds the first instance that returns a value for the given method.</p>
+<dl class="method">
+<dt id="celery.routes.Router.expand_destination">
+<tt class="descname">expand_destination</tt><big>(</big><em>route</em><big>)</big><a class="headerlink" href="#celery.routes.Router.expand_destination" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.routes.Router.lookup_route">
+<tt class="descname">lookup_route</tt><big>(</big><em>task</em>, <em>args=None</em>, <em>kwargs=None</em><big>)</big><a class="headerlink" href="#celery.routes.Router.lookup_route" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.routes.Router.route">
+<tt class="descname">route</tt><big>(</big><em>options</em>, <em>task</em>, <em>args=()</em>, <em>kwargs={}</em><big>)</big><a class="headerlink" href="#celery.routes.Router.route" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
-
-<dl class="function">
-<dt id="celery.routes.lookup_disabled">
-<tt class="descclassname">celery.routes.</tt><tt class="descname">lookup_disabled</tt><big>(</big><em>routes</em>, <em>task</em>, <em>task_id=None</em>, <em>args=None</em>, <em>kwargs=None</em><big>)</big><a class="headerlink" href="#celery.routes.lookup_disabled" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="celery.routes.lookup_route">
-<tt class="descclassname">celery.routes.</tt><tt class="descname">lookup_route</tt><big>(</big><em>routes</em>, <em>task</em>, <em>task_id=None</em>, <em>args=None</em>, <em>kwargs=None</em><big>)</big><a class="headerlink" href="#celery.routes.lookup_route" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 <dl class="function">
 <dt id="celery.routes.prepare">

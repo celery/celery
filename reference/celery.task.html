@@ -86,6 +86,14 @@ however if you want a periodic task, you should subclass
 </dd></dl>
 
 <dl class="attribute">
+<dt id="celery.task.Task.queue">
+<tt class="descname">queue</tt><a class="headerlink" href="#celery.task.Task.queue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Select a destination queue for this task. The queue needs to exist
+in <tt class="docutils literal"><span class="pre">CELERY_QUEUES</span></tt>. The <tt class="docutils literal"><span class="pre">routing_key</span></tt>, <tt class="docutils literal"><span class="pre">exchange</span></tt> and
+<tt class="docutils literal"><span class="pre">exchange_type</span></tt> attributes will be ignored if this is set.</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="celery.task.Task.routing_key">
 <tt class="descname">routing_key</tt><a class="headerlink" href="#celery.task.Task.routing_key" title="Permalink to this definition">¶</a></dt>
 <dd><p>Override the global default <tt class="docutils literal"><span class="pre">routing_key</span></tt> for this task.</p>

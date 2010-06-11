@@ -59,37 +59,95 @@ using AMQP. Other brokers may implement some functionality, see their
 respective documenation for more information, or contact the <a class="reference external" href="http://groups.google.com/group/celery-users">mailinglist</a>.</p>
 <div class="contents local topic" id="contents">
 <ul class="simple">
-<li><a class="reference external" href="#basics" id="id4">Basics</a></li>
-<li><a class="reference external" href="#amqp-primer" id="id5">AMQP Primer</a><ul>
-<li><a class="reference external" href="#messages" id="id6">Messages</a></li>
-<li><a class="reference external" href="#producers-consumers-and-brokers" id="id7">Producers, consumers and brokers</a></li>
-<li><a class="reference external" href="#exchanges-queues-and-routing-keys" id="id8">Exchanges, queues and routing keys.</a></li>
-<li><a class="reference external" href="#exchange-types" id="id9">Exchange types</a><ul>
-<li><a class="reference external" href="#direct-exchanges" id="id10">Direct exchanges</a></li>
-<li><a class="reference external" href="#topic-exchanges" id="id11">Topic exchanges</a></li>
+<li><a class="reference external" href="#basics" id="id4">Basics</a><ul>
+<li><a class="reference external" href="#automatic-routing" id="id5">Automatic routing</a><ul>
+<li><a class="reference external" href="#changing-the-name-of-the-default-queue" id="id6">Changing the name of the default queue</a></li>
+<li><a class="reference external" href="#how-the-queues-are-defined" id="id7">How the queues are defined</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#related-api-commands" id="id12">Related API commands</a><ul>
-<li><a class="reference external" href="#exchange-declare-exchange-name-type-passive-durable-auto-delete-internal" id="id13">exchange.declare(exchange_name, type, passive, durable, auto_delete, internal)</a></li>
-<li><a class="reference external" href="#queue-declare-queue-name-passive-durable-exclusive-auto-delete" id="id14">queue.declare(queue_name, passive, durable, exclusive, auto_delete)</a></li>
-<li><a class="reference external" href="#queue-bind-queue-name-exchange-name-routing-key" id="id15">queue.bind(queue_name, exchange_name, routing_key)</a></li>
-<li><a class="reference external" href="#queue-delete-name-if-unused-if-empty" id="id16">queue.delete(name, if_unused, if_empty)</a></li>
-<li><a class="reference external" href="#exchange-delete-name-if-unused" id="id17">exchange.delete(name, if_unused)</a></li>
+<li><a class="reference external" href="#manual-routing" id="id8">Manual routing</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#hands-on-with-the-api" id="id18">Hands-on with the API</a></li>
+<li><a class="reference external" href="#amqp-primer" id="id9">AMQP Primer</a><ul>
+<li><a class="reference external" href="#messages" id="id10">Messages</a></li>
+<li><a class="reference external" href="#producers-consumers-and-brokers" id="id11">Producers, consumers and brokers</a></li>
+<li><a class="reference external" href="#exchanges-queues-and-routing-keys" id="id12">Exchanges, queues and routing keys.</a></li>
+<li><a class="reference external" href="#exchange-types" id="id13">Exchange types</a><ul>
+<li><a class="reference external" href="#direct-exchanges" id="id14">Direct exchanges</a></li>
+<li><a class="reference external" href="#topic-exchanges" id="id15">Topic exchanges</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#id2" id="id19">Routing Tasks</a><ul>
-<li><a class="reference external" href="#defining-queues" id="id20">Defining queues</a></li>
-<li><a class="reference external" href="#specifying-task-destination" id="id21">Specifying task destination</a></li>
-<li><a class="reference external" href="#routers" id="id22">Routers</a></li>
+<li><a class="reference external" href="#related-api-commands" id="id16">Related API commands</a><ul>
+<li><a class="reference external" href="#exchange-declare-exchange-name-type-passive-durable-auto-delete-internal" id="id17">exchange.declare(exchange_name, type, passive, durable, auto_delete, internal)</a></li>
+<li><a class="reference external" href="#queue-declare-queue-name-passive-durable-exclusive-auto-delete" id="id18">queue.declare(queue_name, passive, durable, exclusive, auto_delete)</a></li>
+<li><a class="reference external" href="#queue-bind-queue-name-exchange-name-routing-key" id="id19">queue.bind(queue_name, exchange_name, routing_key)</a></li>
+<li><a class="reference external" href="#queue-delete-name-if-unused-if-empty" id="id20">queue.delete(name, if_unused, if_empty)</a></li>
+<li><a class="reference external" href="#exchange-delete-name-if-unused" id="id21">exchange.delete(name, if_unused)</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#hands-on-with-the-api" id="id22">Hands-on with the API</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#id2" id="id23">Routing Tasks</a><ul>
+<li><a class="reference external" href="#defining-queues" id="id24">Defining queues</a></li>
+<li><a class="reference external" href="#specifying-task-destination" id="id25">Specifying task destination</a></li>
+<li><a class="reference external" href="#routers" id="id26">Routers</a></li>
 </ul>
 </li>
 </ul>
 </div>
 <div class="section" id="basics">
 <h2><a class="toc-backref" href="#id4">Basics</a><a class="headerlink" href="#basics" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="automatic-routing">
+<h3><a class="toc-backref" href="#id5">Automatic routing</a><a class="headerlink" href="#automatic-routing" title="Permalink to this headline">¶</a></h3>
+<p>The simplest way to do routing is to use the <tt class="docutils literal"><span class="pre">CELERY_CREATE_MISSING_QUEUES</span></tt>
+setting (on by default).</p>
+<p>When this setting is on a named queue that is not already defined in
+<tt class="docutils literal"><span class="pre">CELERY_QUEUES</span></tt> will be created automatically. This makes it easy to perform
+simple routing tasks.</p>
+<p>Say you have two servers, <tt class="docutils literal"><span class="pre">x</span></tt>, and <tt class="docutils literal"><span class="pre">y</span></tt> that handles regular tasks,
+and one server <tt class="docutils literal"><span class="pre">z</span></tt>, that only handles feed related tasks, you can use this
+configuration:</p>
+<blockquote>
+CELERY_ROUTES = {&#8220;feed.tasks.import_feed&#8221;: &#8220;feeds&#8221;}</blockquote>
+<p>With this route enabled import feed tasks will be routed to the
+<tt class="docutils literal"><span class="pre">&quot;feeds&quot;</span></tt> queue, while all other tasks will be routed to the default queue
+(named <tt class="docutils literal"><span class="pre">&quot;celery&quot;</span></tt>, for historic reasons).</p>
+<p>Now you can start server <tt class="docutils literal"><span class="pre">z</span></tt> to only process the feeds queue like this:</p>
+<div class="highlight-python"><pre>(z)$ celeryd -Q feeds</pre>
+</div>
+<p>You can specify as many queues as you want, so you can make this server
+process the default queue as well:</p>
+<div class="highlight-python"><pre>(z)$ celeryd -Q feeds,celery</pre>
+</div>
+<div class="section" id="changing-the-name-of-the-default-queue">
+<h4><a class="toc-backref" href="#id6">Changing the name of the default queue</a><a class="headerlink" href="#changing-the-name-of-the-default-queue" title="Permalink to this headline">¶</a></h4>
+<p>You can change the name of the default queue by using the following
+configuration:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_QUEUES</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;default&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s">&quot;exchange&quot;</span><span class="p">:</span> <span class="s">&quot;default&quot;</span><span class="p">,</span>
+                             <span class="s">&quot;binding_key&quot;</span><span class="p">:</span> <span class="s">&quot;default&quot;</span><span class="p">}}</span>
+<span class="n">CELERY_DEFAULT_QUEUE</span> <span class="o">=</span> <span class="s">&quot;default&quot;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="how-the-queues-are-defined">
+<h4><a class="toc-backref" href="#id7">How the queues are defined</a><a class="headerlink" href="#how-the-queues-are-defined" title="Permalink to this headline">¶</a></h4>
+<p>The point with this feature is to hide the complex AMQP protocol for users
+with only basic needs. However, you may still be interested in how these queues
+are defined.</p>
+<p>A queue named <tt class="docutils literal"><span class="pre">&quot;video&quot;</span></tt> will be created with the following settings:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span><span class="s">&quot;exchange&quot;</span><span class="p">:</span> <span class="s">&quot;video&quot;</span><span class="p">,</span>
+ <span class="s">&quot;exchange_type&quot;</span><span class="p">:</span> <span class="s">&quot;direct&quot;</span><span class="p">,</span>
+ <span class="s">&quot;routing_key&quot;</span><span class="p">:</span> <span class="s">&quot;video&quot;</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>The non-AMQP backends like <tt class="docutils literal"><span class="pre">ghettoq</span></tt> does not support exchanges, so they
+require the exchange to have the same name as the queue. Using this design
+ensures it will work for them as well.</p>
+</div>
+</div>
+<div class="section" id="manual-routing">
+<h3><a class="toc-backref" href="#id8">Manual routing</a><a class="headerlink" href="#manual-routing" title="Permalink to this headline">¶</a></h3>
 <p>Say you have two servers, <tt class="docutils literal"><span class="pre">x</span></tt>, and <tt class="docutils literal"><span class="pre">y</span></tt> that handles regular tasks,
 and one server <tt class="docutils literal"><span class="pre">z</span></tt>, that only handles feed related tasks, you can use this
 configuration:</p>
@@ -163,10 +221,11 @@ exchanges. There&#8217;s also AMQP in 10 minutes*: <a class="reference external"
 and <a class="reference external" href="http://bit.ly/EEWca">Standard Exchange Types</a>. For users of RabbitMQ the <a class="reference external" href="http://www.rabbitmq.com/faq.html">RabbitMQ FAQ</a>
 could be useful as a source of information.</p>
 </div>
+</div>
 <div class="section" id="amqp-primer">
-<span id="id1"></span><h2><a class="toc-backref" href="#id5">AMQP Primer</a><a class="headerlink" href="#amqp-primer" title="Permalink to this headline">¶</a></h2>
+<span id="id1"></span><h2><a class="toc-backref" href="#id9">AMQP Primer</a><a class="headerlink" href="#amqp-primer" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="messages">
-<h3><a class="toc-backref" href="#id6">Messages</a><a class="headerlink" href="#messages" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id10">Messages</a><a class="headerlink" href="#messages" title="Permalink to this headline">¶</a></h3>
 <p>A message consists of headers and a body. Celery uses headers to store
 the content type of the message and its content encoding. In Celery the
 content type is usually the serialization format used to serialize the
@@ -181,7 +240,7 @@ metadata - like the number of retries and its ETA (if any).</p>
 </div>
 </div>
 <div class="section" id="producers-consumers-and-brokers">
-<h3><a class="toc-backref" href="#id7">Producers, consumers and brokers</a><a class="headerlink" href="#producers-consumers-and-brokers" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id11">Producers, consumers and brokers</a><a class="headerlink" href="#producers-consumers-and-brokers" title="Permalink to this headline">¶</a></h3>
 <p>The client sending messages is typically called a <em>publisher</em>, or
 a <em>producer</em>, while the entity receiving messages is called
 a <em>consumer</em>.</p>
@@ -190,7 +249,7 @@ to consumers.</p>
 <p>You are likely to see these terms used a lot in AMQP related material.</p>
 </div>
 <div class="section" id="exchanges-queues-and-routing-keys">
-<h3><a class="toc-backref" href="#id8">Exchanges, queues and routing keys.</a><a class="headerlink" href="#exchanges-queues-and-routing-keys" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id12">Exchanges, queues and routing keys.</a><a class="headerlink" href="#exchanges-queues-and-routing-keys" title="Permalink to this headline">¶</a></h3>
 <ol class="arabic simple">
 <li>Messages are sent to exchanges.</li>
 <li>An exchange routes messages to one or more queues. Several exchange types
@@ -232,19 +291,19 @@ while <tt class="docutils literal"><span class="pre">binding_key</span></tt> is 
 they are both referred to as the routing key.</p>
 </div>
 <div class="section" id="exchange-types">
-<h3><a class="toc-backref" href="#id9">Exchange types</a><a class="headerlink" href="#exchange-types" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id13">Exchange types</a><a class="headerlink" href="#exchange-types" title="Permalink to this headline">¶</a></h3>
 <p>The exchange type defines how the messages are routed through the exchange.
 The exchange types defined in the standard are <tt class="docutils literal"><span class="pre">direct</span></tt>, <tt class="docutils literal"><span class="pre">topic</span></tt>,
 <tt class="docutils literal"><span class="pre">fanout</span></tt> and <tt class="docutils literal"><span class="pre">headers</span></tt>. Also non-standard exchange types are available
 as plugins to RabbitMQ, like the <a class="reference external" href="http://github.com/squaremo/rabbitmq-lvc-plugin">last-value-cache plug-in</a> by Michael
 Bridgen.</p>
 <div class="section" id="direct-exchanges">
-<h4><a class="toc-backref" href="#id10">Direct exchanges</a><a class="headerlink" href="#direct-exchanges" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id14">Direct exchanges</a><a class="headerlink" href="#direct-exchanges" title="Permalink to this headline">¶</a></h4>
 <p>Direct exchanges match by exact routing keys, so a queue bound with
 the routing key <tt class="docutils literal"><span class="pre">video</span></tt> only receives messages with the same routing key.</p>
 </div>
 <div class="section" id="topic-exchanges">
-<h4><a class="toc-backref" href="#id11">Topic exchanges</a><a class="headerlink" href="#topic-exchanges" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id15">Topic exchanges</a><a class="headerlink" href="#topic-exchanges" title="Permalink to this headline">¶</a></h4>
 <p>Topic exchanges matches routing keys using dot-separated words, and can
 include wildcard characters: <tt class="docutils literal"><span class="pre">*</span></tt> matches a single word, <tt class="docutils literal"><span class="pre">#</span></tt> matches
 zero or more words.</p>
@@ -254,9 +313,9 @@ items in the USA) or <tt class="docutils literal"><span class="pre">usa.weather<
 </div>
 </div>
 <div class="section" id="related-api-commands">
-<h3><a class="toc-backref" href="#id12">Related API commands</a><a class="headerlink" href="#related-api-commands" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id16">Related API commands</a><a class="headerlink" href="#related-api-commands" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="exchange-declare-exchange-name-type-passive-durable-auto-delete-internal">
-<h4><a class="toc-backref" href="#id13">exchange.declare(exchange_name, type, passive, durable, auto_delete, internal)</a><a class="headerlink" href="#exchange-declare-exchange-name-type-passive-durable-auto-delete-internal" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id17">exchange.declare(exchange_name, type, passive, durable, auto_delete, internal)</a><a class="headerlink" href="#exchange-declare-exchange-name-type-passive-durable-auto-delete-internal" title="Permalink to this headline">¶</a></h4>
 <p>Declares an exchange by name.</p>
 <ul class="simple">
 <li><tt class="docutils literal"><span class="pre">passive</span></tt> means the exchange won&#8217;t be created, but you can use this to
@@ -267,7 +326,7 @@ are no more queues using it.</li>
 </ul>
 </div>
 <div class="section" id="queue-declare-queue-name-passive-durable-exclusive-auto-delete">
-<h4><a class="toc-backref" href="#id14">queue.declare(queue_name, passive, durable, exclusive, auto_delete)</a><a class="headerlink" href="#queue-declare-queue-name-passive-durable-exclusive-auto-delete" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id18">queue.declare(queue_name, passive, durable, exclusive, auto_delete)</a><a class="headerlink" href="#queue-declare-queue-name-passive-durable-exclusive-auto-delete" title="Permalink to this headline">¶</a></h4>
 <p>Declares a queue by name.</p>
 <ul class="simple">
 <li>exclusive queues can only be consumed from by the current connection.
@@ -275,16 +334,16 @@ implies <tt class="docutils literal"><span class="pre">auto_delete</span></tt>.<
 </ul>
 </div>
 <div class="section" id="queue-bind-queue-name-exchange-name-routing-key">
-<h4><a class="toc-backref" href="#id15">queue.bind(queue_name, exchange_name, routing_key)</a><a class="headerlink" href="#queue-bind-queue-name-exchange-name-routing-key" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id19">queue.bind(queue_name, exchange_name, routing_key)</a><a class="headerlink" href="#queue-bind-queue-name-exchange-name-routing-key" title="Permalink to this headline">¶</a></h4>
 <p>Binds a queue to an exchange with a routing key.
 Unbound queues will not receive messages, so this is necessary.</p>
 </div>
 <div class="section" id="queue-delete-name-if-unused-if-empty">
-<h4><a class="toc-backref" href="#id16">queue.delete(name, if_unused, if_empty)</a><a class="headerlink" href="#queue-delete-name-if-unused-if-empty" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id20">queue.delete(name, if_unused, if_empty)</a><a class="headerlink" href="#queue-delete-name-if-unused-if-empty" title="Permalink to this headline">¶</a></h4>
 <p>Deletes a queue and its binding.</p>
 </div>
 <div class="section" id="exchange-delete-name-if-unused">
-<h4><a class="toc-backref" href="#id17">exchange.delete(name, if_unused)</a><a class="headerlink" href="#exchange-delete-name-if-unused" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id21">exchange.delete(name, if_unused)</a><a class="headerlink" href="#exchange-delete-name-if-unused" title="Permalink to this headline">¶</a></h4>
 <p>Deletes an exchange.</p>
 <p><strong>NOTE</strong>: Declaring does not necessarily mean &#8220;create&#8221;. When you declare you
 <em>assert</em> that the entity exists and that it&#8217;s operable. There is no rule as to
@@ -293,7 +352,7 @@ or producer. Usually the first one to need it will be the one to create it.</p>
 </div>
 </div>
 <div class="section" id="hands-on-with-the-api">
-<h3><a class="toc-backref" href="#id18">Hands-on with the API</a><a class="headerlink" href="#hands-on-with-the-api" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id22">Hands-on with the API</a><a class="headerlink" href="#hands-on-with-the-api" title="Permalink to this headline">¶</a></h3>
 <p>Celery comes with a tool called <tt class="docutils literal"><span class="pre">camqadm</span></tt> (short for celery AMQP admin).
 It&#8217;s used for simple admnistration tasks like creating/deleting queues and
 exchanges, purging queues and sending messages. In short it&#8217;s for simple
@@ -361,9 +420,9 @@ ok.</pre>
 </div>
 </div>
 <div class="section" id="id2">
-<h2><a class="toc-backref" href="#id19">Routing Tasks</a><a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id23">Routing Tasks</a><a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="defining-queues">
-<h3><a class="toc-backref" href="#id20">Defining queues</a><a class="headerlink" href="#defining-queues" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id24">Defining queues</a><a class="headerlink" href="#defining-queues" title="Permalink to this headline">¶</a></h3>
 <p>In Celery the queues are defined by the <tt class="docutils literal"><span class="pre">CELERY_QUEUES</span></tt> setting.</p>
 <p>Here&#8217;s an example queue configuration with three queues;
 One for video, one for images and finally, one default queue for everything else:</p>
@@ -395,7 +454,7 @@ default routing values for tasks, and as the default values for entries
 in <tt class="docutils literal"><span class="pre">CELERY_QUEUES</span></tt>.</p>
 </div>
 <div class="section" id="specifying-task-destination">
-<h3><a class="toc-backref" href="#id21">Specifying task destination</a><a class="headerlink" href="#specifying-task-destination" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id25">Specifying task destination</a><a class="headerlink" href="#specifying-task-destination" title="Permalink to this headline">¶</a></h3>
 <p>The destination for a task is decided by the following (in order):</p>
 <ol class="arabic simple">
 <li>The <a class="reference internal" href="#routers"><em>Routers</em></a> defined in <tt class="docutils literal"><span class="pre">CELERY_ROUTES</span></tt>.</li>
@@ -408,13 +467,13 @@ This is the most flexible approach, but sensible defaults can still be set
 as task attributes.</p>
 </div>
 <div class="section" id="routers">
-<span id="id3"></span><h3><a class="toc-backref" href="#id22">Routers</a><a class="headerlink" href="#routers" title="Permalink to this headline">¶</a></h3>
+<span id="id3"></span><h3><a class="toc-backref" href="#id26">Routers</a><a class="headerlink" href="#routers" title="Permalink to this headline">¶</a></h3>
 <p>A router is a class that decides the routing options for a task.</p>
 <p>All you need to define a new router is to create a class with a
 <tt class="docutils literal"><span class="pre">route_for_task</span></tt> method:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MyRouter</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 
-    <span class="k">def</span> <span class="nf">route_for_task</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">task_id</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">route_for_task</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">task</span> <span class="o">==</span> <span class="s">&quot;myapp.tasks.compress_video&quot;</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">{</span><span class="s">&quot;exchange&quot;</span><span class="p">:</span> <span class="s">&quot;video&quot;</span><span class="p">,</span>
                     <span class="s">&quot;exchange_type&quot;</span><span class="p">:</span> <span class="s">&quot;topic&quot;</span><span class="p">,</span>

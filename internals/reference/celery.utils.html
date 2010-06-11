@@ -80,6 +80,13 @@
 </dd></dl>
 
 <dl class="function">
+<dt id="celery.utils.firstmethod">
+<tt class="descclassname">celery.utils.</tt><tt class="descname">firstmethod</tt><big>(</big><em>method</em><big>)</big><a class="headerlink" href="#celery.utils.firstmethod" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a functions that with a list of instances,
+finds the first instance that returns a value for the given method.</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="celery.utils.fun_takes_kwargs">
 <tt class="descclassname">celery.utils.</tt><tt class="descname">fun_takes_kwargs</tt><big>(</big><em>fun</em>, <em>kwlist=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="headerlink" href="#celery.utils.fun_takes_kwargs" title="Permalink to this definition">¶</a></dt>
 <dd><p>With a function, and a list of keyword arguments, returns arguments
@@ -228,7 +235,7 @@ yield the last value infinitely.</p>
 
 <dl class="function">
 <dt id="celery.utils.retry_over_time">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">retry_over_time</tt><big>(</big><em>fun</em>, <em>catch</em>, <em>args=</em><span class="optional">[</span><span class="optional">]</span>, <em>kwargs={}</em>, <em>errback=&lt;function noop at 0x103971e60&gt;</em>, <em>max_retries=None</em>, <em>interval_start=2</em>, <em>interval_step=2</em>, <em>interval_max=30</em><big>)</big><a class="headerlink" href="#celery.utils.retry_over_time" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.utils.</tt><tt class="descname">retry_over_time</tt><big>(</big><em>fun</em>, <em>catch</em>, <em>args=</em><span class="optional">[</span><span class="optional">]</span>, <em>kwargs={}</em>, <em>errback=&lt;function noop at 0x1040f2500&gt;</em>, <em>max_retries=None</em>, <em>interval_start=2</em>, <em>interval_step=2</em>, <em>interval_max=30</em><big>)</big><a class="headerlink" href="#celery.utils.retry_over_time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retry the function over and over until max retries is exceeded.</p>
 <p>For each retry we sleep a for a while before we try again, this interval
 is increased for every retry until the max seconds is reached.</p>
