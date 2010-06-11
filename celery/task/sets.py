@@ -83,7 +83,7 @@ class subtask(AttributeDict):
         args = tuple(args) + tuple(self.args)
         kwargs = dict(self.kwargs, **kwargs)
         options = dict(self.options, **options)
-        return self.get_type().apply(args, kwargs, options)
+        return self.get_type().apply(args, kwargs, **options)
 
     def apply_async(self, args=(), kwargs={}, **options):
         """Apply this task asynchronously."""

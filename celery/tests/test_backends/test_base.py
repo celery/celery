@@ -34,6 +34,14 @@ class TestBaseBackendInterface(unittest.TestCase):
         self.assertRaises(NotImplementedError,
                 b.store_result, "SOMExx-N0nex1stant-IDxx-", 42, states.SUCCESS)
 
+    def test_reload_task_result(self):
+        self.assertRaises(NotImplementedError,
+                b.reload_task_result, "SOMExx-N0nex1stant-IDxx-")
+
+    def test_reload_taskset_result(self):
+        self.assertRaises(NotImplementedError,
+                b.reload_taskset_result, "SOMExx-N0nex1stant-IDxx-")
+
     def test_get_result(self):
         self.assertRaises(NotImplementedError,
                 b.get_result, "SOMExx-N0nex1stant-IDxx-")
