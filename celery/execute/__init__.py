@@ -1,13 +1,14 @@
 from celery import conf
-from celery.utils import gen_unique_id, fun_takes_kwargs, mattrgetter
-from celery.result import AsyncResult, EagerResult
+from celery.datastructures import ExceptionInfo
 from celery.execute.trace import TaskTrace
-from celery.registry import tasks
 from celery.messaging import with_connection
 from celery.messaging import TaskPublisher
-from celery.datastructures import ExceptionInfo
+from celery.registry import tasks
+from celery.result import AsyncResult, EagerResult
+from celery.routes import route
+from celery.utils import gen_unique_id, fun_takes_kwargs, mattrgetter
 
-extract_exec_options = mattrgetter("routing_key", "exchange",
+extract_exec_options = mattrgetter("queue", "routing_key", "exchange",
                                    "immediate", "mandatory",
                                    "priority", "serializer",
                                    "delivery_mode")
@@ -16,7 +17,7 @@ extract_exec_options = mattrgetter("routing_key", "exchange",
 @with_connection
 def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
         task_id=None, publisher=None, connection=None, connect_timeout=None,
-        **options):
+        routes=None, routing_table=None, **options):
     """Run a task asynchronously by the celery daemon(s).
 
     :param task: The :class:`~celery.task.base.Task` to run.
@@ -78,11 +79,19 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
     replaced by a local :func:`apply` call instead.
 
     """
+    if routes is None:
+        routes = conf.ROUTES
+    if routing_table is None:
+        routing_table = conf.get_routing_table()
+
     if conf.ALWAYS_EAGER:
         return apply(task, args, kwargs, task_id=task_id)
 
     task = tasks[task.name] # get instance from registry
+
     options = dict(extract_exec_options(task), **options)
+    options = route(routes, options, routing_table,
+                    task.name, args, kwargs)
     exchange = options.get("exchange")
     exchange_type = options.get("exchange_type")
 

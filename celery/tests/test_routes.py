@@ -3,7 +3,6 @@ import unittest2 as unittest
 
 from celery import conf
 from celery import routes
-from celery.utils import gen_unique_id
 from celery.utils.functional import wraps
 from celery.exceptions import RouteNotFound
 
@@ -69,7 +68,7 @@ class test_lookup_route(unittest.TestCase):
         R = routes.prepare(({"celery.ping": "bar"},
                             {"celery.ping": "foo"}))
         self.assertDictContainsSubset(b_route,
-                expand(routes.lookup_route(R, "celery.ping", gen_unique_id(),
+                expand(routes.lookup_route(R, "celery.ping",
                     args=[1, 2], kwargs={})))
 
     @with_queues(foo=a_route, bar=b_route)
@@ -78,7 +77,7 @@ class test_lookup_route(unittest.TestCase):
         R = routes.prepare(({"celery.xaza": "bar"},
                             {"celery.ping": "foo"}))
         self.assertDictContainsSubset(a_route,
-                expand(routes.lookup_route(R, "celery.ping", gen_unique_id(),
+                expand(routes.lookup_route(R, "celery.ping",
                     args=[1, 2], kwargs={})))
         self.assertIsNone(routes.lookup_route(R, "celery.poza"))
 

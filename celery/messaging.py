@@ -18,9 +18,8 @@ from celery.routes import lookup_route, expand_destination
 from celery.loaders import load_settings
 
 
-MSG_OPTIONS = ("mandatory", "priority",
-               "immediate", "routing_key",
-               "serializer", "delivery_mode")
+MSG_OPTIONS = ("mandatory", "priority", "immediate",
+               "routing_key", "serializer", "delivery_mode")
 
 get_msg_options = mitemgetter(*MSG_OPTIONS)
 extract_msg_options = lambda d: dict(zip(MSG_OPTIONS, get_msg_options(d)))
@@ -56,12 +55,11 @@ class TaskPublisher(Publisher):
         """Delay task for execution by the celery nodes."""
 
         task_id = task_id or gen_unique_id()
-
+        task_args = task_args or []
+        task_kwargs = task_kwargs or {}
         if countdown: # Convert countdown to ETA.
             eta = datetime.now() + timedelta(seconds=countdown)
 
-        task_args = task_args or []
-        task_kwargs = task_kwargs or {}
         if not isinstance(task_args, (list, tuple)):
             raise ValueError("task args must be a list or tuple")
         if not isinstance(task_kwargs, dict):
@@ -79,17 +77,7 @@ class TaskPublisher(Publisher):
         if taskset_id:
             message_data["taskset"] = taskset_id
 
-        route = {}
-        if conf.ROUTES:
-            route = lookup_route(conf.ROUTES, task_name, task_id,
-                                 task_args, task_kwargs)
-        if route:
-            dest = expand_destination(route, conf.get_routing_table())
-            msg_options = dict(extract_msg_options(kwargs), **dest)
-        else:
-            msg_options = extract_msg_options(kwargs)
-
-        self.send(message_data, **msg_options)
+        self.send(message_data, **extract_msg_options(kwargs))
         signals.task_sent.send(sender=task_name, **message_data)
 
         return task_id

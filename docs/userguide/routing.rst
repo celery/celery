@@ -413,7 +413,7 @@ All you need to define a new router is to create a class with a
 
     class MyRouter(object):
 
-        def route_for_task(task, task_id=None, args=None, kwargs=None):
+        def route_for_task(task, args=None, kwargs=None):
             if task == "myapp.tasks.compress_video":
                 return {"exchange": "video",
                         "exchange_type": "topic",
