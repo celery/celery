@@ -32,7 +32,7 @@ configuration:
 
 With this route enabled import feed tasks will be routed to the
 ``"feeds"`` queue, while all other tasks will be routed to the default queue
-(named ``"celery"``, for historic reasons).
+(named ``"celery"`` for historic reasons).
 
 Now you can start server ``z`` to only process the feeds queue like this::
 
