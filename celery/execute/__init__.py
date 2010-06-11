@@ -5,7 +5,7 @@ from celery.messaging import with_connection
 from celery.messaging import TaskPublisher
 from celery.registry import tasks
 from celery.result import AsyncResult, EagerResult
-from celery.routes import route
+from celery.routes import Router
 from celery.utils import gen_unique_id, fun_takes_kwargs, mattrgetter
 
 extract_exec_options = mattrgetter("queue", "routing_key", "exchange",
@@ -17,7 +17,7 @@ extract_exec_options = mattrgetter("queue", "routing_key", "exchange",
 @with_connection
 def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
         task_id=None, publisher=None, connection=None, connect_timeout=None,
-        routes=None, queues=None, **options):
+        router=None, **options):
     """Run a task asynchronously by the celery daemon(s).
 
     :param task: The :class:`~celery.task.base.Task` to run.
@@ -79,10 +79,7 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
     replaced by a local :func:`apply` call instead.
 
     """
-    if routes is None:
-        routes = conf.ROUTES
-    if queues is None:
-        queues = conf.get_queues()
+    router = router or Router(conf.ROUTES, conf.get_queues())
 
     if conf.ALWAYS_EAGER:
         return apply(task, args, kwargs, task_id=task_id)
@@ -90,8 +87,7 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
     task = tasks[task.name] # get instance from registry
 
     options = dict(extract_exec_options(task), **options)
-    options = route(routes, options, queues,
-                    task.name, args, kwargs)
+    options = router.route(options, task.name, args, kwargs)
     exchange = options.get("exchange")
     exchange_type = options.get("exchange_type")
 

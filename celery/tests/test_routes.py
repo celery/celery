@@ -9,7 +9,7 @@ from celery.exceptions import RouteNotFound
 
 def E(queues):
     def expand(answer):
-        return routes.expand_destination(answer, queues)
+        return routes.Router([], queues).expand_destination(answer)
     return expand
 
 
@@ -64,48 +64,19 @@ class test_lookup_route(unittest.TestCase):
 
     @with_queues(foo=a_queue, bar=b_queue)
     def test_lookup_takes_first(self):
-        expand = E(conf.QUEUES)
         R = routes.prepare(({"celery.ping": "bar"},
                             {"celery.ping": "foo"}))
+        router = routes.Router(R, conf.QUEUES)
         self.assertDictContainsSubset(b_queue,
-                expand(routes.lookup_route(R, "celery.ping",
-                    args=[1, 2], kwargs={})))
+                router.route({}, "celery.ping",
+                    args=[1, 2], kwargs={}))
 
     @with_queues(foo=a_queue, bar=b_queue)
     def test_lookup_paths_traversed(self):
-        expand = E(conf.QUEUES)
         R = routes.prepare(({"celery.xaza": "bar"},
                             {"celery.ping": "foo"}))
+        router = routes.Router(R, conf.QUEUES)
         self.assertDictContainsSubset(a_queue,
-                expand(routes.lookup_route(R, "celery.ping",
-                    args=[1, 2], kwargs={})))
-        self.assertIsNone(routes.lookup_route(R, "celery.poza"))
-
-
-class test_lookup_disabled(unittest.TestCase):
-
-    def test_disabled(self):
-
-        def create_router(name, is_disabled):
-            class _Router(object):
-
-                def disabled(self, task, *args):
-                    if task == name:
-                        return is_disabled
-            return _Router()
-
-
-        A = create_router("celery.ping", True)
-        B = create_router("celery.ping", False)
-        C = object()
-
-        R1 = (routes.prepare((A, B, C)), True)
-        R2 = (routes.prepare((B, C, A)), False)
-        R3 = (routes.prepare((C, A, B)), True)
-        R4 = (routes.prepare((B, A, C)), False)
-        R5 = (routes.prepare((A, C, B)), True)
-        R6 = (routes.prepare((C, B, A)), False)
-
-        for i, (router, state) in enumerate((R1, R2, R3, R4, R5, R6)):
-            self.assertEqual(routes.lookup_disabled(router, "celery.ping"),
-                             state, "ok %d" % i)
+                router.route({}, "celery.ping",
+                    args=[1, 2], kwargs={}))
+        self.assertEqual(router.route({}, "celery.poza"), {})

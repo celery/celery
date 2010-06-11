@@ -50,6 +50,21 @@ def first(predicate, iterable):
             return item
 
 
+def firstmethod(method):
+    """Returns a functions that with a list of instances,
+    finds the first instance that returns a value for the given method."""
+
+    def _matcher(seq, *args, **kwargs):
+        for cls in seq:
+            try:
+                answer = getattr(cls, method)(*args, **kwargs)
+                if answer is not None:
+                    return answer
+            except AttributeError:
+                pass
+    return _matcher
+
+
 def chunks(it, n):
     """Split an iterator into chunks with ``n`` elements each.
 

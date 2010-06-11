@@ -1,5 +1,7 @@
 from celery.exceptions import RouteNotFound
-from celery.utils import instantiate
+from celery.utils import instantiate, firstmethod
+
+_first_route = firstmethod("route_for_task")
 
 
 class MapRoute(object):
@@ -12,27 +14,46 @@ class MapRoute(object):
         return self.map.get(task)
 
 
-def expand_destination(route, queues):
-    # The route can simply be a queue name,
-    # this is convenient for direct exchanges.
-    if isinstance(route, basestring):
-        queue, route = route, {}
-    else:
-        # For topic exchanges you can use the defaults from a queue
-        # definition, and override e.g. just the routing_key.
-        queue = route.pop("queue", None)
+class Router(object):
 
-    if queue:
-        try:
-            dest = dict(queues[queue])
-        except KeyError:
-            raise RouteNotFound(
-                "Route %s does not exist in the routing table "
-                "(CELERY_QUEUES)" % route)
-        dest.setdefault("routing_key", dest.get("binding_key"))
-        return dict(route, **dest)
+    def __init__(self, routes, queues):
+        self.queues = queues
+        self.routes = routes
 
-    return route
+    def route(self, options, task, args=(), kwargs={}):
+        # Expand "queue" keys in options.
+        options = self.expand_destination(options)
+        if self.routes:
+            route = self.lookup_route(task, args, kwargs)
+            if route:
+                # Also expand "queue" keys in route.
+                return dict(options, **self.expand_destination(route))
+        return options
+
+    def expand_destination(self, route):
+        # The route can simply be a queue name,
+        # this is convenient for direct exchanges.
+        if isinstance(route, basestring):
+            queue, route = route, {}
+        else:
+            # For topic exchanges you can use the defaults from a queue
+            # definition, and override e.g. just the routing_key.
+            queue = route.pop("queue", None)
+
+        if queue:
+            try:
+                dest = dict(self.queues[queue])
+            except KeyError:
+                raise RouteNotFound(
+                    "Route %s does not exist in the routing table "
+                    "(CELERY_QUEUES)" % route)
+            dest.setdefault("routing_key", dest.get("binding_key"))
+            return dict(route, **dest)
+
+        return route
+
+    def lookup_route(self, task, args=None, kwargs=None):
+        return _first_route(self.routes, task, args, kwargs)
 
 
 def prepare(routes):
@@ -50,38 +71,5 @@ def prepare(routes):
     return map(expand_route, routes)
 
 
-def route(routes, options, queues, task, args=(), kwargs={}):
-    # Expand "queue" keys in options.
-    options = expand_destination(options, queues)
-    if routes:
-        route = lookup_route(routes, task, args, kwargs)
-        # Also expand "queue" keys in route.
-        return dict(options, **expand_destination(route, queues))
-    return options
 
 
-def firstmatcher(method):
-    """Returns a functions that with a list of instances,
-    finds the first instance that returns a value for the given method."""
-
-    def _matcher(seq, *args, **kwargs):
-        for cls in seq:
-            try:
-                answer = getattr(cls, method)(*args, **kwargs)
-                if answer is not None:
-                    return answer
-            except AttributeError:
-                pass
-    return _matcher
-
-
-_first_route = firstmatcher("route_for_task")
-_first_disabled = firstmatcher("disabled")
-
-
-def lookup_route(routes, task, args=None, kwargs=None):
-    return _first_route(routes, task, args, kwargs)
-
-
-def lookup_disabled(routes, task, args=None, kwargs=None):
-    return _first_disabled(routes, task, args, kwargs)
