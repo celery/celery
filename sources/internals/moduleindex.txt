@@ -11,13 +11,24 @@ Worker
 celery.worker
 -------------
 
-* :class:`celery.worker.WorkController`
+* :class:`~celery.worker.WorkController`
 
 This is the worker's main process. It starts and stops all the components
 required by the worker: Pool, Mediator, Scheduler, ClockService, and Listener.
 
+* :func:`~celery.worker.process_initializer`
+
+This is the function used to initialize pool processes. It sets up loggers and
+imports required task modules, etc.
+
 celery.worker.job
 -----------------
+
+* :class:`~celery.worker.job.TaskRequest`
+
+A request to execute a task. Contains the task name, id, args and kwargs.
+Handles acknowledgement, execution, writing results to backends and error handling
+(including error e-mails)
 
 celery.worker.pool
 ------------------

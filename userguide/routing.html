@@ -112,7 +112,7 @@ configuration:</p>
 CELERY_ROUTES = {&#8220;feed.tasks.import_feed&#8221;: &#8220;feeds&#8221;}</blockquote>
 <p>With this route enabled import feed tasks will be routed to the
 <tt class="docutils literal"><span class="pre">&quot;feeds&quot;</span></tt> queue, while all other tasks will be routed to the default queue
-(named <tt class="docutils literal"><span class="pre">&quot;celery&quot;</span></tt>, for historic reasons).</p>
+(named <tt class="docutils literal"><span class="pre">&quot;celery&quot;</span></tt> for historic reasons).</p>
 <p>Now you can start server <tt class="docutils literal"><span class="pre">z</span></tt> to only process the feeds queue like this:</p>
 <div class="highlight-python"><pre>(z)$ celeryd -Q feeds</pre>
 </div>

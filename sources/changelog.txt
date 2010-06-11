@@ -9,7 +9,7 @@
 =====
 :release-date: NOT RELEASED
 :branch: master
-:state: beta
+:state: freeze
 
 Celery 1.2 contains backward incompatible changes, the most important
 being that the Django dependency has been removed, so Celery no longer

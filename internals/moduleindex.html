@@ -136,13 +136,24 @@
 <div class="section" id="celery-worker">
 <h3><a class="toc-backref" href="#id2">celery.worker</a><a class="headerlink" href="#celery-worker" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
-<li><a class="reference internal" href="reference/celery.worker.html#celery.worker.WorkController" title="celery.worker.WorkController"><tt class="xref py py-class docutils literal"><span class="pre">celery.worker.WorkController</span></tt></a></li>
+<li><a class="reference internal" href="reference/celery.worker.html#celery.worker.WorkController" title="celery.worker.WorkController"><tt class="xref py py-class docutils literal"><span class="pre">WorkController</span></tt></a></li>
 </ul>
 <p>This is the worker&#8217;s main process. It starts and stops all the components
 required by the worker: Pool, Mediator, Scheduler, ClockService, and Listener.</p>
+<ul class="simple">
+<li><a class="reference internal" href="reference/celery.worker.html#celery.worker.process_initializer" title="celery.worker.process_initializer"><tt class="xref py py-func docutils literal"><span class="pre">process_initializer()</span></tt></a></li>
+</ul>
+<p>This is the function used to initialize pool processes. It sets up loggers and
+imports required task modules, etc.</p>
 </div>
 <div class="section" id="celery-worker-job">
 <h3><a class="toc-backref" href="#id3">celery.worker.job</a><a class="headerlink" href="#celery-worker-job" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><a class="reference internal" href="reference/celery.worker.job.html#celery.worker.job.TaskRequest" title="celery.worker.job.TaskRequest"><tt class="xref py py-class docutils literal"><span class="pre">TaskRequest</span></tt></a></li>
+</ul>
+<p>A request to execute a task. Contains the task name, id, args and kwargs.
+Handles acknowledgement, execution, writing results to backends and error handling
+(including error e-mails)</p>
 </div>
 <div class="section" id="celery-worker-pool">
 <h3><a class="toc-backref" href="#id4">celery.worker.pool</a><a class="headerlink" href="#celery-worker-pool" title="Permalink to this headline">¶</a></h3>

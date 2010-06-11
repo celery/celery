@@ -55,8 +55,7 @@
             
   <div class="section" id="executable-jobs-celery-worker-job">
 <h1>Executable Jobs - celery.worker.job<a class="headerlink" href="#executable-jobs-celery-worker-job" title="Permalink to this headline">¶</a></h1>
-<span class="target" id="module-celery.worker.job"></span><p>Jobs Executable by the Worker Server.</p>
-<dl class="exception">
+<span class="target" id="module-celery.worker.job"></span><dl class="exception">
 <dt id="celery.worker.job.AlreadyExecutedError">
 <em class="property">exception </em><tt class="descclassname">celery.worker.job.</tt><tt class="descname">AlreadyExecutedError</tt><a class="headerlink" href="#celery.worker.job.AlreadyExecutedError" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tasks can only be executed once, as they might change
@@ -71,7 +70,7 @@ world-wide state.</p>
 
 <dl class="class">
 <dt id="celery.worker.job.TaskRequest">
-<em class="property">class </em><tt class="descclassname">celery.worker.job.</tt><tt class="descname">TaskRequest</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>args</em>, <em>kwargs</em>, <em>on_ack=&lt;function noop at 0x1040f2500&gt;</em>, <em>retries=0</em>, <em>delivery_info=None</em>, <em>hostname=None</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.worker.job.</tt><tt class="descname">TaskRequest</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>args</em>, <em>kwargs</em>, <em>on_ack=&lt;function noop at 0x103d35668&gt;</em>, <em>retries=0</em>, <em>delivery_info=None</em>, <em>hostname=None</em>, <em>email_subject=None</em>, <em>email_body=None</em>, <em>logger=None</em>, <em>eventer=None</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest" title="Permalink to this definition">¶</a></dt>
 <dd><p>A request for task execution.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -315,7 +314,12 @@ the exception instance on failure.</p>
 <dl class="function">
 <dt id="celery.worker.job.execute_and_trace">
 <tt class="descclassname">celery.worker.job.</tt><tt class="descname">execute_and_trace</tt><big>(</big><em>task_name</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.worker.job.execute_and_trace" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>This is a pickleable method used as a target when applying to pools.</p>
+<p>It&#8217;s the same as:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">WorkerTaskTrace</span><span class="p">(</span><span class="n">task_name</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span><span class="o">.</span><span class="n">execute_safe</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
 
 </div>
 
