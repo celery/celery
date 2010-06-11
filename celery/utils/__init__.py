@@ -1,9 +1,5 @@
 from __future__ import generators
-"""
 
-Utility functions
-
-"""
 import time
 import operator
 try:

@@ -217,12 +217,12 @@ class TestTaskRequest(unittest.TestCase):
                               "id": tw.task_id,
                               "return_value": 10}
         self.assertTrue(x)
-        x = tw.fail_msg % {"name": tw.task_name,
+        x = tw.error_msg % {"name": tw.task_name,
                            "id": tw.task_id,
                            "exc": "FOOBARBAZ",
                            "traceback": "foobarbaz"}
         self.assertTrue(x)
-        x = tw.fail_email_subject % {"name": tw.task_name,
+        x = tw.email_subject % {"name": tw.task_name,
                                      "id": tw.task_id,
                                      "exc": "FOOBARBAZ",
                                      "hostname": "lana"}
