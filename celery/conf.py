@@ -240,6 +240,7 @@ def _init_routing_table(queues):
         opts.setdefault("exchange", DEFAULT_EXCHANGE),
         opts.setdefault("exchange_type", DEFAULT_EXCHANGE_TYPE)
         opts.setdefault("binding_key", DEFAULT_EXCHANGE)
+        opts.setdefault("routing_key", opts.get("binding_key"))
         return opts
 
     return dict((queue, _defaults(opts)) for queue, opts in queues.items())
