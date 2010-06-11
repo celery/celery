@@ -4,7 +4,7 @@ import unittest2 as unittest
 from celery import conf
 from celery import routes
 from celery.utils.functional import wraps
-from celery.exceptions import RouteNotFound
+from celery.exceptions import QueueNotFound
 
 
 def E(queues):
@@ -57,7 +57,7 @@ class test_MapRoute(unittest.TestCase):
     def test_expand_route_not_found(self):
         expand = E(conf.QUEUES)
         route = routes.MapRoute({"a": "x"})
-        self.assertRaises(RouteNotFound, expand, route.route_for_task("a"))
+        self.assertRaises(QueueNotFound, expand, route.route_for_task("a"))
 
 
 class test_lookup_route(unittest.TestCase):

@@ -13,6 +13,7 @@ recursive-include celery *.py
 recursive-include docs *
 recursive-include tests *
 recursive-include contrib *
+recursive-include examples *
 prune tests/*.pyc
 prune docs/*.pyc
 prune contrib/*.pyc
