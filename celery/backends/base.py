@@ -143,7 +143,8 @@ class BaseDictBackend(BaseBackend):
 
     def __init__(self, *args, **kwargs):
         super(BaseDictBackend, self).__init__(*args, **kwargs)
-        self._cache = LocalCache(limit=conf.MAX_CACHED_RESULTS)
+        self._cache = LocalCache(limit=kwargs.get("max_cached_results") or
+                                 conf.MAX_CACHED_RESULTS)
 
     def store_result(self, task_id, result, status, traceback=None):
         """Store task result and status."""

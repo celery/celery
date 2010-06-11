@@ -35,6 +35,8 @@ class MongoBackend(BaseDictBackend):
             module :mod:`pymongo` is not available.
 
         """
+        self.result_expires = kwargs.get("result_expires") or \
+                                conf.TASK_RESULT_EXPIRES
 
         if not pymongo:
             raise ImproperlyConfigured(
@@ -132,6 +134,6 @@ class MongoBackend(BaseDictBackend):
         taskmeta_collection = db[self.mongodb_taskmeta_collection]
         taskmeta_collection.remove({
                 "date_done": {
-                    "$lt": datetime.now() - conf.TASK_RESULT_EXPIRES,
+                    "$lt": datetime.now() - self.result_expires,
                  }
         })

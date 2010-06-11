@@ -11,15 +11,17 @@ from celery.exceptions import ImproperlyConfigured
 class DatabaseBackend(BaseDictBackend):
     """The database result backend."""
 
-    def __init__(self, dburi=conf.RESULT_DBURI,
+    def __init__(self, dburi=None, result_expires=None,
             engine_options=None, **kwargs):
-        if not dburi:
+        self.result_expires = result_expires or conf.TASK_RESULT_EXPIRES
+        self.dburi = dburi or conf.RESULT_DBURI
+        self.engine_options = dict(engine_options or {},
+                                   **conf.RESULT_ENGINE_OPTIONS or {})
+        if not self.dburi:
             raise ImproperlyConfigured(
                     "Missing connection string! Do you have "
                     "CELERY_RESULT_DBURI set to a real value?")
-        self.dburi = dburi
-        self.engine_options = dict(engine_options or {},
-                                   **conf.RESULT_ENGINE_OPTIONS or {})
+
         super(DatabaseBackend, self).__init__(**kwargs)
 
     def ResultSession(self):
@@ -85,8 +87,8 @@ class DatabaseBackend(BaseDictBackend):
 
     def cleanup(self):
         """Delete expired metadata."""
-        expires = conf.TASK_RESULT_EXPIRES
         session = self.ResultSession()
+        expires = self.result_expires
         try:
             for task in session.query(Task).filter(
                     Task.date_done < (datetime.now() - expires)):
