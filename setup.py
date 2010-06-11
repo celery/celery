@@ -17,20 +17,14 @@ except ImportError:
 import celery as distmeta
 
 
-class RunTests(TestCommand):
-    env = dict(CELERY_LOADER="default",
-               CELERY_CONFIG_MODULE="tests.celeryconfig",
-               CELERYINIT=1)
-    extra_env = {}
+class QuickRunTests(TestCommand):
+    extra_env = dict(SKIP_RLIMITS=1, QUICKTEST=1)
 
     def run(self, *args, **kwargs):
-        for env_name, env_value in dict(self.env, **self.extra_env).items():
+        for env_name, env_value in self.extra_env.items():
             os.environ[env_name] = str(env_value)
         TestCommand.run(self, *args, **kwargs)
 
-
-class QuickRunTests(RunTests):
-    extra_env = dict(SKIP_RLIMITS=1, QUICKTEST=1)
 
 install_requires = []
 
@@ -75,7 +69,7 @@ setup(
     zip_safe=False,
     install_requires=install_requires,
     tests_require=['nose-cover3', 'unittest2', 'simplejson'],
-    cmdclass = {"test": RunTests, "quicktest": QuickRunTests},
+    cmdclass = {"quicktest": QuickRunTests},
     test_suite="nose.collector",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
