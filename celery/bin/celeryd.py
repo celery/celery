@@ -79,6 +79,7 @@ from celery.utils import info
 from celery.utils import get_full_cls_name
 from celery.worker import WorkController
 from celery.exceptions import ImproperlyConfigured
+from celery.routes import Router
 
 STARTUP_INFO_FMT = """
 Configuration ->
@@ -227,6 +228,14 @@ class Worker(object):
             conf.QUEUES = dict((queue, options)
                                 for queue, options in conf.QUEUES.items()
                                     if queue in self.queues)
+            for queue in self.queues:
+                if queue not in conf.QUEUES:
+                    if conf.CREATE_MISSING_QUEUES:
+                        Router(queues=conf.QUEUES).add_queue(queue)
+                        print("QUEUES: %s" % conf.QUEUES)
+                    else:
+                        raise ImproperlyConfigured(
+                            "Queue '%s' not defined in CELERY_QUEUES" % queue)
 
     def init_loader(self):
         from celery.loaders import current_loader, load_settings

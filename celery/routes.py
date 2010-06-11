@@ -1,4 +1,4 @@
-from celery.exceptions import RouteNotFound
+from celery.exceptions import QueueNotFound
 from celery.utils import instantiate, firstmethod
 
 _first_route = firstmethod("route_for_task")
@@ -16,9 +16,21 @@ class MapRoute(object):
 
 class Router(object):
 
-    def __init__(self, routes, queues):
+    def __init__(self, routes=None, queues=None, create_missing=False):
+        if queues is None:
+            queues = {}
+        if routes is None:
+            routes = []
         self.queues = queues
         self.routes = routes
+        self.create_missing = create_missing
+
+    def add_queue(self, queue):
+        q = self.queues[queue] = {"binding_key": queue,
+                                  "routing_key": queue,
+                                  "exchange": queue,
+                                  "exchange_type": "direct"}
+        return q
 
     def route(self, options, task, args=(), kwargs={}):
         # Expand "queue" keys in options.
@@ -44,9 +56,11 @@ class Router(object):
             try:
                 dest = dict(self.queues[queue])
             except KeyError:
-                raise RouteNotFound(
-                    "Route %s does not exist in the routing table "
-                    "(CELERY_QUEUES)" % route)
+                if self.create_missing:
+                    dest = self.add_queue(queue)
+                else:
+                    raise QueueNotFound(
+                        "Queue '%s' is not defined in CELERY_QUEUES" % queue)
             dest.setdefault("routing_key", dest.get("binding_key"))
             return dict(route, **dest)
 

@@ -9,8 +9,8 @@ Task of kind %s is not registered, please make sure it's imported.
 """.strip()
 
 
-class RouteNotFound(KeyError):
-    """Task routed to a queue not in the routing table (CELERY_QUEUES)."""
+class QueueNotFound(KeyError):
+    """Task routed to a queue not in CELERY_QUEUES."""
 
 
 class TimeLimitExceeded(Exception):

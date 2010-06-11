@@ -35,6 +35,7 @@ _DEFAULTS = {
     "CELERYD_TASK_SOFT_TIME_LIMIT": None,
     "CELERYD_MAX_TASKS_PER_CHILD": None,
     "CELERY_ROUTES": None,
+    "CELERY_CREATE_MISSING_QUEUES": True,
     "CELERY_DEFAULT_ROUTING_KEY": "celery",
     "CELERY_DEFAULT_QUEUE": "celery",
     "CELERY_DEFAULT_EXCHANGE": "celery",
@@ -199,6 +200,7 @@ QUEUES = _get("CELERY_QUEUES") or {DEFAULT_QUEUE: {
                                        "exchange": DEFAULT_EXCHANGE,
                                        "exchange_type": DEFAULT_EXCHANGE_TYPE,
                                        "binding_key": DEFAULT_ROUTING_KEY}}
+CREATE_MISSING_QUEUES = _get("CELERY_CREATE_MISSING_QUEUES")
 ROUTES = routes.prepare(_get("CELERY_ROUTES") or [])
 # :--- Broadcast queue settings                     <-   --   --- - ----- -- #
 
