@@ -38,9 +38,9 @@ class ColorFormatter(logging.Formatter):
         return logging.Formatter.format(self, record)
 
 
-def get_task_logger(loglevel=None):
+def get_task_logger(loglevel=None, name=None):
     ensure_process_aware_logger()
-    logger = logging.getLogger("celery.Task")
+    logger = logging.getLogger(name or "celery.task.default")
     if loglevel is not None:
         logger.setLevel(loglevel)
     return logger
@@ -112,8 +112,9 @@ def setup_task_logger(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
     if task_kwargs is None:
         task_kwargs = {}
     task_kwargs.setdefault("task_id", "-?-")
+    task_name = task_kwargs.get("task_name")
     task_kwargs.setdefault("task_name", "-?-")
-    logger = _setup_logger(get_task_logger(loglevel),
+    logger = _setup_logger(get_task_logger(loglevel, task_name),
                            logfile, format, colorize, **kwargs)
     return LoggerAdapter(logger, task_kwargs)
 
