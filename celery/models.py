@@ -5,9 +5,15 @@ celery.models has been moved to djcelery.models.
 This file is deprecated and will be removed in Celery v1.4.0.
 
 """
+import atexit
+
 from django.core.exceptions import ImproperlyConfigured
 
-raise ImproperlyConfigured("""
+@atexit.register
+def _display_help():
+    import sys
+
+    sys.stderr.write("""
 
 ======================================================
 ERROR: celery can't be added to INSTALLED_APPS anymore
@@ -41,3 +47,5 @@ Celery 1.2.0 Changelog as well:
     http://github.com/ask/celery/tree/djangofree/Changelog
 
 """)
+
+raise ImproperlyConfigured("Please install django-celery")
