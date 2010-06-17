@@ -66,21 +66,21 @@ class BaseAsyncResult(object):
 
     def ready(self):
         """Returns ``True`` if the task executed successfully, or raised
-        an exception. If the task is still running, pending, or is waiting
-        for retry then ``False`` is returned.
+        an exception.
 
-        :rtype: bool
+        If the task is still running, pending, or is waiting
+        for retry then ``False`` is returned.
 
         """
         return self.status not in self.backend.UNREADY_STATES
 
     def successful(self):
-        """Returns ``True`` if the task executed successfully.
-
-        :rtype: bool
-
-        """
+        """Returns ``True`` if the task executed successfully."""
         return self.status == states.SUCCESS
+
+    def failed(self):
+        """Returns ``True`` if the task failed by exception."""
+        return self.status == states.FAILURE
 
     def __str__(self):
         """``str(self) -> self.task_id``"""
@@ -208,8 +208,8 @@ class TaskSetResult(object):
             successfully (i.e. did not raise an exception).
 
         """
-        return all((subtask.successful()
-                        for subtask in self.itersubtasks()))
+        return all(subtask.successful()
+                        for subtask in self.itersubtasks())
 
     def failed(self):
         """Did the taskset fail?
@@ -218,8 +218,8 @@ class TaskSetResult(object):
             (i.e., raised an exception)
 
         """
-        return any((not subtask.successful()
-                        for subtask in self.itersubtasks()))
+        return any(subtask.failed()
+                        for subtask in self.itersubtasks())
 
     def waiting(self):
         """Is the taskset waiting?
@@ -228,8 +228,8 @@ class TaskSetResult(object):
             waiting for execution.
 
         """
-        return any((not subtask.ready()
-                        for subtask in self.itersubtasks()))
+        return any(not subtask.ready()
+                        for subtask in self.itersubtasks())
 
     def ready(self):
         """Is the task ready?
@@ -238,8 +238,8 @@ class TaskSetResult(object):
             executed.
 
         """
-        return all((subtask.ready()
-                        for subtask in self.itersubtasks()))
+        return all(subtask.ready()
+                        for subtask in self.itersubtasks())
 
     def completed_count(self):
         """Task completion count.
