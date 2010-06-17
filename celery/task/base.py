@@ -253,7 +253,7 @@ class Task(object):
     def establish_connection(self,
             connect_timeout=conf.BROKER_CONNECTION_TIMEOUT):
         """Establish a connection to the message broker."""
-        return _establish_connection(connect_timeout)
+        return _establish_connection(connect_timeout=connect_timeout)
 
     @classmethod
     def get_publisher(self, connection=None, exchange=None,
