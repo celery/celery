@@ -16,6 +16,7 @@ class ResultPublisher(Publisher):
     delivery_mode = conf.RESULT_PERSISTENT and 2 or 1
     serializer = conf.RESULT_SERIALIZER
     durable = conf.RESULT_PERSISTENT
+    auto_delete = True
 
     def __init__(self, connection, task_id, **kwargs):
         super(ResultPublisher, self).__init__(connection,
@@ -68,7 +69,8 @@ class AMQPBackend(BaseDictBackend):
                                exchange=self.exchange,
                                exchange_type=self.exchange_type,
                                delivery_mode=delivery_mode,
-                               serializer=self.serializer)
+                               serializer=self.serializer,
+                               auto_delete=self.auto_delete)
 
     def _create_consumer(self, task_id, connection):
         return ResultConsumer(connection, task_id,
