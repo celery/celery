@@ -48,7 +48,7 @@ Django integration has been moved to a separate package: `django-celery`_.
     ``celery.models``                      ``djcelery.models``
     ``celery.managers``                    ``djcelery.managers``
     ``celery.views``                       ``djcelery.views``
-    ``celery.urls``                        ``djcelery.url``
+    ``celery.urls``                        ``djcelery.urls``
     ``celery.management``                  ``djcelery.management``
     ``celery.loaders.djangoapp``           ``djcelery.loaders``
     ``celery.backends.database``           ``djcelery.backends.database``
@@ -56,7 +56,7 @@ Django integration has been moved to a separate package: `django-celery`_.
     =====================================  =====================================
 
 Importing :mod:`djcelery` will automatically setup celery to use the Django
-loader by setting the :envvar:`CELERY_LOADER`` environment variable (it won't
+loader by setting the :envvar:`CELERY_LOADER` environment variable (it won't
 change it if it's already defined).
 
 When the Django loader is used, the "database" and "cache" backend aliases
@@ -121,8 +121,8 @@ Backward incompatible changes
     Also this makes it possible to use the client side of celery without being
     configured::
 
-        >>> from carrot.connection import Connection
-        >>> conn = Connection("localhost", "guest", "guest", "/")
+        >>> from carrot.connection import BrokerConnection
+        >>> conn = BrokerConnection("localhost", "guest", "guest", "/")
         >>> from celery.execute import send_task
         >>> r = send_task("celery.ping", args=(), kwargs={}, connection=conn)
         >>> from celery.backends.amqp import AMQPBackend
@@ -137,9 +137,8 @@ Backward incompatible changes
     **Setting name**                       **Replace with**
     =====================================  =====================================
     ``CELERY_AMQP_CONSUMER_QUEUES``        ``CELERY_QUEUES``
-    ``CELERY_AMQP_CONSUMER_QUEUES``        ``CELERY_QUEUES``
     ``CELERY_AMQP_EXCHANGE``               ``CELERY_DEFAULT_EXCHANGE``
-    ``CELERY_AMQP_EXCHANGE_TYPE``          ``CELERY_DEFAULT_AMQP_EXCHANGE_TYPE``
+    ``CELERY_AMQP_EXCHANGE_TYPE``          ``CELERY_DEFAULT_EXCHANGE_TYPE``
     ``CELERY_AMQP_CONSUMER_ROUTING_KEY``   ``CELERY_QUEUES``
     ``CELERY_AMQP_PUBLISHER_ROUTING_KEY``  ``CELERY_DEFAULT_ROUTING_KEY``
     =====================================  =====================================
@@ -226,13 +225,8 @@ News
   tasks to the pool.
 
     This means it doesn't have to wait for dozens of tasks to finish at shutdown
-    because it has already applied n prefetched tasks without any pool
-    processes to immediately accept them.
-
-    Some overhead for very short tasks though, then the shutdown probably doesn't
-    matter either so can disable with::
-
-        CELERYD_POOL_PUTLOCKS = False
+    because it has applied prefetched tasks without having any pool
+    processes available to immediately accept them.
 
     See http://github.com/ask/celery/issues/closed#issue/122
 
