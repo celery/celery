@@ -87,12 +87,10 @@ class DatabaseBackend(BaseDictBackend):
         session = self.ResultSession()
         expires = self.result_expires
         try:
-            qs = session.query(Task).filter(
-                    Task.date_done < (datetime.now() - expires)):
-            qs.delete()
-            qs = session.query(TaskSet).filter(
-                    TaskSet.date_done < (datetime.now() - expires)):
-            qs = session.delete()
+            session.query(Task).filter(
+                    Task.date_done < (datetime.now() - expires)).delete()
+            session.query(TaskSet).filter(
+                    TaskSet.date_done < (datetime.now() - expires)).delete()
             session.commit()
         finally:
             session.close()
