@@ -67,4 +67,4 @@ class TaskSet(ResultModelBase):
                 "date_done": self.date_done}
 
     def __unicode__(self):
-        return u"<TaskSet: %s>" % (self.taskset_id)
+        return u"<TaskSet: %s>" % (self.taskset_id, )
