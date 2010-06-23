@@ -3,6 +3,8 @@ from __future__ import generators
 import time
 import heapq
 
+from datetime import datetime
+
 from celery import log
 
 DEFAULT_MAX_INTERVAL = 2
@@ -34,7 +36,9 @@ class Scheduler(object):
             This callback takes no arguments.
 
         """
-        eta = eta and time.mktime(eta.timetuple()) or time.time()
+        if isinstance(eta, datetime):
+            eta = time.mktime(eta.timetuple())
+        eta = eta or time.time()
         heapq.heappush(self._queue, (eta, priority, item, callback))
 
     def __iter__(self):
