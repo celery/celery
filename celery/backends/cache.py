@@ -1,10 +1,18 @@
-import pylibmc
-
 from carrot.utils import partition
 
 from celery import conf
 from celery.backends.base import KeyValueStoreBackend
+from celery.exceptions import ImproperlyConfigured
 from celery.utils import timeutils
+
+try:
+    import pylibmc as memcache
+except ImportError:
+    try:
+        import memcache
+    except ImportError:
+        raise ImproperlyConfigured("Memcached backend requires either "
+                                   "the 'memcache' or 'pylibmc' library")
 
 
 class CacheBackend(KeyValueStoreBackend):
@@ -21,7 +29,7 @@ class CacheBackend(KeyValueStoreBackend):
         self.options = dict(conf.CELERY_CACHE_BACKEND_OPTIONS, options)
         self.backend, _, servers = partition(backend, "://")
         self.servers = servers.split(";")
-        self.client = pylibmc.Client(servers, **options)
+        self.client = memcache.Client(servers, **options)
 
         assert self.backend == "pylibmc"
 

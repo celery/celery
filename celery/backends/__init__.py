@@ -5,6 +5,7 @@ from celery.loaders import current_loader
 
 BACKEND_ALIASES = {
     "amqp": "celery.backends.amqp.AMQPBackend",
+    "cache": "celery.backends.cache.CacheBackend",
     "redis": "celery.backends.pyredis.RedisBackend",
     "mongodb": "celery.backends.mongodb.MongoBackend",
     "tyrant": "celery.backends.tyrant.TyrantBackend",
