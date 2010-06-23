@@ -31,13 +31,11 @@ class DatabaseBackend(BaseDictBackend):
         """Store return value and status of an executed task."""
         session = self.ResultSession()
         try:
-            tasks = session.query(Task).filter(Task.task_id == task_id).all()
-            if not tasks:
+            task = session.query(Task).filter(Task.task_id == task_id).first()
+            if not task:
                 task = Task(task_id)
                 session.add(task)
                 session.flush()
-            else:
-                task = tasks[0]
             task.result = result
             task.status = status
             task.traceback = traceback
@@ -62,9 +60,7 @@ class DatabaseBackend(BaseDictBackend):
         """Get task metadata for a task by id."""
         session = self.ResultSession()
         try:
-            task = None
-            for task in session.query(Task).filter(Task.task_id == task_id):
-                break
+            task = session.query(Task).filter(Task.task_id == task_id).first()
             if not task:
                 task = Task(task_id)
                 session.add(task)
@@ -80,7 +76,8 @@ class DatabaseBackend(BaseDictBackend):
         session = self.ResultSession()
         try:
             qs = session.query(TaskSet)
-            for taskset in qs.filter(TaskSet.taskset_id == taskset_id):
+            taskset = qs.filter(TaskSet.taskset_id == taskset_id).first()
+            if taskset:
                 return taskset.to_dict()
         finally:
             session.close()
@@ -90,12 +87,12 @@ class DatabaseBackend(BaseDictBackend):
         session = self.ResultSession()
         expires = self.result_expires
         try:
-            for task in session.query(Task).filter(
+            qs = session.query(Task).filter(
                     Task.date_done < (datetime.now() - expires)):
-                session.delete(task)
-            for taskset in session.query(TaskSet).filter(
+            qs.delete()
+            qs = session.query(TaskSet).filter(
                     TaskSet.date_done < (datetime.now() - expires)):
-                session.delete(taskset)
+            qs = session.delete()
             session.commit()
         finally:
             session.close()

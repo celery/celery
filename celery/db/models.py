@@ -1,7 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Column, Sequence
-from sqlalchemy import Integer, String, Text, DateTime
+import sqlalchemy as sa
 
 from celery import states
 from celery.db.session import ResultModelBase
@@ -14,14 +13,15 @@ class Task(ResultModelBase):
     __tablename__ = "celery_taskmeta"
     __table_args__ = {"sqlite_autoincrement": True}
 
-    id = Column("id", Integer, Sequence("task_id_sequence"), primary_key=True,
-            autoincrement=True)
-    task_id = Column("task_id", String(255))
-    status = Column("status", String(50), default=states.PENDING)
-    result = Column("result", PickleType, nullable=True)
-    date_done = Column("date_done", DateTime, default=datetime.now,
+    id = sa.Column(sa.Integer, sa.Sequence("task_id_sequence"),
+                   primary_key=True,
+                   autoincrement=True)
+    task_id = sa.Column(sa.String(255))
+    status = sa.Column(sa.String(50), default=states.PENDING)
+    result = sa.Column(PickleType, nullable=True)
+    date_done = sa.Column(sa.DateTime, default=datetime.now,
                        onupdate=datetime.now, nullable=True)
-    traceback = Column("traceback", Text, nullable=True)
+    traceback = sa.Column(sa.Text, nullable=True)
 
     def __init__(self, task_id):
         self.task_id = task_id
@@ -48,11 +48,11 @@ class TaskSet(ResultModelBase):
     __tablename__ = "celery_tasksetmeta"
     __table_args__ = {"sqlite_autoincrement": True}
 
-    id = Column("id", Integer, Sequence("taskset_id_sequence"),
+    id = sa.Column(sa.Integer, sa.Sequence("taskset_id_sequence"),
                 autoincrement=True, primary_key=True)
-    taskset_id = Column("taskset_id", String(255))
-    result = Column("result", PickleType, nullable=True)
-    date_done = Column("date_done", DateTime, default=datetime.now,
+    taskset_id = sa.Column(sa.String(255))
+    result = sa.Column(sa.PickleType, nullable=True)
+    date_done = sa.Column(sa.DateTime, default=datetime.now,
                        nullable=True)
 
     def __init__(self, task_id):
