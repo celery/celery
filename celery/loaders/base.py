@@ -28,6 +28,10 @@ class BaseLoader(object):
         """This method is called before a task is executed."""
         pass
 
+    def on_task_return(self, task_id, task, status, retval):
+        """This method is called after a task is executed."""
+        pass
+
     def on_worker_init(self):
         """This method is called when the worker (``celeryd``) starts."""
         pass

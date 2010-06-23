@@ -105,6 +105,10 @@ class WorkerTaskTrace(TaskTrace):
             self.task.backend.mark_as_done(self.task_id, retval)
         return self.super.handle_success(retval, *args)
 
+    def handle_after_return(self, status, retval, type_, tb, strtb):
+        self.loader.on_task_return(self.task_id, self.task, status, retval)
+        self.super.handle_after_return(status, retval, type_, tb, strtb)
+
     def handle_retry(self, exc, type_, tb, strtb):
         """Handle retry exception."""
         message, orig_exc = exc.args
