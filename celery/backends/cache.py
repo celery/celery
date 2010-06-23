@@ -28,7 +28,7 @@ class CacheBackend(KeyValueStoreBackend):
         if isinstance(expires, timedelta):
             expires = timeutils.timedelta_seconds(expires)
         self.expires = expires
-        self.options = dict(conf.CACHE_BACKEND_OPTIONS, options)
+        self.options = dict(conf.CACHE_BACKEND_OPTIONS, **options)
         self.backend, _, servers = partition(backend, "://")
         self.servers = servers.split(";")
 
