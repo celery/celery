@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from carrot.utils import partition
 
 from celery import conf
@@ -16,7 +18,7 @@ except ImportError:
 
 
 class CacheBackend(KeyValueStoreBackend):
-    Client = pylibmc.Client
+    Client = memcache.Client
 
     _client = None
 
@@ -29,7 +31,6 @@ class CacheBackend(KeyValueStoreBackend):
         self.options = dict(conf.CELERY_CACHE_BACKEND_OPTIONS, options)
         self.backend, _, servers = partition(backend, "://")
         self.servers = servers.split(";")
-        self.client = memcache.Client(servers, **options)
 
     def get(self, key):
         return self.client.get(key)
