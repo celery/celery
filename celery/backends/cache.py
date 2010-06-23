@@ -31,8 +31,6 @@ class CacheBackend(KeyValueStoreBackend):
         self.servers = servers.split(";")
         self.client = memcache.Client(servers, **options)
 
-        assert self.backend == "pylibmc"
-
     def get(self, key):
         return self.client.get(key)
 
