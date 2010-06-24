@@ -7,18 +7,19 @@ from celery.worker.control import builtins
 
 class ControlDispatch(object):
     """Execute worker control panel commands."""
-    panel_cls = Panel
+    Panel = Panel
+    ReplyPublisher = ControlReplyPublisher
 
     def __init__(self, logger=None, hostname=None, listener=None):
         self.logger = logger or log.get_default_logger()
         self.hostname = hostname
         self.listener = listener
-        self.panel = self.panel_cls(self.logger, self.listener, self.hostname)
+        self.panel = self.Panel(self.logger, self.listener, self.hostname)
 
     @with_connection
     def reply(self, data, exchange, routing_key, connection=None,
             connect_timeout=None):
-        crq = ControlReplyPublisher(connection, exchange=exchange)
+        crq = self.ReplyPublisher(connection, exchange=exchange)
         try:
             crq.send(data, routing_key=routing_key)
         finally:

@@ -184,3 +184,29 @@ class test_ControlPanel(unittest.TestCase):
         m = {"command": "shutdown",
              "destination": hostname}
         self.assertRaises(SystemExit, self.panel.dispatch_from_message, m)
+
+
+    def test_panel_reply(self):
+
+        replies = []
+
+        class MockReplyPublisher(object):
+
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def send(self, reply, **kwargs):
+                replies.append(reply)
+
+            def close(self):
+                pass
+
+        class _Dispatch(control.ControlDispatch):
+            ReplyPublisher = MockReplyPublisher
+
+        panel = _Dispatch(hostname, listener=Listener())
+
+        r = panel.execute("ping", reply_to={"exchange": "x",
+                                            "routing_key": "x"})
+        self.assertEqual(r, "pong")
+        self.assertDictEqual(replies[0], {panel.hostname: "pong"})
