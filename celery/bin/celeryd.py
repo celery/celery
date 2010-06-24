@@ -160,6 +160,7 @@ OPTION_LIST = (
 
 
 class Worker(object):
+    WorkController = WorkController
 
     def __init__(self, concurrency=conf.CELERYD_CONCURRENCY,
             loglevel=conf.CELERYD_LOG_LEVEL, logfile=conf.CELERYD_LOG_FILE,
@@ -195,15 +196,6 @@ class Worker(object):
         print("celery@%s v%s is starting." % (self.hostname,
                                               celery.__version__))
 
-
-        if conf.RESULT_BACKEND == "database" \
-                and self.settings.DATABASE_ENGINE == "sqlite3" and \
-                self.concurrency > 1:
-            warnings.warn("The sqlite3 database engine doesn't handle "
-                          "concurrency well. Will use a single process only.",
-                          UserWarning)
-            self.concurrency = 1
-
         if getattr(self.settings, "DEBUG", False):
             warnings.warn("Using settings.DEBUG leads to a memory leak, "
                     "never use this setting in a production environment!")
@@ -232,7 +224,6 @@ class Worker(object):
                 if queue not in conf.QUEUES:
                     if conf.CREATE_MISSING_QUEUES:
                         Router(queues=conf.QUEUES).add_queue(queue)
-                        print("QUEUES: %s" % conf.QUEUES)
                     else:
                         raise ImproperlyConfigured(
                             "Queue '%s' not defined in CELERY_QUEUES" % queue)
@@ -293,7 +284,7 @@ class Worker(object):
         }
 
     def run_worker(self):
-        worker = WorkController(concurrency=self.concurrency,
+        worker = self.WorkController(concurrency=self.concurrency,
                                 loglevel=self.loglevel,
                                 logfile=self.logfile,
                                 hostname=self.hostname,
@@ -381,7 +372,7 @@ def set_process_status(info):
     arg_start = "manage" in sys.argv[0] and 2 or 1
     if sys.argv[arg_start:]:
         info = "%s (%s)" % (info, " ".join(sys.argv[arg_start:]))
-    platform.set_mp_process_title("celeryd", info=info)
+    return platform.set_mp_process_title("celeryd", info=info)
 
 
 def run_worker(**options):

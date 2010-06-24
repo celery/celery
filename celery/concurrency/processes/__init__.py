@@ -27,6 +27,7 @@ class TaskPool(object):
         The logger used for debugging.
 
     """
+    Pool = Pool
 
     def __init__(self, limit, logger=None, initializer=None,
             maxtasksperchild=None, timeout=None, soft_timeout=None,
@@ -46,11 +47,11 @@ class TaskPool(object):
         Will pre-fork all workers so they're ready to accept tasks.
 
         """
-        self._pool = Pool(processes=self.limit,
-                          initializer=self.initializer,
-                          timeout=self.timeout,
-                          soft_timeout=self.soft_timeout,
-                          maxtasksperchild=self.maxtasksperchild)
+        self._pool = self.Pool(processes=self.limit,
+                               initializer=self.initializer,
+                               timeout=self.timeout,
+                               soft_timeout=self.soft_timeout,
+                               maxtasksperchild=self.maxtasksperchild)
 
     def stop(self):
         """Gracefully stop the pool."""
@@ -96,7 +97,7 @@ class TaskPool(object):
 
         if isinstance(ret_value, ExceptionInfo):
             if isinstance(ret_value.exception, (
-                    SystemExit, KeyboardInterrupt)): # pragma: no cover
+                    SystemExit, KeyboardInterrupt)):
                 raise ret_value.exception
             [errback(ret_value) for errback in errbacks]
         else:
