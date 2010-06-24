@@ -94,8 +94,8 @@ from celery.messaging import get_consumer_set, BroadcastConsumer
 from celery.exceptions import NotRegistered
 from celery.datastructures import SharedCounter
 
-RUN = 0x0
-CLOSE = 0x1
+RUN = 0x1
+CLOSE = 0x2
 
 
 class QoS(object):

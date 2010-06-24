@@ -7,7 +7,7 @@ from celery import utils
 from celery.tests.utils import sleepdeprived, execute_context
 from celery.tests.utils import mask_modules
 
-class TestChunks(unittest.TestCase):
+class test_chunks(unittest.TestCase):
 
     def test_chunks(self):
 
@@ -27,7 +27,7 @@ class TestChunks(unittest.TestCase):
             [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9]])
 
 
-class TestGenUniqueId(unittest.TestCase):
+class test_gen_unique_id(unittest.TestCase):
 
     def test_gen_unique_id_without_ctypes(self):
         old_utils = sys.modules.pop("celery.utils")
@@ -47,7 +47,7 @@ class TestGenUniqueId(unittest.TestCase):
             sys.modules["celery.utils"] = old_utils
 
 
-class TestDivUtils(unittest.TestCase):
+class test_utils(unittest.TestCase):
 
     def test_repeatlast(self):
         items = range(6)
@@ -57,8 +57,50 @@ class TestDivUtils(unittest.TestCase):
         for j in items:
             self.assertEqual(it.next(), i)
 
+    def test_get_full_cls_name(self):
+        Class = type("Fox", (object, ), {"__module__": "quick.brown"})
+        self.assertEqual(utils.get_full_cls_name(Class), "quick.brown.Fox")
 
-class TestRetryOverTime(unittest.TestCase):
+    def test_is_iterable(self):
+        for a in "f", ["f"], ("f", ), {"f": "f"}:
+            self.assertTrue(utils.is_iterable(a))
+        for b in object(), 1:
+            self.assertFalse(utils.is_iterable(b))
+
+    def test_padlist(self):
+        self.assertListEqual(utils.padlist(["George", "Costanza", "NYC"], 3),
+                ["George", "Costanza", "NYC"])
+        self.assertListEqual(utils.padlist(["George", "Costanza"], 3),
+                ["George", "Costanza", None])
+        self.assertListEqual(utils.padlist(["George", "Costanza", "NYC"], 4,
+                                           default="Earth"),
+                ["George", "Costanza", "NYC", "Earth"])
+
+    def test_firstmethod_AttributeError(self):
+        self.assertIsNone(utils.firstmethod("foo")([object()]))
+
+    def test_first(self):
+        iterations = [0]
+
+        def predicate(value):
+            iterations[0] += 1
+            if value == 5:
+                return True
+            return False
+
+        self.assertEqual(5, utils.first(predicate, xrange(10)))
+        self.assertEqual(iterations[0], 6)
+
+        iterations[0] = 0
+        self.assertIsNone(utils.first(predicate, xrange(10, 20)))
+        self.assertEqual(iterations[0], 10)
+
+    def test_get_cls_by_name__instance_returns_instance(self):
+        instance = object()
+        self.assertIs(utils.get_cls_by_name(instance), instance)
+
+
+class test_retry_over_time(unittest.TestCase):
 
     def test_returns_retval_on_success(self):
 

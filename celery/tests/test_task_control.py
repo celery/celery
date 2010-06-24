@@ -3,6 +3,7 @@ import unittest2 as unittest
 from celery.task import control
 from celery.task.builtins import PingTask
 from celery.utils import gen_unique_id
+from celery.utils.functional import wraps
 
 
 class MockBroadcastPublisher(object):
@@ -18,25 +19,55 @@ class MockBroadcastPublisher(object):
         pass
 
 
+class MockControlReplyConsumer(object):
+
+    def __init__(self, *args, **kwarg):
+        pass
+
+    def collect(self, *args, **kwargs):
+        pass
+
+    def close(self):
+        pass
+
+
 def with_mock_broadcast(fun):
 
+    @wraps(fun)
     def _mocked(*args, **kwargs):
         old_pub = control.BroadcastPublisher
+        old_rep = control.ControlReplyConsumer
         control.BroadcastPublisher = MockBroadcastPublisher
+        control.ControlReplyConsumer = MockControlReplyConsumer
         try:
             return fun(*args, **kwargs)
         finally:
             MockBroadcastPublisher.sent = []
             control.BroadcastPublisher = old_pub
+            control.ControlReplyConsumer = old_rep
     return _mocked
 
 
-class TestBroadcast(unittest.TestCase):
+class test_Broadcast(unittest.TestCase):
+
+    def test_discard_all(self):
+        control.discard_all()
 
     @with_mock_broadcast
     def test_broadcast(self):
         control.broadcast("foobarbaz", arguments=[])
         self.assertIn("foobarbaz", MockBroadcastPublisher.sent)
+
+    @with_mock_broadcast
+    def test_broadcast_limit(self):
+        control.broadcast("foobarbaz1", arguments=[], limit=None,
+                destination=[1, 2, 3])
+        self.assertIn("foobarbaz1", MockBroadcastPublisher.sent)
+
+    @with_mock_broadcast
+    def test_broadcast_validate(self):
+        self.assertRaises(ValueError, control.broadcast, "foobarbaz2",
+                          destination="foo")
 
     @with_mock_broadcast
     def test_rate_limit(self):

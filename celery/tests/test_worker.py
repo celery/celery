@@ -88,6 +88,8 @@ class MockBackend(object):
 
 
 class MockPool(object):
+    _terminated = False
+    _stopped = False
 
     def __init__(self, *args, **kwargs):
         self.raise_regular = kwargs.get("raise_regular", False)
@@ -103,8 +105,12 @@ class MockPool(object):
         pass
 
     def stop(self):
-        pass
+        self._stopped = True
         return True
+
+    def terminate(self):
+        self._terminated = True
+        self.stop()
 
 
 class MockController(object):
@@ -453,6 +459,14 @@ class test_WorkController(unittest.TestCase):
         self.worker = WorkController(concurrency=1, loglevel=0)
         self.worker.logger = MockLogger()
 
+    def test_with_rate_limits_disabled(self):
+        conf.DISABLE_RATE_LIMITS = True
+        try:
+            worker = WorkController(concurrency=1, loglevel=0)
+            self.assertIsInstance(worker.ready_queue, FastQueue)
+        finally:
+            conf.DISABLE_RATE_LIMITS = False
+
     def test_attrs(self):
         worker = self.worker
         self.assertIsInstance(worker.eta_schedule, Scheduler)
@@ -461,6 +475,12 @@ class test_WorkController(unittest.TestCase):
         self.assertTrue(worker.listener)
         self.assertTrue(worker.mediator)
         self.assertTrue(worker.components)
+
+    def test_with_embedded_clockservice(self):
+        worker = WorkController(concurrency=1, loglevel=0,
+                                embed_clockservice=True)
+        self.assertTrue(worker.clockservice)
+        self.assertIn(worker.clockservice, worker.components)
 
     def test_process_task(self):
         worker = self.worker
@@ -492,7 +512,7 @@ class test_WorkController(unittest.TestCase):
         worker.process_task(task)
         worker.pool.stop()
 
-    def test_start_stop(self):
+    def test_start__stop(self):
         worker = self.worker
         w1 = {"started": False}
         w2 = {"started": False}
@@ -508,3 +528,23 @@ class test_WorkController(unittest.TestCase):
         worker.stop()
         for component in worker.components:
             self.assertTrue(component._stopped)
+
+    def test_start__terminate(self):
+        worker = self.worker
+        w1 = {"started": False}
+        w2 = {"started": False}
+        w3 = {"started": False}
+        w4 = {"started": False}
+        worker.components = [MockController(w1), MockController(w2),
+                             MockController(w3), MockController(w4),
+                             MockPool()]
+
+        worker.start()
+        for w in (w1, w2, w3, w4):
+            self.assertTrue(w["started"])
+        self.assertTrue(worker._running, len(worker.components))
+        self.assertEqual(worker._state, RUN)
+        worker.terminate()
+        for component in worker.components:
+            self.assertTrue(component._stopped)
+        self.assertTrue(worker.components[4]._terminated)

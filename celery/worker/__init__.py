@@ -191,14 +191,11 @@ class WorkController(object):
         """Starts the workers main loop."""
         self._state = RUN
 
-        try:
-            for i, component in enumerate(self.components):
-                self.logger.debug("Starting thread %s..." % \
-                        component.__class__.__name__)
-                self._running = i + 1
-                component.start()
-        finally:
-            self.stop()
+        for i, component in enumerate(self.components):
+            self.logger.debug("Starting thread %s..." % (
+                                    component.__class__.__name__))
+            self._running = i + 1
+            component.start()
 
     def process_task(self, wrapper):
         """Process task by sending it to the pool of workers."""
