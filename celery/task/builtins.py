@@ -19,8 +19,8 @@ class DeleteExpiredTaskMetaTask(PeriodicTask):
     def run(self, **kwargs):
         """:returns: None"""
         logger = self.get_logger(**kwargs)
-        logger.info("Deleting expired task meta objects...")
-        default_backend.cleanup()
+        logger.info("Deleting expired task results...")
+        self.backend.cleanup()
 
 
 class PingTask(Task):

@@ -237,7 +237,7 @@ class TaskRequest(object):
             self.logger.warn("Skipping revoked task: %s[%s]" % (
                 self.task_name, self.task_id))
             self.send_event("task-revoked", uuid=self.task_id)
-            self.on_ack()
+            self.acknowledge()
             self._already_revoked = True
             return True
         return False
