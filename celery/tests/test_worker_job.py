@@ -175,10 +175,7 @@ class test_TaskRequest(unittest.TestCase):
 
     def test_execute_acks_late(self):
         mytask_raising.acks_late = True
-        tw = TaskRequest(mytask_raising.name, gen_unique_id(), [1], {"f": "x"})
         try:
-            tw.execute()
-            self.assertTrue(tw.acknowledged)
         finally:
             mytask_raising.acks_late = False
 

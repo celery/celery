@@ -28,7 +28,7 @@ class BaseLoader(object):
         """This method is called before a task is executed."""
         pass
 
-    def on_task_return(self, task_id, task, status, retval):
+    def on_process_cleanup(self):
         """This method is called after a task is executed."""
         pass
 
