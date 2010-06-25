@@ -259,7 +259,7 @@ Example configuration
     CELERY_RESULT_BACKEND = "redis"
     REDIS_HOST = "localhost"
     REDIS_PORT = 6379
-    REDIS_DATABASE = "celery_results"
+    REDIS_DB = "celery_results"
     REDIS_CONNECT_RETRY=True
 
 MongoDB backend settings
