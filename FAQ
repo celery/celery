@@ -62,8 +62,7 @@ Is celery for Django only?
 **Answer:** No.
 
 Celery does not depend on Django anymore. To use Celery with Django you have
-to use the `django-celery`_ package:
-
+to use the `django-celery`_ package.
 
 .. _`django-celery`: http://pypi.python.org/pypi/django-celery
 
