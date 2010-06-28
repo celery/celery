@@ -4,7 +4,7 @@
 
 .. image:: http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png
 
-:Version: 1.1.1
+:Version: 1.1.2
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
 :Source: http://github.com/ask/celery/
@@ -13,7 +13,7 @@
 
 --
 
-Celery is a task queue/job queue based on distributed message passing.
+Celery is an asynchronous task queue/job queue based on distributed message passing.
 It is focused on real-time operation, but supports scheduling as well.
 
 The execution units, called tasks, are executed concurrently on a single or
@@ -28,8 +28,8 @@ language. It can also `operate with other languages using webhooks`_.
 The recommended message broker is `RabbitMQ`_, but support for `Redis`_ and
 databases (`SQLAlchemy`_) is also available.
 
-You may also be pleased to know that full Django integration exists
-via the `django-celery`_ package.
+You may also be pleased to know that full Django integration exists,
+delivered by the `django-celery`_ package.
 
 .. _`RabbitMQ`: http://www.rabbitmq.com/
 .. _`Redis`: http://code.google.com/p/redis/
@@ -37,6 +37,9 @@ via the `django-celery`_ package.
 .. _`django-celery`: http://pypi.python.org/pypi/django-celery
 .. _`operate with other languages using webhooks`:
     http://ask.github.com/celery/userguide/remote-tasks.html
+
+.. contents::
+    :local:
 
 Overview
 ========
@@ -47,7 +50,7 @@ This is a high level overview of the architecture.
 
 The broker pushes tasks to the worker servers.
 A worker server is a networked machine running ``celeryd``. This can be one or
-more machines, depending on the workload.
+more machines depending on the workload.
 
 The result of the task can be stored for later retrieval (called its
 "tombstone").
