@@ -239,8 +239,8 @@ class AckHandler(PoolThread):
 
 class TimeoutHandler(PoolThread):
 
-    def __init__(self, processes, sentinel_event, cache, t_soft, t_hard):
-        self.sentinel_event = sentinel_event
+    def __init__(self, processes, cache, t_soft, t_hard):
+        self.processes = processes
         self.cache = cache
         self.t_soft = t_soft
         self.t_hard = t_hard
