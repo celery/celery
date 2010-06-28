@@ -267,7 +267,7 @@ that has an AMQP client.
 Results
 =======
 
-How dow I get the result of a task if I have the ID that points there?
+How do I get the result of a task if I have the ID that points there?
 ----------------------------------------------------------------------
 
 **Answer**: Use ``Task.AsyncResult``::
