@@ -28,19 +28,23 @@ def revoke(panel, task_id, task_name=None, **kwargs):
 @Panel.register
 def enable_events(panel):
     dispatcher = panel.listener.event_dispatcher
-    dispatcher.enable()
-    dispatcher.send("worker-online")
-    panel.logger.warn("Events enabled by remote.")
-    return {"ok": "events enabled"}
+    if not dispatcher.enabled:
+        dispatcher.enable()
+        dispatcher.send("worker-online")
+        panel.logger.warn("Events enabled by remote.")
+        return {"ok": "events enabled"}
+    return {"ok": "events already enabled"}
 
 
 @Panel.register
 def disable_events(panel):
     dispatcher = panel.listener.event_dispatcher
-    dispatcher.send("worker-offline")
-    dispatcher.disable()
-    panel.logger.warn("Events disabled by remote.")
-    return {"ok": "events disabled"}
+    if dispatcher.enabled:
+        dispatcher.send("worker-offline")
+        dispatcher.disable()
+        panel.logger.warn("Events disabled by remote.")
+        return {"ok": "events disabled"}
+    return {"ok": "events already disabled"}
 
 
 @Panel.register
