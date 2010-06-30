@@ -1,6 +1,5 @@
 from __future__ import generators
 
-import os
 import sys
 import time
 import unittest2 as unittest

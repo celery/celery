@@ -62,7 +62,7 @@ class Loader(BaseLoader):
                                     DEFAULT_CONFIG_MODULE)
         try:
             celeryconfig = import_module(configname)
-        except ImportError, exc:
+        except ImportError:
             warnings.warn("No celeryconfig.py module found! Please make "
                           "sure it exists and is available to Python.",
                           NotConfigured)

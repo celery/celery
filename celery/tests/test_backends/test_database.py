@@ -1,5 +1,3 @@
-import sys
-import socket
 import unittest2 as unittest
 
 from datetime import datetime
@@ -11,8 +9,6 @@ from celery import states
 from celery.db.models import Task, TaskSet
 from celery.utils import gen_unique_id
 from celery.backends.database import DatabaseBackend
-
-from celery.tests.utils import execute_context, mask_modules
 
 
 class SomeClass(object):

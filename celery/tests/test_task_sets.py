@@ -6,7 +6,7 @@ from celery import conf
 from celery.task import Task
 from celery.task.sets import subtask, TaskSet
 
-from celery.tests.utils import execute_context, with_eager_tasks
+from celery.tests.utils import execute_context
 from celery.tests.compat import catch_warnings
 
 

@@ -11,7 +11,6 @@ from celery import platform
 from celery import signals
 from celery.bin import celeryd as cd
 from celery.exceptions import ImproperlyConfigured
-from celery.utils import noop
 from celery.utils import patch
 from celery.utils.functional import wraps
 

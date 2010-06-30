@@ -46,7 +46,7 @@ class test_Scheduler(unittest.TestCase):
             callback_called[0] = True
 
         sched.enter(MockItem("foo", revoked=True), eta=now, callback=callback)
-        remaining = iter(sched).next()
+        iter(sched).next()
         self.assertFalse(callback_called[0])
         self.assertRaises(Empty, ready_queue.get_nowait)
         self.assertFalse(sched.queue)

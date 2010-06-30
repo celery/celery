@@ -3,11 +3,11 @@ import types
 import unittest2 as unittest
 
 from celery import states
-from celery.backends.cache import CacheBackend, get_best_memcache, DummyClient
+from celery.backends.cache import CacheBackend, DummyClient
 from celery.exceptions import ImproperlyConfigured
 from celery.utils import gen_unique_id
 
-from celery.tests.utils import execute_context, mask_modules
+from celery.tests.utils import mask_modules
 
 
 class SomeClass(object):
@@ -92,7 +92,6 @@ class test_get_best_memcache(unittest.TestCase):
     def test_pylibmc(self):
         pylibmc = self.mock_pylibmc()
         pylibmc.next()
-        import __builtin__
         sys.modules.pop("celery.backends.cache", None)
         from celery.backends import cache
         self.assertEqual(cache.get_best_memcache().__module__, "pylibmc")

@@ -1,6 +1,5 @@
 from datetime import timedelta
 
-from celery.backends import default_backend
 from celery.serialization import pickle
 from celery.task.base import Task, PeriodicTask
 from celery.task.sets import TaskSet

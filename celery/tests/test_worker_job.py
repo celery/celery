@@ -14,7 +14,6 @@ from celery.datastructures import ExceptionInfo
 from celery.decorators import task as task_dec
 from celery.exceptions import RetryTaskError, NotRegistered
 from celery.log import setup_logger
-from celery.registry import tasks
 from celery.result import AsyncResult
 from celery.task.base import Task
 from celery.utils import gen_unique_id
@@ -86,7 +85,7 @@ class test_WorkerTaskTrace(unittest.TestCase):
     def test_marked_as_started(self):
         mytask.track_started = True
         try:
-            ret = jail(gen_unique_id(), mytask.name, [2], {})
+            jail(gen_unique_id(), mytask.name, [2], {})
         finally:
             mytask.track_started = False
 
