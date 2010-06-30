@@ -4,28 +4,18 @@ import heapq
 from carrot.utils import partition
 
 from celery import states
-from celery.datastructures import LocalCache
+from celery.datastructures import AttributeDict, LocalCache
 from celery.utils import kwdict
 
 HEARTBEAT_EXPIRE = 150 # 2 minutes, 30 seconds
 
 
-class Element(dict):
+class Element(AttributeDict):
     """Base class for types."""
     visited = False
 
     def __init__(self, **fields):
         dict.__init__(self, fields)
-
-    def __getattr__(self, key):
-        try:
-            return self[key]
-        except KeyError:
-            raise AttributeError("'%s' object has no attribute '%s'" % (
-                    self.__class__.__name__, key))
-
-    def __setattr__(self, key, value):
-        self[key] = value
 
 
 class Worker(Element):

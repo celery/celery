@@ -44,18 +44,6 @@ class DatabaseBackend(BaseDictBackend):
             session.close()
         return result
 
-    def _save_taskset(self, taskset_id, result):
-        """Store the result of an executed taskset."""
-        taskset = TaskSet(taskset_id, result)
-        session = self.ResultSession()
-        try:
-            session.add(taskset)
-            session.flush()
-            session.commit()
-        finally:
-            session.close()
-        return result
-
     def _get_task_meta_for(self, task_id):
         """Get task metadata for a task by id."""
         session = self.ResultSession()
@@ -66,8 +54,19 @@ class DatabaseBackend(BaseDictBackend):
                 session.add(task)
                 session.flush()
                 session.commit()
-            if task:
-                return task.to_dict()
+            return task.to_dict()
+        finally:
+            session.close()
+
+    def _save_taskset(self, taskset_id, result):
+        """Store the result of an executed taskset."""
+        session = self.ResultSession()
+        try:
+            taskset = TaskSet(taskset_id, result)
+            session.add(taskset)
+            session.flush()
+            session.commit()
+            return result
         finally:
             session.close()
 
@@ -75,8 +74,8 @@ class DatabaseBackend(BaseDictBackend):
         """Get taskset metadata for a taskset by id."""
         session = self.ResultSession()
         try:
-            qs = session.query(TaskSet)
-            taskset = qs.filter(TaskSet.taskset_id == taskset_id).first()
+            taskset = session.query(TaskSet).filter(
+                    TaskSet.taskset_id == taskset_id).first()
             if taskset:
                 return taskset.to_dict()
         finally:

@@ -142,6 +142,7 @@ class TaskBucket(object):
         task_type = self.task_registry[task_name]
         rate_limit = getattr(task_type, "rate_limit", None)
         rate_limit = timeutils.rate(rate_limit)
+        task_queue = FastQueue()
         if task_name in self.buckets:
             task_queue = self._get_queue_for_type(task_name)
         else:

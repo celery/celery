@@ -2,9 +2,13 @@ import sys
 import socket
 import unittest2 as unittest
 
+from datetime import datetime
+
 from celery.exceptions import ImproperlyConfigured
 
+from celery import conf
 from celery import states
+from celery.db.models import Task, TaskSet
 from celery.utils import gen_unique_id
 from celery.backends.database import DatabaseBackend
 
@@ -18,6 +22,17 @@ class SomeClass(object):
 
 
 class test_DatabaseBackend(unittest.TestCase):
+
+    def test_missing_dburi_raises_ImproperlyConfigured(self):
+        prev, conf.RESULT_DBURI = conf.RESULT_DBURI, None
+        try:
+            self.assertRaises(ImproperlyConfigured, DatabaseBackend)
+        finally:
+            conf.RESULT_DBURI = prev
+
+    def test_missing_task_id_is_PENDING(self):
+        tb = DatabaseBackend()
+        self.assertEqual(tb.get_status("xxx-does-not-exist"), states.PENDING)
 
     def test_mark_as_done(self):
         tb = DatabaseBackend()
@@ -84,3 +99,40 @@ class test_DatabaseBackend(unittest.TestCase):
     def test_process_cleanup(self):
         tb = DatabaseBackend()
         tb.process_cleanup()
+
+    def test_save___restore_taskset(self):
+        tb = DatabaseBackend()
+
+        tid = gen_unique_id()
+        res = {u"something": "special"}
+        self.assertEqual(tb.save_taskset(tid, res), res)
+
+        res2 = tb.restore_taskset(tid)
+        self.assertEqual(res2, res)
+
+        self.assertIsNone(tb.restore_taskset("xxx-nonexisting-id"))
+
+    def test_cleanup(self):
+        tb = DatabaseBackend()
+        for i in range(10):
+            tb.mark_as_done(gen_unique_id(), 42)
+            tb.save_taskset(gen_unique_id(), {"foo": "bar"})
+        s = tb.ResultSession()
+        for t in s.query(Task).all():
+            t.date_done = datetime.now() - tb.result_expires * 2
+        for t in s.query(TaskSet).all():
+            t.date_done = datetime.now() - tb.result_expires * 2
+        s.commit()
+        s.close()
+
+        tb.cleanup()
+        s2 = tb.ResultSession()
+        self.assertEqual(s2.query(Task).count(), 0)
+        self.assertEqual(s2.query(TaskSet).count(), 0)
+
+    def test_Task__repr__(self):
+        self.assertIn("foo", repr(Task("foo")))
+
+    def test_TaskSet__repr__(self):
+        self.assertIn("foo", repr(TaskSet("foo", None)))
+

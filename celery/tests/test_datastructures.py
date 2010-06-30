@@ -4,9 +4,10 @@ from Queue import Queue
 
 from celery.datastructures import PositionQueue, ExceptionInfo, LocalCache
 from celery.datastructures import LimitedSet, SharedCounter, consume_queue
+from celery.datastructures import AttributeDict
 
 
-class TestPositionQueue(unittest.TestCase):
+class test_PositionQueue(unittest.TestCase):
 
     def test_position_queue_unfilled(self):
         q = PositionQueue(length=10)
@@ -36,7 +37,7 @@ class TestPositionQueue(unittest.TestCase):
         self.assertTrue(q.full())
 
 
-class TestExceptionInfo(unittest.TestCase):
+class test_ExceptionInfo(unittest.TestCase):
 
     def test_exception_info(self):
 
@@ -56,7 +57,7 @@ class TestExceptionInfo(unittest.TestCase):
         self.assertTrue(r)
 
 
-class TestUtilities(unittest.TestCase):
+class test_utilities(unittest.TestCase):
 
     def test_consume_queue(self):
         x = Queue()
@@ -68,7 +69,7 @@ class TestUtilities(unittest.TestCase):
         self.assertRaises(StopIteration, it.next)
 
 
-class TestSharedCounter(unittest.TestCase):
+class test_SharedCounter(unittest.TestCase):
 
     def test_initial_value(self):
         self.assertEqual(int(SharedCounter(10)), 10)
@@ -101,7 +102,7 @@ class TestSharedCounter(unittest.TestCase):
         self.assertIn("<SharedCounter:", repr(SharedCounter(10)))
 
 
-class TestLimitedSet(unittest.TestCase):
+class test_LimitedSet(unittest.TestCase):
 
     def test_add(self):
         s = LimitedSet(maxlen=2)
@@ -118,7 +119,7 @@ class TestLimitedSet(unittest.TestCase):
         s = LimitedSet(maxlen=2)
         items = "foo", "bar"
         map(s.add, items)
-        l = list(iter(items))
+        l = list(iter(s))
         for item in items:
             self.assertIn(item, l)
 
@@ -129,7 +130,7 @@ class TestLimitedSet(unittest.TestCase):
         self.assertIn("LimitedSet(", repr(s))
 
 
-class TestLocalCache(unittest.TestCase):
+class test_LocalCache(unittest.TestCase):
 
     def test_expires(self):
         limit = 100
@@ -138,3 +139,14 @@ class TestLocalCache(unittest.TestCase):
         for i in slots:
             x[i] = i
         self.assertListEqual(x.keys(), slots[limit:])
+
+
+class test_AttributeDict(unittest.TestCase):
+
+    def test_getattr__setattr(self):
+        x = AttributeDict({"foo": "bar"})
+        self.assertEqual(x["foo"], "bar")
+        self.assertRaises(AttributeError, getattr, x, "bar")
+        x.bar = "foo"
+        self.assertEqual(x["bar"], "foo")
+

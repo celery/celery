@@ -43,7 +43,7 @@ def mytask(i, **kwargs):
     return i ** i
 
 
-@task_dec()
+@task_dec # traverses coverage for decorator without parens
 def mytask_no_kwargs(i):
     return i ** i
 

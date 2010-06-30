@@ -26,22 +26,14 @@ class Task(ResultModelBase):
     def __init__(self, task_id):
         self.task_id = task_id
 
-    def __str__(self):
-        return "<Task(%s, %s, %s, %s)>" % (self.task_id,
-                                           self.result,
-                                           self.status,
-                                           self.traceback)
-
     def to_dict(self):
         return {"task_id": self.task_id,
                 "status": self.status,
                 "result": self.result,
-                "date_done": self.date_done,
                 "traceback": self.traceback}
 
-    def __unicode__(self):
-        return u"<Task: %s successful: %s>" % (self.task_id, self.status)
-
+    def __repr__(self):
+        return "<Task %s state: %s>" % (self.task_id, self.status)
 
 class TaskSet(ResultModelBase):
     """TaskSet result"""
@@ -55,16 +47,13 @@ class TaskSet(ResultModelBase):
     date_done = sa.Column(sa.DateTime, default=datetime.now,
                        nullable=True)
 
-    def __init__(self, task_id):
-        self.task_id = task_id
-
-    def __str__(self):
-        return "<TaskSet(%s, %s)>" % (self.task_id, self.result)
+    def __init__(self, taskset_id, result):
+        self.taskset_id = taskset_id
+        self.result = result
 
     def to_dict(self):
         return {"taskset_id": self.taskset_id,
-                "result": self.result,
-                "date_done": self.date_done}
+                "result": self.result}
 
-    def __unicode__(self):
+    def __repr__(self):
         return u"<TaskSet: %s>" % (self.taskset_id, )
