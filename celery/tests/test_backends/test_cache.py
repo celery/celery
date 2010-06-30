@@ -66,7 +66,6 @@ class test_CacheBackend(unittest.TestCase):
                           CacheBackend, backend="unknown://")
 
 
-
 class test_get_best_memcache(unittest.TestCase):
 
     def mock_memcache(self):

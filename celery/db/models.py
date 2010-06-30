@@ -35,6 +35,7 @@ class Task(ResultModelBase):
     def __repr__(self):
         return "<Task %s state: %s>" % (self.task_id, self.status)
 
+
 class TaskSet(ResultModelBase):
     """TaskSet result"""
     __tablename__ = "celery_tasksetmeta"

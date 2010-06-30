@@ -91,5 +91,3 @@ class test_TaskPool(unittest.TestCase):
         pool = TaskPool(10)
         pool.start()
         pool.apply_async(lambda x: x, (2, ), {})
-
-

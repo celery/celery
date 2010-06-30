@@ -100,4 +100,3 @@ class test_prepare(unittest.TestCase):
         self.assertIs(p[2], o)
 
         self.assertEqual(routes.prepare(o), [o])
-

@@ -335,7 +335,6 @@ def install_worker_int_again_handler(worker):
     platform.install_signal_handler("SIGINT", _stop)
 
 
-
 def install_worker_term_handler(worker):
 
     def _stop(signum, frame):

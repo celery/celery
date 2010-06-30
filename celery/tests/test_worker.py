@@ -450,9 +450,6 @@ class test_CarrotListener(unittest.TestCase):
         self.assertEqual(l.iterations, 1)
 
 
-
-
-
 class test_WorkController(unittest.TestCase):
 
     def setUp(self):

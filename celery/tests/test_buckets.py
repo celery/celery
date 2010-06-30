@@ -94,7 +94,6 @@ class test_TokenBucketQueue(unittest.TestCase):
         self.assertEqual(x.get_nowait(), "The quick brown fox")
 
 
-
 class test_rate_limit_string(unittest.TestCase):
 
     @skip_if_disabled
@@ -282,6 +281,7 @@ class test_TaskBucket(unittest.TestCase):
         x.buckets[TaskB.name].put(2)
         x.buckets[TaskC.name].put(3)
         self.assertItemsEqual(x.items, [1, 2, 3])
+
 
 class test_FastQueue(unittest.TestCase):
 

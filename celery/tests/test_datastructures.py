@@ -149,4 +149,3 @@ class test_AttributeDict(unittest.TestCase):
         self.assertRaises(AttributeError, getattr, x, "bar")
         x.bar = "foo"
         self.assertEqual(x["bar"], "foo")
-

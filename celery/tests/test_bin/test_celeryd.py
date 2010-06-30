@@ -35,7 +35,6 @@ def disable_stdouts(fun):
     return disable
 
 
-
 class _WorkController(object):
 
     def __init__(self, *args, **kwargs):
@@ -143,7 +142,6 @@ class test_Worker(unittest.TestCase):
         self.assertTrue(worker_ready_sent[0])
 
 
-
 class test_funs(unittest.TestCase):
 
     @disable_stdouts
@@ -190,7 +188,6 @@ class test_funs(unittest.TestCase):
         finally:
             cd.Worker = p
             sys.argv = s
-
 
 
 class test_signal_handlers(unittest.TestCase):

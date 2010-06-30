@@ -185,7 +185,6 @@ class test_ControlPanel(unittest.TestCase):
              "destination": hostname}
         self.assertRaises(SystemExit, self.panel.dispatch_from_message, m)
 
-
     def test_panel_reply(self):
 
         replies = []

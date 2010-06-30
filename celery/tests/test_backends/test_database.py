@@ -135,4 +135,3 @@ class test_DatabaseBackend(unittest.TestCase):
 
     def test_TaskSet__repr__(self):
         self.assertIn("foo", repr(TaskSet("foo", None)))
-

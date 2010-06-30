@@ -83,7 +83,3 @@ def prepare(routes):
     if not hasattr(routes, "__iter__"):
         routes = (routes, )
     return map(expand_route, routes)
-
-
-
-

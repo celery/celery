@@ -158,9 +158,6 @@ class test_BaseDictBackend(unittest.TestCase):
         self.b._cache["task-exists"] = {"result": "task"}
 
 
-
-
-
 class test_KeyValueStoreBackend(unittest.TestCase):
 
     def setUp(self):

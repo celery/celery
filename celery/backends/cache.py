@@ -9,7 +9,6 @@ from celery.utils import timeutils
 from celery.datastructures import LocalCache
 
 
-
 def get_best_memcache(*args, **kwargs):
     try:
         import pylibmc as memcache
@@ -59,7 +58,6 @@ class CacheBackend(KeyValueStoreBackend):
                     "following backends: %s" % (self.backend,
                                                 ", ".join(backends.keys())))
 
-
     def get(self, key):
         return self.client.get(key)
 
@@ -71,6 +69,3 @@ class CacheBackend(KeyValueStoreBackend):
         if self._client is None:
             self._client = self.Client(self.servers, **self.options)
         return self._client
-
-
-

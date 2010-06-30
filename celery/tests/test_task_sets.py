@@ -127,7 +127,6 @@ class test_TaskSet(unittest.TestCase):
                         for i in (2, 4, 8)])
         self.assertEqual(len(ts), 3)
 
-
     def test_respects_ALWAYS_EAGER(self):
 
         class MockTaskSet(TaskSet):

@@ -36,6 +36,7 @@ def utf8dict(tup):
     return dict((key.encode("utf-8"), maybe_utf8(value))
                     for key, value in tup)
 
+
 def extract_response(raw_response):
     """Extract the response text from a raw JSON response."""
     if not raw_response:
@@ -52,7 +53,6 @@ def extract_response(raw_response):
             raise RemoteExecuteError(payload.get("reason"))
         else:
             raise UnknownStatusError(str(status))
-
 
 
 class MutableURL(object):
