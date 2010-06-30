@@ -1,3 +1,5 @@
+.. image:: http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png
+
 =================================
  Celery - Distributed Task Queue
 =================================
