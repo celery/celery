@@ -1,3 +1,4 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -5,126 +6,126 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Backend: Cache - celery.backends.cache &mdash; Celery v1.0.3 (stable) documentation</title>
-    <link rel="stylesheet" href="../../static/adctheme.css" type="text/css" />
+    <title>Backend: Memcache - celery.backends.cache &mdash; Celery v1.1.3 (unstable) documentation</title>
+    <link rel="stylesheet" href="../../static/classy.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.0.3 (stable)',
-        COLLAPSE_MODINDEX: false,
+        VERSION:     '1.1.3 (unstable)',
+        COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="../../static/jquery.js"></script>
+    <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v1.0.3 (stable) documentation" href="../../index.html" />
+    <link rel="top" title="Celery v1.1.3 (unstable) documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
-    <link rel="next" title="Backend: MongoDB - celery.backends.mongodb" href="celery.backends.mongodb.html" />
-    <link rel="prev" title="Backend: Database - celery.backends.database" href="celery.backends.database.html" />
-    <link media="only screen and (max-device-width: 480px)" href="../../static/mobile.css" type="text/css" rel="stylesheet" /> 
+    <link rel="next" title="Backend: AMQP - celery.backends.amqp" href="celery.backends.amqp.html" />
+    <link rel="prev" title="Backend: SQLAlchemy Database - celery.backends.database" href="celery.backends.database.html" /> 
   </head>
   <body>
-<div id="docstitle">
-	<p>Celery v1.0.3 (stable) documentation</p>
-</div>
-<div id="header">
-	<div id="title"><h1>Backend: Cache - celery.backends.cache</h1></div>
-	<ul id="headerButtons">
-		<li id="toc_button"><div class="headerButton"><a href="#">Table of Contents</a></div></li>
-		<li id="page_buttons">
-			<div class="headerButton"><a href="../../genindex.html" title="General Index" accesskey="I">index</a></div>
-			<div class="headerButton"><a href="../../modindex.html" title="Global Module Index" accesskey="M">modules</a></div>
-			<div class="headerButton"><a href="celery.backends.mongodb.html" title="Backend: MongoDB - celery.backends.mongodb" accesskey="N">next</a></div>
-			<div class="headerButton"><a href="celery.backends.database.html" title="Backend: Database - celery.backends.database" accesskey="P">previous</a></div>
-		</li>
-	</ul>
-</div>
-
-<div id="sphinxsidebar">
-  <div class="sphinxsidebarwrapper">
-	<ul><li class="toctree-l1"><a href="../../index.html">Main Page</a></li></ul>
-	<ul>
-<li class="toctree-l1"><a class="reference external" href="../../getting-started/index.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../userguide/index.html">User Guide</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../configuration.html">Configuration and defaults</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../cookbook/index.html">Cookbook</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../tutorials/index.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../faq.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../reference/index.html">API Reference</a></li>
-<li class="toctree-l1"><a class="reference external" href="../index.html">Internals</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../changelog.html">Change history</a></li>
-<li class="toctree-l1"><a class="reference external" href="../../links.html">Interesting Links</a></li>
-</ul>
-
-      <h3>This Page</h3>
-      <ul class="this-page-menu">
-        <li><a href="../../sources/internals/reference/celery.backends.cache.txt"
-               rel="nofollow">Show Source</a></li>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.backends.amqp.html" title="Backend: AMQP - celery.backends.amqp"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.backends.database.html" title="Backend: SQLAlchemy Database - celery.backends.database"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">Celery v1.1.3 (unstable) documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Internals</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
-    <div id="searchbox" style="display: none">
-      
-        <form class="search" action="../../search.html" method="get">
-			<div class="search-wrapper">
-			<span class="search-left"></span>
-			<input class="prettysearch" type="text" name="q" size="18" />
-			<span class="search-right">&nbsp;</span>
-			</div>
-          <input type="submit" value="Search" class="searchbutton" />
-          <input type="hidden" name="check_keywords" value="yes" />
-          <input type="hidden" name="area" value="default" />
-        </form>
-        <p class="searchtip" style="font-size: 90%">
-        Enter search terms or a module, class or function name.
-        </p>
     </div>
-    <script type="text/javascript">$('#searchbox').show(0);</script>
-  </div>
-</div>
-
-
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="module-celery.backends.cache">
-<h1>Backend: Cache - celery.backends.cache<a class="headerlink" href="#module-celery.backends.cache" title="Permalink to this headline">¶</a></h1>
-<p>celery.backends.cache</p>
-<dl class="class">
+  <div class="section" id="backend-memcache-celery-backends-cache">
+<h1>Backend: Memcache - celery.backends.cache<a class="headerlink" href="#backend-memcache-celery-backends-cache" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-celery.backends.cache"></span><dl class="class">
 <dt id="celery.backends.cache.CacheBackend">
-<em class="property">class </em><tt class="descclassname">celery.backends.cache.</tt><tt class="descname">CacheBackend</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.backends.cache.CacheBackend" title="Permalink to this definition">¶</a></dt>
-<dd>Backend using the Django cache framework to store task metadata.</dd></dl>
+<em class="property">class </em><tt class="descclassname">celery.backends.cache.</tt><tt class="descname">CacheBackend</tt><big>(</big><em>expires=datetime.timedelta(1)</em>, <em>backend=None</em>, <em>options={}</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.backends.cache.CacheBackend" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="celery.backends.cache.CacheBackend.client">
+<tt class="descname">client</tt><a class="headerlink" href="#celery.backends.cache.CacheBackend.client" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.backends.cache.CacheBackend.get">
+<tt class="descname">get</tt><big>(</big><em>key</em><big>)</big><a class="headerlink" href="#celery.backends.cache.CacheBackend.get" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.backends.cache.CacheBackend.set">
+<tt class="descname">set</tt><big>(</big><em>key</em>, <em>value</em><big>)</big><a class="headerlink" href="#celery.backends.cache.CacheBackend.set" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
 
 <dl class="class">
-<dt id="celery.backends.cache.DjangoMemcacheWrapper">
-<em class="property">class </em><tt class="descclassname">celery.backends.cache.</tt><tt class="descname">DjangoMemcacheWrapper</tt><big>(</big><em>cache</em><big>)</big><a class="headerlink" href="#celery.backends.cache.DjangoMemcacheWrapper" title="Permalink to this definition">¶</a></dt>
-<dd>Wrapper class to django&#8217;s memcache backend class, that overrides the
-<tt class="xref docutils literal"><span class="pre">get()</span></tt> method in order to remove the forcing of unicode strings
-since it may cause binary or pickled data to break.</dd></dl>
+<dt id="celery.backends.cache.DummyClient">
+<em class="property">class </em><tt class="descclassname">celery.backends.cache.</tt><tt class="descname">DummyClient</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.backends.cache.DummyClient" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.backends.cache.DummyClient.get">
+<tt class="descname">get</tt><big>(</big><em>key</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.backends.cache.DummyClient.get" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.backends.cache.DummyClient.set">
+<tt class="descname">set</tt><big>(</big><em>key</em>, <em>value</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.backends.cache.DummyClient.set" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.backends.cache.get_best_memcache">
+<tt class="descclassname">celery.backends.cache.</tt><tt class="descname">get_best_memcache</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.backends.cache.get_best_memcache" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </div>
 
 
-          </div> 
+          </div>
         </div>
       </div>
-    <div class="footer">
-    <p>
-      &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
-	</p>
-    </div>
       <div class="clearer"></div>
     </div>
-	<div id="breadcrumbs">
-		<a href="../index.html" accesskey="U">Internals</a><img src="../../static/triangle_closed.png" height="9" width="9" alt="&gt;">
-		<a href="index.html" >Internal Module Reference</a><img src="../../static/triangle_closed.png" height="9" width="9" alt="&gt;">
-		Backend: Cache - celery.backends.cache
-		</ul>
-	</div>
-	<script type="text/javascript" charset="utf-8" src="../../static/toc.js"></script>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.backends.amqp.html" title="Backend: AMQP - celery.backends.amqp"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.backends.database.html" title="Backend: SQLAlchemy Database - celery.backends.database"
+             >previous</a> |</li>
+        <li><a href="../../index.html">Celery v1.1.3 (unstable) documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Internals</a> &raquo;</li>
+          <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
+    </div>
   </body>
 </html>

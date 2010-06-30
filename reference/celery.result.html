@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Task Result - celery.result &mdash; Celery v1.1.1 (unstable) documentation</title>
+    <title>Task Result - celery.result &mdash; Celery v1.1.3 (unstable) documentation</title>
     <link rel="stylesheet" href="../static/classy.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.1.1 (unstable)',
+        VERSION:     '1.1.3 (unstable)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v1.1.1 (unstable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v1.1.3 (unstable) documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="Task Information and Utilities - celery.task" href="celery.task.html" />
     <link rel="prev" title="Executing Tasks - celery.execute" href="celery.execute.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.execute.html" title="Executing Tasks - celery.execute"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v1.1.1 (unstable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v1.1.3 (unstable) documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>
@@ -118,6 +118,12 @@
 </dd></dl>
 
 <dl class="method">
+<dt id="celery.result.BaseAsyncResult.failed">
+<tt class="descclassname">BaseAsyncResult.</tt><tt class="descname">failed</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult.failed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task failed by exception.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="celery.result.BaseAsyncResult.get">
 <tt class="descclassname">BaseAsyncResult.</tt><tt class="descname">get</tt><big>(</big><em>timeout=None</em><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult.get" title="Permalink to this definition">¶</a></dt>
 <dd><p>Alias to <a class="reference internal" href="#celery.result.BaseAsyncResult.wait" title="celery.result.BaseAsyncResult.wait"><tt class="xref py py-meth docutils literal"><span class="pre">wait()</span></tt></a>.</p>
@@ -127,16 +133,9 @@
 <dt id="celery.result.BaseAsyncResult.ready">
 <tt class="descclassname">BaseAsyncResult.</tt><tt class="descname">ready</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult.ready" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task executed successfully, or raised
-an exception. If the task is still running, pending, or is waiting
+an exception.</p>
+<p>If the task is still running, pending, or is waiting
 for retry then <tt class="xref docutils literal"><span class="pre">False</span></tt> is returned.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
-</tr>
-</tbody>
-</table>
 </dd></dl>
 
 <dl class="attribute">
@@ -184,14 +183,6 @@ contains the resulting value.</blockquote>
 <dt id="celery.result.BaseAsyncResult.successful">
 <tt class="descclassname">BaseAsyncResult.</tt><tt class="descname">successful</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult.successful" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task executed successfully.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
-</tr>
-</tbody>
-</table>
 </dd></dl>
 
 <dl class="attribute">
@@ -422,7 +413,7 @@ executed.</td>
 
 <dl class="classmethod">
 <dt id="celery.result.TaskSetResult.restore">
-<em class="property">classmethod </em><tt class="descname">restore</tt><big>(</big><em>taskset_id</em>, <em>backend=&lt;celery.backends.amqp.AMQPBackend object at 0x103d3b6d0&gt;</em><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult.restore" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><tt class="descname">restore</tt><big>(</big><em>taskset_id</em>, <em>backend=&lt;celery.backends.amqp.AMQPBackend object at 0x103e127d0&gt;</em><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult.restore" title="Permalink to this definition">¶</a></dt>
 <dd><p>Restore previously saved taskset result.</p>
 </dd></dl>
 
@@ -433,7 +424,7 @@ executed.</td>
 
 <dl class="method">
 <dt id="celery.result.TaskSetResult.save">
-<tt class="descname">save</tt><big>(</big><em>backend=&lt;celery.backends.amqp.AMQPBackend object at 0x103d3b6d0&gt;</em><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult.save" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">save</tt><big>(</big><em>backend=&lt;celery.backends.amqp.AMQPBackend object at 0x103e127d0&gt;</em><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult.save" title="Permalink to this definition">¶</a></dt>
 <dd><p>Save taskset result for later retrieval using <a class="reference internal" href="#celery.result.TaskSetResult.restore" title="celery.result.TaskSetResult.restore"><tt class="xref py py-meth docutils literal"><span class="pre">restore()</span></tt></a>.</p>
 <p>Example:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
@@ -503,7 +494,7 @@ waiting for execution.</td>
         <li class="right" >
           <a href="celery.execute.html" title="Executing Tasks - celery.execute"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v1.1.1 (unstable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v1.1.3 (unstable) documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>

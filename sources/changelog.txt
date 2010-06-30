@@ -48,7 +48,7 @@ Django integration has been moved to a separate package: `django-celery`_.
     ``celery.models``                      ``djcelery.models``
     ``celery.managers``                    ``djcelery.managers``
     ``celery.views``                       ``djcelery.views``
-    ``celery.urls``                        ``djcelery.url``
+    ``celery.urls``                        ``djcelery.urls``
     ``celery.management``                  ``djcelery.management``
     ``celery.loaders.djangoapp``           ``djcelery.loaders``
     ``celery.backends.database``           ``djcelery.backends.database``
@@ -56,7 +56,7 @@ Django integration has been moved to a separate package: `django-celery`_.
     =====================================  =====================================
 
 Importing :mod:`djcelery` will automatically setup celery to use the Django
-loader by setting the :envvar:`CELERY_LOADER`` environment variable (it won't
+loader by setting the :envvar:`CELERY_LOADER` environment variable (it won't
 change it if it's already defined).
 
 When the Django loader is used, the "database" and "cache" backend aliases
@@ -68,9 +68,11 @@ will point to the :mod:`djcelery` backends instead of the built-in backends.
 Upgrading for others
 --------------------
 
-The database backend is now using `SQLAlchemy`_ instead of the Django ORM,
-see `Supported Databases`_ for a table of supported databases.
+Database result backend
+~~~~~~~~~~~~~~~~~~~~~~~
 
+The database result backend is now using `SQLAlchemy`_ instead of the
+Django ORM, see `Supported Databases`_ for a table of supported databases.
 
 The ``DATABASE_*`` settings has been replaced by a single setting:
 ``CELERY_RESULT_DBURI``. The value here should be an
@@ -108,6 +110,25 @@ the ``CELERY_RESULT_ENGINE_OPTIONS`` setting::
 .. _`SQLAlchemy Connection Strings`:
     http://www.sqlalchemy.org/docs/dbengine.html#create-engine-url-arguments
 
+Cache result backend
+~~~~~~~~~~~~~~~~~~~~
+
+The cache result backend is no longer using the Django cache framework,
+but it supports mostly the same configuration syntax::
+
+    CELERY_CACHE_BACKEND = "memcached://A.example.com:11211;B.example.com"
+
+To use the cache backend you must either have the `pylibmc`_ or
+`python-memcached`_ library installed, of which the former is regarded
+as the best choice.
+
+.. _`pylibmc`: http://pypi.python.org/pypi/pylibmc
+.. _`python-memcached`: http://pypi.python.org/pypi/python-memcached
+
+The support backend types are ``memcached://`` and ``memory://``,
+we haven't felt the need to support any of the other backends
+provided by Django.
+
 Backward incompatible changes
 -----------------------------
 
@@ -121,8 +142,8 @@ Backward incompatible changes
     Also this makes it possible to use the client side of celery without being
     configured::
 
-        >>> from carrot.connection import Connection
-        >>> conn = Connection("localhost", "guest", "guest", "/")
+        >>> from carrot.connection import BrokerConnection
+        >>> conn = BrokerConnection("localhost", "guest", "guest", "/")
         >>> from celery.execute import send_task
         >>> r = send_task("celery.ping", args=(), kwargs={}, connection=conn)
         >>> from celery.backends.amqp import AMQPBackend
@@ -137,9 +158,8 @@ Backward incompatible changes
     **Setting name**                       **Replace with**
     =====================================  =====================================
     ``CELERY_AMQP_CONSUMER_QUEUES``        ``CELERY_QUEUES``
-    ``CELERY_AMQP_CONSUMER_QUEUES``        ``CELERY_QUEUES``
     ``CELERY_AMQP_EXCHANGE``               ``CELERY_DEFAULT_EXCHANGE``
-    ``CELERY_AMQP_EXCHANGE_TYPE``          ``CELERY_DEFAULT_AMQP_EXCHANGE_TYPE``
+    ``CELERY_AMQP_EXCHANGE_TYPE``          ``CELERY_DEFAULT_EXCHANGE_TYPE``
     ``CELERY_AMQP_CONSUMER_ROUTING_KEY``   ``CELERY_QUEUES``
     ``CELERY_AMQP_PUBLISHER_ROUTING_KEY``  ``CELERY_DEFAULT_ROUTING_KEY``
     =====================================  =====================================
@@ -161,6 +181,37 @@ Backward incompatible changes
     You need to include the loader class name, like this::
 
         CELERY_LOADER = "myapp.loaders.Loader"
+
+* ``CELERY_TASK_RESULT_EXPIRES`` now defaults to 1 day.
+
+    Previous default setting was to expire in 5 days.
+
+*  AMQP backend: Don't use different values for `auto_delete`.
+
+    This bug became visible with RabbitMQ 1.8.0, which no longer
+    allows conflicting declarations for the auto_delete and durable settings.
+
+    If you've already used celery with this backend chances are you
+    have to delete the previous declaration::
+
+        $ PYTHONPATH=. camqadm exchange.delete celeryresults
+
+* Now uses pickle instead of cPickle on Python versions <= 2.5
+
+    cPikle is broken in Python <= 2.5.
+
+    It unsafely and incorrectly uses relative instead of absolute imports,
+    so e.g::
+
+          exceptions.KeyError
+
+    becomes::
+
+          celery.exceptions.KeyError
+
+    Your best choice is to upgrade to Python 2.6,
+    as while the pure pickle version has worse performance,
+    it is the only safe option for older Python versions.
 
 .. _120news:
 
@@ -195,6 +246,17 @@ News
         The fields here are, in order: *sender hostname*, *timestamp*, *event type* and
         *additional event fields*.
 
+* AMQP result backend: Now supports ``.ready()``, ``.successful()``,
+  ``.result``, ``.status``, and even responds to changes in task state
+
+* New user guides:
+
+    * :doc:`userguide/workers`
+    * :doc:`userguide/tasksets`
+    * :doc:`userguide/routing`
+
+* celeryd: Standard out/error is now being redirected to the logfile.
+
 * :mod:`billiard` has been moved back to the celery repository.
 
     =====================================  =====================================
@@ -211,6 +273,11 @@ News
 
 * now depends on :mod:`pyparsing`
 
+* celeryd: Added ``--purge`` as an alias to ``--discard``.
+
+* celeryd: Ctrl+C (SIGINT) once does warm shutdown, hitting Ctrl+C twice
+  forces termination.
+
 * Added support for using complex crontab-expressions in periodic tasks. For
   example, you can now use::
 
@@ -226,15 +293,55 @@ News
   tasks to the pool.
 
     This means it doesn't have to wait for dozens of tasks to finish at shutdown
-    because it has already applied n prefetched tasks without any pool
-    processes to immediately accept them.
-
-    Some overhead for very short tasks though, then the shutdown probably doesn't
-    matter either so can disable with::
-
-        CELERYD_POOL_PUTLOCKS = False
+    because it has applied prefetched tasks without having any pool
+    processes available to immediately accept them.
 
     See http://github.com/ask/celery/issues/closed#issue/122
+
+* New built-in way to do task callbacks using
+  :class:`~celery.task.sets.subtask`.
+
+  See :doc:`userguide/tasksets` for more information.
+
+* TaskSets can now contain several types of tasks.
+
+  :class:`~celery.task.sets.TaskSet` has been refactored to use
+  a new syntax, please see :doc:`userguide/tasksets` for more information.
+
+  The previous syntax is still supported, but will be deprecated in
+  version 1.4.
+
+* TaskSet failed() result was incorrect.
+
+    See http://github.com/ask/celery/issues/closed#issue/132
+
+* Now creates different loggers per task class.
+
+    See http://github.com/ask/celery/issues/closed#issue/129
+
+* Missing queue definitions are now created automatically.
+
+    You can disable this using the CELERY_CREATE_MISSING_QUEUES setting.
+
+    The missing queues are created with the following options::
+
+        CELERY_QUEUES[name] = {"exchange": name,
+                               "exchange_type": "direct",
+                               "routing_key": "name}
+
+   This feature is added for easily setting up routing using the ``-Q``
+   option to ``celeryd``::
+
+       $ celeryd -Q video, image
+
+   See the new routing section of the userguide for more information:
+   :doc:`userguide/routing`.
+
+* New Task option: ``Task.queue``
+
+    If set, message options will be taken from the corresponding entry
+    in ``CELERY_QUEUES``. ``exchange``, ``exchange_type`` and ``routing_key``
+    will be ignored
 
 * Added support for task soft and hard timelimits.
 
@@ -384,6 +491,30 @@ News
         >>> broadcast("enable_events")
         >>> broadcast("disable_events")
 
+* Removed top-level tests directory. Test config now in celery.tests.config
+
+    This means running the unittests doesn't require any special setup.
+    ``celery/tests/__init__`` now configures the ``CELERY_CONFIG_MODULE`` and
+    ``CELERY_LOADER``, so when ``nosetests`` imports that, the unit test
+    environment is all set up.
+
+    Before you run the tests you need to install the test requirements::
+
+        $ pip install -r contrib/requirements/test.txt
+
+    Running all tests::
+
+        $ nosetests
+
+    Specifying the tests to run::
+
+        $ nosetests celery.tests.test_task
+
+    Producing HTML coverage::
+
+        $ nosetests --with-coverage3
+
+    The coverage output is then located in ``celery/tests/cover/index.html``.
 
 * celeryd: New option ``--version``: Dump version info and exit.
 
@@ -446,6 +577,12 @@ News
         celeryd-multi -n bar.myhost -c 10
         celeryd-multi -n baz.myhost -c 10
         celeryd-multi -n xuzzy.myhost -c 3
+
+* The worker now calls the result backends ``process_cleanup`` method
+  *after* task execution instead of before.
+
+* AMQP result backend now supports Pika.
+
 
 1.0.5
 =====
@@ -1178,7 +1315,6 @@ News
 * New cool task decorator syntax.
 
 * celeryd now sends events if enabled with the ``-E`` argument.
-
 
     Excellent for monitoring tools, one is already in the making
     (http://github.com/ask/celerymon).

@@ -26,6 +26,7 @@
     celery.backends
     celery.backends.base
     celery.backends.database
+    celery.backends.cache
     celery.backends.amqp
     celery.backends.mongodb
     celery.backends.pyredis
