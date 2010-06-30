@@ -87,10 +87,8 @@ class Task(Element):
         return super(Task, self).update(d, **extra)
 
     def on_received(self, timestamp=None, **fields):
-        print("ON RECEIVED")
         self.received = timestamp
         self.state = "RECEIVED"
-        print(fields)
         self.update(fields, timestamp=timestamp)
 
     def on_started(self, timestamp=None, **fields):
