@@ -75,11 +75,6 @@ configuration values.
 
         $ python manage.py syncdb
 
-  Or if you're not using django, but the default loader instead run
-  ``celeryinit``::
-
-        $ celeryinit
-
 Important notes
 ---------------
 

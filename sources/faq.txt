@@ -369,7 +369,7 @@ routing capabilities of AMQP you need to set both the ``queue``, and
 carrot needs to maintain the same interface for both AMQP and STOMP (obviously
 the one with the most capabilities won).
 
-Use the following specific settings in your ``settings.py``:
+Use the following specific settings in your ``celeryconfig.py``/django ``settings.py``:
 
 .. code-block:: python
 

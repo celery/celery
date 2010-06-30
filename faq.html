@@ -399,7 +399,7 @@ routing capabilities of AMQP you need to set both the <tt class="docutils litera
 <tt class="docutils literal"><span class="pre">exchange</span></tt> settings to your queue name. This is a minor inconvenience since
 carrot needs to maintain the same interface for both AMQP and STOMP (obviously
 the one with the most capabilities won).</p>
-<p>Use the following specific settings in your <tt class="docutils literal"><span class="pre">settings.py</span></tt>:</p>
+<p>Use the following specific settings in your <tt class="docutils literal"><span class="pre">celeryconfig.py</span></tt>/django <tt class="docutils literal"><span class="pre">settings.py</span></tt>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># Makes python-stomp the default backend for carrot.</span>
 <span class="n">CARROT_BACKEND</span> <span class="o">=</span> <span class="s">&quot;stomp&quot;</span>
 

@@ -26,7 +26,7 @@ simple routing tasks.
 
 Say you have two servers, ``x``, and ``y`` that handles regular tasks,
 and one server ``z``, that only handles feed related tasks, you can use this
-configuration:
+configuration::
 
     CELERY_ROUTES = {"feed.tasks.import_feed": "feeds"}
 

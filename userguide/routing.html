@@ -108,8 +108,9 @@ simple routing tasks.</p>
 <p>Say you have two servers, <tt class="docutils literal"><span class="pre">x</span></tt>, and <tt class="docutils literal"><span class="pre">y</span></tt> that handles regular tasks,
 and one server <tt class="docutils literal"><span class="pre">z</span></tt>, that only handles feed related tasks, you can use this
 configuration:</p>
-<blockquote>
-CELERY_ROUTES = {&#8220;feed.tasks.import_feed&#8221;: &#8220;feeds&#8221;}</blockquote>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_ROUTES</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;feed.tasks.import_feed&quot;</span><span class="p">:</span> <span class="s">&quot;feeds&quot;</span><span class="p">}</span>
+</pre></div>
+</div>
 <p>With this route enabled import feed tasks will be routed to the
 <tt class="docutils literal"><span class="pre">&quot;feeds&quot;</span></tt> queue, while all other tasks will be routed to the default queue
 (named <tt class="docutils literal"><span class="pre">&quot;celery&quot;</span></tt> for historic reasons).</p>
