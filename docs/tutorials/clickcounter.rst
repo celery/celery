@@ -108,14 +108,14 @@ On to the code...
 
 .. code-block:: python
 
-    from carrot.connection import DjangoBrokerConnection
+    from celery.messaging import establish_connection
     from carrot.messaging import Publisher, Consumer
     from clickmuncher.models import Click
 
 
     def send_increment_clicks(for_url):
         """Send a message for incrementing the click count for an URL."""
-        connection = DjangoBrokerConnection()
+        connection = establish_connection()
         publisher = Publisher(connection=connection,
                               exchange="clicks",
                               routing_key="increment_click",
@@ -130,7 +130,7 @@ On to the code...
     def process_clicks():
         """Process all currently gathered clicks by saving them to the
         database."""
-        connection = DjangoBrokerConnection()
+        connection = establish_connection()
         consumer = Consumer(connection=connection,
                             queue="clicks",
                             exchange="clicks",

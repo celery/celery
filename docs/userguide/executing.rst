@@ -235,6 +235,9 @@ by creating a new queue that binds to ``"image.crop``".
 AMQP options
 ============
 
+**NOTE** The ``mandatory`` and ``immediate`` flags are not supported by
+``amqplib`` at this point.
+
 * mandatory
 
 This sets the delivery to be mandatory. An exception will be raised

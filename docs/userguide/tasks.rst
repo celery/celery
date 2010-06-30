@@ -43,15 +43,6 @@ The task decorator takes the same execution options as the
     def create_user(username, password):
         User.objects.create(username=username, password=password)
 
-An alternative way to use the decorator is to give the function as an argument
-instead, but if you do this be sure to set the resulting tasks :attr:`__name__`
-attribute, so pickle is able to find it in reverse:
-
-.. code-block:: python
-
-    create_user_task = task()(create_user)
-    create_user_task.__name__ = "create_user_task"
-
 
 Default keyword arguments
 =========================
@@ -110,8 +101,9 @@ the worker log:
 .. code-block:: python
 
     class AddTask(Task):
-        def run(self, x, y, \*\*kwargs):
-            logger = self.get_logger(\*\*kwargs)
+
+        def run(self, x, y, **kwargs):
+            logger = self.get_logger(**kwargs)
             logger.info("Adding %s + %s" % (x, y))
             return x + y
 
@@ -120,13 +112,16 @@ or using the decorator syntax:
 .. code-block:: python
 
     @task()
-    def add(x, y, \*\*kwargs):
-        logger = add.get_logger(\*\*kwargs)
+    def add(x, y, **kwargs):
+        logger = add.get_logger(**kwargs)
         logger.info("Adding %s + %s" % (x, y))
         return x + y
 
 There are several logging levels available, and the workers ``loglevel``
 setting decides whether or not they will be written to the log file.
+
+Of course, you can also simply use ``print`` as anything written to standard
+out/-err will be written to the logfile as well.
 
 
 Retrying a task if something fails
@@ -139,7 +134,7 @@ It will do the right thing, and respect the
 .. code-block:: python
 
     @task()
-    def send_twitter_status(oauth, tweet, \*\*kwargs):
+    def send_twitter_status(oauth, tweet, **kwargs):
         try:
             twitter = Twitter(oauth)
             twitter.update_status(tweet)
@@ -176,7 +171,7 @@ You can also provide the ``countdown`` argument to
     class MyTask(Task):
         default_retry_delay = 30 * 60 # retry in 30 minutes
 
-        def run(self, x, y, \*\*kwargs):
+        def run(self, x, y, **kwargs):
             try:
                 ...
             except Exception, exc:
@@ -254,11 +249,18 @@ Task options
 Message and routing options
 ---------------------------
 
-* routing_key
-    Override the global default ``routing_key`` for this task.
+* queue
+
+    Use the routing settings from a queue defined in ``CELERY_QUEUES``.
+    If defined the ``exchange`` and ``routing_key`` options will be ignored.
 
 * exchange
+
     Override the global default ``exchange`` for this task.
+
+* routing_key
+
+    Override the global default ``routing_key`` for this task.
 
 * mandatory
     If set, the task message has mandatory routing. By default the task
@@ -278,7 +280,7 @@ Message and routing options
     highest. **Note:** RabbitMQ does not support priorities yet.
 
 See :doc:`executing` for more information about the messaging options
-available.
+available, also :doc:`routing`.
 
 Example
 =======
@@ -383,8 +385,8 @@ blog/tasks.py
 
 
     @task
-    def spam_filter(comment_id, remote_addr=None, \*\*kwargs):
-            logger = spam_filter.get_logger(\*\*kwargs)
+    def spam_filter(comment_id, remote_addr=None, **kwargs):
+            logger = spam_filter.get_logger(**kwargs)
             logger.info("Running spam filter for comment %s" % comment_id)
 
             comment = Comment.objects.get(pk=comment_id)

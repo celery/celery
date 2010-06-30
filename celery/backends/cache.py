@@ -10,15 +10,21 @@ from celery.datastructures import LocalCache
 
 
 def get_best_memcache(*args, **kwargs):
+    behaviors = kwargs.pop("behaviors", None)
+    is_pylibmc = False
     try:
         import pylibmc as memcache
+        is_pylibmc = True
     except ImportError:
         try:
             import memcache
         except ImportError:
             raise ImproperlyConfigured("Memcached backend requires either "
                                        "the 'memcache' or 'pylibmc' library")
-    return memcache.Client(*args, **kwargs)
+    client = memcache.Client(*args, **kwargs)
+    if is_pylibmc and behaviors is not None:
+        client.behaviors = behaviors
+    return client
 
 
 class DummyClient(object):
