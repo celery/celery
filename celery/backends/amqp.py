@@ -39,11 +39,11 @@ class AMQPBackend(BaseDictBackend):
         routing_key = task_id.replace("-", "")
         backend = connection.create_backend()
         backend.queue_declare(queue=routing_key, durable=True,
-                                exclusive=False, auto_delete=True)
+                              exclusive=False, auto_delete=True)
         backend.exchange_declare(exchange=self.exchange,
                                  type="direct",
                                  durable=True,
-                                 auto_delete=False)
+                                 auto_delete=True)
         backend.queue_bind(queue=routing_key, exchange=self.exchange,
                            routing_key=routing_key)
         backend.close()
@@ -52,8 +52,9 @@ class AMQPBackend(BaseDictBackend):
         routing_key = task_id.replace("-", "")
         self._declare_queue(task_id, connection)
         return Publisher(connection, exchange=self.exchange,
-                      exchange_type="direct",
-                      routing_key=routing_key)
+                         exchange_type="direct",
+                         routing_key=routing_key,
+                         auto_delete=True)
 
     def _consumer_for_task_id(self, task_id, connection):
         routing_key = task_id.replace("-", "")
