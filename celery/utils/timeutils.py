@@ -56,20 +56,6 @@ def remaining(start, ends_in, now=None, relative=True):
           of ``ends_in``).
     :keyword now: The current time, defaults to :func:`datetime.now`.
 
-    Examples::
-
-        >>> remaining(datetime.now(), ends_in=timedelta(seconds=30))
-        '0:0:29.999948'
-
-        >>> str(remaining(datetime.now() - timedelta(minutes=29),
-                ends_in=timedelta(hours=2)))
-        '1:30:59.999938'
-
-        >>> str(remaining(datetime.now() - timedelta(minutes=29),
-                ends_in=timedelta(hours=2),
-                relative=False))
-        '1:11:18.458437'
-
     """
     now = now or datetime.now()
 
@@ -92,6 +78,8 @@ def rate(rate):
 
 def weekday(name):
     """Return the position of a weekday (0 - 7, where 0 is Sunday).
+
+    Example::
 
         >>> weekday("sunday"), weekday("sun"), weekday("mon")
         (0, 0, 1)

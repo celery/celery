@@ -212,6 +212,7 @@ Backward incompatible changes
     Your best choice is to upgrade to Python 2.6,
     as while the pure pickle version has worse performance,
     it is the only safe option for older Python versions.
+
 .. _120news:
 
 News
