@@ -2,6 +2,21 @@
  Change history
 ================
 
+1.0.6 [2010-06-30 09:57 A.M CEST]
+=================================
+
+* RabbitMQ 1.8.0 has extended their exchange equivalence tests to
+  include ``auto_delete`` and ``durable``. This broke the AMQP backend.
+
+  If you've already used the AMQP backend this means you have to
+  delete the previous definitions::
+
+      $ PYTHONPATH=. camqadm exchange.delete celeryresults
+
+  or::
+
+      $ python manage.py camqadm exchange.delete celeryresults
+
 1.0.5 [2010-06-01 02:36 P.M CEST]
 =================================
 
