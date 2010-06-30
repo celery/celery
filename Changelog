@@ -68,9 +68,11 @@ will point to the :mod:`djcelery` backends instead of the built-in backends.
 Upgrading for others
 --------------------
 
-The database backend is now using `SQLAlchemy`_ instead of the Django ORM,
-see `Supported Databases`_ for a table of supported databases.
+Database result backend
+~~~~~~~~~~~~~~~~~~~~~~~
 
+The database result backend is now using `SQLAlchemy`_ instead of the
+Django ORM, see `Supported Databases`_ for a table of supported databases.
 
 The ``DATABASE_*`` settings has been replaced by a single setting:
 ``CELERY_RESULT_DBURI``. The value here should be an
@@ -107,6 +109,25 @@ the ``CELERY_RESULT_ENGINE_OPTIONS`` setting::
     http://www.sqlalchemy.org/docs/dbengine.html#create-engine-url-arguments
 .. _`SQLAlchemy Connection Strings`:
     http://www.sqlalchemy.org/docs/dbengine.html#create-engine-url-arguments
+
+Cache result backend
+~~~~~~~~~~~~~~~~~~~~
+
+The cache result backend is no longer using the Django cache framework,
+but it supports mostly the same configuration syntax::
+
+    CELERY_CACHE_BACKEND = "memcached://A.example.com:11211;B.example.com"
+
+To use the cache backend you must either have the `pylibmc`_ or
+`python-memcached`_ library installed, of which the former is regarded
+as the best choice.
+
+.. _`pylibmc`: http://pypi.python.org/pypi/pylibmc
+.. _`python-memcached`: http://pypi.python.org/pypi/python-memcached
+
+The support backend types are ``memcached://`` and ``memory://``,
+we haven't felt the need to support any of the other backends
+provided by Django.
 
 Backward incompatible changes
 -----------------------------
