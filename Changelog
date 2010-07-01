@@ -583,6 +583,23 @@ News
 
 * AMQP result backend now supports Pika.
 
+1.0.6
+=====
+:release-date: 2010-06-30 09:57 A.M CEST
+:md5: 88ae6a25b0f63b79a9a654b8694a93c6
+
+* RabbitMQ 1.8.0 has extended their exchange equivalence tests to
+  include ``auto_delete`` and ``durable``. This broke the AMQP backend.
+
+  If you've already used the AMQP backend this means you have to
+  delete the previous definitions::
+
+      $ PYTHONPATH=. camqadm exchange.delete celeryresults
+
+  or::
+
+      $ python manage.py camqadm exchange.delete celeryresults
+
 
 1.0.5
 =====
