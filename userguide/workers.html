@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Workers Guide &mdash; Celery v1.1.3 (unstable) documentation</title>
+    <title>Workers Guide &mdash; Celery v2.0.0 (stable) documentation</title>
     <link rel="stylesheet" href="../static/classy.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.1.3 (unstable)',
+        VERSION:     '2.0.0 (stable)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v1.1.3 (unstable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.0.0 (stable) documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
     <link rel="next" title="Sets of tasks, Subtasks and Callbacks" href="tasksets.html" />
     <link rel="prev" title="Executing Tasks" href="executing.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="executing.html" title="Executing Tasks"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v1.1.3 (unstable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.0.0 (stable) documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User Guide</a> &raquo;</li> 
       </ul>
     </div>
@@ -81,16 +81,19 @@
 </div>
 <div class="section" id="starting-the-worker">
 <h2><a class="toc-backref" href="#id1">Starting the worker</a><a class="headerlink" href="#starting-the-worker" title="Permalink to this headline">¶</a></h2>
-<p>Starting celeryd in the foreground:</p>
+<p>You can start celeryd to run in the foreground by executing the command:</p>
 <div class="highlight-python"><pre>$ celeryd --loglevel=INFO</pre>
 </div>
-<p>You probably want to use a daemonization tool to start and stop
-<tt class="docutils literal"><span class="pre">celeryd</span></tt> in the background, see <a class="reference internal" href="../cookbook/daemonizing.html"><em>Running celeryd as a daemon</em></a> for help using
-some of the most popular solutions.</p>
-<p>For a full list of available command line options see <a class="reference internal" href="../reference/celery.bin.celeryd.html#module-celery.bin.celeryd"><tt class="xref py py-mod docutils literal"><span class="pre">celeryd</span></tt></a>.</p>
-<p>You can also start multiple celeryd&#8217;s on the same machine, but if you do so
-be sure to give a unique name to each individual worker by specifying the
-<tt class="docutils literal"><span class="pre">-hostname</span></tt> argument:</p>
+<p>You probably want to use a daemonization tool to start
+<tt class="docutils literal"><span class="pre">celeryd</span></tt> in the background. See <a class="reference internal" href="../cookbook/daemonizing.html"><em>Running celeryd as a daemon</em></a> for help
+starting celeryd with some of the most popular daemonization tools.</p>
+<p>For a full list of available command line options see
+<a class="reference internal" href="../reference/celery.bin.celeryd.html#module-celery.bin.celeryd"><tt class="xref py py-mod docutils literal"><span class="pre">celeryd</span></tt></a>, or simply execute the command:</p>
+<div class="highlight-python"><pre>$ celeryd --help</pre>
+</div>
+<p>You can also start multiple celeryd&#8217;s on the same machine. If you do so
+be sure to give a unique name to each individual worker by specifying a
+hostname with the <tt class="docutils literal"><span class="pre">--hostname|-n</span></tt> argument:</p>
 <div class="highlight-python"><pre>$ celeryd --loglevel=INFO --concurrency=10 -n worker1.example.com
 $ celeryd --loglevel=INFO --concurrency=10 -n worker2.example.com
 $ celeryd --loglevel=INFO --concurrency=10 -n worker3.example.com</pre>
@@ -98,20 +101,20 @@ $ celeryd --loglevel=INFO --concurrency=10 -n worker3.example.com</pre>
 </div>
 <div class="section" id="stopping-the-worker">
 <h2><a class="toc-backref" href="#id2">Stopping the worker</a><a class="headerlink" href="#stopping-the-worker" title="Permalink to this headline">¶</a></h2>
-<p>Shutdown should be accomplished using the <tt class="docutils literal"><span class="pre">TERM</span></tt> signal (although <tt class="docutils literal"><span class="pre">INT</span></tt>
-also works).</p>
+<p>Shutdown should be accomplished using the <tt class="docutils literal"><span class="pre">TERM</span></tt> signal.</p>
 <p>When shutdown is initiated the worker will finish any tasks it&#8217;s currently
 executing before it terminates, so if these tasks are important you should
 wait for it to finish before doing anything drastic (like sending the <tt class="docutils literal"><span class="pre">KILL</span></tt>
 signal).</p>
-<p>If the worker won&#8217;t shutdown after considerate time, you probably have hanging
-tasks, in this case it&#8217;s safe to use the <tt class="docutils literal"><span class="pre">KILL</span></tt> signal but be aware that
-currently executing tasks will be lost (unless the tasks have the
-<a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.Task.acks_late" title="celery.task.base.Task.acks_late"><tt class="xref py py-attr docutils literal"><span class="pre">acks_late</span></tt></a> option set).</p>
+<p>If the worker won&#8217;t shutdown after considerate time, for example because
+of tasks stuck in an infinite-loop, you can use the <tt class="docutils literal"><span class="pre">KILL</span></tt> signal to
+force terminate the worker, but be aware that currently executing tasks will
+be lost (unless the tasks have the <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.Task.acks_late" title="celery.task.base.Task.acks_late"><tt class="xref py py-attr docutils literal"><span class="pre">acks_late</span></tt></a>
+option set).</p>
 <p>Also, since the <tt class="docutils literal"><span class="pre">KILL</span></tt> signal can&#8217;t be catched by processes the worker will
-not be able to reap its children, so make sure you do it manually. This
+not be able to reap its children so make sure you do it manually. This
 command usually does the trick:</p>
-<div class="highlight-python"><pre>$ ps auxww | grep celeryd | awk '{print $2}' | xargs kill -KILL</pre>
+<div class="highlight-python"><pre>$ ps auxww | grep celeryd | awk '{print $2}' | xargs kill -9</pre>
 </div>
 </div>
 <div class="section" id="restarting-the-worker">
@@ -120,21 +123,21 @@ command usually does the trick:</p>
 restart the worker using the <tt class="docutils literal"><span class="pre">HUP</span></tt> signal:</p>
 <div class="highlight-python"><pre>$ kill -HUP $pid</pre>
 </div>
-<p>The worker will then replace itself using the same arguments as it was
-started with.</p>
+<p>The worker will then replace itself with a new instance using the same
+arguments as it was started with.</p>
 </div>
 <div class="section" id="concurrency">
 <h2><a class="toc-backref" href="#id4">Concurrency</a><a class="headerlink" href="#concurrency" title="Permalink to this headline">¶</a></h2>
 <p>Multiprocessing is used to perform concurrent execution of tasks. The number
-of worker processes can be changed using the <tt class="docutils literal"><span class="pre">--concurrency</span></tt> argument, and
-defaults to the number of CPUs in the system.</p>
+of worker processes can be changed using the <tt class="docutils literal"><span class="pre">--concurrency</span></tt> argument and
+defaults to the number of CPUs available.</p>
 <p>More worker processes are usually better, but there&#8217;s a cut-off point where
 adding more processes affects performance in negative ways.
 There is even some evidence to support that having multiple celeryd&#8217;s running,
 may perform better than having a single worker. For example 3 celeryd&#8217;s with
 10 worker processes each, but you need to experiment to find the values that
-works best for you, as this varies based on application, work load, task
-runtimes and other factors.</p>
+works best for you as this varies based on application, work load, task
+run times and other factors.</p>
 </div>
 <div class="section" id="time-limits">
 <h2><a class="toc-backref" href="#id5">Time limits</a><a class="headerlink" href="#time-limits" title="Permalink to this headline">¶</a></h2>
@@ -145,7 +148,7 @@ this scenario happening is enabling time limits.</p>
 <p>The time limit (<tt class="docutils literal"><span class="pre">--time-limit</span></tt>) is the maximum number of seconds a task
 may run before the process executing it is terminated and replaced by a
 new process. You can also enable a soft time limit (<tt class="docutils literal"><span class="pre">--soft-time-limit</span></tt>),
-this raises an exception that the task can catch to clean up before the hard
+this raises an exception the task can catch to clean up before the hard
 time limit kills it:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.decorators</span> <span class="kn">import</span> <span class="n">task</span>
 <span class="kn">from</span> <span class="nn">celery.exceptions</span> <span class="kn">import</span> <span class="n">SoftTimeLimitExceeded</span>
@@ -166,27 +169,28 @@ time limit kills it:</p>
 <h2><a class="toc-backref" href="#id6">Max tasks per child setting</a><a class="headerlink" href="#max-tasks-per-child-setting" title="Permalink to this headline">¶</a></h2>
 <p>With this option you can configure the maximum number of tasks
 a worker can execute before it&#8217;s replaced by a new process.</p>
-<p>This is useful if you have memory leaks you have no control over,
-for example closed source C extensions.</p>
+<p>This is useful if you have memory leaks you have no control over
+for example from closed source C extensions.</p>
 <p>The option can be set using the <tt class="docutils literal"><span class="pre">--maxtasksperchild</span></tt> argument
 to <tt class="docutils literal"><span class="pre">celeryd</span></tt> or using the <tt class="docutils literal"><span class="pre">CELERYD_MAX_TASKS_PER_CHILD</span></tt> setting.</p>
 </div>
 <div class="section" id="remote-control">
 <h2><a class="toc-backref" href="#id7">Remote control</a><a class="headerlink" href="#remote-control" title="Permalink to this headline">¶</a></h2>
-<p>Workers have the ability to be remote controlled using a broadcast message
-queue. The commands can be directed to all, or a specific list of workers.</p>
-<p>Commands can also have replies, the client can then wait for and collect
+<p>Workers have the ability to be remote controlled using a high-priority
+broadcast message queue. The commands can be directed to all, or a specific
+list of workers.</p>
+<p>Commands can also have replies. The client can then wait for and collect
 those replies, but since there&#8217;s no central authority to know how many
 workers are available in the cluster, there is also no way to estimate
-how many workers may send a reply, therefore the client has a configurable
-timeout - the deadline in seconds for replies to arrive in. This timeout
-defaults to one second. If the worker didn&#8217;t reply within the deadline,
+how many workers may send a reply. Therefore the client has a configurable
+timeout — the deadline in seconds for replies to arrive in. This timeout
+defaults to one second. If the worker doesn&#8217;t reply within the deadline
 it doesn&#8217;t necessarily mean the worker didn&#8217;t reply, or worse is dead, but
-may just be caused by network latency or the worker being slow at processing
+may simply be caused by network latency or the worker being slow at processing
 commands, so adjust the timeout accordingly.</p>
 <p>In addition to timeouts, the client can specify the maximum number
 of replies to wait for. If a destination is specified this limit is set
-to the number of destinations.</p>
+to the number of destination hosts.</p>
 <div class="section" id="the-broadcast-function">
 <h3><a class="toc-backref" href="#id8">The <a class="reference internal" href="../reference/celery.task.control.html#celery.task.control.broadcast" title="celery.task.control.broadcast"><tt class="xref py py-func docutils literal"><span class="pre">broadcast()</span></tt></a> function.</a><a class="headerlink" href="#the-broadcast-function" title="Permalink to this headline">¶</a></h3>
 <p>This is the client function used to send commands to the workers.
@@ -236,11 +240,11 @@ destination hostname:</p>
 </pre></div>
 </div>
 <p><strong>NOTE</strong> This won&#8217;t affect workers with the <tt class="docutils literal"><span class="pre">CELERY_DISABLE_RATE_LIMITS</span></tt>
-setting on. To re-enable rate limits you have to restart the worker.</p>
+setting on. To re-enable rate limits then you have to restart the worker.</p>
 </div>
 <div class="section" id="remote-shutdown">
 <h3><a class="toc-backref" href="#id10">Remote shutdown</a><a class="headerlink" href="#remote-shutdown" title="Permalink to this headline">¶</a></h3>
-<p>This command will gracefully shut down the worker from remote.</p>
+<p>This command will gracefully shut down the worker remotely:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">broadcast</span><span class="p">(</span><span class="s">&quot;shutdown&quot;</span><span class="p">)</span> <span class="c"># shutdown all workers</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">broadcast</span><span class="p">(</span><span class="s">&quot;shutdown, destination=&quot;</span><span class="n">worker1</span><span class="o">.</span><span class="n">example</span><span class="o">.</span><span class="n">com</span><span class="s">&quot;)</span>
 </pre></div>
@@ -250,10 +254,10 @@ setting on. To re-enable rate limits you have to restart the worker.</p>
 <h3><a class="toc-backref" href="#id11">Ping</a><a class="headerlink" href="#ping" title="Permalink to this headline">¶</a></h3>
 <p>This command requests a ping from alive workers.
 The workers reply with the string &#8216;pong&#8217;, and that&#8217;s just about it.
-It will use the default one second limit for replies unless you specify
-a custom <tt class="docutils literal"><span class="pre">timeout</span></tt>.</p>
+It will use the default one second timeout for replies unless you specify
+a custom timeout:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task.control</span> <span class="kn">import</span> <span class="n">ping</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">ping</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ping</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
 <span class="go">[{&#39;worker1.example.com&#39;: &#39;pong&#39;},</span>
 <span class="go"> {&#39;worker2.example.com&#39;: &#39;pong&#39;},</span>
 <span class="go"> {&#39;worker3.example.com&#39;: &#39;pong&#39;}]</span>
@@ -375,7 +379,7 @@ for immediate execution.</p>
         <li class="right" >
           <a href="executing.html" title="Executing Tasks"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v1.1.3 (unstable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.0.0 (stable) documentation</a> &raquo;</li>
           <li><a href="index.html" >User Guide</a> &raquo;</li> 
       </ul>
     </div>
