@@ -74,7 +74,7 @@ The :class:`~celery.task.sets.TaskSet` enables easy invocation of several
 tasks at once, and is then able to join the results in the same order as the
 tasks were invoked.
 
-The task set works on a list of :class:`~celery.task.sets.subtask`'s::
+A task set takes a list of :class:`~celery.task.sets.subtask`'s::
 
     >>> from celery.task.sets import TaskSet
     >>> from tasks import add
@@ -120,7 +120,7 @@ It supports the following operations:
 * :meth:`~celery.result.TaskSetResult.waiting`
 
     Returns :const:`True` if any of the subtasks
-    is not ready.
+    is not ready yet.
 
 * :meth:`~celery.result.TaskSetResult.ready`
 
@@ -133,15 +133,15 @@ It supports the following operations:
 
 * :meth:`~celery.result.TaskSetResult.revoke`
 
-    Revoke all of the subtasks.
+    Revokes all of the subtasks.
 
 * :meth:`~celery.result.TaskSetResult.iterate`
 
-    Iterate over the return values of the subtasks
+    Iterates over the return values of the subtasks
     as they finish, one by one.
 
 * :meth:`~celery.result.TaskSetResult.join`
 
-    Gather the results for all of the subtasks,
+    Gather the results for all of the subtasks
     and return a list with them ordered by the order of which they
     were called.

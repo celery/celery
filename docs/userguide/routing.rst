@@ -20,12 +20,12 @@ Automatic routing
 The simplest way to do routing is to use the ``CELERY_CREATE_MISSING_QUEUES``
 setting (on by default).
 
-When this setting is on a named queue that is not already defined in
+With this setting on, a named queue that is not already defined in
 ``CELERY_QUEUES`` will be created automatically. This makes it easy to perform
 simple routing tasks.
 
 Say you have two servers, ``x``, and ``y`` that handles regular tasks,
-and one server ``z``, that only handles feed related tasks, you can use this
+and one server ``z``, that only handles feed related tasks. You can use this
 configuration::
 
     CELERY_ROUTES = {"feed.tasks.import_feed": "feeds"}
@@ -59,7 +59,7 @@ How the queues are defined
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The point with this feature is to hide the complex AMQP protocol for users
-with only basic needs. However, you may still be interested in how these queues
+with only basic needs. However — you may still be interested in how these queues
 are defined.
 
 A queue named ``"video"`` will be created with the following settings:
