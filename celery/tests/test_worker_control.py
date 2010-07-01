@@ -20,6 +20,7 @@ def mytask():
 
 
 class Dispatcher(object):
+    enabled = None
 
     def __init__(self, *args, **kwargs):
         self.sent = []
@@ -54,6 +55,7 @@ class test_ControlPanel(unittest.TestCase):
     def test_disable_events(self):
         listener = Listener()
         panel = self.create_panel(listener=listener)
+        listener.event_dispatcher.enabled = True
         panel.execute("disable_events")
         self.assertEqual(listener.event_dispatcher.enabled, False)
         self.assertIn("worker-offline", listener.event_dispatcher.sent)
@@ -61,6 +63,7 @@ class test_ControlPanel(unittest.TestCase):
     def test_enable_events(self):
         listener = Listener()
         panel = self.create_panel(listener=listener)
+        listener.event_dispatcher.enabled = False
         panel.execute("enable_events")
         self.assertEqual(listener.event_dispatcher.enabled, True)
         self.assertIn("worker-online", listener.event_dispatcher.sent)
