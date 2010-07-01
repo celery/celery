@@ -109,6 +109,8 @@ class MongoBackend(BaseDictBackend):
         taskmeta_collection = db[self.mongodb_taskmeta_collection]
         taskmeta_collection.save(meta, safe=True)
 
+        return result
+
     def _get_task_meta_for(self, task_id):
         """Get task metadata for a task by id."""
 
