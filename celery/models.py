@@ -2,7 +2,7 @@
 
 celery.models has been moved to djcelery.models.
 
-This file is deprecated and will be removed in Celery v1.4.0.
+This file is deprecated and will be removed in Celery v2.1.0.
 
 """
 import atexit
@@ -43,7 +43,7 @@ To install django-celery you can do one of the following:
 
 
 If you weren't aware of this already you should read the
-Celery 1.2.0 Changelog as well:
+Celery 2.0 Changelog as well:
     http://github.com/ask/celery/tree/djangofree/Changelog
 
 """)

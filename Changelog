@@ -5,14 +5,14 @@
 .. contents::
     :local:
 
-1.2.0
+2.0.0
 =====
 :release-date: NOT RELEASED
 :branch: master
 :state: freeze
 
-Celery 1.2 contains backward incompatible changes, the most important
-being that the Django dependency has been removed, so Celery no longer
+Celery 2.0 contains backward incompatible changes, the most important
+being that the Django dependency has been removed so Celery no longer
 supports Django out of the box, but instead as an add-on package
 called `django-celery`_.
 
@@ -55,15 +55,15 @@ Django integration has been moved to a separate package: `django-celery`_.
     ``celery.backends.cache``              ``djcelery.backends.cache``
     =====================================  =====================================
 
-Importing :mod:`djcelery` will automatically setup celery to use the Django
-loader by setting the :envvar:`CELERY_LOADER` environment variable (it won't
-change it if it's already defined).
+Importing :mod:`djcelery` will automatically setup Celery to use the Django.
+It does this by pointing the :envvar:`CELERY_LOADER` environment variable to
+the Django loader (it won't change it if a loader is already set.)
 
-When the Django loader is used, the "database" and "cache" backend aliases
-will point to the :mod:`djcelery` backends instead of the built-in backends.
+When the Django loader is used, the "database" and "cache" result backend
+aliases will point to the :mod:`djcelery` backends instead of the built-in backends,
+and configuration will be read from the Django settings.
 
 .. _`django-celery`: http://pypi.python.org/pypi/django-celery
-
 
 Upgrading for others
 --------------------
@@ -1017,7 +1017,7 @@ Fixes
 
     Please note that a patch to :mod:`multiprocessing` is currently being
     worked on, this patch would enable us to use a better solution, and is
-    scheduled for inclusion in the ``1.2.0`` release.
+    scheduled for inclusion in the ``2.0.0`` release.
 
 * celeryd now shutdowns cleanly when receving the ``TERM`` signal.
 
@@ -1295,7 +1295,7 @@ Deprecations
 ------------
 
 * The following configuration variables has been renamed and will be
-  deprecated in v1.2:
+  deprecated in v2.0:
 
     * CELERYD_DAEMON_LOG_FORMAT -> CELERYD_LOG_FORMAT
     * CELERYD_DAEMON_LOG_LEVEL -> CELERYD_LOG_LEVEL
@@ -1313,12 +1313,12 @@ Deprecations
     the custom AMQP routing options (queue/exchange/routing_key, etc), you
     should read the new FAQ entry: http://bit.ly/aiWoH.
 
-    The previous syntax is deprecated and scheduled for removal in v1.2.
+    The previous syntax is deprecated and scheduled for removal in v2.0.
 
 * ``TaskSet.run`` has been renamed to ``TaskSet.apply_async``.
 
     ``TaskSet.run`` has now been deprecated, and is scheduled for
-    removal in v1.2.
+    removal in v2.0.
 
 News
 ----
