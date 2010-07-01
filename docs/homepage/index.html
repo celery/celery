@@ -30,7 +30,7 @@ pageTracker._trackPageview();
     <div class="link" id="current"><a href="#">Home</a></div>
     <div class="link"><a href="http://github.com/ask/celery">Code</a></div>
     <div class="link"><a href="docs/">Documentation</a></div>
-    <div class="link"><a href="http://ask.github.com/celery/getting-started/">Tutorials</a></div>
+    <div class="link"><a href="http://celeryq.org/docs/getting-started/">Tutorials</a></div>
     <div class="link"><a href="http://pypi.python.org/pypi/celery">Download</a></div>
   </div>
 </div>
@@ -52,20 +52,27 @@ pageTracker._trackPageview();
 
     <div class="column">
         <h2>Distributed Task Queue</h2>
-        <p>
-        Celery is a task queue/job queue based on distributed message passing.
-        It is focused on real-time operation, but support scheduling as well.</p>
+        <p> Celery is an asynchronous task queue/job queue based on distributed message passing.
+        It is focused on real-time operation, but supports scheduling as well.</p>
 
-        <p>The execution units, called tasks, are executed concurrently on one
-        or more worker servers. Tasks can execute asynchronously (in the background) or
-        synchronously (wait until ready).</p>
+        <p>The execution units, called tasks, are executed concurrently on a single or
+        more worker servers. Tasks can execute asynchronously (in the background) or synchronously
+        (wait until ready).</p>
 
-        <p>Celery is already used in production to process millions of tasks
-        a day.</p>
+        <p>Celery is already used in production to process millions of tasks a day.</p>
 
-        <p>Celery was originally created for use with Django, but is now
-        usable from any Python project.
-        It can also <a href="http://ask.github.com/celery/userguide/remote-tasks.html">operate with other languages</a> via webhooks.</p>
+        <p>Celery is written in Python, but the protocol can be implemented in any
+        language.
+        It can also <a href="http://celeryq.org/docs/userguide/remote-tasks.html"
+        >operate with other languages</a> using webhooks.</p>
+
+        <p>The recommended message broker is <a href="http://rabbitmq.com">RabbitMQ</a>,
+        but support for <a href="http://redisdb.com">Redis</a> and databases
+        is also available.</p>
+
+        <p>You may also be pleased to know that full
+        <a href="http://pypi.python.org/pypi/django-celery">Django integration</a>exists,
+        delivered by the django-celery package.</p>
 
         <h3>Example</h3>
         <p>This is a simple task adding two numbers:</p>
@@ -86,16 +93,16 @@ pageTracker._trackPageview();
 
     <h3>Getting Started</h3>
 
-
     <ol>
         <li>Install celery by download or <code>pip install -U celery</code></li>
-        <li>Set up <a href="http://ask.github.com/celery/getting-started/broker-installation.html">RabbitMQ</a>
-        or one of the <a href="http://ask.github.com/celery/tutorials/otherqueues.html">ghetto queue</a>
+        <li>Set up <a href="http://celeryq.org/docs/getting-started/broker-installation.html">RabbitMQ</a>
+        or one of the <a href="http://celeryq.org/docs/tutorials/otherqueues.html">ghetto queue</a>
         solutions.
         <li>Select one of the following guides:
         <ul>
-            <li><a href="http://ask.github.com/celery/getting-started/first-steps-with-python.html">First steps with Python</a></li>
-            <li><a href="http://ask.github.com/celery/getting-started/first-steps-with-django.html">First steps with Django</a></li>
+            <li><a
+                href="http://celeryq.org/docs/getting-started/first-steps-with-celery.html">First steps with Python</a></li>
+            <li><a href="http://celeryq.org/docs/django-celery/getting-started/first-steps-with-django.html">First steps with Django</a></li>
         </ul>
     </ol>
 
@@ -164,7 +171,7 @@ pageTracker._trackPageview();
       <p>1.0 is scheduled to be released this week! Please help us test the latest
       <a href="http://github.com/ask/celery/tarball/v1.0.0-pre4">release
           candiate</a> to make this happen. To upgrade from an earlier
-      version, please read the <a href="http://ask.github.com/celery/changelog.html">changelog</a>.
+      version, please read the <a href="http://celeryq.org/docs/changelog.html">changelog</a>.
       <hr>
       </span>
 
