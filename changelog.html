@@ -176,6 +176,13 @@ well.</p>
 </pre></div>
 </div>
 </li>
+<li><p class="first">If you use <tt class="docutils literal"><span class="pre">mod_wsgi</span></tt> you need to add the following line to your <tt class="docutils literal"><span class="pre">.wsgi</span></tt>
+file:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">os</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s">&quot;CELERY_LOADER&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;django&quot;</span>
+</pre></div>
+</div>
+</li>
 <li><p class="first">The following modules has been moved to <a class="reference external" href="http://pypi.python.org/pypi/django-celery">django-celery</a>:</p>
 <blockquote>
 <table border="1" class="docutils">
