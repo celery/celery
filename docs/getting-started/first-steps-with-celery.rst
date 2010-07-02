@@ -30,8 +30,7 @@ All celery tasks are classes that inherit from the ``Task``
 class. In this case we're using a decorator that wraps the add
 function in an appropriate class for us automatically. The full
 documentation on how to create tasks and task classes is in the
-:doc:`../userguide/tasks>` part of the user guide.
-
+:doc:`../userguide/tasks` part of the user guide.
 
 
 Configuration

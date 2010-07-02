@@ -13,7 +13,7 @@ start-stop-daemon
 =================
 
 See the `contrib/debian/init.d/`_ directory in the celery distribution, this
-directory contains init scripts for celeryd and celery.
+directory contains init scripts for celeryd and celerybeat.
 
 These scripts are configured in ``/etc/default/celeryd``.
 
