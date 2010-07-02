@@ -217,6 +217,7 @@
     <dt><a href="internals/reference/celery.backends.base.html#celery.backends.base.BaseDictBackend">BaseDictBackend (class in celery.backends.base)</a></dt>
     <dt><a href="reference/celery.loaders.base.html#celery.loaders.base.BaseLoader">BaseLoader (class in celery.loaders.base)</a></dt>
     <dt><a href="reference/celery.bin.celerybeat.html#celery.bin.celerybeat.Beat">Beat (class in celery.bin.celerybeat)</a></dt>
+    <dt><a href="reference/celery.bin.celerybeat.html#celery.bin.celerybeat.Beat.ClockService">Beat.ClockService (class in celery.bin.celerybeat)</a></dt>
     <dt><a href="internals/reference/celery.utils.dispatch.saferef.html#celery.utils.dispatch.saferef.BoundMethodWeakref">BoundMethodWeakref (class in celery.utils.dispatch.saferef)</a></dt>
     <dt><a href="internals/reference/celery.utils.dispatch.saferef.html#celery.utils.dispatch.saferef.BoundNonDescriptorMethodWeakref">BoundNonDescriptorMethodWeakref (class in celery.utils.dispatch.saferef)</a></dt>
 </dl></td>
@@ -1057,6 +1058,9 @@
       <dt><a href="internals/reference/celery.backends.tyrant.html#celery.backends.tyrant.TyrantBackend.open">(celery.backends.tyrant.TyrantBackend method)</a></dt>
   </dl></dd>
     <dt><a href="internals/reference/celery.beat.html#celery.beat.ClockService.open_schedule">open_schedule() (celery.beat.ClockService method)</a></dt>
+    <dd><dl>
+      <dt><a href="reference/celery.bin.celerybeat.html#celery.bin.celerybeat.Beat.ClockService.open_schedule">(celery.bin.celerybeat.Beat.ClockService method)</a></dt>
+  </dl></dd>
     <dt><a href="reference/celery.bin.celeryd_multi.html#celery.bin.celeryd_multi.NamespacedOptionParser.optmerge">optmerge() (celery.bin.celeryd_multi.NamespacedOptionParser method)</a></dt>
     <dt><a href="internals/reference/celery.utils.compat.html#celery.utils.compat.OrderedDict">OrderedDict (class in celery.utils.compat)</a></dt>
 </dl></td>
@@ -1361,6 +1365,7 @@
     <dt><a href="internals/reference/celery.beat.html#celery.beat.ClockService.schedule">schedule (celery.beat.ClockService attribute)</a></dt>
     <dd><dl>
       <dt><a href="internals/reference/celery.beat.html#celery.beat.Scheduler.schedule">(celery.beat.Scheduler attribute)</a>, <a href="internals/reference/celery.beat.html#celery.beat.Scheduler.schedule">[1]</a></dt>
+      <dt><a href="reference/celery.bin.celerybeat.html#celery.bin.celerybeat.Beat.ClockService.schedule">(celery.bin.celerybeat.Beat.ClockService attribute)</a></dt>
       <dt><a href="reference/celery.task.schedules.html#celery.task.schedules.schedule">(class in celery.task.schedules)</a></dt>
   </dl></dd>
     <dt><a href="reference/celery.bin.celeryd.html#celery.bin.celeryd.Worker.WorkController.schedule_controller">schedule_controller (celery.bin.celeryd.Worker.WorkController attribute)</a></dt>
@@ -1371,11 +1376,17 @@
     <dt><a href="internals/reference/celery.worker.controllers.html#celery.worker.controllers.ScheduleController">ScheduleController (class in celery.worker.controllers)</a></dt>
     <dt><a href="internals/reference/celery.beat.html#celery.beat.ScheduleEntry">ScheduleEntry (class in celery.beat)</a></dt>
     <dt><a href="internals/reference/celery.beat.html#celery.beat.ClockService.scheduler">scheduler (celery.beat.ClockService attribute)</a></dt>
+    <dd><dl>
+      <dt><a href="reference/celery.bin.celerybeat.html#celery.bin.celerybeat.Beat.ClockService.scheduler">(celery.bin.celerybeat.Beat.ClockService attribute)</a></dt>
+  </dl></dd>
     <dt><a href="internals/reference/celery.beat.html#celery.beat.Scheduler">Scheduler (class in celery.beat)</a></dt>
     <dd><dl>
       <dt><a href="internals/reference/celery.worker.scheduler.html#celery.worker.scheduler.Scheduler">(class in celery.worker.scheduler)</a></dt>
   </dl></dd>
     <dt><a href="internals/reference/celery.beat.html#celery.beat.ClockService.scheduler_cls">scheduler_cls (celery.beat.ClockService attribute)</a></dt>
+    <dd><dl>
+      <dt><a href="reference/celery.bin.celerybeat.html#celery.bin.celerybeat.Beat.ClockService.scheduler_cls">(celery.bin.celerybeat.Beat.ClockService attribute)</a></dt>
+  </dl></dd>
     <dt><a href="internals/reference/celery.beat.html#celery.beat.SchedulingError">SchedulingError</a></dt>
     <dt><a href="reference/celery.bin.celeryev.html#celery.bin.celeryev.CursesMonitor.selection_info">selection_info() (celery.bin.celeryev.CursesMonitor method)</a></dt>
     <dt><a href="reference/celery.bin.celeryev.html#celery.bin.celeryev.CursesMonitor.selection_rate_limit">selection_rate_limit() (celery.bin.celeryev.CursesMonitor method)</a></dt>
@@ -1431,6 +1442,7 @@
     <dt><a href="reference/celery.bin.camqadm.html#celery.bin.camqadm.Spec">Spec (class in celery.bin.camqadm)</a></dt>
     <dt><a href="internals/reference/celery.beat.html#celery.beat.ClockService.start">start() (celery.beat.ClockService method)</a></dt>
     <dd><dl>
+      <dt><a href="reference/celery.bin.celerybeat.html#celery.bin.celerybeat.Beat.ClockService.start">(celery.bin.celerybeat.Beat.ClockService method)</a></dt>
       <dt><a href="reference/celery.bin.celeryd.html#celery.bin.celeryd.Worker.WorkController.start">(celery.bin.celeryd.Worker.WorkController method)</a></dt>
       <dt><a href="reference/celery.bin.celeryd_multi.html#celery.bin.celeryd_multi.MultiTool.start">(celery.bin.celeryd_multi.MultiTool method)</a></dt>
       <dt><a href="internals/reference/celery.concurrency.processes.html#celery.concurrency.processes.TaskPool.start">(celery.concurrency.processes.TaskPool method)</a></dt>
@@ -1454,6 +1466,7 @@
   </dl></dd>
     <dt><a href="internals/reference/celery.beat.html#celery.beat.ClockService.stop">stop() (celery.beat.ClockService method)</a></dt>
     <dd><dl>
+      <dt><a href="reference/celery.bin.celerybeat.html#celery.bin.celerybeat.Beat.ClockService.stop">(celery.bin.celerybeat.Beat.ClockService method)</a></dt>
       <dt><a href="reference/celery.bin.celeryd.html#celery.bin.celeryd.Worker.WorkController.stop">(celery.bin.celeryd.Worker.WorkController method)</a></dt>
       <dt><a href="internals/reference/celery.concurrency.processes.html#celery.concurrency.processes.TaskPool.stop">(celery.concurrency.processes.TaskPool method)</a></dt>
       <dt><a href="internals/reference/celery.concurrency.threads.html#celery.concurrency.threads.TaskPool.stop">(celery.concurrency.threads.TaskPool method)</a></dt>
@@ -1484,6 +1497,9 @@
       <dt><a href="reference/celery.result.html#celery.result.TaskSetResult.successful">(celery.result.TaskSetResult method)</a></dt>
   </dl></dd>
     <dt><a href="internals/reference/celery.beat.html#celery.beat.ClockService.sync">sync() (celery.beat.ClockService method)</a></dt>
+    <dd><dl>
+      <dt><a href="reference/celery.bin.celerybeat.html#celery.bin.celerybeat.Beat.ClockService.sync">(celery.bin.celerybeat.Beat.ClockService method)</a></dt>
+  </dl></dd>
 </dl></td>
 </tr></table>
 

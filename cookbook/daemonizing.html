@@ -58,16 +58,230 @@
 daemonization tools.</p>
 <div class="contents local topic" id="contents">
 <ul class="simple">
-<li><a class="reference external" href="#start-stop-daemon" id="id2">start-stop-daemon</a></li>
-<li><a class="reference external" href="#supervisord" id="id3">supervisord</a></li>
-<li><a class="reference external" href="#launchd-os-x" id="id4">launchd (OS X)</a></li>
+<li><a class="reference external" href="#start-stop-daemon" id="id5">start-stop-daemon</a><ul>
+<li><a class="reference external" href="#init-script-celeryd" id="id6">Init script: celeryd</a><ul>
+<li><a class="reference external" href="#example-configuration" id="id7">Example configuration</a></li>
+<li><a class="reference external" href="#example-django-configuration" id="id8">Example Django configuration</a></li>
+<li><a class="reference external" href="#available-options" id="id9">Available options</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#init-script-celerybeat" id="id10">Init script: celerybeat</a><ul>
+<li><a class="reference external" href="#id1" id="id11">Example configuration</a></li>
+<li><a class="reference external" href="#id2" id="id12">Example Django configuration</a></li>
+<li><a class="reference external" href="#id3" id="id13">Available options</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference external" href="#supervisord" id="id14">supervisord</a></li>
+<li><a class="reference external" href="#launchd-os-x" id="id15">launchd (OS X)</a></li>
 </ul>
 </div>
 <div class="section" id="start-stop-daemon">
-<h2><a class="toc-backref" href="#id2">start-stop-daemon</a><a class="headerlink" href="#start-stop-daemon" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li><a class="reference external" href="http://github.com/ask/celery/tree/master/contrib/debian/">contrib/debian/init.d/</a></li>
+<h2><a class="toc-backref" href="#id5">start-stop-daemon</a><a class="headerlink" href="#start-stop-daemon" title="Permalink to this headline">¶</a></h2>
+<p>See the <a class="reference external" href="http://github.com/ask/celery/tree/master/contrib/debian/">contrib/debian/init.d/</a> directory in the celery distribution, this
+directory contains init scripts for celeryd and celerybeat.</p>
+<p>These scripts are configured in <tt class="docutils literal"><span class="pre">/etc/default/celeryd</span></tt>.</p>
+<div class="section" id="init-script-celeryd">
+<h3><a class="toc-backref" href="#id6">Init script: celeryd</a><a class="headerlink" href="#init-script-celeryd" title="Permalink to this headline">¶</a></h3>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Usage:</th><td class="field-body"><tt class="docutils literal"><span class="pre">/etc/init.d/celeryd</span> <span class="pre">{start|stop|force-reload|restart|try-restart|status}</span></tt></td>
+</tr>
+<tr class="field"><th class="field-name" colspan="2">Configuration file:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body">/etc/default/celeryd</td>
+</tr>
+</tbody>
+</table>
+<p>To configure celeryd you probably need to at least tell it where to chdir
+when it starts (to find your celeryconfig).</p>
+<div class="section" id="example-configuration">
+<h4><a class="toc-backref" href="#id7">Example configuration</a><a class="headerlink" href="#example-configuration" title="Permalink to this headline">¶</a></h4>
+<p>This is an example configuration for a Python project.</p>
+<p><tt class="docutils literal"><span class="pre">/etc/default/celeryd</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># Where to chdir at start.</span>
+<span class="n">CELERYD_CHDIR</span><span class="o">=</span><span class="s">&quot;/opt/Myproject/&quot;</span>
+
+<span class="c"># Extra arguments to celeryd</span>
+<span class="n">CELERYD_OPTS</span><span class="o">=</span><span class="s">&quot;--time-limit 300&quot;</span>
+
+<span class="c"># Name of the celery config module.#</span>
+<span class="n">CELERY_CONFIG_MODULE</span><span class="o">=</span><span class="s">&quot;celeryconfig&quot;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="example-django-configuration">
+<h4><a class="toc-backref" href="#id8">Example Django configuration</a><a class="headerlink" href="#example-django-configuration" title="Permalink to this headline">¶</a></h4>
+<p>This is an example configuration for those using <tt class="docutils literal"><span class="pre">django-celery</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># Where the Django project is.</span>
+<span class="n">CELERYD_CHDIR</span><span class="o">=</span><span class="s">&quot;/opt/Project/&quot;</span>
+
+<span class="c"># Name of the projects settings module.</span>
+<span class="n">DJANGO_SETTINGS_MODULE</span><span class="o">=</span><span class="s">&quot;settings&quot;</span>
+
+<span class="c"># Path to celeryd</span>
+<span class="n">CELERYD</span><span class="o">=</span><span class="s">&quot;/opt/Project/manage.py celeryd&quot;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="available-options">
+<h4><a class="toc-backref" href="#id9">Available options</a><a class="headerlink" href="#available-options" title="Permalink to this headline">¶</a></h4>
+<ul>
+<li><dl class="first docutils">
+<dt>CELERYD_OPTS</dt>
+<dd><p class="first last">Additional arguments to celeryd, see <tt class="docutils literal"><span class="pre">celeryd</span> <span class="pre">--help</span></tt> for a list.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>CELERYD_CHDIR</dt>
+<dd><p class="first last">Path to chdir at start. Default is to stay in the current directory.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>CELERYD_PIDFILE</dt>
+<dd><p class="first last">Full path to the pidfile. Default is /var/run/celeryd.pid.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>CELERYD_LOGFILE</dt>
+<dd><p class="first last">Full path to the celeryd logfile. Default is /var/log/celeryd.log</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>CELERYD_LOG_LEVEL</dt>
+<dd><p class="first last">Log level to use for celeryd. Default is INFO.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>CELERYD</dt>
+<dd><p class="first last">Path to the celeryd program. Default is <tt class="docutils literal"><span class="pre">celeryd</span></tt>.
+You can point this to an virtualenv, or even use manage.py for django.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>CELERYD_USER</dt>
+<dd><p class="first last">User to run celeryd as. Default is current user.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>CELERYD_GROUP</dt>
+<dd><p class="first last">Group to run celeryd as. Default is current user.</p>
+</dd>
+</dl>
+</li>
 </ul>
+</div>
+</div>
+<div class="section" id="init-script-celerybeat">
+<h3><a class="toc-backref" href="#id10">Init script: celerybeat</a><a class="headerlink" href="#init-script-celerybeat" title="Permalink to this headline">¶</a></h3>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Usage:</th><td class="field-body"><tt class="docutils literal"><span class="pre">/etc/init.d/celerybeat</span> <span class="pre">{start|stop|force-reload|restart|try-restart|status}</span></tt></td>
+</tr>
+<tr class="field"><th class="field-name" colspan="2">Configuration file:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body">/etc/default/celerybeat or /etc/default/celeryd</td>
+</tr>
+</tbody>
+</table>
+<div class="section" id="id1">
+<h4><a class="toc-backref" href="#id11">Example configuration</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h4>
+<p>This is an example configuration for a Python project:</p>
+<p><tt class="docutils literal"><span class="pre">/etc/default/celeryd</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># Where to chdir at start.</span>
+<span class="n">CELERYD_CHDIR</span><span class="o">=</span><span class="s">&quot;/opt/Myproject/&quot;</span>
+
+<span class="c"># Extra arguments to celeryd</span>
+<span class="n">CELERYD_OPTS</span><span class="o">=</span><span class="s">&quot;--time-limit 300&quot;</span>
+
+<span class="c"># Extra arguments to celerybeat</span>
+<span class="n">CELERYBEAT_OPTS</span><span class="o">=</span><span class="s">&quot;--schedule=/var/run/celerybeat-schedule&quot;</span>
+
+<span class="c"># Name of the celery config module.#</span>
+<span class="n">CELERY_CONFIG_MODULE</span><span class="o">=</span><span class="s">&quot;celeryconfig&quot;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id2">
+<h4><a class="toc-backref" href="#id12">Example Django configuration</a><a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h4>
+<p>This is an example configuration for those using <tt class="docutils literal"><span class="pre">django-celery</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># Where the Django project is.</span>
+<span class="n">CELERYD_CHDIR</span><span class="o">=</span><span class="s">&quot;/opt/Project/&quot;</span>
+
+<span class="c"># Name of the projects settings module.</span>
+<span class="n">DJANGO_SETTINGS_MODULE</span><span class="o">=</span><span class="s">&quot;settings&quot;</span>
+
+<span class="c"># Path to celeryd</span>
+<span class="n">CELERYD</span><span class="o">=</span><span class="s">&quot;/opt/Project/manage.py celeryd&quot;</span>
+
+<span class="c"># Path to celerybeat</span>
+<span class="n">CELERYBEAT</span><span class="o">=</span><span class="s">&quot;/opt/Project/manage.py celerybeat&quot;</span>
+
+<span class="c"># Extra arguments to celerybeat</span>
+<span class="n">CELERYBEAT_OPTS</span><span class="o">=</span><span class="s">&quot;--schedule=/var/run/celerybeat-schedule&quot;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id3">
+<h4><a class="toc-backref" href="#id13">Available options</a><a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h4>
+<ul>
+<li><dl class="first docutils">
+<dt>CELERYBEAT_OPTS</dt>
+<dd><p class="first last">Additional arguments to celerybeat, see <tt class="docutils literal"><span class="pre">celerybeat</span> <span class="pre">--help</span></tt> for a
+list.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>CELERYBEAT_PIDFILE</dt>
+<dd><p class="first last">Full path to the pidfile. Default is /var/run/celeryd.pid.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>CELERYBEAT_LOGFILE</dt>
+<dd><p class="first last">Full path to the celeryd logfile. Default is /var/log/celeryd.log</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>CELERYBEAT_LOG_LEVEL</dt>
+<dd><p class="first last">Log level to use for celeryd. Default is INFO.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>CELERYBEAT</dt>
+<dd><p class="first last">Path to the celeryd program. Default is <tt class="docutils literal"><span class="pre">celeryd</span></tt>.
+You can point this to an virtualenv, or even use manage.py for django.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>CELERYBEAT_USER</dt>
+<dd><p class="first last">User to run celeryd as. Default is current user.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>CELERYBEAT_GROUP</dt>
+<dd><p class="first last">Group to run celeryd as. Default is current user.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div>
+</div>
 </div>
 <div class="section" id="supervisord">
 <h2><a class="reference external" href="http://supervisord.org/">supervisord</a><a class="headerlink" href="#supervisord" title="Permalink to this headline">¶</a></h2>
@@ -76,7 +290,7 @@ daemonization tools.</p>
 </ul>
 </div>
 <div class="section" id="launchd-os-x">
-<h2><a class="toc-backref" href="#id4">launchd (OS X)</a><a class="headerlink" href="#launchd-os-x" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id15">launchd (OS X)</a><a class="headerlink" href="#launchd-os-x" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><a class="reference external" href="http://github.com/ask/celery/tree/master/contrib/mac/">contrib/mac/</a></li>
 </ul>
