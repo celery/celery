@@ -42,6 +42,11 @@ Django integration has been moved to a separate package: `django-celery`_.
 
     INSTALLED_APPS = "djcelery"
 
+* If you use ``mod_wsgi`` you need to add the following line to your ``.wsgi``
+  file::
+
+    import os
+    os.environ["CELERY_LOADER"] = "django"
 
 * The following modules has been moved to `django-celery`_:
 
