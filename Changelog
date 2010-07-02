@@ -11,6 +11,9 @@
 :branch: master
 :state: freeze
 
+Foreword
+--------
+
 Celery 2.0 contains backward incompatible changes, the most important
 being that the Django dependency has been removed so Celery no longer
 supports Django out of the box, but instead as an add-on package
