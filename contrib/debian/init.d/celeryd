@@ -135,14 +135,6 @@ check_dev_null() {
 export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
 
 
-if [ -f "$CELERYD" -a ! -x "$CELERYD" ]; then
-    echo "ERROR: $CELERYD is not executable."
-    echo "Please make it executable by doing: chmod +x '$CELERYD'"
-
-    echo "celeryd is disabled"
-    exit
-fi
-
 stop_worker () {
     cmd="start-stop-daemon --stop \
                            --quiet \

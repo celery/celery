@@ -141,14 +141,6 @@ check_dev_null() {
 export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
 
 
-if [ -f "$CELERYBEAT" -a ! -x "$CELERYBEAT" ]; then
-    echo "ERROR: $CELERYBEAT is not executable."
-    echo "Please make it executable by doing: chmod +x '$CELERYBEAT'"
-
-    echo "celeryd is disabled"
-    exit
-fi
-
 stop_worker () {
     cmd="start-stop-daemon --stop \
                            --quiet \
