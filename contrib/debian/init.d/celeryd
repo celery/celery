@@ -35,7 +35,7 @@
 #   DJANGO_SETTINGS_MODULE="settings"
 #
 #   # Path to celeryd
-#   # CELERYD="/opt/Project/manage.py celeryd"
+#   CELERYD="/opt/Project/manage.py celeryd"
 #
 # AVAILABLE OPTIONS
 # =================
