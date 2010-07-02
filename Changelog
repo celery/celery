@@ -594,7 +594,6 @@ News
 1.0.6
 =====
 :release-date: 2010-06-30 09:57 A.M CEST
-:md5: 88ae6a25b0f63b79a9a654b8694a93c6
 
 * RabbitMQ 1.8.0 has extended their exchange equivalence tests to
   include ``auto_delete`` and ``durable``. This broke the AMQP backend.
@@ -612,7 +611,6 @@ News
 1.0.5
 =====
 :release-date: 2010-06-01 02:36 P.M CEST
-:md5: c93f7522c2ce98a32e1cc1a970a7dba1
 
 Critical
 --------
