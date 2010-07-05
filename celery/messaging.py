@@ -172,6 +172,8 @@ class ControlReplyPublisher(Publisher):
     exchange = "celerycrq"
     exchange_type = "direct"
     delivery_mode = "non-persistent"
+    durable = False
+    auto_delete = True
 
 
 class BroadcastPublisher(Publisher):
@@ -268,6 +270,6 @@ def get_consumer_set(connection, queues=None, **options):
 @with_connection
 def reply(data, exchange, routing_key, connection=None, connect_timeout=None,
         **kwargs):
-    pub = Publisher(connection, exchange=exchange,
+    pub = ControlReplyPublisher(connection, exchange=exchange,
                     routing_key=routing_key, **kwargs)
     pub.send(data)
