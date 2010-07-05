@@ -5,7 +5,7 @@ from celery.backends import default_backend
 from celery.registry import tasks
 from celery.utils import timeutils
 from celery.worker import state
-from celery.worker.revoke import revoked
+from celery.worker.state import revoked
 from celery.worker.control.registry import Panel
 
 TASK_INFO_FIELDS = ("exchange", "routing_key", "rate_limit")

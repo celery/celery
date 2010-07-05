@@ -20,7 +20,7 @@ from celery.utils import gen_unique_id
 from celery.worker.job import WorkerTaskTrace, TaskRequest
 from celery.worker.job import execute_and_trace, AlreadyExecutedError
 from celery.worker.job import InvalidTaskError
-from celery.worker.revoke import revoked
+from celery.worker.state import revoked
 
 from celery.tests.compat import catch_warnings
 from celery.tests.utils import execute_context

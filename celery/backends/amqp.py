@@ -38,7 +38,8 @@ class ResultConsumer(Consumer):
     def __init__(self, connection, task_id, expires=None, **kwargs):
         routing_key = task_id.replace("-", "")
         if expires is not None:
-            self.queue_arguments = {"x-expires": expires}
+            pass
+            #self.queue_arguments = {"x-expires": expires}
         super(ResultConsumer, self).__init__(connection,
                 queue=routing_key, routing_key=routing_key, **kwargs)
 

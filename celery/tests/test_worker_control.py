@@ -8,7 +8,7 @@ from celery.task.builtins import PingTask
 from celery.utils import gen_unique_id
 from celery.worker import control
 from celery.worker.buckets import FastQueue
-from celery.worker.revoke import revoked
+from celery.worker.state import revoked
 from celery.worker.scheduler import Scheduler
 
 hostname = socket.gethostname()

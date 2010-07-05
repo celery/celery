@@ -13,7 +13,6 @@ from celery.registry import tasks
 from celery.utils import noop, kwdict, fun_takes_kwargs
 from celery.utils.mail import mail_admins
 from celery.worker import state
-from celery.worker.revoke import revoked
 
 # pep8.py borks on a inline signature separator and
 # says "trailing whitespace" ;)
@@ -233,7 +232,7 @@ class TaskRequest(object):
     def revoked(self):
         if self._already_revoked:
             return True
-        if self.task_id in revoked:
+        if self.task_id in state.revoked:
             self.logger.warn("Skipping revoked task: %s[%s]" % (
                 self.task_name, self.task_id))
             self.send_event("task-revoked", uuid=self.task_id)

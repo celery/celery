@@ -353,7 +353,7 @@ class test_CarrotListener(unittest.TestCase):
                            kwargs={}, id=id)
         l.event_dispatcher = MockEventDispatcher()
         l.receive_message(c.decode(), c)
-        from celery.worker.revoke import revoked
+        from celery.worker.state import revoked
         self.assertIn(id, revoked)
 
         l.receive_message(t.decode(), t)
