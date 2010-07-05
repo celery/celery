@@ -131,6 +131,11 @@ def stats(panel, **kwargs):
 
 
 @Panel.register
+def dump_revoked(panel, **kwargs):
+    return list(state.revoked)
+
+
+@Panel.register
 def dump_tasks(panel, **kwargs):
 
     def _extract_info(task):

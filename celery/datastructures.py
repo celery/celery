@@ -222,6 +222,15 @@ class LimitedSet(object):
     def __contains__(self, value):
         return value in self._data
 
+    def update(self, other):
+        if isinstance(other, self.__class__):
+            self._data.update(other._data)
+        else:
+            self._data.update(other)
+
+    def as_dict(self):
+        return self._data
+
     def __iter__(self):
         return iter(self._data.keys())
 

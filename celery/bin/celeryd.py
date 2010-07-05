@@ -135,6 +135,11 @@ OPTION_LIST = (
                     option. The extension '.db' will be appended to the \
                     filename. Default: %s" % (
                     conf.CELERYBEAT_SCHEDULE_FILENAME)),
+    optparse.make_option('-S', '--statedb', default=conf.CELERYD_STATE_DB,
+            action="store", dest="db",
+            help="Path to the state database. The extension '.db' will \
+                 be appended to the filename. Default: %s" % (
+                     conf.CELERYD_STATE_DB)),
     optparse.make_option('-E', '--events', default=conf.SEND_EVENTS,
             action="store_true", dest="events",
             help="Send events so celery can be monitored by e.g. celerymon."),
@@ -169,7 +174,7 @@ class Worker(object):
             task_time_limit=conf.CELERYD_TASK_TIME_LIMIT,
             task_soft_time_limit=conf.CELERYD_TASK_SOFT_TIME_LIMIT,
             max_tasks_per_child=conf.CELERYD_MAX_TASKS_PER_CHILD,
-            queues=None, events=False, **kwargs):
+            queues=None, events=False, db=None, **kwargs):
         self.concurrency = concurrency or multiprocessing.cpu_count()
         self.loglevel = loglevel
         self.logfile = logfile
@@ -181,6 +186,7 @@ class Worker(object):
         self.task_time_limit = task_time_limit
         self.task_soft_time_limit = task_soft_time_limit
         self.max_tasks_per_child = max_tasks_per_child
+        self.db = db
         self.queues = queues or []
 
         if isinstance(self.queues, basestring):
@@ -292,6 +298,7 @@ class Worker(object):
                                 embed_clockservice=self.run_clockservice,
                                 schedule_filename=self.schedule,
                                 send_events=self.events,
+                                db=self.db,
                                 max_tasks_per_child=self.max_tasks_per_child,
                                 task_time_limit=self.task_time_limit,
                                 task_soft_time_limit=self.task_soft_time_limit)

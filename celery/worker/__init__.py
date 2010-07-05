@@ -16,6 +16,7 @@ from celery.log import setup_logger, _hijack_multiprocessing_logger
 from celery.beat import EmbeddedClockService
 from celery.utils import noop, instantiate
 
+from celery.worker import state
 from celery.worker.buckets import TaskBucket, FastQueue
 from celery.worker.scheduler import Scheduler
 
@@ -123,7 +124,8 @@ class WorkController(object):
             task_time_limit=conf.CELERYD_TASK_TIME_LIMIT,
             task_soft_time_limit=conf.CELERYD_TASK_SOFT_TIME_LIMIT,
             max_tasks_per_child=conf.CELERYD_MAX_TASKS_PER_CHILD,
-            pool_putlocks=conf.CELERYD_POOL_PUTLOCKS):
+            pool_putlocks=conf.CELERYD_POOL_PUTLOCKS,
+            db=conf.CELERYD_STATE_DB):
 
         # Options
         self.loglevel = loglevel or self.loglevel
@@ -138,7 +140,12 @@ class WorkController(object):
         self.task_soft_time_limit = task_soft_time_limit
         self.max_tasks_per_child = max_tasks_per_child
         self.pool_putlocks = pool_putlocks
+        self.db = db
         self._finalize = Finalize(self, self.stop, exitpriority=1)
+
+        if self.db:
+            persistence = state.Persistent(self.db)
+            Finalize(persistence, persistence.save, exitpriority=5)
 
         # Queues
         if conf.DISABLE_RATE_LIMITS:
