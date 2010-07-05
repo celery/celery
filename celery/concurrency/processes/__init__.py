@@ -102,3 +102,11 @@ class TaskPool(object):
             [errback(ret_value) for errback in errbacks]
         else:
             [callback(ret_value) for callback in callbacks]
+
+    @property
+    def info(self):
+        return {"max-concurrency": self.limit,
+                "processes": [p.pid for p in self._pool._pool],
+                "max-tasks-per-child": self.maxtasksperchild,
+                "put-guarded-by-semaphore": self.putlocks,
+                "timeouts": (self.soft_timeout, self.timeout)}

@@ -176,7 +176,8 @@ class WorkController(object):
                                     hostname=self.hostname,
                                     send_events=self.send_events,
                                     init_callback=self.ready_callback,
-                                    initial_prefetch_count=prefetch_count)
+                                    initial_prefetch_count=prefetch_count,
+                                    pool=self.pool)
 
         # The order is important here;
         #   the first in the list is the first to start,

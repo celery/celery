@@ -203,7 +203,7 @@ class CarrotListener(object):
 
     def __init__(self, ready_queue, eta_schedule, logger,
             init_callback=noop, send_events=False, hostname=None,
-            initial_prefetch_count=2):
+            initial_prefetch_count=2, pool=None):
         self.connection = None
         self.task_consumer = None
         self.ready_queue = ready_queue
@@ -215,6 +215,7 @@ class CarrotListener(object):
         self.initial_prefetch_count = initial_prefetch_count
         self.event_dispatcher = None
         self.heart = None
+        self.pool = pool
         self.control_dispatch = ControlDispatch(logger=logger,
                                                 hostname=self.hostname,
                                                 listener=self)
