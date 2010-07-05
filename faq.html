@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>Frequently Asked Questions &mdash; Celery v2.0.0 (stable) documentation</title>
-    <link rel="stylesheet" href="static/classy.css" type="text/css" />
+    <link rel="stylesheet" href="static/celery.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
@@ -43,7 +43,7 @@
              accesskey="P">previous</a> |</li>
         <li><a href="index.html">Celery v2.0.0 (stable) documentation</a> &raquo;</li> 
       </ul>
-    </div>
+    </div>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -583,6 +583,96 @@ and they will not be re-run unless you have the <tt class="docutils literal"><sp
 
 
           </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
+</a></p>
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Frequently Asked Questions</a><ul>
+<li><a class="reference internal" href="#general">General</a><ul>
+<li><a class="reference internal" href="#what-kinds-of-things-should-i-use-celery-for">What kinds of things should I use celery for?</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#misconceptions">Misconceptions</a><ul>
+<li><a class="reference internal" href="#is-celery-dependent-on-pickle">Is celery dependent on pickle?</a></li>
+<li><a class="reference internal" href="#is-celery-for-django-only">Is celery for Django only?</a></li>
+<li><a class="reference internal" href="#do-i-have-to-use-amqp-rabbitmq">Do I have to use AMQP/RabbitMQ?</a></li>
+<li><a class="reference internal" href="#is-celery-multi-lingual">Is celery multi-lingual?</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#troubleshooting">Troubleshooting</a><ul>
+<li><a class="reference internal" href="#mysql-is-throwing-deadlock-errors-what-can-i-do">MySQL is throwing deadlock errors, what can I do?</a></li>
+<li><a class="reference internal" href="#celeryd-is-not-doing-anything-just-hanging">celeryd is not doing anything, just hanging</a></li>
+<li><a class="reference internal" href="#why-is-task-delay-apply-celeryd-just-hanging">Why is Task.delay/apply*/celeryd just hanging?</a></li>
+<li><a class="reference internal" href="#why-won-t-celeryd-run-on-freebsd">Why won&#8217;t celeryd run on FreeBSD?</a></li>
+<li><a class="reference internal" href="#i-m-having-integrityerror-duplicate-key-errors-why">I&#8217;m having <tt class="docutils literal"><span class="pre">IntegrityError:</span> <span class="pre">Duplicate</span> <span class="pre">Key</span></tt> errors. Why?</a></li>
+<li><a class="reference internal" href="#why-aren-t-my-tasks-processed">Why aren&#8217;t my tasks processed?</a></li>
+<li><a class="reference internal" href="#why-won-t-my-task-run">Why won&#8217;t my Task run?</a></li>
+<li><a class="reference internal" href="#why-won-t-my-periodic-task-run">Why won&#8217;t my Periodic Task run?</a></li>
+<li><a class="reference internal" href="#how-do-i-discard-all-waiting-tasks">How do I discard all waiting tasks?</a></li>
+<li><a class="reference internal" href="#i-ve-discarded-messages-but-there-are-still-messages-left-in-the-queue">I&#8217;ve discarded messages, but there are still messages left in the queue?</a></li>
+<li><a class="reference internal" href="#windows-the-b-beat-option-to-celeryd-doesn-t-work">Windows: The <tt class="docutils literal"><span class="pre">-B</span></tt> / <tt class="docutils literal"><span class="pre">--beat</span></tt> option to celeryd doesn&#8217;t work?</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#tasks">Tasks</a><ul>
+<li><a class="reference internal" href="#how-can-i-reuse-the-same-connection-when-applying-tasks">How can I reuse the same connection when applying tasks?</a></li>
+<li><a class="reference internal" href="#can-i-execute-a-task-by-name">Can I execute a task by name?</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#results">Results</a><ul>
+<li><a class="reference internal" href="#how-do-i-get-the-result-of-a-task-if-i-have-the-id-that-points-there">How do I get the result of a task if I have the ID that points there?</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#brokers">Brokers</a><ul>
+<li><a class="reference internal" href="#why-is-rabbitmq-crashing">Why is RabbitMQ crashing?</a></li>
+<li><a class="reference internal" href="#can-i-use-celery-with-activemq-stomp">Can I use celery with ActiveMQ/STOMP?</a></li>
+<li><a class="reference internal" href="#what-features-are-not-supported-when-using-stomp">What features are not supported when using STOMP?</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#features">Features</a><ul>
+<li><a class="reference internal" href="#how-can-i-run-a-task-once-another-task-has-finished">How can I run a task once another task has finished?</a></li>
+<li><a class="reference internal" href="#can-i-cancel-the-execution-of-a-task">Can I cancel the execution of a task?</a></li>
+<li><a class="reference internal" href="#why-aren-t-my-remote-control-commands-received-by-all-workers">Why aren&#8217;t my remote control commands received by all workers?</a></li>
+<li><a class="reference internal" href="#can-i-send-some-tasks-to-only-some-servers">Can I send some tasks to only some servers?</a></li>
+<li><a class="reference internal" href="#can-i-change-the-interval-of-a-periodic-task-at-runtime">Can I change the interval of a periodic task at runtime?</a></li>
+<li><a class="reference internal" href="#does-celery-support-task-priorities">Does celery support task priorities?</a></li>
+<li><a class="reference internal" href="#should-i-use-retry-or-acks-late">Should I use retry or acks_late?</a></li>
+<li><a class="reference internal" href="#module-celery.task.base">Can I schedule tasks to execute at a specific time?</a></li>
+<li><a class="reference internal" href="#how-do-i-shut-down-celeryd-safely">How do I shut down <tt class="docutils literal"><span class="pre">celeryd</span></tt> safely?</a></li>
+<li><a class="reference internal" href="#how-do-i-run-celeryd-in-the-background-on-platform">How do I run celeryd in the background on [platform]?</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="tutorials/clickcounter.html"
+                        title="previous chapter">Tutorial: Creating a click counter using carrot and celery</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="reference/index.html"
+                        title="next chapter">API Reference</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="sources/faq.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
       </div>
       <div class="clearer"></div>

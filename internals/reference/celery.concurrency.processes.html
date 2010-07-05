@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>Multiprocessing Pool Support - celery.concurrency.processes &mdash; Celery v2.0.0 (stable) documentation</title>
-    <link rel="stylesheet" href="../../static/classy.css" type="text/css" />
+    <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
@@ -46,7 +46,7 @@
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
-    </div>
+    </div>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -288,6 +288,11 @@ than <cite>Pool.map()</cite></p>
 otherwise the thread which handles the result will get blocked.</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="celery.concurrency.processes.TaskPool.info">
+<tt class="descclassname">TaskPool.</tt><tt class="descname">info</tt><a class="headerlink" href="#celery.concurrency.processes.TaskPool.info" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="method">
 <dt id="celery.concurrency.processes.TaskPool.on_ready">
 <tt class="descclassname">TaskPool.</tt><tt class="descname">on_ready</tt><big>(</big><em>callbacks</em>, <em>errbacks</em>, <em>ret_value</em><big>)</big><a class="headerlink" href="#celery.concurrency.processes.TaskPool.on_ready" title="Permalink to this definition">¶</a></dt>
@@ -320,6 +325,36 @@ been collected.</p>
 
 
           </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="celery.worker.revoke.html"
+                        title="previous chapter">Worker Revoked Tasks - celery.worker.revoke</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="celery.concurrency.processes.pool.html"
+                        title="next chapter">extended multiprocessing.pool - celery.concurrency.processes.pool</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../sources/internals/reference/celery.concurrency.processes.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
       </div>
       <div class="clearer"></div>

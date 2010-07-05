@@ -61,9 +61,9 @@ Django integration has been moved to a separate package: `django-celery`_.
     ``celery.backends.cache``              ``djcelery.backends.cache``
     =====================================  =====================================
 
-Importing :mod:`djcelery` will automatically setup Celery to use the Django.
-It does this by pointing the :envvar:`CELERY_LOADER` environment variable to
-the Django loader (it won't change it if a loader is already set.)
+Importing :mod:`djcelery` will automatically setup Celery to use Django loader.
+loader.  It does this by setting the :envvar:`CELERY_LOADER` environment variable to
+``"django"`` (it won't change it if a loader is already set.)
 
 When the Django loader is used, the "database" and "cache" result backend
 aliases will point to the :mod:`djcelery` backends instead of the built-in backends,

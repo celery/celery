@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>Executable Jobs - celery.worker.job &mdash; Celery v2.0.0 (stable) documentation</title>
-    <link rel="stylesheet" href="../../static/classy.css" type="text/css" />
+    <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
@@ -46,7 +46,7 @@
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
-    </div>
+    </div>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -70,7 +70,7 @@ world-wide state.</p>
 
 <dl class="class">
 <dt id="celery.worker.job.TaskRequest">
-<em class="property">class </em><tt class="descclassname">celery.worker.job.</tt><tt class="descname">TaskRequest</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>args</em>, <em>kwargs</em>, <em>on_ack=&lt;function noop at 0x1033c3c08&gt;</em>, <em>retries=0</em>, <em>delivery_info=None</em>, <em>hostname=None</em>, <em>email_subject=None</em>, <em>email_body=None</em>, <em>logger=None</em>, <em>eventer=None</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.worker.job.</tt><tt class="descname">TaskRequest</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>args</em>, <em>kwargs</em>, <em>on_ack=&lt;function noop at 0x103dd7578&gt;</em>, <em>retries=0</em>, <em>delivery_info=None</em>, <em>hostname=None</em>, <em>email_subject=None</em>, <em>email_body=None</em>, <em>logger=None</em>, <em>eventer=None</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest" title="Permalink to this definition">¶</a></dt>
 <dd><p>A request for task execution.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -325,6 +325,36 @@ the exception instance on failure.</p>
 
 
           </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="celery.worker.listener.html"
+                        title="previous chapter">Worker Message Listener - celery.worker.listener</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="celery.worker.controllers.html"
+                        title="next chapter">Worker Controller Threads - celery.worker.controllers</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../sources/internals/reference/celery.worker.job.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
       </div>
       <div class="clearer"></div>

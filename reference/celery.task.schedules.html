@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>Periodic Task Schedule Behaviors - celery.task.schedules &mdash; Celery v2.0.0 (stable) documentation</title>
-    <link rel="stylesheet" href="../static/classy.css" type="text/css" />
+    <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
@@ -45,7 +45,7 @@
         <li><a href="../index.html">Celery v2.0.0 (stable) documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
-    </div>
+    </div>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -56,7 +56,7 @@
 <h1>Periodic Task Schedule Behaviors - celery.task.schedules<a class="headerlink" href="#periodic-task-schedule-behaviors-celery-task-schedules" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="module-celery.task.schedules"></span><dl class="class">
 <dt id="celery.task.schedules.crontab">
-<em class="property">class </em><tt class="descclassname">celery.task.schedules.</tt><tt class="descname">crontab</tt><big>(</big><em>minute='*'</em>, <em>hour='*'</em>, <em>day_of_week='*'</em>, <em>nowfun=&lt;built-in method now of type object at 0x103b4c5c0&gt;</em><big>)</big><a class="headerlink" href="#celery.task.schedules.crontab" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.task.schedules.</tt><tt class="descname">crontab</tt><big>(</big><em>minute='*'</em>, <em>hour='*'</em>, <em>day_of_week='*'</em>, <em>nowfun=&lt;built-in method now of type object at 0x1031de5c0&gt;</em><big>)</big><a class="headerlink" href="#celery.task.schedules.crontab" title="Permalink to this definition">¶</a></dt>
 <dd><p>A crontab can be used as the <tt class="docutils literal"><span class="pre">run_every</span></tt> value of a
 <tt class="xref py py-class docutils literal"><span class="pre">PeriodicTask</span></tt> to add cron-like scheduling.</p>
 <p>Like a <em class="manpage">cron</em> job, you can specify units of time of when
@@ -168,6 +168,36 @@ where next time to run is in seconds.</p>
 
 
           </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="celery.task.http.html"
+                        title="previous chapter">HTTP Callback Tasks - celery.task.http</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="celery.signals.html"
+                        title="next chapter">Signals - celery.signals</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../sources/reference/celery.task.schedules.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
       </div>
       <div class="clearer"></div>

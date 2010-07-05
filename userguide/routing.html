@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>Routing Tasks &mdash; Celery v2.0.0 (stable) documentation</title>
-    <link rel="stylesheet" href="../static/classy.css" type="text/css" />
+    <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
@@ -45,7 +45,7 @@
         <li><a href="../index.html">Celery v2.0.0 (stable) documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User Guide</a> &raquo;</li> 
       </ul>
-    </div>
+    </div>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -515,6 +515,78 @@ returning a value and use that as the final route for the task.</p>
 
 
           </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
+</a></p>
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Routing Tasks</a><ul>
+<li><a class="reference internal" href="#basics">Basics</a><ul>
+<li><a class="reference internal" href="#automatic-routing">Automatic routing</a><ul>
+<li><a class="reference internal" href="#changing-the-name-of-the-default-queue">Changing the name of the default queue</a></li>
+<li><a class="reference internal" href="#how-the-queues-are-defined">How the queues are defined</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#manual-routing">Manual routing</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#amqp-primer">AMQP Primer</a><ul>
+<li><a class="reference internal" href="#messages">Messages</a></li>
+<li><a class="reference internal" href="#producers-consumers-and-brokers">Producers, consumers and brokers</a></li>
+<li><a class="reference internal" href="#exchanges-queues-and-routing-keys">Exchanges, queues and routing keys.</a></li>
+<li><a class="reference internal" href="#exchange-types">Exchange types</a><ul>
+<li><a class="reference internal" href="#direct-exchanges">Direct exchanges</a></li>
+<li><a class="reference internal" href="#topic-exchanges">Topic exchanges</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#related-api-commands">Related API commands</a><ul>
+<li><a class="reference internal" href="#exchange-declare-exchange-name-type-passive-durable-auto-delete-internal">exchange.declare(exchange_name, type, passive, durable, auto_delete, internal)</a></li>
+<li><a class="reference internal" href="#queue-declare-queue-name-passive-durable-exclusive-auto-delete">queue.declare(queue_name, passive, durable, exclusive, auto_delete)</a></li>
+<li><a class="reference internal" href="#queue-bind-queue-name-exchange-name-routing-key">queue.bind(queue_name, exchange_name, routing_key)</a></li>
+<li><a class="reference internal" href="#queue-delete-name-if-unused-if-empty">queue.delete(name, if_unused, if_empty)</a></li>
+<li><a class="reference internal" href="#exchange-delete-name-if-unused">exchange.delete(name, if_unused)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#hands-on-with-the-api">Hands-on with the API</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id2">Routing Tasks</a><ul>
+<li><a class="reference internal" href="#defining-queues">Defining queues</a></li>
+<li><a class="reference internal" href="#specifying-task-destination">Specifying task destination</a></li>
+<li><a class="reference internal" href="#routers">Routers</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="remote-tasks.html"
+                        title="previous chapter">HTTP Callback Tasks (Webhooks)</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../configuration.html"
+                        title="next chapter">Configuration and defaults</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../sources/userguide/routing.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
       </div>
       <div class="clearer"></div>

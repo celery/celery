@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>Change history &mdash; Celery v2.0.0 (stable) documentation</title>
-    <link rel="stylesheet" href="static/classy.css" type="text/css" />
+    <link rel="stylesheet" href="static/celery.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
@@ -43,7 +43,7 @@
              accesskey="P">previous</a> |</li>
         <li><a href="index.html">Celery v2.0.0 (stable) documentation</a> &raquo;</li> 
       </ul>
-    </div>
+    </div>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -239,9 +239,9 @@ file:</p>
 </blockquote>
 </li>
 </ul>
-<p>Importing <tt class="xref py py-mod docutils literal"><span class="pre">djcelery</span></tt> will automatically setup Celery to use the Django.
-It does this by pointing the <span class="target" id="index-0"></span><tt class="xref std std-envvar docutils literal"><span class="pre">CELERY_LOADER</span></tt> environment variable to
-the Django loader (it won&#8217;t change it if a loader is already set.)</p>
+<p>Importing <tt class="xref py py-mod docutils literal"><span class="pre">djcelery</span></tt> will automatically setup Celery to use Django loader.
+loader.  It does this by setting the <span class="target" id="index-0"></span><tt class="xref std std-envvar docutils literal"><span class="pre">CELERY_LOADER</span></tt> environment variable to
+<tt class="docutils literal"><span class="pre">&quot;django&quot;</span></tt> (it won&#8217;t change it if a loader is already set.)</p>
 <p>When the Django loader is used, the &#8220;database&#8221; and &#8220;cache&#8221; result backend
 aliases will point to the <tt class="xref py py-mod docutils literal"><span class="pre">djcelery</span></tt> backends instead of the built-in backends,
 and configuration will be read from the Django settings.</p>
@@ -2936,6 +2936,122 @@ the name change request is in <tt class="docutils literal"><span class="pre">doc
 
 
           </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
+</a></p>
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Change history</a><ul>
+<li><a class="reference internal" href="#id1">2.0.0</a><ul>
+<li><a class="reference internal" href="#foreword">Foreword</a></li>
+<li><a class="reference internal" href="#upgrading-for-django-users">Upgrading for Django-users</a></li>
+<li><a class="reference internal" href="#upgrading-for-others">Upgrading for others</a><ul>
+<li><a class="reference internal" href="#database-result-backend">Database result backend</a></li>
+<li><a class="reference internal" href="#cache-result-backend">Cache result backend</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#backward-incompatible-changes">Backward incompatible changes</a></li>
+<li><a class="reference internal" href="#news">News</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id3">1.0.6</a></li>
+<li><a class="reference internal" href="#id4">1.0.5</a><ul>
+<li><a class="reference internal" href="#critical">Critical</a></li>
+<li><a class="reference internal" href="#changes">Changes</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id5">1.0.4</a></li>
+<li><a class="reference internal" href="#id6">1.0.3</a><ul>
+<li><a class="reference internal" href="#important-notes">Important notes</a></li>
+<li><a class="reference internal" href="#id7">News</a></li>
+<li><a class="reference internal" href="#remote-control-commands">Remote control commands</a></li>
+<li><a class="reference internal" href="#fixes">Fixes</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id8">1.0.2</a></li>
+<li><a class="reference internal" href="#id9">1.0.1</a></li>
+<li><a class="reference internal" href="#id10">1.0.0</a><ul>
+<li><a class="reference internal" href="#id11">Backward incompatible changes</a></li>
+<li><a class="reference internal" href="#deprecations">Deprecations</a></li>
+<li><a class="reference internal" href="#id12">News</a></li>
+<li><a class="reference internal" href="#id13">Changes</a></li>
+<li><a class="reference internal" href="#bugs">Bugs</a></li>
+<li><a class="reference internal" href="#documentation">Documentation</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id14">0.8.4</a></li>
+<li><a class="reference internal" href="#id15">0.8.3</a></li>
+<li><a class="reference internal" href="#id16">0.8.2</a></li>
+<li><a class="reference internal" href="#id17">0.8.1</a><ul>
+<li><a class="reference internal" href="#very-important-note">Very important note</a></li>
+<li><a class="reference internal" href="#important-changes">Important changes</a></li>
+<li><a class="reference internal" href="#id18">Changes</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id19">0.8.0</a><ul>
+<li><a class="reference internal" href="#id20">Backward incompatible changes</a></li>
+<li><a class="reference internal" href="#id21">Important changes</a></li>
+<li><a class="reference internal" href="#id22">News</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id23">0.6.0</a><ul>
+<li><a class="reference internal" href="#id24">Important changes</a></li>
+<li><a class="reference internal" href="#id25">News</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id26">0.4.1</a></li>
+<li><a class="reference internal" href="#id27">0.4.0</a></li>
+<li><a class="reference internal" href="#id28">0.3.20</a></li>
+<li><a class="reference internal" href="#id29">0.3.7</a></li>
+<li><a class="reference internal" href="#id30">0.3.3</a></li>
+<li><a class="reference internal" href="#id31">0.3.2</a></li>
+<li><a class="reference internal" href="#id32">0.3.1</a></li>
+<li><a class="reference internal" href="#id33">0.3.0</a></li>
+<li><a class="reference internal" href="#id34">0.2.0</a></li>
+<li><a class="reference internal" href="#pre3">0.2.0-pre3</a></li>
+<li><a class="reference internal" href="#pre2">0.2.0-pre2</a></li>
+<li><a class="reference internal" href="#pre1">0.2.0-pre1</a></li>
+<li><a class="reference internal" href="#id35">0.1.15</a></li>
+<li><a class="reference internal" href="#id36">0.1.14</a></li>
+<li><a class="reference internal" href="#id37">0.1.13</a></li>
+<li><a class="reference internal" href="#id38">0.1.12</a></li>
+<li><a class="reference internal" href="#id39">0.1.11</a></li>
+<li><a class="reference internal" href="#id40">0.1.10</a></li>
+<li><a class="reference internal" href="#id41">0.1.8</a></li>
+<li><a class="reference internal" href="#id42">0.1.7</a></li>
+<li><a class="reference internal" href="#id43">0.1.6</a></li>
+<li><a class="reference internal" href="#id44">0.1.0</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="internals/reference/celery.platform.html"
+                        title="previous chapter">Platform Specific - celery.platform</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="links.html"
+                        title="next chapter">Interesting Links</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="sources/changelog.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
       </div>
       <div class="clearer"></div>

@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>Running celeryd as a daemon &mdash; Celery v2.0.0 (stable) documentation</title>
-    <link rel="stylesheet" href="../static/classy.css" type="text/css" />
+    <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
@@ -45,7 +45,7 @@
         <li><a href="../index.html">Celery v2.0.0 (stable) documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Cookbook</a> &raquo;</li> 
       </ul>
-    </div>
+    </div>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -299,6 +299,60 @@ You can point this to an virtualenv, or even use manage.py for django.</p>
 
 
           </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
+</a></p>
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Running celeryd as a daemon</a><ul>
+<li><a class="reference internal" href="#start-stop-daemon">start-stop-daemon</a><ul>
+<li><a class="reference internal" href="#init-script-celeryd">Init script: celeryd</a><ul>
+<li><a class="reference internal" href="#example-configuration">Example configuration</a></li>
+<li><a class="reference internal" href="#example-django-configuration">Example Django configuration</a></li>
+<li><a class="reference internal" href="#available-options">Available options</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#init-script-celerybeat">Init script: celerybeat</a><ul>
+<li><a class="reference internal" href="#id1">Example configuration</a></li>
+<li><a class="reference internal" href="#id2">Example Django configuration</a></li>
+<li><a class="reference internal" href="#id3">Available options</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#supervisord">supervisord</a></li>
+<li><a class="reference internal" href="#launchd-os-x">launchd (OS X)</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="tasks.html"
+                        title="previous chapter">Creating Tasks</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../tutorials/index.html"
+                        title="next chapter">Tutorials</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../sources/cookbook/daemonizing.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
       </div>
       <div class="clearer"></div>

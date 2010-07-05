@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>Configuration and defaults &mdash; Celery v2.0.0 (stable) documentation</title>
-    <link rel="stylesheet" href="static/classy.css" type="text/css" />
+    <link rel="stylesheet" href="static/celery.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
@@ -43,7 +43,7 @@
              accesskey="P">previous</a> |</li>
         <li><a href="index.html">Celery v2.0.0 (stable) documentation</a> &raquo;</li> 
       </ul>
-    </div>
+    </div>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -911,6 +911,89 @@ Can also be set via the <tt class="docutils literal"><span class="pre">--logfile
 
 
           </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
+</a></p>
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Configuration and defaults</a><ul>
+<li><a class="reference internal" href="#example-configuration-file">Example configuration file</a></li>
+<li><a class="reference internal" href="#concurrency-settings">Concurrency settings</a></li>
+<li><a class="reference internal" href="#task-result-backend-settings">Task result backend settings</a></li>
+<li><a class="reference internal" href="#database-backend-settings">Database backend settings</a><ul>
+<li><a class="reference internal" href="#example-configuration">Example configuration</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#amqp-backend-settings">AMQP backend settings</a><ul>
+<li><a class="reference internal" href="#id1">Example configuration</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#cache-backend-settings">Cache backend settings</a><ul>
+<li><a class="reference internal" href="#id2">Example configuration</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#tokyo-tyrant-backend-settings">Tokyo Tyrant backend settings</a><ul>
+<li><a class="reference internal" href="#id3">Example configuration</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#redis-backend-settings">Redis backend settings</a><ul>
+<li><a class="reference internal" href="#id4">Example configuration</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#mongodb-backend-settings">MongoDB backend settings</a><ul>
+<li><a class="reference internal" href="#id5">Example configuration</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#messaging-settings">Messaging settings</a><ul>
+<li><a class="reference internal" href="#routing">Routing</a></li>
+<li><a class="reference internal" href="#connection">Connection</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#task-execution-settings">Task execution settings</a></li>
+<li><a class="reference internal" href="#worker-celeryd">Worker: celeryd</a><ul>
+<li><a class="reference internal" href="#error-e-mails">Error E-Mails</a><ul>
+<li><a class="reference internal" href="#example-e-mail-configuration">Example E-Mail configuration</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#events">Events</a></li>
+<li><a class="reference internal" href="#broadcast-commands">Broadcast Commands</a></li>
+<li><a class="reference internal" href="#logging">Logging</a></li>
+<li><a class="reference internal" href="#custom-component-classes-advanced">Custom Component Classes (advanced)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#periodic-task-server-celerybeat">Periodic Task Server: celerybeat</a></li>
+<li><a class="reference internal" href="#monitor-server-celerymon">Monitor Server: celerymon</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="userguide/routing.html"
+                        title="previous chapter">Routing Tasks</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="cookbook/index.html"
+                        title="next chapter">Cookbook</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="sources/configuration.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
       </div>
       <div class="clearer"></div>

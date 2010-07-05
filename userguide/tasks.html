@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>Tasks &mdash; Celery v2.0.0 (stable) documentation</title>
-    <link rel="stylesheet" href="../static/classy.css" type="text/css" />
+    <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
@@ -45,7 +45,7 @@
         <li><a href="../index.html">Celery v2.0.0 (stable) documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User Guide</a> &raquo;</li> 
       </ul>
-    </div>
+    </div>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -676,6 +676,73 @@ messages may be expensive.</p>
 
 
           </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
+</a></p>
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Tasks</a><ul>
+<li><a class="reference internal" href="#basics">Basics</a></li>
+<li><a class="reference internal" href="#default-keyword-arguments">Default keyword arguments</a></li>
+<li><a class="reference internal" href="#logging">Logging</a></li>
+<li><a class="reference internal" href="#retrying-a-task-if-something-fails">Retrying a task if something fails</a><ul>
+<li><a class="reference internal" href="#using-a-custom-retry-delay">Using a custom retry delay</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#task-options">Task options</a><ul>
+<li><a class="reference internal" href="#message-and-routing-options">Message and routing options</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#example">Example</a><ul>
+<li><a class="reference internal" href="#blog-models-py">blog/models.py</a></li>
+<li><a class="reference internal" href="#blog-views-py">blog/views.py</a></li>
+<li><a class="reference internal" href="#blog-tasks-py">blog/tasks.py</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#how-it-works">How it works</a></li>
+<li><a class="reference internal" href="#tips-and-best-practices">Tips and Best Practices</a><ul>
+<li><a class="reference internal" href="#ignore-results-you-don-t-want">Ignore results you don&#8217;t want</a></li>
+<li><a class="reference internal" href="#disable-rate-limits-if-they-re-not-used">Disable rate limits if they&#8217;re not used</a></li>
+<li><a class="reference internal" href="#avoid-launching-synchronous-subtasks">Avoid launching synchronous subtasks</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#performance-and-strategies">Performance and Strategies</a><ul>
+<li><a class="reference internal" href="#granularity">Granularity</a></li>
+<li><a class="reference internal" href="#data-locality">Data locality</a></li>
+<li><a class="reference internal" href="#state">State</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">User Guide</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="executing.html"
+                        title="next chapter">Executing Tasks</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../sources/userguide/tasks.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
       </div>
       <div class="clearer"></div>

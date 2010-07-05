@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>Celery Worker Daemon - celery.bin.celeryd &mdash; Celery v2.0.0 (stable) documentation</title>
-    <link rel="stylesheet" href="../static/classy.css" type="text/css" />
+    <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
@@ -45,7 +45,7 @@
         <li><a href="../index.html">Celery v2.0.0 (stable) documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
-    </div>
+    </div>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -139,10 +139,10 @@ terminated and replaced by a new worker.</p>
 
 <dl class="class">
 <dt id="celery.bin.celeryd.Worker">
-<em class="property">class </em><tt class="descclassname">celery.bin.celeryd.</tt><tt class="descname">Worker</tt><big>(</big><em>concurrency=0</em>, <em>loglevel=30</em>, <em>logfile=None</em>, <em>hostname=None</em>, <em>discard=False</em>, <em>run_clockservice=False</em>, <em>schedule='celerybeat-schedule'</em>, <em>task_time_limit=None</em>, <em>task_soft_time_limit=None</em>, <em>max_tasks_per_child=None</em>, <em>queues=None</em>, <em>events=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.Worker" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.bin.celeryd.</tt><tt class="descname">Worker</tt><big>(</big><em>concurrency=0</em>, <em>loglevel=30</em>, <em>logfile=None</em>, <em>hostname=None</em>, <em>discard=False</em>, <em>run_clockservice=False</em>, <em>schedule='celerybeat-schedule'</em>, <em>task_time_limit=None</em>, <em>task_soft_time_limit=None</em>, <em>max_tasks_per_child=None</em>, <em>queues=None</em>, <em>events=False</em>, <em>db=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.Worker" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="class">
 <dt id="celery.bin.celeryd.Worker.WorkController">
-<em class="property">class </em><tt class="descname">WorkController</tt><big>(</big><em>concurrency=None</em>, <em>logfile=None</em>, <em>loglevel=None</em>, <em>send_events=False</em>, <em>hostname=None</em>, <em>ready_callback=&lt;function noop at 0x1033c3c08&gt;</em>, <em>embed_clockservice=False</em>, <em>pool_cls='celery.concurrency.processes.TaskPool'</em>, <em>listener_cls='celery.worker.listener.CarrotListener'</em>, <em>mediator_cls='celery.worker.controllers.Mediator'</em>, <em>eta_scheduler_cls='celery.worker.controllers.ScheduleController'</em>, <em>schedule_filename='celerybeat-schedule'</em>, <em>task_time_limit=None</em>, <em>task_soft_time_limit=None</em>, <em>max_tasks_per_child=None</em>, <em>pool_putlocks=True</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.Worker.WorkController" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descname">WorkController</tt><big>(</big><em>concurrency=None</em>, <em>logfile=None</em>, <em>loglevel=None</em>, <em>send_events=False</em>, <em>hostname=None</em>, <em>ready_callback=&lt;function noop at 0x103dd7578&gt;</em>, <em>embed_clockservice=False</em>, <em>pool_cls='celery.concurrency.processes.TaskPool'</em>, <em>listener_cls='celery.worker.listener.CarrotListener'</em>, <em>mediator_cls='celery.worker.controllers.Mediator'</em>, <em>eta_scheduler_cls='celery.worker.controllers.ScheduleController'</em>, <em>schedule_filename='celerybeat-schedule'</em>, <em>task_time_limit=None</em>, <em>task_soft_time_limit=None</em>, <em>max_tasks_per_child=None</em>, <em>pool_putlocks=True</em>, <em>db=None</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.Worker.WorkController" title="Permalink to this definition">¶</a></dt>
 <dd><p>Executes tasks waiting in the task queue.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -358,6 +358,36 @@ processing.</p>
 
 
           </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="celery.events.state.html"
+                        title="previous chapter">In-memory Representation of Cluster State - celery.events.state</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="celery.bin.celerybeat.html"
+                        title="next chapter">Celery Periodic Task Server - celery.bin.celerybeat</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../sources/reference/celery.bin.celeryd.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
       </div>
       <div class="clearer"></div>

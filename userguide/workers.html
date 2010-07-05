@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>Workers Guide &mdash; Celery v2.0.0 (stable) documentation</title>
-    <link rel="stylesheet" href="../static/classy.css" type="text/css" />
+    <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
@@ -45,7 +45,7 @@
         <li><a href="../index.html">Celery v2.0.0 (stable) documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User Guide</a> &raquo;</li> 
       </ul>
-    </div>
+    </div>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -360,6 +360,64 @@ for immediate execution.</p>
 
 
           </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
+</a></p>
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Workers Guide</a><ul>
+<li><a class="reference internal" href="#starting-the-worker">Starting the worker</a></li>
+<li><a class="reference internal" href="#stopping-the-worker">Stopping the worker</a></li>
+<li><a class="reference internal" href="#restarting-the-worker">Restarting the worker</a></li>
+<li><a class="reference internal" href="#concurrency">Concurrency</a></li>
+<li><a class="reference internal" href="#time-limits">Time limits</a></li>
+<li><a class="reference internal" href="#max-tasks-per-child-setting">Max tasks per child setting</a></li>
+<li><a class="reference internal" href="#remote-control">Remote control</a><ul>
+<li><a class="reference internal" href="#the-broadcast-function">The <tt class="docutils literal"><span class="pre">broadcast()</span></tt> function.</a></li>
+<li><a class="reference internal" href="#rate-limits">Rate limits</a></li>
+<li><a class="reference internal" href="#remote-shutdown">Remote shutdown</a></li>
+<li><a class="reference internal" href="#ping">Ping</a></li>
+<li><a class="reference internal" href="#enable-disable-events">Enable/disable events</a></li>
+<li><a class="reference internal" href="#writing-your-own-remote-control-commands">Writing your own remote control commands</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#debugging">Debugging</a><ul>
+<li><a class="reference internal" href="#dump-of-registered-tasks">Dump of registered tasks</a></li>
+<li><a class="reference internal" href="#dump-of-scheduled-eta-tasks">Dump of scheduled (ETA) tasks</a></li>
+<li><a class="reference internal" href="#dump-of-reserved-tasks">Dump of reserved tasks</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="executing.html"
+                        title="previous chapter">Executing Tasks</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="tasksets.html"
+                        title="next chapter">Sets of tasks, Subtasks and Callbacks</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../sources/userguide/workers.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
       </div>
       <div class="clearer"></div>
