@@ -1,12 +1,12 @@
 import unittest2 as unittest
 
-from celery.worker import revoke
+from celery.worker import state
 
 
 class TestRevokeRegistry(unittest.TestCase):
 
     def test_is_working(self):
-        revoke.revoked.add("foo")
-        self.assertIn("foo", revoke.revoked)
-        revoke.revoked.pop_value("foo")
-        self.assertNotIn("foo", revoke.revoked)
+        state.revoked.add("foo")
+        self.assertIn("foo", state.revoked)
+        state.revoked.pop_value("foo")
+        self.assertNotIn("foo", state.revoked)
