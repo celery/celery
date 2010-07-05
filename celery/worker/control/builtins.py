@@ -4,6 +4,7 @@ from celery import conf
 from celery.backends import default_backend
 from celery.registry import tasks
 from celery.utils import timeutils
+from celery.worker import state
 from celery.worker.revoke import revoked
 from celery.worker.control.registry import Panel
 
@@ -114,6 +115,19 @@ def dump_reserved(panel, **kwargs):
     panel.logger.info("* Dump of currently reserved tasks:\n%s" % (
                             "\n".join(info, )))
     return info
+
+
+@Panel.register
+def dump_active(panel, **kwargs):
+    from celery.worker.state import active
+    return active
+
+
+@Panel.register
+def stats(panel, **kwargs):
+    return {"active": state.active,
+            "total": state.total,
+            "pool": panel.listener.pool.info}
 
 
 @Panel.register
