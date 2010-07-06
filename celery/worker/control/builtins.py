@@ -3,6 +3,7 @@ from datetime import datetime
 from celery import conf
 from celery.backends import default_backend
 from celery.registry import tasks
+from celery.serialization import pickle
 from celery.utils import timeutils
 from celery.worker import state
 from celery.worker.state import revoked
@@ -124,9 +125,11 @@ def dump_active(panel, **kwargs):
 
 
 @Panel.register
-def stats(panel, **kwargs):
-    return {"active": state.active,
-            "total": state.total,
+def stats(panel, safe=False, **kwargs):
+    active_requests = [request.info(safe=safe)
+                            for request in state.active_requests]
+    return {"active": active_requests,
+            "total": state.total_count,
             "pool": panel.listener.pool.info}
 
 
