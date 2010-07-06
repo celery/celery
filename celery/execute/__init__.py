@@ -141,7 +141,7 @@ def delay_task(task_name, *args, **kwargs):
     :raises celery.exceptions.NotRegistered: exception if no such task
         has been registered in the task registry.
 
-    :returns: :class:`celery.result.AsyncResult`.
+    :returns :class:`celery.result.AsyncResult`:
 
     Example
 
