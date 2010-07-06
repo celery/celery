@@ -16,6 +16,10 @@ from celery.task.schedules import schedule
 from celery.task.sets import TaskSet, subtask
 
 
+def _unpickle_task(name):
+    return tasks[name]
+
+
 class TaskType(type):
     """Metaclass for tasks.
 
@@ -216,6 +220,9 @@ class Task(object):
 
     def __call__(self, *args, **kwargs):
         return self.run(*args, **kwargs)
+
+    def __reduce__(self):
+        return (_unpickle_task, (self.name, ), None)
 
     def run(self, *args, **kwargs):
         """The body of the task executed by the worker.
