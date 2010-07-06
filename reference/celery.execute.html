@@ -149,15 +149,13 @@ replaced by a local <a class="reference internal" href="#celery.execute.apply" t
 </td>
 </tr>
 <tr class="field"><th class="field-name" colspan="2">Raises <a class="reference internal" href="celery.exceptions.html#celery.exceptions.NotRegistered" title="celery.exceptions.NotRegistered">celery.exceptions.NotRegistered</a>:</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first">exception if no such task
+<tr><td>&nbsp;</td><td class="field-body"><p class="first last">exception if no such task
 has been registered in the task registry.</p>
-</td>
-</tr>
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">&lt;pending_xref py:class py:module=&#8221;celery.execute&#8221; refdoc=&#8221;reference/celery.execute&#8221; refdomain=&#8221;py&#8221; refexplicit=&#8221;False&#8221; reftarget=&#8221;celery.result.AsyncResult&#8221; reftype=&#8221;class&#8221;&gt;&lt;literal classes=&#8221;xref py py-class&#8221;&gt;celery.result.AsyncResult&lt;/literal&gt;&lt;/pending_xref&gt;.</p>
 </td>
 </tr>
 </tbody>
 </table>
+<p>:returns <a class="reference internal" href="celery.result.html#celery.result.AsyncResult" title="celery.result.AsyncResult"><tt class="xref py py-class docutils literal"><span class="pre">celery.result.AsyncResult</span></tt></a>:</p>
 <p>Example</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">r</span> <span class="o">=</span> <span class="n">delay_task</span><span class="p">(</span><span class="s">&quot;update_record&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;George Costanza&quot;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="mi">32</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">r</span><span class="o">.</span><span class="n">ready</span><span class="p">()</span>
