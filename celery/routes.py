@@ -80,6 +80,6 @@ def prepare(routes):
             return mpromise(instantiate, route)
         return route
 
-    if not hasattr(routes, "__iter__"):
+    if not isinstance(routes, (list, tuple)):
         routes = (routes, )
     return map(expand_route, routes)

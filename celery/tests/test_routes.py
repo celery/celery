@@ -3,6 +3,7 @@ import unittest2 as unittest
 
 from celery import conf
 from celery import routes
+from celery.utils import maybe_promise
 from celery.utils.functional import wraps
 from celery.exceptions import QueueNotFound
 
@@ -96,7 +97,12 @@ class test_prepare(unittest.TestCase):
                   o]
         p = routes.prepare(R)
         self.assertIsInstance(p[0], routes.MapRoute)
-        self.assertIsInstance(p[1], LocalCache)
+        self.assertIsInstance(maybe_promise(p[1]), LocalCache)
         self.assertIs(p[2], o)
 
         self.assertEqual(routes.prepare(o), [o])
+
+    def test_prepare_item_is_dict(self):
+        R = {"foo": "bar"}
+        p = routes.prepare(R)
+        self.assertIsInstance(p[0], routes.MapRoute)
