@@ -481,6 +481,7 @@ All you need to define a new router is to create a class with a
                 return {"exchange": "video",
                         "exchange_type": "topic",
                         "routing_key": "video.compress"}
+            return None
 
 If you return the ``queue`` key, it will expand with the defined settings of
 that queue in ``CELERY_QUEUES``::
