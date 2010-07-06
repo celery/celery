@@ -278,17 +278,15 @@ has finished executing.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>args</strong> &#8211; positional arguments passed on to the task.</li>
 <li><strong>kwargs</strong> &#8211; keyword arguments passed on to the task.</li>
 </ul>
 </td>
 </tr>
-<tr class="field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">&lt;pending_xref py:class=&#8221;Task&#8221; py:module=&#8221;celery.task.base&#8221; refdoc=&#8221;reference/celery.task.base&#8221; refdomain=&#8221;py&#8221; refexplicit=&#8221;False&#8221; reftarget=&#8221;celery.result.EagerResult&#8221; reftype=&#8221;class&#8221;&gt;&lt;literal classes=&#8221;xref py py-class&#8221;&gt;celery.result.EagerResult&lt;/literal&gt;&lt;/pending_xref&gt;</p>
-</td>
-</tr>
 </tbody>
 </table>
+<p>:rtype <a class="reference internal" href="celery.result.html#celery.result.EagerResult" title="celery.result.EagerResult"><tt class="xref py py-class docutils literal"><span class="pre">celery.result.EagerResult</span></tt></a>:</p>
 <p>See <a class="reference internal" href="celery.execute.html#celery.execute.apply" title="celery.execute.apply"><tt class="xref py py-func docutils literal"><span class="pre">celery.execute.apply()</span></tt></a>.</p>
 </dd></dl>
 
@@ -315,7 +313,7 @@ has finished executing.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Return type:</th><td class="field-body">&lt;pending_xref py:class=&#8221;Task&#8221; py:module=&#8221;celery.task.base&#8221; refdoc=&#8221;reference/celery.task.base&#8221; refdomain=&#8221;py&#8221; refexplicit=&#8221;False&#8221; reftarget=&#8221;celery.result.AsyncResult&#8221; reftype=&#8221;class&#8221;&gt;&lt;literal classes=&#8221;xref py py-class&#8221;&gt;celery.result.AsyncResult&lt;/literal&gt;&lt;/pending_xref&gt;</td>
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body">&lt;pending_xref py:class=&#8221;Task&#8221; py:module=&#8221;celery.task.base&#8221; refdoc=&#8221;reference/celery.task.base&#8221; refdomain=&#8221;py&#8221; refexplicit=&#8221;False&#8221; reftarget=&#8221;celery.result.AsyncResult&#8221; reftype=&#8221;class&#8221;&gt;&lt;literal classes=&#8221;xref py py-class&#8221;&gt;celery.result.AsyncResult&lt;/literal&gt;&lt;/pending_xref&gt;</td>
 </tr>
 </tbody>
 </table>
@@ -373,14 +371,7 @@ but doesn&#8217;t support the extra options.</p>
 <dt id="celery.task.base.Task.get_consumer">
 <em class="property">classmethod </em><tt class="descclassname">Task.</tt><tt class="descname">get_consumer</tt><big>(</big><em>connection=None</em>, <em>connect_timeout=4</em><big>)</big><a class="headerlink" href="#celery.task.base.Task.get_consumer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a celery task message consumer.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Return type:</th><td class="field-body">&lt;pending_xref py:class=&#8221;Task&#8221; py:module=&#8221;celery.task.base&#8221; refdoc=&#8221;reference/celery.task.base&#8221; refdomain=&#8221;py&#8221; refexplicit=&#8221;False&#8221; reftarget=&#8221;celery.messaging.TaskConsumer&#8221; reftype=&#8221;class&#8221;&gt;&lt;literal classes=&#8221;xref py py-class&#8221;&gt;celery.messaging.TaskConsumer&lt;/literal&gt;&lt;/pending_xref&gt;.</td>
-</tr>
-</tbody>
-</table>
+<p>:rtype <a class="reference internal" href="celery.messaging.html#celery.messaging.TaskConsumer" title="celery.messaging.TaskConsumer"><tt class="xref py py-class docutils literal"><span class="pre">celery.messaging.TaskConsumer</span></tt></a>:</p>
 <p>Please be sure to close the AMQP connection when you&#8217;re done
 with this object. i.e.:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">consumer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumer</span><span class="p">()</span>
@@ -401,14 +392,7 @@ with this object. i.e.:</p>
 <dt id="celery.task.base.Task.get_publisher">
 <em class="property">classmethod </em><tt class="descclassname">Task.</tt><tt class="descname">get_publisher</tt><big>(</big><em>connection=None</em>, <em>exchange=None</em>, <em>connect_timeout=4</em>, <em>exchange_type=None</em><big>)</big><a class="headerlink" href="#celery.task.base.Task.get_publisher" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a celery task message publisher.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Return type:</th><td class="field-body">&lt;pending_xref py:class=&#8221;Task&#8221; py:module=&#8221;celery.task.base&#8221; refdoc=&#8221;reference/celery.task.base&#8221; refdomain=&#8221;py&#8221; refexplicit=&#8221;False&#8221; reftarget=&#8221;celery.messaging.TaskPublisher&#8221; reftype=&#8221;class&#8221;&gt;&lt;literal classes=&#8221;xref py py-class&#8221;&gt;celery.messaging.TaskPublisher&lt;/literal&gt;&lt;/pending_xref&gt;.</td>
-</tr>
-</tbody>
-</table>
+<p>:rtype <a class="reference internal" href="celery.messaging.html#celery.messaging.TaskPublisher" title="celery.messaging.TaskPublisher"><tt class="xref py py-class docutils literal"><span class="pre">celery.messaging.TaskPublisher</span></tt></a>:</p>
 <p>Please be sure to close the AMQP connection when you&#8217;re done
 with this object, i.e.:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">publisher</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_publisher</span><span class="p">()</span>

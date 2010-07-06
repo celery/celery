@@ -70,7 +70,7 @@ world-wide state.</p>
 
 <dl class="class">
 <dt id="celery.worker.job.TaskRequest">
-<em class="property">class </em><tt class="descclassname">celery.worker.job.</tt><tt class="descname">TaskRequest</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>args</em>, <em>kwargs</em>, <em>on_ack=&lt;function noop at 0x1033b8668&gt;</em>, <em>retries=0</em>, <em>delivery_info=None</em>, <em>hostname=None</em>, <em>email_subject=None</em>, <em>email_body=None</em>, <em>logger=None</em>, <em>eventer=None</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.worker.job.</tt><tt class="descname">TaskRequest</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>args</em>, <em>kwargs</em>, <em>on_ack=&lt;function noop at 0x10313d668&gt;</em>, <em>retries=0</em>, <em>delivery_info=None</em>, <em>hostname=None</em>, <em>email_subject=None</em>, <em>email_body=None</em>, <em>logger=None</em>, <em>eventer=None</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest" title="Permalink to this definition">¶</a></dt>
 <dd><p>A request for task execution.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -182,7 +182,6 @@ from producer to consumer.</p>
 </tr>
 </tbody>
 </table>
-<p>:returns <tt class="xref py py-class docutils literal"><span class="pre">multiprocessing.AsyncResult</span></tt> instance.</p>
 </dd></dl>
 
 <dl class="method">
@@ -207,11 +206,15 @@ from producer to consumer.</p>
 <tr><td>&nbsp;</td><td class="field-body">if the message does not describe a task,
 the message is also rejected.</td>
 </tr>
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body">&lt;pending_xref py:class=&#8221;TaskRequest&#8221; py:module=&#8221;celery.worker.job&#8221; refdoc=&#8221;internals/reference/celery.worker.job&#8221; refdomain=&#8221;py&#8221; refexplicit=&#8221;False&#8221; reftarget=&#8221;TaskRequest&#8221; reftype=&#8221;class&#8221;&gt;&lt;literal classes=&#8221;xref py py-class&#8221;&gt;TaskRequest&lt;/literal&gt;&lt;/pending_xref&gt; instance.</td>
-</tr>
 </tbody>
 </table>
+<p>:returns <a class="reference internal" href="#celery.worker.job.TaskRequest" title="celery.worker.job.TaskRequest"><tt class="xref py py-class docutils literal"><span class="pre">TaskRequest</span></tt></a>:</p>
 </dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.job.TaskRequest.info">
+<tt class="descname">info</tt><big>(</big><em>safe=False</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest.info" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="celery.worker.job.TaskRequest.on_accepted">
@@ -273,7 +276,7 @@ result, and sets the task status to <tt class="docutils literal"><span class="pr
 </ul>
 </td>
 </tr>
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">the function return value on success, or
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">the evaluated functions return value on success, or
 the exception instance on failure.</p>
 </td>
 </tr>
