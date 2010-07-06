@@ -19,7 +19,7 @@ def task_accepted(request):
 def task_ready(request):
     try:
         active_requests.remove(request)
-    except IndexError:
+    except KeyError:
         pass
 
 
