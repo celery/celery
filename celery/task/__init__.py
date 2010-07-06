@@ -36,7 +36,7 @@ def dmap_async(fun, args, timeout=None):
     """Distribute processing of the arguments and collect the results
     asynchronously.
 
-    :returns: :class:`celery.result.AsyncResult` object.
+    :returns :class:`celery.result.AsyncResult`:
 
     Example
 
@@ -64,7 +64,7 @@ def execute_remote(fun, *args, **kwargs):
     The object must be picklable, so you can't use lambdas or functions
     defined in the REPL (the objects must have an associated module).
 
-    :returns: class:`celery.result.AsyncResult`.
+    :returns class:`celery.result.AsyncResult`:
 
     """
     return ExecuteRemoteTask.delay(pickle.dumps(fun), args, kwargs)

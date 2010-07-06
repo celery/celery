@@ -65,7 +65,7 @@ class WorkerTaskTrace(TaskTrace):
     :param args: List of positional args to pass on to the function.
     :param kwargs: Keyword arguments mapping to pass on to the function.
 
-    :returns: the function return value on success, or
+    :returns: the evaluated functions return value on success, or
         the exception instance on failure.
 
     """
@@ -244,7 +244,7 @@ class TaskRequest(object):
         :raises UnknownTaskError: if the message does not describe a task,
             the message is also rejected.
 
-        :returns: :class:`TaskRequest` instance.
+        :returns :class:`TaskRequest`:
 
         """
         task_name = message_data["task"]
@@ -337,8 +337,6 @@ class TaskRequest(object):
         :keyword loglevel: The loglevel used by the task.
 
         :keyword logfile: The logfile used by the task.
-
-        :returns :class:`multiprocessing.AsyncResult` instance.
 
         """
         if self.revoked():
