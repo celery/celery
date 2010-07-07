@@ -57,6 +57,14 @@ class MaxRetriesExceededError(Exception):
     pass
 
 
+class RetryTaskError(Exception):
+    """The task is to be retried later."""
+
+    def __init__(self, message, exc, *args, **kwargs):
+        self.exc = exc
+        Exception.__init__(self, message, exc, *args,
+                           **kwargs)
+
 class TaskRevokedError(Exception):
     """The task has been revoked, so no result available."""
     pass
