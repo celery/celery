@@ -333,7 +333,6 @@ class Task(object):
 
         :returns :class:`celery.result.AsyncResult`:
 
-
         """
         return apply_async(self, args, kwargs, **options)
 
@@ -413,6 +412,7 @@ class Task(object):
 
         :param args: positional arguments passed on to the task.
         :param kwargs: keyword arguments passed on to the task.
+
         :rtype :class:`celery.result.EagerResult`:
 
         See :func:`celery.execute.apply`.
