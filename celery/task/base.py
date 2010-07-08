@@ -147,7 +147,7 @@ class Task(object):
     .. attribute:: disable_error_emails
 
         Disable all error e-mails for this task (only applicable if
-        ``settings.SEND_CELERY_ERROR_EMAILS`` is on.)
+        ``settings.CELERY_SEND_TASK_ERROR_EMAILS`` is on.)
 
     .. attribute:: serializer
 
