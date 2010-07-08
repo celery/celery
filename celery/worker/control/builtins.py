@@ -119,17 +119,14 @@ def dump_reserved(panel, **kwargs):
 
 
 @Panel.register
-def dump_active(panel, **kwargs):
-    from celery.worker.state import active
-    return active
+def dump_active(panel, safe=False, **kwargs):
+    return [request.info(safe=safe)
+                for request in state.active_requests]
 
 
 @Panel.register
-def stats(panel, safe=False, **kwargs):
-    active_requests = [request.info(safe=safe)
-                            for request in state.active_requests]
-    return {"active": active_requests,
-            "total": state.total_count,
+def stats(panel, **kwargs):
+    return {"total": state.total_count,
             "pool": panel.listener.pool.info}
 
 

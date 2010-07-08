@@ -377,7 +377,7 @@ class TaskRequest(object):
     def on_success(self, ret_value):
         """The handler used if the task was successfully processed (
         without raising an exception)."""
-        state.task_ready(self.task_name)
+        state.task_ready(self)
 
         if self.task.acks_late:
             self.acknowledge()
@@ -394,7 +394,7 @@ class TaskRequest(object):
 
     def on_failure(self, exc_info):
         """The handler used if the task raised an exception."""
-        state.task_ready(self.task_name)
+        state.task_ready(self)
 
         if self.task.acks_late:
             self.acknowledge()
