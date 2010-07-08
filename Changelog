@@ -5,6 +5,115 @@
 .. contents::
     :local:
 
+2.0.1
+=====
+:release-date: TBA
+
+* The remote control command replies was not working with RabbitMQ 1.8.0's
+  stricter equivalence checks.
+
+    If you've already hit this problem you may have to delete the
+    declaration::
+
+        $ PYTHONPATH=. camqadm exchange.delete celerycrq
+
+    or::
+    
+    	$ python manage.py camqadm exchange.delete celerycrq
+
+* A bug sneaked in the ETA scheduler that made it only able to execute
+  one task per second(!)
+
+  The scheduler sleeps between iterations so it doesn't consume too much CPU.
+  It keeps a list of the scheduled items sorted by time, at each iteration
+  it sleeps for the remaining time of the item with the nearest deadline.
+  If there are no eta tasks it will sleep for a minimum amount of time, one
+  second by default.
+
+  A bug sneaked in here, making it sleep for one second for every task
+  that was scheduled. This has been fixed, so now it should move
+  tasks like hot knife through butter.
+
+  In addition a new setting has been added to control the minimum sleep
+  interval; ``CELERYD_ETA_SCHEDULER_PRECISION``. A good
+  value for this would be a float between 0 and 1, depending
+  on the needed precision. A value of 0.8 means that when the ETA of a task
+  is met, it will take at most 0.8 seconds for the task to be moved to the
+  ready queue.
+
+* Task.__reduce__: Tasks created using the task decorator can now be pickled.
+
+* New homepage design by Jan Henrik Helmers: http://celeryproject.org
+
+* New Sphinx theme by Armin Ronacher: http://celeryproject.org/docs
+
+* Fixed "pending_xref" errors shown in the HTML rendering of the
+  documentation. Apparently this was caused by new changes in Sphinx 1.0b2.
+
+* Router classes in ``CELERY_ROUTES`` are now imported lazily.
+
+    Importing a router class in a module that also loads the Celery
+    environment would cause a circular dependency. This is solved
+    by importing it when needed after the environment is set up.
+
+* ``CELERY_ROUTES`` was broken if set to a single dict.
+
+    This example in the docs should now work again::
+
+        CELERY_ROUTES = {"feed.tasks.import_feed": "feeds"}
+
+* ``CREATE_MISSING_QUEUES`` was not honored by apply_async.
+
+* New remote control command: ``stats``
+
+    Dumps information about the worker, like pool process pids, and
+    total number of tasks executed by type.
+
+    Example reply::
+
+        [{'worker.local':
+             'total': {'tasks.sleeptask': 6},
+             'pool': {'timeouts': [None, None],
+                      'processes': [60376, 60377],
+                      'max-concurrency': 2,
+                      'max-tasks-per-child': None,
+                      'put-guarded-by-semaphore': True}}]
+
+* New remote control command: ``dump_active``
+
+    Gives a list of tasks currently being executed by the worker.
+    By default arguments are passed through repr in case there
+    are arguments that is not JSON encodable. If you know
+    the arguments are JSON safe, you can pass the argument ``safe=True``.
+
+    Example reply::
+
+        >>> broadcast("dump_active", arguments={"safe": False}, reply=True)
+        [{'worker.local': [
+            {'args': '(1,)',
+             'time_start': 1278580542.6300001,
+             'name': 'tasks.sleeptask',
+             'delivery_info': {
+                 'consumer_tag': '30',
+                 'routing_key': 'celery',
+                 'exchange': 'celery'},
+             'hostname': 'casper.local',
+             'acknowledged': True,
+             'kwargs': '{}',
+             'id': '802e93e9-e470-47ed-b913-06de8510aca2',
+            }
+        ]}]
+
+* Added experimental support for persistent revokes.
+
+    Use the ``-S|--statedb`` argument to celeryd to enable it::
+
+        $ celeryd --statedb=/var/run/celeryd
+
+    This will use the file: ``/var/run/celeryd.db``,
+    as the ``shelve`` module automatically adds the ``.db`` suffix.
+
+
 2.0.0
 =====
 :release-date: 2010-07-02 02:30 P.M CEST
