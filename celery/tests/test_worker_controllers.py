@@ -117,7 +117,7 @@ class TestScheduleController(unittest.TestCase):
         try:
             for i in times:
                 c.on_iteration()
-                res = i is None and 1 or i
+                res = i or 1
                 self.assertEqual(slept[0], res)
         finally:
             time.sleep = old_sleep

@@ -7,6 +7,7 @@ import time
 import threading
 from Queue import Empty as QueueEmpty
 
+from celery import conf
 from celery import log
 
 
@@ -101,10 +102,12 @@ class Mediator(BackgroundThread):
 class ScheduleController(BackgroundThread):
     """Schedules tasks with an ETA by moving them to the bucket queue."""
 
-    def __init__(self, eta_schedule, logger=None):
+    def __init__(self, eta_schedule, logger=None,
+            precision=None):
         super(ScheduleController, self).__init__()
         self.logger = logger or log.get_default_logger()
         self._scheduler = iter(eta_schedule)
+        self.precision = precision or conf.CELERYD_ETA_SCHEDULER_PRECISION
         self.debug = log.SilenceRepeated(self.logger.debug, max_iterations=10)
 
     def on_iteration(self):
@@ -112,4 +115,4 @@ class ScheduleController(BackgroundThread):
         delay = self._scheduler.next()
         self.debug("ScheduleController: Scheduler wake-up"
                 "ScheduleController: Next wake-up eta %s seconds..." % delay)
-        time.sleep(delay or 1)
+        time.sleep(delay or self.precision)
