@@ -333,6 +333,9 @@ except ImportError:
             msg, kwargs = self.process(msg, kwargs)
             self.logger.log(level, msg, *args, **kwargs)
 
+        def isEnabledFor(self, level, *args, **kwargs):
+            return self.logger.isEnabledFor(level, *args, **kwargs)
+
 ############## itertools.izip_longest #######################################
 
 try:
