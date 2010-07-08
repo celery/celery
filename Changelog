@@ -18,8 +18,8 @@
         $ PYTHONPATH=. camqadm exchange.delete celerycrq
 
     or::
-    
-    	$ python manage.py camqadm exchange.delete celerycrq
+
+        $ python manage.py camqadm exchange.delete celerycrq
 
 * A bug sneaked in the ETA scheduler that made it only able to execute
   one task per second(!)
