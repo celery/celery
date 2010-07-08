@@ -110,9 +110,6 @@ class ScheduleController(BackgroundThread):
     def on_iteration(self):
         """Wake-up scheduler"""
         delay = self._scheduler.next()
-        if delay is None:
-            delay = 1
-
         self.debug("ScheduleController: Scheduler wake-up"
                 "ScheduleController: Next wake-up eta %s seconds..." % delay)
-        time.sleep(delay)
+        time.sleep(delay or 1)

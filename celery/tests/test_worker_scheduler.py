@@ -32,7 +32,7 @@ class test_Scheduler(unittest.TestCase):
         sched.enter(MockItem("foo"), eta=now, callback=callback)
 
         remaining = iter(sched).next()
-        self.assertEqual(remaining, 0)
+        self.assertIsNone(remaining)
         self.assertTrue(callback_called[0])
         self.assertEqual(ready_queue.get_nowait().task_id, "foo")
 

@@ -69,7 +69,7 @@ class Scheduler(object):
                         ready_queue.put(item)
                         if callback is not None:
                             callback()
-                        yield 0
+                        continue
                     else:
                         heapq.heappush(self._queue, event)
             yield None
