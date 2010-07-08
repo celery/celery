@@ -5,7 +5,10 @@ import sqlalchemy as sa
 from celery import states
 from celery.db.session import ResultModelBase
 # See docstring of a805d4bd for an explanation for this workaround ;)
-from celery.db.a805d4bd import PickleType
+if sa.__version__.startswith('0.5'):
+    from celery.db.dfd042c7 import PickleType
+else:
+    from celery.db.a805d4bd import PickleType
 
 
 class Task(ResultModelBase):
