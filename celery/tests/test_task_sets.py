@@ -96,25 +96,28 @@ class test_TaskSet(unittest.TestCase):
             self.assertTrue(log)
             self.assertIn("Using this invocation of TaskSet is deprecated",
                           log[0].message.args[0])
+            self.assertListEqual(ts.tasks,
+                                 [MockTask.subtask((i, i))
+                                    for i in (2, 4, 8)])
             return ts
 
         context = catch_warnings(record=True)
         ts = execute_context(context, with_catch_warnings)
-        self.assertListEqual(ts.tasks,
-                             [MockTask.subtask((i, i))
-                                 for i in (2, 4, 8)])
 
         # TaskSet.task (deprecated)
         def with_catch_warnings2(log):
+            ts = TaskSet(MockTask, [[(2, 2)], [(4, 4)], [(8, 8)]])
             self.assertEqual(ts.task, MockTask)
             self.assertTrue(log)
             self.assertIn("TaskSet.task is deprecated",
                           log[0].message.args[0])
+            return ts
 
         execute_context(catch_warnings(record=True), with_catch_warnings2)
 
         # TaskSet.task_name (deprecated)
         def with_catch_warnings3(log):
+            ts = TaskSet(MockTask, [[(2, 2)], [(4, 4)], [(8, 8)]])
             self.assertEqual(ts.task_name, MockTask.name)
             self.assertTrue(log)
             self.assertIn("TaskSet.task_name is deprecated",
