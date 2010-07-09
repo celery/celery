@@ -7,7 +7,10 @@
 
 2.0.1
 =====
-:release-date: TBA
+:release-date: 2010-07-09 03:02 P.M CEST
+
+* multiprocessing.pool: Now handles encoding errors, so that pickling errors
+  doesn't crash the worker processes.
 
 * The remote control command replies was not working with RabbitMQ 1.8.0's
   stricter equivalence checks.
@@ -24,24 +27,36 @@
 * A bug sneaked in the ETA scheduler that made it only able to execute
   one task per second(!)
 
-  The scheduler sleeps between iterations so it doesn't consume too much CPU.
-  It keeps a list of the scheduled items sorted by time, at each iteration
-  it sleeps for the remaining time of the item with the nearest deadline.
-  If there are no eta tasks it will sleep for a minimum amount of time, one
-  second by default.
+    The scheduler sleeps between iterations so it doesn't consume too much CPU.
+    It keeps a list of the scheduled items sorted by time, at each iteration
+    it sleeps for the remaining time of the item with the nearest deadline.
+    If there are no eta tasks it will sleep for a minimum amount of time, one
+    second by default.
 
-  A bug sneaked in here, making it sleep for one second for every task
-  that was scheduled. This has been fixed, so now it should move
-  tasks like hot knife through butter.
+    A bug sneaked in here, making it sleep for one second for every task
+    that was scheduled. This has been fixed, so now it should move
+    tasks like hot knife through butter.
 
-  In addition a new setting has been added to control the minimum sleep
-  interval; ``CELERYD_ETA_SCHEDULER_PRECISION``. A good
-  value for this would be a float between 0 and 1, depending
-  on the needed precision. A value of 0.8 means that when the ETA of a task
-  is met, it will take at most 0.8 seconds for the task to be moved to the
-  ready queue.
+    In addition a new setting has been added to control the minimum sleep
+    interval; ``CELERYD_ETA_SCHEDULER_PRECISION``. A good
+    value for this would be a float between 0 and 1, depending
+    on the needed precision. A value of 0.8 means that when the ETA of a task
+    is met, it will take at most 0.8 seconds for the task to be moved to the
+    ready queue.
+
+* Pool: Supervisor did not release the semaphore.
+
+    This would lead to a deadlock if all workers terminated prematurely.
+
+* Added Python version trove classifiers: 2.4, 2.5, 2.6 and 2.7
+
+* Tests now passing on Python 2.7.
 
 * Task.__reduce__: Tasks created using the task decorator can now be pickled.
+
+* setup.py: nose added to ``tests_require``.
+
+* Pickle should now work with SQLAlchemy 0.5.x
 
 * New homepage design by Jan Henrik Helmers: http://celeryproject.org
 
