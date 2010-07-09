@@ -8,7 +8,7 @@ from celery import log
 from celery.datastructures import ExceptionInfo
 from celery.utils.functional import curry
 
-from celery.concurrency.processes.pool import Pool, RUN
+from celery.concurrency.processes.pool import Pool, RUN, MaybeEncodingError
 
 
 class TaskPool(object):
@@ -81,6 +81,7 @@ class TaskPool(object):
         errbacks = errbacks or []
 
         on_ready = curry(self.on_ready, callbacks, errbacks)
+        on_worker_error = curry(self.on_worker_error, errbacks)
 
         self.logger.debug("TaskPool: Apply %s (args:%s kwargs:%s)" % (
             target, args, kwargs))
@@ -89,7 +90,12 @@ class TaskPool(object):
                                       callback=on_ready,
                                       accept_callback=accept_callback,
                                       timeout_callback=timeout_callback,
+                                      error_callback=on_worker_error,
                                       waitforslot=self.putlocks)
+
+    def on_worker_error(self, errbacks, exc):
+        einfo = ExceptionInfo((exc.__class__, exc, None))
+        [errback(einfo) for errback in errbacks]
 
     def on_ready(self, callbacks, errbacks, ret_value):
         """What to do when a worker task is ready and its return value has

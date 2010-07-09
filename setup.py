@@ -74,7 +74,6 @@ setup(
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Operating System :: OS Independent",
-        "Programming Language :: Python",
         "Environment :: No Input/Output (Daemon)",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: BSD License",
@@ -82,6 +81,12 @@ setup(
         "Topic :: Communications",
         "Topic :: System :: Distributed Computing",
         "Topic :: Software Development :: Libraries :: Python Modules",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 2",
+        "Programming Language :: Python :: 2.4",
+        "Programming Language :: Python :: 2.5",
+        "Programming Language :: Python :: 2.6",
+        "Programming Language :: Python :: 2.7",
     ],
     entry_points={
         'console_scripts': [
