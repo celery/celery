@@ -18,7 +18,7 @@
     celery.worker.control
     celery.worker.control.builtins
     celery.worker.control.registry
-    celery.worker.revoke
+    celery.worker.state
     celery.concurrency.processes
     celery.concurrency.processes.pool
     celery.concurrency.threads

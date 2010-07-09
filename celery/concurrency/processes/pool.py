@@ -51,10 +51,6 @@ def mapstar(args):
 #
 
 
-def soft_timeout_sighandler(signum, frame):
-    raise SoftTimeLimitExceeded()
-
-
 class MaybeEncodingError(Exception):
     """Wraps unpickleable object."""
 
@@ -63,11 +59,16 @@ class MaybeEncodingError(Exception):
         self.value = repr(value)
         super(MaybeEncodingError, self).__init__(self.exc, self.value)
 
-    def __str__(self):
-        return "Error sending result: '%s'. Reason: '%s'." % (self.value,
-                                                              self.exc)
     def __repr__(self):
         return "<MaybeEncodingError: %s>" % str(self)
+
+    def __str__(self):
+        return "Error sending result: '%s'. Reason: '%s'." % (
+                    self.value, self.exc)
+
+
+def soft_timeout_sighandler(signum, frame):
+    raise SoftTimeLimitExceeded()
 
 
 def worker(inqueue, outqueue, ackqueue, initializer=None, initargs=(),
@@ -109,7 +110,6 @@ def worker(inqueue, outqueue, ackqueue, initializer=None, initargs=(),
             put((job, i, result))
         except Exception, exc:
             wrapped = MaybeEncodingError(exc, result[1])
-            debug('Got possible encoding error while sending result: %s' % wrapped)
             put((job, i, (False, wrapped)))
 
         completed += 1

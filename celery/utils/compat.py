@@ -366,7 +366,7 @@ def _compat_chain_from_iterable(iterables):
         for element in it:
             yield element
 
-#try:
-#    chain_from_iterable = getattr(chain, "from_iterable")
-#except AttributeError:
-chain_from_iterable = _compat_chain_from_iterable
+try:
+    chain_from_iterable = getattr(chain, "from_iterable")
+except AttributeError:
+    chain_from_iterable = _compat_chain_from_iterable

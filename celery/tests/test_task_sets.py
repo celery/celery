@@ -102,7 +102,7 @@ class test_TaskSet(unittest.TestCase):
             return ts
 
         context = catch_warnings(record=True)
-        ts = execute_context(context, with_catch_warnings)
+        execute_context(context, with_catch_warnings)
 
         # TaskSet.task (deprecated)
         def with_catch_warnings2(log):
@@ -111,7 +111,6 @@ class test_TaskSet(unittest.TestCase):
             self.assertTrue(log)
             self.assertIn("TaskSet.task is deprecated",
                           log[0].message.args[0])
-            return ts
 
         execute_context(catch_warnings(record=True), with_catch_warnings2)
 

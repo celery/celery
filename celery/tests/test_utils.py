@@ -101,7 +101,6 @@ class test_utils(unittest.TestCase):
         self.assertEqual("four", utils.firstmethod("m")([
             A(), A(), A(), promise(lambda: A("four")), A("five")]))
 
-
     def test_first(self):
         iterations = [0]
 

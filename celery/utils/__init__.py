@@ -88,6 +88,7 @@ def maybe_promise(value):
         return value.evaluate()
     return value
 
+
 def noop(*args, **kwargs):
     """No operation.
 
@@ -341,5 +342,3 @@ def instantiate(name, *args, **kwargs):
 
     """
     return get_cls_by_name(name)(*args, **kwargs)
-
-

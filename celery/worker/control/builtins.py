@@ -3,7 +3,6 @@ from datetime import datetime
 from celery import conf
 from celery.backends import default_backend
 from celery.registry import tasks
-from celery.serialization import pickle
 from celery.utils import timeutils
 from celery.worker import state
 from celery.worker.state import revoked

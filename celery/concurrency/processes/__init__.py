@@ -8,7 +8,7 @@ from celery import log
 from celery.datastructures import ExceptionInfo
 from celery.utils.functional import curry
 
-from celery.concurrency.processes.pool import Pool, RUN, MaybeEncodingError
+from celery.concurrency.processes.pool import Pool, RUN
 
 
 class TaskPool(object):
