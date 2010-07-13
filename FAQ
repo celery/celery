@@ -330,58 +330,44 @@ Can I use celery with ActiveMQ/STOMP?
 
 **Answer**: Yes, but this is somewhat experimental for now.
 It is working ok in a test configuration, but it has not
-been tested in production like RabbitMQ has. If you have any problems with
-using STOMP and celery, please report the bugs to the issue tracker:
+been tested in production. If you have any problems
+using STOMP with celery, please report an issue here::
 
     http://github.com/ask/celery/issues/
 
-First you have to use the ``master`` branch of ``celery``::
+The STOMP carrot backend requires the `stompy`_ library::
 
-    $ git clone git://github.com/ask/celery.git
-    $ cd celery
-    $ sudo python setup.py install
-    $ cd ..
-
-Then you need to install the ``stompbackend`` branch of ``carrot``::
-
-    $ git clone git://github.com/ask/carrot.git
-    $ cd carrot
-    $ git checkout stompbackend
-    $ sudo python setup.py install
-    $ cd ..
-
-And my fork of ``python-stomp`` which adds non-blocking support::
-
-    $ hg clone http://bitbucket.org/asksol/python-stomp/
+    $ pip install stompy
     $ cd python-stomp
     $ sudo python setup.py install
     $ cd ..
 
+.. _`stompy`: http://pypi.python.org/pypi/stompy
+
 In this example we will use a queue called ``celery`` which we created in
 the ActiveMQ web admin interface.
 
-**Note**: For ActiveMQ the queue name has to have ``"/queue/"`` prepended to
-it. i.e. the queue ``celery`` becomes ``/queue/celery``.
+**Note**: When using ActiveMQ the queue name needs to have ``"/queue/"``
+prepended to it. i.e. the queue ``celery`` becomes ``/queue/celery``.
 
-Since a STOMP queue is a single named entity and it doesn't have the
-routing capabilities of AMQP you need to set both the ``queue``, and
-``exchange`` settings to your queue name. This is a minor inconvenience since
-carrot needs to maintain the same interface for both AMQP and STOMP (obviously
-the one with the most capabilities won).
+Since STOMP doesn't have exchanges and the routing capabilities of AMQP,
+you need to set ``exchange`` name to the same as the queue name. This is
+a minor inconvenience since carrot needs to maintain the same interface
+for both AMQP and STOMP.
 
-Use the following specific settings in your ``celeryconfig.py``/django ``settings.py``:
+Use the following settings in your ``celeryconfig.py``/django ``settings.py``:
 
 .. code-block:: python
 
-    # Makes python-stomp the default backend for carrot.
+    # Use the stomp carrot backend.
     CARROT_BACKEND = "stomp"
 
     # STOMP hostname and port settings.
     BROKER_HOST = "localhost"
     BROKER_PORT = 61613
 
-    # The queue name to use (both queue and exchange must be set to the
-    # same queue name when using STOMP)
+    # The queue name to use (the exchange *must* be set to the
+    # same as the queue name when using STOMP)
     CELERY_DEFAULT_QUEUE = "/queue/celery"
     CELERY_DEFAULT_EXCHANGE = "/queue/celery" 
 
@@ -389,11 +375,8 @@ Use the following specific settings in your ``celeryconfig.py``/django ``setting
         "/queue/celery": {"exchange": "/queue/celery"}
     }
 
-Now you can go on reading the tutorial in the README, ignoring any AMQP
-specific options. 
-
-What features are not supported when using STOMP?
---------------------------------------------------
+What features are not supported when using ghettoq/STOMP?
+---------------------------------------------------------
 
 This is a (possible incomplete) list of features not available when
 using the STOMP backend:
