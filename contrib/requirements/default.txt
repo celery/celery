@@ -3,5 +3,4 @@ python-dateutil
 sqlalchemy
 anyjson
 carrot>=0.10.5
-django-picklefield
 pyparsing

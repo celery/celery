@@ -1,6 +1,9 @@
 """
 dfd042c7
-SQLAlchemy 0.5.8 version of a805d4bd, see the docstring of that module for an explanation of this workaround.
+
+SQLAlchemy 0.5.8 version of a805d4bd, see the docstring of that module
+for an explanation of this workaround.
+
 """
 from sqlalchemy.types import PickleType as _PickleType
 from sqlalchemy import util
@@ -31,11 +34,14 @@ class PickleType(_PickleType):
         if self.comparator:
             return self.comparator(x, y)
         elif self.mutable and not hasattr(x, '__eq__') and x is not None:
-            util.warn_deprecated("Objects stored with PickleType when mutable=True must implement __eq__() for reliable comparison.")
-            return self.pickler.dumps(x, self.protocol) == self.pickler.dumps(y, self.protocol)
+            util.warn_deprecated(
+                    "Objects stored with PickleType when mutable=True "
+                    "must implement __eq__() for reliable comparison.")
+            a = self.pickler.dumps(x, self.protocol)
+            b = self.pickler.dumps(y, self.protocol)
+            return a == b
         else:
             return x == y
 
     def is_mutable(self):
         return self.mutable
-

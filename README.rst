@@ -4,7 +4,7 @@
 
 .. image:: http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png
 
-:Version: 2.0.0
+:Version: 2.0.1
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
 :Source: http://github.com/ask/celery/
@@ -13,8 +13,9 @@
 
 --
 
-Celery is an asynchronous task queue/job queue based on distributed message passing.
-It is focused on real-time operation, but supports scheduling as well.
+Celery is an open source asynchronous task queue/job queue based on
+distributed message passing. It is focused on real-time operation,
+but supports scheduling as well.
 
 The execution units, called tasks, are executed concurrently on a single or
 more worker servers. Tasks can execute asynchronously (in the background) or synchronously

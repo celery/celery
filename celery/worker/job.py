@@ -403,15 +403,13 @@ class TaskRequest(object):
                                        exception=repr(exc_info.exception),
                                        traceback=exc_info.traceback)
 
-        context = {
-            "hostname": self.hostname,
-            "id": self.task_id,
-            "name": self.task_name,
-            "exc": repr(exc_info.exception),
-            "traceback": unicode(exc_info.traceback, 'utf-8'),
-            "args": self.args,
-            "kwargs": self.kwargs,
-        }
+        context = {"hostname": self.hostname,
+                   "id": self.task_id,
+                   "name": self.task_name,
+                   "exc": repr(exc_info.exception),
+                   "traceback": unicode(exc_info.traceback, 'utf-8'),
+                   "args": self.args,
+                   "kwargs": self.kwargs}
         self.logger.error(self.error_msg.strip() % context)
 
         task_obj = tasks.get(self.task_name, object)
