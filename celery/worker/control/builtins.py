@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from celery import conf
+from celery import log
 from celery.backends import default_backend
 from celery.registry import tasks
 from celery.utils import timeutils
@@ -49,6 +50,16 @@ def disable_events(panel):
 
 
 @Panel.register
+def set_loglevel(panel, loglevel=None):
+    if loglevel is not None:
+        if not isinstance(loglevel, int):
+            loglevel = conf.LOG_LEVELS[loglevel.upper()]
+        log.get_default_logger(loglevel=loglevel)
+    return {"ok": loglevel}
+
+
+
+@Panel.register
 def rate_limit(panel, task_name, rate_limit, **kwargs):
     """Set new rate limit for a task type.
 
@@ -88,7 +99,7 @@ def rate_limit(panel, task_name, rate_limit, **kwargs):
 
 
 @Panel.register
-def dump_schedule(panel, **kwargs):
+def dump_schedule(panel, safe=False, **kwargs):
     schedule = panel.listener.eta_schedule
     if not schedule.queue:
         panel.logger.info("--Empty schedule--")
@@ -101,11 +112,16 @@ def dump_schedule(panel, **kwargs):
     info = map(formatitem, enumerate(schedule.info()))
     panel.logger.info("* Dump of current schedule:\n%s" % (
                             "\n".join(info, )))
-    return info
+    scheduled_tasks = []
+    for item in schedule.info():
+        scheduled_tasks.append({"eta": item["eta"],
+                                "priority": item["priority"],
+                                "request": item["item"].info(safe=safe)})
+    return scheduled_tasks
 
 
 @Panel.register
-def dump_reserved(panel, **kwargs):
+def dump_reserved(panel, safe=False, **kwargs):
     ready_queue = panel.listener.ready_queue
     reserved = ready_queue.items
     if not reserved:
@@ -114,7 +130,8 @@ def dump_reserved(panel, **kwargs):
     info = map(repr, reserved)
     panel.logger.info("* Dump of currently reserved tasks:\n%s" % (
                             "\n".join(info, )))
-    return info
+    return [request.info(safe=safe)
+            for request in reserved]
 
 
 @Panel.register
