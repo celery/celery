@@ -316,6 +316,10 @@ except ImportError:
             msg, kwargs = self.process(msg, kwargs)
             self.logger.warning(msg, *args, **kwargs)
 
+        def warn(self, msg, *args, **kwargs):
+            msg, kwargs = self.process(msg, kwargs)
+            self.logger.warn(msg, *args, **kwargs)
+
         def error(self, msg, *args, **kwargs):
             msg, kwargs = self.process(msg, kwargs)
             self.logger.error(msg, *args, **kwargs)
