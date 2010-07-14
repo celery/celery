@@ -365,7 +365,7 @@ class test_TaskRequest(unittest.TestCase):
         tid = gen_unique_id()
         tw = TaskRequest(mytask.name, tid, [4], {"f": "x"})
         self.assertEqual(tw.execute(), 256)
-        meta = default_backend._get_task_meta_for(tid)
+        meta = default_backend.get_task_meta(tid)
         self.assertEqual(meta["result"], 256)
         self.assertEqual(meta["status"], states.SUCCESS)
 
@@ -373,7 +373,7 @@ class test_TaskRequest(unittest.TestCase):
         tid = gen_unique_id()
         tw = TaskRequest(mytask_no_kwargs.name, tid, [4], {})
         self.assertEqual(tw.execute(), 256)
-        meta = default_backend._get_task_meta_for(tid)
+        meta = default_backend.get_task_meta(tid)
         self.assertEqual(meta["result"], 256)
         self.assertEqual(meta["status"], states.SUCCESS)
 
@@ -381,7 +381,7 @@ class test_TaskRequest(unittest.TestCase):
         tid = gen_unique_id()
         tw = TaskRequest(mytask_some_kwargs.name, tid, [4], {})
         self.assertEqual(tw.execute(logfile="foobaz.log"), 256)
-        meta = default_backend._get_task_meta_for(tid)
+        meta = default_backend.get_task_meta(tid)
         self.assertEqual(some_kwargs_scratchpad.get("logfile"), "foobaz.log")
         self.assertEqual(meta["result"], 256)
         self.assertEqual(meta["status"], states.SUCCESS)
@@ -391,7 +391,7 @@ class test_TaskRequest(unittest.TestCase):
         tw = TaskRequest(mytask.name, tid, [4], {"f": "x"},
                         on_ack=on_ack)
         self.assertEqual(tw.execute(), 256)
-        meta = default_backend._get_task_meta_for(tid)
+        meta = default_backend.get_task_meta(tid)
         self.assertTrue(scratch["ACK"])
         self.assertEqual(meta["result"], 256)
         self.assertEqual(meta["status"], states.SUCCESS)
@@ -400,7 +400,7 @@ class test_TaskRequest(unittest.TestCase):
         tid = gen_unique_id()
         tw = TaskRequest(mytask_raising.name, tid, [4], {"f": "x"})
         self.assertIsInstance(tw.execute(), ExceptionInfo)
-        meta = default_backend._get_task_meta_for(tid)
+        meta = default_backend.get_task_meta(tid)
         self.assertEqual(meta["status"], states.FAILURE)
         self.assertIsInstance(meta["result"], KeyError)
 

@@ -127,9 +127,8 @@ def dump_reserved(panel, safe=False, **kwargs):
     if not reserved:
         panel.logger.info("--Empty queue--")
         return []
-    info = map(repr, reserved)
     panel.logger.info("* Dump of currently reserved tasks:\n%s" % (
-                            "\n".join(info, )))
+                            "\n".join(map(repr, reserved), )))
     return [request.info(safe=safe)
             for request in reserved]
 
