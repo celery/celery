@@ -91,7 +91,7 @@
 <li><a class="reference external" href="#brokers" id="id25">Brokers</a><ul>
 <li><a class="reference external" href="#why-is-rabbitmq-crashing" id="id26">Why is RabbitMQ crashing?</a></li>
 <li><a class="reference external" href="#can-i-use-celery-with-activemq-stomp" id="id27">Can I use celery with ActiveMQ/STOMP?</a></li>
-<li><a class="reference external" href="#what-features-are-not-supported-when-using-stomp" id="id28">What features are not supported when using STOMP?</a></li>
+<li><a class="reference external" href="#what-features-are-not-supported-when-using-ghettoq-stomp" id="id28">What features are not supported when using ghettoq/STOMP?</a></li>
 </ul>
 </li>
 <li><a class="reference external" href="#features" id="id29">Features</a><ul>
@@ -367,48 +367,34 @@ setting.</p>
 <h3><a class="toc-backref" href="#id27">Can I use celery with ActiveMQ/STOMP?</a><a class="headerlink" href="#can-i-use-celery-with-activemq-stomp" title="Permalink to this headline">¶</a></h3>
 <p><strong>Answer</strong>: Yes, but this is somewhat experimental for now.
 It is working ok in a test configuration, but it has not
-been tested in production like RabbitMQ has. If you have any problems with
-using STOMP and celery, please report the bugs to the issue tracker:</p>
-<blockquote>
-<a class="reference external" href="http://github.com/ask/celery/issues/">http://github.com/ask/celery/issues/</a></blockquote>
-<p>First you have to use the <tt class="docutils literal"><span class="pre">master</span></tt> branch of <tt class="docutils literal"><span class="pre">celery</span></tt>:</p>
-<div class="highlight-python"><pre>$ git clone git://github.com/ask/celery.git
-$ cd celery
-$ sudo python setup.py install
-$ cd ..</pre>
+been tested in production. If you have any problems
+using STOMP with celery, please report an issue here:</p>
+<div class="highlight-python"><pre>http://github.com/ask/celery/issues/</pre>
 </div>
-<p>Then you need to install the <tt class="docutils literal"><span class="pre">stompbackend</span></tt> branch of <tt class="docutils literal"><span class="pre">carrot</span></tt>:</p>
-<div class="highlight-python"><pre>$ git clone git://github.com/ask/carrot.git
-$ cd carrot
-$ git checkout stompbackend
-$ sudo python setup.py install
-$ cd ..</pre>
-</div>
-<p>And my fork of <tt class="docutils literal"><span class="pre">python-stomp</span></tt> which adds non-blocking support:</p>
-<div class="highlight-python"><pre>$ hg clone http://bitbucket.org/asksol/python-stomp/
+<p>The STOMP carrot backend requires the <a class="reference external" href="http://pypi.python.org/pypi/stompy">stompy</a> library:</p>
+<div class="highlight-python"><pre>$ pip install stompy
 $ cd python-stomp
 $ sudo python setup.py install
 $ cd ..</pre>
 </div>
 <p>In this example we will use a queue called <tt class="docutils literal"><span class="pre">celery</span></tt> which we created in
 the ActiveMQ web admin interface.</p>
-<p><strong>Note</strong>: For ActiveMQ the queue name has to have <tt class="docutils literal"><span class="pre">&quot;/queue/&quot;</span></tt> prepended to
-it. i.e. the queue <tt class="docutils literal"><span class="pre">celery</span></tt> becomes <tt class="docutils literal"><span class="pre">/queue/celery</span></tt>.</p>
-<p>Since a STOMP queue is a single named entity and it doesn&#8217;t have the
-routing capabilities of AMQP you need to set both the <tt class="docutils literal"><span class="pre">queue</span></tt>, and
-<tt class="docutils literal"><span class="pre">exchange</span></tt> settings to your queue name. This is a minor inconvenience since
-carrot needs to maintain the same interface for both AMQP and STOMP (obviously
-the one with the most capabilities won).</p>
-<p>Use the following specific settings in your <tt class="docutils literal"><span class="pre">celeryconfig.py</span></tt>/django <tt class="docutils literal"><span class="pre">settings.py</span></tt>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># Makes python-stomp the default backend for carrot.</span>
+<p><strong>Note</strong>: When using ActiveMQ the queue name needs to have <tt class="docutils literal"><span class="pre">&quot;/queue/&quot;</span></tt>
+prepended to it. i.e. the queue <tt class="docutils literal"><span class="pre">celery</span></tt> becomes <tt class="docutils literal"><span class="pre">/queue/celery</span></tt>.</p>
+<p>Since STOMP doesn&#8217;t have exchanges and the routing capabilities of AMQP,
+you need to set <tt class="docutils literal"><span class="pre">exchange</span></tt> name to the same as the queue name. This is
+a minor inconvenience since carrot needs to maintain the same interface
+for both AMQP and STOMP.</p>
+<p>Use the following settings in your <tt class="docutils literal"><span class="pre">celeryconfig.py</span></tt>/django <tt class="docutils literal"><span class="pre">settings.py</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># Use the stomp carrot backend.</span>
 <span class="n">CARROT_BACKEND</span> <span class="o">=</span> <span class="s">&quot;stomp&quot;</span>
 
 <span class="c"># STOMP hostname and port settings.</span>
 <span class="n">BROKER_HOST</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>
 <span class="n">BROKER_PORT</span> <span class="o">=</span> <span class="mi">61613</span>
 
-<span class="c"># The queue name to use (both queue and exchange must be set to the</span>
-<span class="c"># same queue name when using STOMP)</span>
+<span class="c"># The queue name to use (the exchange *must* be set to the</span>
+<span class="c"># same as the queue name when using STOMP)</span>
 <span class="n">CELERY_DEFAULT_QUEUE</span> <span class="o">=</span> <span class="s">&quot;/queue/celery&quot;</span>
 <span class="n">CELERY_DEFAULT_EXCHANGE</span> <span class="o">=</span> <span class="s">&quot;/queue/celery&quot;</span>
 
@@ -417,11 +403,9 @@ the one with the most capabilities won).</p>
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>Now you can go on reading the tutorial in the README, ignoring any AMQP
-specific options.</p>
 </div>
-<div class="section" id="what-features-are-not-supported-when-using-stomp">
-<h3><a class="toc-backref" href="#id28">What features are not supported when using STOMP?</a><a class="headerlink" href="#what-features-are-not-supported-when-using-stomp" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="what-features-are-not-supported-when-using-ghettoq-stomp">
+<h3><a class="toc-backref" href="#id28">What features are not supported when using ghettoq/STOMP?</a><a class="headerlink" href="#what-features-are-not-supported-when-using-ghettoq-stomp" title="Permalink to this headline">¶</a></h3>
 <p>This is a (possible incomplete) list of features not available when
 using the STOMP backend:</p>
 <blockquote>
@@ -629,7 +613,7 @@ and they will not be re-run unless you have the <tt class="docutils literal"><sp
 <li><a class="reference internal" href="#brokers">Brokers</a><ul>
 <li><a class="reference internal" href="#why-is-rabbitmq-crashing">Why is RabbitMQ crashing?</a></li>
 <li><a class="reference internal" href="#can-i-use-celery-with-activemq-stomp">Can I use celery with ActiveMQ/STOMP?</a></li>
-<li><a class="reference internal" href="#what-features-are-not-supported-when-using-stomp">What features are not supported when using STOMP?</a></li>
+<li><a class="reference internal" href="#what-features-are-not-supported-when-using-ghettoq-stomp">What features are not supported when using ghettoq/STOMP?</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#features">Features</a><ul>

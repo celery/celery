@@ -55,6 +55,38 @@
             
   <div class="section" id="thread-pool-support-experimental-celery-concurrency-threads">
 <h1>Thread Pool Support <strong>EXPERIMENTAL</strong> - celery.concurrency.threads<a class="headerlink" href="#thread-pool-support-experimental-celery-concurrency-threads" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-celery.concurrency.threads"></span><dl class="class">
+<dt id="celery.concurrency.threads.TaskPool">
+<em class="property">class </em><tt class="descclassname">celery.concurrency.threads.</tt><tt class="descname">TaskPool</tt><big>(</big><em>limit</em>, <em>logger=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.concurrency.threads.TaskPool" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.concurrency.threads.TaskPool.apply_async">
+<tt class="descname">apply_async</tt><big>(</big><em>target</em>, <em>args=None</em>, <em>kwargs=None</em>, <em>callbacks=None</em>, <em>errbacks=None</em>, <em>accept_callback=None</em>, <em>**compat</em><big>)</big><a class="headerlink" href="#celery.concurrency.threads.TaskPool.apply_async" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.threads.TaskPool.on_ready">
+<tt class="descname">on_ready</tt><big>(</big><em>callbacks</em>, <em>errbacks</em>, <em>ret_value</em><big>)</big><a class="headerlink" href="#celery.concurrency.threads.TaskPool.on_ready" title="Permalink to this definition">¶</a></dt>
+<dd><p>What to do when a worker task is ready and its return value has
+been collected.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.threads.TaskPool.start">
+<tt class="descname">start</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.threads.TaskPool.start" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.concurrency.threads.TaskPool.stop">
+<tt class="descname">stop</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.concurrency.threads.TaskPool.stop" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.concurrency.threads.do_work">
+<tt class="descclassname">celery.concurrency.threads.</tt><tt class="descname">do_work</tt><big>(</big><em>target</em>, <em>args=()</em>, <em>kwargs={}</em>, <em>callback=None</em>, <em>accept_callback=None</em><big>)</big><a class="headerlink" href="#celery.concurrency.threads.do_work" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </div>
 
 

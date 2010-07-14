@@ -264,16 +264,33 @@ then import them using the ``CELERY_IMPORTS`` setting::
 
     CELERY_IMPORTS = ("myapp.worker.control", )
 
-Debugging
-=========
+Inspecting workers
+==================
+
+:class:`celery.task.control.inspect` lets you inspect running workers. It uses
+remote control commands under the hood.
+
+.. code-block:: python
+
+    >>> from celery.task.control import inspect
+
+    # Inspect all nodes.
+    >>> i = inspect()
+
+    # Specify multiple nodes to inspect.
+    >>> i = inspect(["worker1.example.com", "worker2.example.com"])
+
+    # Specify a single node to inspect.
+    >>> i = inspect("worker1.example.com")
+
 
 Dump of registered tasks
 ------------------------
 
 You can get a list of tasks registered in the worker using the
-``dump_tasks`` remote control command::
+:meth:`~celery.task.control.inspect.registered_tasks`::
 
-    >>> broadcast("dump_tasks", reply=True)
+    >>> i.registered_tasks()
     [{'worker1.example.com': ['celery.delete_expired_task_meta',
                               'celery.execute_remote',
                               'celery.map_async',
@@ -282,38 +299,55 @@ You can get a list of tasks registered in the worker using the
                               'tasks.add',
                               'tasks.sleeptask']}]
 
+Dump of currently executing tasks
+---------------------------------
+
+You can get a list of active tasks using
+:meth:`~celery.task.control.inspect.active`::
+
+    >>> i.active()
+    [{'worker1.example.com':
+        [{"name": "tasks.sleeptask",
+          "id": "32666e9b-809c-41fa-8e93-5ae0c80afbbf",
+          "args": "(8,)",
+          "kwargs": "{}"}]}]
+
+
 Dump of scheduled (ETA) tasks
 -----------------------------
 
 You can get a list of tasks waiting to be scheduled by using
-the ``dump_schedule`` remote control command.
+:meth:`~celery.task.control.inspect.scheduled`::
 
-    >>> broadcast("dump_schedule", reply=True)
+    >>> i.scheduled()
     [{'worker1.example.com':
-        ['0. 2010-06-07 09:07:52 pri0 <TaskRequest: {
-            name:"tasks.sleeptask",
-            id:"1a7980ea-8b19-413e-91d2-0b74f3844c4d",
-            args:"[1]", kwargs:"{}"}>',
-        '1. 2010-06-07 09:07:53 pri0 <TaskRequest: {
-            name:"tasks.sleeptask",
-            id:"49661b9a-aa22-4120-94b7-9ee8031d219d",
-            args:"[2]",
-            kwargs:"{}"}>',
-
-The outputted fields are (in order): position, eta, priority, request.
+        [{"eta": "2010-06-07 09:07:52", "priority": 0,
+          "request": {
+            "name": "tasks.sleeptask",
+            "id": "1a7980ea-8b19-413e-91d2-0b74f3844c4d",
+            "args": "[1]",
+            "kwargs": "{}"}},
+         {"eta": "2010-06-07 09:07:53", "priority": 0,
+          "request": {
+            "name": "tasks.sleeptask",
+            "id": "49661b9a-aa22-4120-94b7-9ee8031d219d",
+            "args": "[2]",
+            "kwargs": "{}"}}]}]
 
 Note that these are tasks with an eta/countdown argument, not periodic tasks.
 
 Dump of reserved tasks
 ----------------------
 
-Reserved tasks are tasks that has been received by the broker and is waiting
-for immediate execution.
+Reserved tasks are tasks that has been received, but is still waiting to be
+executed.
 
-You can get a list of these using the ``dump_reserved`` remote control command.
+You can get a list of these using
+:meth:`~celery.task.control.inspect.reserved`::
 
-    >>> broadcast("dump_reserved", reply=True)
+    >>> i.reserved()
     [{'worker1.example.com':
-        ['<TaskRequest: {name:"tasks.sleeptask",
-                         id:"32666e9b-809c-41fa-8e93-5ae0c80afbbf",
-                         args:"(8,)", kwargs:"{}"}>']}]
+        [{"name": "tasks.sleeptask",
+          "id": "32666e9b-809c-41fa-8e93-5ae0c80afbbf",
+          "args": "(8,)",
+          "kwargs": "{}"}]}]

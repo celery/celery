@@ -71,10 +71,11 @@
 <li><a class="reference external" href="#writing-your-own-remote-control-commands" id="id13">Writing your own remote control commands</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#debugging" id="id14">Debugging</a><ul>
+<li><a class="reference external" href="#inspecting-workers" id="id14">Inspecting workers</a><ul>
 <li><a class="reference external" href="#dump-of-registered-tasks" id="id15">Dump of registered tasks</a></li>
-<li><a class="reference external" href="#dump-of-scheduled-eta-tasks" id="id16">Dump of scheduled (ETA) tasks</a></li>
-<li><a class="reference external" href="#dump-of-reserved-tasks" id="id17">Dump of reserved tasks</a></li>
+<li><a class="reference external" href="#dump-of-currently-executing-tasks" id="id16">Dump of currently executing tasks</a></li>
+<li><a class="reference external" href="#dump-of-scheduled-eta-tasks" id="id17">Dump of scheduled (ETA) tasks</a></li>
+<li><a class="reference external" href="#dump-of-reserved-tasks" id="id18">Dump of reserved tasks</a></li>
 </ul>
 </li>
 </ul>
@@ -305,13 +306,27 @@ then import them using the <tt class="docutils literal"><span class="pre">CELERY
 </div>
 </div>
 </div>
-<div class="section" id="debugging">
-<h2><a class="toc-backref" href="#id14">Debugging</a><a class="headerlink" href="#debugging" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="inspecting-workers">
+<h2><a class="toc-backref" href="#id14">Inspecting workers</a><a class="headerlink" href="#inspecting-workers" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference internal" href="../reference/celery.task.control.html#celery.task.control.inspect" title="celery.task.control.inspect"><tt class="xref py py-class docutils literal"><span class="pre">celery.task.control.inspect</span></tt></a> lets you inspect running workers. It uses
+remote control commands under the hood.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task.control</span> <span class="kn">import</span> <span class="n">inspect</span>
+
+<span class="go"># Inspect all nodes.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">i</span> <span class="o">=</span> <span class="n">inspect</span><span class="p">()</span>
+
+<span class="go"># Specify multiple nodes to inspect.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">i</span> <span class="o">=</span> <span class="n">inspect</span><span class="p">([</span><span class="s">&quot;worker1.example.com&quot;</span><span class="p">,</span> <span class="s">&quot;worker2.example.com&quot;</span><span class="p">])</span>
+
+<span class="go"># Specify a single node to inspect.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">i</span> <span class="o">=</span> <span class="n">inspect</span><span class="p">(</span><span class="s">&quot;worker1.example.com&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
 <div class="section" id="dump-of-registered-tasks">
 <h3><a class="toc-backref" href="#id15">Dump of registered tasks</a><a class="headerlink" href="#dump-of-registered-tasks" title="Permalink to this headline">¶</a></h3>
 <p>You can get a list of tasks registered in the worker using the
-<tt class="docutils literal"><span class="pre">dump_tasks</span></tt> remote control command:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">broadcast</span><span class="p">(</span><span class="s">&quot;dump_tasks&quot;</span><span class="p">,</span> <span class="n">reply</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<a class="reference internal" href="../reference/celery.task.control.html#celery.task.control.inspect.registered_tasks" title="celery.task.control.inspect.registered_tasks"><tt class="xref py py-meth docutils literal"><span class="pre">registered_tasks()</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">i</span><span class="o">.</span><span class="n">registered_tasks</span><span class="p">()</span>
 <span class="go">[{&#39;worker1.example.com&#39;: [&#39;celery.delete_expired_task_meta&#39;,</span>
 <span class="go">                          &#39;celery.execute_remote&#39;,</span>
 <span class="go">                          &#39;celery.map_async&#39;,</span>
@@ -322,36 +337,53 @@ then import them using the <tt class="docutils literal"><span class="pre">CELERY
 </pre></div>
 </div>
 </div>
-<div class="section" id="dump-of-scheduled-eta-tasks">
-<h3><a class="toc-backref" href="#id16">Dump of scheduled (ETA) tasks</a><a class="headerlink" href="#dump-of-scheduled-eta-tasks" title="Permalink to this headline">¶</a></h3>
-<p>You can get a list of tasks waiting to be scheduled by using
-the <tt class="docutils literal"><span class="pre">dump_schedule</span></tt> remote control command.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">broadcast</span><span class="p">(</span><span class="s">&quot;dump_schedule&quot;</span><span class="p">,</span> <span class="n">reply</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<div class="section" id="dump-of-currently-executing-tasks">
+<h3><a class="toc-backref" href="#id16">Dump of currently executing tasks</a><a class="headerlink" href="#dump-of-currently-executing-tasks" title="Permalink to this headline">¶</a></h3>
+<p>You can get a list of active tasks using
+<a class="reference internal" href="../reference/celery.task.control.html#celery.task.control.inspect.active" title="celery.task.control.inspect.active"><tt class="xref py py-meth docutils literal"><span class="pre">active()</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">i</span><span class="o">.</span><span class="n">active</span><span class="p">()</span>
 <span class="go">[{&#39;worker1.example.com&#39;:</span>
-<span class="go">    [&#39;0. 2010-06-07 09:07:52 pri0 &lt;TaskRequest: {</span>
-<span class="go">        name:&quot;tasks.sleeptask&quot;,</span>
-<span class="go">        id:&quot;1a7980ea-8b19-413e-91d2-0b74f3844c4d&quot;,</span>
-<span class="go">        args:&quot;[1]&quot;, kwargs:&quot;{}&quot;}&gt;&#39;,</span>
-<span class="go">    &#39;1. 2010-06-07 09:07:53 pri0 &lt;TaskRequest: {</span>
-<span class="go">        name:&quot;tasks.sleeptask&quot;,</span>
-<span class="go">        id:&quot;49661b9a-aa22-4120-94b7-9ee8031d219d&quot;,</span>
-<span class="go">        args:&quot;[2]&quot;,</span>
-<span class="go">        kwargs:&quot;{}&quot;}&gt;&#39;,</span>
+<span class="go">    [{&quot;name&quot;: &quot;tasks.sleeptask&quot;,</span>
+<span class="go">      &quot;id&quot;: &quot;32666e9b-809c-41fa-8e93-5ae0c80afbbf&quot;,</span>
+<span class="go">      &quot;args&quot;: &quot;(8,)&quot;,</span>
+<span class="go">      &quot;kwargs&quot;: &quot;{}&quot;}]}]</span>
 </pre></div>
 </div>
-<p>The outputted fields are (in order): position, eta, priority, request.</p>
+</div>
+<div class="section" id="dump-of-scheduled-eta-tasks">
+<h3><a class="toc-backref" href="#id17">Dump of scheduled (ETA) tasks</a><a class="headerlink" href="#dump-of-scheduled-eta-tasks" title="Permalink to this headline">¶</a></h3>
+<p>You can get a list of tasks waiting to be scheduled by using
+<a class="reference internal" href="../reference/celery.task.control.html#celery.task.control.inspect.scheduled" title="celery.task.control.inspect.scheduled"><tt class="xref py py-meth docutils literal"><span class="pre">scheduled()</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">i</span><span class="o">.</span><span class="n">scheduled</span><span class="p">()</span>
+<span class="go">[{&#39;worker1.example.com&#39;:</span>
+<span class="go">    [{&quot;eta&quot;: &quot;2010-06-07 09:07:52&quot;, &quot;priority&quot;: 0,</span>
+<span class="go">      &quot;request&quot;: {</span>
+<span class="go">        &quot;name&quot;: &quot;tasks.sleeptask&quot;,</span>
+<span class="go">        &quot;id&quot;: &quot;1a7980ea-8b19-413e-91d2-0b74f3844c4d&quot;,</span>
+<span class="go">        &quot;args&quot;: &quot;[1]&quot;,</span>
+<span class="go">        &quot;kwargs&quot;: &quot;{}&quot;}},</span>
+<span class="go">     {&quot;eta&quot;: &quot;2010-06-07 09:07:53&quot;, &quot;priority&quot;: 0,</span>
+<span class="go">      &quot;request&quot;: {</span>
+<span class="go">        &quot;name&quot;: &quot;tasks.sleeptask&quot;,</span>
+<span class="go">        &quot;id&quot;: &quot;49661b9a-aa22-4120-94b7-9ee8031d219d&quot;,</span>
+<span class="go">        &quot;args&quot;: &quot;[2]&quot;,</span>
+<span class="go">        &quot;kwargs&quot;: &quot;{}&quot;}}]}]</span>
+</pre></div>
+</div>
 <p>Note that these are tasks with an eta/countdown argument, not periodic tasks.</p>
 </div>
 <div class="section" id="dump-of-reserved-tasks">
-<h3><a class="toc-backref" href="#id17">Dump of reserved tasks</a><a class="headerlink" href="#dump-of-reserved-tasks" title="Permalink to this headline">¶</a></h3>
-<p>Reserved tasks are tasks that has been received by the broker and is waiting
-for immediate execution.</p>
-<p>You can get a list of these using the <tt class="docutils literal"><span class="pre">dump_reserved</span></tt> remote control command.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">broadcast</span><span class="p">(</span><span class="s">&quot;dump_reserved&quot;</span><span class="p">,</span> <span class="n">reply</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<h3><a class="toc-backref" href="#id18">Dump of reserved tasks</a><a class="headerlink" href="#dump-of-reserved-tasks" title="Permalink to this headline">¶</a></h3>
+<p>Reserved tasks are tasks that has been received, but is still waiting to be
+executed.</p>
+<p>You can get a list of these using
+<a class="reference internal" href="../reference/celery.task.control.html#celery.task.control.inspect.reserved" title="celery.task.control.inspect.reserved"><tt class="xref py py-meth docutils literal"><span class="pre">reserved()</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">i</span><span class="o">.</span><span class="n">reserved</span><span class="p">()</span>
 <span class="go">[{&#39;worker1.example.com&#39;:</span>
-<span class="go">    [&#39;&lt;TaskRequest: {name:&quot;tasks.sleeptask&quot;,</span>
-<span class="go">                     id:&quot;32666e9b-809c-41fa-8e93-5ae0c80afbbf&quot;,</span>
-<span class="go">                     args:&quot;(8,)&quot;, kwargs:&quot;{}&quot;}&gt;&#39;]}]</span>
+<span class="go">    [{&quot;name&quot;: &quot;tasks.sleeptask&quot;,</span>
+<span class="go">      &quot;id&quot;: &quot;32666e9b-809c-41fa-8e93-5ae0c80afbbf&quot;,</span>
+<span class="go">      &quot;args&quot;: &quot;(8,)&quot;,</span>
+<span class="go">      &quot;kwargs&quot;: &quot;{}&quot;}]}]</span>
 </pre></div>
 </div>
 </div>
@@ -384,8 +416,9 @@ for immediate execution.</p>
 <li><a class="reference internal" href="#writing-your-own-remote-control-commands">Writing your own remote control commands</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#debugging">Debugging</a><ul>
+<li><a class="reference internal" href="#inspecting-workers">Inspecting workers</a><ul>
 <li><a class="reference internal" href="#dump-of-registered-tasks">Dump of registered tasks</a></li>
+<li><a class="reference internal" href="#dump-of-currently-executing-tasks">Dump of currently executing tasks</a></li>
 <li><a class="reference internal" href="#dump-of-scheduled-eta-tasks">Dump of scheduled (ETA) tasks</a></li>
 <li><a class="reference internal" href="#dump-of-reserved-tasks">Dump of reserved tasks</a></li>
 </ul>
