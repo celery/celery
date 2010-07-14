@@ -414,7 +414,10 @@ class TaskRequest(object):
 
         task_obj = tasks.get(self.task_name, object)
         send_error_email = conf.CELERY_SEND_TASK_ERROR_EMAILS and not \
-                                task_obj.disable_error_emails
+                                task_obj.disable_error_emails and not any(
+                                    isinstance(exc_info.exception, whexc)
+                                    for whexc in
+                                    conf.CELERY_TASK_ERROR_WHITELIST)
         if send_error_email:
             subject = self.email_subject.strip() % context
             body = self.email_body.strip() % context
