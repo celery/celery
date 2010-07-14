@@ -1,11 +1,10 @@
 import operator
 import time
 
-from celery.task.control import broadcast
-
 from celery.tests.functional import tasks
 from celery.tests.functional.case import WorkerCase
 
+from celery.task.control import broadcast
 
 class test_basic(WorkerCase):
 
