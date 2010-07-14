@@ -174,6 +174,7 @@ class LoggingProxy(object):
     name = None
     closed = False
     loglevel = logging.ERROR
+    _recurse_protection = False
 
     def __init__(self, logger, loglevel=None):
         self.logger = logger
@@ -207,10 +208,17 @@ class LoggingProxy(object):
         return map(wrap_handler, self.logger.handlers)
 
     def write(self, data):
+        if self._recurse_protection:
+            # Logger is logging back to this file, so stop recursing.
+            return
         """Write message to logging object."""
         data = data.strip()
         if data and not self.closed:
-            self.logger.log(self.loglevel, data)
+            self._recurse_protection = True
+            try:
+                self.logger.log(self.loglevel, data)
+            finally:
+                self._recurse_protection = False
 
     def writelines(self, sequence):
         """``writelines(sequence_of_strings) -> None``.
