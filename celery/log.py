@@ -1,14 +1,15 @@
 """celery.log"""
+import logging
+import threading
+import time
 import os
 import sys
-import time
-import logging
 import traceback
 
 from celery import conf
 from celery.utils import noop
-from celery.utils.patch import ensure_process_aware_logger
 from celery.utils.compat import LoggerAdapter
+from celery.utils.patch import ensure_process_aware_logger
 
 _hijacked = False
 _monkeypatched = False
@@ -17,12 +18,10 @@ BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
 RESET_SEQ = "\033[0m"
 COLOR_SEQ = "\033[1;%dm"
 BOLD_SEQ = "\033[1m"
-COLORS = {
-    "WARNING": YELLOW,
-    "DEBUG": BLUE,
-    "CRITICAL": MAGENTA,
-    "ERROR": RED,
-}
+COLORS = {"DEBUG": BLUE,
+          "WARNING": YELLOW,
+          "ERROR": RED,
+          "CRITICAL": MAGENTA}
 
 
 class ColorFormatter(logging.Formatter):
@@ -174,6 +173,7 @@ class LoggingProxy(object):
     name = None
     closed = False
     loglevel = logging.ERROR
+    _thread = threading.local()
 
     def __init__(self, logger, loglevel=None):
         self.logger = logger
@@ -207,10 +207,17 @@ class LoggingProxy(object):
         return map(wrap_handler, self.logger.handlers)
 
     def write(self, data):
+        if getattr(self._thread, "recurse_protection", False):
+            # Logger is logging back to this file, so stop recursing.
+            return
         """Write message to logging object."""
         data = data.strip()
         if data and not self.closed:
-            self.logger.log(self.loglevel, data)
+            self._thread.recurse_protection = True
+            try:
+                self.logger.log(self.loglevel, data)
+            finally:
+                self._thread.recurse_protection = False
 
     def writelines(self, sequence):
         """``writelines(sequence_of_strings) -> None``.

@@ -8,6 +8,7 @@ from celery.task.builtins import PingTask
 from celery.utils import gen_unique_id
 from celery.worker import control
 from celery.worker.buckets import FastQueue
+from celery.worker.job import TaskRequest
 from celery.worker.state import revoked
 from celery.worker.scheduler import Scheduler
 
@@ -39,7 +40,10 @@ class Listener(object):
 
     def __init__(self):
         self.ready_queue = FastQueue()
-        self.ready_queue.put("the quick brown fox")
+        self.ready_queue.put(TaskRequest(task_name=mytask.name,
+                                         task_id=gen_unique_id(),
+                                         args=(2, 2),
+                                         kwargs={}))
         self.eta_schedule = Scheduler(self.ready_queue)
         self.event_dispatcher = Dispatcher()
 
@@ -83,11 +87,14 @@ class test_ControlPanel(unittest.TestCase):
     def test_dump_reserved(self):
         listener = Listener()
         panel = self.create_panel(listener=listener)
-        info = "\n".join(panel.execute("dump_reserved"))
-        self.assertIn("the quick brown fox", info)
+        response = panel.execute("dump_reserved", {"safe": True})
+        self.assertDictContainsSubset({"name": mytask.name,
+                                       "args": (2, 2),
+                                       "kwargs": {},
+                                       "hostname": socket.gethostname()},
+                                       response[0])
         listener.ready_queue = FastQueue()
-        info = "\n".join(panel.execute("dump_reserved"))
-        self.assertFalse(info)
+        self.assertFalse(panel.execute("dump_reserved"))
 
     def test_rate_limit_when_disabled(self):
         conf.DISABLE_RATE_LIMITS = True

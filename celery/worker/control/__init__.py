@@ -57,7 +57,13 @@ class ControlDispatch(object):
         except KeyError:
             self.logger.error("No such control command: %s" % command)
         else:
-            reply = control(self.panel, **kwdict(kwargs))
+            try:
+                reply = control(self.panel, **kwdict(kwargs))
+            except Exception, exc:
+                self.logger.error(
+                        "Error running control command %s kwargs=%s: %s" % (
+                            command, kwargs, exc))
+                reply = {"error": str(exc)}
             if reply_to:
                 self.reply({self.hostname: reply},
                            exchange=reply_to["exchange"],

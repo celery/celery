@@ -88,6 +88,57 @@ def rate_limit(task_name, rate_limit, destination=None, **kwargs):
                                    **kwargs)
 
 
+def flatten_reply(reply):
+    nodes = {}
+    for item in reply:
+        nodes.update(item)
+    return nodes
+
+
+class inspect(object):
+
+    def __init__(self, destination=None, timeout=1):
+        self.destination = destination
+        self.timeout = timeout
+
+    def _prepare(self, reply):
+        if not reply:
+            return
+        by_node = flatten_reply(reply)
+        if not isinstance(self.destination, (list, tuple)):
+            return by_node.get(self.destination)
+        return by_node
+
+    def _request(self, command, **kwargs):
+        return self._prepare(broadcast(command, arguments=kwargs,
+                                      timeout=self.timeout, reply=True))
+
+    def active(self, safe=False):
+        return self._request("dump_active", safe=safe)
+
+    def scheduled(self, safe=False):
+        return self._request("dump_schedule", safe=safe)
+
+    def reserved(self, safe=False):
+        return self._request("dump_reserved", safe=safe)
+
+    def stats(self):
+        return self._request("stats")
+
+    def revoked(self):
+        return self._request("dump_revoked")
+
+    def registered_tasks(self):
+        return self._request("dump_registered_tasks")
+
+    def enable_events(self):
+        return self._request("enable_events")
+
+    def disable_events(self):
+        return self._request("disable_events")
+
+
+
 @with_connection
 def broadcast(command, arguments=None, destination=None, connection=None,
         connect_timeout=conf.BROKER_CONNECTION_TIMEOUT, reply=False,
