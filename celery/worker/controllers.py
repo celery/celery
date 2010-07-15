@@ -60,6 +60,7 @@ class BackgroundThread(threading.Thread):
         self.on_stop()
         self._shutdown.set()
         self._stopped.wait() # block until this thread is done
+        self.join(1e100)
 
 
 class Mediator(BackgroundThread):
