@@ -1,5 +1,3 @@
-import atexit
-
 CARROT_BACKEND = "memory"
 
 
@@ -13,9 +11,3 @@ CELERY_DEFAULT_ROUTING_KEY = "testcelery"
 CELERY_QUEUES = {"testcelery": {"binding_key": "testcelery"}}
 
 CELERYD_LOG_COLOR = False
-
-@atexit.register
-def teardown_testdb():
-    import os
-    if os.path.exists("test.db"):
-        os.remove("test.db")
