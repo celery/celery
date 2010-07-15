@@ -95,18 +95,13 @@ WORKERS=$CELERYD_NUM_WORKERS
 
 stop_worker () {
     cmd="start-stop-daemon  --stop --quiet $* --pidfile $CELERYD_PID_FILE"
-    w=`celeryd-multi start $WORKERS --cmd="start-stop-daemon --stop \
-                                        --quiet $* \
-                                        --pidfile $CELERYD_PID_FILE"`
-    for wname in `celeryd-multi names $WORKERS $CELERYD_OPTS`; do
-        log_daemon_msg "Stopping celery task worker" "$wname"
-        stopcmd=`celeryd-multi get "$wname" $WORKERS --cmd="$cmd" $CELERYD_OPTS`
-        if `$stopcmd`; then
-            log_end_msg 0
-        else:
-            log_end_msg 1
-        fi
-    done
+    stopcmd=`celeryd-multi expand "$cmd" $WORKERS`
+    log_daemon_msg "Stopping celery task workers..."
+    if eval "$stopcmd"; then
+        log_end_msg 0
+    else
+        log_end_msg 1
+    fi
 }
 
 start_worker () {
