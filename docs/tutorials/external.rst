@@ -1,6 +1,6 @@
-==================================
- External tutorials and resources
-==================================
+============================================
+ Tutorials and resources from the community
+============================================
 
 This is a list of external blog posts, tutorials and slides related
 to Celery. If you have a link that's missing from this list, please
@@ -8,6 +8,14 @@ contact the mailing-list or submit a patch.
 
 .. contents::
     :local:
+
+Django/Celery Quickstart (or, how I learned to stop using cron and love celery)
+-------------------------------------------------------------------------------
+http://bitkickers.blogspot.com/2010/07/djangocelery-quickstart-or-how-i.html
+
+How Celery, Carrot, and your messaging stack work
+-------------------------------------------------
+http://jasonmbaker.com/how-celery-carrot-and-your-messaging-stack-wo
 
 Introduction to Celery
 ======================
