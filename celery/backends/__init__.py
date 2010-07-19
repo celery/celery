@@ -10,6 +10,7 @@ BACKEND_ALIASES = {
     "mongodb": "celery.backends.mongodb.MongoBackend",
     "tyrant": "celery.backends.tyrant.TyrantBackend",
     "database": "celery.backends.database.DatabaseBackend",
+    "cassandra": "celery.backends.cassandra.CassandraBackend",
 }
 
 _backend_cache = {}
