@@ -142,7 +142,7 @@ terminated and replaced by a new worker.</p>
 <em class="property">class </em><tt class="descclassname">celery.bin.celeryd.</tt><tt class="descname">Worker</tt><big>(</big><em>concurrency=0</em>, <em>loglevel=30</em>, <em>logfile=None</em>, <em>hostname=None</em>, <em>discard=False</em>, <em>run_clockservice=False</em>, <em>schedule='celerybeat-schedule'</em>, <em>task_time_limit=None</em>, <em>task_soft_time_limit=None</em>, <em>max_tasks_per_child=None</em>, <em>queues=None</em>, <em>events=False</em>, <em>db=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.Worker" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="class">
 <dt id="celery.bin.celeryd.Worker.WorkController">
-<em class="property">class </em><tt class="descname">WorkController</tt><big>(</big><em>concurrency=None</em>, <em>logfile=None</em>, <em>loglevel=None</em>, <em>send_events=False</em>, <em>hostname=None</em>, <em>ready_callback=&lt;function noop at 0x103380050&gt;</em>, <em>embed_clockservice=False</em>, <em>pool_cls='celery.concurrency.processes.TaskPool'</em>, <em>listener_cls='celery.worker.listener.CarrotListener'</em>, <em>mediator_cls='celery.worker.controllers.Mediator'</em>, <em>eta_scheduler_cls='celery.worker.controllers.ScheduleController'</em>, <em>schedule_filename='celerybeat-schedule'</em>, <em>task_time_limit=None</em>, <em>task_soft_time_limit=None</em>, <em>max_tasks_per_child=None</em>, <em>pool_putlocks=True</em>, <em>db=None</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.Worker.WorkController" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descname">WorkController</tt><big>(</big><em>concurrency=None</em>, <em>logfile=None</em>, <em>loglevel=None</em>, <em>send_events=False</em>, <em>hostname=None</em>, <em>ready_callback=&lt;function noop at 0x10371e848&gt;</em>, <em>embed_clockservice=False</em>, <em>pool_cls='celery.concurrency.processes.TaskPool'</em>, <em>listener_cls='celery.worker.listener.CarrotListener'</em>, <em>mediator_cls='celery.worker.controllers.Mediator'</em>, <em>eta_scheduler_cls='celery.worker.controllers.ScheduleController'</em>, <em>schedule_filename='celerybeat-schedule'</em>, <em>task_time_limit=None</em>, <em>task_soft_time_limit=None</em>, <em>max_tasks_per_child=None</em>, <em>pool_putlocks=True</em>, <em>db=None</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.Worker.WorkController" title="Permalink to this definition">¶</a></dt>
 <dd><p>Executes tasks waiting in the task queue.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -163,7 +163,7 @@ terminated and replaced by a new worker.</p>
 <dt id="celery.bin.celeryd.Worker.WorkController.concurrency">
 <tt class="descname">concurrency</tt><a class="headerlink" href="#celery.bin.celeryd.Worker.WorkController.concurrency" title="Permalink to this definition">¶</a></dt>
 <dd><p>The number of simultaneous processes doing work (default:
-<a class="reference internal" href="celery.conf.html#celery.conf.CELERYD_CONCURRENCY" title="celery.conf.CELERYD_CONCURRENCY"><tt class="xref py py-const docutils literal"><span class="pre">celery.conf.CELERYD_CONCURRENCY</span></tt></a>)</p>
+<tt class="docutils literal"><span class="pre">conf.CELERYD_CONCURRENCY</span></tt>)</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -176,7 +176,7 @@ terminated and replaced by a new worker.</p>
 <dt id="celery.bin.celeryd.Worker.WorkController.logfile">
 <tt class="descname">logfile</tt><a class="headerlink" href="#celery.bin.celeryd.Worker.WorkController.logfile" title="Permalink to this definition">¶</a></dt>
 <dd><p>The logfile used, if no logfile is specified it uses <tt class="docutils literal"><span class="pre">stderr</span></tt>
-(default: <a class="reference internal" href="celery.conf.html#celery.conf.CELERYD_LOG_FILE" title="celery.conf.CELERYD_LOG_FILE"><tt class="xref py py-const docutils literal"><span class="pre">celery.conf.CELERYD_LOG_FILE</span></tt></a>).</p>
+(default: <cite>celery.conf.CELERYD_LOG_FILE</cite>).</p>
 </dd></dl>
 
 <dl class="attribute">

@@ -272,7 +272,7 @@ containing the traceback (if any).</li>
 <dl class="classmethod">
 <dt id="celery.task.base.Task.apply">
 <em class="property">classmethod </em><tt class="descclassname">Task.</tt><tt class="descname">apply</tt><big>(</big><em>args=None</em>, <em>kwargs=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.task.base.Task.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Execute this task at once, by blocking until the task
+<dd><p>Execute this task locally, by blocking until the task
 has finished executing.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -281,6 +281,8 @@ has finished executing.</p>
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>args</strong> &#8211; positional arguments passed on to the task.</li>
 <li><strong>kwargs</strong> &#8211; keyword arguments passed on to the task.</li>
+<li><strong>throw</strong> &#8211; Re-raise task exceptions. Defaults to
+the <tt class="docutils literal"><span class="pre">CELERY_EAGER_PROPAGATES_EXCEPTIONS</span></tt> setting.</li>
 </ul>
 </td>
 </tr>
