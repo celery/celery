@@ -227,6 +227,7 @@ class AckHandler(PoolThread):
             except (IOError, EOFError), exc:
                 debug('ack handler got %s -- exiting',
                         exc.__class__.__name__)
+                return
 
             if self._state:
                 assert self._state == TERMINATE
@@ -240,7 +241,7 @@ class AckHandler(PoolThread):
             job, i, time_accepted, pid = task
             try:
                 cache[job]._ack(i, time_accepted, pid)
-            except (KeyError, AttributeError), exc:
+            except (KeyError, AttributeError):
                 # Object gone, or doesn't support _ack (e.g. IMapIterator)
                 pass
 
@@ -253,13 +254,13 @@ class AckHandler(PoolThread):
                 return
 
             if task is None:
-                debug('result handler ignoring extra sentinel')
+                debug('ack handler ignoring extra sentinel')
                 continue
 
             job, i, time_accepted, pid = task
             try:
                 cache[job]._ack(i, time_accepted, pid)
-            except KeyError:
+            except (KeyError, AttributeError):
                 pass
 
         debug('ack handler exiting: len(cache)=%s, thread._state=%s',
