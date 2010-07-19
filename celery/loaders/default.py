@@ -1,4 +1,5 @@
 import os
+import sys
 import warnings
 from importlib import import_module
 
@@ -54,12 +55,30 @@ class Loader(BaseLoader):
                              list(settings.INSTALLED_APPS))
         settings.INSTALLED_APPS = tuple(installed_apps)
         settings.CELERY_TASK_ERROR_WHITELIST = tuple(
-                getattr(import_module(mod), clas)
-                for fqn in settings.CELERY_TASK_ERROR_WHITELIST
-                for mod, clas in (fqn.rsplit('.', 1),)
-                )
+                getattr(import_module(mod), cls)
+                    for fqn in settings.CELERY_TASK_ERROR_WHITELIST
+                        for mod, cls in (fqn.rsplit('.', 1),))
 
         return settings
+
+    def import_from_cwd(self, module, imp=import_module):
+        """Import module, but make sure it finds modules
+        located in the current directory.
+
+        Modules located in the current directory has
+        precedence over modules located in ``sys.path``.
+        """
+        cwd = os.getcwd()
+        if cwd in sys.path:
+            return imp(module)
+        sys.path.insert(0, cwd)
+        try:
+            return imp(module)
+        finally:
+            try:
+                sys.path.remove(cwd)
+            except ValueError:
+                pass
 
     def read_configuration(self):
         """Read configuration from ``celeryconfig.py`` and configure
@@ -67,7 +86,7 @@ class Loader(BaseLoader):
         configname = os.environ.get("CELERY_CONFIG_MODULE",
                                     DEFAULT_CONFIG_MODULE)
         try:
-            celeryconfig = import_module(configname)
+            celeryconfig = self.import_from_cwd(configname)
         except ImportError:
             warnings.warn("No celeryconfig.py module found! Please make "
                           "sure it exists and is available to Python.",

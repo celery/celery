@@ -18,7 +18,7 @@
     If you've already hit this problem you may have to delete the
     declaration::
 
-        $ PYTHONPATH=. camqadm exchange.delete celerycrq
+        $ camqadm exchange.delete celerycrq
 
     or::
 
@@ -324,7 +324,7 @@ Backward incompatible changes
     If you've already used celery with this backend chances are you
     have to delete the previous declaration::
 
-        $ PYTHONPATH=. camqadm exchange.delete celeryresults
+        $ camqadm exchange.delete celeryresults
 
 * Now uses pickle instead of cPickle on Python versions <= 2.5
 
@@ -723,7 +723,7 @@ News
   If you've already used the AMQP backend this means you have to
   delete the previous definitions::
 
-      $ PYTHONPATH=. camqadm exchange.delete celeryresults
+      $ camqadm exchange.delete celeryresults
 
   or::
 
