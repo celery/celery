@@ -24,6 +24,13 @@ RUN = 0x1
 CLOSE = 0x2
 TERMINATE = 0x3
 
+WORKER_SIGRESET = frozenset(["SIGTERM",
+                             "SIGHUP",
+                             "SIGTTIN",
+                             "SIGTTOU"])
+WORKER_SIGIGNORE = frozenset(["SIGINT"])
+
+
 
 def process_initializer():
     """Initializes the process so it can be used to process tasks.
@@ -36,8 +43,8 @@ def process_initializer():
     # and the logger is left from the parent process causing a crash.
     _hijack_multiprocessing_logger()
 
-    platform.reset_signal("SIGTERM")
-    platform.ignore_signal("SIGINT")
+    map(platform.reset_signal, WORKER_SIGRESET)
+    map(platform.ignore_signal, WORKER_SIGIGNORE)
     platform.set_mp_process_title("celeryd")
 
     # This is for windows and other platforms not supporting
@@ -61,7 +68,7 @@ class WorkController(object):
     .. attribute:: concurrency
 
         The number of simultaneous processes doing work (default:
-        :const:`celery.conf.CELERYD_CONCURRENCY`)
+        ``conf.CELERYD_CONCURRENCY``)
 
     .. attribute:: loglevel
 
@@ -70,7 +77,7 @@ class WorkController(object):
     .. attribute:: logfile
 
         The logfile used, if no logfile is specified it uses ``stderr``
-        (default: :const:`celery.conf.CELERYD_LOG_FILE`).
+        (default: `celery.conf.CELERYD_LOG_FILE`).
 
     .. attribute:: embed_clockservice
 
