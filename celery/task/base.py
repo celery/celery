@@ -407,11 +407,13 @@ class Task(object):
 
     @classmethod
     def apply(self, args=None, kwargs=None, **options):
-        """Execute this task at once, by blocking until the task
+        """Execute this task locally, by blocking until the task
         has finished executing.
 
         :param args: positional arguments passed on to the task.
         :param kwargs: keyword arguments passed on to the task.
+        :keyword throw: Re-raise task exceptions. Defaults to
+            the ``CELERY_EAGER_PROPAGATES_EXCEPTIONS`` setting.
 
         :rtype :class:`celery.result.EagerResult`:
 
