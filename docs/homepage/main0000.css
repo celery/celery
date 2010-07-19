@@ -1,8 +1,10 @@
 body {
-  background: #e1edc1 url(bg000000.png) 50% 0 repeat;
+  background: #9aa090 url(bg.png) 50% 0 repeat;
   color: #230;
   font: 15px/1.75em Georgia, serif;
   margin: 0;
+  overflow-x: hidden;
+  overflow-y: scroll;
 }
 
 a {
@@ -31,11 +33,10 @@ a:hover {
 }
 
 #navbar {
-  font-size: 0.8em;
+  font-size: 0.85em;
   line-height: 1.7em;
   position: fixed;
-  background: transparent url(bg_top00.png) 0 100% repeat-x;
-  height: 30px;
+  height: 23px;
   top: 0;
   left: 0;
   right: 0;
@@ -43,7 +44,7 @@ a:hover {
 }
 
 #navbar .iStretch {
- height: 22px;
+ height: 23px;
  overflow: hidden;
 }
 
@@ -51,7 +52,6 @@ a:hover {
   float: right;
   padding: 1px 10px;
   margin: 0;
-  xheight: 22px;
   text-align: center;
   -webkit-transition: 0.2s;
 }
@@ -74,13 +74,13 @@ a:hover {
 #topcontainer {
   padding: 65px 0 25px 0;
   text-align: right;
-  margin-top: 10px;
   background: transparent url(logo0000.png) 0% 50% no-repeat;
 }
 
 #topcontainer ul{
   display: inline-block;
   width: 420px;
+  height: 100px;
   padding: 0;
   margin: 0;
   list-style: none;
@@ -96,8 +96,9 @@ a:hover {
   text-shadow: 0 2px 5px rgba(0,0,0,0.5);
 }
 
-#contentcontainer {
+#contentcontainer, #navbar {
   background: transparent url(white_50.png);
+  outline: 1px solid #797e6c;
   box-shadow: 0 0 5px #4e543f;
   -webkit-box-shadow: 0 0 5px #4e543f;
   -moz-box-shadow: 0 0 5px #4e543f;
@@ -111,11 +112,12 @@ a:hover {
   vertical-align: top;
   padding-bottom: 30px;
   display: block;
-  display: inline-block;
+  float: left;
 }
 
-.column:last-child {
+.column.side {
   width: 250px;
+  float: right;
   padding: 40px 36px 0 30px;
   background: transparent url(black_10.png);
 }
@@ -127,7 +129,6 @@ a:hover {
 }
 
 #credits ul li {
-  xdisplay: inline-block;
   font-size: 0.85em;
   float: left;
   vertical-align: top;
@@ -188,9 +189,9 @@ hr {
     width: 90%;
   }
 
-  .column, .column:last-child {
-    width: 90%;
-    padding: 6%;
+  .column, .column.side {
+    width: 88%;
+    padding: 7%;
     overflow: hidden;
   }
 
