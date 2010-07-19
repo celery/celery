@@ -188,6 +188,7 @@ class Worker(object):
         self.max_tasks_per_child = max_tasks_per_child
         self.db = db
         self.queues = queues or []
+        self._isatty = sys.stdout.isatty()
 
         if isinstance(self.queues, basestring):
             self.queues = self.queues.split(",")
@@ -304,10 +305,13 @@ class Worker(object):
                                 task_soft_time_limit=self.task_soft_time_limit)
 
         # Install signal handler so SIGHUP restarts the worker.
-        install_worker_restart_handler(worker)
+        if not self._isatty:
+            # only install HUP handler if detached from terminal,
+            # so closing the terminal window doesn't restart celeryd
+            # into the background.
+            install_worker_restart_handler(worker)
         install_worker_term_handler(worker)
         install_worker_int_handler(worker)
-
         signals.worker_init.send(sender=worker)
         worker.start()
 

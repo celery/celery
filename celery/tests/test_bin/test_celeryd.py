@@ -60,7 +60,6 @@ class test_Worker(unittest.TestCase):
         worker = self.Worker(loglevel="INFO")
         self.assertEqual(worker.loglevel, logging.INFO)
 
-    @disable_stdouts
     def test_run_worker(self):
         handlers = {}
 
@@ -70,9 +69,19 @@ class test_Worker(unittest.TestCase):
         p = platform.install_signal_handler
         platform.install_signal_handler = i
         try:
-            self.Worker().run_worker()
+            w = self.Worker()
+            w._isatty = False
+            w.run_worker()
             for sig in "SIGINT", "SIGHUP", "SIGTERM":
                 self.assertIn(sig, handlers)
+
+            handlers.clear()
+            w = self.Worker()
+            w._isatty = True
+            w.run_worker()
+            for sig in "SIGINT", "SIGTERM":
+                self.assertIn(sig, handlers)
+            self.assertNotIn("SIGHUP", handlers)
         finally:
             platform.install_signal_handler = p
 
