@@ -10,12 +10,16 @@ contact the mailing-list or submit a patch.
     :local:
 
 Django/Celery Quickstart (or, how I learned to stop using cron and love celery)
--------------------------------------------------------------------------------
+===============================================================================
 http://bitkickers.blogspot.com/2010/07/djangocelery-quickstart-or-how-i.html
 
 How Celery, Carrot, and your messaging stack work
--------------------------------------------------
+=================================================
 http://jasonmbaker.com/how-celery-carrot-and-your-messaging-stack-wo
+
+Large Problems in Django, Mostly Solved: Delayed Execution
+==========================================================
+http://ericholscher.com/blog/2010/jun/23/large-problems-django-mostly-solved-delayed-execut/
 
 Introduction to Celery
 ======================
@@ -97,6 +101,9 @@ http://ojs.pythonpapers.org/index.php/tppm/article/viewFile/105/122
 
 .. _`ThinkingCactus`: http://thinkingcactus.com/
 
+Queued Storage Backend for Django
+=================================
+http://stepsandnumbers.com/archive/2010/01/04/queued-storage-backend-for-django/
 
 RabbitMQ with Python and Ruby
 =============================
