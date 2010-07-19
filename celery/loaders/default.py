@@ -13,6 +13,7 @@ DEFAULT_SETTINGS = {
     "DATABASE_NAME": "celery.sqlite",
     "INSTALLED_APPS": ("celery", ),
     "CELERY_IMPORTS": (),
+    "CELERY_TASK_ERROR_WHITELIST": (),
 }
 
 DEFAULT_UNCONFIGURED_SETTINGS = {
@@ -52,6 +53,11 @@ class Loader(BaseLoader):
         installed_apps = set(list(DEFAULT_SETTINGS["INSTALLED_APPS"]) + \
                              list(settings.INSTALLED_APPS))
         settings.INSTALLED_APPS = tuple(installed_apps)
+        settings.CELERY_TASK_ERROR_WHITELIST = tuple(
+                getattr(import_module(mod), clas)
+                for fqn in settings.CELERY_TASK_ERROR_WHITELIST
+                for mod, clas in (fqn.rsplit('.', 1),)
+                )
 
         return settings
 
