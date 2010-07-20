@@ -132,7 +132,7 @@ class Task(object):
     .. attribute:: default_retry_delay
 
         Default time in seconds before a retry of the task should be
-        executed. Default is a 1 minute delay.
+        executed. Default is a 3 minute delay.
 
     .. attribute:: rate_limit
 
