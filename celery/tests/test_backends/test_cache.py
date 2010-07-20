@@ -73,10 +73,10 @@ class test_get_best_memcache(unittest.TestCase):
         memcache.Client = DummyClient
         memcache.Client.__module__ = memcache.__name__
         prev, sys.modules["memcache"] = sys.modules.get("memcache"), memcache
-        yield
+        yield True
         if prev is not None:
             sys.modules["memcache"] = prev
-        yield
+        yield True
 
     def mock_pylibmc(self):
         pylibmc = types.ModuleType("pylibmc")
@@ -84,10 +84,10 @@ class test_get_best_memcache(unittest.TestCase):
         pylibmc.Client.__module__ = pylibmc.__name__
         prev = sys.modules.get("pylibmc")
         sys.modules["pylibmc"] = pylibmc
-        yield
+        yield True
         if prev is not None:
             sys.modules["pylibmc"] = prev
-        yield
+        yield True
 
     def test_pylibmc(self):
         pylibmc = self.mock_pylibmc()
