@@ -46,13 +46,13 @@ def extract_response(raw_response):
     except ValueError, exc:
         raise InvalidResponseError(str(exc))
 
-        status = payload["status"]
-        if status == "success":
-            return payload["retval"]
-        elif status == "failure":
-            raise RemoteExecuteError(payload.get("reason"))
-        else:
-            raise UnknownStatusError(str(status))
+    status = payload["status"]
+    if status == "success":
+        return payload["retval"]
+    elif status == "failure":
+        raise RemoteExecuteError(payload.get("reason"))
+    else:
+        raise UnknownStatusError(str(status))
 
 
 class MutableURL(object):

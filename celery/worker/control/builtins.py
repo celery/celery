@@ -178,4 +178,4 @@ def ping(panel, **kwargs):
 @Panel.register
 def shutdown(panel, **kwargs):
     panel.logger.critical("Got shutdown from remote.")
-    raise SystemExit
+    raise SystemExit("Got shutdown from remote")

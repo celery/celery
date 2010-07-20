@@ -59,6 +59,8 @@ class ControlDispatch(object):
         else:
             try:
                 reply = control(self.panel, **kwdict(kwargs))
+	    except SystemExit:
+		raise
             except Exception, exc:
                 self.logger.error(
                         "Error running control command %s kwargs=%s: %s" % (
