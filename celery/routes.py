@@ -11,7 +11,9 @@ class MapRoute(object):
         self.map = map
 
     def route_for_task(self, task, *args, **kwargs):
-        return self.map.get(task)
+        route = self.map.get(task)
+        if route:
+            return dict(route)
 
 
 class Router(object):
