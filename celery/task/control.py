@@ -138,7 +138,6 @@ class inspect(object):
         return self._request("disable_events")
 
 
-
 @with_connection
 def broadcast(command, arguments=None, destination=None, connection=None,
         connect_timeout=conf.BROKER_CONNECTION_TIMEOUT, reply=False,

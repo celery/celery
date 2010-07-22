@@ -6,11 +6,12 @@ try:
 except ImportError:
     pycassa = None
 
-from datetime import datetime
 import itertools
 import random
 import socket
 import time
+
+from datetime import datetime
 
 from celery.backends.base import BaseDictBackend
 from celery import conf
@@ -19,7 +20,6 @@ from celery.loaders import load_settings
 from celery.log import setup_logger
 from celery.serialization import pickle
 from celery import states
-
 
 
 class CassandraBackend(BaseDictBackend):
@@ -39,13 +39,15 @@ class CassandraBackend(BaseDictBackend):
     _retry_timeout = 300
     _retry_wait = 3
     _index_shards = 64
-    _index_keys = ["celery.results.index!%02x" % i for i in range(_index_shards)]
+    _index_keys = ["celery.results.index!%02x" % i
+                        for i in range(_index_shards)]
 
-    def __init__(self, servers=None, keyspace=None, column_family=None, cassandra_options=None, **kwargs):
+    def __init__(self, servers=None, keyspace=None, column_family=None,
+            cassandra_options=None, **kwargs):
         """Initialize Cassandra backend.
 
         Raises :class:`celery.exceptions.ImproperlyConfigured` if
-        :setting:`CASSANDRA_SERVERS` is not set.
+        the ``CASSANDRA_SERVERS`` setting is not set.
 
         """
         self.logger = setup_logger("celery.backends.cassandra")
@@ -69,7 +71,8 @@ class CassandraBackend(BaseDictBackend):
                                getattr(settings, "CASSANDRA_COLUMN_FAMILY",
                                        self.column_family)
         self.cassandra_options = dict(cassandra_options or {},
-                                   **getattr(settings, "CASSANDRA_OPTIONS", {}))
+                                   **getattr(settings,
+                                             "CASSANDRA_OPTIONS", {}))
         if not self.servers or not self.keyspace or not self.column_family:
             raise ImproperlyConfigured(
                     "Cassandra backend not configured.")
@@ -103,9 +106,9 @@ class CassandraBackend(BaseDictBackend):
                                    **self.cassandra_options)
             self._column_family = \
               pycassa.ColumnFamily(conn, self.keyspace,
-                                   self.column_family,
-                                   read_consistency_level=pycassa.ConsistencyLevel.DCQUORUM,
-                                   write_consistency_level=pycassa.ConsistencyLevel.DCQUORUM)
+                    self.column_family,
+                    read_consistency_level=pycassa.ConsistencyLevel.DCQUORUM,
+                    write_consistency_level=pycassa.ConsistencyLevel.DCQUORUM)
         return self._column_family
 
     def process_cleanup(self):
@@ -117,8 +120,10 @@ class CassandraBackend(BaseDictBackend):
         """Store return value and status of an executed task."""
         cf = self._get_column_family()
         date_done = datetime.utcnow()
-        index_key = 'celery.results.index!%02x' % random.randrange(self._index_shards)
-        index_column_name = '%8x!%s' % (time.mktime(date_done.timetuple()), task_id)
+        index_key = 'celery.results.index!%02x' % (
+                random.randrange(self._index_shards))
+        index_column_name = '%8x!%s' % (time.mktime(date_done.timetuple()),
+                                        task_id)
         meta = {"status": status,
                 "result": pickle.dumps(result),
                 "date_done": date_done.strftime('%Y-%m-%dT%H:%M:%SZ'),
@@ -157,7 +162,8 @@ class CassandraBackend(BaseDictBackend):
                                            column_parent, slice_pred,
                                            pycassa.ConsistencyLevel.DCQUORUM)
 
-        index_cols = [c.column.name for c in itertools.chain(*columns.values())]
+        index_cols = [c.column.name
+                        for c in itertools.chain(*columns.values())]
         for k in self._index_keys:
             cf.remove(k, index_cols)
 
@@ -166,5 +172,3 @@ class CassandraBackend(BaseDictBackend):
             cf.remove(k)
 
         self.logger.debug('Cleaned %i expired results' % len(task_ids))
-
-

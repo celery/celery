@@ -31,7 +31,6 @@ WORKER_SIGRESET = frozenset(["SIGTERM",
 WORKER_SIGIGNORE = frozenset(["SIGINT"])
 
 
-
 def process_initializer():
     """Initializes the process so it can be used to process tasks.
 

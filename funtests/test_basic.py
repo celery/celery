@@ -47,4 +47,3 @@ class test_basic(WorkerCase):
         self.assertTrue(len(schedule), 2)
         self.assertEqual(schedule[0]["request"]["name"], tasks.add.name)
         self.assertEqual(schedule[0]["request"]["args"], [2, 2])
-

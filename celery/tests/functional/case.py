@@ -10,7 +10,7 @@ import unittest2 as unittest
 from itertools import count
 
 from celery.exceptions import TimeoutError
-from celery.task.control import broadcast, ping, flatten_reply, inspect
+from celery.task.control import ping, flatten_reply, inspect
 from celery.utils import get_full_cls_name
 
 HOSTNAME = socket.gethostname()
@@ -148,7 +148,6 @@ class WorkerCase(unittest.TestCase):
         return (self.is_reserved(task_id, interval) or
                 self.is_scheduled(task_id, interval) or
                 self.is_accepted(task_id, interval))
-
 
     def ensure_accepted(self, task_id, interval=0.5, timeout=10):
         return try_while(lambda: self.is_accepted(task_id, interval),

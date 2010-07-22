@@ -40,9 +40,10 @@ class Scheduler(object):
             try:
                 eta = time.mktime(eta.timetuple())
             except OverflowError:
-                # this machine can't represent the passed in time as a unix timestamp
-                # just ignore this for now
-                self.logger.error("Cannot represent %s as a unix timestamp. Ignoring it." % eta)
+                # this machine can't represent the passed in time as
+                # a unix timestamp just ignore this for now
+                self.logger.error("Cannot represent %s as a unix timestamp. "
+                                  "Ignoring %s." % (eta, item))
                 return
         eta = eta or time.time()
         heapq.heappush(self._queue, (eta, priority, item, callback))

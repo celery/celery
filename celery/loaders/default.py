@@ -57,7 +57,7 @@ class Loader(BaseLoader):
         settings.CELERY_TASK_ERROR_WHITELIST = tuple(
                 getattr(import_module(mod), cls)
                     for fqn in settings.CELERY_TASK_ERROR_WHITELIST
-                        for mod, cls in (fqn.rsplit('.', 1),))
+                        for mod, cls in (fqn.rsplit('.', 1), ))
 
         return settings
 

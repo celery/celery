@@ -58,7 +58,6 @@ def set_loglevel(panel, loglevel=None):
     return {"ok": loglevel}
 
 
-
 @Panel.register
 def rate_limit(panel, task_name, rate_limit, **kwargs):
     """Set new rate limit for a task type.
