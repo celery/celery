@@ -42,7 +42,7 @@ class test_MapRoute(unittest.TestCase):
     @with_queues(foo=a_queue, bar=b_queue)
     def test_route_for_task_expanded_route(self):
         expand = E(conf.QUEUES)
-        route = routes.MapRoute({"celery.ping": "foo"})
+        route = routes.MapRoute({"celery.ping": {"queue": "foo"}})
         self.assertDictContainsSubset(a_queue,
                              expand(route.route_for_task("celery.ping")))
         self.assertIsNone(route.route_for_task("celery.awesome"))
@@ -57,7 +57,7 @@ class test_MapRoute(unittest.TestCase):
 
     def test_expand_route_not_found(self):
         expand = E(conf.QUEUES)
-        route = routes.MapRoute({"a": "x"})
+        route = routes.MapRoute({"a": {"queue": "x"}})
         self.assertRaises(QueueNotFound, expand, route.route_for_task("a"))
 
 
@@ -69,8 +69,8 @@ class test_lookup_route(unittest.TestCase):
 
     @with_queues(foo=a_queue, bar=b_queue)
     def test_lookup_takes_first(self):
-        R = routes.prepare(({"celery.ping": "bar"},
-                            {"celery.ping": "foo"}))
+        R = routes.prepare(({"celery.ping": {"queue": "bar"}},
+                            {"celery.ping": {"queue": "foo"}}))
         router = routes.Router(R, conf.QUEUES)
         self.assertDictContainsSubset(b_queue,
                 router.route({}, "celery.ping",
@@ -78,8 +78,8 @@ class test_lookup_route(unittest.TestCase):
 
     @with_queues(foo=a_queue, bar=b_queue)
     def test_lookup_paths_traversed(self):
-        R = routes.prepare(({"celery.xaza": "bar"},
-                            {"celery.ping": "foo"}))
+        R = routes.prepare(({"celery.xaza": {"queue": "bar"}},
+                            {"celery.ping": {"queue": "foo"}}))
         router = routes.Router(R, conf.QUEUES)
         self.assertDictContainsSubset(a_queue,
                 router.route({}, "celery.ping",
