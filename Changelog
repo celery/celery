@@ -5,6 +5,120 @@
 .. contents::
     :local:
 
+2.0.2
+=====
+:release-date: 2010-07-22 11:31 A.M CEST
+
+* Routes: When using the dict route syntax, the exchange for a task
+  could dissapear making the task unroutable.
+
+    See http://github.com/ask/celery/issues/issue/158
+
+* Test suite now passing on Python 2.4
+
+* No longer have to type PYTHONPATH=. to use celeryconfig in current dir.
+
+    This is accomplished by the default loader ensuring that the current
+    directory is in ``sys.path`` when loading the config module.
+    ``sys.path`` is reset to its original state after loading.
+
+    Adding cwd to ``sys.path`` without the user knowing may be a security
+    issue, as this means someone can drop a Python module in the users
+    directory that executes arbitrary commands. This was the original reason
+    not to do this, but if done *only when loading the config module*, this
+    means that the behvavior will only apply to the modules imported in the
+    config module, which I think is a good compromise (certainly better than
+    just explictly setting PYTHONPATH=. anyway)
+
+* Experimental Cassandra backend added.
+
+* celeryd: SIGHUP handler accidentally propagated to worker pool processes.
+
+    In combination with 7a7c44e39344789f11b5346e9cc8340f5fe4846c
+    this would make each child process start a new celeryd when
+    the terminal window was closed :/
+
+* celeryd: Do not install SIGHUP handler if running from a terminal.
+
+    This fixes the problem where celeryd is launched in the background
+    when closing the terminal.
+
+* celeryd: Now joins thread at shutdown.
+
+    See http://github.com/ask/celery/issues/issue/152
+
+* Test deardown: Don't use atexit but nose's ``teardown()`` functionality
+  instead.
+
+    See http://github.com/ask/celery/issues/issue/154
+
+* Debian init script for celeryd: Stop now works correctly.
+
+* Task logger: Add ``warn`` method (synonym for ``warning``)
+
+* Can now define a whitelist of errors to send e-mails for.
+
+    Example::
+
+        CELERY_TASK_ERROR_WHITELIST = ('myapp.MalformedInputError')
+
+    See http://github.com/ask/celery/issues/issue/153
+
+* celeryd: Now handles overflow exceptions in time.mktime when parsing
+  the ETA field.
+
+* LoggerWrapper: Try to detect loggers logging back to stderr/stdout to
+  an infinite loop.
+
+* Added :class:`celery.task.control.inspect`: Inspects a running worker.
+
+    Examples:
+
+        # Inspect a single worker
+        >>> i = inspect("myworker.example.com")
+
+        # Inspect several workers
+        >>> i = inspect(["myworker.example.com", "myworker2.example.com"])
+
+        # Inspect all workers consuming on this vhost.
+        >>> i = inspect()
+
+        ### Methods
+
+        # Get currently executing tasks
+        >>> i.active()
+
+        # Get currently reserved tasks
+        >>> i.reserved()
+
+        # Get the current eta schedule
+        >>> i.scheduled()
+
+        # Worker statistics and info
+        >>> i.stats()
+
+        # List of currently revoked tasks
+        >>> i.revoked()
+
+        # List of registered tasks
+        >>> i.registered_tasks()
+
+*  Remote control commands ``dump_active``/``dump_reserved``/``dump_schedule``
+   now replies with detailed task requests.
+
+    Containing the original arguments and fields of the task requested.
+
+    In addition the remote control command ``set_loglevel`` has been added,
+    this only changes the loglevel for the mainprocess logger.
+
+* Worker control command execution now catches exceptions and returns them
+  in the reply.
+
+* Functional test suite added
+
+    :mod:`celery.tests.functional.case` contains utilties to start
+    and stop an embedded celeryd for use in functional testing.
+
 2.0.1
 =====
 :release-date: 2010-07-09 03:02 P.M CEST
