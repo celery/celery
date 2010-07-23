@@ -43,20 +43,20 @@
     This fixes the problem where celeryd is launched in the background
     when closing the terminal.
 
-* celeryd: Now joins thread at shutdown.
+* celeryd: Now joins threads at shutdown.
 
     See http://github.com/ask/celery/issues/issue/152
 
-* Test deardown: Don't use atexit but nose's ``teardown()`` functionality
+* Test teardown: Don't use atexit but nose's ``teardown()`` functionality
   instead.
 
     See http://github.com/ask/celery/issues/issue/154
 
 * Debian init script for celeryd: Stop now works correctly.
 
-* Task logger: Add ``warn`` method (synonym for ``warning``)
+* Task logger:  ``warn`` method added (synonym for ``warning``)
 
-* Can now define a whitelist of errors to send e-mails for.
+* Can now define a whitelist of errors to send error e-mails for.
 
     Example::
 
@@ -64,15 +64,15 @@
 
     See http://github.com/ask/celery/issues/issue/153
 
-* celeryd: Now handles overflow exceptions in time.mktime when parsing
+* celeryd: Now handles overflow exceptions in ``time.mktime`` while parsing
   the ETA field.
 
-* LoggerWrapper: Try to detect loggers logging back to stderr/stdout to
+* LoggerWrapper: Try to detect loggers logging back to stderr/stdout making
   an infinite loop.
 
 * Added :class:`celery.task.control.inspect`: Inspects a running worker.
 
-    Examples:
+    Examples::
 
         # Inspect a single worker
         >>> i = inspect("myworker.example.com")
@@ -109,15 +109,15 @@
     Containing the original arguments and fields of the task requested.
 
     In addition the remote control command ``set_loglevel`` has been added,
-    this only changes the loglevel for the mainprocess logger.
+    this only changes the loglevel for the main process.
 
-* Worker control command execution now catches exceptions and returns them
-  in the reply.
+* Worker control command execution now catches errors and returns their
+  string representation in the reply.
 
 * Functional test suite added
 
-    :mod:`celery.tests.functional.case` contains utilties to start
-    and stop an embedded celeryd for use in functional testing.
+    :mod:`celery.tests.functional.case` contains utilities to start
+    and stop an embedded celeryd process, for use in functional testing.
 
 2.0.1
 =====
