@@ -185,12 +185,12 @@ the terminal window was closed :/</p>
 when closing the terminal.</p>
 </blockquote>
 </li>
-<li><p class="first">celeryd: Now joins thread at shutdown.</p>
+<li><p class="first">celeryd: Now joins threads at shutdown.</p>
 <blockquote>
 <p>See <a class="reference external" href="http://github.com/ask/celery/issues/issue/152">http://github.com/ask/celery/issues/issue/152</a></p>
 </blockquote>
 </li>
-<li><p class="first">Test deardown: Don&#8217;t use atexit but nose&#8217;s <tt class="docutils literal"><span class="pre">teardown()</span></tt> functionality
+<li><p class="first">Test teardown: Don&#8217;t use atexit but nose&#8217;s <tt class="docutils literal"><span class="pre">teardown()</span></tt> functionality
 instead.</p>
 <blockquote>
 <p>See <a class="reference external" href="http://github.com/ask/celery/issues/issue/154">http://github.com/ask/celery/issues/issue/154</a></p>
@@ -198,9 +198,9 @@ instead.</p>
 </li>
 <li><p class="first">Debian init script for celeryd: Stop now works correctly.</p>
 </li>
-<li><p class="first">Task logger: Add <tt class="docutils literal"><span class="pre">warn</span></tt> method (synonym for <tt class="docutils literal"><span class="pre">warning</span></tt>)</p>
+<li><p class="first">Task logger:  <tt class="docutils literal"><span class="pre">warn</span></tt> method added (synonym for <tt class="docutils literal"><span class="pre">warning</span></tt>)</p>
 </li>
-<li><p class="first">Can now define a whitelist of errors to send e-mails for.</p>
+<li><p class="first">Can now define a whitelist of errors to send error e-mails for.</p>
 <blockquote>
 <p>Example:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_TASK_ERROR_WHITELIST</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;myapp.MalformedInputError&#39;</span><span class="p">)</span>
@@ -209,36 +209,44 @@ instead.</p>
 <p>See <a class="reference external" href="http://github.com/ask/celery/issues/issue/153">http://github.com/ask/celery/issues/issue/153</a></p>
 </blockquote>
 </li>
-<li><p class="first">celeryd: Now handles overflow exceptions in time.mktime when parsing
+<li><p class="first">celeryd: Now handles overflow exceptions in <tt class="docutils literal"><span class="pre">time.mktime</span></tt> while parsing
 the ETA field.</p>
 </li>
-<li><p class="first">LoggerWrapper: Try to detect loggers logging back to stderr/stdout to
+<li><p class="first">LoggerWrapper: Try to detect loggers logging back to stderr/stdout making
 an infinite loop.</p>
 </li>
 <li><p class="first">Added <a class="reference internal" href="reference/celery.task.control.html#celery.task.control.inspect" title="celery.task.control.inspect"><tt class="xref py py-class docutils literal"><span class="pre">celery.task.control.inspect</span></tt></a>: Inspects a running worker.</p>
 <blockquote>
 <p>Examples:</p>
-<blockquote>
-<p># Inspect a single worker
-&gt;&gt;&gt; i = inspect(&#8220;myworker.example.com&#8221;)</p>
-<p># Inspect several workers
-&gt;&gt;&gt; i = inspect([&#8220;myworker.example.com&#8221;, &#8220;myworker2.example.com&#8221;])</p>
-<p># Inspect all workers consuming on this vhost.
-&gt;&gt;&gt; i = inspect()</p>
-<p>### Methods</p>
-<p># Get currently executing tasks
-&gt;&gt;&gt; i.active()</p>
-<p># Get currently reserved tasks
-&gt;&gt;&gt; i.reserved()</p>
-<p># Get the current eta schedule
-&gt;&gt;&gt; i.scheduled()</p>
-<p># Worker statistics and info
-&gt;&gt;&gt; i.stats()</p>
-<p># List of currently revoked tasks
-&gt;&gt;&gt; i.revoked()</p>
-<p># List of registered tasks
-&gt;&gt;&gt; i.registered_tasks()</p>
-</blockquote>
+<div class="highlight-python"><pre># Inspect a single worker
+&gt;&gt;&gt; i = inspect("myworker.example.com")
+
+# Inspect several workers
+&gt;&gt;&gt; i = inspect(["myworker.example.com", "myworker2.example.com"])
+
+# Inspect all workers consuming on this vhost.
+&gt;&gt;&gt; i = inspect()
+
+### Methods
+
+# Get currently executing tasks
+&gt;&gt;&gt; i.active()
+
+# Get currently reserved tasks
+&gt;&gt;&gt; i.reserved()
+
+# Get the current eta schedule
+&gt;&gt;&gt; i.scheduled()
+
+# Worker statistics and info
+&gt;&gt;&gt; i.stats()
+
+# List of currently revoked tasks
+&gt;&gt;&gt; i.revoked()
+
+# List of registered tasks
+&gt;&gt;&gt; i.registered_tasks()</pre>
+</div>
 </blockquote>
 </li>
 <li><p class="first">Remote control commands <tt class="docutils literal"><span class="pre">dump_active</span></tt>/<tt class="docutils literal"><span class="pre">dump_reserved</span></tt>/<tt class="docutils literal"><span class="pre">dump_schedule</span></tt>
@@ -246,16 +254,16 @@ now replies with detailed task requests.</p>
 <blockquote>
 <p>Containing the original arguments and fields of the task requested.</p>
 <p>In addition the remote control command <tt class="docutils literal"><span class="pre">set_loglevel</span></tt> has been added,
-this only changes the loglevel for the mainprocess logger.</p>
+this only changes the loglevel for the main process.</p>
 </blockquote>
 </li>
-<li><p class="first">Worker control command execution now catches exceptions and returns them
-in the reply.</p>
+<li><p class="first">Worker control command execution now catches errors and returns their
+string representation in the reply.</p>
 </li>
 <li><p class="first">Functional test suite added</p>
 <blockquote>
-<p><tt class="xref py py-mod docutils literal"><span class="pre">celery.tests.functional.case</span></tt> contains utilties to start
-and stop an embedded celeryd for use in functional testing.</p>
+<p><tt class="xref py py-mod docutils literal"><span class="pre">celery.tests.functional.case</span></tt> contains utilities to start
+and stop an embedded celeryd process, for use in functional testing.</p>
 </blockquote>
 </li>
 </ul>
