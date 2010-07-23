@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>First steps with Celery &mdash; Celery v2.0.1 (stable) documentation</title>
+    <title>First steps with Celery &mdash; Celery v2.0.2 (stable) documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.0.1 (stable)',
+        VERSION:     '2.0.2 (stable)',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.0.1 (stable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.0.2 (stable) documentation" href="../index.html" />
     <link rel="up" title="Getting Started" href="index.html" />
     <link rel="next" title="Periodic Tasks" href="periodic-tasks.html" />
     <link rel="prev" title="Broker Installation" href="broker-installation.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="broker-installation.html" title="Broker Installation"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.0.1 (stable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.0.2 (stable) documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Getting Started</a> &raquo;</li> 
       </ul>
     </div>  
@@ -138,14 +138,14 @@ do. For all of the options available, see the
 <h2><a class="toc-backref" href="#id3">Running the celery worker server</a><a class="headerlink" href="#running-the-celery-worker-server" title="Permalink to this headline">¶</a></h2>
 <p>To test we will run the worker server in the foreground, so we can
 see what&#8217;s going on in the terminal:</p>
-<div class="highlight-python"><pre>$ PYTHONPATH="." celeryd --loglevel=INFO</pre>
+<div class="highlight-python"><pre>$ celeryd --loglevel=INFO</pre>
 </div>
 <p>However, in production you probably want to run the worker in the
 background as a daemon. To do this you need to use to tools provided
 by your platform, or something like <a class="reference external" href="http://supervisord.org">supervisord</a>.</p>
 <p>For a complete listing of the command line options available, use the
 help command:</p>
-<div class="highlight-python"><pre>$  PYTHONPATH="." celeryd --help</pre>
+<div class="highlight-python"><pre>$  celeryd --help</pre>
 </div>
 <p>For info on how to run celery as standalone daemon, see
 <a class="reference internal" href="../cookbook/daemonizing.html"><em>daemon mode reference</em></a></p>
@@ -265,7 +265,7 @@ Guide</em></a>.</p>
         <li class="right" >
           <a href="broker-installation.html" title="Broker Installation"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.0.1 (stable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.0.2 (stable) documentation</a> &raquo;</li>
           <li><a href="index.html" >Getting Started</a> &raquo;</li> 
       </ul>
     </div>
