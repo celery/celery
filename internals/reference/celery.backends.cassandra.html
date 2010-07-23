@@ -1,0 +1,155 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Backend: Cassandra - celery.backends.cassandra &mdash; Celery v2.0.2 (stable) documentation</title>
+    <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.2 (stable)',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../static/jquery.js"></script>
+    <script type="text/javascript" src="../../static/underscore.js"></script>
+    <script type="text/javascript" src="../../static/doctools.js"></script>
+    <link rel="top" title="Celery v2.0.2 (stable) documentation" href="../../index.html" />
+    <link rel="up" title="Internal Module Reference" href="index.html" />
+    <link rel="next" title="Backend: Tokyo Tyrant - celery.backends.tyrant" href="celery.backends.tyrant.html" />
+    <link rel="prev" title="Backend: Redis - celery.backends.pyredis" href="celery.backends.pyredis.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.backends.tyrant.html" title="Backend: Tokyo Tyrant - celery.backends.tyrant"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.backends.pyredis.html" title="Backend: Redis - celery.backends.pyredis"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">Celery v2.0.2 (stable) documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Internals</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="backend-cassandra-celery-backends-cassandra">
+<h1>Backend: Cassandra - celery.backends.cassandra<a class="headerlink" href="#backend-cassandra-celery-backends-cassandra" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-celery.backends.cassandra"></span><p>celery.backends.cassandra</p>
+<dl class="class">
+<dt id="celery.backends.cassandra.CassandraBackend">
+<em class="property">class </em><tt class="descclassname">celery.backends.cassandra.</tt><tt class="descname">CassandraBackend</tt><big>(</big><em>servers=None</em>, <em>keyspace=None</em>, <em>column_family=None</em>, <em>cassandra_options=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.backends.cassandra.CassandraBackend" title="Permalink to this definition">¶</a></dt>
+<dd><p>Highly fault tolerant Cassandra backend.</p>
+<dl class="attribute">
+<dt id="celery.backends.cassandra.CassandraBackend.servers">
+<tt class="descname">servers</tt><a class="headerlink" href="#celery.backends.cassandra.CassandraBackend.servers" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of Cassandra servers with format: &#8220;hostname:port&#8221;.</p>
+</dd></dl>
+
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name" colspan="2">Raises <a class="reference internal" href="../../reference/celery.exceptions.html#celery.exceptions.ImproperlyConfigured" title="celery.exceptions.ImproperlyConfigured">celery.exceptions.ImproperlyConfigured</a>:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body">if
+module <tt class="xref py py-mod docutils literal"><span class="pre">pycassa</span></tt> is not available.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="celery.backends.cassandra.CassandraBackend.cleanup">
+<tt class="descname">cleanup</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.backends.cassandra.CassandraBackend.cleanup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete expired metadata.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.backends.cassandra.CassandraBackend.process_cleanup">
+<tt class="descname">process_cleanup</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.backends.cassandra.CassandraBackend.process_cleanup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="celery.backends.pyredis.html"
+                        title="previous chapter">Backend: Redis - celery.backends.pyredis</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="celery.backends.tyrant.html"
+                        title="next chapter">Backend: Tokyo Tyrant - celery.backends.tyrant</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../sources/internals/reference/celery.backends.cassandra.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.backends.tyrant.html" title="Backend: Tokyo Tyrant - celery.backends.tyrant"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.backends.pyredis.html" title="Backend: Redis - celery.backends.pyredis"
+             >previous</a> |</li>
+        <li><a href="../../index.html">Celery v2.0.2 (stable) documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Internals</a> &raquo;</li>
+          <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009, Ask Solem.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
+    </div>
+  </body>
+</html>
