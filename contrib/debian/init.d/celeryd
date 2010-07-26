@@ -140,7 +140,7 @@ stop_worker () {
                            --quiet \
                            $* \
                            --pidfile $CELERYD_PID_FILE"
-    if `$cmd`; then
+    if $cmd; then
         log_end_msg 0
     else
         log_end_msg 1
@@ -156,7 +156,7 @@ start_worker () {
                            $* \
                            --pidfile $CELERYD_PID_FILE
                            --exec $CELERYD -- $CELERYD_OPTS"
-    if `$cmd`; then
+    if $cmd; then
         log_end_msg 0
     else
         log_end_msg 1
