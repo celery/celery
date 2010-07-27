@@ -9,8 +9,8 @@ daemonization tools.
     :local:
 
 
-start-stop-daemon
-=================
+start-stop-daemon (Debian/Ubuntu/++)
+====================================
 
 See the `contrib/debian/init.d/`_ directory in the celery distribution, this
 directory contains init scripts for celeryd and celerybeat.
@@ -68,10 +68,10 @@ Available options
 * CELERYD_CHDIR
     Path to chdir at start. Default is to stay in the current directory.
 
-* CELERYD_PIDFILE
+* CELERYD_PID_FILE
     Full path to the pidfile. Default is /var/run/celeryd.pid.
 
-* CELERYD_LOGFILE
+* CELERYD_LOG_FILE
     Full path to the celeryd logfile. Default is /var/log/celeryd.log
 
 * CELERYD_LOG_LEVEL
@@ -166,6 +166,32 @@ Available options
 .. _`contrib/supervisord/`:
     http://github.com/ask/celery/tree/master/contrib/supervisord/
 .. _`supervisord`: http://supervisord.org/
+
+Trobuleshooting
+---------------
+
+If you can't get the init scripts to work you should try running
+them in *verbose mode*::
+
+    $ sh -x /etc/init.d/celeryd start
+
+This can reveal hints as to why the service won't start.
+
+Also you will see the commands generated, you can try to run the celeryd
+command manually to read the resulting error output.
+
+For example my ``sh -x`` output does this::
+
+    ++ start-stop-daemon --start --chdir /opt/Opal/release/opal --quiet \
+        --oknodo --background --make-pidfile --pidfile /var/run/celeryd.pid \
+        --exec /opt/Opal/release/opal/manage.py celeryd -- --time-limit=300 \
+        -f /var/log/celeryd.log -l INFO
+
+Run the celeryd command after ``--exec`` (without the ``--``) to show the
+actual resulting output::
+
+    $ /opt/Opal/release/opal/manage.py celeryd --time-limit=300 \
+        -f /var/log/celeryd.log -l INFO
 
 
 launchd (OS X)
