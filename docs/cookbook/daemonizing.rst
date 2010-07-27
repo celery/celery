@@ -158,26 +158,17 @@ Available options
 * CELERYBEAT_GROUP
     Group to run celeryd as. Default is current user.
 
-`supervisord`_
-==============
-
-* `contrib/supervisord/`_
-
-.. _`contrib/supervisord/`:
-    http://github.com/ask/celery/tree/master/contrib/supervisord/
-.. _`supervisord`: http://supervisord.org/
-
-Trobuleshooting
+Troubleshooting
 ---------------
 
-If you can't get the init scripts to work you should try running
+If you can't get the init scripts to work, you should try running
 them in *verbose mode*::
 
     $ sh -x /etc/init.d/celeryd start
 
 This can reveal hints as to why the service won't start.
 
-Also you will see the commands generated, you can try to run the celeryd
+Also you will see the commands generated, so you can try to run the celeryd
 command manually to read the resulting error output.
 
 For example my ``sh -x`` output does this::
@@ -193,6 +184,15 @@ actual resulting output::
     $ /opt/Opal/release/opal/manage.py celeryd --time-limit=300 \
         -f /var/log/celeryd.log -l INFO
 
+
+`supervisord`_
+==============
+
+* `contrib/supervisord/`_
+
+.. _`contrib/supervisord/`:
+    http://github.com/ask/celery/tree/master/contrib/supervisord/
+.. _`supervisord`: http://supervisord.org/
 
 launchd (OS X)
 ==============
