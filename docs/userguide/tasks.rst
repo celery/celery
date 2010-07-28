@@ -329,7 +329,7 @@ blog/views.py
 .. code-block:: python
 
     from django import forms
-    frmo django.http import HttpResponseRedirect
+    from django.http import HttpResponseRedirect
     from django.template.context import RequestContext
     from django.shortcuts import get_object_or_404, render_to_response
 
@@ -644,7 +644,7 @@ re-fetch the article in the task body:
 .. code-block:: python
 
     @task
-    def expand_abbreviations(article_id)
+    def expand_abbreviations(article_id):
         article = Article.objects.get(id=article_id)
         article.body.replace("MyCorp", "My Corporation")
         article.save()
