@@ -148,7 +148,7 @@ just specify a custom exchange and exchange type:
             },
             "regular_tasks": {
                 "binding_key": "task.#",
-            }
+            },
             "image_tasks": {
                 "binding_key": "image.compress",
                 "exchange": "mediatasks",
