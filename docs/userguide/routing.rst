@@ -189,7 +189,7 @@ This is an example task message represented as a Python dictionary:
 .. code-block:: python
 
     {"task": "myapp.tasks.add",
-     "id": 
+     "id": "54086c5e-6193-4575-8308-dbab76798756",
      "args": [4, 4],
      "kwargs": {}}
 
