@@ -198,7 +198,7 @@ Task options
 * max_retries
 
     The maximum number of attempted retries before giving up.
-    If this is exceeded the :exc`~celery.execptions.MaxRetriesExceeded`
+    If this is exceeded the :exc`~celery.exceptions.MaxRetriesExceeded`
     exception will be raised. Note that you have to retry manually, it's
     not something that happens automatically.
 
