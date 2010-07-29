@@ -17,7 +17,7 @@ extract_exec_options = mattrgetter("queue", "routing_key", "exchange",
 @with_connection
 def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
         task_id=None, publisher=None, connection=None, connect_timeout=None,
-        router=None, **options):
+        router=None, expires=None, **options):
     """Run a task asynchronously by the celery daemon(s).
 
     :param task: The :class:`~celery.task.base.Task` to run.
@@ -33,9 +33,13 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
       the ``immediate`` setting, they are unrelated).
 
     :keyword eta: A :class:`~datetime.datetime` object that describes the
-      absolute time when the task should execute. May not be specified
-      if ``countdown`` is also supplied. (Do not confuse this with the
-      ``immediate`` setting, they are unrelated).
+      absolute time and date of when the task should execute. May not be
+      specified if ``countdown`` is also supplied. (Do not confuse this
+      with the ``immediate`` setting, they are unrelated).
+
+    :keyword expires: A :class:`~datetime.datetime` object that describes
+      the absolute time and date of when the task should expire.
+      The task will not be executed after the expiration time.
 
     :keyword connection: Re-use existing broker connection instead
       of establishing a new one. The ``connect_timeout`` argument is
@@ -96,7 +100,8 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
                                               exchange_type=exchange_type)
     try:
         task_id = publish.delay_task(task.name, args, kwargs, task_id=task_id,
-                                     countdown=countdown, eta=eta, **options)
+                                     countdown=countdown, eta=eta,
+                                     expires=expires, **options)
     finally:
         publisher or publish.close()
 
@@ -106,7 +111,7 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
 @with_connection
 def send_task(name, args=None, kwargs=None, countdown=None, eta=None,
         task_id=None, publisher=None, connection=None, connect_timeout=None,
-        result_cls=AsyncResult, **options):
+        result_cls=AsyncResult, expires=None, **options):
     """Send task by name.
 
     Useful if you don't have access to the :class:`~celery.task.base.Task`
@@ -124,7 +129,8 @@ def send_task(name, args=None, kwargs=None, countdown=None, eta=None,
                                          exchange_type=exchange_type)
     try:
         task_id = publish.delay_task(name, args, kwargs, task_id=task_id,
-                                     countdown=countdown, eta=eta, **options)
+                                     countdown=countdown, eta=eta,
+                                     expires=expires, **options)
     finally:
         publisher or publish.close()
 

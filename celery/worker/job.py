@@ -3,6 +3,8 @@ import time
 import socket
 import warnings
 
+from datetime import datetime
+
 from celery import conf
 from celery import log
 from celery import platform
@@ -10,7 +12,7 @@ from celery.datastructures import ExceptionInfo
 from celery.execute.trace import TaskTrace
 from celery.loaders import current_loader
 from celery.registry import tasks
-from celery.utils import noop, kwdict, fun_takes_kwargs
+from celery.utils import noop, kwdict, fun_takes_kwargs, maybe_iso8601
 from celery.utils.compat import any
 from celery.utils.mail import mail_admins
 from celery.worker import state
@@ -208,12 +210,14 @@ class TaskRequest(object):
     def __init__(self, task_name, task_id, args, kwargs,
             on_ack=noop, retries=0, delivery_info=None, hostname=None,
             email_subject=None, email_body=None, logger=None,
-            eventer=None, **opts):
+            eventer=None, eta=None, expires=None, **opts):
         self.task_name = task_name
         self.task_id = task_id
         self.retries = retries
         self.args = args
         self.kwargs = kwargs
+        self.eta = eta
+        self.expires = expires
         self.on_ack = on_ack
         self.delivery_info = delivery_info or {}
         self.hostname = hostname or socket.gethostname()
@@ -224,9 +228,16 @@ class TaskRequest(object):
 
         self.task = tasks[self.task_name]
 
+    def maybe_expire(self):
+        if self.expires and datetime.now() > self.expires:
+            state.revoked.add(self.task_id)
+            self.task.backend.mark_as_revoked(self.task_id)
+
     def revoked(self):
         if self._already_revoked:
             return True
+        if self.expires:
+            self.maybe_expire()
         if self.task_id in state.revoked:
             self.logger.warn("Skipping revoked task: %s[%s]" % (
                 self.task_name, self.task_id))
@@ -253,6 +264,8 @@ class TaskRequest(object):
         args = message_data["args"]
         kwargs = message_data["kwargs"]
         retries = message_data.get("retries", 0)
+        eta = maybe_iso8601(message_data.get("eta"))
+        expires = maybe_iso8601(message_data.get("expires"))
 
         _delivery_info = getattr(message, "delivery_info", {})
         delivery_info = dict((key, _delivery_info.get(key))
@@ -265,7 +278,8 @@ class TaskRequest(object):
         return cls(task_name, task_id, args, kwdict(kwargs),
                    retries=retries, on_ack=message.ack,
                    delivery_info=delivery_info, logger=logger,
-                   eventer=eventer, hostname=hostname)
+                   eventer=eventer, hostname=hostname,
+                   eta=eta, expires=expires)
 
     def extend_with_default_kwargs(self, loglevel, logfile):
         """Extend the tasks keyword arguments with standard task arguments.
@@ -445,3 +459,10 @@ class TaskRequest(object):
                 "time_start": self.time_start,
                 "acknowledged": self.acknowledged,
                 "delivery_info": self.delivery_info}
+
+    def shortinfo(self):
+        return "%s[%s]%s%s" % (
+                    self.task_name,
+                    self.task_id,
+                    self.eta and " eta:[%s]" % (self.eta, ),
+                    self.expires and " expires:[%s]" % (self.expires, ))

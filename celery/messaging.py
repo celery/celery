@@ -52,7 +52,8 @@ class TaskPublisher(Publisher):
             _exchanges_declared.add(self.exchange)
 
     def delay_task(self, task_name, task_args=None, task_kwargs=None,
-            countdown=None, eta=None, task_id=None, taskset_id=None, **kwargs):
+            countdown=None, eta=None, task_id=None, taskset_id=None,
+            expires=None, **kwargs):
         """Delay task for execution by the celery nodes."""
 
         task_id = task_id or gen_unique_id()
@@ -73,6 +74,7 @@ class TaskPublisher(Publisher):
             "kwargs": task_kwargs or {},
             "retries": kwargs.get("retries", 0),
             "eta": eta and eta.isoformat(),
+            "expires": expires and expires.isoformat(),
         }
 
         if taskset_id:
