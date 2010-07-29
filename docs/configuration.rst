@@ -316,13 +316,13 @@ Routing
 -------
 
 * CELERY_QUEUES
-  The mapping of queues the worker consumes from. This is a dictionary
-  of queue name/options. See :doc:`userguide/routing` for more information.
+    The mapping of queues the worker consumes from. This is a dictionary
+    of queue name/options. See :doc:`userguide/routing` for more information.
 
-  The default is a queue/exchange/binding key of ``"celery"``, with
-  exchange type ``direct``.
+    The default is a queue/exchange/binding key of ``"celery"``, with
+    exchange type ``direct``.
 
-  You don't have to care about this unless you want custom routing facilities.
+    You don't have to care about this unless you want custom routing facilities.
 
 * CELERY_DEFAULT_QUEUE
     The queue used by default, if no custom queue is specified.
@@ -411,8 +411,8 @@ Task execution settings
 
 * CELERY_MAX_CACHED_RESULTS
 
-  Total number of results to store before results are evicted from the
-  result cache. The default is ``5000``.
+    Total number of results to store before results are evicted from the
+    result cache. The default is ``5000``.
 
 * CELERY_TRACK_STARTED
 
@@ -435,10 +435,10 @@ Task execution settings
 
 * CELERY_DEFAULT_RATE_LIMIT
 
-  The global default rate limit for tasks.
+    The global default rate limit for tasks.
 
-  This value is used for tasks that does not have a custom rate limit
-  The default is no rate limit.
+    This value is used for tasks that does not have a custom rate limit
+    The default is no rate limit.
 
 * CELERY_DISABLE_RATE_LIMITS
 
@@ -463,8 +463,8 @@ Worker: celeryd
 
 * CELERYD_MAX_TASKS_PER_CHILD
 
-  Maximum number of tasks a pool worker process can execute before
-  it's replaced with a new one. Default is no limit.
+    Maximum number of tasks a pool worker process can execute before
+    it's replaced with a new one. Default is no limit.
 
 * CELERYD_TASK_TIME_LIMIT
 
