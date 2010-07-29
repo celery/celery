@@ -1,12 +1,12 @@
-#!/bin/bash
+#!/bin/sh -e
 
 ### BEGIN INIT INFO
-# Provides:		celeryd
+# Provides:		celeryd-multi
 # Required-Start:	
 # Required-Stop:	
 # Default-Start:	2 3 4 5
 # Default-Stop:		1
-# Short-Description:	celery task worker daemon
+# Short-Description:	celery task multiple workers daemon
 ### END INIT INFO
 
 # OS X Debug replacements to lsb-functions.
