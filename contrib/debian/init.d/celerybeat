@@ -146,7 +146,7 @@ stop_worker () {
                            --quiet \
                            $* \
                            --pidfile $CELERYBEAT_PID_FILE"
-    if `$cmd`; then
+    if $cmd; then
         log_end_msg 0
     else
         log_end_msg 1
@@ -162,7 +162,7 @@ start_worker () {
                            $* \
                            --pidfile $CELERYBEAT_PID_FILE
                            --exec $CELERYBEAT -- $CELERYBEAT_OPTS"
-    if `$cmd`; then
+    if $cmd; then
         log_end_msg 0
     else
         log_end_msg 1
