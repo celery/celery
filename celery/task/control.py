@@ -105,7 +105,8 @@ class inspect(object):
         if not reply:
             return
         by_node = flatten_reply(reply)
-        if not isinstance(self.destination, (list, tuple)):
+        if self.destination and \
+                not isinstance(self.destination, (list, tuple)):
             return by_node.get(self.destination)
         return by_node
 
