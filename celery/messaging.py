@@ -59,13 +59,19 @@ class TaskPublisher(Publisher):
         task_id = task_id or gen_unique_id()
         task_args = task_args or []
         task_kwargs = task_kwargs or {}
+        now = None
         if countdown: # Convert countdown to ETA.
-            eta = datetime.now() + timedelta(seconds=countdown)
+            now = datetime.now()
+            eta = now + timedelta(seconds=countdown)
 
         if not isinstance(task_args, (list, tuple)):
             raise ValueError("task args must be a list or tuple")
         if not isinstance(task_kwargs, dict):
             raise ValueError("task kwargs must be a dictionary")
+
+        if isinstance(expires, int):
+            now = now or datetime.now()
+            expires = now + timedelta(seconds=expires)
 
         message_data = {
             "task": task_name,
