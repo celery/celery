@@ -540,12 +540,12 @@ Good:
 
     @task(ignore_result=True)
     def fetch_page(url, callback=None):
-        page = myparser.parse_document(page)
+        page = myhttplib.get(url)
         if callback:
             # The callback may have been serialized with JSON,
             # so best practice is to convert the subtask dict back
             # into a subtask object.
-            subtask(callback).delay(page)
+            subtask(callback).delay(url, page)
 
     @task(ignore_result=True)
     def parse_page(url, page, callback=None):
