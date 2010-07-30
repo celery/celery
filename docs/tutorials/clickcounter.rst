@@ -218,7 +218,7 @@ Processing the clicks every 30 minutes is easy using celery periodic tasks.
     class ProcessClicksTask(PeriodicTask):
         run_every = timedelta(minutes=30)
 
-        def run(self, \*\*kwargs):
+        def run(self, **kwargs):
             process_clicks()
 
 We subclass from :class:`celery.task.base.PeriodicTask`, set the ``run_every``
