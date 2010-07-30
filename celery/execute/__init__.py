@@ -37,8 +37,9 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
       specified if ``countdown`` is also supplied. (Do not confuse this
       with the ``immediate`` setting, they are unrelated).
 
-    :keyword expires: A :class:`~datetime.datetime` object that describes
-      the absolute time and date of when the task should expire.
+    :keyword expires: Either a :class:`int`, describing the number of seconds,
+      or a :class:`~datetime.datetime` object that describes the absolute time
+      and date of when the task should expire.
       The task will not be executed after the expiration time.
 
     :keyword connection: Re-use existing broker connection instead
