@@ -174,7 +174,7 @@ def apply(task, args, kwargs, **options):
     """
     args = args or []
     kwargs = kwargs or {}
-    task_id = options.get("task_id", gen_unique_id())
+    task_id = options.get("task_id") or gen_unique_id()
     retries = options.get("retries", 0)
     throw = options.pop("throw", conf.EAGER_PROPAGATES_EXCEPTIONS)
 
