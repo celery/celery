@@ -19,7 +19,7 @@ Example connecting to the :data:`task_sent` signal:
     from celery.signals import task_sent
 
     def task_sent_handler(sender=None, task_id=None, task=None, args=None,
-            kwargs=None, \*\*kwds):
+                          kwargs=None, **kwds):
         print("Got signal task_sent for task id %s" % (task_id, ))
 
     task_sent.connect(task_sent_handler)
