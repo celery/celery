@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from carrot.utils import partition
 
@@ -9,6 +9,8 @@ RATE_MODIFIER_MAP = {"s": lambda n: n,
                      "m": lambda n: n / 60.0,
                      "h": lambda n: n / 60.0 / 60.0}
 
+HAVE_TIMEDELTA_TOTAL_SECONDS = hasattr(timedelta, "total_seconds")
+
 
 def timedelta_seconds(delta):
     """Convert :class:`datetime.timedelta` to seconds.
@@ -16,6 +18,8 @@ def timedelta_seconds(delta):
     Doesn't account for negative values.
 
     """
+    if HAVE_TIMEDELTA_TOTAL_SECONDS:
+        return delta.total_seconds()
     if delta.days < 0:
         return 0
     return delta.days * 86400 + delta.seconds + (delta.microseconds / 10e5)
