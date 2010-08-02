@@ -19,7 +19,8 @@ def timedelta_seconds(delta):
 
     """
     if HAVE_TIMEDELTA_TOTAL_SECONDS:
-        return delta.total_seconds()
+        # Should return 0 for negative seconds
+        return max(delta.total_seconds(), 0)
     if delta.days < 0:
         return 0
     return delta.days * 86400 + delta.seconds + (delta.microseconds / 10e5)
