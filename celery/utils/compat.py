@@ -294,6 +294,7 @@ except ImportError:
 try:
     from logging import LoggerAdapter
 except ImportError:
+    import logging
     class LoggerAdapter(object):
 
         def __init__(self, logger, extra):
@@ -372,7 +373,6 @@ except ImportError:
 
         def removeHandler(self, hdlr):
             self.logger.removeHandler(hdlr)
-
 
 
 ############## itertools.izip_longest #######################################
