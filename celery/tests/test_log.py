@@ -14,24 +14,40 @@ except ImportError:
 
 from carrot.utils import rpartition
 
-from celery.log import (setup_logger, emergency_error,
+from celery.log import (setup_logger, setup_task_logger, emergency_error,
+                        get_default_logger, get_task_logger,
                         redirect_stdouts_to_logger, LoggingProxy)
 from celery.tests.utils import override_stdouts, execute_context
+from celery.utils.compat import LoggerAdapter
 
+
+def get_handlers(logger):
+    if isinstance(logger, LoggerAdapter):
+        return logger.logger.handlers
+    return logger.handlers
+
+def set_handlers(logger, new_handlers):
+    if isinstance(logger, LoggerAdapter):
+        logger.logger.handlers = new_handlers
+    logger.handlers = new_handlers
 
 @contextmanager
 def wrap_logger(logger, loglevel=logging.ERROR):
-    old_handlers = logger.handlers
+    old_handlers = get_handlers(logger)
     sio = StringIO()
     siohandler = logging.StreamHandler(sio)
-    logger.handlers = [siohandler]
+    set_handlers(logger, [siohandler])
 
     yield sio
 
-    logger.handlers = old_handlers
+    set_handlers(logger, old_handlers)
 
 
-class TestLog(unittest.TestCase):
+class test_default_logger(unittest.TestCase):
+
+    def setUp(self):
+        self.setup_logger = setup_logger
+        self.get_logger = get_default_logger
 
     def _assertLog(self, logger, logmsg, loglevel=logging.ERROR):
 
@@ -51,10 +67,10 @@ class TestLog(unittest.TestCase):
         return self.assertFalse(val, reason)
 
     def test_setup_logger(self):
-        logger = setup_logger(loglevel=logging.ERROR, logfile=None)
-        logger.handlers = [] # Reset previously set logger.
-        logger = setup_logger(loglevel=logging.ERROR, logfile=None)
-        self.assertIs(logger.handlers[0].stream, sys.__stderr__,
+        logger = self.setup_logger(loglevel=logging.ERROR, logfile=None)
+        set_handlers(logger, [])
+        logger = self.setup_logger(loglevel=logging.ERROR, logfile=None)
+        self.assertIs(get_handlers(logger)[0].stream, sys.__stderr__,
                 "setup_logger logs to stderr without logfile argument.")
         self.assertDidLogFalse(logger, "Logging something",
                 "Logger doesn't info when loglevel is ERROR",
@@ -67,13 +83,12 @@ class TestLog(unittest.TestCase):
                              "Testing emergency error facility")
 
     def test_setup_logger_no_handlers_stream(self):
-        from multiprocessing import get_logger
-        l = get_logger()
-        l.handlers = []
+        l = self.get_logger()
+        set_handlers(l, [])
 
         def with_override_stdouts(outs):
             stdout, stderr = outs
-            l = setup_logger(logfile=stderr, loglevel=logging.INFO)
+            l = self.setup_logger(logfile=stderr, loglevel=logging.INFO)
             l.info("The quick brown fox...")
             self.assertIn("The quick brown fox...", stderr.getvalue())
 
@@ -81,12 +96,12 @@ class TestLog(unittest.TestCase):
         execute_context(context, with_override_stdouts)
 
     def test_setup_logger_no_handlers_file(self):
-        from multiprocessing import get_logger
-        l = get_logger()
-        l.handlers = []
+        l = self.get_logger()
+        set_handlers(l, [])
         tempfile = mktemp(suffix="unittest", prefix="celery")
-        l = setup_logger(logfile=tempfile, loglevel=0)
-        self.assertIsInstance(l.handlers[0], logging.FileHandler)
+        l = self.setup_logger(logfile=tempfile, loglevel=0)
+        print(get_handlers(l)[0].stream)
+        self.assertIsInstance(get_handlers(l)[0], logging.FileHandler)
 
     def test_emergency_error_stderr(self):
         def with_override_stdouts(outs):
@@ -109,7 +124,7 @@ class TestLog(unittest.TestCase):
             os.unlink(tempfile)
 
     def test_redirect_stdouts(self):
-        logger = setup_logger(loglevel=logging.ERROR, logfile=None)
+        logger = self.setup_logger(loglevel=logging.ERROR, logfile=None)
         try:
             def with_wrap_logger(sio):
                 redirect_stdouts_to_logger(logger, loglevel=logging.ERROR)
@@ -122,7 +137,7 @@ class TestLog(unittest.TestCase):
             sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
 
     def test_logging_proxy(self):
-        logger = setup_logger(loglevel=logging.ERROR, logfile=None)
+        logger = self.setup_logger(loglevel=logging.ERROR, logfile=None)
 
         def with_wrap_logger(sio):
             p = LoggingProxy(logger)
@@ -143,3 +158,10 @@ class TestLog(unittest.TestCase):
 
         context = wrap_logger(logger)
         execute_context(context, with_wrap_logger)
+
+
+class test_task_logger(test_default_logger):
+
+    def setUp(self):
+        self.setup_logger = setup_task_logger
+        self.get_logger = get_task_logger
