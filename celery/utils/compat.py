@@ -300,45 +300,80 @@ except ImportError:
             self.logger = logger
             self.extra = extra
 
+        def setLevel(self, level):
+            self.level = logging._checkLevel(level)
+
         def process(self, msg, kwargs):
             kwargs["extra"] = self.extra
             return msg, kwargs
 
         def debug(self, msg, *args, **kwargs):
-            msg, kwargs = self.process(msg, kwargs)
-            self.logger.debug(msg, *args, **kwargs)
+            self.log(logging.DEBUG, msg, args, **kwargs)
 
         def info(self, msg, *args, **kwargs):
-            msg, kwargs = self.process(msg, kwargs)
-            self.logger.info(msg, *args, **kwargs)
+            self.log(logging.INFO, msg, *args, **kwargs)
 
         def warning(self, msg, *args, **kwargs):
-            msg, kwargs = self.process(msg, kwargs)
-            self.logger.warning(msg, *args, **kwargs)
-
-        def warn(self, msg, *args, **kwargs):
-            msg, kwargs = self.process(msg, kwargs)
-            self.logger.warn(msg, *args, **kwargs)
+            self.log(logging.WARNING, msg, *args, **kwargs)
+        warn = warning
 
         def error(self, msg, *args, **kwargs):
-            msg, kwargs = self.process(msg, kwargs)
-            self.logger.error(msg, *args, **kwargs)
+            self.log(logging.ERROR, msg, *args, **kwargs)
 
         def exception(self, msg, *args, **kwargs):
-            msg, kwargs = self.process(msg, kwargs)
-            kwargs["exc_info"] = 1
-            self.logger.error(msg, *args, **kwargs)
+            kwargs.setdefault("exc_info", 1)
+            self.error(msg, *args, **kwargs)
 
         def critical(self, msg, *args, **kwargs):
-            msg, kwargs = self.process(msg, kwargs)
-            self.logger.critical(msg, *args, **kwargs)
+            self.log(logging.CRITICAL, msg, *args, **kwargs)
+        fatal = critical
 
         def log(self, level, msg, *args, **kwargs):
-            msg, kwargs = self.process(msg, kwargs)
-            self.logger.log(level, msg, *args, **kwargs)
+            if self.logger.isEnabledFor(level):
+                msg, kwargs = self.process(msg, kwargs)
+                self._log(level, msg, *args, **kwargs)
+
+        def makeRecord(self, name, level, fn, lno, msg, args, exc_info, 
+                func=None, extra=None):
+            rv = logging.LogRecord(name, level, fn, lno,
+                                   msg, args, exc_info, func)
+            if extra is not None:
+                for key, value in extra.items():
+                    if key in ("message", "asctime") or key in rv.__dict__:
+                        raise KeyError(
+                                "Attempt to override %r in LogRecord" % key)
+                    rv.__dict__[key] = value
+            return rv
+
+        def _log(self, level, msg, args, exc_info=None, extra=None):
+            defcaller = "(unknown file)", 0, "(unknown function)"
+            if logging._srcfile:
+                # IronPython doesn't track Python frames, so findCaller
+                # throws an exception on some versions of IronPython.
+                # We trap it here so that IronPython can use logging.
+                try:
+                    fn, lno, func = self.logger.findCaller()
+                except ValueError:
+                    fn, lno, func = defcaller
+            else:
+                fn, lno, func = defcaller
+            if exc_info:
+                if not isinstance(exc_info, tuple):
+                    exc_info = sys.exc_info()
+            record = self.makeRecord(self.logger.name, level, fn, lno, msg,
+                                     args, exc_info, func, extra)
+            self.logger.handle(record)
 
         def isEnabledFor(self, level, *args, **kwargs):
             return self.logger.isEnabledFor(level, *args, **kwargs)
+
+        def addHandler(self, hdlr):
+            self.logger.addHandler(hdlr)
+
+        def removeHandler(self, hdlr):
+            self.logger.removeHandler(hdlr)
+
+
 
 ############## itertools.izip_longest #######################################
 
