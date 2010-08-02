@@ -46,7 +46,7 @@ up and running.
   again, and again.
 
 * If the task has an ETA/countdown, the task is moved to the ``eta_schedule``
-  so the :class:`~celery.worker.scheduler.Scheduler` can schedule it at its
+  so the :class:`timer2.Timer` can schedule it at its
   deadline. Tasks without an eta are moved immediately to the ``ready_queue``,
   so they can be picked up by the :class:`~celery.worker.controllers.Mediator`
   to be sent to the pool.
@@ -267,10 +267,14 @@ class CarrotListener(object):
 
         if task.eta:
             self.qos.increment()
-            self.eta_schedule.enter(task, eta=task.eta,
-                    callback=self.qos.decrement_eventually)
+            self.eta_schedule.apply_at(task.eta,
+                                       self.apply_eta_task, (task, ))
         else:
             self.ready_queue.put(task)
+
+    def apply_eta_task(self, task):
+        self.ready_queue.put(task)
+        self.qos.decrement_eventually()
 
     def on_control(self, control):
         """Handle received remote control command."""

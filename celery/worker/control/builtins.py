@@ -99,7 +99,7 @@ def rate_limit(panel, task_name, rate_limit, **kwargs):
 
 @Panel.register
 def dump_schedule(panel, safe=False, **kwargs):
-    schedule = panel.listener.eta_schedule
+    schedule = panel.listener.eta_schedule.schedule
     if not schedule.queue:
         panel.logger.info("--Empty schedule--")
         return []

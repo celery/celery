@@ -8,7 +8,10 @@ import logging
 import traceback
 from multiprocessing.util import Finalize
 
+from timer2 import Timer
+
 from celery import conf
+from celery import log
 from celery import registry
 from celery import platform
 from celery import signals
@@ -18,7 +21,6 @@ from celery.utils import noop, instantiate
 
 from celery.worker import state
 from celery.worker.buckets import TaskBucket, FastQueue
-from celery.worker.scheduler import Scheduler
 
 RUN = 0x1
 CLOSE = 0x2
@@ -146,6 +148,8 @@ class WorkController(object):
         self.task_soft_time_limit = task_soft_time_limit
         self.max_tasks_per_child = max_tasks_per_child
         self.pool_putlocks = pool_putlocks
+        self.timer_debug = log.SilenceRepeated(self.logger.debug,
+                                               max_iterations=10)
         self.db = db
         self._finalize = Finalize(self, self.stop, exitpriority=1)
 
@@ -158,7 +162,6 @@ class WorkController(object):
             self.ready_queue = FastQueue()
         else:
             self.ready_queue = TaskBucket(task_registry=registry.tasks)
-        self.eta_schedule = Scheduler(self.ready_queue, logger=self.logger)
 
         self.logger.debug("Instantiating thread components...")
 
@@ -174,7 +177,9 @@ class WorkController(object):
                                     callback=self.process_task,
                                     logger=self.logger)
         self.scheduler = instantiate(eta_scheduler_cls,
-                                     self.eta_schedule, logger=self.logger)
+                               precision=conf.CELERYD_ETA_SCHEDULER_PRECISION,
+                               on_error=self.on_timer_error,
+                               on_tick=self.on_timer_tick)
 
         self.clockservice = None
         if self.embed_clockservice:
@@ -184,7 +189,7 @@ class WorkController(object):
         prefetch_count = self.concurrency * conf.CELERYD_PREFETCH_MULTIPLIER
         self.listener = instantiate(listener_cls,
                                     self.ready_queue,
-                                    self.eta_schedule,
+                                    self.scheduler,
                                     logger=self.logger,
                                     hostname=self.hostname,
                                     send_events=self.send_events,
@@ -252,3 +257,11 @@ class WorkController(object):
 
         self.listener.close_connection()
         self._state = TERMINATE
+
+    def on_timer_error(self, exc_info):
+        _, exc, _ = exc_info
+        self.logger.error("Timer error: %r" % (exc, ))
+
+    def on_timer_tick(self, delay):
+        self.timer_debug("Scheduler wake-up! Next eta %s secs." % delay)
+

@@ -48,7 +48,7 @@ _DEFAULTS = {
     "CELERYD_POOL_PUTLOCKS": True,
     "CELERYD_POOL": "celery.concurrency.processes.TaskPool",
     "CELERYD_MEDIATOR": "celery.worker.controllers.Mediator",
-    "CELERYD_ETA_SCHEDULER": "celery.worker.controllers.ScheduleController",
+    "CELERYD_ETA_SCHEDULER": "timer2.Timer",
     "CELERYD_LISTENER": "celery.worker.listener.CarrotListener",
     "CELERYD_CONCURRENCY": 0, # defaults to cpu count
     "CELERYD_PREFETCH_MULTIPLIER": 4,
