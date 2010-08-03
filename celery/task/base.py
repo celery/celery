@@ -530,6 +530,10 @@ class Task(object):
         for a single task invocation."""
         return subtask(cls, *args, **kwargs)
 
+    @property
+    def __name__(self):
+        return self.__class__.__name__
+
 
 class PeriodicTask(Task):
     """A periodic task is a task that behaves like a :manpage:`cron` job.
