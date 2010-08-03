@@ -376,6 +376,11 @@ class Task(object):
             ...                        countdown=60 * 5, exc=exc)
 
         """
+        if not kwargs:
+            raise TypeError(
+                    "kwargs argument to retries can't be empty. "
+                    "Task must accept **kwargs, see http://bit.ly/cAx3Bg")
+
         delivery_info = kwargs.pop("delivery_info", {})
         options.setdefault("exchange", delivery_info.get("exchange"))
         options.setdefault("routing_key", delivery_info.get("routing_key"))
