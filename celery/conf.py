@@ -22,6 +22,14 @@ LOG_LEVELS[logging.FATAL] = "FATAL"
 settings = load_settings()
 
 _DEFAULTS = {
+    "BROKER_CONNECTION_TIMEOUT": 4,
+    "BROKER_CONNECTION_RETRY": True,
+    "BROKER_CONNECTION_MAX_RETRIES": 100,
+    "BROKER_HOST": "localhost",
+    "BROKER_PORT": None,
+    "BROKER_USER": "guest",
+    "BROKER_PASSWORD": "guest",
+    "BROKER_VHOST": "/",
     "CELERY_RESULT_BACKEND": "database",
     "CELERY_ALWAYS_EAGER": False,
     "CELERY_EAGER_PROPAGATES_EXCEPTIONS": False,
@@ -41,9 +49,6 @@ _DEFAULTS = {
     "CELERY_DEFAULT_EXCHANGE": "celery",
     "CELERY_DEFAULT_EXCHANGE_TYPE": "direct",
     "CELERY_DEFAULT_DELIVERY_MODE": 2, # persistent
-    "BROKER_CONNECTION_TIMEOUT": 4,
-    "BROKER_CONNECTION_RETRY": True,
-    "BROKER_CONNECTION_MAX_RETRIES": 100,
     "CELERY_ACKS_LATE": False,
     "CELERYD_POOL_PUTLOCKS": True,
     "CELERYD_POOL": "celery.concurrency.processes.TaskPool",
@@ -194,7 +199,9 @@ BROKER_CONNECTION_RETRY = _get("BROKER_CONNECTION_RETRY",
                                 compat=["CELERY_BROKER_CONNECTION_RETRY"])
 BROKER_CONNECTION_MAX_RETRIES = _get("BROKER_CONNECTION_MAX_RETRIES",
                             compat=["CELERY_BROKER_CONNECTION_MAX_RETRIES"])
-BROKER_BACKEND = _get("BROKER_BACKEND") or _get("CARROT_BACKEND")
+BROKER_BACKEND = _get("BROKER_TRANSPORT") or \
+                        _get("BROKER_BACKEND") or \
+                            _get("CARROT_BACKEND")
 
 # <--- Message routing                             <-   --   --- - ----- -- #
 DEFAULT_QUEUE = _get("CELERY_DEFAULT_QUEUE")
