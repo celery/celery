@@ -53,11 +53,11 @@ This is an example configuration for those using ``django-celery``::
     # Where the Django project is.
     CELERYD_CHDIR="/opt/Project/"
 
-    # Name of the projects settings module.
-    DJANGO_SETTINGS_MODULE="settings"
-
     # Path to celeryd
     CELERYD="/opt/Project/manage.py celeryd"
+
+    # Name of the projects settings module.
+    export DJANGO_SETTINGS_MODULE="settings"
 
 Available options
 ~~~~~~~~~~~~~~~~~~
