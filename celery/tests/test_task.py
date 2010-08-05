@@ -148,10 +148,14 @@ class TestTaskRetries(unittest.TestCase):
         self.assertEqual(result.get(), 42)
         self.assertEqual(RetryTaskNoArgs.iterations, 4)
 
+    def test_retry_kwargs_can_not_be_empty(self):
+        self.assertRaises(TypeError, RetryTaskMockApply.retry,
+                            args=[4, 4], kwargs={})
+
     def test_retry_not_eager(self):
         exc = Exception("baz")
         try:
-            RetryTaskMockApply.retry(args=[4, 4], kwargs={},
+            RetryTaskMockApply.retry(args=[4, 4], kwargs={"task_retries": 0},
                                      exc=exc, throw=False)
             self.assertTrue(RetryTaskMockApply.applied)
         finally:
@@ -159,7 +163,8 @@ class TestTaskRetries(unittest.TestCase):
 
         try:
             self.assertRaises(RetryTaskError, RetryTaskMockApply.retry,
-                    args=[4, 4], kwargs={}, exc=exc, throw=True)
+                    args=[4, 4], kwargs={"task_retries": 0},
+                    exc=exc, throw=True)
             self.assertTrue(RetryTaskMockApply.applied)
         finally:
             RetryTaskMockApply.applied = 0
