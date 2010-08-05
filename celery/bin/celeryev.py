@@ -484,8 +484,6 @@ def run_camera(camera, freq, verbose=False):
 def eventtop():
     sys.stderr.write("-> celeryev: starting capture...\n")
     state = State()
-    cam = ModelCamera(state)
-    cam.install()
     display = CursesMonitor(state)
     display.init_screen()
     refresher = DisplayThread(display)
