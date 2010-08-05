@@ -14,3 +14,4 @@
     tasksets
     remote-tasks
     routing
+    monitoring
