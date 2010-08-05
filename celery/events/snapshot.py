@@ -6,6 +6,7 @@ from celery.utils.dispatch import Signal
 
 
 class Polaroid(object):
+    _tref = None
     shutter_signal = Signal(providing_args=("state", ))
 
     def __init__(self, state, freq=1.0, verbose=False):
@@ -14,7 +15,7 @@ class Polaroid(object):
         self.verbose = verbose
 
     def install(self):
-        timer2.apply_interval(self.freq * 1000.0, self.capture)
+        self._tref = timer2.apply_interval(self.freq * 1000.0, self.capture)
 
     def on_shutter(self, state):
         pass
@@ -29,3 +30,15 @@ class Polaroid(object):
 
     def capture(self):
         return self.state.freeze_while(self.shutter)
+
+    def cancel(self):
+        if self._tref:
+            self._tref()
+            self._tref.cancel()
+
+    def __enter__(self):
+        self.install()
+        return self
+
+    def __exit__(self, *exc_info):
+        self.cancel()
