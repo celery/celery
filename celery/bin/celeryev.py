@@ -18,6 +18,7 @@ from celery.events import EventReceiver
 from celery.events.state import State
 from celery.messaging import establish_connection
 from celery.datastructures import LocalCache
+from celery.utils import instantiate
 
 TASK_NAMES = LocalCache(0xFFF)
 
@@ -29,6 +30,15 @@ OPTION_LIST = (
     optparse.make_option('-d', '--DUMP',
         action="store_true", dest="dump",
         help="Dump events to stdout."),
+    optparse.make_option('-c', '--camera',
+        action="store", dest="camera",
+        help="Camera class to take event snapshots with."),
+    optparse.make_option('-f', '--frequency', '--freq',
+        action="store", dest="frequency", type="float", default=1.0,
+        help="Recording: Snapshot frequency."),
+    optparse.make_option('-x', '--verbose',
+        action="store_true", dest="verbose",
+        help="Show more output.")
 )
 
 
@@ -456,9 +466,26 @@ class DisplayThread(threading.Thread):
             self.display.nap()
 
 
+def run_camera(camera, freq, verbose=False):
+    sys.stderr.write(
+        "-> celeryev: Taking snapshots with %s (every %s secs.)\n" % (
+            camera, freq))
+    state = State()
+    cam = instantiate(camera, state, freq=freq, verbose=verbose)
+    cam.install()
+    conn = establish_connection()
+    recv = EventReceiver(conn, handlers={"*": state.event})
+    try:
+        recv.capture(limit=None)
+    finally:
+        cam.shutter()
+        conn.close()
+
 def eventtop():
     sys.stderr.write("-> celeryev: starting capture...\n")
     state = State()
+    cam = ModelCamera(state)
+    cam.install()
     display = CursesMonitor(state)
     display.init_screen()
     refresher = DisplayThread(display)
@@ -466,13 +493,7 @@ def eventtop():
     conn = establish_connection()
     recv = EventReceiver(conn, handlers={"*": state.event})
     try:
-        consumer = recv.consumer()
-        consumer.consume()
-        while True:
-            try:
-                conn.connection.drain_events()
-            except socket.timeout:
-                pass
+        recv.capture(limit=None)
     except Exception:
         refresher.shutdown = True
         refresher.join()
@@ -496,9 +517,12 @@ def eventdump():
         conn and conn.close()
 
 
-def run_celeryev(dump=False, **kwargs):
+def run_celeryev(dump=False, camera=None, frequency=1.0, verbose=False,
+        **kwargs):
     if dump:
         return eventdump()
+    if camera:
+        return run_camera(camera, frequency, verbose=verbose)
     return eventtop()
 
 
