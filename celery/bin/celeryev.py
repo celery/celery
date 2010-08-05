@@ -478,7 +478,7 @@ def run_camera(camera, freq, verbose=False):
     try:
         recv.capture(limit=None)
     finally:
-        cam.shutter()
+        cam.cancel()
         conn.close()
 
 def eventtop():
