@@ -470,5 +470,5 @@ class TaskRequest(object):
         return "%s[%s]%s%s" % (
                     self.task_name,
                     self.task_id,
-                    self.eta and " eta:[%s]" % (self.eta, ),
-                    self.expires and " expires:[%s]" % (self.expires, ))
+                    self.eta and " eta:[%s]" % (self.eta, ) or "",
+                    self.expires and " expires:[%s]" % (self.expires, ) or "")

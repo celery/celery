@@ -263,7 +263,9 @@ class CarrotListener(object):
 
         self.event_dispatcher.send("task-received", uuid=task.task_id,
                 name=task.task_name, args=repr(task.args),
-                kwargs=repr(task.kwargs), retries=task.retries, eta=task.eta)
+                kwargs=repr(task.kwargs), retries=task.retries,
+                eta=task.eta and task.eta.isoformat(),
+                expires=task.expires and task.expires.isoformat())
 
         if task.eta:
             self.qos.increment()
