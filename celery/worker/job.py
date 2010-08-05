@@ -12,7 +12,8 @@ from celery.datastructures import ExceptionInfo
 from celery.execute.trace import TaskTrace
 from celery.loaders import current_loader
 from celery.registry import tasks
-from celery.utils import noop, kwdict, fun_takes_kwargs, maybe_iso8601
+from celery.utils import noop, kwdict, fun_takes_kwargs
+from celery.utils import truncate_text, maybe_iso8601
 from celery.utils.compat import any
 from celery.utils.mail import mail_admins
 from celery.worker import state
@@ -404,8 +405,13 @@ class TaskRequest(object):
         msg = self.success_msg.strip() % {
                 "id": self.task_id,
                 "name": self.task_name,
-                "return_value": ret_value}
+                "return_value": self.repr_result(ret_value)}
         self.logger.info(msg)
+
+    def repr_result(self, result, maxlen=46):
+        # 46 is the length needed to fit
+        #     "the quick brown fox jumps over the lazy dog" :)
+        return truncate_text(repr(result), maxlen)
 
     def on_failure(self, exc_info):
         """The handler used if the task raised an exception."""

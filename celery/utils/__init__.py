@@ -353,3 +353,10 @@ def instantiate(name, *args, **kwargs):
 
     """
     return get_cls_by_name(name)(*args, **kwargs)
+
+
+def truncate_text(text, maxlen=128, suffix="..."):
+    """Truncates text to a maximum number of characters."""
+    if len(text) >= maxlen:
+        return text[:maxlen].rsplit(" ", 1)[0] + suffix
+    return text
