@@ -2,6 +2,10 @@ import sys
 import time
 import timer2
 
+from celery.events import EventReceiver
+from celery.events.state import State
+from celery.messaging import establish_connection
+from celery.utils import instantiate
 from celery.utils.dispatch import Signal
 
 
@@ -42,3 +46,22 @@ class Polaroid(object):
 
     def __exit__(self, *exc_info):
         self.cancel()
+
+
+def evcam(camera, freq, verbose=False):
+    sys.stderr.write(
+        "-> evcam: Taking snapshots with %s (every %s secs.)\n" % (
+            camera, freq))
+    state = State()
+    cam = instantiate(camera, state, freq=freq, verbose=verbose)
+    cam.install()
+    conn = establish_connection()
+    recv = EventReceiver(conn, handlers={"*": state.event})
+    try:
+        try:
+            recv.capture(limit=None)
+        except KeyboardInterrupt:
+            raise SystemExit
+    finally:
+        cam.cancel()
+        conn.close()
