@@ -329,10 +329,10 @@ except ImportError:
             self.log(logging.CRITICAL, msg, args, **kwargs)
         fatal = critical
 
-        def log(self, level, msg, args, exc_info=None, extra=None):
+        def log(self, level, msg, args, **kwargs):
             if self.logger.isEnabledFor(level):
                 msg, kwargs = self.process(msg, kwargs)
-                self._log(level, msg, args, exc_info=None, extra=None)
+                self._log(level, msg, args, **kwargs)
 
         def makeRecord(self, name, level, fn, lno, msg, args, exc_info, 
                 func=None, extra=None):
