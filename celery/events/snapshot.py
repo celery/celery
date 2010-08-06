@@ -17,8 +17,8 @@ class Polaroid(object):
 
     _tref = None
 
-    def __init__(self, state, freq=1.0, maxrate=None, cleanup_freq=60.0,
-            verbose=False):
+    def __init__(self, state, freq=1.0, maxrate=None,
+            cleanup_freq=3600.0, verbose=False):
         self.state = state
         self.freq = freq
         self.cleanup_freq = cleanup_freq
