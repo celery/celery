@@ -312,27 +312,27 @@ except ImportError:
             self.log(logging.DEBUG, msg, args, **kwargs)
 
         def info(self, msg, *args, **kwargs):
-            self.log(logging.INFO, msg, *args, **kwargs)
+            self.log(logging.INFO, msg, args, **kwargs)
 
         def warning(self, msg, *args, **kwargs):
-            self.log(logging.WARNING, msg, *args, **kwargs)
+            self.log(logging.WARNING, msg, args, **kwargs)
         warn = warning
 
         def error(self, msg, *args, **kwargs):
-            self.log(logging.ERROR, msg, *args, **kwargs)
+            self.log(logging.ERROR, msg, args, **kwargs)
 
         def exception(self, msg, *args, **kwargs):
             kwargs.setdefault("exc_info", 1)
             self.error(msg, *args, **kwargs)
 
         def critical(self, msg, *args, **kwargs):
-            self.log(logging.CRITICAL, msg, *args, **kwargs)
+            self.log(logging.CRITICAL, msg, args, **kwargs)
         fatal = critical
 
-        def log(self, level, msg, *args, **kwargs):
+        def log(self, level, msg, args, exc_info=None, extra=None):
             if self.logger.isEnabledFor(level):
                 msg, kwargs = self.process(msg, kwargs)
-                self._log(level, msg, *args, **kwargs)
+                self._log(level, msg, args, exc_info=None, extra=None)
 
         def makeRecord(self, name, level, fn, lno, msg, args, exc_info, 
                 func=None, extra=None):
@@ -365,8 +365,8 @@ except ImportError:
                                      args, exc_info, func, extra)
             self.logger.handle(record)
 
-        def isEnabledFor(self, level, *args, **kwargs):
-            return self.logger.isEnabledFor(level, *args, **kwargs)
+        def isEnabledFor(self, level):
+            return self.logger.isEnabledFor(level)
 
         def addHandler(self, hdlr):
             self.logger.addHandler(hdlr)
