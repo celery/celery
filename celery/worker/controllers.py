@@ -89,7 +89,7 @@ class Mediator(BackgroundThread):
             # This blocks until there's a message in the queue.
             task = self.ready_queue.get(timeout=1)
         except QueueEmpty:
-            pass
+            time.sleep(0.2)
         else:
             if task.revoked():
                 return
