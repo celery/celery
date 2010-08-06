@@ -18,16 +18,19 @@ OPTION_LIST = (
         help="Recording: Snapshot frequency."),
     optparse.make_option('-x', '--verbose',
         action="store_true", dest="verbose",
-        help="Show more output.")
+        help="Show more output."),
+    optparse.make_option('-r', '--maxrate',
+        action="store", dest="maxrate", default=None,
+        help="Recording: Shutter rate limit (e.g. 10/m)"),
 )
 
 
-def run_celeryev(dump=False, camera=None, frequency=1.0, verbose=False,
-        **kwargs):
+def run_celeryev(dump=False, camera=None, frequency=1.0, maxrate=None,
+        verbose=None, **kwargs):
     if dump:
         return evdump()
     if camera:
-        return evcam(camera, frequency, verbose=verbose)
+        return evcam(camera, frequency, maxrate, verbose=verbose)
     return evtop()
 
 
