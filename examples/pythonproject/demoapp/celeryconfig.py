@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.insert(0, os.getcwd())
+
 BROKER_HOST = "localhost"
 BROKER_USER = "guest"
 BROKER_PASSWORD = "guest"
