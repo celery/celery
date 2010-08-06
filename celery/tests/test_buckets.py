@@ -183,13 +183,14 @@ class test_TaskBucket(unittest.TestCase):
     @skip_if_disabled
     def test_has_rate_limits(self):
         b = buckets.TaskBucket(task_registry=self.registry)
-        self.assertEqual(b.buckets[TaskA.name].fill_rate, 10)
+        self.assertEqual(b.buckets[TaskA.name]._bucket.fill_rate, 10)
         self.assertIsInstance(b.buckets[TaskB.name], buckets.Queue)
-        self.assertEqual(b.buckets[TaskC.name].fill_rate, 1)
+        self.assertEqual(b.buckets[TaskC.name]._bucket.fill_rate, 1)
         self.registry.register(TaskD)
         b.init_with_registry()
         try:
-            self.assertEqual(b.buckets[TaskD.name].fill_rate, 1000 / 60.0)
+            self.assertEqual(b.buckets[TaskD.name]._bucket.fill_rate,
+                             1000 / 60.0)
         finally:
             self.registry.unregister(TaskD)
 
@@ -283,10 +284,6 @@ class test_TaskBucket(unittest.TestCase):
 
 
 class test_FastQueue(unittest.TestCase):
-
-    def test_can_consume(self):
-        x = buckets.FastQueue()
-        self.assertTrue(x.can_consume())
 
     def test_items(self):
         x = buckets.FastQueue()
