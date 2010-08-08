@@ -290,90 +290,93 @@ except ImportError:
     collections.defaultdict = defaultdict # Pickle needs this.
 
 ############## logging.LoggerAdapter ########################################
+import sys
+import logging
+
+class _CompatLoggerAdapter(object):
+
+    def __init__(self, logger, extra):
+        self.logger = logger
+        self.extra = extra
+
+    def setLevel(self, level):
+        self.logger.level = logging._checkLevel(level)
+
+    def process(self, msg, kwargs):
+        kwargs["extra"] = self.extra
+        return msg, kwargs
+
+    def debug(self, msg, *args, **kwargs):
+        self.log(logging.DEBUG, msg, args, **kwargs)
+
+    def info(self, msg, *args, **kwargs):
+        self.log(logging.INFO, msg, args, **kwargs)
+
+    def warning(self, msg, *args, **kwargs):
+        self.log(logging.WARNING, msg, args, **kwargs)
+    warn = warning
+
+    def error(self, msg, *args, **kwargs):
+        self.log(logging.ERROR, msg, args, **kwargs)
+
+    def exception(self, msg, *args, **kwargs):
+        kwargs.setdefault("exc_info", 1)
+        self.error(msg, *args, **kwargs)
+
+    def critical(self, msg, *args, **kwargs):
+        self.log(logging.CRITICAL, msg, args, **kwargs)
+    fatal = critical
+
+    def log(self, level, msg, args, **kwargs):
+        if self.logger.isEnabledFor(level):
+            msg, kwargs = self.process(msg, kwargs)
+            self._log(level, msg, args, **kwargs)
+
+    def makeRecord(self, name, level, fn, lno, msg, args, exc_info, 
+            func=None, extra=None):
+        rv = logging.LogRecord(name, level, fn, lno,
+                               msg, args, exc_info, func)
+        if extra is not None:
+            for key, value in extra.items():
+                if key in ("message", "asctime") or key in rv.__dict__:
+                    raise KeyError(
+                            "Attempt to override %r in LogRecord" % key)
+                rv.__dict__[key] = value
+        return rv
+
+    def _log(self, level, msg, args, exc_info=None, extra=None):
+        defcaller = "(unknown file)", 0, "(unknown function)"
+        if logging._srcfile:
+            # IronPython doesn't track Python frames, so findCaller
+            # throws an exception on some versions of IronPython.
+            # We trap it here so that IronPython can use logging.
+            try:
+                fn, lno, func = self.logger.findCaller()
+            except ValueError:
+                fn, lno, func = defcaller
+        else:
+            fn, lno, func = defcaller
+        if exc_info:
+            if not isinstance(exc_info, tuple):
+                exc_info = sys.exc_info()
+        record = self.makeRecord(self.logger.name, level, fn, lno, msg,
+                                    args, exc_info, func, extra)
+        self.logger.handle(record)
+
+    def isEnabledFor(self, level):
+        return self.logger.isEnabledFor(level)
+
+    def addHandler(self, hdlr):
+        self.logger.addHandler(hdlr)
+
+    def removeHandler(self, hdlr):
+        self.logger.removeHandler(hdlr)
+
 
 try:
     from logging import LoggerAdapter
 except ImportError:
-    import logging
-    class LoggerAdapter(object):
-
-        def __init__(self, logger, extra):
-            self.logger = logger
-            self.extra = extra
-
-        def setLevel(self, level):
-            self.level = logging._checkLevel(level)
-
-        def process(self, msg, kwargs):
-            kwargs["extra"] = self.extra
-            return msg, kwargs
-
-        def debug(self, msg, *args, **kwargs):
-            self.log(logging.DEBUG, msg, args, **kwargs)
-
-        def info(self, msg, *args, **kwargs):
-            self.log(logging.INFO, msg, args, **kwargs)
-
-        def warning(self, msg, *args, **kwargs):
-            self.log(logging.WARNING, msg, args, **kwargs)
-        warn = warning
-
-        def error(self, msg, *args, **kwargs):
-            self.log(logging.ERROR, msg, args, **kwargs)
-
-        def exception(self, msg, *args, **kwargs):
-            kwargs.setdefault("exc_info", 1)
-            self.error(msg, *args, **kwargs)
-
-        def critical(self, msg, *args, **kwargs):
-            self.log(logging.CRITICAL, msg, args, **kwargs)
-        fatal = critical
-
-        def log(self, level, msg, args, **kwargs):
-            if self.logger.isEnabledFor(level):
-                msg, kwargs = self.process(msg, kwargs)
-                self._log(level, msg, args, **kwargs)
-
-        def makeRecord(self, name, level, fn, lno, msg, args, exc_info, 
-                func=None, extra=None):
-            rv = logging.LogRecord(name, level, fn, lno,
-                                   msg, args, exc_info, func)
-            if extra is not None:
-                for key, value in extra.items():
-                    if key in ("message", "asctime") or key in rv.__dict__:
-                        raise KeyError(
-                                "Attempt to override %r in LogRecord" % key)
-                    rv.__dict__[key] = value
-            return rv
-
-        def _log(self, level, msg, args, exc_info=None, extra=None):
-            defcaller = "(unknown file)", 0, "(unknown function)"
-            if logging._srcfile:
-                # IronPython doesn't track Python frames, so findCaller
-                # throws an exception on some versions of IronPython.
-                # We trap it here so that IronPython can use logging.
-                try:
-                    fn, lno, func = self.logger.findCaller()
-                except ValueError:
-                    fn, lno, func = defcaller
-            else:
-                fn, lno, func = defcaller
-            if exc_info:
-                if not isinstance(exc_info, tuple):
-                    exc_info = sys.exc_info()
-            record = self.makeRecord(self.logger.name, level, fn, lno, msg,
-                                     args, exc_info, func, extra)
-            self.logger.handle(record)
-
-        def isEnabledFor(self, level):
-            return self.logger.isEnabledFor(level)
-
-        def addHandler(self, hdlr):
-            self.logger.addHandler(hdlr)
-
-        def removeHandler(self, hdlr):
-            self.logger.removeHandler(hdlr)
-
+    LoggerAdapter = _CompatLoggerAdapter
 
 ############## itertools.izip_longest #######################################
 

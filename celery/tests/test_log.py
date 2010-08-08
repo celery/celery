@@ -18,7 +18,9 @@ from celery.log import (setup_logger, setup_task_logger, emergency_error,
                         get_default_logger, get_task_logger,
                         redirect_stdouts_to_logger, LoggingProxy)
 from celery.tests.utils import override_stdouts, execute_context
+from celery.utils import gen_unique_id
 from celery.utils.compat import LoggerAdapter
+from celery.utils.compat import _CompatLoggerAdapter
 
 
 def get_handlers(logger):
@@ -165,3 +167,62 @@ class test_task_logger(test_default_logger):
     def setUp(self):
         self.setup_logger = setup_task_logger
         self.get_logger = get_task_logger
+
+
+class MockLogger(logging.Logger):
+    _records = None
+
+    def __init__(self, *args, **kwargs):
+        self._records = []
+        logging.Logger.__init__(self, *args, **kwargs)
+
+    def handle(self, record):
+        self._records.append(record)
+
+    def isEnabledFor(self, level):
+        return True
+
+
+class test_CompatLoggerAdapter(unittest.TestCase):
+    levels = ("debug",
+              "info",
+              "warn", "warning",
+              "error",
+              "fatal", "critical")
+
+    def setUp(self):
+        self.logger, self.adapter = self.createAdapter()
+
+    def createAdapter(self, name=None, extra={"foo": "bar"}):
+        logger = MockLogger(name=name or gen_unique_id())
+        return logger, _CompatLoggerAdapter(logger, extra)
+
+    def test_levels(self):
+        for level in self.levels:
+            msg = "foo bar %s" % (level, )
+            logger, adapter = self.createAdapter()
+            getattr(adapter, level)(msg)
+            self.assertEqual(logger._records[0].msg, msg)
+
+    def test_exception(self):
+        try:
+            raise KeyError("foo")
+        except KeyError:
+            self.adapter.exception("foo bar exception")
+        self.assertEqual(self.logger._records[0].msg, "foo bar exception")
+
+    def test_setLevel(self):
+        self.adapter.setLevel(logging.INFO)
+        self.assertEqual(self.logger.level, logging.INFO)
+
+    def test_process(self):
+        msg, kwargs = self.adapter.process("foo bar baz", {"exc_info": 1})
+        self.assertDictEqual(kwargs, {"exc_info": 1,
+                                      "extra": {"foo": "bar"}})
+
+    def test_add_remove_handlers(self):
+        handler = logging.StreamHandler()
+        self.adapter.addHandler(handler)
+        self.assertIs(self.logger.handlers[0], handler)
+        self.adapter.removeHandler(handler)
+        self.assertListEqual(self.logger.handlers, [])
