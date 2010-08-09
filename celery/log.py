@@ -53,7 +53,6 @@ def setup_logging_subsystem(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
         **kwargs):
     global _setup
     if not _setup:
-        print("SETTING LOGGER TO %s" % (logfile, ))
         ensure_process_aware_logger()
         logging.Logger.manager.loggerDict.clear()
         from multiprocessing import util as mputil
@@ -69,7 +68,7 @@ def setup_logging_subsystem(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
                                                colorize=colorize)
         if not receivers:
             root = logging.getLogger()
-            _setup_logger(root, logfile, loglevel, format, colorize, **kwargs)
+            _setup_logger(root, logfile, format, colorize, **kwargs)
             root.setLevel(loglevel)
         _setup = True
         return receivers
