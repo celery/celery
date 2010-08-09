@@ -1,5 +1,6 @@
-import sys
+import logging
 import optparse
+import sys
 
 from celery.events.cursesmon import evtop
 from celery.events.dumper import evdump
@@ -13,24 +14,28 @@ OPTION_LIST = (
     optparse.make_option('-c', '--camera',
         action="store", dest="camera",
         help="Camera class to take event snapshots with."),
-    optparse.make_option('-f', '--frequency', '--freq',
+    optparse.make_option('-F', '--frequency', '--freq',
         action="store", dest="frequency", type="float", default=1.0,
         help="Recording: Snapshot frequency."),
-    optparse.make_option('-x', '--verbose',
-        action="store_true", dest="verbose",
-        help="Show more output."),
     optparse.make_option('-r', '--maxrate',
         action="store", dest="maxrate", default=None,
         help="Recording: Shutter rate limit (e.g. 10/m)"),
+    optparse.make_option('-l', '--loglevel',
+        action="store", dest="loglevel", default="WARNING",
+        help="Loglevel. Default is WARNING."),
+    optparse.make_option('-f', '--logfile',
+        action="store", dest="logfile", default=None,
+        help="Log file. Default is <stderr>"),
 )
 
 
 def run_celeryev(dump=False, camera=None, frequency=1.0, maxrate=None,
-        verbose=None, **kwargs):
+        loglevel=logging.WARNING, logfile=None, **kwargs):
     if dump:
         return evdump()
     if camera:
-        return evcam(camera, frequency, maxrate, verbose=verbose)
+        return evcam(camera, frequency, maxrate,
+                     loglevel=loglevel, logfile=logfile)
     return evtop()
 
 

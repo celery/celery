@@ -2,6 +2,8 @@ import sys
 import time
 import timer2
 
+from celery import conf
+from celery import log
 from celery.datastructures import TokenBucket
 from celery.events import EventReceiver
 from celery.events.state import State
@@ -18,11 +20,11 @@ class Polaroid(object):
     _tref = None
 
     def __init__(self, state, freq=1.0, maxrate=None,
-            cleanup_freq=3600.0, verbose=False):
+            cleanup_freq=3600.0, logger=None):
         self.state = state
         self.freq = freq
         self.cleanup_freq = cleanup_freq
-        self.verbose = verbose
+        self.logger = logger
         self.maxrate = maxrate and TokenBucket(rate(maxrate))
 
     def install(self):
@@ -43,8 +45,8 @@ class Polaroid(object):
         self.on_cleanup()
 
     def debug(self, msg):
-        if self.verbose:
-            sys.stderr.write("[%s] %s\n" % (time.asctime(), msg, ))
+        if self.logger:
+            self.logger.debug(msg)
 
     def shutter(self):
         if self.maxrate is None or self.maxrate.can_consume():
@@ -71,13 +73,19 @@ class Polaroid(object):
         self.cancel()
 
 
-def evcam(camera, freq=1.0, maxrate=None, verbose=False):
-    sys.stderr.write(
+def evcam(camera, freq=1.0, maxrate=None, loglevel=0,
+        logfile=None):
+    if not isinstance(loglevel, int):
+        loglevel = conf.LOG_LEVELS[loglevel.upper()]
+    logger = log.setup_logger(loglevel=loglevel,
+                              logfile=logfile,
+                              name="celery.evcam")
+    logger.info(
         "-> evcam: Taking snapshots with %s (every %s secs.)\n" % (
             camera, freq))
     state = State()
     cam = instantiate(camera, state,
-                      freq=freq, maxrate=maxrate, verbose=verbose)
+                      freq=freq, maxrate=maxrate, logger=logger)
     cam.install()
     conn = establish_connection()
     recv = EventReceiver(conn, handlers={"*": state.event})
