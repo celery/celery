@@ -360,3 +360,21 @@ def truncate_text(text, maxlen=128, suffix="..."):
     if len(text) >= maxlen:
         return text[:maxlen].rsplit(" ", 1)[0] + suffix
     return text
+
+
+def abbr(S, max, ellipsis="..."):
+    if S is None:
+        return "???"
+    if len(S) > max:
+        return ellipsis and (S[:max-len(ellipsis)] + ellipsis) or S[:max]
+    return S
+
+
+def abbrtask(S, max):
+    if S is None:
+        return "???"
+    if len(S) > max:
+        module, _, cls = rpartition(S, ".")
+        module = abbr(module, max - len(cls), False)
+        return module + "[.]" + cls
+    return S

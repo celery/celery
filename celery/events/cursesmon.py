@@ -15,24 +15,9 @@ from celery.events import EventReceiver
 from celery.events.state import State
 from celery.messaging import establish_connection
 from celery.task import control
+from celery.utils import abbr, abbrtask
 
 
-def abbr(S, max, dots=True):
-    if S is None:
-        return "???"
-    if len(S) > max:
-        return dots and S[:max-3] + "..." or S[:max-3]
-    return S
-
-
-def abbrtask(S, max):
-    if S is None:
-        return "???"
-    if len(S) > max:
-        module, _, cls = rpartition(S, ".")
-        module = abbr(module, max - len(cls), False)
-        return module + "[.]" + cls
-    return S
 
 
 class CursesMonitor(object):
