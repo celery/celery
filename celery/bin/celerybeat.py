@@ -49,7 +49,7 @@ OPTION_LIST = (
     optparse.make_option('-l', '--loglevel',
             default=conf.CELERYBEAT_LOG_LEVEL,
             action="store", dest="loglevel",
-            help="Choose between DEBUG/INFO/WARNING/ERROR/CRITICAL/FATAL."),
+            help="Loglevel. One of DEBUG/INFO/WARNING/ERROR/CRITICAL."),
 )
 
 
@@ -78,7 +78,7 @@ class Beat(object):
 
     def start_scheduler(self):
         from celery.log import setup_logger
-        logger = setup_logger(self.loglevel, self.logfile)
+        logger = setup_logger(self.loglevel, self.logfile, name="celery.beat")
         beat = self.ClockService(logger,
                                  schedule_filename=self.schedule)
 
