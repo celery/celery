@@ -7,12 +7,15 @@ import sys
 import traceback
 
 from celery import conf
+from celery import signals
 from celery.utils import noop
 from celery.utils.compat import LoggerAdapter
 from celery.utils.patch import ensure_process_aware_logger
 
-_hijacked = False
-_monkeypatched = False
+# The logging subsystem is only configured once per process.
+# setup_logging_subsystem sets this flag, and subsequent calls
+# will do nothing.
+_setup = False
 
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
 RESET_SEQ = "\033[0m"
@@ -25,6 +28,7 @@ COLORS = {"DEBUG": BLUE,
 
 
 class ColorFormatter(logging.Formatter):
+
     def __init__(self, msg, use_color=True):
         logging.Formatter.__init__(self, msg)
         self.use_color = use_color
@@ -38,32 +42,37 @@ class ColorFormatter(logging.Formatter):
 
 
 def get_task_logger(loglevel=None, name=None):
-    ensure_process_aware_logger()
     logger = logging.getLogger(name or "celery.task.default")
     if loglevel is not None:
         logger.setLevel(loglevel)
     return logger
 
 
-def _hijack_multiprocessing_logger():
-    from multiprocessing import util as mputil
-    global _hijacked
-
-    if _hijacked:
-        return mputil.get_logger()
-
-    ensure_process_aware_logger()
-
-    logging.Logger.manager.loggerDict.clear()
-
-    try:
-        if mputil._logger is not None:
-            mputil.logger = None
-    except AttributeError:
-        pass
-
-    _hijacked = True
-    return mputil.get_logger()
+def setup_logging_subsystem(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
+        format=conf.CELERYD_LOG_FORMAT, colorize=conf.CELERYD_LOG_COLOR,
+        **kwargs):
+    global _setup
+    if not _setup:
+        print("SETTING LOGGER TO %s" % (logfile, ))
+        ensure_process_aware_logger()
+        logging.Logger.manager.loggerDict.clear()
+        from multiprocessing import util as mputil
+        try:
+            if mputil._logger is not None:
+                mputil.logger = None
+        except AttributeError:
+            pass
+        receivers = signals.setup_logging.send(sender=None,
+                                               loglevel=loglevel,
+                                               logfile=logfile,
+                                               format=format,
+                                               colorize=colorize)
+        if not receivers:
+            root = logging.getLogger()
+            _setup_logger(root, logfile, loglevel, format, colorize, **kwargs)
+            root.setLevel(loglevel)
+        _setup = True
+        return receivers
 
 
 def _detect_handler(logfile=None):
@@ -74,13 +83,13 @@ def _detect_handler(logfile=None):
     return logging.FileHandler(logfile)
 
 
-def get_default_logger(loglevel=None):
+def get_default_logger(loglevel=None, name="celery"):
     """Get default logger instance.
 
     :keyword loglevel: Initial log level.
 
     """
-    logger = _hijack_multiprocessing_logger()
+    logger = logging.getLogger(name)
     if loglevel is not None:
         logger.setLevel(loglevel)
     return logger
@@ -88,20 +97,23 @@ def get_default_logger(loglevel=None):
 
 def setup_logger(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
         format=conf.CELERYD_LOG_FORMAT, colorize=conf.CELERYD_LOG_COLOR,
-        **kwargs):
+        name="celery", root=True, **kwargs):
     """Setup the ``multiprocessing`` logger. If ``logfile`` is not specified,
     then ``stderr`` is used.
 
     Returns logger object.
 
     """
-    return _setup_logger(get_default_logger(loglevel),
-                         logfile, format, colorize, **kwargs)
+    if not root:
+        return _setup_logger(get_default_logger(loglevel, name),
+                             logfile, format, colorize, **kwargs)
+    setup_logging_subsystem(loglevel, logfile, format, colorize, **kwargs)
+    return get_default_logger(name=name)
 
 
 def setup_task_logger(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
         format=conf.CELERYD_TASK_LOG_FORMAT, colorize=conf.CELERYD_LOG_COLOR,
-        task_kwargs=None, **kwargs):
+        task_kwargs=None, root=True, **kwargs):
     """Setup the task logger. If ``logfile`` is not specified, then
     ``stderr`` is used.
 
@@ -113,9 +125,15 @@ def setup_task_logger(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
     task_kwargs.setdefault("task_id", "-?-")
     task_name = task_kwargs.get("task_name")
     task_kwargs.setdefault("task_name", "-?-")
-    logger = _setup_logger(get_task_logger(loglevel, task_name),
-                           logfile, format, colorize, **kwargs)
+    if not root:
+        logger = _setup_logger(get_task_logger(loglevel, task_name),
+                               logfile, format, colorize, **kwargs)
+    else:
+        setup_logging_subsystem(loglevel, logfile, format, colorize, **kwargs)
+        logger = get_task_logger(name=task_name)
     return LoggerAdapter(logger, task_kwargs)
+
+
 
 
 def _setup_logger(logger, logfile, format, colorize,

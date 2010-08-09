@@ -12,7 +12,7 @@ from celery import conf
 from celery import registry
 from celery import platform
 from celery import signals
-from celery.log import setup_logger, _hijack_multiprocessing_logger
+from celery.log import setup_logger
 from celery.beat import EmbeddedClockService
 from celery.utils import noop, instantiate
 
@@ -37,11 +37,6 @@ def process_initializer():
     Used for multiprocessing environments.
 
     """
-    # There seems to a bug in multiprocessing (backport?)
-    # when detached, where the worker gets EOFErrors from time to time
-    # and the logger is left from the parent process causing a crash.
-    _hijack_multiprocessing_logger()
-
     map(platform.reset_signal, WORKER_SIGRESET)
     map(platform.ignore_signal, WORKER_SIGIGNORE)
     platform.set_mp_process_title("celeryd")

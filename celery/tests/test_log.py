@@ -14,6 +14,7 @@ except ImportError:
 
 from carrot.utils import rpartition
 
+from celery import log
 from celery.log import (setup_logger, setup_task_logger, emergency_error,
                         get_default_logger, get_task_logger,
                         redirect_stdouts_to_logger, LoggingProxy)
@@ -50,6 +51,7 @@ class test_default_logger(unittest.TestCase):
     def setUp(self):
         self.setup_logger = setup_logger
         self.get_logger = get_default_logger
+        log._setup = False
 
     def _assertLog(self, logger, logmsg, loglevel=logging.ERROR):
 
@@ -69,9 +71,11 @@ class test_default_logger(unittest.TestCase):
         return self.assertFalse(val, reason)
 
     def test_setup_logger(self):
-        logger = self.setup_logger(loglevel=logging.ERROR, logfile=None)
+        logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
+                                   root=False)
         set_handlers(logger, [])
-        logger = self.setup_logger(loglevel=logging.ERROR, logfile=None)
+        logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
+                                   root=False)
         self.assertIs(get_handlers(logger)[0].stream, sys.__stderr__,
                 "setup_logger logs to stderr without logfile argument.")
         self.assertDidLogFalse(logger, "Logging something",
@@ -90,7 +94,8 @@ class test_default_logger(unittest.TestCase):
 
         def with_override_stdouts(outs):
             stdout, stderr = outs
-            l = self.setup_logger(logfile=stderr, loglevel=logging.INFO)
+            l = self.setup_logger(logfile=stderr, loglevel=logging.INFO,
+                                  root=False)
             l.info("The quick brown fox...")
             self.assertIn("The quick brown fox...", stderr.getvalue())
 
@@ -101,9 +106,9 @@ class test_default_logger(unittest.TestCase):
         l = self.get_logger()
         set_handlers(l, [])
         tempfile = mktemp(suffix="unittest", prefix="celery")
-        l = self.setup_logger(logfile=tempfile, loglevel=0)
-        print(get_handlers(l)[0].stream)
-        self.assertIsInstance(get_handlers(l)[0], logging.FileHandler)
+        l = self.setup_logger(logfile=tempfile, loglevel=0, root=False)
+        self.assertIsInstance(get_handlers(l)[0 ],
+                              logging.FileHandler)
 
     def test_emergency_error_stderr(self):
         def with_override_stdouts(outs):
@@ -126,7 +131,8 @@ class test_default_logger(unittest.TestCase):
             os.unlink(tempfile)
 
     def test_redirect_stdouts(self):
-        logger = self.setup_logger(loglevel=logging.ERROR, logfile=None)
+        logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
+                                   root=False)
         try:
             def with_wrap_logger(sio):
                 redirect_stdouts_to_logger(logger, loglevel=logging.ERROR)
@@ -139,7 +145,8 @@ class test_default_logger(unittest.TestCase):
             sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
 
     def test_logging_proxy(self):
-        logger = self.setup_logger(loglevel=logging.ERROR, logfile=None)
+        logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
+                                   root=False)
 
         def with_wrap_logger(sio):
             p = LoggingProxy(logger)

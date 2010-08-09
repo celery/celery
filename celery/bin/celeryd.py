@@ -199,6 +199,7 @@ class Worker(object):
     def run(self):
         self.init_loader()
         self.init_queues()
+        self.worker_init()
         self.redirect_stdouts_to_logger()
         print("celery@%s v%s is starting." % (self.hostname,
                                               celery.__version__))
@@ -209,7 +210,6 @@ class Worker(object):
 
         if self.discard:
             self.purge_messages()
-        self.worker_init()
 
         # Dump configuration to screen so we have some basic information
         # for when users sends bug reports.
@@ -245,10 +245,12 @@ class Worker(object):
 
     def redirect_stdouts_to_logger(self):
         from celery import log
+        handled = log.setup_logging_subsystem(loglevel=self.loglevel,
+                                              logfile=self.logfile)
         # Redirect stdout/stderr to our logger.
-        logger = log.setup_logger(loglevel=self.loglevel,
-                                  logfile=self.logfile)
-        log.redirect_stdouts_to_logger(logger, loglevel=logging.WARNING)
+        if not handled:
+            logger = log.get_default_logger()
+            log.redirect_stdouts_to_logger(logger, loglevel=logging.WARNING)
 
     def purge_messages(self):
         discarded_count = discard_all()
