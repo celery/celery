@@ -290,8 +290,9 @@ except ImportError:
     collections.defaultdict = defaultdict # Pickle needs this.
 
 ############## logging.LoggerAdapter ########################################
-import sys
 import logging
+import multiprocessing
+import sys
 
 class _CompatLoggerAdapter(object):
 
@@ -342,6 +343,7 @@ class _CompatLoggerAdapter(object):
                     raise KeyError(
                             "Attempt to override %r in LogRecord" % key)
                 rv.__dict__[key] = value
+        rv.processName = multiprocessing.current_process()._name
         return rv
 
     def _log(self, level, msg, args, exc_info=None, extra=None):
