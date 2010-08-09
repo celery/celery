@@ -191,10 +191,18 @@ class State(object):
                                "task": self.task_event}
         self._resource = RLock()
 
-    def clear(self):
+    def clear_tasks(self, ready=True):
+        if ready:
+            self.tasks = dict((uuid, task)
+                                for uuid, task in self.tasks.items()
+                                    if task.state not in states.READY_STATES)
+        else:
+            self.tasks.clear()
+
+    def clear(self, ready=True):
         try:
             self.workers.clear()
-            self.tasks.clear()
+            self.clear_tasks(ready)
             self.event_count = 0
             self.task_count = 0
         finally:
