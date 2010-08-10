@@ -28,7 +28,7 @@ Say you have two servers, ``x``, and ``y`` that handles regular tasks,
 and one server ``z``, that only handles feed related tasks. You can use this
 configuration::
 
-    CELERY_ROUTES = {"feed.tasks.import_feed": "feeds"}
+    CELERY_ROUTES = {"feed.tasks.import_feed": {"queue": "feeds"}}
 
 With this route enabled import feed tasks will be routed to the
 ``"feeds"`` queue, while all other tasks will be routed to the default queue
