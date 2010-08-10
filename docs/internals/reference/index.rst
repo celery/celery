@@ -13,7 +13,6 @@
     celery.worker.job
     celery.worker.controllers
     celery.worker.buckets
-    celery.worker.scheduler
     celery.worker.heartbeat
     celery.worker.control
     celery.worker.control.builtins

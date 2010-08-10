@@ -7,6 +7,7 @@ from Queue import Empty
 
 from carrot.backends.base import BaseMessage
 from carrot.connection import BrokerConnection
+from timer2 import Timer
 
 from celery import conf
 from celery.decorators import task as task_dec
@@ -17,7 +18,6 @@ from celery.worker import WorkController
 from celery.worker.buckets import FastQueue
 from celery.worker.job import TaskRequest
 from celery.worker.listener import CarrotListener, QoS, RUN
-from celery.worker.scheduler import Scheduler
 
 from celery.tests.compat import catch_warnings
 from celery.tests.utils import execute_context
@@ -160,7 +160,7 @@ class test_CarrotListener(unittest.TestCase):
 
     def setUp(self):
         self.ready_queue = FastQueue()
-        self.eta_schedule = Scheduler(self.ready_queue)
+        self.eta_schedule = Timer()
         self.logger = get_logger()
         self.logger.setLevel(0)
 
@@ -336,7 +336,7 @@ class test_CarrotListener(unittest.TestCase):
         items = [entry[2] for entry in self.eta_schedule.queue]
         found = 0
         for item in items:
-            if item.task_name == foo_task.name:
+            if item.args[0].task_name == foo_task.name:
                 found = True
         self.assertTrue(found)
         self.assertTrue(l.task_consumer.prefetch_count_incremented)
@@ -388,10 +388,10 @@ class test_CarrotListener(unittest.TestCase):
         l.receive_message(m.decode(), m)
 
         in_hold = self.eta_schedule.queue[0]
-        self.assertEqual(len(in_hold), 4)
-        eta, priority, task, on_accept = in_hold
+        self.assertEqual(len(in_hold), 3)
+        eta, priority, entry = in_hold
+        task = entry.args[0]
         self.assertIsInstance(task, TaskRequest)
-        self.assertTrue(callable(on_accept))
         self.assertEqual(task.task_name, foo_task.name)
         self.assertEqual(task.execute(), 2 * 4 * 8)
         self.assertRaises(Empty, self.ready_queue.get_nowait)
@@ -466,7 +466,7 @@ class test_WorkController(unittest.TestCase):
 
     def test_attrs(self):
         worker = self.worker
-        self.assertIsInstance(worker.eta_schedule, Scheduler)
+        self.assertIsInstance(worker.scheduler, Timer)
         self.assertTrue(worker.scheduler)
         self.assertTrue(worker.pool)
         self.assertTrue(worker.listener)
