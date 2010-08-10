@@ -1,24 +1,26 @@
+import socket
 import unittest2 as unittest
-from Queue import Empty
+
 from datetime import datetime, timedelta
 from multiprocessing import get_logger
+from Queue import Empty
 
-from carrot.connection import BrokerConnection
 from carrot.backends.base import BaseMessage
+from carrot.connection import BrokerConnection
+from timer2 import Timer
 
 from celery import conf
-from celery.utils import gen_unique_id
-from celery.worker import WorkController
-from celery.worker.job import TaskRequest
-from celery.worker.buckets import FastQueue
-from celery.worker.listener import CarrotListener, QoS, RUN
-from celery.worker.scheduler import Scheduler
 from celery.decorators import task as task_dec
 from celery.decorators import periodic_task as periodic_task_dec
 from celery.serialization import pickle
+from celery.utils import gen_unique_id
+from celery.worker import WorkController
+from celery.worker.buckets import FastQueue
+from celery.worker.job import TaskRequest
+from celery.worker.listener import CarrotListener, QoS, RUN
 
-from celery.tests.utils import execute_context
 from celery.tests.compat import catch_warnings
+from celery.tests.utils import execute_context
 
 
 class PlaceHolder(object):
@@ -62,17 +64,20 @@ def foo_periodic_task():
 
 class MockLogger(object):
 
-    def critical(self, *args, **kwargs):
-        pass
+    def __init__(self):
+        self.logged = []
 
-    def info(self, *args, **kwargs):
-        pass
+    def critical(self, msg, *args, **kwargs):
+        self.logged.append(msg)
 
-    def error(self, *args, **kwargs):
-        pass
+    def info(self, msg, *args, **kwargs):
+        self.logged.append(msg)
 
-    def debug(self, *args, **kwargs):
-        pass
+    def error(self, msg, *args, **kwargs):
+        self.logged.append(msg)
+
+    def debug(self, msg, *args, **kwargs):
+        self.logged.append(msg)
 
 
 class MockBackend(object):
@@ -83,6 +88,8 @@ class MockBackend(object):
 
 
 class MockPool(object):
+    _terminated = False
+    _stopped = False
 
     def __init__(self, *args, **kwargs):
         self.raise_regular = kwargs.get("raise_regular", False)
@@ -98,8 +105,12 @@ class MockPool(object):
         pass
 
     def stop(self):
-        pass
+        self._stopped = True
         return True
+
+    def terminate(self):
+        self._terminated = True
+        self.stop()
 
 
 class MockController(object):
@@ -123,11 +134,33 @@ def create_message(backend, **data):
                        content_encoding="binary")
 
 
-class TestCarrotListener(unittest.TestCase):
+class test_QoS(unittest.TestCase):
+
+    class MockConsumer(object):
+        prefetch_count = 0
+
+        def qos(self, prefetch_size=0, prefetch_count=0, apply_global=False):
+            self.prefetch_count = prefetch_count
+
+    def test_decrement(self):
+        consumer = self.MockConsumer()
+        qos = QoS(consumer, 10, get_logger())
+        qos.update()
+        self.assertEqual(int(qos.value), 10)
+        self.assertEqual(consumer.prefetch_count, 10)
+        qos.decrement()
+        self.assertEqual(int(qos.value), 9)
+        self.assertEqual(consumer.prefetch_count, 9)
+        qos.decrement_eventually()
+        self.assertEqual(int(qos.value), 8)
+        self.assertEqual(consumer.prefetch_count, 9)
+
+
+class test_CarrotListener(unittest.TestCase):
 
     def setUp(self):
         self.ready_queue = FastQueue()
-        self.eta_schedule = Scheduler(self.ready_queue)
+        self.eta_schedule = Timer()
         self.logger = get_logger()
         self.logger.setLevel(0)
 
@@ -232,6 +265,38 @@ class TestCarrotListener(unittest.TestCase):
         context = catch_warnings(record=True)
         execute_context(context, with_catch_warnings)
 
+    def test_receive_message_InvalidTaskError(self):
+        logger = MockLogger()
+        l = CarrotListener(self.ready_queue, self.eta_schedule, logger,
+                           send_events=False)
+        backend = MockBackend()
+        m = create_message(backend, task=foo_task.name,
+            args=(1, 2), kwargs="foobarbaz", id=1)
+        l.event_dispatcher = MockEventDispatcher()
+        l.control_dispatch = MockControlDispatch()
+
+        l.receive_message(m.decode(), m)
+        self.assertIn("Invalid task ignored", logger.logged[0])
+
+    def test_on_decode_error(self):
+        logger = MockLogger()
+        l = CarrotListener(self.ready_queue, self.eta_schedule, logger,
+                           send_events=False)
+
+        class MockMessage(object):
+            content_type = "application/x-msgpack"
+            content_encoding = "binary"
+            body = "foobarbaz"
+            acked = False
+
+            def ack(self):
+                self.acked = True
+
+        message = MockMessage()
+        l.on_decode_error(message, KeyError("foo"))
+        self.assertTrue(message.acked)
+        self.assertIn("Message decoding error", logger.logged[0])
+
     def test_receieve_message(self):
         l = CarrotListener(self.ready_queue, self.eta_schedule, self.logger,
                            send_events=False)
@@ -271,7 +336,7 @@ class TestCarrotListener(unittest.TestCase):
         items = [entry[2] for entry in self.eta_schedule.queue]
         found = 0
         for item in items:
-            if item.task_name == foo_task.name:
+            if item.args[0].task_name == foo_task.name:
                 found = True
         self.assertTrue(found)
         self.assertTrue(l.task_consumer.prefetch_count_incremented)
@@ -288,7 +353,7 @@ class TestCarrotListener(unittest.TestCase):
                            kwargs={}, id=id)
         l.event_dispatcher = MockEventDispatcher()
         l.receive_message(c.decode(), c)
-        from celery.worker.revoke import revoked
+        from celery.worker.state import revoked
         self.assertIn(id, revoked)
 
         l.receive_message(t.decode(), t)
@@ -323,29 +388,96 @@ class TestCarrotListener(unittest.TestCase):
         l.receive_message(m.decode(), m)
 
         in_hold = self.eta_schedule.queue[0]
-        self.assertEqual(len(in_hold), 4)
-        eta, priority, task, on_accept = in_hold
+        self.assertEqual(len(in_hold), 3)
+        eta, priority, entry = in_hold
+        task = entry.args[0]
         self.assertIsInstance(task, TaskRequest)
-        self.assertTrue(callable(on_accept))
         self.assertEqual(task.task_name, foo_task.name)
         self.assertEqual(task.execute(), 2 * 4 * 8)
         self.assertRaises(Empty, self.ready_queue.get_nowait)
 
+    def test_start__consume_messages(self):
 
-class TestWorkController(unittest.TestCase):
+        class _QoS(object):
+            prev = 3
+            next = 4
+
+            def update(self):
+                self.prev = self.next
+
+        class _Listener(CarrotListener):
+            iterations = 0
+            wait_method = None
+
+            def reset_connection(self):
+                if self.iterations >= 1:
+                    raise KeyError("foo")
+
+            def _detect_wait_method(self):
+                return self.wait_method
+
+        called_back = [False]
+        def init_callback(listener):
+            called_back[0] = True
+
+
+        l = _Listener(self.ready_queue, self.eta_schedule, self.logger,
+                      send_events=False, init_callback=init_callback)
+        l.qos = _QoS()
+
+        def raises_KeyError(limit=None):
+            yield True
+            l.iterations = 1
+            raise KeyError("foo")
+
+        l.wait_method = raises_KeyError
+        self.assertRaises(KeyError, l.start)
+        self.assertTrue(called_back[0])
+        self.assertEqual(l.iterations, 1)
+        self.assertEqual(l.qos.prev, l.qos.next)
+
+        l = _Listener(self.ready_queue, self.eta_schedule, self.logger,
+                      send_events=False, init_callback=init_callback)
+        l.qos = _QoS()
+        def raises_socket_error(limit=None):
+            yield True
+            l.iterations = 1
+            raise socket.error("foo")
+
+        l.wait_method = raises_socket_error
+        self.assertRaises(KeyError, l.start)
+        self.assertTrue(called_back[0])
+        self.assertEqual(l.iterations, 1)
+
+
+class test_WorkController(unittest.TestCase):
 
     def setUp(self):
         self.worker = WorkController(concurrency=1, loglevel=0)
         self.worker.logger = MockLogger()
 
+    def test_with_rate_limits_disabled(self):
+        conf.DISABLE_RATE_LIMITS = True
+        try:
+            worker = WorkController(concurrency=1, loglevel=0)
+            self.assertIsInstance(worker.ready_queue, FastQueue)
+        finally:
+            conf.DISABLE_RATE_LIMITS = False
+
     def test_attrs(self):
         worker = self.worker
-        self.assertIsInstance(worker.eta_schedule, Scheduler)
+        self.assertIsInstance(worker.scheduler, Timer)
         self.assertTrue(worker.scheduler)
         self.assertTrue(worker.pool)
         self.assertTrue(worker.listener)
         self.assertTrue(worker.mediator)
         self.assertTrue(worker.components)
+
+    def test_with_embedded_clockservice(self):
+        worker = WorkController(concurrency=1, loglevel=0,
+                                embed_clockservice=True)
+        self.assertTrue(worker.clockservice)
+        self.assertIn(worker.clockservice, worker.components)
 
     def test_process_task(self):
         worker = self.worker
@@ -377,7 +509,7 @@ class TestWorkController(unittest.TestCase):
         worker.process_task(task)
         worker.pool.stop()
 
-    def test_start_stop(self):
+    def test_start__stop(self):
         worker = self.worker
         w1 = {"started": False}
         w2 = {"started": False}
@@ -393,3 +525,23 @@ class TestWorkController(unittest.TestCase):
         worker.stop()
         for component in worker.components:
             self.assertTrue(component._stopped)
+
+    def test_start__terminate(self):
+        worker = self.worker
+        w1 = {"started": False}
+        w2 = {"started": False}
+        w3 = {"started": False}
+        w4 = {"started": False}
+        worker.components = [MockController(w1), MockController(w2),
+                             MockController(w3), MockController(w4),
+                             MockPool()]
+
+        worker.start()
+        for w in (w1, w2, w3, w4):
+            self.assertTrue(w["started"])
+        self.assertTrue(worker._running, len(worker.components))
+        self.assertEqual(worker._state, RUN)
+        worker.terminate()
+        for component in worker.components:
+            self.assertTrue(component._stopped)
+        self.assertTrue(worker.components[4]._terminated)

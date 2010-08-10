@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from carrot.utils import partition
 
@@ -9,6 +9,8 @@ RATE_MODIFIER_MAP = {"s": lambda n: n,
                      "m": lambda n: n / 60.0,
                      "h": lambda n: n / 60.0 / 60.0}
 
+HAVE_TIMEDELTA_TOTAL_SECONDS = hasattr(timedelta, "total_seconds")
+
 
 def timedelta_seconds(delta):
     """Convert :class:`datetime.timedelta` to seconds.
@@ -16,6 +18,9 @@ def timedelta_seconds(delta):
     Doesn't account for negative values.
 
     """
+    if HAVE_TIMEDELTA_TOTAL_SECONDS:
+        # Should return 0 for negative seconds
+        return max(delta.total_seconds(), 0)
     if delta.days < 0:
         return 0
     return delta.days * 86400 + delta.seconds + (delta.microseconds / 10e5)
@@ -56,20 +61,6 @@ def remaining(start, ends_in, now=None, relative=True):
           of ``ends_in``).
     :keyword now: The current time, defaults to :func:`datetime.now`.
 
-    Examples::
-
-        >>> remaining(datetime.now(), ends_in=timedelta(seconds=30))
-        '0:0:29.999948'
-
-        >>> str(remaining(datetime.now() - timedelta(minutes=29),
-                ends_in=timedelta(hours=2)))
-        '1:30:59.999938'
-
-        >>> str(remaining(datetime.now() - timedelta(minutes=29),
-                ends_in=timedelta(hours=2),
-                relative=False))
-        '1:11:18.458437'
-
     """
     now = now or datetime.now()
 
@@ -92,6 +83,8 @@ def rate(rate):
 
 def weekday(name):
     """Return the position of a weekday (0 - 7, where 0 is Sunday).
+
+    Example::
 
         >>> weekday("sunday"), weekday("sun"), weekday("mon")
         (0, 0, 1)

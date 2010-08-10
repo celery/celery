@@ -14,3 +14,4 @@ pip-log.txt
 erl_crash.dump
 *.db
 Documentation/
+.tox/

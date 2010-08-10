@@ -62,8 +62,7 @@ Is celery for Django only?
 **Answer:** No.
 
 Celery does not depend on Django anymore. To use Celery with Django you have
-to use the `django-celery`_ package:
-
+to use the `django-celery`_ package.
 
 .. _`django-celery`: http://pypi.python.org/pypi/django-celery
 
@@ -240,34 +239,10 @@ waiting tasks you have to stop all the workers, and then discard the tasks
 using ``discard_all``.
 
 
-Windows: The ``-B`` / ``--beat`` option to celeryd doesn't work?
-----------------------------------------------------------------
-**Answer**: That's right. Run ``celerybeat`` and ``celeryd`` as separate
-services instead.
-
-Tasks
-=====
-
-How can I reuse the same connection when applying tasks?
---------------------------------------------------------
-
-**Answer**: See :doc:`userguide/executing`.
-
-Can I execute a task by name?
------------------------------
-
-**Answer**: Yes. Use :func:`celery.execute.send_task`.
-You can also execute a task by name from any language
-that has an AMQP client.
-
-    >>> from celery.execute import send_task
-    >>> send_task("tasks.add", args=[2, 2], kwargs={})
-    <AsyncResult: 373550e8-b9a0-4666-bc61-ace01fa4f91d>
-
 Results
 =======
 
-How dow I get the result of a task if I have the ID that points there?
+How do I get the result of a task if I have the ID that points there?
 ----------------------------------------------------------------------
 
 **Answer**: Use ``Task.AsyncResult``::
@@ -331,58 +306,44 @@ Can I use celery with ActiveMQ/STOMP?
 
 **Answer**: Yes, but this is somewhat experimental for now.
 It is working ok in a test configuration, but it has not
-been tested in production like RabbitMQ has. If you have any problems with
-using STOMP and celery, please report the bugs to the issue tracker:
+been tested in production. If you have any problems
+using STOMP with celery, please report an issue here::
 
     http://github.com/ask/celery/issues/
 
-First you have to use the ``master`` branch of ``celery``::
+The STOMP carrot backend requires the `stompy`_ library::
 
-    $ git clone git://github.com/ask/celery.git
-    $ cd celery
-    $ sudo python setup.py install
-    $ cd ..
-
-Then you need to install the ``stompbackend`` branch of ``carrot``::
-
-    $ git clone git://github.com/ask/carrot.git
-    $ cd carrot
-    $ git checkout stompbackend
-    $ sudo python setup.py install
-    $ cd ..
-
-And my fork of ``python-stomp`` which adds non-blocking support::
-
-    $ hg clone http://bitbucket.org/asksol/python-stomp/
+    $ pip install stompy
     $ cd python-stomp
     $ sudo python setup.py install
     $ cd ..
 
+.. _`stompy`: http://pypi.python.org/pypi/stompy
+
 In this example we will use a queue called ``celery`` which we created in
 the ActiveMQ web admin interface.
 
-**Note**: For ActiveMQ the queue name has to have ``"/queue/"`` prepended to
-it. i.e. the queue ``celery`` becomes ``/queue/celery``.
+**Note**: When using ActiveMQ the queue name needs to have ``"/queue/"``
+prepended to it. i.e. the queue ``celery`` becomes ``/queue/celery``.
 
-Since a STOMP queue is a single named entity and it doesn't have the
-routing capabilities of AMQP you need to set both the ``queue``, and
-``exchange`` settings to your queue name. This is a minor inconvenience since
-carrot needs to maintain the same interface for both AMQP and STOMP (obviously
-the one with the most capabilities won).
+Since STOMP doesn't have exchanges and the routing capabilities of AMQP,
+you need to set ``exchange`` name to the same as the queue name. This is
+a minor inconvenience since carrot needs to maintain the same interface
+for both AMQP and STOMP.
 
-Use the following specific settings in your ``settings.py``:
+Use the following settings in your ``celeryconfig.py``/django ``settings.py``:
 
 .. code-block:: python
 
-    # Makes python-stomp the default backend for carrot.
+    # Use the stomp carrot backend.
     CARROT_BACKEND = "stomp"
 
     # STOMP hostname and port settings.
     BROKER_HOST = "localhost"
     BROKER_PORT = 61613
 
-    # The queue name to use (both queue and exchange must be set to the
-    # same queue name when using STOMP)
+    # The queue name to use (the exchange *must* be set to the
+    # same as the queue name when using STOMP)
     CELERY_DEFAULT_QUEUE = "/queue/celery"
     CELERY_DEFAULT_EXCHANGE = "/queue/celery" 
 
@@ -390,11 +351,8 @@ Use the following specific settings in your ``settings.py``:
         "/queue/celery": {"exchange": "/queue/celery"}
     }
 
-Now you can go on reading the tutorial in the README, ignoring any AMQP
-specific options. 
-
-What features are not supported when using STOMP?
---------------------------------------------------
+What features are not supported when using ghettoq/STOMP?
+---------------------------------------------------------
 
 This is a (possible incomplete) list of features not available when
 using the STOMP backend:
@@ -407,8 +365,56 @@ using the STOMP backend:
 
     * mandatory
 
-Features
-========
+Tasks
+=====
+
+How can I reuse the same connection when applying tasks?
+--------------------------------------------------------
+
+**Answer**: See :doc:`userguide/executing`.
+
+Can I execute a task by name?
+-----------------------------
+
+**Answer**: Yes. Use :func:`celery.execute.send_task`.
+You can also execute a task by name from any language
+that has an AMQP client.
+
+    >>> from celery.execute import send_task
+    >>> send_task("tasks.add", args=[2, 2], kwargs={})
+    <AsyncResult: 373550e8-b9a0-4666-bc61-ace01fa4f91d>
+
+
+How can I get the task id of the current task?
+----------------------------------------------
+
+**Answer**: Celery does set some default keyword arguments if the task
+accepts them (you can accept them by either using ``**kwargs``, or list them
+specifically)::
+
+    @task
+    def mytask(task_id=None):
+        cache.set(task_id, "Running")
+
+The default keyword arguments are documented here:
+http://celeryq.org/docs/userguide/tasks.html#default-keyword-arguments
+
+Can I specify a custom task_id?
+-------------------------------
+
+**Answer**: Yes. Use the ``task_id`` argument to
+:meth:`~celery.execute.apply_async`::
+
+    >>> task.apply_async(args, kwargs, task_id="...")
+
+Can I use natural task ids?
+---------------------------
+
+**Answer**: Yes, but make sure it is unique, as the behavior
+for two tasks existing with the same id is undefined.
+
+The world will probably not explode, but at the worst
+they can overwrite each others results.
 
 How can I run a task once another task has finished?
 ----------------------------------------------------
@@ -422,7 +428,7 @@ Also, a common pattern is to use callback tasks:
     def add(x, y, callback=None):
         result = x + y
         if callback:
-            callback.delay(result)
+            subtask(callback).delay(result)
         return result
 
 
@@ -431,8 +437,11 @@ Also, a common pattern is to use callback tasks:
         logger = log_result.get_logger(**kwargs)
         logger.info("log_result got: %s" % (result, ))
 
+Invocation::
 
-    >>> add.delay(2, 2, callback=log_result)
+    >>> add.delay(2, 2, callback=log_result.subtask())
+
+See :doc:`userguide/tasksets` for more information.
 
 Can I cancel the execution of a task?
 -------------------------------------
@@ -468,120 +477,7 @@ Can I send some tasks to only some servers?
 **Answer:** Yes. You can route tasks to an arbitrary server using AMQP,
 and a worker can bind to as many queues as it wants.
 
-Say you have two servers, ``x``, and ``y`` that handles regular tasks,
-and one server ``z``, that only handles feed related tasks, you can use this
-configuration:
-
-* Servers ``x`` and ``y``: settings.py:
-
-.. code-block:: python
-
-    CELERY_DEFAULT_QUEUE = "regular_tasks"
-    CELERY_QUEUES = {
-        "regular_tasks": {
-            "binding_key": "task.#",
-        },
-    }
-    CELERY_DEFAULT_EXCHANGE = "tasks"
-    CELERY_DEFAULT_EXCHANGE_TYPE = "topic"
-    CELERY_DEFAULT_ROUTING_KEY = "task.regular"
-
-* Server ``z``: settings.py:
-
-.. code-block:: python
-
-        CELERY_DEFAULT_QUEUE = "feed_tasks"
-        CELERY_QUEUES = {
-            "feed_tasks": {
-                "binding_key": "feed.#",
-            },
-        }
-        CELERY_DEFAULT_EXCHANGE = "tasks"
-        CELERY_DEFAULT_ROUTING_KEY = "task.regular"
-        CELERY_DEFAULT_EXCHANGE_TYPE = "topic"
-
-``CELERY_QUEUES`` is a map of queue names and their exchange/type/binding_key,
-if you don't set exchange or exchange type, they will be taken from the
-``CELERY_DEFAULT_EXCHANGE``/``CELERY_DEFAULT_EXCHANGE_TYPE`` settings.
-
-Now to make a Task run on the ``z`` server you need to set its
-``routing_key`` attribute so it starts with the words ``"task.feed."``:
-
-.. code-block:: python
-
-    from feedaggregator.models import Feed
-    from celery.decorators import task
-
-    @task(routing_key="feed.importer")
-    def import_feed(feed_url):
-        Feed.objects.import_feed(feed_url)
-
-or if subclassing the ``Task`` class directly:
-
-.. code-block:: python
-
-    class FeedImportTask(Task):
-        routing_key = "feed.importer"
-
-        def run(self, feed_url):
-            Feed.objects.import_feed(feed_url)
-
-
-You can also override this using the ``routing_key`` argument to
-:func:`celery.task.apply_async`:
-
-    >>> from myapp.tasks import RefreshFeedTask
-    >>> RefreshFeedTask.apply_async(args=["http://cnn.com/rss"],
-    ...                             routing_key="feed.importer")
-
-
- If you want, you can even have your feed processing worker handle regular
- tasks as well, maybe in times when there's a lot of work to do.
- Just add a new queue to server ``z``'s ``CELERY_QUEUES``:
-
- .. code-block:: python
-
-        CELERY_QUEUES = {
-            "feed_tasks": {
-                "binding_key": "feed.#",
-            },
-            "regular_tasks": {
-                "binding_key": "task.#",
-            },
-        }
-
-Since the default exchange is ``tasks``, they will both use the same
-exchange.
-
-If you have another queue but on another exchange you want to add,
-just specify a custom exchange and exchange type:
-
-.. code-block:: python
-
-    CELERY_QUEUES = {
-            "feed_tasks": {
-                "binding_key": "feed.#",
-            },
-            "regular_tasks": {
-                "binding_key": "task.#",
-            }
-            "image_tasks": {
-                "binding_key": "image.compress",
-                "exchange": "mediatasks",
-                "exchange_type": "direct",
-            },
-        }
-
-If you're confused about these terms, you should read up on AMQP and RabbitMQ.
-`Rabbits and Warrens`_ is an excellent blog post describing queues and
-exchanges. There's also AMQP in 10 minutes*: `Flexible Routing Model`_,
-and `Standard Exchange Types`_. For users of RabbitMQ the `RabbitMQ FAQ`_
-could also be useful as a source of information.
-
-.. _`Rabbits and Warrens`: http://blogs.digitar.com/jjww/2009/01/rabbits-and-warrens/
-.. _`Flexible Routing Model`: http://bit.ly/95XFO1
-.. _`Standard Exchange Types`: http://bit.ly/EEWca
-.. _`RabbitMQ FAQ`: http://www.rabbitmq.com/faq.html
+See :doc:`userguide/routing` for more information.
 
 Can I change the interval of a periodic task at runtime?
 --------------------------------------------------------
@@ -691,3 +587,32 @@ and they will not be re-run unless you have the ``acks_late`` option set.
 How do I run celeryd in the background on [platform]?
 -----------------------------------------------------
 **Answer**: Please see :doc:`cookbook/daemonizing`.
+
+Windows
+=======
+
+celeryd keeps spawning processes at startup
+-------------------------------------------
+
+**Answer**: This is a known issue on Windows.
+You have to start celeryd with the command::
+
+    $ python -m celeryd.bin.celeryd
+
+Any additional arguments can be appended to this command.
+
+See http://bit.ly/bo9RSw
+
+The ``-B`` / ``--beat`` option to celeryd doesn't work?
+----------------------------------------------------------------
+**Answer**: That's right. Run ``celerybeat`` and ``celeryd`` as separate
+services instead.
+
+``django-celery`` can’t find settings?
+--------------------------------------
+
+**Answer**: You need to specify the ``--settings`` argument to ``manage.py``::
+
+    $ python manage.py celeryd start --settings=settings
+
+See http://bit.ly/bo9RSw

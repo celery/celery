@@ -16,7 +16,7 @@ RANDTEXT_RES = """\
     lazy dog\
 """
 
-ROUTE = {"queue1": {
+QUEUES = {"queue1": {
             "exchange": "exchange1",
             "exchange_type": "type1",
             "binding_key": "bind1"},
@@ -26,7 +26,7 @@ ROUTE = {"queue1": {
             "binding_key": "bind2"}}
 
 
-ROUTE_FORMAT = """
+QUEUE_FORMAT = """
 . queue1 -> exchange:exchange1 (type1) binding:bind1
 . queue2 -> exchange:exchange2 (type2) binding:bind2
 """.strip()
@@ -55,8 +55,8 @@ class TestInfo(unittest.TestCase):
     def test_textindent(self):
         self.assertEqual(info.textindent(RANDTEXT, 4), RANDTEXT_RES)
 
-    def test_format_routing_table(self):
-        self.assertEqual(info.format_routing_table(ROUTE), ROUTE_FORMAT)
+    def test_format_queues(self):
+        self.assertEqual(info.format_queues(QUEUES), QUEUE_FORMAT)
 
     def test_broker_info(self):
         info.format_broker_info()

@@ -1,12 +1,12 @@
 import time
 
 from collections import deque
-from itertools import chain
 from Queue import Queue, Empty as QueueEmpty
 
+from celery.datastructures import TokenBucket
 from celery.utils import all
 from celery.utils import timeutils
-from celery.utils.compat import izip_longest
+from celery.utils.compat import izip_longest, chain_from_iterable
 
 
 class RateLimitExceeded(Exception):
@@ -143,6 +143,7 @@ class TaskBucket(object):
         task_type = self.task_registry[task_name]
         rate_limit = getattr(task_type, "rate_limit", None)
         rate_limit = timeutils.rate(rate_limit)
+        task_queue = FastQueue()
         if task_name in self.buckets:
             task_queue = self._get_queue_for_type(task_name)
         else:
@@ -180,7 +181,7 @@ class TaskBucket(object):
     def items(self):
         # for queues with contents [(1, 2), (3, 4), (5, 6), (7, 8)]
         # zips and flattens to [1, 3, 5, 7, 2, 4, 6, 8]
-        return filter(None, chain.from_iterable(izip_longest(*[bucket.items
+        return filter(None, chain_from_iterable(izip_longest(*[bucket.items
                                     for bucket in self.buckets.values()])))
 
 
@@ -193,9 +194,6 @@ class FastQueue(Queue):
 
     def expected_time(self, tokens=1):
         return 0
-
-    def can_consume(self, tokens=1):
-        return True
 
     def wait(self, block=True):
         return self.get(block=block)
@@ -210,36 +208,19 @@ class TokenBucketQueue(object):
 
     This uses the token bucket algorithm to rate limit the queue on get
     operations.
-    See http://en.wikipedia.org/wiki/Token_Bucket
-    Most of this code was stolen from an entry in the ASPN Python Cookbook:
-    http://code.activestate.com/recipes/511490/
 
-    :param fill_rate: see :attr:`fill_rate`.
-    :keyword capacity: see :attr:`capacity`.
-
-    .. attribute:: fill_rate
-
-        The rate in tokens/second that the bucket will be refilled.
-
-    .. attribute:: capacity
-
-        Maximum number of tokens in the bucket. Default is ``1``.
-
-    .. attribute:: timestamp
-
-        Timestamp of the last time a token was taken out of the bucket.
+    :param fill_rate: The rate in tokens/second that the bucket will
+      be refilled.
+    :keyword capacity: Maximum number of tokens in the bucket. Default is 1.
 
     """
     RateLimitExceeded = RateLimitExceeded
 
     def __init__(self, fill_rate, queue=None, capacity=1):
-        self.capacity = float(capacity)
-        self._tokens = self.capacity
+        self._bucket = TokenBucket(fill_rate, capacity)
         self.queue = queue
         if not self.queue:
             self.queue = Queue()
-        self.fill_rate = float(fill_rate)
-        self.timestamp = time.time()
 
     def put(self, item, block=True):
         """Put an item into the queue.
@@ -271,7 +252,7 @@ class TokenBucketQueue(object):
         """
         get = block and self.queue.get or self.queue.get_nowait
 
-        if not self.can_consume(1):
+        if not self._bucket.can_consume(1):
             raise RateLimitExceeded()
 
         return get()
@@ -311,27 +292,10 @@ class TokenBucketQueue(object):
                 return self.get(block=block)
             time.sleep(remaining)
 
-    def can_consume(self, tokens=1):
-        """Consume tokens from the bucket. Returns True if there were
-        sufficient tokens otherwise False."""
-        if tokens <= self._get_tokens():
-            self._tokens -= tokens
-            return True
-        return False
-
     def expected_time(self, tokens=1):
         """Returns the expected time in seconds when a new token should be
         available."""
-        tokens = max(tokens, self._get_tokens())
-        return (tokens - self._get_tokens()) / self.fill_rate
-
-    def _get_tokens(self):
-        if self._tokens < self.capacity:
-            now = time.time()
-            delta = self.fill_rate * (now - self.timestamp)
-            self._tokens = min(self.capacity, self._tokens + delta)
-            self.timestamp = now
-        return self._tokens
+        return self._bucket.expected_time(tokens)
 
     @property
     def items(self):

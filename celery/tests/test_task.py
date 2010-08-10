@@ -10,14 +10,13 @@ from celery import task
 from celery import messaging
 from celery.task.schedules import crontab, crontab_parser
 from celery.utils import timeutils
-from celery.utils import gen_unique_id
+from celery.utils import gen_unique_id, parse_iso8601
 from celery.utils.functional import wraps
 from celery.result import EagerResult
 from celery.execute import send_task
 from celery.backends import default_backend
 from celery.decorators import task as task_dec
 from celery.exceptions import RetryTaskError
-from celery.worker.listener import parse_iso8601
 
 from celery.tests.utils import with_eager_tasks
 
@@ -149,10 +148,14 @@ class TestTaskRetries(unittest.TestCase):
         self.assertEqual(result.get(), 42)
         self.assertEqual(RetryTaskNoArgs.iterations, 4)
 
+    def test_retry_kwargs_can_not_be_empty(self):
+        self.assertRaises(TypeError, RetryTaskMockApply.retry,
+                            args=[4, 4], kwargs={})
+
     def test_retry_not_eager(self):
         exc = Exception("baz")
         try:
-            RetryTaskMockApply.retry(args=[4, 4], kwargs={},
+            RetryTaskMockApply.retry(args=[4, 4], kwargs={"task_retries": 0},
                                      exc=exc, throw=False)
             self.assertTrue(RetryTaskMockApply.applied)
         finally:
@@ -160,7 +163,8 @@ class TestTaskRetries(unittest.TestCase):
 
         try:
             self.assertRaises(RetryTaskError, RetryTaskMockApply.retry,
-                    args=[4, 4], kwargs={}, exc=exc, throw=True)
+                    args=[4, 4], kwargs={"task_retries": 0},
+                    exc=exc, throw=True)
             self.assertTrue(RetryTaskMockApply.applied)
         finally:
             RetryTaskMockApply.applied = 0
@@ -352,25 +356,24 @@ class TestTaskSet(unittest.TestCase):
 
     @with_eager_tasks
     def test_function_taskset(self):
-        ts = task.TaskSet(return_True_task.name, [
-              ([1], {}), [[2], {}], [[3], {}], [[4], {}], [[5], {}]])
+        subtasks = [return_True_task.subtask([i]) for i in range(1, 6)]
+        ts = task.TaskSet(subtasks)
         res = ts.apply_async()
         self.assertListEqual(res.join(), [True, True, True, True, True])
 
     def test_counter_taskset(self):
         IncrementCounterTask.count = 0
-        ts = task.TaskSet(IncrementCounterTask, [
-            ([], {}),
-            ([], {"increment_by": 2}),
-            ([], {"increment_by": 3}),
-            ([], {"increment_by": 4}),
-            ([], {"increment_by": 5}),
-            ([], {"increment_by": 6}),
-            ([], {"increment_by": 7}),
-            ([], {"increment_by": 8}),
-            ([], {"increment_by": 9}),
+        ts = task.TaskSet(tasks=[
+            IncrementCounterTask.subtask((), {}),
+            IncrementCounterTask.subtask((), {"increment_by": 2}),
+            IncrementCounterTask.subtask((), {"increment_by": 3}),
+            IncrementCounterTask.subtask((), {"increment_by": 4}),
+            IncrementCounterTask.subtask((), {"increment_by": 5}),
+            IncrementCounterTask.subtask((), {"increment_by": 6}),
+            IncrementCounterTask.subtask((), {"increment_by": 7}),
+            IncrementCounterTask.subtask((), {"increment_by": 8}),
+            IncrementCounterTask.subtask((), {"increment_by": 9}),
         ])
-        self.assertEqual(ts.task_name, IncrementCounterTask.name)
         self.assertEqual(ts.total, 9)
 
 

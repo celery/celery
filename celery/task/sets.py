@@ -1,13 +1,37 @@
+import warnings
+
 from UserList import UserList
 
 from celery import conf
 from celery import registry
 from celery.datastructures import AttributeDict
-from celery.messaging import establish_connection, with_connection
+from celery.messaging import with_connection
 from celery.messaging import TaskPublisher
 from celery.result import TaskSetResult
 from celery.utils import gen_unique_id
 
+TASKSET_DEPRECATION_TEXT = """\
+Using this invocation of TaskSet is deprecated and will be removed
+in Celery v2.4!
+
+TaskSets now supports multiple types of tasks, the API has to reflect
+this so the syntax has been changed to:
+
+    from celery.task.sets import TaskSet
+
+    ts = TaskSet(tasks=[
+            %(cls)s.subtask(args1, kwargs1, options1),
+            %(cls)s.subtask(args2, kwargs2, options2),
+            %(cls)s.subtask(args3, kwargs3, options3),
+            ...
+            %(cls)s.subtask(argsN, kwargsN, optionsN),
+    ])
+
+    result = ts.apply_async()
+
+Thank you for your patience!
+
+"""
 
 class subtask(AttributeDict):
     """Class that wraps the arguments and execution options
@@ -49,19 +73,25 @@ class subtask(AttributeDict):
         init(task=task_name, args=tuple(args or ()), kwargs=kwargs or (),
              options=options or ())
 
-    def apply(self, *argmerge, **execopts):
+    def delay(self, *argmerge, **kwmerge):
+        """Shortcut to ``apply_async(argmerge, kwargs)``."""
+        return self.apply_async(args=argmerge, kwargs=kwmerge)
+
+    def apply(self, args=(), kwargs={}, **options):
         """Apply this task locally."""
         # For callbacks: extra args are prepended to the stored args.
-        args = tuple(argmerge) + tuple(self.args)
-        return self.get_type().apply(args, self.kwargs,
-                                     **dict(self.options, **execopts))
+        args = tuple(args) + tuple(self.args)
+        kwargs = dict(self.kwargs, **kwargs)
+        options = dict(self.options, **options)
+        return self.get_type().apply(args, kwargs, **options)
 
-    def apply_async(self, *argmerge, **execopts):
+    def apply_async(self, args=(), kwargs={}, **options):
         """Apply this task asynchronously."""
         # For callbacks: extra args are prepended to the stored args.
-        args = tuple(argmerge) + tuple(self.args)
-        return self.get_type().apply_async(args, self.kwargs,
-                                           **dict(self.options, **execopts))
+        args = tuple(args) + tuple(self.args)
+        kwargs = dict(self.kwargs, **kwargs)
+        options = dict(self.options, **options)
+        return self.get_type().apply_async(args, kwargs, **options)
 
     def get_type(self):
         # For JSON serialization, the task class is lazily loaded,
@@ -93,17 +123,23 @@ class TaskSet(UserList):
         >>> list_of_return_values = taskset_result.join()
 
     """
-    task = None # compat
-    task_name = None # compat
+    _task = None # compat
+    _task_name = None # compat
 
     def __init__(self, task=None, tasks=None):
-        # Previously TaskSet only supported applying one kind of task.
-        # the signature then was TaskSet(task, arglist)
-        # Convert the arguments to subtasks'.
         if task is not None:
-            tasks = [subtask(task, *arglist) for arglist in tasks]
-            self.task = task
-            self.task_name = task.name
+            if hasattr(task, "__iter__"):
+                tasks = task
+            else:
+                # Previously TaskSet only supported applying one kind of task.
+                # the signature then was TaskSet(task, arglist),
+                # so convert the arguments to subtasks'.
+                tasks = [subtask(task, *arglist) for arglist in tasks]
+                task = self._task = registry.tasks[task.name]
+                self._task_name = task.name
+                warnings.warn(TASKSET_DEPRECATION_TEXT % {
+                                "cls": task.__class__.__name__},
+                              DeprecationWarning)
 
         self.data = list(tasks)
         self.total = len(self.tasks)
@@ -165,3 +201,17 @@ class TaskSet(UserList):
     @property
     def tasks(self):
         return self.data
+
+    @property
+    def task(self):
+        warnings.warn(
+            "TaskSet.task is deprecated and will be removed in 1.4",
+            DeprecationWarning)
+        return self._task
+
+    @property
+    def task_name(self):
+        warnings.warn(
+            "TaskSet.task_name is deprecated and will be removed in 1.4",
+            DeprecationWarning)
+        return self._task_name

@@ -1,10 +1,12 @@
 from datetime import datetime
 
 from celery import conf
+from celery import log
 from celery.backends import default_backend
 from celery.registry import tasks
 from celery.utils import timeutils
-from celery.worker.revoke import revoked
+from celery.worker import state
+from celery.worker.state import revoked
 from celery.worker.control.registry import Panel
 
 TASK_INFO_FIELDS = ("exchange", "routing_key", "rate_limit")
@@ -28,19 +30,32 @@ def revoke(panel, task_id, task_name=None, **kwargs):
 @Panel.register
 def enable_events(panel):
     dispatcher = panel.listener.event_dispatcher
-    dispatcher.enable()
-    dispatcher.send("worker-online")
-    panel.logger.warn("Events enabled by remote.")
-    return {"ok": "events enabled"}
+    if not dispatcher.enabled:
+        dispatcher.enable()
+        dispatcher.send("worker-online")
+        panel.logger.warn("Events enabled by remote.")
+        return {"ok": "events enabled"}
+    return {"ok": "events already enabled"}
 
 
 @Panel.register
 def disable_events(panel):
     dispatcher = panel.listener.event_dispatcher
-    dispatcher.send("worker-offline")
-    dispatcher.disable()
-    panel.logger.warn("Events disabled by remote.")
-    return {"ok": "events disabled"}
+    if dispatcher.enabled:
+        dispatcher.send("worker-offline")
+        dispatcher.disable()
+        panel.logger.warn("Events disabled by remote.")
+        return {"ok": "events disabled"}
+    return {"ok": "events already disabled"}
+
+
+@Panel.register
+def set_loglevel(panel, loglevel=None):
+    if loglevel is not None:
+        if not isinstance(loglevel, int):
+            loglevel = conf.LOG_LEVELS[loglevel.upper()]
+        log.get_default_logger(loglevel=loglevel)
+    return {"ok": loglevel}
 
 
 @Panel.register
@@ -83,8 +98,8 @@ def rate_limit(panel, task_name, rate_limit, **kwargs):
 
 
 @Panel.register
-def dump_schedule(panel, **kwargs):
-    schedule = panel.listener.eta_schedule
+def dump_schedule(panel, safe=False, **kwargs):
+    schedule = panel.listener.eta_schedule.schedule
     if not schedule.queue:
         panel.logger.info("--Empty schedule--")
         return []
@@ -96,20 +111,42 @@ def dump_schedule(panel, **kwargs):
     info = map(formatitem, enumerate(schedule.info()))
     panel.logger.info("* Dump of current schedule:\n%s" % (
                             "\n".join(info, )))
-    return info
+    scheduled_tasks = []
+    for item in schedule.info():
+        scheduled_tasks.append({"eta": item["eta"],
+                                "priority": item["priority"],
+                                "request": item["item"].info(safe=safe)})
+    return scheduled_tasks
 
 
 @Panel.register
-def dump_reserved(panel, **kwargs):
+def dump_reserved(panel, safe=False, **kwargs):
     ready_queue = panel.listener.ready_queue
     reserved = ready_queue.items
     if not reserved:
         panel.logger.info("--Empty queue--")
         return []
-    info = map(repr, reserved)
     panel.logger.info("* Dump of currently reserved tasks:\n%s" % (
-                            "\n".join(info, )))
-    return info
+                            "\n".join(map(repr, reserved), )))
+    return [request.info(safe=safe)
+            for request in reserved]
+
+
+@Panel.register
+def dump_active(panel, safe=False, **kwargs):
+    return [request.info(safe=safe)
+                for request in state.active_requests]
+
+
+@Panel.register
+def stats(panel, **kwargs):
+    return {"total": state.total_count,
+            "pool": panel.listener.pool.info}
+
+
+@Panel.register
+def dump_revoked(panel, **kwargs):
+    return list(state.revoked)
 
 
 @Panel.register
@@ -140,4 +177,4 @@ def ping(panel, **kwargs):
 @Panel.register
 def shutdown(panel, **kwargs):
     panel.logger.critical("Got shutdown from remote.")
-    raise SystemExit
+    raise SystemExit("Got shutdown from remote")

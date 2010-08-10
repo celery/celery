@@ -1,5 +1,7 @@
-from celery.exceptions import RouteNotFound
-from celery.utils import instantiate
+from celery.exceptions import QueueNotFound
+from celery.utils import instantiate, firstmethod, mpromise
+
+_first_route = firstmethod("route_for_task")
 
 
 class MapRoute(object):
@@ -9,20 +11,65 @@ class MapRoute(object):
         self.map = map
 
     def route_for_task(self, task, *args, **kwargs):
-        return self.map.get(task)
+        route = self.map.get(task)
+        if route:
+            return dict(route)
 
 
-def expand_destination(route, routing_table):
-    if isinstance(route, basestring):
-        try:
-            dest = dict(routing_table[route])
-        except KeyError:
-            raise RouteNotFound(
-                "Route %s does not exist in the routing table "
-                "(CELERY_QUEUES)" % route)
-        dest.setdefault("routing_key", dest.get("binding_key"))
-        return dest
-    return route
+class Router(object):
+
+    def __init__(self, routes=None, queues=None, create_missing=False):
+        if queues is None:
+            queues = {}
+        if routes is None:
+            routes = []
+        self.queues = queues
+        self.routes = routes
+        self.create_missing = create_missing
+
+    def add_queue(self, queue):
+        q = self.queues[queue] = {"binding_key": queue,
+                                  "routing_key": queue,
+                                  "exchange": queue,
+                                  "exchange_type": "direct"}
+        return q
+
+    def route(self, options, task, args=(), kwargs={}):
+        # Expand "queue" keys in options.
+        options = self.expand_destination(options)
+        if self.routes:
+            route = self.lookup_route(task, args, kwargs)
+            if route:
+                # Also expand "queue" keys in route.
+                return dict(options, **self.expand_destination(route))
+        return options
+
+    def expand_destination(self, route):
+        # The route can simply be a queue name,
+        # this is convenient for direct exchanges.
+        if isinstance(route, basestring):
+            queue, route = route, {}
+        else:
+            # For topic exchanges you can use the defaults from a queue
+            # definition, and override e.g. just the routing_key.
+            queue = route.pop("queue", None)
+
+        if queue:
+            try:
+                dest = dict(self.queues[queue])
+            except KeyError:
+                if self.create_missing:
+                    dest = self.add_queue(queue)
+                else:
+                    raise QueueNotFound(
+                        "Queue '%s' is not defined in CELERY_QUEUES" % queue)
+            dest.setdefault("routing_key", dest.get("binding_key"))
+            return dict(route, **dest)
+
+        return route
+
+    def lookup_route(self, task, args=None, kwargs=None):
+        return _first_route(self.routes, task, args, kwargs)
 
 
 def prepare(routes):
@@ -32,36 +79,9 @@ def prepare(routes):
         if isinstance(route, dict):
             return MapRoute(route)
         if isinstance(route, basestring):
-            return instantiate(route)
+            return mpromise(instantiate, route)
         return route
 
-    if not hasattr(routes, "__iter__"):
+    if not isinstance(routes, (list, tuple)):
         routes = (routes, )
     return map(expand_route, routes)
-
-
-def firstmatcher(method):
-    """Returns a functions that with a list of instances,
-    finds the first instance that returns a value for the given method."""
-
-    def _matcher(seq, *args, **kwargs):
-        for cls in seq:
-            try:
-                answer = getattr(cls, method)(*args, **kwargs)
-                if answer is not None:
-                    return answer
-            except AttributeError:
-                pass
-    return _matcher
-
-
-_first_route = firstmatcher("route_for_task")
-_first_disabled = firstmatcher("disabled")
-
-
-def lookup_route(routes, task, task_id=None, args=None, kwargs=None):
-    return _first_route(routes, task, task_id, args, kwargs)
-
-
-def lookup_disabled(routes, task, task_id=None, args =None, kwargs=None):
-    return _first_disabled(routes, task, task_id, args, kwargs)

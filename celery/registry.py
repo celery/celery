@@ -60,13 +60,13 @@ class TaskRegistry(UserDict):
         try:
             return UserDict.__getitem__(self, key)
         except KeyError, exc:
-            raise self.NotRegistered(exc)
+            raise self.NotRegistered(str(exc))
 
     def pop(self, key, *args):
         try:
             return UserDict.pop(self, key, *args)
         except KeyError, exc:
-            raise self.NotRegistered(exc)
+            raise self.NotRegistered(str(exc))
 
 
 """

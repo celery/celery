@@ -1,6 +1,5 @@
 from datetime import timedelta
 
-from celery.backends import default_backend
 from celery.serialization import pickle
 from celery.task.base import Task, PeriodicTask
 from celery.task.sets import TaskSet
@@ -19,8 +18,8 @@ class DeleteExpiredTaskMetaTask(PeriodicTask):
     def run(self, **kwargs):
         """:returns: None"""
         logger = self.get_logger(**kwargs)
-        logger.info("Deleting expired task meta objects...")
-        default_backend.cleanup()
+        logger.info("Deleting expired task results...")
+        self.backend.cleanup()
 
 
 class PingTask(Task):

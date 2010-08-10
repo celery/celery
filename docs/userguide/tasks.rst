@@ -43,15 +43,6 @@ The task decorator takes the same execution options as the
     def create_user(username, password):
         User.objects.create(username=username, password=password)
 
-An alternative way to use the decorator is to give the function as an argument
-instead, but if you do this be sure to set the resulting tasks :attr:`__name__`
-attribute, so pickle is able to find it in reverse:
-
-.. code-block:: python
-
-    create_user_task = task()(create_user)
-    create_user_task.__name__ = "create_user_task"
-
 
 Default keyword arguments
 =========================
@@ -110,8 +101,9 @@ the worker log:
 .. code-block:: python
 
     class AddTask(Task):
-        def run(self, x, y, \*\*kwargs):
-            logger = self.get_logger(\*\*kwargs)
+
+        def run(self, x, y, **kwargs):
+            logger = self.get_logger(**kwargs)
             logger.info("Adding %s + %s" % (x, y))
             return x + y
 
@@ -120,13 +112,16 @@ or using the decorator syntax:
 .. code-block:: python
 
     @task()
-    def add(x, y, \*\*kwargs):
-        logger = add.get_logger(\*\*kwargs)
+    def add(x, y, **kwargs):
+        logger = add.get_logger(**kwargs)
         logger.info("Adding %s + %s" % (x, y))
         return x + y
 
 There are several logging levels available, and the workers ``loglevel``
 setting decides whether or not they will be written to the log file.
+
+Of course, you can also simply use ``print`` as anything written to standard
+out/-err will be written to the logfile as well.
 
 
 Retrying a task if something fails
@@ -139,7 +134,7 @@ It will do the right thing, and respect the
 .. code-block:: python
 
     @task()
-    def send_twitter_status(oauth, tweet, \*\*kwargs):
+    def send_twitter_status(oauth, tweet, **kwargs):
         try:
             twitter = Twitter(oauth)
             twitter.update_status(tweet)
@@ -176,7 +171,7 @@ You can also provide the ``countdown`` argument to
     class MyTask(Task):
         default_retry_delay = 30 * 60 # retry in 30 minutes
 
-        def run(self, x, y, \*\*kwargs):
+        def run(self, x, y, **kwargs):
             try:
                 ...
             except Exception, exc:
@@ -203,7 +198,7 @@ Task options
 * max_retries
 
     The maximum number of attempted retries before giving up.
-    If this is exceeded the :exc`~celery.execptions.MaxRetriesExceeded`
+    If this is exceeded the :exc`~celery.exceptions.MaxRetriesExceeded`
     exception will be raised. Note that you have to retry manually, it's
     not something that happens automatically.
 
@@ -254,11 +249,18 @@ Task options
 Message and routing options
 ---------------------------
 
-* routing_key
-    Override the global default ``routing_key`` for this task.
+* queue
+
+    Use the routing settings from a queue defined in ``CELERY_QUEUES``.
+    If defined the ``exchange`` and ``routing_key`` options will be ignored.
 
 * exchange
+
     Override the global default ``exchange`` for this task.
+
+* routing_key
+
+    Override the global default ``routing_key`` for this task.
 
 * mandatory
     If set, the task message has mandatory routing. By default the task
@@ -278,7 +280,7 @@ Message and routing options
     highest. **Note:** RabbitMQ does not support priorities yet.
 
 See :doc:`executing` for more information about the messaging options
-available.
+available, also :doc:`routing`.
 
 Example
 =======
@@ -327,7 +329,7 @@ blog/views.py
 .. code-block:: python
 
     from django import forms
-    frmo django.http import HttpResponseRedirect
+    from django.http import HttpResponseRedirect
     from django.template.context import RequestContext
     from django.shortcuts import get_object_or_404, render_to_response
 
@@ -383,8 +385,8 @@ blog/tasks.py
 
 
     @task
-    def spam_filter(comment_id, remote_addr=None, \*\*kwargs):
-            logger = spam_filter.get_logger(\*\*kwargs)
+    def spam_filter(comment_id, remote_addr=None, **kwargs):
+            logger = spam_filter.get_logger(**kwargs)
             logger.info("Running spam filter for comment %s" % comment_id)
 
             comment = Comment.objects.get(pk=comment_id)
@@ -538,18 +540,18 @@ Good:
 
     @task(ignore_result=True)
     def fetch_page(url, callback=None):
-        page = myparser.parse_document(page)
+        page = myhttplib.get(url)
         if callback:
             # The callback may have been serialized with JSON,
             # so best practice is to convert the subtask dict back
             # into a subtask object.
-            subtask(callback).apply_async(page)
+            subtask(callback).delay(url, page)
 
     @task(ignore_result=True)
     def parse_page(url, page, callback=None):
         info = myparser.parse_document(page)
         if callback:
-            subtask(callback).apply_async(url, info)
+            subtask(callback).delay(url, info)
 
     @task(ignore_result=True)
     def store_page_info(url, info):
@@ -559,7 +561,8 @@ Good:
 We use :class:`~celery.task.sets.subtask` here to safely pass
 around the callback task. :class:`~celery.task.sets.subtask` is a 
 subclass of dict used to wrap the arguments and execution options
-for a single task invocation.
+for a single task invocation. See :doc:`tasksets` for more information about
+subtasks.
 
 
 Performance and Strategies
@@ -641,7 +644,7 @@ re-fetch the article in the task body:
 .. code-block:: python
 
     @task
-    def expand_abbreviations(article_id)
+    def expand_abbreviations(article_id):
         article = Article.objects.get(id=article_id)
         article.body.replace("MyCorp", "My Corporation")
         article.save()
@@ -650,3 +653,42 @@ re-fetch the article in the task body:
 
 There might even be performance benefits to this approach, as sending large
 messages may be expensive.
+
+Database transactions
+---------------------
+
+Let's look at another example:
+
+.. code-block:: python
+
+    from django.db import transaction
+
+    @transaction.commit_on_success
+    def create_article(request):
+        article = Article.objects.create(....)
+        expand_abbreviations.delay(article.pk)
+
+This is a Django view creating an article object in the database,
+then passing its primary key to a task. It uses the `commit_on_success`
+decorator, which will commit the transaction when the view returns, or
+roll back if the view raises an exception.
+
+There is a race condition if the task starts executing
+before the transaction has been committed: the database object does not exist
+yet!
+
+The solution is to **always commit transactions before applying tasks
+that depends on state from the current transaction**:
+
+.. code-block:: python
+
+    @transaction.commit_manually
+    def create_article(request):
+        try:
+            article = Article.objects.create(...)
+        except:
+            transaction.rollback()
+            raise
+        else:
+            transaction.commit()
+            expand_abbreviations.delay(article.pk)

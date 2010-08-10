@@ -1,9 +1,5 @@
 from __future__ import generators
-"""
 
-Utility functions
-
-"""
 import time
 import operator
 try:
@@ -11,15 +7,88 @@ try:
 except ImportError:
     ctypes = None
 import importlib
+from datetime import datetime
 from uuid import UUID, uuid4, _uuid_generate_random
 from inspect import getargspec
 from itertools import islice
 
 from carrot.utils import rpartition
+from dateutil.parser import parse as parse_iso8601
 
 from celery.utils.compat import all, any, defaultdict
 from celery.utils.timeutils import timedelta_seconds # was here before
 from celery.utils.functional import curry
+
+
+class promise(object):
+    """A promise.
+
+    Evaluated when called or if the :meth:`evaluate` method is called.
+    The function is evaluated on every access, so the value is not
+    memoized (see :class:`mpromise`).
+
+    Overloaded operations that will evaluate the promise:
+        :meth:`__str__`, :meth:`__repr__`, :meth:`__cmp__`.
+
+    """
+
+    def __init__(self, fun, *args, **kwargs):
+        self._fun = fun
+        self._args = args
+        self._kwargs = kwargs
+
+    def __call__(self):
+        return self.evaluate()
+
+    def evaluate(self):
+        return self._fun(*self._args, **self._kwargs)
+
+    def __str__(self):
+        return str(self())
+
+    def __repr__(self):
+        return repr(self())
+
+    def __cmp__(self, rhs):
+        if isinstance(rhs, self.__class__):
+            return -cmp(rhs, self())
+        return cmp(self(), rhs)
+
+    def __deepcopy__(self, memo):
+        memo[id(self)] = self
+        return self
+
+    def __reduce__(self):
+        return (self.__class__, (self._fun, ), {"_args": self._args,
+                                                "_kwargs": self._kwargs})
+
+
+class mpromise(promise):
+    """Memoized promise.
+
+    The function is only evaluated once, every subsequent access
+    will return the same value.
+
+    .. attribute:: evaluated
+
+        Set to to :const:`True` after the promise has been evaluated.
+
+    """
+    evaluated = False
+    _value = None
+
+    def evaluate(self):
+        if not self.evaluated:
+            self._value = super(mpromise, self).evaluate()
+            self.evaluated = True
+        return self._value
+
+
+def maybe_promise(value):
+    """Evaluates if the value is a promise."""
+    if isinstance(value, promise):
+        return value.evaluate()
+    return value
 
 
 def noop(*args, **kwargs):
@@ -29,6 +98,15 @@ def noop(*args, **kwargs):
 
     """
     pass
+
+
+def maybe_iso8601(dt):
+    """``Either datetime | str -> datetime or None -> None``"""
+    if not dt:
+        return
+    if isinstance(dt, datetime):
+        return dt
+    return parse_iso8601(dt)
 
 
 def kwdict(kwargs):
@@ -48,6 +126,25 @@ def first(predicate, iterable):
     for item in iterable:
         if predicate(item):
             return item
+
+
+def firstmethod(method):
+    """Returns a functions that with a list of instances,
+    finds the first instance that returns a value for the given method.
+
+    The list can also contain promises (:class:`promise`.)
+
+    """
+
+    def _matcher(seq, *args, **kwargs):
+        for cls in seq:
+            try:
+                answer = getattr(maybe_promise(cls), method)(*args, **kwargs)
+                if answer is not None:
+                    return answer
+            except AttributeError:
+                pass
+    return _matcher
 
 
 def chunks(it, n):
@@ -256,3 +353,28 @@ def instantiate(name, *args, **kwargs):
 
     """
     return get_cls_by_name(name)(*args, **kwargs)
+
+
+def truncate_text(text, maxlen=128, suffix="..."):
+    """Truncates text to a maximum number of characters."""
+    if len(text) >= maxlen:
+        return text[:maxlen].rsplit(" ", 1)[0] + suffix
+    return text
+
+
+def abbr(S, max, ellipsis="..."):
+    if S is None:
+        return "???"
+    if len(S) > max:
+        return ellipsis and (S[:max-len(ellipsis)] + ellipsis) or S[:max]
+    return S
+
+
+def abbrtask(S, max):
+    if S is None:
+        return "???"
+    if len(S) > max:
+        module, _, cls = rpartition(S, ".")
+        module = abbr(module, max - len(cls), False)
+        return module + "[.]" + cls
+    return S

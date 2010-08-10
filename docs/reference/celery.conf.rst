@@ -275,12 +275,14 @@ Celeryd
 .. data:: CELERYD_CONCURRENCY
 
     The number of concurrent worker processes.
-    If set to ``0``, the total number of available CPUs/cores will be used.
+    If set to ``0`` (the default), the total number of available CPUs/cores
+    will be used.
 
 .. data:: CELERYD_PREFETCH_MULTIPLIER
 
     The number of concurrent workers is multipled by this number to yield
     the wanted AMQP QoS message prefetch count.
+    Default is: ``4``
 
 .. data:: CELERYD_POOL
 

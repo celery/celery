@@ -18,21 +18,26 @@ It should contain all you need to run a basic celery set-up.
 
 .. code-block:: python
 
+    # List of modules to import when celery starts.
+    CELERY_IMPORTS = ("myapp.tasks", )
+
+    ## Result store settings.
     CELERY_RESULT_BACKEND = "database"
     CELERY_RESULT_DBURI = "sqlite:///mydatabase.db"
 
+    ## Broker settings.
     BROKER_HOST = "localhost"
     BROKER_PORT = 5672
     BROKER_VHOST = "/"
     BROKER_USER = "guest"
     BROKER_PASSWORD = "guest"
 
+    ## Worker settings
     ## If you're doing mostly I/O you can have more processes,
     ## but if mostly spending CPU, try to keep it close to the
     ## number of CPUs on your machine. If not set, the number of CPUs/cores
     ## available will be used.
-    # CELERYD_CONCURRENCY = 8
-
+    CELERYD_CONCURRENCY = 10
     # CELERYD_LOG_FILE = "celeryd.log"
     # CELERYD_LOG_LEVEL = "INFO"
 
@@ -127,14 +132,6 @@ the ``CELERY_RESULT_ENGINE_OPTIONS`` setting::
 .. _`Connection String`:
     http://www.sqlalchemy.org/docs/dbengine.html#create-engine-url-arguments
 
-Please see the Django ORM database settings documentation:
-http://docs.djangoproject.com/en/dev/ref/settings/#database-engine
-
-If you use this backend, make sure to initialize the database tables
-after configuration. Use the ``celeryinit`` command to do so::
-
-    $ celeryinit
-
 Example configuration
 ---------------------
 
@@ -173,12 +170,8 @@ Example configuration
 Cache backend settings
 ======================
 
-Please see the documentation for the Django cache framework settings:
-http://docs.djangoproject.com/en/dev/topics/cache/#memcached
-
-To use a custom cache backend for Celery, while using another for Django,
-you should use the ``CELERY_CACHE_BACKEND`` setting instead of the regular
-django ``CACHE_BACKEND`` setting.
+The cache backend supports the `pylibmc`_ and `python-memcached` libraries.
+The latter is used only if `pylibmc`_ is not installed.
 
 Example configuration
 ---------------------
@@ -187,14 +180,24 @@ Using a single memcached server:
 
 .. code-block:: python
 
-    CACHE_BACKEND = 'memcached://127.0.0.1:11211/'
+    CELERY_CACHE_BACKEND = 'memcached://127.0.0.1:11211/'
 
 Using multiple memcached servers:
 
 .. code-block:: python
 
     CELERY_RESULT_BACKEND = "cache"
-    CACHE_BACKEND = 'memcached://172.19.26.240:11211;172.19.26.242:11211/'
+    CELERY_CACHE_BACKEND = 'memcached://172.19.26.240:11211;172.19.26.242:11211/'
+
+You can set pylibmc options using the ``CELERY_CACHE_BACKEND_OPTIONS``
+setting:
+
+.. code-block:: python
+
+    CELERY_CACHE_BACKEND_OPTIONS = {"binary": True,
+                                    "behaviors": {"tcp_nodelay": True}}
+
+.. _`pylibmc`: http://sendapatch.se/projects/pylibmc/
 
 
 Tokyo Tyrant backend settings
@@ -259,7 +262,7 @@ Example configuration
     CELERY_RESULT_BACKEND = "redis"
     REDIS_HOST = "localhost"
     REDIS_PORT = 6379
-    REDIS_DATABASE = "celery_results"
+    REDIS_DB = "celery_results"
     REDIS_CONNECT_RETRY=True
 
 MongoDB backend settings
@@ -313,13 +316,13 @@ Routing
 -------
 
 * CELERY_QUEUES
-  The mapping of queues the worker consumes from. This is a dictionary
-  of queue name/options. See :doc:`userguide/routing` for more information.
+    The mapping of queues the worker consumes from. This is a dictionary
+    of queue name/options. See :doc:`userguide/routing` for more information.
 
-  The default is a queue/exchange/binding key of ``"celery"``, with
-  exchange type ``direct``.
+    The default is a queue/exchange/binding key of ``"celery"``, with
+    exchange type ``direct``.
 
-  You don't have to care about this unless you want custom routing facilities.
+    You don't have to care about this unless you want custom routing facilities.
 
 * CELERY_DEFAULT_QUEUE
     The queue used by default, if no custom queue is specified.
@@ -408,8 +411,8 @@ Task execution settings
 
 * CELERY_MAX_CACHED_RESULTS
 
-  Total number of results to store before results are evicted from the
-  result cache. The default is ``5000``.
+    Total number of results to store before results are evicted from the
+    result cache. The default is ``5000``.
 
 * CELERY_TRACK_STARTED
 
@@ -432,10 +435,10 @@ Task execution settings
 
 * CELERY_DEFAULT_RATE_LIMIT
 
-  The global default rate limit for tasks.
+    The global default rate limit for tasks.
 
-  This value is used for tasks that does not have a custom rate limit
-  The default is no rate limit.
+    This value is used for tasks that does not have a custom rate limit
+    The default is no rate limit.
 
 * CELERY_DISABLE_RATE_LIMITS
 
@@ -453,14 +456,15 @@ Worker: celeryd
 
 * CELERY_IMPORTS
 
-    A sequence of modules to import when the celery daemon starts.  This is
-    useful to add tasks if you are not using django or cannot use task
-    auto-discovery.
+    A sequence of modules to import when the celery daemon starts.
+
+    This is used to specify the task modules to import, but also
+    to import signal handlers and additional remote control commands, etc.
 
 * CELERYD_MAX_TASKS_PER_CHILD
 
-  Maximum number of tasks a pool worker process can execute before
-  it's replaced with a new one. Default is no limit.
+    Maximum number of tasks a pool worker process can execute before
+    it's replaced with a new one. Default is no limit.
 
 * CELERYD_TASK_TIME_LIMIT
 

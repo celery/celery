@@ -51,6 +51,22 @@ def mapstar(args):
 #
 
 
+class MaybeEncodingError(Exception):
+    """Wraps unpickleable object."""
+
+    def __init__(self, exc, value):
+        self.exc = str(exc)
+        self.value = repr(value)
+        super(MaybeEncodingError, self).__init__(self.exc, self.value)
+
+    def __repr__(self):
+        return "<MaybeEncodingError: %s>" % str(self)
+
+    def __str__(self):
+        return "Error sending result: '%s'. Reason: '%s'." % (
+                    self.value, self.exc)
+
+
 def soft_timeout_sighandler(signum, frame):
     raise SoftTimeLimitExceeded()
 
@@ -90,7 +106,12 @@ def worker(inqueue, outqueue, ackqueue, initializer=None, initargs=(),
             result = (True, func(*args, **kwds))
         except Exception, e:
             result = (False, e)
-        put((job, i, result))
+        try:
+            put((job, i, result))
+        except Exception, exc:
+            wrapped = MaybeEncodingError(exc, result[1])
+            put((job, i, (False, wrapped)))
+
         completed += 1
     debug('worker exiting after %d tasks' % completed)
 
@@ -239,8 +260,8 @@ class AckHandler(PoolThread):
 
 class TimeoutHandler(PoolThread):
 
-    def __init__(self, processes, sentinel_event, cache, t_soft, t_hard):
-        self.sentinel_event = sentinel_event
+    def __init__(self, processes, cache, t_soft, t_hard):
+        self.processes = processes
         self.cache = cache
         self.t_soft = t_soft
         self.t_hard = t_hard
@@ -350,7 +371,10 @@ class ResultHandler(PoolThread):
                 return
 
             if putlock is not None:
-                putlock.release()
+                try:
+                    putlock.release()
+                except ValueError:
+                    pass
 
             if self._state:
                 assert self._state == TERMINATE
@@ -368,7 +392,10 @@ class ResultHandler(PoolThread):
                 pass
 
         if putlock is not None:
-            putlock.release()
+            try:
+                putlock.release()
+            except ValueError:
+                pass
 
         while cache and self._state != TERMINATE:
             try:
@@ -449,7 +476,7 @@ class Pool(object):
         self._worker_handler = self.Supervisor(self)
         self._worker_handler.start()
 
-        self._putlock = threading.Semaphore(self._processes)
+        self._putlock = threading.BoundedSemaphore(self._processes)
 
         self._task_handler = self.TaskHandler(self._taskqueue, self._quick_put,
                                          self._outqueue, self._pool)
@@ -508,6 +535,11 @@ class Pool(object):
             if worker.exitcode is not None:
                 # worker exited
                 debug('cleaning up worker %d' % i)
+                if self._putlock is not None:
+                    try:
+                        self._putlock.release()
+                    except ValueError:
+                        pass
                 worker.join()
                 del self._pool[i]
         return len(self._pool) < self._processes
@@ -589,7 +621,7 @@ class Pool(object):
 
     def apply_async(self, func, args=(), kwds={},
             callback=None, accept_callback=None, timeout_callback=None,
-            waitforslot=False):
+            waitforslot=False, error_callback=None):
         '''
         Asynchronous equivalent of `apply()` builtin.
 
@@ -607,7 +639,8 @@ class Pool(object):
         '''
         assert self._state == RUN
         result = ApplyResult(self._cache, callback,
-                             accept_callback, timeout_callback)
+                             accept_callback, timeout_callback,
+                             error_callback)
         if waitforslot:
             self._putlock.acquire()
         self._taskqueue.put(([(result._job, None, func, args, kwds)], None))
@@ -742,7 +775,7 @@ DynamicPool = Pool
 class ApplyResult(object):
 
     def __init__(self, cache, callback, accept_callback=None,
-            timeout_callback=None):
+            timeout_callback=None, error_callback=None):
         self._cond = threading.Condition(threading.Lock())
         self._job = job_counter.next()
         self._cache = cache
@@ -751,6 +784,7 @@ class ApplyResult(object):
         self._time_accepted = None
         self._ready = False
         self._callback = callback
+        self._errback = error_callback
         self._accept_callback = accept_callback
         self._timeout_callback = timeout_callback
         cache[self._job] = self
@@ -786,6 +820,8 @@ class ApplyResult(object):
         self._success, self._value = obj
         if self._callback and self._success:
             self._callback(self._value)
+        if self._errback and not self._success:
+            self._errback(self._value)
         self._cond.acquire()
         try:
             self._ready = True

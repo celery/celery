@@ -72,12 +72,10 @@ class TestRedisBackend(unittest.TestCase):
 
         tid = gen_unique_id()
 
-        self.assertFalse(tb.is_successful(tid))
         self.assertEqual(tb.get_status(tid), states.PENDING)
         self.assertIsNone(tb.get_result(tid))
 
         tb.mark_as_done(tid, 42)
-        self.assertTrue(tb.is_successful(tid))
         self.assertEqual(tb.get_status(tid), states.SUCCESS)
         self.assertEqual(tb.get_result(tid), 42)
 
@@ -101,7 +99,6 @@ class TestRedisBackend(unittest.TestCase):
         except KeyError, exception:
             pass
         tb.mark_as_failure(tid3, exception)
-        self.assertFalse(tb.is_successful(tid3))
         self.assertEqual(tb.get_status(tid3), states.FAILURE)
         self.assertIsInstance(tb.get_result(tid3), KeyError)
 

@@ -9,6 +9,8 @@ from celery.serialization import get_pickleable_exception as gpe
 
 from celery import states
 from celery.backends.base import BaseBackend, KeyValueStoreBackend
+from celery.backends.base import BaseDictBackend
+from celery.utils import gen_unique_id
 
 
 class wrapobject(object):
@@ -24,7 +26,7 @@ Lookalike = subclass_exception("Lookalike", wrapobject, "foo.module")
 b = BaseBackend()
 
 
-class TestBaseBackendInterface(unittest.TestCase):
+class test_BaseBackend_interface(unittest.TestCase):
 
     def test_get_status(self):
         self.assertRaises(NotImplementedError,
@@ -33,6 +35,14 @@ class TestBaseBackendInterface(unittest.TestCase):
     def test_store_result(self):
         self.assertRaises(NotImplementedError,
                 b.store_result, "SOMExx-N0nex1stant-IDxx-", 42, states.SUCCESS)
+
+    def test_reload_task_result(self):
+        self.assertRaises(NotImplementedError,
+                b.reload_task_result, "SOMExx-N0nex1stant-IDxx-")
+
+    def test_reload_taskset_result(self):
+        self.assertRaises(NotImplementedError,
+                b.reload_taskset_result, "SOMExx-N0nex1stant-IDxx-")
 
     def test_get_result(self):
         self.assertRaises(NotImplementedError,
@@ -51,7 +61,7 @@ class TestBaseBackendInterface(unittest.TestCase):
                 b.get_traceback, "SOMExx-N0nex1stant-IDxx-")
 
 
-class TestPickleException(unittest.TestCase):
+class test_exception_pickle(unittest.TestCase):
 
     def test_oldstyle(self):
         self.assertIsNone(fnpe(Oldstyle()))
@@ -68,7 +78,7 @@ class TestPickleException(unittest.TestCase):
         self.assertIsNone(fnpe(Impossible()))
 
 
-class TestPrepareException(unittest.TestCase):
+class test_prepare_exception(unittest.TestCase):
 
     def test_unpickleable(self):
         x = b.prepare_exception(Unpickleable(1, 2, "foo"))
@@ -93,7 +103,86 @@ class TestPrepareException(unittest.TestCase):
         self.assertIsInstance(y, KeyError)
 
 
-class TestKeyValueStoreBackendInterface(unittest.TestCase):
+class KVBackend(KeyValueStoreBackend):
+
+    def __init__(self, *args, **kwargs):
+        self.db = {}
+        super(KVBackend, self).__init__(KeyValueStoreBackend)
+
+    def get(self, key):
+        return self.db.get(key)
+
+    def set(self, key, value):
+        self.db[key] = value
+
+
+class DictBackend(BaseDictBackend):
+
+    def _save_taskset(self, taskset_id, result):
+        return "taskset-saved"
+
+    def _restore_taskset(self, taskset_id):
+        if taskset_id == "exists":
+            return {"result": "taskset"}
+
+    def _get_task_meta_for(self, task_id):
+        if task_id == "task-exists":
+            return {"result": "task"}
+
+
+class test_BaseDictBackend(unittest.TestCase):
+
+    def setUp(self):
+        self.b = DictBackend()
+
+    def test_save_taskset(self):
+        self.assertEqual(self.b.save_taskset("foofoo", "xxx"),
+                         "taskset-saved")
+
+    def test_restore_taskset(self):
+        self.assertIsNone(self.b.restore_taskset("missing"))
+        self.assertIsNone(self.b.restore_taskset("missing"))
+        self.assertEqual(self.b.restore_taskset("exists"), "taskset")
+        self.assertEqual(self.b.restore_taskset("exists"), "taskset")
+        self.assertEqual(self.b.restore_taskset("exists", cache=False),
+                         "taskset")
+
+    def test_reload_taskset_result(self):
+        self.b._cache = {}
+        self.b.reload_taskset_result("exists")
+        self.b._cache["exists"] = {"result": "taskset"}
+
+    def test_reload_task_result(self):
+        self.b._cache = {}
+        self.b.reload_taskset_result("task-exists")
+        self.b._cache["task-exists"] = {"result": "task"}
+
+
+class test_KeyValueStoreBackend(unittest.TestCase):
+
+    def setUp(self):
+        self.b = KVBackend()
+
+    def test_get_store_result(self):
+        tid = gen_unique_id()
+        self.b.mark_as_done(tid, "Hello world")
+        self.assertEqual(self.b.get_result(tid), "Hello world")
+        self.assertEqual(self.b.get_status(tid), states.SUCCESS)
+
+    def test_get_missing_meta(self):
+        self.assertIsNone(self.b.get_result("xxx-missing"))
+        self.assertEqual(self.b.get_status("xxx-missing"), states.PENDING)
+
+    def test_save_restore_taskset(self):
+        tid = gen_unique_id()
+        self.b.save_taskset(tid, "Hello world")
+        self.assertEqual(self.b.restore_taskset(tid), "Hello world")
+
+    def test_restore_missing_taskset(self):
+        self.assertIsNone(self.b.restore_taskset("xxx-nonexistant"))
+
+
+class test_KeyValueStoreBackend_interface(unittest.TestCase):
 
     def test_get(self):
         self.assertRaises(NotImplementedError, KeyValueStoreBackend().get,

@@ -1,12 +1,12 @@
-#!/bin/bash
+#!/bin/sh -e
 
 ### BEGIN INIT INFO
-# Provides:		celeryd
-# Required-Start:	
-# Required-Stop:	
-# Default-Start:	2 3 4 5
-# Default-Stop:		1
-# Short-Description:	celery task worker daemon
+# Provides:          celeryd-multi
+# Required-Start:    $network $local_fs $remote_fs
+# Required-Stop:     $network $local_fs $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: celery task multiple workers daemon
 ### END INIT INFO
 
 # OS X Debug replacements to lsb-functions.
@@ -95,18 +95,13 @@ WORKERS=$CELERYD_NUM_WORKERS
 
 stop_worker () {
     cmd="start-stop-daemon  --stop --quiet $* --pidfile $CELERYD_PID_FILE"
-    w=`celeryd-multi start $WORKERS --cmd="start-stop-daemon --stop \
-                                        --quiet $* \
-                                        --pidfile $CELERYD_PID_FILE"`
-    for wname in `celeryd-multi names $WORKERS $CELERYD_OPTS`; do
-        log_daemon_msg "Stopping celery task worker" "$wname"
-        stopcmd=`celeryd-multi get "$wname" $WORKERS --cmd="$cmd" $CELERYD_OPTS`
-        if `$stopcmd`; then
-            log_end_msg 0
-        else:
-            log_end_msg 1
-        fi
-    done
+    stopcmd=`celeryd-multi expand "$cmd" $WORKERS`
+    log_daemon_msg "Stopping celery task workers..."
+    if eval "$stopcmd"; then
+        log_end_msg 0
+    else
+        log_end_msg 1
+    fi
 }
 
 start_worker () {

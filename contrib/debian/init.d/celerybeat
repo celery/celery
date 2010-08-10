@@ -1,27 +1,87 @@
-#!/bin/sh
+#!/bin/sh -e
+# =========================================================
+#  celerybeat - Starts the Celery periodic task scheduler.
+# =========================================================
+#
+# :Usage: /etc/init.d/celerybeat {start|stop|force-reload|restart|try-restart|status}
+#
+# :Configuration file: /etc/default/celerybeat or /etc/default/celeryd
+#
+# EXAMPLE CONFIGURATION
+# =====================
+#
+# this is an example configuration for a Python project:
+#
+# /etc/default/celeryd:
+#
+#   # Where to chdir at start.
+#   CELERYD_CHDIR="/opt/Myproject/"
+#
+#   # Extra arguments to celeryd
+#   CELERYD_OPTS="--time-limit 300"
+#
+#   # Extra arguments to celerybeat
+#   CELERYBEAT_OPTS="--schedule=/var/run/celerybeat-schedule"
+#
+#   # Name of the celery config module.#
+#   CELERY_CONFIG_MODULE="celeryconfig"
+#
+# EXAMPLE DJANGO CONFIGURATION
+# ============================
+#
+#   # Where the Django project is.
+#   CELERYD_CHDIR="/opt/Project/"
+#
+#   # Name of the projects settings module.
+#   DJANGO_SETTINGS_MODULE="settings"
+#
+#   # Path to celeryd
+#   CELERYD="/opt/Project/manage.py celeryd"
+#
+#   # Path to celerybeat
+#   CELERYBEAT="/opt/Project/manage.py celerybeat"
+#
+#   # Extra arguments to celerybeat
+#   CELERYBEAT_OPTS="--schedule=/var/run/celerybeat-schedule"
+#
+# AVAILABLE OPTIONS
+# =================
+#
+#   * CELERYBEAT_OPTS
+#       Additional arguments to celerybeat, see ``celerybeat --help`` for a
+#       list.
+#
+#   * CELERYBEAT_PIDFILE
+#       Full path to the pidfile. Default is /var/run/celeryd.pid.
+#
+#   * CELERYBEAT_LOGFILE
+#       Full path to the celeryd logfile. Default is /var/log/celeryd.log
+#
+#   * CELERYBEAT_LOG_LEVEL
+#       Log level to use for celeryd. Default is INFO.
+#
+#   * CELERYBEAT
+#       Path to the celeryd program. Default is ``celeryd``.
+#       You can point this to an virtualenv, or even use manage.py for django.
+#
+#   * CELERYBEAT_USER
+#       User to run celeryd as. Default is current user.
+#
+#   * CELERYBEAT_GROUP
+#       Group to run celeryd as. Default is current user.
+
 
 ### BEGIN INIT INFO
-# Provides:		celerybeat
-# Required-Start:	
-# Required-Stop:	
-# Default-Start:	2 3 4 5
-# Default-Stop:		1
-# Short-Description:	celery periodic task scheduler
+# Provides:          celerybeat
+# Required-Start:    $network $local_fs $remote_fs
+# Required-Stop:     $network $local_fs $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: celery periodic task scheduler
 ### END INIT INFO
-
-# To use this with Django set your DJANGO_PROJECT_DIR in /etc/default/celeryd:
-#
-#   echo "DJANGO_PROJECT_DIR=/opt/Myapp" > /etc/default/celeryd
-#
-# The django project dir is the directory that contains settings and
-# manage.py.
-
-# celerybeat uses the celeryd default file by default, but you can also
-# add a /etc/default/celerybeat file to set different settings for celerybeat.
 
 set -e
 
-DJANGO_SETTINGS_MODULE=settings
 CELERYBEAT_PID_FILE="/var/run/celerybeat.pid"
 CELERYBEAT_LOG_FILE="/var/log/celerybeat.log"
 CELERYBEAT_LOG_LEVEL="INFO"
@@ -32,25 +92,12 @@ DEFAULT_CELERYBEAT="celerybeat"
 if test -f /etc/default/celeryd; then
     . /etc/default/celeryd
 fi
-if test -f /etc/default/celerybeat; then
-    . /etc/default/celerybeat
-fi
 
-export DJANGO_SETTINGS_MODULE
-export DJANGO_PROJECT_DIR
+CELERYBEAT=${CELERYBEAT:-$DEFAULT_CELERYBEAT}
 
-if [ -z "$CELERYBEAT" ]; then
-    if [ ! -z "$DJANGO_PROJECT_DIR" ]; then
-        CELERYBEAT="$DJANGO_PROJECT_DIR/manage.py"
-        CELERYBEAT_OPTS="celerybeat $CELERYBEAT_OPTS"
-    else
-        CELERYBEAT=$DEFAULT_CELERYBEAT
-    fi
-fi
+export CELERY_LOADER
 
 . /lib/lsb/init-functions
-
-cd $DJANGO_PROJECT_DIR
 
 CELERYBEAT_OPTS="$CELERYBEAT_OPTS -f $CELERYBEAT_LOG_FILE -l $CELERYBEAT_LOG_LEVEL"
 
@@ -66,6 +113,12 @@ if [ -n "$CELERYBEAT_GROUP" ]; then
     DAEMON_OPTS="$DAEMON_OPTS --group $CELERYBEAT_GROUP"
 fi
 
+CELERYBEAT_CHDIR=${CELERYBEAT_CHDIR:-$CELERYD_CHDIR}
+if [ -n "$CELERYBEAT_CHDIR" ]; then
+    DAEMON_OPTS="$DAEMON_OPTS --chdir $CELERYBEAT_CHDIR"
+fi
+
+
 # Are we running from init?
 run_by_init() {
     ([ "$previous" ] && [ "$runlevel" ]) || [ "$runlevel" = S ]
@@ -74,49 +127,59 @@ run_by_init() {
 
 check_dev_null() {
     if [ ! -c /dev/null ]; then
-	if [ "$1" = log_end_msg ]; then
-	    log_end_msg 1 || true
-	fi
-	if ! run_by_init; then
-	    log_action_msg "/dev/null is not a character device!"
-	fi
-	exit 1
+    if [ "$1" = log_end_msg ]; then
+        log_end_msg 1 || true
+    fi
+    if ! run_by_init; then
+        log_action_msg "/dev/null is not a character device!"
+    fi
+    exit 1
     fi
 }
 
 
 export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
-if [ ! -z "$VIRTUALENV" ]; then
-    export PATH="$VIRTUALENV/bin:$PATH"
-    if [ -z "$DJANGO_PROJECT_DIR" ]; then
-        CELERYBEAT="$VIRTUALENV/bin/$CELERYBEAT"
+
+
+stop_worker () {
+    cmd="start-stop-daemon --stop \
+                           --quiet \
+                           $* \
+                           --pidfile $CELERYBEAT_PID_FILE"
+    if $cmd; then
+        log_end_msg 0
+    else
+        log_end_msg 1
     fi
-fi
+}
 
-if [ -f "$CELERYBEAT" -a ! -x "$CELERYBEAT" ]; then
-    echo "ERROR: $CELERYBEAT is not executable."
-    echo "Please make it executable by doing: chmod +x '$CELERYBEAT'"
+start_worker () {
+    cmd="start-stop-daemon --start $DAEMON_OPTS \
+                           --quiet \
+                           --oknodo \
+                           --background \
+                           --make-pidfile \
+                           $* \
+                           --pidfile $CELERYBEAT_PID_FILE
+                           --exec $CELERYBEAT -- $CELERYBEAT_OPTS"
+    if $cmd; then
+        log_end_msg 0
+    else
+        log_end_msg 1
+    fi
+}
 
-    echo "celerybeat is disabled"
-    exit
-fi
+
 
 case "$1" in
   start)
     check_dev_null
     log_daemon_msg "Starting celery periodic task scheduler" "celerybeat"
-    if start-stop-daemon --start $DAEMON_OPTS --quiet --oknodo --background --chdir $DJANGO_PROJECT_DIR --make-pidfile --pidfile $CELERYBEAT_PID_FILE --exec $CELERYBEAT -- $CELERYBEAT_OPTS; then
-        log_end_msg 0
-    else
-        log_end_msg 1
-    fi
+    start_worker
     ;;
   stop)
     log_daemon_msg "Stopping celery periodic task scheduler" "celerybeat"
-    if start-stop-daemon --stop --quiet --oknodo --pidfile $CELERYBEAT_PID_FILE; then log_end_msg 0 else
-        rm -f "$CELERYBEAT_PID_FILE"
-        log_end_msg 1
-    fi
+    stop_worker --oknodo
     ;;
 
   reload|force-reload)
@@ -125,51 +188,43 @@ case "$1" in
 
   restart)
     log_daemon_msg "Restarting celery periodic task scheduler" "celerybeat"
-    start-stop-daemon --stop --quiet --oknodo --retry 30 --pidfile $CELERYBEAT_PID_FILE
+    stop_worker --oknodo --retry 30
     check_dev_null log_end_msg
-    if start-stop-daemon --start $DAEMON_OPTS --quiet --oknodo --background --chdir $DJANGO_PROJECT_DIR --make-pidfile --pidfile $CELERYBEAT_PID_FILE --exec $CELERYBEAT -- $CELERYBEAT_OPTS; then
-        log_end_msg 0
-    else
-        log_end_msg 1
-    fi
+    start_worker
     ;;
 
   try-restart)
     log_daemon_msg "Restarting celery periodic task scheduler" "celerybeat"
     set +e
-    start-stop-daemon --stop --quiet --retry 30 --pidfile $CELERYBEAT_PID_FILE
+    stop_worker --retry 30
     RET="$?"
     set -e
     case $RET in
         0)
-		# old daemon stopped
-		check_dev_null log_end_msg
-		if start-stop-daemon --start $DAEMON_OPTS --quiet --oknodo --background --chdir $DJANGO_PROJECT_DIR --make-pidfile --pidfile $CELERYBEAT_PID_FILE --exec $CELERYBEAT -- $CELERYBEAT_OPTS; then
-		    log_end_msg 0
-		else
-		    log_end_msg 1
-		fi
-		;;
-	    1)
-		# daemon not running
-		log_progress_msg "(not running)"
-		log_end_msg 0
-		;;
-	    *)
-		# failed to stop
-		log_progress_msg "(failed to stop)"
-		log_end_msg 1
-		;;
-	esac
-	;;
+        # old daemon stopped
+        check_dev_null log_end_msg
+        start_worker
+        ;;
+        1)
+        # daemon not running
+        log_progress_msg "(not running)"
+        log_end_msg 0
+        ;;
+        *)
+        # failed to stop
+        log_progress_msg "(failed to stop)"
+        log_end_msg 1
+        ;;
+    esac
+    ;;
 
   status)
-	status_of_proc -p $CELERYBEAT_PID_FILE $CELERYBEAT celerybeat && exit 0 || exit $?
-	;;
+    status_of_proc -p $CELERYBEAT_PID_FILE $CELERYBEAT celerybeat && exit 0 || exit $?
+    ;;
 
   *)
-	log_action_msg "Usage: /etc/init.d/celerybeat {start|stop|force-reload|restart|try-restart|status}"
-	exit 1
+    log_action_msg "Usage: /etc/init.d/celerybeat {start|stop|force-reload|restart|try-restart|status}"
+    exit 1
 esac
 
 exit 0

@@ -14,20 +14,17 @@ from celery import conf
 from celery import signals
 from celery.utils import gen_unique_id, mitemgetter, noop
 from celery.utils.functional import wraps
-from celery.routes import lookup_route, expand_destination
-from celery.loaders import load_settings
 
 
-MSG_OPTIONS = ("mandatory", "priority",
-               "immediate", "routing_key",
-               "serializer", "delivery_mode")
+MSG_OPTIONS = ("mandatory", "priority", "immediate",
+               "routing_key", "serializer", "delivery_mode")
 
 get_msg_options = mitemgetter(*MSG_OPTIONS)
 extract_msg_options = lambda d: dict(zip(MSG_OPTIONS, get_msg_options(d)))
-default_queue = conf.get_routing_table()[conf.DEFAULT_QUEUE]
+default_queue = conf.get_queues()[conf.DEFAULT_QUEUE]
 
 _queues_declared = False
-_exchanges_declared = {}
+_exchanges_declared = set()
 
 
 class TaskPublisher(Publisher):
@@ -47,25 +44,34 @@ class TaskPublisher(Publisher):
             consumers = get_consumer_set(self.connection)
             consumers.close()
             _queues_declared = True
+        self.declare()
+
+    def declare(self):
         if self.exchange not in _exchanges_declared:
-            self.declare()
-            _exchanges_declared[self.exchange] = True
+            super(TaskPublisher, self).declare()
+            _exchanges_declared.add(self.exchange)
 
     def delay_task(self, task_name, task_args=None, task_kwargs=None,
-            countdown=None, eta=None, task_id=None, taskset_id=None, **kwargs):
+            countdown=None, eta=None, task_id=None, taskset_id=None,
+            expires=None, **kwargs):
         """Delay task for execution by the celery nodes."""
 
         task_id = task_id or gen_unique_id()
-
-        if countdown: # Convert countdown to ETA.
-            eta = datetime.now() + timedelta(seconds=countdown)
-
         task_args = task_args or []
         task_kwargs = task_kwargs or {}
+        now = None
+        if countdown: # Convert countdown to ETA.
+            now = datetime.now()
+            eta = now + timedelta(seconds=countdown)
+
         if not isinstance(task_args, (list, tuple)):
             raise ValueError("task args must be a list or tuple")
         if not isinstance(task_kwargs, dict):
             raise ValueError("task kwargs must be a dictionary")
+
+        if isinstance(expires, int):
+            now = now or datetime.now()
+            expires = now + timedelta(seconds=expires)
 
         message_data = {
             "task": task_name,
@@ -74,22 +80,13 @@ class TaskPublisher(Publisher):
             "kwargs": task_kwargs or {},
             "retries": kwargs.get("retries", 0),
             "eta": eta and eta.isoformat(),
+            "expires": expires and expires.isoformat(),
         }
 
         if taskset_id:
             message_data["taskset"] = taskset_id
 
-        route = {}
-        if conf.ROUTES:
-            route = lookup_route(conf.ROUTES, task_name, task_id,
-                                 task_args, task_kwargs)
-        if route:
-            dest = expand_destination(route, conf.get_routing_table())
-            msg_options = dict(extract_msg_options(kwargs), **dest)
-        else:
-            msg_options = extract_msg_options(kwargs)
-
-        self.send(message_data, **msg_options)
+        self.send(message_data, **extract_msg_options(kwargs))
         signals.task_sent.send(sender=task_name, **message_data)
 
         return task_id
@@ -186,6 +183,8 @@ class ControlReplyPublisher(Publisher):
     exchange = "celerycrq"
     exchange_type = "direct"
     delivery_mode = "non-persistent"
+    durable = False
+    auto_delete = True
 
 
 class BroadcastPublisher(Publisher):
@@ -268,7 +267,7 @@ def get_consumer_set(connection, queues=None, **options):
     Defaults to the queues in ``CELERY_QUEUES``.
 
     """
-    queues = queues or conf.get_routing_table()
+    queues = queues or conf.get_queues()
     cset = ConsumerSet(connection)
     for queue_name, queue_options in queues.items():
         queue_options = dict(queue_options)
@@ -282,6 +281,6 @@ def get_consumer_set(connection, queues=None, **options):
 @with_connection
 def reply(data, exchange, routing_key, connection=None, connect_timeout=None,
         **kwargs):
-    pub = Publisher(connection, exchange=exchange,
+    pub = ControlReplyPublisher(connection, exchange=exchange,
                     routing_key=routing_key, **kwargs)
     pub.send(data)

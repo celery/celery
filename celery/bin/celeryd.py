@@ -79,6 +79,7 @@ from celery.utils import info
 from celery.utils import get_full_cls_name
 from celery.worker import WorkController
 from celery.exceptions import ImproperlyConfigured
+from celery.routes import Router
 
 STARTUP_INFO_FMT = """
 Configuration ->
@@ -134,6 +135,11 @@ OPTION_LIST = (
                     option. The extension '.db' will be appended to the \
                     filename. Default: %s" % (
                     conf.CELERYBEAT_SCHEDULE_FILENAME)),
+    optparse.make_option('-S', '--statedb', default=conf.CELERYD_STATE_DB,
+            action="store", dest="db",
+            help="Path to the state database. The extension '.db' will \
+                 be appended to the filename. Default: %s" % (
+                     conf.CELERYD_STATE_DB)),
     optparse.make_option('-E', '--events', default=conf.SEND_EVENTS,
             action="store_true", dest="events",
             help="Send events so celery can be monitored by e.g. celerymon."),
@@ -159,6 +165,7 @@ OPTION_LIST = (
 
 
 class Worker(object):
+    WorkController = WorkController
 
     def __init__(self, concurrency=conf.CELERYD_CONCURRENCY,
             loglevel=conf.CELERYD_LOG_LEVEL, logfile=conf.CELERYD_LOG_FILE,
@@ -167,7 +174,7 @@ class Worker(object):
             task_time_limit=conf.CELERYD_TASK_TIME_LIMIT,
             task_soft_time_limit=conf.CELERYD_TASK_SOFT_TIME_LIMIT,
             max_tasks_per_child=conf.CELERYD_MAX_TASKS_PER_CHILD,
-            queues=None, events=False, **kwargs):
+            queues=None, events=False, db=None, **kwargs):
         self.concurrency = concurrency or multiprocessing.cpu_count()
         self.loglevel = loglevel
         self.logfile = logfile
@@ -179,7 +186,9 @@ class Worker(object):
         self.task_time_limit = task_time_limit
         self.task_soft_time_limit = task_soft_time_limit
         self.max_tasks_per_child = max_tasks_per_child
+        self.db = db
         self.queues = queues or []
+        self._isatty = sys.stdout.isatty()
 
         if isinstance(self.queues, basestring):
             self.queues = self.queues.split(",")
@@ -190,18 +199,10 @@ class Worker(object):
     def run(self):
         self.init_loader()
         self.init_queues()
+        self.worker_init()
         self.redirect_stdouts_to_logger()
         print("celery@%s v%s is starting." % (self.hostname,
                                               celery.__version__))
-
-
-        if conf.RESULT_BACKEND == "database" \
-                and self.settings.DATABASE_ENGINE == "sqlite3" and \
-                self.concurrency > 1:
-            warnings.warn("The sqlite3 database engine doesn't handle "
-                          "concurrency well. Will use a single process only.",
-                          UserWarning)
-            self.concurrency = 1
 
         if getattr(self.settings, "DEBUG", False):
             warnings.warn("Using settings.DEBUG leads to a memory leak, "
@@ -209,7 +210,6 @@ class Worker(object):
 
         if self.discard:
             self.purge_messages()
-        self.worker_init()
 
         # Dump configuration to screen so we have some basic information
         # for when users sends bug reports.
@@ -227,6 +227,13 @@ class Worker(object):
             conf.QUEUES = dict((queue, options)
                                 for queue, options in conf.QUEUES.items()
                                     if queue in self.queues)
+            for queue in self.queues:
+                if queue not in conf.QUEUES:
+                    if conf.CREATE_MISSING_QUEUES:
+                        Router(queues=conf.QUEUES).add_queue(queue)
+                    else:
+                        raise ImproperlyConfigured(
+                            "Queue '%s' not defined in CELERY_QUEUES" % queue)
 
     def init_loader(self):
         from celery.loaders import current_loader, load_settings
@@ -238,10 +245,12 @@ class Worker(object):
 
     def redirect_stdouts_to_logger(self):
         from celery import log
+        handled = log.setup_logging_subsystem(loglevel=self.loglevel,
+                                              logfile=self.logfile)
         # Redirect stdout/stderr to our logger.
-        logger = log.setup_logger(loglevel=self.loglevel,
-                                  logfile=self.logfile)
-        log.redirect_stdouts_to_logger(logger, loglevel=logging.WARNING)
+        if not handled:
+            logger = log.get_default_logger()
+            log.redirect_stdouts_to_logger(logger, loglevel=logging.WARNING)
 
     def purge_messages(self):
         discarded_count = discard_all()
@@ -269,9 +278,11 @@ class Worker(object):
             include_builtins = self.loglevel <= logging.DEBUG
             tasklist = self.tasklist(include_builtins=include_builtins)
 
+        queues = conf.get_queues()
+
         return STARTUP_INFO_FMT % {
             "conninfo": info.format_broker_info(),
-            "queues": info.format_routing_table(indent=8),
+            "queues": info.format_queues(queues, indent=8),
             "concurrency": self.concurrency,
             "loglevel": conf.LOG_LEVELS[self.loglevel],
             "logfile": self.logfile or "[stderr]",
@@ -282,7 +293,7 @@ class Worker(object):
         }
 
     def run_worker(self):
-        worker = WorkController(concurrency=self.concurrency,
+        worker = self.WorkController(concurrency=self.concurrency,
                                 loglevel=self.loglevel,
                                 logfile=self.logfile,
                                 hostname=self.hostname,
@@ -290,15 +301,19 @@ class Worker(object):
                                 embed_clockservice=self.run_clockservice,
                                 schedule_filename=self.schedule,
                                 send_events=self.events,
+                                db=self.db,
                                 max_tasks_per_child=self.max_tasks_per_child,
                                 task_time_limit=self.task_time_limit,
                                 task_soft_time_limit=self.task_soft_time_limit)
 
         # Install signal handler so SIGHUP restarts the worker.
-        install_worker_restart_handler(worker)
+        if not self._isatty:
+            # only install HUP handler if detached from terminal,
+            # so closing the terminal window doesn't restart celeryd
+            # into the background.
+            install_worker_restart_handler(worker)
         install_worker_term_handler(worker)
         install_worker_int_handler(worker)
-
         signals.worker_init.send(sender=worker)
         worker.start()
 
@@ -331,7 +346,6 @@ def install_worker_int_again_handler(worker):
         raise SystemExit()
 
     platform.install_signal_handler("SIGINT", _stop)
-
 
 
 def install_worker_term_handler(worker):
@@ -370,7 +384,7 @@ def set_process_status(info):
     arg_start = "manage" in sys.argv[0] and 2 or 1
     if sys.argv[arg_start:]:
         info = "%s (%s)" % (info, " ".join(sys.argv[arg_start:]))
-    platform.set_mp_process_title("celeryd", info=info)
+    return platform.set_mp_process_title("celeryd", info=info)
 
 
 def run_worker(**options):

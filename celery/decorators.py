@@ -5,6 +5,7 @@ Decorators
 """
 from inspect import getargspec
 
+from celery import registry
 from celery.task.base import Task, PeriodicTask
 from celery.utils.functional import wraps
 
@@ -58,7 +59,8 @@ def task(*args, **options):
             cls_dict = dict(options, run=run,
                             __module__=fun.__module__,
                             __doc__=fun.__doc__)
-            return type(fun.__name__, (base, ), cls_dict)()
+            T = type(fun.__name__, (base, ), cls_dict)()
+            return registry.tasks[T.name] # global instance.
 
         return _create_task_cls
 

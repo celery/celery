@@ -9,12 +9,7 @@ class TestInitFile(unittest.TestCase):
         self.assertTrue(celery.VERSION)
         self.assertGreaterEqual(len(celery.VERSION), 3)
         celery.VERSION = (0, 3, 0)
-        self.assertFalse(celery.is_stable_release())
         self.assertGreaterEqual(celery.__version__.count("."), 2)
-        self.assertIn("(unstable)", celery.version_with_meta())
-        celery.VERSION = (0, 4, 0)
-        self.assertTrue(celery.is_stable_release())
-        self.assertIn("(stable)", celery.version_with_meta())
 
     def test_meta(self):
         for m in ("__author__", "__contact__", "__homepage__",

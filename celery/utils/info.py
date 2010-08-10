@@ -1,9 +1,8 @@
 import math
 
-from celery import conf
 from celery.messaging import establish_connection
 
-ROUTE_FORMAT = """
+QUEUE_FORMAT = """
 . %(name)s -> exchange:%(exchange)s (%(exchange_type)s) \
 binding:%(binding_key)s
 """
@@ -31,13 +30,12 @@ def textindent(t, indent=0):
     return "\n".join(" " * indent + p for p in t.split("\n"))
 
 
-def format_routing_table(table=None, indent=0):
+def format_queues(queues, indent=0):
     """Format routing table into string for log dumps."""
-    table = table or conf.get_routing_table()
-    format = lambda **route: ROUTE_FORMAT.strip() % route
-    routes = "\n".join(format(name=name, **route)
-                            for name, route in table.items())
-    return textindent(routes, indent=indent)
+    format = lambda **queue: QUEUE_FORMAT.strip() % queue
+    info = "\n".join(format(name=name, **config)
+                            for name, config in queues.items())
+    return textindent(info, indent=indent)
 
 
 def get_broker_info():

@@ -34,7 +34,7 @@ copyright = u'2009, Ask Solem'
 # The short X.Y version.
 version = ".".join(map(str, celery.VERSION[0:2]))
 # The full version, including alpha/beta/rc tags.
-release = celery.version_with_meta()
+release = celery.__version__
 
 exclude_trees = ['.build']
 
@@ -62,5 +62,10 @@ latex_documents = [
    ur'Ask Solem', 'manual'),
 ]
 
-html_theme = "classy"
+html_theme = "celery"
 html_theme_path = ["_theme"]
+html_sidebars = {
+    'index': ['sidebarintro.html', 'sourcelink.html', 'searchbox.html'],
+    '**': ['sidebarlogo.html', 'localtoc.html', 'relations.html',
+           'sourcelink.html', 'searchbox.html'],
+}

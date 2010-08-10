@@ -3,14 +3,14 @@ import unittest2 as unittest
 
 from celery import conf
 from celery import routes
-from celery.utils import gen_unique_id
+from celery.utils import maybe_promise
 from celery.utils.functional import wraps
-from celery.exceptions import RouteNotFound
+from celery.exceptions import QueueNotFound
 
 
-def E(routing_table):
+def E(queues):
     def expand(answer):
-        return routes.expand_destination(answer, routing_table)
+        return routes.Router([], queues).expand_destination(answer)
     return expand
 
 
@@ -29,84 +29,80 @@ def with_queues(**queues):
     return patch_fun
 
 
-a_route = {"exchange": "fooexchange",
+a_queue = {"exchange": "fooexchange",
            "exchange_type": "fanout",
                "binding_key": "xuzzy"}
-b_route = {"exchange": "barexchange",
+b_queue = {"exchange": "barexchange",
            "exchange_type": "topic",
            "binding_key": "b.b.#"}
 
 
 class test_MapRoute(unittest.TestCase):
 
-    @with_queues(foo=a_route, bar=b_route)
+    @with_queues(foo=a_queue, bar=b_queue)
     def test_route_for_task_expanded_route(self):
         expand = E(conf.QUEUES)
-        route = routes.MapRoute({"celery.ping": "foo"})
-        self.assertDictContainsSubset(a_route,
+        route = routes.MapRoute({"celery.ping": {"queue": "foo"}})
+        self.assertDictContainsSubset(a_queue,
                              expand(route.route_for_task("celery.ping")))
         self.assertIsNone(route.route_for_task("celery.awesome"))
 
-    @with_queues(foo=a_route, bar=b_route)
+    @with_queues(foo=a_queue, bar=b_queue)
     def test_route_for_task(self):
         expand = E(conf.QUEUES)
-        route = routes.MapRoute({"celery.ping": b_route})
-        self.assertDictContainsSubset(b_route,
+        route = routes.MapRoute({"celery.ping": b_queue})
+        self.assertDictContainsSubset(b_queue,
                              expand(route.route_for_task("celery.ping")))
         self.assertIsNone(route.route_for_task("celery.awesome"))
 
     def test_expand_route_not_found(self):
         expand = E(conf.QUEUES)
-        route = routes.MapRoute({"a": "x"})
-        self.assertRaises(RouteNotFound, expand, route.route_for_task("a"))
+        route = routes.MapRoute({"a": {"queue": "x"}})
+        self.assertRaises(QueueNotFound, expand, route.route_for_task("a"))
 
 
 class test_lookup_route(unittest.TestCase):
 
-    @with_queues(foo=a_route, bar=b_route)
+    def test_init_queues(self):
+        router = routes.Router(queues=None)
+        self.assertDictEqual(router.queues, {})
+
+    @with_queues(foo=a_queue, bar=b_queue)
     def test_lookup_takes_first(self):
-        expand = E(conf.QUEUES)
-        R = routes.prepare(({"celery.ping": "bar"},
-                            {"celery.ping": "foo"}))
-        self.assertDictContainsSubset(b_route,
-                expand(routes.lookup_route(R, "celery.ping", gen_unique_id(),
-                    args=[1, 2], kwargs={})))
+        R = routes.prepare(({"celery.ping": {"queue": "bar"}},
+                            {"celery.ping": {"queue": "foo"}}))
+        router = routes.Router(R, conf.QUEUES)
+        self.assertDictContainsSubset(b_queue,
+                router.route({}, "celery.ping",
+                    args=[1, 2], kwargs={}))
 
-    @with_queues(foo=a_route, bar=b_route)
+    @with_queues(foo=a_queue, bar=b_queue)
     def test_lookup_paths_traversed(self):
-        expand = E(conf.QUEUES)
-        R = routes.prepare(({"celery.xaza": "bar"},
-                            {"celery.ping": "foo"}))
-        self.assertDictContainsSubset(a_route,
-                expand(routes.lookup_route(R, "celery.ping", gen_unique_id(),
-                    args=[1, 2], kwargs={})))
-        self.assertIsNone(routes.lookup_route(R, "celery.poza"))
+        R = routes.prepare(({"celery.xaza": {"queue": "bar"}},
+                            {"celery.ping": {"queue": "foo"}}))
+        router = routes.Router(R, conf.QUEUES)
+        self.assertDictContainsSubset(a_queue,
+                router.route({}, "celery.ping",
+                    args=[1, 2], kwargs={}))
+        self.assertEqual(router.route({}, "celery.poza"), {})
 
 
-class test_lookup_disabled(unittest.TestCase):
+class test_prepare(unittest.TestCase):
 
-    def test_disabled(self):
+    def test_prepare(self):
+        from celery.datastructures import LocalCache
+        o = object()
+        R = [{"foo": "bar"},
+                  "celery.datastructures.LocalCache",
+                  o]
+        p = routes.prepare(R)
+        self.assertIsInstance(p[0], routes.MapRoute)
+        self.assertIsInstance(maybe_promise(p[1]), LocalCache)
+        self.assertIs(p[2], o)
 
-        def create_router(name, is_disabled):
-            class _Router(object):
+        self.assertEqual(routes.prepare(o), [o])
 
-                def disabled(self, task, *args):
-                    if task == name:
-                        return is_disabled
-            return _Router()
-
-
-        A = create_router("celery.ping", True)
-        B = create_router("celery.ping", False)
-        C = object()
-
-        R1 = (routes.prepare((A, B, C)), True)
-        R2 = (routes.prepare((B, C, A)), False)
-        R3 = (routes.prepare((C, A, B)), True)
-        R4 = (routes.prepare((B, A, C)), False)
-        R5 = (routes.prepare((A, C, B)), True)
-        R6 = (routes.prepare((C, B, A)), False)
-
-        for i, (router, state) in enumerate((R1, R2, R3, R4, R5, R6)):
-            self.assertEqual(routes.lookup_disabled(router, "celery.ping"),
-                             state, "ok %d" % i)
+    def test_prepare_item_is_dict(self):
+        R = {"foo": "bar"}
+        p = routes.prepare(R)
+        self.assertIsInstance(p[0], routes.MapRoute)

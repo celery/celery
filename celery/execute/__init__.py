@@ -1,13 +1,14 @@
 from celery import conf
-from celery.utils import gen_unique_id, fun_takes_kwargs, mattrgetter
-from celery.result import AsyncResult, EagerResult
+from celery.datastructures import ExceptionInfo
 from celery.execute.trace import TaskTrace
-from celery.registry import tasks
 from celery.messaging import with_connection
 from celery.messaging import TaskPublisher
-from celery.datastructures import ExceptionInfo
+from celery.registry import tasks
+from celery.result import AsyncResult, EagerResult
+from celery.routes import Router
+from celery.utils import gen_unique_id, fun_takes_kwargs, mattrgetter
 
-extract_exec_options = mattrgetter("routing_key", "exchange",
+extract_exec_options = mattrgetter("queue", "routing_key", "exchange",
                                    "immediate", "mandatory",
                                    "priority", "serializer",
                                    "delivery_mode")
@@ -16,7 +17,7 @@ extract_exec_options = mattrgetter("routing_key", "exchange",
 @with_connection
 def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
         task_id=None, publisher=None, connection=None, connect_timeout=None,
-        **options):
+        router=None, expires=None, **options):
     """Run a task asynchronously by the celery daemon(s).
 
     :param task: The :class:`~celery.task.base.Task` to run.
@@ -32,9 +33,14 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
       the ``immediate`` setting, they are unrelated).
 
     :keyword eta: A :class:`~datetime.datetime` object that describes the
-      absolute time when the task should execute. May not be specified
-      if ``countdown`` is also supplied. (Do not confuse this with the
-      ``immediate`` setting, they are unrelated).
+      absolute time and date of when the task should execute. May not be
+      specified if ``countdown`` is also supplied. (Do not confuse this
+      with the ``immediate`` setting, they are unrelated).
+
+    :keyword expires: Either a :class:`int`, describing the number of seconds,
+      or a :class:`~datetime.datetime` object that describes the absolute time
+      and date of when the task should expire.
+      The task will not be executed after the expiration time.
 
     :keyword connection: Re-use existing broker connection instead
       of establishing a new one. The ``connect_timeout`` argument is
@@ -78,11 +84,16 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
     replaced by a local :func:`apply` call instead.
 
     """
+    router = router or Router(conf.ROUTES, conf.get_queues(),
+                              conf.CREATE_MISSING_QUEUES)
+
     if conf.ALWAYS_EAGER:
         return apply(task, args, kwargs, task_id=task_id)
 
     task = tasks[task.name] # get instance from registry
+
     options = dict(extract_exec_options(task), **options)
+    options = router.route(options, task.name, args, kwargs)
     exchange = options.get("exchange")
     exchange_type = options.get("exchange_type")
 
@@ -90,7 +101,8 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
                                               exchange_type=exchange_type)
     try:
         task_id = publish.delay_task(task.name, args, kwargs, task_id=task_id,
-                                     countdown=countdown, eta=eta, **options)
+                                     countdown=countdown, eta=eta,
+                                     expires=expires, **options)
     finally:
         publisher or publish.close()
 
@@ -100,7 +112,7 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
 @with_connection
 def send_task(name, args=None, kwargs=None, countdown=None, eta=None,
         task_id=None, publisher=None, connection=None, connect_timeout=None,
-        result_cls=AsyncResult, **options):
+        result_cls=AsyncResult, expires=None, **options):
     """Send task by name.
 
     Useful if you don't have access to the :class:`~celery.task.base.Task`
@@ -118,7 +130,8 @@ def send_task(name, args=None, kwargs=None, countdown=None, eta=None,
                                          exchange_type=exchange_type)
     try:
         task_id = publish.delay_task(name, args, kwargs, task_id=task_id,
-                                     countdown=countdown, eta=eta, **options)
+                                     countdown=countdown, eta=eta,
+                                     expires=expires, **options)
     finally:
         publisher or publish.close()
 
@@ -135,7 +148,7 @@ def delay_task(task_name, *args, **kwargs):
     :raises celery.exceptions.NotRegistered: exception if no such task
         has been registered in the task registry.
 
-    :returns: :class:`celery.result.AsyncResult`.
+    :returns :class:`celery.result.AsyncResult`:
 
     Example
 
@@ -161,7 +174,7 @@ def apply(task, args, kwargs, **options):
     """
     args = args or []
     kwargs = kwargs or {}
-    task_id = options.get("task_id", gen_unique_id())
+    task_id = options.get("task_id") or gen_unique_id()
     retries = options.get("retries", 0)
     throw = options.pop("throw", conf.EAGER_PROPAGATES_EXCEPTIONS)
 

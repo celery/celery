@@ -49,11 +49,12 @@ OPTION_LIST = (
     optparse.make_option('-l', '--loglevel',
             default=conf.CELERYBEAT_LOG_LEVEL,
             action="store", dest="loglevel",
-            help="Choose between DEBUG/INFO/WARNING/ERROR/CRITICAL/FATAL."),
+            help="Loglevel. One of DEBUG/INFO/WARNING/ERROR/CRITICAL."),
 )
 
 
 class Beat(object):
+    ClockService = ClockService
 
     def __init__(self, loglevel=conf.CELERYBEAT_LOG_LEVEL,
             logfile=conf.CELERYBEAT_LOG_FILE,
@@ -77,9 +78,9 @@ class Beat(object):
 
     def start_scheduler(self):
         from celery.log import setup_logger
-        logger = setup_logger(self.loglevel, self.logfile)
-        beat = ClockService(logger,
-                            schedule_filename=self.schedule)
+        logger = setup_logger(self.loglevel, self.logfile, name="celery.beat")
+        beat = self.ClockService(logger,
+                                 schedule_filename=self.schedule)
 
         try:
             self.install_sync_handler(beat)

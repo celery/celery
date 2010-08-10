@@ -57,7 +57,7 @@ def find_nearest_pickleable_exception(exc):
     :returns: the nearest exception if it's not :exc:`Exception` or below,
         if it is it returns ``None``.
 
-    :rtype: :exc:`Exception`
+    :rtype :exc:`Exception`:
 
     """
     cls = exc.__class__

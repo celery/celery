@@ -8,19 +8,22 @@
 Starting the worker
 ===================
 
-Starting celeryd in the foreground::
+You can start celeryd to run in the foreground by executing the command::
 
     $ celeryd --loglevel=INFO
 
-You probably want to use a daemonization tool to start and stop
-``celeryd`` in the background, see :doc:`../cookbook/daemonizing` for help using
-some of the most popular solutions.
+You probably want to use a daemonization tool to start
+``celeryd`` in the background. See :doc:`../cookbook/daemonizing` for help
+starting celeryd with some of the most popular daemonization tools.
 
-For a full list of available command line options see :mod:`~celery.bin.celeryd`.
+For a full list of available command line options see
+:mod:`~celery.bin.celeryd`, or simply execute the command::
 
-You can also start multiple celeryd's on the same machine, but if you do so
-be sure to give a unique name to each individual worker by specifying the
-``-hostname`` argument::
+    $ celeryd --help
+
+You can also start multiple celeryd's on the same machine. If you do so
+be sure to give a unique name to each individual worker by specifying a
+hostname with the ``--hostname|-n`` argument::
 
     $ celeryd --loglevel=INFO --concurrency=10 -n worker1.example.com
     $ celeryd --loglevel=INFO --concurrency=10 -n worker2.example.com
@@ -29,24 +32,24 @@ be sure to give a unique name to each individual worker by specifying the
 Stopping the worker
 ===================
 
-Shutdown should be accomplished using the ``TERM`` signal (although ``INT``
-also works).
+Shutdown should be accomplished using the ``TERM`` signal.
 
 When shutdown is initiated the worker will finish any tasks it's currently
 executing before it terminates, so if these tasks are important you should
 wait for it to finish before doing anything drastic (like sending the ``KILL``
 signal).
 
-If the worker won't shutdown after considerate time, you probably have hanging
-tasks, in this case it's safe to use the ``KILL`` signal but be aware that
-currently executing tasks will be lost (unless the tasks have the
-:attr:`~celery.task.base.Task.acks_late` option set).
+If the worker won't shutdown after considerate time, for example because
+of tasks stuck in an infinite-loop, you can use the ``KILL`` signal to
+force terminate the worker, but be aware that currently executing tasks will
+be lost (unless the tasks have the :attr:`~celery.task.base.Task.acks_late`
+option set).
 
 Also, since the ``KILL`` signal can't be catched by processes the worker will
-not be able to reap its children, so make sure you do it manually. This
+not be able to reap its children so make sure you do it manually. This
 command usually does the trick::
 
-    $ ps auxww | grep celeryd | awk '{print $2}' | xargs kill -KILL
+    $ ps auxww | grep celeryd | awk '{print $2}' | xargs kill -9
 
 Restarting the worker
 =====================
@@ -56,23 +59,23 @@ restart the worker using the ``HUP`` signal::
 
     $ kill -HUP $pid
 
-The worker will then replace itself using the same arguments as it was
-started with.
+The worker will then replace itself with a new instance using the same
+arguments as it was started with.
 
 Concurrency
 ===========
 
 Multiprocessing is used to perform concurrent execution of tasks. The number
-of worker processes can be changed using the ``--concurrency`` argument, and
-defaults to the number of CPUs in the system.
+of worker processes can be changed using the ``--concurrency`` argument and
+defaults to the number of CPUs available.
 
 More worker processes are usually better, but there's a cut-off point where
 adding more processes affects performance in negative ways.
 There is even some evidence to support that having multiple celeryd's running,
 may perform better than having a single worker. For example 3 celeryd's with
 10 worker processes each, but you need to experiment to find the values that
-works best for you, as this varies based on application, work load, task
-runtimes and other factors.
+works best for you as this varies based on application, work load, task
+run times and other factors.
 
 Time limits
 ===========
@@ -85,7 +88,7 @@ this scenario happening is enabling time limits.
 The time limit (``--time-limit``) is the maximum number of seconds a task
 may run before the process executing it is terminated and replaced by a
 new process. You can also enable a soft time limit (``--soft-time-limit``),
-this raises an exception that the task can catch to clean up before the hard
+this raises an exception the task can catch to clean up before the hard
 time limit kills it:
 
 .. code-block:: python
@@ -112,8 +115,8 @@ Max tasks per child setting
 With this option you can configure the maximum number of tasks
 a worker can execute before it's replaced by a new process.
 
-This is useful if you have memory leaks you have no control over,
-for example closed source C extensions.
+This is useful if you have memory leaks you have no control over
+for example from closed source C extensions.
 
 The option can be set using the ``--maxtasksperchild`` argument
 to ``celeryd`` or using the ``CELERYD_MAX_TASKS_PER_CHILD`` setting.
@@ -121,22 +124,23 @@ to ``celeryd`` or using the ``CELERYD_MAX_TASKS_PER_CHILD`` setting.
 Remote control
 ==============
 
-Workers have the ability to be remote controlled using a broadcast message
-queue. The commands can be directed to all, or a specific list of workers.
+Workers have the ability to be remote controlled using a high-priority
+broadcast message queue. The commands can be directed to all, or a specific
+list of workers.
 
-Commands can also have replies, the client can then wait for and collect
+Commands can also have replies. The client can then wait for and collect
 those replies, but since there's no central authority to know how many
 workers are available in the cluster, there is also no way to estimate
-how many workers may send a reply, therefore the client has a configurable
-timeout - the deadline in seconds for replies to arrive in. This timeout
-defaults to one second. If the worker didn't reply within the deadline,
+how many workers may send a reply. Therefore the client has a configurable
+timeout — the deadline in seconds for replies to arrive in. This timeout
+defaults to one second. If the worker doesn't reply within the deadline
 it doesn't necessarily mean the worker didn't reply, or worse is dead, but
-may just be caused by network latency or the worker being slow at processing
+may simply be caused by network latency or the worker being slow at processing
 commands, so adjust the timeout accordingly.
 
 In addition to timeouts, the client can specify the maximum number
 of replies to wait for. If a destination is specified this limit is set
-to the number of destinations.
+to the number of destination hosts.
 
 The :func:`~celery.task.control.broadcast` function.
 ----------------------------------------------------
@@ -191,13 +195,13 @@ destination hostname::
     ...            destination=["worker1.example.com"])
 
 **NOTE** This won't affect workers with the ``CELERY_DISABLE_RATE_LIMITS``
-setting on. To re-enable rate limits you have to restart the worker.
+setting on. To re-enable rate limits then you have to restart the worker.
 
 
 Remote shutdown
 ---------------
 
-This command will gracefully shut down the worker from remote.
+This command will gracefully shut down the worker remotely::
 
     >>> broadcast("shutdown") # shutdown all workers
     >>> broadcast("shutdown, destination="worker1.example.com")
@@ -207,11 +211,11 @@ Ping
 
 This command requests a ping from alive workers.
 The workers reply with the string 'pong', and that's just about it.
-It will use the default one second limit for replies unless you specify
-a custom ``timeout``.
+It will use the default one second timeout for replies unless you specify
+a custom timeout::
 
     >>> from celery.task.control import ping
-    >>> ping()
+    >>> ping(timeout=0.5)
     [{'worker1.example.com': 'pong'},
      {'worker2.example.com': 'pong'},
      {'worker3.example.com': 'pong'}]
@@ -260,16 +264,33 @@ then import them using the ``CELERY_IMPORTS`` setting::
 
     CELERY_IMPORTS = ("myapp.worker.control", )
 
-Debugging
-=========
+Inspecting workers
+==================
+
+:class:`celery.task.control.inspect` lets you inspect running workers. It uses
+remote control commands under the hood.
+
+.. code-block:: python
+
+    >>> from celery.task.control import inspect
+
+    # Inspect all nodes.
+    >>> i = inspect()
+
+    # Specify multiple nodes to inspect.
+    >>> i = inspect(["worker1.example.com", "worker2.example.com"])
+
+    # Specify a single node to inspect.
+    >>> i = inspect("worker1.example.com")
+
 
 Dump of registered tasks
 ------------------------
 
 You can get a list of tasks registered in the worker using the
-``dump_tasks`` remote control command::
+:meth:`~celery.task.control.inspect.registered_tasks`::
 
-    >>> broadcast("dump_tasks", reply=True)
+    >>> i.registered_tasks()
     [{'worker1.example.com': ['celery.delete_expired_task_meta',
                               'celery.execute_remote',
                               'celery.map_async',
@@ -278,38 +299,55 @@ You can get a list of tasks registered in the worker using the
                               'tasks.add',
                               'tasks.sleeptask']}]
 
+Dump of currently executing tasks
+---------------------------------
+
+You can get a list of active tasks using
+:meth:`~celery.task.control.inspect.active`::
+
+    >>> i.active()
+    [{'worker1.example.com':
+        [{"name": "tasks.sleeptask",
+          "id": "32666e9b-809c-41fa-8e93-5ae0c80afbbf",
+          "args": "(8,)",
+          "kwargs": "{}"}]}]
+
+
 Dump of scheduled (ETA) tasks
 -----------------------------
 
 You can get a list of tasks waiting to be scheduled by using
-the ``dump_schedule`` remote control command.
+:meth:`~celery.task.control.inspect.scheduled`::
 
-    >>> broadcast("dump_schedule", reply=True)
+    >>> i.scheduled()
     [{'worker1.example.com':
-        ['0. 2010-06-07 09:07:52 pri0 <TaskRequest: {
-            name:"tasks.sleeptask",
-            id:"1a7980ea-8b19-413e-91d2-0b74f3844c4d",
-            args:"[1]", kwargs:"{}"}>',
-        '1. 2010-06-07 09:07:53 pri0 <TaskRequest: {
-            name:"tasks.sleeptask",
-            id:"49661b9a-aa22-4120-94b7-9ee8031d219d",
-            args:"[2]",
-            kwargs:"{}"}>',
-
-The outputted fields are (in order): position, eta, priority, request.
+        [{"eta": "2010-06-07 09:07:52", "priority": 0,
+          "request": {
+            "name": "tasks.sleeptask",
+            "id": "1a7980ea-8b19-413e-91d2-0b74f3844c4d",
+            "args": "[1]",
+            "kwargs": "{}"}},
+         {"eta": "2010-06-07 09:07:53", "priority": 0,
+          "request": {
+            "name": "tasks.sleeptask",
+            "id": "49661b9a-aa22-4120-94b7-9ee8031d219d",
+            "args": "[2]",
+            "kwargs": "{}"}}]}]
 
 Note that these are tasks with an eta/countdown argument, not periodic tasks.
 
 Dump of reserved tasks
 ----------------------
 
-Reserved tasks are tasks that has been received by the broker and is waiting
-for immediate execution.
+Reserved tasks are tasks that has been received, but is still waiting to be
+executed.
 
-You can get a list of these using the ``dump_reserved`` remote control command.
+You can get a list of these using
+:meth:`~celery.task.control.inspect.reserved`::
 
-    >>> broadcast("dump_reserved", reply=True)
+    >>> i.reserved()
     [{'worker1.example.com':
-        ['<TaskRequest: {name:"tasks.sleeptask",
-                         id:"32666e9b-809c-41fa-8e93-5ae0c80afbbf",
-                         args:"(8,)", kwargs:"{}"}>']}]
+        [{"name": "tasks.sleeptask",
+          "id": "32666e9b-809c-41fa-8e93-5ae0c80afbbf",
+          "args": "(8,)",
+          "kwargs": "{}"}]}]

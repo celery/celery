@@ -8,18 +8,24 @@ UNREGISTERED_FMT = """
 Task of kind %s is not registered, please make sure it's imported.
 """.strip()
 
-
-class RouteNotFound(KeyError):
-    """Task routed to a queue not in the routing table (CELERY_QUEUES)."""
+class QueueNotFound(KeyError):
+    """Task routed to a queue not in CELERY_QUEUES."""
+    pass
 
 
 class TimeLimitExceeded(Exception):
     """The time limit has been exceeded and the job has been terminated."""
+    pass
 
 
 class SoftTimeLimitExceeded(Exception):
     """The soft time limit has been exceeded. This exception is raised
     to give the task a chance to clean up."""
+    pass
+
+
+class WorkerLostError(Exception):
+    """The worker processing a task has exited prematurely."""
     pass
 
 
@@ -56,9 +62,14 @@ class RetryTaskError(Exception):
 
     def __init__(self, message, exc, *args, **kwargs):
         self.exc = exc
-        Exception.__init__(self, message, exc, *args, **kwargs)
-
+        Exception.__init__(self, message, exc, *args,
+                           **kwargs)
 
 class TaskRevokedError(Exception):
     """The task has been revoked, so no result available."""
     pass
+
+
+class NotConfigured(UserWarning):
+    """Celery has not been configured, as no config module has been found."""
+

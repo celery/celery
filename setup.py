@@ -17,20 +17,14 @@ except ImportError:
 import celery as distmeta
 
 
-class RunTests(TestCommand):
-    env = dict(CELERY_LOADER="default",
-               CELERY_CONFIG_MODULE="tests.celeryconfig",
-               CELERYINIT=1)
-    extra_env = {}
+class QuickRunTests(TestCommand):
+    extra_env = dict(SKIP_RLIMITS=1, QUICKTEST=1)
 
     def run(self, *args, **kwargs):
-        for env_name, env_value in dict(self.env, **self.extra_env).items():
+        for env_name, env_value in self.extra_env.items():
             os.environ[env_name] = str(env_value)
         TestCommand.run(self, *args, **kwargs)
 
-
-class QuickRunTests(RunTests):
-    extra_env = dict(SKIP_RLIMITS=1, QUICKTEST=1)
 
 install_requires = []
 
@@ -46,7 +40,8 @@ install_requires.extend([
     "sqlalchemy",
     "anyjson",
     "carrot>=0.10.5",
-    "pyparsing"])
+    "pyparsing",
+    "timer2"])
 
 py_version = sys.version_info
 if sys.version_info < (2, 6):
@@ -74,13 +69,12 @@ setup(
              "bin/celeryev"],
     zip_safe=False,
     install_requires=install_requires,
-    tests_require=['nose-cover3', 'unittest2', 'simplejson'],
-    cmdclass = {"test": RunTests, "quicktest": QuickRunTests},
+    tests_require=['nose', 'nose-cover3', 'unittest2', 'simplejson'],
+    cmdclass = {"quicktest": QuickRunTests},
     test_suite="nose.collector",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Operating System :: OS Independent",
-        "Programming Language :: Python",
         "Environment :: No Input/Output (Daemon)",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: BSD License",
@@ -88,6 +82,12 @@ setup(
         "Topic :: Communications",
         "Topic :: System :: Distributed Computing",
         "Topic :: Software Development :: Libraries :: Python Modules",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 2",
+        "Programming Language :: Python :: 2.4",
+        "Programming Language :: Python :: 2.5",
+        "Programming Language :: Python :: 2.6",
+        "Programming Language :: Python :: 2.7",
     ],
     entry_points={
         'console_scripts': [

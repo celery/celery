@@ -31,6 +31,10 @@ Please use the CELERYBEAT_SCHEDULE setting instead:
 """
 
 
+def _unpickle_task(name):
+    return tasks[name]
+
+
 class TaskType(type):
     """Metaclass for tasks.
 
@@ -95,6 +99,12 @@ class Task(object):
         however if you want a periodic task, you should subclass
         :class:`PeriodicTask` instead.
 
+    .. attribute:: queue
+
+        Select a destination queue for this task. The queue needs to exist
+        in ``CELERY_QUEUES``. The ``routing_key``, ``exchange`` and
+        ``exchange_type`` attributes will be ignored if this is set.
+
     .. attribute:: routing_key
 
         Override the global default ``routing_key`` for this task.
@@ -137,7 +147,7 @@ class Task(object):
     .. attribute:: default_retry_delay
 
         Default time in seconds before a retry of the task should be
-        executed. Default is a 1 minute delay.
+        executed. Default is a 3 minute delay.
 
     .. attribute:: rate_limit
 
@@ -152,7 +162,7 @@ class Task(object):
     .. attribute:: disable_error_emails
 
         Disable all error e-mails for this task (only applicable if
-        ``settings.SEND_CELERY_ERROR_EMAILS`` is on.)
+        ``settings.CELERY_SEND_TASK_ERROR_EMAILS`` is on.)
 
     .. attribute:: serializer
 
@@ -201,11 +211,16 @@ class Task(object):
     abstract = True
     autoregister = True
     type = "regular"
-    exchange = None
+
+    queue = None
     routing_key = None
+    exchange = None
+    exchange_type = conf.DEFAULT_EXCHANGE_TYPE
+    delivery_mode = conf.DEFAULT_DELIVERY_MODE
     immediate = False
     mandatory = False
     priority = None
+
     ignore_result = conf.IGNORE_RESULT
     disable_error_emails = False
     max_retries = 3
@@ -213,8 +228,6 @@ class Task(object):
     serializer = conf.TASK_SERIALIZER
     rate_limit = conf.DEFAULT_RATE_LIMIT
     backend = default_backend
-    exchange_type = conf.DEFAULT_EXCHANGE_TYPE
-    delivery_mode = conf.DEFAULT_DELIVERY_MODE
     track_started = conf.TRACK_STARTED
     acks_late = conf.ACKS_LATE
 
@@ -222,6 +235,9 @@ class Task(object):
 
     def __call__(self, *args, **kwargs):
         return self.run(*args, **kwargs)
+
+    def __reduce__(self):
+        return (_unpickle_task, (self.name, ), None)
 
     def run(self, *args, **kwargs):
         """The body of the task executed by the worker.
@@ -259,7 +275,7 @@ class Task(object):
     def establish_connection(self,
             connect_timeout=conf.BROKER_CONNECTION_TIMEOUT):
         """Establish a connection to the message broker."""
-        return _establish_connection(connect_timeout)
+        return _establish_connection(connect_timeout=connect_timeout)
 
     @classmethod
     def get_publisher(self, connection=None, exchange=None,
@@ -267,7 +283,7 @@ class Task(object):
             exchange_type=None):
         """Get a celery task message publisher.
 
-        :rtype: :class:`celery.messaging.TaskPublisher`.
+        :rtype :class:`celery.messaging.TaskPublisher`:
 
         Please be sure to close the AMQP connection when you're done
         with this object, i.e.:
@@ -292,7 +308,7 @@ class Task(object):
             connect_timeout=conf.BROKER_CONNECTION_TIMEOUT):
         """Get a celery task message consumer.
 
-        :rtype: :class:`celery.messaging.TaskConsumer`.
+        :rtype :class:`celery.messaging.TaskConsumer`:
 
         Please be sure to close the AMQP connection when you're done
         with this object. i.e.:
@@ -314,7 +330,7 @@ class Task(object):
         :param \*args: positional arguments passed on to the task.
         :param \*\*kwargs: keyword arguments passed on to the task.
 
-        :returns: :class:`celery.result.AsyncResult`
+        :returns :class:`celery.result.AsyncResult`:
 
         """
         return self.apply_async(args, kwargs)
@@ -330,8 +346,7 @@ class Task(object):
 
         See :func:`celery.execute.apply_async` for more information.
 
-        :rtype: :class:`celery.result.AsyncResult`
-
+        :returns :class:`celery.result.AsyncResult`:
 
         """
         return apply_async(self, args, kwargs, **options)
@@ -376,6 +391,11 @@ class Task(object):
             ...                        countdown=60 * 5, exc=exc)
 
         """
+        if not kwargs:
+            raise TypeError(
+                    "kwargs argument to retries can't be empty. "
+                    "Task must accept **kwargs, see http://bit.ly/cAx3Bg")
+
         delivery_info = kwargs.pop("delivery_info", {})
         options.setdefault("exchange", delivery_info.get("exchange"))
         options.setdefault("routing_key", delivery_info.get("routing_key"))
@@ -407,12 +427,15 @@ class Task(object):
 
     @classmethod
     def apply(self, args=None, kwargs=None, **options):
-        """Execute this task at once, by blocking until the task
+        """Execute this task locally, by blocking until the task
         has finished executing.
 
         :param args: positional arguments passed on to the task.
         :param kwargs: keyword arguments passed on to the task.
-        :rtype: :class:`celery.result.EagerResult`
+        :keyword throw: Re-raise task exceptions. Defaults to
+            the ``CELERY_EAGER_PROPAGATES_EXCEPTIONS`` setting.
+
+        :rtype :class:`celery.result.EagerResult`:
 
         See :func:`celery.execute.apply`.
 
@@ -521,6 +544,10 @@ class Task(object):
         this task that wraps arguments and execution options
         for a single task invocation."""
         return subtask(cls, *args, **kwargs)
+
+    @property
+    def __name__(self):
+        return self.__class__.__name__
 
 
 class PeriodicTask(Task):

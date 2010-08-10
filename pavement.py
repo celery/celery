@@ -98,7 +98,7 @@ def bump(options):
     ("verbose", "V", "Make more noise"),
 ])
 def test(options):
-    cmd = "CELERY_LOADER=default PYTHONPATH=tests nosetests"
+    cmd = "CELERY_LOADER=default nosetests"
     if getattr(options, "coverage", False):
         cmd += " --with-coverage3"
     if getattr(options, "quick", False):

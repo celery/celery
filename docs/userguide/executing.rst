@@ -122,38 +122,20 @@ establish the connection yourself and pass it to ``apply_async``:
 
 .. code-block:: python
 
-    from celery.messaging import establish_connection
-
     numbers = [(2, 2), (4, 4), (8, 8), (16, 16)]
 
     results = []
-    connection = establish_connection()
+    publisher = add.get_publisher()
     try:
         for args in numbers:
-            res = add.apply_async(args=args, connection=connection)
+            res = add.apply_async(args=args, publisher=publisher)
             results.append(res)
     finally:
-        connection.close()
+        publisher.close()
+        publisher.connection.close()
 
     print([res.get() for res in results])
 
-
-In Python 2.5 and above, you can use the ``with`` statement:
-
-.. code-block:: python
-
-    from __future__ import with_statement
-    from celery.messaging import establish_connection
-
-    numbers = [(2, 2), (4, 4), (8, 8), (16, 16)]
-
-    results = []
-    with establish_connection() as connection:
-        for args in numbers:
-            res = add.apply_async(args=args, connection=connection)
-            results.append(res)
-
-    print([res.get() for res in results])
 
 The connection timeout is the number of seconds to wait before we give up
 establishing the connection. You can set this with the ``connect_timeout``
@@ -167,7 +149,7 @@ Or if you handle the connection manually:
 
 .. code-block:: python
 
-    connection = establish_connection(connect_timeout=3)
+    publisher = add.get_publisher(connect_timeout=3)
 
 
 Routing options
@@ -220,10 +202,10 @@ listen to different queues:
     ...                               routing_key="video.compress")
 
     >>> ImageRotateTask.apply_async(args=[filename, 360],
-                                    routing_key="image.rotate")
+    ...                             routing_key="image.rotate")
 
     >>> ImageCropTask.apply_async(args=[filename, selection],
-                                  routing_key="image.crop")
+    ...                           routing_key="image.crop")
     >>> UpdateReccomendationsTask.apply_async(routing_key="misc.recommend")
 
 
@@ -234,6 +216,9 @@ by creating a new queue that binds to ``"image.crop``".
 
 AMQP options
 ============
+
+**NOTE** The ``mandatory`` and ``immediate`` flags are not supported by
+``amqplib`` at this point.
 
 * mandatory
 

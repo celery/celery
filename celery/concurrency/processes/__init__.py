@@ -27,6 +27,7 @@ class TaskPool(object):
         The logger used for debugging.
 
     """
+    Pool = Pool
 
     def __init__(self, limit, logger=None, initializer=None,
             maxtasksperchild=None, timeout=None, soft_timeout=None,
@@ -46,11 +47,11 @@ class TaskPool(object):
         Will pre-fork all workers so they're ready to accept tasks.
 
         """
-        self._pool = Pool(processes=self.limit,
-                          initializer=self.initializer,
-                          timeout=self.timeout,
-                          soft_timeout=self.soft_timeout,
-                          maxtasksperchild=self.maxtasksperchild)
+        self._pool = self.Pool(processes=self.limit,
+                               initializer=self.initializer,
+                               timeout=self.timeout,
+                               soft_timeout=self.soft_timeout,
+                               maxtasksperchild=self.maxtasksperchild)
 
     def stop(self):
         """Gracefully stop the pool."""
@@ -80,6 +81,7 @@ class TaskPool(object):
         errbacks = errbacks or []
 
         on_ready = curry(self.on_ready, callbacks, errbacks)
+        on_worker_error = curry(self.on_worker_error, errbacks)
 
         self.logger.debug("TaskPool: Apply %s (args:%s kwargs:%s)" % (
             target, args, kwargs))
@@ -88,7 +90,12 @@ class TaskPool(object):
                                       callback=on_ready,
                                       accept_callback=accept_callback,
                                       timeout_callback=timeout_callback,
+                                      error_callback=on_worker_error,
                                       waitforslot=self.putlocks)
+
+    def on_worker_error(self, errbacks, exc):
+        einfo = ExceptionInfo((exc.__class__, exc, None))
+        [errback(einfo) for errback in errbacks]
 
     def on_ready(self, callbacks, errbacks, ret_value):
         """What to do when a worker task is ready and its return value has
@@ -96,8 +103,16 @@ class TaskPool(object):
 
         if isinstance(ret_value, ExceptionInfo):
             if isinstance(ret_value.exception, (
-                    SystemExit, KeyboardInterrupt)): # pragma: no cover
+                    SystemExit, KeyboardInterrupt)):
                 raise ret_value.exception
             [errback(ret_value) for errback in errbacks]
         else:
             [callback(ret_value) for callback in callbacks]
+
+    @property
+    def info(self):
+        return {"max-concurrency": self.limit,
+                "processes": [p.pid for p in self._pool._pool],
+                "max-tasks-per-child": self.maxtasksperchild,
+                "put-guarded-by-semaphore": self.putlocks,
+                "timeouts": (self.soft_timeout, self.timeout)}

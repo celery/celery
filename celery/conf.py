@@ -22,10 +22,18 @@ LOG_LEVELS[logging.FATAL] = "FATAL"
 settings = load_settings()
 
 _DEFAULTS = {
+    "BROKER_CONNECTION_TIMEOUT": 4,
+    "BROKER_CONNECTION_RETRY": True,
+    "BROKER_CONNECTION_MAX_RETRIES": 100,
+    "BROKER_HOST": "localhost",
+    "BROKER_PORT": None,
+    "BROKER_USER": "guest",
+    "BROKER_PASSWORD": "guest",
+    "BROKER_VHOST": "/",
     "CELERY_RESULT_BACKEND": "database",
     "CELERY_ALWAYS_EAGER": False,
     "CELERY_EAGER_PROPAGATES_EXCEPTIONS": False,
-    "CELERY_TASK_RESULT_EXPIRES": timedelta(days=5),
+    "CELERY_TASK_RESULT_EXPIRES": timedelta(days=1),
     "CELERY_SEND_EVENTS": False,
     "CELERY_IGNORE_RESULT": False,
     "CELERY_STORE_ERRORS_EVEN_IF_IGNORED": False,
@@ -35,19 +43,17 @@ _DEFAULTS = {
     "CELERYD_TASK_SOFT_TIME_LIMIT": None,
     "CELERYD_MAX_TASKS_PER_CHILD": None,
     "CELERY_ROUTES": None,
+    "CELERY_CREATE_MISSING_QUEUES": True,
     "CELERY_DEFAULT_ROUTING_KEY": "celery",
     "CELERY_DEFAULT_QUEUE": "celery",
     "CELERY_DEFAULT_EXCHANGE": "celery",
     "CELERY_DEFAULT_EXCHANGE_TYPE": "direct",
     "CELERY_DEFAULT_DELIVERY_MODE": 2, # persistent
-    "BROKER_CONNECTION_TIMEOUT": 4,
-    "BROKER_CONNECTION_RETRY": True,
-    "BROKER_CONNECTION_MAX_RETRIES": 100,
     "CELERY_ACKS_LATE": False,
     "CELERYD_POOL_PUTLOCKS": True,
     "CELERYD_POOL": "celery.concurrency.processes.TaskPool",
     "CELERYD_MEDIATOR": "celery.worker.controllers.Mediator",
-    "CELERYD_ETA_SCHEDULER": "celery.worker.controllers.ScheduleController",
+    "CELERYD_ETA_SCHEDULER": "timer2.Timer",
     "CELERYD_LISTENER": "celery.worker.listener.CarrotListener",
     "CELERYD_CONCURRENCY": 0, # defaults to cpu count
     "CELERYD_PREFETCH_MULTIPLIER": 4,
@@ -57,6 +63,8 @@ _DEFAULTS = {
     "CELERYD_LOG_LEVEL": "WARN",
     "CELERYD_LOG_FILE": None, # stderr
     "CELERYBEAT_SCHEDULE": {},
+    "CELERYD_STATE_DB": None,
+    "CELERYD_ETA_SCHEDULER_PRECISION": 1,
     "CELERYBEAT_SCHEDULE_FILENAME": "celerybeat-schedule",
     "CELERYBEAT_MAX_LOOP_INTERVAL": 5 * 60, # five minutes.
     "CELERYBEAT_LOG_LEVEL": "INFO",
@@ -117,7 +125,8 @@ ALWAYS_EAGER = _get("CELERY_ALWAYS_EAGER")
 EAGER_PROPAGATES_EXCEPTIONS = _get("CELERY_EAGER_PROPAGATES_EXCEPTIONS")
 RESULT_BACKEND = _get("CELERY_RESULT_BACKEND", compat=["CELERY_BACKEND"])
 CELERY_BACKEND = RESULT_BACKEND # FIXME Remove in 1.4
-CELERY_CACHE_BACKEND = _get("CELERY_CACHE_BACKEND")
+CACHE_BACKEND = _get("CELERY_CACHE_BACKEND") or _get("CACHE_BACKEND")
+CACHE_BACKEND_OPTIONS = _get("CELERY_CACHE_BACKEND_OPTIONS") or {}
 TASK_SERIALIZER = _get("CELERY_TASK_SERIALIZER")
 TASK_RESULT_EXPIRES = _get("CELERY_TASK_RESULT_EXPIRES")
 IGNORE_RESULT = _get("CELERY_IGNORE_RESULT")
@@ -147,6 +156,7 @@ CELERYD_MAX_TASKS_PER_CHILD = _get("CELERYD_MAX_TASKS_PER_CHILD")
 STORE_ERRORS_EVEN_IF_IGNORED = _get("CELERY_STORE_ERRORS_EVEN_IF_IGNORED")
 CELERY_SEND_TASK_ERROR_EMAILS = _get("CELERY_SEND_TASK_ERROR_EMAILS", False,
                                      compat=["SEND_CELERY_TASK_ERROR_EMAILS"])
+CELERY_TASK_ERROR_WHITELIST = _get("CELERY_TASK_ERROR_WHITELIST")
 CELERYD_LOG_FORMAT = _get("CELERYD_LOG_FORMAT",
                           compat=["CELERYD_DAEMON_LOG_FORMAT"])
 CELERYD_TASK_LOG_FORMAT = _get("CELERYD_TASK_LOG_FORMAT")
@@ -156,6 +166,7 @@ CELERYD_LOG_COLOR = _get("CELERYD_LOG_COLOR",
 CELERYD_LOG_LEVEL = _get("CELERYD_LOG_LEVEL",
                             compat=["CELERYD_DAEMON_LOG_LEVEL"])
 CELERYD_LOG_LEVEL = LOG_LEVELS[CELERYD_LOG_LEVEL.upper()]
+CELERYD_STATE_DB = _get("CELERYD_STATE_DB")
 CELERYD_CONCURRENCY = _get("CELERYD_CONCURRENCY")
 CELERYD_PREFETCH_MULTIPLIER = _get("CELERYD_PREFETCH_MULTIPLIER")
 CELERYD_POOL_PUTLOCKS = _get("CELERYD_POOL_PUTLOCKS")
@@ -164,6 +175,7 @@ CELERYD_POOL = _get("CELERYD_POOL")
 CELERYD_LISTENER = _get("CELERYD_LISTENER")
 CELERYD_MEDIATOR = _get("CELERYD_MEDIATOR")
 CELERYD_ETA_SCHEDULER = _get("CELERYD_ETA_SCHEDULER")
+CELERYD_ETA_SCHEDULER_PRECISION = _get("CELERYD_ETA_SCHEDULER_PRECISION")
 
 # :--- Email settings                               <-   --   --- - ----- -- #
 ADMINS = _get("ADMINS")
@@ -188,7 +200,9 @@ BROKER_CONNECTION_RETRY = _get("BROKER_CONNECTION_RETRY",
                                 compat=["CELERY_BROKER_CONNECTION_RETRY"])
 BROKER_CONNECTION_MAX_RETRIES = _get("BROKER_CONNECTION_MAX_RETRIES",
                             compat=["CELERY_BROKER_CONNECTION_MAX_RETRIES"])
-BROKER_BACKEND = _get("BROKER_BACKEND") or _get("CARROT_BACKEND")
+BROKER_BACKEND = _get("BROKER_TRANSPORT") or \
+                        _get("BROKER_BACKEND") or \
+                            _get("CARROT_BACKEND")
 
 # <--- Message routing                             <-   --   --- - ----- -- #
 DEFAULT_QUEUE = _get("CELERY_DEFAULT_QUEUE")
@@ -200,6 +214,7 @@ QUEUES = _get("CELERY_QUEUES") or {DEFAULT_QUEUE: {
                                        "exchange": DEFAULT_EXCHANGE,
                                        "exchange_type": DEFAULT_EXCHANGE_TYPE,
                                        "binding_key": DEFAULT_ROUTING_KEY}}
+CREATE_MISSING_QUEUES = _get("CELERY_CREATE_MISSING_QUEUES")
 ROUTES = routes.prepare(_get("CELERY_ROUTES") or [])
 # :--- Broadcast queue settings                     <-   --   --- - ----- -- #
 
@@ -234,7 +249,7 @@ CELERYMON_LOG_LEVEL = _get("CELERYMON_LOG_LEVEL")
 CELERYMON_LOG_FILE = _get("CELERYMON_LOG_FILE")
 
 
-def _init_routing_table(queues):
+def _init_queues(queues):
     """Convert configuration mapping to a table of queues digestible
     by a :class:`carrot.messaging.ConsumerSet`."""
 
@@ -242,10 +257,11 @@ def _init_routing_table(queues):
         opts.setdefault("exchange", DEFAULT_EXCHANGE),
         opts.setdefault("exchange_type", DEFAULT_EXCHANGE_TYPE)
         opts.setdefault("binding_key", DEFAULT_EXCHANGE)
+        opts.setdefault("routing_key", opts.get("binding_key"))
         return opts
 
     return dict((queue, _defaults(opts)) for queue, opts in queues.items())
 
 
-def get_routing_table():
-    return _init_routing_table(QUEUES)
+def get_queues():
+    return _init_queues(QUEUES)

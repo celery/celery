@@ -1,16 +1,16 @@
-<!DOCTYPE html>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 <head>
 <meta charset="utf-8">
 <meta name="keywords" content="task queue, job queue, asynchronous, rabbitmq, amqp,
 redis, django, python, webhooks, queue, distributed">
 <meta name="description" content="open source distributed task queue" >
-<link rel="icon" type="image/png" href="favicon.png">
-<meta name="viewport" content="width=320, user-scalable=no">
+<link rel="icon" type="image/png" href="favicon0.png">
+<meta name="viewport" content="width=500, user-scalable=no">
 <link rel="apple-touch-icon" href="favicon_64.png"/>
 <title>Celery - The Distributed Task Queue</title>
-<link rel="stylesheet" href="main.css"/>
-<link rel="stylesheet" href="trac.css"/>
+<link rel="stylesheet" href="main0000.css"/>
+<link rel="stylesheet" href="trac0000.css"/>
 <script type="text/javascript">
 var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
 document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
@@ -22,15 +22,18 @@ pageTracker._trackPageview();
 } catch(err) {}</script>
 
 
+
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+
 </head>
 
 <body>
 <div id="navbar">
   <div class="iStretch">
-    <div class="link" id="current"><a href="#">Home</a></div>
+    <div class="link" id="current"><a href="">Home</a></div>
     <div class="link"><a href="http://github.com/ask/celery">Code</a></div>
-    <div class="link"><a href="docs/">Documentation</a></div>
-    <div class="link"><a href="http://ask.github.com/celery/getting-started/">Tutorials</a></div>
+    <div class="link"><a href="http://celeryq.org/docs/">Documentation</a></div>
+    <div class="link"><a href="http://celeryq.org/docs/getting-started/">Tutorials</a></div>
     <div class="link"><a href="http://pypi.python.org/pypi/celery">Download</a></div>
   </div>
 </div>
@@ -52,20 +55,27 @@ pageTracker._trackPageview();
 
     <div class="column">
         <h2>Distributed Task Queue</h2>
-        <p>
-        Celery is a task queue/job queue based on distributed message passing.
-        It is focused on real-time operation, but support scheduling as well.</p>
+        <p> Celery is an asynchronous task queue/job queue based on distributed message passing.
+        It is focused on real-time operation, but supports scheduling as well.</p>
 
-        <p>The execution units, called tasks, are executed concurrently on one
-        or more worker servers. Tasks can execute asynchronously (in the background) or
-        synchronously (wait until ready).</p>
+        <p>The execution units, called tasks, are executed concurrently on a single or
+        more worker servers. Tasks can execute asynchronously (in the background) or synchronously
+        (wait until ready).</p>
 
-        <p>Celery is already used in production to process millions of tasks
-        a day.</p>
+        <p>Celery is already used in production to process millions of tasks a day.</p>
 
-        <p>Celery was originally created for use with Django, but is now
-        usable from any Python project.
-        It can also <a href="http://ask.github.com/celery/userguide/remote-tasks.html">operate with other languages</a> via webhooks.</p>
+        <p>Celery is written in Python, but the protocol can be implemented in any
+        language.
+        It can also <a href="http://celeryq.org/docs/userguide/remote-tasks.html"
+        >operate with other languages</a> using webhooks.</p>
+
+        <p>The recommended message broker is <a href="http://rabbitmq.com/">RabbitMQ</a>,
+        but support for <a href="http://redisdb.com/">Redis</a> and databases
+        is also available.</p>
+
+        <p>You may also be pleased to know that full
+        <a href="http://pypi.python.org/pypi/django-celery">Django integration</a>exists,
+        delivered by the django-celery package.</p>
 
         <h3>Example</h3>
         <p>This is a simple task adding two numbers:</p>
@@ -86,16 +96,16 @@ pageTracker._trackPageview();
 
     <h3>Getting Started</h3>
 
-
     <ol>
         <li>Install celery by download or <code>pip install -U celery</code></li>
-        <li>Set up <a href="http://ask.github.com/celery/getting-started/broker-installation.html">RabbitMQ</a>
-        or one of the <a href="http://ask.github.com/celery/tutorials/otherqueues.html">ghetto queue</a>
+        <li>Set up <a href="http://celeryq.org/docs/getting-started/broker-installation.html">RabbitMQ</a>
+        or one of the <a href="http://celeryq.org/docs/tutorials/otherqueues.html">ghetto queue</a>
         solutions.
         <li>Select one of the following guides:
         <ul>
-            <li><a href="http://ask.github.com/celery/getting-started/first-steps-with-python.html">First steps with Python</a></li>
-            <li><a href="http://ask.github.com/celery/getting-started/first-steps-with-django.html">First steps with Django</a></li>
+            <li><a
+                href="http://celeryq.org/docs/getting-started/first-steps-with-celery.html">First steps with Python</a></li>
+            <li><a href="http://celeryq.org/docs/django-celery/getting-started/first-steps-with-django.html">First steps with Django</a></li>
         </ul>
     </ol>
 
@@ -124,7 +134,47 @@ pageTracker._trackPageview();
     </div>
     </div>
 
-    <div class="column">
+    <div class="column side">
+
+      <span class="newsitem">
+      <h2>Celery 2.0 released!</h2>
+      <h4>By <a href="http://twitter.com/asksol">@asksol</a> on 2010-07-02.</h4>
+      <p>We're proud to announce the release of Celery 2.0. This version replaces
+      the Django ORM with SQLAlchemy as the database result store. With this, Celery no
+      longer depends on Django. Django integration is now available as a separate package
+      called <a href="http://pypi.python.org/pypi/django-celery">django-celery</a>.
+      </p>
+
+      <p>In addition there are a lot of new features: a curses monitor, time
+      limits, complex crontab expressions, callbacks, simplified routing,
+      and more. Everything is detailed in the <a
+          href="http://celeryq.org/docs/changelog.html#id1">changelog</a>,
+      so be sure to read it before upgrading.</p>
+      </span>
+
+      <span class="newsitem">
+      <h2>Celery 1.0.6 released!</h2>
+      <h4>By <a href="http://twitter.com/asksol">@asksol</a> on 2010-06-30.</h4>
+      <p>RabbitMQ 1.8.0 came with stricter equivalence checks that broke the
+      AMQP result backend, this release resolves this. If you've already used
+      the AMQP backend you need to delete the previous declarations. For
+      instructions please read the full
+      <a href="http://celeryproject.org/docs/changelog.html">changelog</a>.
+      Download from <a href="http://pypi.python.org/pypi/celery/1.0.6">PyPI</a>,
+      or simply install the upgrade using <code>pip install -U celery==1.0.6</code>.
+      <hr>
+      </span>
+
+      <span class="newsitem">
+      <h2>Celery 1.0.5 released!</h2>
+      <h4>By <a href="http://twitter.com/asksol">@asksol</a> on 2010-06-01.</h4>
+      <p>This release contains some important bugfixes related to shutdown and
+      broker connection loss, as well as some other minor fixes. Also
+      AbortableTask has been added to contrib. Please read the full <a href="http://celeryproject.org/docs/changelog.html">changelog</a>
+      before you upgrade. Download from <a href="http://pypi.python.org/pypi/celery/1.0.5">PyPI</a>,
+      or simply install the upgrade using <code>pip install -U celery</code>.
+      <hr>
+      </span>
 
       <span class="newsitem">
       <h2>Celery 1.0.3 released!</h2>
@@ -154,7 +204,7 @@ pageTracker._trackPageview();
       <p>Celery 1.0 has finally been released! It is available on <a
           href="http://pypi.python.org/pypi/celery/1.0.0">PyPI</a> for
       downloading. You can also install it via <code>pip install
-          celery</code>. You can read the announcement <a href="celery_1.0_released.html">here</a>.
+          celery</code>. You can read the announcement <a href="http://celeryproject.org/celery_1.0_released.html">here</a>.
       <hr>
       </span>
 
@@ -164,29 +214,39 @@ pageTracker._trackPageview();
       <p>1.0 is scheduled to be released this week! Please help us test the latest
       <a href="http://github.com/ask/celery/tarball/v1.0.0-pre4">release
           candiate</a> to make this happen. To upgrade from an earlier
-      version, please read the <a href="http://ask.github.com/celery/changelog.html">changelog</a>.
+      version, please read the <a href="http://celeryq.org/docs/changelog.html">changelog</a>.
       <hr>
       </span>
 
       <span class="newsitem">
       <h2>New website.</h2>
       <h4>By <a href="http://twitter.com/asksol">@asksol</a> on 2010-02-08</h4>
-      <p>We finally got a home page. Big thanks to <a href="http://helmersworks.com">Jan Henrik Helmers</a>
+      <p>We finally got a home page. Big thanks to <a href="http://helmersworks.com/">Jan Henrik Helmers</a>
       <hr>
       </span>
 
     </div>
+    <div style="clear:both"></div>
 
   </div>
 
  <div id="credits">
-     <div class="iStretch">Copyright (c) 2009-2010, <a href="http://twitter.com/asksol">Ask Solem</a> and
-         <a href="http://github.com/ask/celery/blob/master/AUTHORS">contributors</a>.<br>
- Page design by <a href="http://www.helmersworks.com/">Jan Henrik Helmers</a>
-   </div>
+   <ul>
+     <li>
+       <strong>Copyright (c) 2009-2010</strong>
+       <span><a href="http://twitter.com/asksol">Ask Solem</a> and
+         <a href="http://github.com/ask/celery/blob/master/AUTHORS">contributors</a>.</span>
+     </li>
+     <li>
+       <strong>Web Design</strong>
+       <span><a href="http://www.helmersworks.com/">Jan Henrik Helmers</a></span>
+     </li>
+   </ul>
  </div>
 
 
 </div>
 </body>
 </html>
+
+<!-- This document saved from http://celeryproject.org/ -->

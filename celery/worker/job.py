@@ -1,29 +1,27 @@
-"""
-
-Jobs Executable by the Worker Server.
-
-"""
 import sys
 import time
 import socket
 import warnings
 
+from datetime import datetime
 
 from celery import conf
+from celery import log
 from celery import platform
-from celery.log import get_default_logger
-from celery.utils import noop, kwdict, fun_takes_kwargs
-from celery.utils.mail import mail_admins
-from celery.worker.revoke import revoked
-from celery.loaders import current_loader
-from celery.execute.trace import TaskTrace
-from celery.registry import tasks
 from celery.datastructures import ExceptionInfo
+from celery.execute.trace import TaskTrace
+from celery.loaders import current_loader
+from celery.registry import tasks
+from celery.utils import noop, kwdict, fun_takes_kwargs
+from celery.utils import truncate_text, maybe_iso8601
+from celery.utils.compat import any
+from celery.utils.mail import mail_admins
+from celery.worker import state
 
 # pep8.py borks on a inline signature separator and
 # says "trailing whitespace" ;)
 EMAIL_SIGNATURE_SEP = "-- "
-TASK_FAIL_EMAIL_BODY = """
+TASK_ERROR_EMAIL_BODY = """
 Task %%(name)s with id %%(id)s raised exception: %%(exc)s
 
 
@@ -71,7 +69,7 @@ class WorkerTaskTrace(TaskTrace):
     :param args: List of positional args to pass on to the function.
     :param kwargs: Keyword arguments mapping to pass on to the function.
 
-    :returns: the function return value on success, or
+    :returns: the evaluated functions return value on success, or
         the exception instance on failure.
 
     """
@@ -100,10 +98,13 @@ class WorkerTaskTrace(TaskTrace):
     def execute(self):
         """Execute, trace and store the result of the task."""
         self.loader.on_task_init(self.task_id, self.task)
-        self.task.backend.process_cleanup()
         if self.task.track_started:
             self.task.backend.mark_as_started(self.task_id)
-        return super(WorkerTaskTrace, self).execute()
+        try:
+            return super(WorkerTaskTrace, self).execute()
+        finally:
+            self.task.backend.process_cleanup()
+            self.loader.on_process_cleanup()
 
     def handle_success(self, retval, *args):
         """Handle successful execution."""
@@ -128,6 +129,13 @@ class WorkerTaskTrace(TaskTrace):
 
 
 def execute_and_trace(task_name, *args, **kwargs):
+    """This is a pickleable method used as a target when applying to pools.
+
+    It's the same as::
+
+        >>> WorkerTaskTrace(task_name, *args, **kwargs).execute_safe()
+
+    """
     platform.set_mp_process_title("celeryd", info=task_name)
     try:
         return WorkerTaskTrace(task_name, *args, **kwargs).execute_safe()
@@ -182,52 +190,60 @@ class TaskRequest(object):
         Set to ``True`` if the task has been acknowledged.
 
     """
+    # Logging output
     success_msg = "Task %(name)s[%(id)s] processed: %(return_value)s"
-    fail_msg = """
+    error_msg = """
         Task %(name)s[%(id)s] raised exception: %(exc)s\n%(traceback)s
     """
-    fail_email_subject = """
+
+    # E-mails
+    email_subject = """
         [celery@%(hostname)s] Error: Task %(name)s (%(id)s): %(exc)s
     """
-    fail_email_body = TASK_FAIL_EMAIL_BODY
+    email_body = TASK_ERROR_EMAIL_BODY
+
+    # Internal flags
     executed = False
     acknowledged = False
     time_start = None
+    _already_revoked = False
 
     def __init__(self, task_name, task_id, args, kwargs,
-            on_ack=noop, retries=0, delivery_info=None, hostname=None, **opts):
+            on_ack=noop, retries=0, delivery_info=None, hostname=None,
+            email_subject=None, email_body=None, logger=None,
+            eventer=None, eta=None, expires=None, **opts):
         self.task_name = task_name
         self.task_id = task_id
         self.retries = retries
         self.args = args
         self.kwargs = kwargs
+        self.eta = eta
+        self.expires = expires
         self.on_ack = on_ack
         self.delivery_info = delivery_info or {}
-        self.task = tasks[self.task_name]
         self.hostname = hostname or socket.gethostname()
-        self._already_revoked = False
+        self.logger = logger or log.get_default_logger()
+        self.eventer = eventer
+        self.email_subject = email_subject or self.email_subject
+        self.email_body = email_body or self.email_body
 
-        for opt in ("success_msg", "fail_msg", "fail_email_subject",
-                    "fail_email_body", "logger", "eventer"):
-            setattr(self, opt, opts.get(opt, getattr(self, opt, None)))
+        self.task = tasks[self.task_name]
 
-        if not self.logger:
-            self.logger = get_default_logger()
-
-    def __repr__(self):
-        return '<%s: {name:"%s", id:"%s", args:"%s", kwargs:"%s"}>' % (
-                self.__class__.__name__,
-                self.task_name, self.task_id,
-                self.args, self.kwargs)
+    def maybe_expire(self):
+        if self.expires and datetime.now() > self.expires:
+            state.revoked.add(self.task_id)
+            self.task.backend.mark_as_revoked(self.task_id)
 
     def revoked(self):
         if self._already_revoked:
             return True
-        if self.task_id in revoked:
+        if self.expires:
+            self.maybe_expire()
+        if self.task_id in state.revoked:
             self.logger.warn("Skipping revoked task: %s[%s]" % (
                 self.task_name, self.task_id))
             self.send_event("task-revoked", uuid=self.task_id)
-            self.on_ack()
+            self.acknowledge()
             self._already_revoked = True
             return True
         return False
@@ -241,7 +257,7 @@ class TaskRequest(object):
         :raises UnknownTaskError: if the message does not describe a task,
             the message is also rejected.
 
-        :returns: :class:`TaskRequest` instance.
+        :returns :class:`TaskRequest`:
 
         """
         task_name = message_data["task"]
@@ -249,6 +265,8 @@ class TaskRequest(object):
         args = message_data["args"]
         kwargs = message_data["kwargs"]
         retries = message_data.get("retries", 0)
+        eta = maybe_iso8601(message_data.get("eta"))
+        expires = maybe_iso8601(message_data.get("expires"))
 
         _delivery_info = getattr(message, "delivery_info", {})
         delivery_info = dict((key, _delivery_info.get(key))
@@ -261,7 +279,8 @@ class TaskRequest(object):
         return cls(task_name, task_id, args, kwdict(kwargs),
                    retries=retries, on_ack=message.ack,
                    delivery_info=delivery_info, logger=logger,
-                   eventer=eventer, hostname=hostname)
+                   eventer=eventer, hostname=hostname,
+                   eta=eta, expires=expires)
 
     def extend_with_default_kwargs(self, loglevel, logfile):
         """Extend the tasks keyword arguments with standard task arguments.
@@ -335,8 +354,6 @@ class TaskRequest(object):
 
         :keyword logfile: The logfile used by the task.
 
-        :returns :class:`multiprocessing.AsyncResult` instance.
-
         """
         if self.revoked():
             return
@@ -352,6 +369,7 @@ class TaskRequest(object):
         return result
 
     def on_accepted(self):
+        state.task_accepted(self)
         if not self.task.acks_late:
             self.acknowledge()
         self.send_event("task-started", uuid=self.task_id)
@@ -359,6 +377,7 @@ class TaskRequest(object):
             self.task_name, self.task_id))
 
     def on_timeout(self, soft):
+        state.task_ready(self)
         if soft:
             self.logger.warning("Soft time limit exceeded for %s[%s]" % (
                 self.task_name, self.task_id))
@@ -374,6 +393,7 @@ class TaskRequest(object):
     def on_success(self, ret_value):
         """The handler used if the task was successfully processed (
         without raising an exception)."""
+        state.task_ready(self)
 
         if self.task.acks_late:
             self.acknowledge()
@@ -385,11 +405,17 @@ class TaskRequest(object):
         msg = self.success_msg.strip() % {
                 "id": self.task_id,
                 "name": self.task_name,
-                "return_value": ret_value}
+                "return_value": self.repr_result(ret_value)}
         self.logger.info(msg)
+
+    def repr_result(self, result, maxlen=46):
+        # 46 is the length needed to fit
+        #     "the quick brown fox jumps over the lazy dog" :)
+        return truncate_text(repr(result), maxlen)
 
     def on_failure(self, exc_info):
         """The handler used if the task raised an exception."""
+        state.task_ready(self)
 
         if self.task.acks_late:
             self.acknowledge()
@@ -398,21 +424,55 @@ class TaskRequest(object):
                                        exception=repr(exc_info.exception),
                                        traceback=exc_info.traceback)
 
-        context = {
-            "hostname": self.hostname,
-            "id": self.task_id,
-            "name": self.task_name,
-            "exc": repr(exc_info.exception),
-            "traceback": unicode(exc_info.traceback, 'utf-8'),
-            "args": self.args,
-            "kwargs": self.kwargs,
-        }
-        self.logger.error(self.fail_msg.strip() % context)
+        context = {"hostname": self.hostname,
+                   "id": self.task_id,
+                   "name": self.task_name,
+                   "exc": repr(exc_info.exception),
+                   "traceback": unicode(exc_info.traceback, 'utf-8'),
+                   "args": self.args,
+                   "kwargs": self.kwargs}
+        self.logger.error(self.error_msg.strip() % context)
 
         task_obj = tasks.get(self.task_name, object)
-        send_error_email = conf.CELERY_SEND_TASK_ERROR_EMAILS and not \
-                                task_obj.disable_error_emails
-        if send_error_email:
-            subject = self.fail_email_subject.strip() % context
-            body = self.fail_email_body.strip() % context
-            mail_admins(subject, body, fail_silently=True)
+        self.send_error_email(task_obj, context, exc_info.exception,
+                              enabled=conf.CELERY_SEND_TASK_ERROR_EMAILS,
+                              whitelist=conf.CELERY_TASK_ERROR_WHITELIST)
+
+    def send_error_email(self, task, context, exc,
+            whitelist=None, enabled=False, fail_silently=True):
+        if enabled and not task.disable_error_emails:
+            if whitelist:
+                if not isinstance(exc, tuple(whitelist)):
+                    return
+            subject = self.email_subject.strip() % context
+            body = self.email_body.strip() % context
+            return mail_admins(subject, body, fail_silently=fail_silently)
+
+    def __repr__(self):
+        return '<%s: {name:"%s", id:"%s", args:"%s", kwargs:"%s"}>' % (
+                self.__class__.__name__,
+                self.task_name, self.task_id,
+                self.args, self.kwargs)
+
+    def info(self, safe=False):
+        args = self.args
+        kwargs = self.kwargs
+        if not safe:
+            args = repr(args)
+            kwargs = repr(self.kwargs)
+
+        return {"id": self.task_id,
+                "name": self.task_name,
+                "args": args,
+                "kwargs": kwargs,
+                "hostname": self.hostname,
+                "time_start": self.time_start,
+                "acknowledged": self.acknowledged,
+                "delivery_info": self.delivery_info}
+
+    def shortinfo(self):
+        return "%s[%s]%s%s" % (
+                    self.task_name,
+                    self.task_id,
+                    self.eta and " eta:[%s]" % (self.eta, ) or "",
+                    self.expires and " expires:[%s]" % (self.expires, ) or "")

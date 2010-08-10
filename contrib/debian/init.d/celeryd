@@ -1,12 +1,78 @@
-#!/bin/sh
+#!/bin/sh -e
+# ============================================
+#  celeryd - Starts the Celery worker daemon.
+# ============================================
+#
+# :Usage: /etc/init.d/celeryd {start|stop|force-reload|restart|try-restart|status}
+#
+# :Configuration file: /etc/default/celeryd
+#
+# To configure celeryd you probably need to tell it where to chdir.
+#
+# EXAMPLE CONFIGURATION
+# =====================
+#
+# this is an example configuration for a Python project:
+#
+# /etc/default/celeryd:
+#
+#   # Where to chdir at start.
+#   CELERYD_CHDIR="/opt/Myproject/"
+#
+#   # Extra arguments to celeryd
+#   CELERYD_OPTS="--time-limit 300"
+#
+#   # Name of the celery config module.#
+#   CELERY_CONFIG_MODULE="celeryconfig"
+#
+# EXAMPLE DJANGO CONFIGURATION
+# ============================
+#
+#   # Where the Django project is.
+#   CELERYD_CHDIR="/opt/Project/"
+#
+#   # Name of the projects settings module.
+#   DJANGO_SETTINGS_MODULE="settings"
+#
+#   # Path to celeryd
+#   CELERYD="/opt/Project/manage.py celeryd"
+#
+# AVAILABLE OPTIONS
+# =================
+#
+#   * CELERYD_OPTS
+#       Additional arguments to celeryd, see ``celeryd --help`` for a list.
+#
+#   * CELERYD_CHDIR
+#       Path to chdir at start. Default is to stay in the current directory.
+#
+#   * CELERYD_PIDFILE
+#       Full path to the pidfile. Default is /var/run/celeryd.pid.
+#
+#   * CELERYD_LOGFILE
+#       Full path to the celeryd logfile. Default is /var/log/celeryd.log
+#
+#   * CELERYD_LOG_LEVEL
+#       Log level to use for celeryd. Default is INFO.
+#
+#   * CELERYD
+#       Path to the celeryd program. Default is ``celeryd``.
+#       You can point this to an virtualenv, or even use manage.py for django.
+#
+#   * CELERYD_USER
+#       User to run celeryd as. Default is current user.
+#
+#   * CELERYD_GROUP
+#       Group to run celeryd as. Default is current user.
+
 
 ### BEGIN INIT INFO
-# Provides:		celeryd
-# Required-Start:	
-# Required-Stop:	
-# Default-Start:	2 3 4 5
-# Default-Stop:		1
-# Short-Description:	celery task worker daemon
+# Provides:          celeryd
+# Required-Start:    $network $local_fs $remote_fs
+# Required-Stop:     $network $local_fs $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: celery task worker daemon
 ### END INIT INFO
 
 set -e
@@ -14,13 +80,15 @@ set -e
 CELERYD_PID_FILE="/var/run/celeryd.pid"
 CELERYD_LOG_FILE="/var/log/celeryd.log"
 CELERYD_LOG_LEVEL="INFO"
-DEFAULT_CELERYD="celeryd"
+DEFAULT_CELERYD="/usr/bin/celeryd"
 
 # /etc/init.d/ssh: start and stop the celery task worker daemon.
 
 if test -f /etc/default/celeryd; then
     . /etc/default/celeryd
 fi
+
+CELERYD=${CELERYD:-$DEFAULT_CELERYD}
 
 export CELERY_LOADER
 
@@ -40,6 +108,10 @@ if [ -n "$CELERYD_GROUP" ]; then
     DAEMON_OPTS="$DAEMON_OPTS --group $CELERYD_GROUP"
 fi
 
+if [ -n "$CELERYD_CHDIR" ]; then
+    DAEMON_OPTS="$DAEMON_OPTS --chdir $CELERYD_CHDIR"
+fi
+
 
 # Are we running from init?
 run_by_init() {
@@ -49,49 +121,59 @@ run_by_init() {
 
 check_dev_null() {
     if [ ! -c /dev/null ]; then
-	if [ "$1" = log_end_msg ]; then
-	    log_end_msg 1 || true
-	fi
-	if ! run_by_init; then
-	    log_action_msg "/dev/null is not a character device!"
-	fi
-	exit 1
+    if [ "$1" = log_end_msg ]; then
+        log_end_msg 1 || true
+    fi
+    if ! run_by_init; then
+        log_action_msg "/dev/null is not a character device!"
+    fi
+    exit 1
     fi
 }
 
 
 export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
-if [ ! -z "$VIRTUALENV" ]; then
-    export PATH="$VIRTUALENV/bin:$PATH"
-    CELERYD="$VIRTUALENV/bin/$CELERYD"
-fi
 
 
-if [ -f "$CELERYD" -a ! -x "$CELERYD" ]; then
-    echo "ERROR: $CELERYD is not executable."
-    echo "Please make it executable by doing: chmod +x '$CELERYD'"
+stop_worker () {
+    cmd="start-stop-daemon --stop \
+                           --quiet \
+                           $* \
+                           --pidfile $CELERYD_PID_FILE"
+    if $cmd; then
+        log_end_msg 0
+    else
+        log_end_msg 1
+    fi
+}
 
-    echo "celeryd is disabled"
-    exit
-fi
+start_worker () {
+    cmd="start-stop-daemon --start $DAEMON_OPTS \
+                           --quiet \
+                           --oknodo \
+                           --background \
+                           --make-pidfile \
+                           $* \
+                           --pidfile $CELERYD_PID_FILE
+                           --exec $CELERYD -- $CELERYD_OPTS"
+    if $cmd; then
+        log_end_msg 0
+    else
+        log_end_msg 1
+    fi
+}
+
 
 
 case "$1" in
   start)
     check_dev_null
     log_daemon_msg "Starting celery task worker server" "celeryd"
-    if start-stop-daemon --start $DAEMON_OPTS --quiet --oknodo --background --make-pidfile --pidfile $CELERYD_PID_FILE --exec $CELERYD -- $CELERYD_OPTS; then
-        log_end_msg 0
-    else
-        log_end_msg 1
-    fi
+    start_worker
     ;;
   stop)
     log_daemon_msg "Stopping celery task worker server" "celeryd"
-    if start-stop-daemon --stop --quiet --oknodo --pidfile $CELERYD_PID_FILE; then log_end_msg 0
-    else
-        log_end_msg 1
-    fi
+    stop_worker --oknodo
     ;;
 
   reload|force-reload)
@@ -100,50 +182,43 @@ case "$1" in
 
   restart)
     log_daemon_msg "Restarting celery task worker server" "celeryd"
-    start-stop-daemon --stop --quiet --oknodo --retry 30 --pidfile $CELERYD_PID_FILE
+    stop_worker --oknodo --retry 30
     check_dev_null log_end_msg
-    if start-stop-daemon --start $DAEMON_OPTS --quiet --oknodo --background --make-pidfile --pidfile $CELERYD_PID_FILE --exec $CELERYD -- $CELERYD_OPTS; then log_end_msg 0
-    else
-        log_end_msg 1
-    fi
+    start_worker
     ;;
 
   try-restart)
     log_daemon_msg "Restarting celery task worker server" "celeryd"
     set +e
-    start-stop-daemon --stop --quiet --retry 30 --pidfile $CELERYD_PID_FILE
+    stop_worker --retry 30
     RET="$?"
     set -e
     case $RET in
         0)
-		# old daemon stopped
-		check_dev_null log_end_msg
-		if start-stop-daemon --start $DAEMON_OPTS --quiet --oknodo --background --make-pidfile --pidfile $CELERYD_PID_FILE --exec $CELERYD -- $CELERYD_OPTS; then
-		    log_end_msg 0
-		else
-		    log_end_msg 1
-		fi
-		;;
-	    1)
-		# daemon not running
-		log_progress_msg "(not running)"
-		log_end_msg 0
-		;;
-	    *)
-		# failed to stop
-		log_progress_msg "(failed to stop)"
-		log_end_msg 1
-		;;
-	esac
-	;;
+        # old daemon stopped
+        check_dev_null log_end_msg
+        start_worker
+        ;;
+        1)
+        # daemon not running
+        log_progress_msg "(not running)"
+        log_end_msg 0
+        ;;
+        *)
+        # failed to stop
+        log_progress_msg "(failed to stop)"
+        log_end_msg 1
+        ;;
+    esac
+    ;;
 
   status)
-	status_of_proc -p $CELERYD_PID_FILE $CELERYD celeryd && exit 0 || exit $?
-	;;
+    status_of_proc -p $CELERYD_PID_FILE $CELERYD celeryd && exit 0 || exit $?
+    ;;
 
   *)
-	log_action_msg "Usage: /etc/init.d/celeryd {start|stop|force-reload|restart|try-restart|status}"
-	exit 1
+    log_action_msg "Usage: /etc/init.d/celeryd {start|stop|force-reload|restart|try-restart|status}"
+    exit 1
 esac
 
 exit 0

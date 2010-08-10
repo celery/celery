@@ -222,6 +222,15 @@ class LimitedSet(object):
     def __contains__(self, value):
         return value in self._data
 
+    def update(self, other):
+        if isinstance(other, self.__class__):
+            self._data.update(other._data)
+        else:
+            self._data.update(other)
+
+    def as_dict(self):
+        return self._data
+
     def __iter__(self):
         return iter(self._data.keys())
 
@@ -256,3 +265,55 @@ class LocalCache(OrderedDict):
         while len(self) >= self.limit:
             self.popitem(last=False)
         super(LocalCache, self).__setitem__(key, value)
+
+
+class TokenBucket(object):
+    """Token Bucket Algorithm.
+
+    See http://en.wikipedia.org/wiki/Token_Bucket
+    Most of this code was stolen from an entry in the ASPN Python Cookbook:
+    http://code.activestate.com/recipes/511490/
+
+    :param fill_rate: see :attr:`fill_rate`.
+    :keyword capacity: see :attr:`capacity`.
+
+    .. attribute:: fill_rate
+
+        The rate in tokens/second that the bucket will be refilled.
+
+    .. attribute:: capacity
+
+        Maximum number of tokens in the bucket. Default is ``1``.
+
+    .. attribute:: timestamp
+
+        Timestamp of the last time a token was taken out of the bucket.
+
+    """
+
+    def __init__(self, fill_rate, capacity=1):
+        self.capacity = float(capacity)
+        self._tokens = capacity
+        self.fill_rate = float(fill_rate)
+        self.timestamp = time.time()
+
+    def can_consume(self, tokens=1):
+        if tokens <= self._get_tokens():
+            self._tokens -= tokens
+            return True
+        return False
+
+    def expected_time(self, tokens=1):
+        """Returns the expected time in seconds when a new token should be
+        available. *Note: consumes a token from the bucket*"""
+        _tokens = self._get_tokens()
+        tokens = max(tokens, _tokens)
+        return (tokens - _tokens) / self.fill_rate
+
+    def _get_tokens(self):
+        if self._tokens < self.capacity:
+            now = time.time()
+            delta = self.fill_rate * (now - self.timestamp)
+            self._tokens = min(self.capacity, self._tokens + delta)
+            self.timestamp = now
+        return self._tokens

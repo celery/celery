@@ -5,8 +5,8 @@
 .. contents::
     :local:
 
-Removals for version 1.2
-============================
+Removals for version 2.0
+========================
 
 * The following settings will be removed:
 

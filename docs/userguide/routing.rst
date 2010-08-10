@@ -11,6 +11,166 @@ respective documenation for more information, or contact the `mailinglist`_.
 .. contents::
     :local:
 
+Basics
+======
+
+Automatic routing
+-----------------
+
+The simplest way to do routing is to use the ``CELERY_CREATE_MISSING_QUEUES``
+setting (on by default).
+
+With this setting on, a named queue that is not already defined in
+``CELERY_QUEUES`` will be created automatically. This makes it easy to perform
+simple routing tasks.
+
+Say you have two servers, ``x``, and ``y`` that handles regular tasks,
+and one server ``z``, that only handles feed related tasks. You can use this
+configuration::
+
+    CELERY_ROUTES = {"feed.tasks.import_feed": {"queue": "feeds"}}
+
+With this route enabled import feed tasks will be routed to the
+``"feeds"`` queue, while all other tasks will be routed to the default queue
+(named ``"celery"`` for historic reasons).
+
+Now you can start server ``z`` to only process the feeds queue like this::
+
+    (z)$ celeryd -Q feeds
+
+You can specify as many queues as you want, so you can make this server
+process the default queue as well::
+
+    (z)$ celeryd -Q feeds,celery
+
+Changing the name of the default queue
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can change the name of the default queue by using the following
+configuration:
+
+.. code-block:: python
+
+    CELERY_QUEUES = {"default": {"exchange": "default",
+                                 "binding_key": "default"}}
+    CELERY_DEFAULT_QUEUE = "default"
+
+How the queues are defined
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The point with this feature is to hide the complex AMQP protocol for users
+with only basic needs. However — you may still be interested in how these queues
+are defined.
+
+A queue named ``"video"`` will be created with the following settings:
+
+.. code-block:: python
+
+    {"exchange": "video",
+     "exchange_type": "direct",
+     "routing_key": "video"}
+
+The non-AMQP backends like ``ghettoq`` does not support exchanges, so they
+require the exchange to have the same name as the queue. Using this design
+ensures it will work for them as well.
+
+Manual routing
+--------------
+
+Say you have two servers, ``x``, and ``y`` that handles regular tasks,
+and one server ``z``, that only handles feed related tasks, you can use this
+configuration:
+
+.. code-block:: python
+
+    CELERY_DEFAULT_QUEUE = "default"
+    CELERY_QUEUES = {
+        "default": {
+            "binding_key": "task.#",
+        },
+        "feed_tasks": {
+            "binding_key": "feed.#",
+        },
+    }
+    CELERY_DEFAULT_EXCHANGE = "tasks"
+    CELERY_DEFAULT_EXCHANGE_TYPE = "topic"
+    CELERY_DEFAULT_ROUTING_KEY = "task.default"
+
+``CELERY_QUEUES`` is a map of queue names and their exchange/type/binding_key,
+if you don't set exchange or exchange type, they will be taken from the
+``CELERY_DEFAULT_EXCHANGE``/``CELERY_DEFAULT_EXCHANGE_TYPE`` settings.
+
+To route a task to the ``feed_tasks`` queue, you can add an entry in the
+``CELERY_ROUTES`` setting:
+
+.. code-block:: python
+
+    CELERY_ROUTES = {
+            "feeds.tasks.import_feed": {
+                "queue": "feed_tasks",
+                "routing_key": "feed.import",
+            },
+    }
+
+
+You can also override this using the ``routing_key`` argument to
+:func:`~celery.execute.apply_async`, or :func:`~celery.execute.send_task`:
+
+    >>> from feeds.tasks import import_feed
+    >>> import_feed.apply_async(args=["http://cnn.com/rss"],
+    ...                         queue="feed_tasks",
+    ...                         routing_key="feed.import")
+
+
+To make server ``z`` consume from the feed queue exclusively you can
+start it with the ``-Q`` option::
+
+    (z)$ celeryd -Q feed_tasks --hostname=z.example.com
+
+Servers ``x`` and ``y`` must be configured to consume from the default queue::
+
+    (x)$ celeryd -Q default --hostname=x.example.com
+    (y)$ celeryd -Q default --hostname=y.example.com
+
+If you want, you can even have your feed processing worker handle regular
+tasks as well, maybe in times when there's a lot of work to do::
+
+    (z)$ celeryd -Q feed_tasks,default --hostname=z.example.com
+
+If you have another queue but on another exchange you want to add,
+just specify a custom exchange and exchange type:
+
+.. code-block:: python
+
+    CELERY_QUEUES = {
+            "feed_tasks": {
+                "binding_key": "feed.#",
+            },
+            "regular_tasks": {
+                "binding_key": "task.#",
+            },
+            "image_tasks": {
+                "binding_key": "image.compress",
+                "exchange": "mediatasks",
+                "exchange_type": "direct",
+            },
+        }
+
+If you're confused about these terms, you should read up on AMQP concepts.
+
+In addition to the :ref:`AMQP Primer` below, there's
+`Rabbits and Warrens`_, an excellent blog post describing queues and
+exchanges. There's also AMQP in 10 minutes*: `Flexible Routing Model`_,
+and `Standard Exchange Types`_. For users of RabbitMQ the `RabbitMQ FAQ`_
+could be useful as a source of information.
+
+.. _`Rabbits and Warrens`: http://blogs.digitar.com/jjww/2009/01/rabbits-and-warrens/
+.. _`Flexible Routing Model`: http://bit.ly/95XFO1
+.. _`Standard Exchange Types`: http://bit.ly/EEWca
+.. _`RabbitMQ FAQ`: http://www.rabbitmq.com/faq.html
+
+.. _`AMQP Primer`:
+
 AMQP Primer
 ===========
 
@@ -29,7 +189,7 @@ This is an example task message represented as a Python dictionary:
 .. code-block:: python
 
     {"task": "myapp.tasks.add",
-     "id": 
+     "id": "54086c5e-6193-4575-8308-dbab76798756",
      "args": [4, 4],
      "kwargs": {}}
 
@@ -316,11 +476,12 @@ All you need to define a new router is to create a class with a
 
     class MyRouter(object):
 
-        def route_for_task(task, task_id=None, args=None, kwargs=None):
+        def route_for_task(self, task, args=None, kwargs=None):
             if task == "myapp.tasks.compress_video":
                 return {"exchange": "video",
                         "exchange_type": "topic",
                         "routing_key": "video.compress"}
+            return None
 
 If you return the ``queue`` key, it will expand with the defined settings of
 that queue in ``CELERY_QUEUES``::

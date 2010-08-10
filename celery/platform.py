@@ -53,10 +53,11 @@ def set_process_title(progname, info=None):
     Only works if :mod`setproctitle` is installed.
 
     """
+    proctitle = "[%s]" % progname
+    proctitle = info and "%s %s" % (proctitle, info) or proctitle
     if _setproctitle:
-        proctitle = "[%s]" % progname
-        proctitle = info and "%s %s" % (proctitle, info) or proctitle
         _setproctitle(proctitle)
+    return proctitle
 
 
 def set_mp_process_title(progname, info=None):
