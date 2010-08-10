@@ -139,8 +139,8 @@ class test_TaskRequest(unittest.TestCase):
         try:
             tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
             try:
-                raise KeyError("foo")
-            except KeyError:
+                raise KeyError("moofoobar")
+            except:
                 einfo = ExceptionInfo(sys.exc_info())
 
             tw.on_failure(einfo)
@@ -455,7 +455,8 @@ class test_TaskRequest(unittest.TestCase):
 
         logfh = StringIO()
         tw.logger.handlers = []
-        tw.logger = setup_logger(logfile=logfh, loglevel=logging.INFO)
+        tw.logger = setup_logger(logfile=logfh, loglevel=logging.INFO,
+                                 root=False)
 
         from celery import conf
         conf.CELERY_SEND_TASK_ERROR_EMAILS = True

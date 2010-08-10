@@ -434,14 +434,14 @@ class TaskRequest(object):
         self.logger.error(self.error_msg.strip() % context)
 
         task_obj = tasks.get(self.task_name, object)
-        self.send_error_email(task_obj, context, exc_info.exception)
+        self.send_error_email(task_obj, context, exc_info.exception,
+                              enabled=conf.CELERY_SEND_TASK_ERROR_EMAILS,
+                              whitelist=conf.CELERY_TASK_ERROR_WHITELIST)
 
     def send_error_email(self, task, context, exc,
-            whitelist=conf.CELERY_TASK_ERROR_WHITELIST,
-            enabled=conf.CELERY_SEND_TASK_ERROR_EMAILS,
-            fail_silently=True):
+            whitelist=None, enabled=False, fail_silently=True):
         if enabled and not task.disable_error_emails:
-            if whitelist is not None:
+            if whitelist:
                 if not isinstance(exc, tuple(whitelist)):
                     return
             subject = self.email_subject.strip() % context
