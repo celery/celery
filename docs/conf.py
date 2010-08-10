@@ -34,7 +34,7 @@ copyright = u'2009, Ask Solem'
 # The short X.Y version.
 version = ".".join(map(str, celery.VERSION[0:2]))
 # The full version, including alpha/beta/rc tags.
-release = celery.version_with_meta()
+release = celery.__version__
 
 exclude_trees = ['.build']
 
