@@ -248,7 +248,7 @@ Also, the following optional configuration directives are available:
 
 * REDIS_DB
 
-    Name of the database to use. Default is ``celery_results``.
+    Database number to use. Default is 0
 
 * REDIS_PASSWORD
 
