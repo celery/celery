@@ -130,7 +130,7 @@ class inspect(object):
         return self._request("dump_revoked")
 
     def registered_tasks(self):
-        return self._request("dump_registered_tasks")
+        return self._request("dump_tasks")
 
     def enable_events(self):
         return self._request("enable_events")
