@@ -16,6 +16,7 @@ from celery import platform
 from celery.execute import send_task
 from celery.schedules import schedule
 from celery.messaging import establish_connection
+from celery.utils import instantiate
 from celery.utils.info import humanize_seconds
 
 
@@ -84,6 +85,12 @@ class ScheduleEntry(object):
         """See :meth:`celery.task.base.PeriodicTask.is_due`."""
         return self.schedule.is_due(self.last_run_at)
 
+    def __repr__(self):
+        return "<Entry: %s(*%s, **%s) {%s}>" % (self.name,
+                                                self.args,
+                                                self.kwargs,
+                                                self.schedule)
+
 
 class Scheduler(UserDict):
     """Scheduler for periodic tasks.
@@ -105,6 +112,7 @@ class Scheduler(UserDict):
         Maximum time to sleep between re-checking the schedule.
 
     """
+    Entry = ScheduleEntry
 
     def __init__(self, schedule=None, logger=None,
             max_interval=None):
@@ -117,6 +125,9 @@ class Scheduler(UserDict):
         self.cleanup()
         self.setup_schedule()
 
+    def iterentries(self):
+        return self.schedule.itervalues()
+
     def tick(self):
         """Run a tick, that is one iteration of the scheduler.
         Executes all due tasks."""
@@ -126,7 +137,7 @@ class Scheduler(UserDict):
         remaining_times = []
         connection = establish_connection()
         try:
-            for entry in self.schedule.values():
+            for entry in self.iterentries():
                 is_due, next_time_to_run = entry.is_due()
                 if is_due:
                     debug("Scheduler: Sending due task %s" % entry.name)
@@ -145,12 +156,17 @@ class Scheduler(UserDict):
 
         return min(remaining_times + [self.max_interval])
 
-    def apply_async(self, entry, **kwargs):
+    def reserve(self, entry):
+        new_entry = self.schedule[entry.name] = entry.next()
+        return new_entry
 
+    def apply_async(self, entry, **kwargs):
         # Update timestamps and run counts before we actually execute,
         # so we have that done if an exception is raised (doesn't schedule
         # forever.)
-        entry = self.schedule[entry.name] = entry.next()
+        entry = self.reserve(entry)
+
+        print("APPLYING: %s" % (entry, ))
 
         try:
             result = send_task(entry.name, entry.args, entry.kwargs,
@@ -168,7 +184,7 @@ class Scheduler(UserDict):
         return s
 
     def setup_schedule(self):
-        self.schedule = self.dict_to_entries(conf.CELERYBEAT_SCHEDULE)
+        self.data = self.dict_to_entries(conf.CELERYBEAT_SCHEDULE)
 
     def dict_to_entries(self, dict_):
         entries = {}
@@ -176,7 +192,7 @@ class Scheduler(UserDict):
             relative = entry.pop("relative", None)
             entry["schedule"] = self.maybe_schedule(entry["schedule"],
                                                     relative)
-            entries[name] = ScheduleEntry(**entry)
+            entries[name] = self.Entry(**entry)
         return entries
 
     def cleanup(self):
@@ -194,9 +210,11 @@ class ClockService(object):
     def __init__(self, logger=None,
             max_interval=conf.CELERYBEAT_MAX_LOOP_INTERVAL,
             schedule=conf.CELERYBEAT_SCHEDULE,
-            schedule_filename=conf.CELERYBEAT_SCHEDULE_FILENAME):
+            schedule_filename=conf.CELERYBEAT_SCHEDULE_FILENAME,
+            scheduler_cls=None):
         self.logger = logger or log.get_default_logger()
         self.max_interval = max_interval
+        self.scheduler_cls = scheduler_cls or self.scheduler_cls
         self._shutdown = threading.Event()
         self._stopped = threading.Event()
         self.schedule = schedule
@@ -239,9 +257,10 @@ class ClockService(object):
     @property
     def scheduler(self):
         if self._scheduler is None:
-            self._scheduler = self.scheduler_cls(schedule=self.schedule,
-                                            logger=self.logger,
-                                            max_interval=self.max_interval)
+            self._scheduler = instantiate(self.scheduler_cls,
+                                          schedule=self.schedule,
+                                          logger=self.logger,
+                                          max_interval=self.max_interval)
         return self._scheduler
 
 

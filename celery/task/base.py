@@ -19,7 +19,7 @@ from celery.task.sets import TaskSet, subtask
 
 PERIODIC_DEPRECATION_TEXT = """\
 Periodic task classes has been deprecated and will be removed
-in celery v1.6.
+in celery v3.0.
 
 Please use the CELERYBEAT_SCHEDULE setting instead:
 

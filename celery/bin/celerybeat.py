@@ -8,6 +8,10 @@
     Path to the schedule database. Defaults to ``celerybeat-schedule``.
     The extension ".db" will be appended to the filename.
 
+.. cmdoption:: -S, --scheduler
+
+    Scheduler class to use. Default is celery.beat.Scheduler
+
 .. cmdoption:: -f, --logfile
 
     Path to log file. If no logfile is specified, ``stderr`` is used.
@@ -43,6 +47,13 @@ OPTION_LIST = (
             help="Path to the schedule database. The extension \
                     '.db' will be appended to the filename. Default: %s" % (
                     conf.CELERYBEAT_SCHEDULE_FILENAME)),
+    optparse.make_option('--max-interval',
+            default=3600, type="int", dest="max_interval",
+            help="Maximum time to sleep between rechecking the schedule."),
+    optparse.make_option('-S', '--scheduler',
+            default=None,
+            action="store", dest="scheduler_cls",
+            help="Scheduler class. Default is celery.beat.Scheduler"),
     optparse.make_option('-f', '--logfile', default=conf.CELERYBEAT_LOG_FILE,
             action="store", dest="logfile",
             help="Path to log file."),
@@ -58,13 +69,17 @@ class Beat(object):
 
     def __init__(self, loglevel=conf.CELERYBEAT_LOG_LEVEL,
             logfile=conf.CELERYBEAT_LOG_FILE,
-            schedule=conf.CELERYBEAT_SCHEDULE_FILENAME, **kwargs):
+            schedule=conf.CELERYBEAT_SCHEDULE_FILENAME,
+            max_interval=None,
+            scheduler_cls=None, **kwargs):
         """Starts the celerybeat task scheduler."""
 
         self.loglevel = loglevel
         self.logfile = logfile
         self.schedule = schedule
-        # Setup logging
+        self.scheduler_cls = scheduler_cls
+        self.max_interval = max_interval
+
         if not isinstance(self.loglevel, int):
             self.loglevel = conf.LOG_LEVELS[self.loglevel.upper()]
 
@@ -79,7 +94,9 @@ class Beat(object):
     def start_scheduler(self):
         from celery.log import setup_logger
         logger = setup_logger(self.loglevel, self.logfile, name="celery.beat")
-        beat = self.ClockService(logger,
+        beat = self.ClockService(logger=logger,
+                                 max_interval=self.max_interval,
+                                 scheduler_cls=self.scheduler_cls,
                                  schedule_filename=self.schedule)
 
         try:
