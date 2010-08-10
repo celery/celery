@@ -1,19 +1,34 @@
 import sys
+import warnings
+
 from datetime import timedelta
 
 from celery import conf
-from celery.log import setup_task_logger
-from celery.utils.timeutils import timedelta_seconds
-from celery.result import BaseAsyncResult, EagerResult
-from celery.execute import apply_async, apply
-from celery.registry import tasks
 from celery.backends import default_backend
+from celery.exceptions import MaxRetriesExceededError, RetryTaskError
+from celery.execute import apply_async, apply
+from celery.log import setup_task_logger
 from celery.messaging import TaskPublisher, TaskConsumer
 from celery.messaging import establish_connection as _establish_connection
-from celery.exceptions import MaxRetriesExceededError, RetryTaskError
+from celery.registry import tasks
+from celery.result import BaseAsyncResult, EagerResult
+from celery.schedules import schedule
+from celery.utils.timeutils import timedelta_seconds
 
-from celery.task.schedules import schedule
 from celery.task.sets import TaskSet, subtask
+
+PERIODIC_DEPRECATION_TEXT = """\
+Periodic task classes has been deprecated and will be removed
+in celery v3.0.
+
+Please use the CELERYBEAT_SCHEDULE setting instead:
+
+    CELERYBEAT_SCHEDULE = {
+        name: dict(name=task_name, schedule=run_every,
+                   args=(), kwargs={}, options={}, relative=False)
+    }
+
+"""
 
 
 def _unpickle_task(name):
@@ -602,16 +617,16 @@ class PeriodicTask(Task):
             raise NotImplementedError(
                     "Periodic tasks must have a run_every attribute")
 
-        # If run_every is a integer, convert it to timedelta seconds.
-        # Operate on the original class attribute so anyone accessing
-        # it directly gets the right value.
-        if isinstance(self.__class__.run_every, int):
-            self.__class__.run_every = timedelta(seconds=self.run_every)
-
-        # Convert timedelta to instance of schedule.
-        if isinstance(self.__class__.run_every, timedelta):
-            self.__class__.run_every = schedule(self.__class__.run_every,
-                                                self.relative)
+        warnings.warn(PERIODIC_DEPRECATION_TEXT,
+                        PendingDeprecationWarning)
+        conf.CELERYBEAT_SCHEDULE[self.name] = {
+                "name": self.name,
+                "schedule": self.run_every,
+                "args": (),
+                "kwargs": {},
+                "options": {},
+                "relative": self.relative,
+        }
 
         super(PeriodicTask, self).__init__()
 
