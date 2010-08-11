@@ -6,6 +6,8 @@ import os
 import sys
 import traceback
 
+from multiprocessing import current_process
+
 from celery import conf
 from celery import signals
 from celery.utils import noop
@@ -38,6 +40,11 @@ class ColorFormatter(logging.Formatter):
         if self.use_color and levelname in COLORS:
             record.msg = COLOR_SEQ % (
                     30 + COLORS[levelname]) + record.msg + RESET_SEQ
+        # Very ugly, but have to make sure processName is supported
+        # by foreign logger instances.
+        # (processName is always supported by Python 2.7)
+        if "processName" not in record.__dict__:
+            record.__dict__["processName"] = current_process()._name
         return logging.Formatter.format(self, record)
 
 
