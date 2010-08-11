@@ -8,7 +8,7 @@ import logging
 import traceback
 from multiprocessing.util import Finalize
 
-from timer2 import Timer
+from celery.utils.timer2 import Timer
 
 from celery import conf
 from celery import log

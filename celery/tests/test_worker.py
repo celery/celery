@@ -7,7 +7,7 @@ from Queue import Empty
 
 from carrot.backends.base import BaseMessage
 from carrot.connection import BrokerConnection
-from timer2 import Timer
+from celery.utils.timer2 import Timer
 
 from celery import conf
 from celery.decorators import task as task_dec

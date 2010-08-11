@@ -1,6 +1,7 @@
 import sys
 import time
-import timer2
+
+from celery.utils import timer2
 
 from celery import conf
 from celery import log

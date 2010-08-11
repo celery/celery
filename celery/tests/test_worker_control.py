@@ -1,7 +1,7 @@
 import socket
 import unittest2 as unittest
 
-from timer2 import Timer
+from celery.utils.timer2 import Timer
 
 from celery import conf
 from celery.decorators import task
