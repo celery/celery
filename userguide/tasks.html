@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Tasks &mdash; Celery v2.0.2 (stable) documentation</title>
+    <title>Tasks &mdash; Celery v2.1.0a1 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.0.2 (stable)',
+        VERSION:     '2.1.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.0.2 (stable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.1.0a1 documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
     <link rel="next" title="Executing Tasks" href="executing.html" />
     <link rel="prev" title="User Guide" href="index.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="index.html" title="User Guide"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.0.2 (stable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User Guide</a> &raquo;</li> 
       </ul>
     </div>  
@@ -84,6 +84,7 @@
 <li><a class="reference external" href="#granularity" id="id18">Granularity</a></li>
 <li><a class="reference external" href="#data-locality" id="id19">Data locality</a></li>
 <li><a class="reference external" href="#state" id="id20">State</a></li>
+<li><a class="reference external" href="#database-transactions" id="id21">Database transactions</a></li>
 </ul>
 </li>
 </ul>
@@ -261,7 +262,7 @@ when making new task types by subclassing.</p>
 <li><p class="first">max_retries</p>
 <blockquote>
 <p>The maximum number of attempted retries before giving up.
-If this is exceeded the :exc`~celery.execptions.MaxRetriesExceeded`
+If this is exceeded the :exc`~celery.exceptions.MaxRetriesExceeded`
 exception will be raised. Note that you have to retry manually, it&#8217;s
 not something that happens automatically.</p>
 </blockquote>
@@ -398,38 +399,39 @@ to the database, then we launch the spam filter task in the background.</p>
 </div>
 <div class="section" id="blog-views-py">
 <h3><a class="toc-backref" href="#id10">blog/views.py</a><a class="headerlink" href="#blog-views-py" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-python"><pre>from django import forms
-frmo django.http import HttpResponseRedirect
-from django.template.context import RequestContext
-from django.shortcuts import get_object_or_404, render_to_response
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">django</span> <span class="kn">import</span> <span class="n">forms</span>
+<span class="kn">from</span> <span class="nn">django.http</span> <span class="kn">import</span> <span class="n">HttpResponseRedirect</span>
+<span class="kn">from</span> <span class="nn">django.template.context</span> <span class="kn">import</span> <span class="n">RequestContext</span>
+<span class="kn">from</span> <span class="nn">django.shortcuts</span> <span class="kn">import</span> <span class="n">get_object_or_404</span><span class="p">,</span> <span class="n">render_to_response</span>
 
-from blog import tasks
-from blog.models import Comment
-
-
-class CommentForm(forms.ModelForm):
-
-    class Meta:
-        model = Comment
+<span class="kn">from</span> <span class="nn">blog</span> <span class="kn">import</span> <span class="n">tasks</span>
+<span class="kn">from</span> <span class="nn">blog.models</span> <span class="kn">import</span> <span class="n">Comment</span>
 
 
-def add_comment(request, slug, template_name="comments/create.html"):
-    post = get_object_or_404(Entry, slug=slug)
-    remote_addr = request.META.get("REMOTE_ADDR")
+<span class="k">class</span> <span class="nc">CommentForm</span><span class="p">(</span><span class="n">forms</span><span class="o">.</span><span class="n">ModelForm</span><span class="p">):</span>
 
-    if request.method == "post":
-        form = CommentForm(request.POST, request.FILES)
-        if form.is_valid():
-            comment = form.save()
-            # Check spam asynchronously.
-            tasks.spam_filter.delay(comment_id=comment.id,
-                                    remote_addr=remote_addr)
-            return HttpResponseRedirect(post.get_absolute_url())
-    else:
-        form = CommentForm()
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">Comment</span>
 
-    context = RequestContext(request, {"form": form})
-    return render_to_response(template_name, context_instance=context)</pre>
+
+<span class="k">def</span> <span class="nf">add_comment</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">slug</span><span class="p">,</span> <span class="n">template_name</span><span class="o">=</span><span class="s">&quot;comments/create.html&quot;</span><span class="p">):</span>
+    <span class="n">post</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">Entry</span><span class="p">,</span> <span class="n">slug</span><span class="o">=</span><span class="n">slug</span><span class="p">)</span>
+    <span class="n">remote_addr</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">META</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;REMOTE_ADDR&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s">&quot;post&quot;</span><span class="p">:</span>
+        <span class="n">form</span> <span class="o">=</span> <span class="n">CommentForm</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">,</span> <span class="n">request</span><span class="o">.</span><span class="n">FILES</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">form</span><span class="o">.</span><span class="n">is_valid</span><span class="p">():</span>
+            <span class="n">comment</span> <span class="o">=</span> <span class="n">form</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+            <span class="c"># Check spam asynchronously.</span>
+            <span class="n">tasks</span><span class="o">.</span><span class="n">spam_filter</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">comment_id</span><span class="o">=</span><span class="n">comment</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                                    <span class="n">remote_addr</span><span class="o">=</span><span class="n">remote_addr</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">HttpResponseRedirect</span><span class="p">(</span><span class="n">post</span><span class="o">.</span><span class="n">get_absolute_url</span><span class="p">())</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">form</span> <span class="o">=</span> <span class="n">CommentForm</span><span class="p">()</span>
+
+    <span class="n">context</span> <span class="o">=</span> <span class="n">RequestContext</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="p">{</span><span class="s">&quot;form&quot;</span><span class="p">:</span> <span class="n">form</span><span class="p">})</span>
+    <span class="k">return</span> <span class="n">render_to_response</span><span class="p">(</span><span class="n">template_name</span><span class="p">,</span> <span class="n">context_instance</span><span class="o">=</span><span class="n">context</span><span class="p">)</span>
+</pre></div>
 </div>
 <p>To filter spam in comments we use <a class="reference external" href="http://akismet.com/faq/">Akismet</a>, the service
 used to filter spam in comments posted to the free weblog platform
@@ -577,12 +579,12 @@ and may even cause a deadlock if the worker pool is exhausted.</p>
 
 <span class="nd">@task</span><span class="p">(</span><span class="n">ignore_result</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">fetch_page</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-    <span class="n">page</span> <span class="o">=</span> <span class="n">myparser</span><span class="o">.</span><span class="n">parse_document</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
+    <span class="n">page</span> <span class="o">=</span> <span class="n">myhttplib</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">callback</span><span class="p">:</span>
         <span class="c"># The callback may have been serialized with JSON,</span>
         <span class="c"># so best practice is to convert the subtask dict back</span>
         <span class="c"># into a subtask object.</span>
-        <span class="n">subtask</span><span class="p">(</span><span class="n">callback</span><span class="p">)</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
+        <span class="n">subtask</span><span class="p">(</span><span class="n">callback</span><span class="p">)</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">page</span><span class="p">)</span>
 
 <span class="nd">@task</span><span class="p">(</span><span class="n">ignore_result</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">parse_page</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">page</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
@@ -661,7 +663,7 @@ version, because the task had the old body in its argument.</p>
 <p>Fixing the race condition is easy, just use the article id instead, and
 re-fetch the article in the task body:</p>
 <div class="highlight-python"><pre>@task
-def expand_abbreviations(article_id)
+def expand_abbreviations(article_id):
     article = Article.objects.get(id=article_id)
     article.body.replace("MyCorp", "My Corporation")
     article.save()
@@ -670,6 +672,38 @@ def expand_abbreviations(article_id)
 </div>
 <p>There might even be performance benefits to this approach, as sending large
 messages may be expensive.</p>
+</div>
+<div class="section" id="database-transactions">
+<h3><a class="toc-backref" href="#id21">Database transactions</a><a class="headerlink" href="#database-transactions" title="Permalink to this headline">¶</a></h3>
+<p>Let&#8217;s look at another example:</p>
+<div class="highlight-python"><pre>from django.db import transaction
+
+@transaction.commit_on_success
+def create_article(request):
+    article = Article.objects.create(....)
+    expand_abbreviations.delay(article.pk)</pre>
+</div>
+<p>This is a Django view creating an article object in the database,
+then passing its primary key to a task. It uses the <cite>commit_on_success</cite>
+decorator, which will commit the transaction when the view returns, or
+roll back if the view raises an exception.</p>
+<p>There is a race condition if the task starts executing
+before the transaction has been committed: the database object does not exist
+yet!</p>
+<p>The solution is to <strong>always commit transactions before applying tasks
+that depends on state from the current transaction</strong>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@transaction.commit_manually</span>
+<span class="k">def</span> <span class="nf">create_article</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">article</span> <span class="o">=</span> <span class="n">Article</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">transaction</span><span class="o">.</span><span class="n">rollback</span><span class="p">()</span>
+        <span class="k">raise</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">transaction</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        <span class="n">expand_abbreviations</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">article</span><span class="o">.</span><span class="n">pk</span><span class="p">)</span>
+</pre></div>
+</div>
 </div>
 </div>
 </div>
@@ -713,6 +747,7 @@ messages may be expensive.</p>
 <li><a class="reference internal" href="#granularity">Granularity</a></li>
 <li><a class="reference internal" href="#data-locality">Data locality</a></li>
 <li><a class="reference internal" href="#state">State</a></li>
+<li><a class="reference internal" href="#database-transactions">Database transactions</a></li>
 </ul>
 </li>
 </ul>
@@ -762,13 +797,13 @@ messages may be expensive.</p>
         <li class="right" >
           <a href="index.html" title="User Guide"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.0.2 (stable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" >User Guide</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
     </div>
   </body>
 </html>

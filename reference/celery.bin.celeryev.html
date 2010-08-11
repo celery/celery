@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>celeryev: Curses Event Viewer - celery.bin.celeryev &mdash; Celery v2.0.2 (stable) documentation</title>
+    <title>celeryev: Curses Event Viewer - celery.bin.celeryev &mdash; Celery v2.1.0a1 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.0.2 (stable)',
+        VERSION:     '2.1.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.0.2 (stable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.1.0a1 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="caqmadm: AMQP API Command-line Shell - celery.bin.camqadm" href="celery.bin.camqadm.html" />
     <link rel="prev" title="Celery Periodic Task Server - celery.bin.celerybeat" href="celery.bin.celerybeat.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.bin.celerybeat.html" title="Celery Periodic Task Server - celery.bin.celerybeat"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.0.2 (stable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -54,162 +54,7 @@
             
   <div class="section" id="celeryev-curses-event-viewer-celery-bin-celeryev">
 <h1>celeryev: Curses Event Viewer - celery.bin.celeryev<a class="headerlink" href="#celeryev-curses-event-viewer-celery-bin-celeryev" title="Permalink to this headline">¶</a></h1>
-<span class="target" id="module-celery.bin.celeryev"></span><dl class="class">
-<dt id="celery.bin.celeryev.CursesMonitor">
-<em class="property">class </em><tt class="descclassname">celery.bin.celeryev.</tt><tt class="descname">CursesMonitor</tt><big>(</big><em>state</em>, <em>keymap=None</em><big>)</big><a class="headerlink" href="#celery.bin.celeryev.CursesMonitor" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
-<dt id="celery.bin.celeryev.CursesMonitor.alert">
-<tt class="descname">alert</tt><big>(</big><em>callback</em>, <em>title=None</em><big>)</big><a class="headerlink" href="#celery.bin.celeryev.CursesMonitor.alert" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.bin.celeryev.CursesMonitor.alert_remote_control_reply">
-<tt class="descname">alert_remote_control_reply</tt><big>(</big><em>reply</em><big>)</big><a class="headerlink" href="#celery.bin.celeryev.CursesMonitor.alert_remote_control_reply" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.bin.celeryev.CursesMonitor.draw">
-<tt class="descname">draw</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryev.CursesMonitor.draw" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.bin.celeryev.CursesMonitor.find_position">
-<tt class="descname">find_position</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryev.CursesMonitor.find_position" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.bin.celeryev.CursesMonitor.format_row">
-<tt class="descname">format_row</tt><big>(</big><em>uuid</em>, <em>worker</em>, <em>task</em>, <em>timestamp</em>, <em>state</em><big>)</big><a class="headerlink" href="#celery.bin.celeryev.CursesMonitor.format_row" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.bin.celeryev.CursesMonitor.handle_keypress">
-<tt class="descname">handle_keypress</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryev.CursesMonitor.handle_keypress" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.bin.celeryev.CursesMonitor.init_screen">
-<tt class="descname">init_screen</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryev.CursesMonitor.init_screen" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.bin.celeryev.CursesMonitor.move_selection">
-<tt class="descname">move_selection</tt><big>(</big><em>direction=1</em><big>)</big><a class="headerlink" href="#celery.bin.celeryev.CursesMonitor.move_selection" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.bin.celeryev.CursesMonitor.move_selection_down">
-<tt class="descname">move_selection_down</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryev.CursesMonitor.move_selection_down" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.bin.celeryev.CursesMonitor.move_selection_up">
-<tt class="descname">move_selection_up</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryev.CursesMonitor.move_selection_up" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.bin.celeryev.CursesMonitor.nap">
-<tt class="descname">nap</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryev.CursesMonitor.nap" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.bin.celeryev.CursesMonitor.readline">
-<tt class="descname">readline</tt><big>(</big><em>x</em>, <em>y</em><big>)</big><a class="headerlink" href="#celery.bin.celeryev.CursesMonitor.readline" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.bin.celeryev.CursesMonitor.resetscreen">
-<tt class="descname">resetscreen</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryev.CursesMonitor.resetscreen" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.bin.celeryev.CursesMonitor.revoke_selection">
-<tt class="descname">revoke_selection</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryev.CursesMonitor.revoke_selection" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.bin.celeryev.CursesMonitor.selection_info">
-<tt class="descname">selection_info</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryev.CursesMonitor.selection_info" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.bin.celeryev.CursesMonitor.selection_rate_limit">
-<tt class="descname">selection_rate_limit</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryev.CursesMonitor.selection_rate_limit" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.bin.celeryev.CursesMonitor.selection_result">
-<tt class="descname">selection_result</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryev.CursesMonitor.selection_result" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.bin.celeryev.CursesMonitor.selection_traceback">
-<tt class="descname">selection_traceback</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryev.CursesMonitor.selection_traceback" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="celery.bin.celeryev.CursesMonitor.tasks">
-<tt class="descname">tasks</tt><a class="headerlink" href="#celery.bin.celeryev.CursesMonitor.tasks" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="celery.bin.celeryev.CursesMonitor.workers">
-<tt class="descname">workers</tt><a class="headerlink" href="#celery.bin.celeryev.CursesMonitor.workers" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="celery.bin.celeryev.DisplayThread">
-<em class="property">class </em><tt class="descclassname">celery.bin.celeryev.</tt><tt class="descname">DisplayThread</tt><big>(</big><em>display</em><big>)</big><a class="headerlink" href="#celery.bin.celeryev.DisplayThread" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
-<dt id="celery.bin.celeryev.DisplayThread.run">
-<tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryev.DisplayThread.run" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="celery.bin.celeryev.Dumper">
-<em class="property">class </em><tt class="descclassname">celery.bin.celeryev.</tt><tt class="descname">Dumper</tt><a class="headerlink" href="#celery.bin.celeryev.Dumper" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
-<dt id="celery.bin.celeryev.Dumper.format_task_event">
-<tt class="descname">format_task_event</tt><big>(</big><em>hostname</em>, <em>timestamp</em>, <em>type</em>, <em>task</em>, <em>event</em><big>)</big><a class="headerlink" href="#celery.bin.celeryev.Dumper.format_task_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.bin.celeryev.Dumper.on_event">
-<tt class="descname">on_event</tt><big>(</big><em>event</em><big>)</big><a class="headerlink" href="#celery.bin.celeryev.Dumper.on_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="function">
-<dt id="celery.bin.celeryev.abbr">
-<tt class="descclassname">celery.bin.celeryev.</tt><tt class="descname">abbr</tt><big>(</big><em>S</em>, <em>max</em>, <em>dots=True</em><big>)</big><a class="headerlink" href="#celery.bin.celeryev.abbr" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="celery.bin.celeryev.abbrtask">
-<tt class="descclassname">celery.bin.celeryev.</tt><tt class="descname">abbrtask</tt><big>(</big><em>S</em>, <em>max</em><big>)</big><a class="headerlink" href="#celery.bin.celeryev.abbrtask" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="celery.bin.celeryev.eventdump">
-<tt class="descclassname">celery.bin.celeryev.</tt><tt class="descname">eventdump</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryev.eventdump" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="celery.bin.celeryev.eventtop">
-<tt class="descclassname">celery.bin.celeryev.</tt><tt class="descname">eventtop</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryev.eventtop" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="celery.bin.celeryev.humanize_type">
-<tt class="descclassname">celery.bin.celeryev.</tt><tt class="descname">humanize_type</tt><big>(</big><em>type</em><big>)</big><a class="headerlink" href="#celery.bin.celeryev.humanize_type" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
+<span class="target" id="module-celery.bin.celeryev"></span><dl class="function">
 <dt id="celery.bin.celeryev.main">
 <tt class="descclassname">celery.bin.celeryev.</tt><tt class="descname">main</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryev.main" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -222,7 +67,7 @@
 
 <dl class="function">
 <dt id="celery.bin.celeryev.run_celeryev">
-<tt class="descclassname">celery.bin.celeryev.</tt><tt class="descname">run_celeryev</tt><big>(</big><em>dump=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.bin.celeryev.run_celeryev" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.bin.celeryev.</tt><tt class="descname">run_celeryev</tt><big>(</big><em>dump=False</em>, <em>camera=None</em>, <em>frequency=1.0</em>, <em>maxrate=None</em>, <em>loglevel=30</em>, <em>logfile=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.bin.celeryev.run_celeryev" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </div>
@@ -278,13 +123,13 @@
         <li class="right" >
           <a href="celery.bin.celerybeat.html" title="Celery Periodic Task Server - celery.bin.celerybeat"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.0.2 (stable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
     </div>
   </body>
 </html>

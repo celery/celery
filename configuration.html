@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Configuration and defaults &mdash; Celery v2.0.2 (stable) documentation</title>
+    <title>Configuration and defaults &mdash; Celery v2.1.0a1 documentation</title>
     <link rel="stylesheet" href="static/celery.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '2.0.2 (stable)',
+        VERSION:     '2.1.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,9 +21,9 @@
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v2.0.2 (stable) documentation" href="index.html" />
+    <link rel="top" title="Celery v2.1.0a1 documentation" href="index.html" />
     <link rel="next" title="Cookbook" href="cookbook/index.html" />
-    <link rel="prev" title="Routing Tasks" href="userguide/routing.html" /> 
+    <link rel="prev" title="Monitoring Guide" href="userguide/monitoring.html" /> 
   </head>
   <body>
     <div class="related">
@@ -39,9 +39,9 @@
           <a href="cookbook/index.html" title="Cookbook"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="userguide/routing.html" title="Routing Tasks"
+          <a href="userguide/monitoring.html" title="Monitoring Guide"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Celery v2.0.2 (stable) documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v2.1.0a1 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -353,7 +353,7 @@ setting:</p>
 <ul>
 <li><p class="first">REDIS_DB</p>
 <blockquote>
-<p>Name of the database to use. Default is <tt class="docutils literal"><span class="pre">celery_results</span></tt>.</p>
+<p>Database number to use. Default is 0</p>
 </blockquote>
 </li>
 <li><p class="first">REDIS_PASSWORD</p>
@@ -443,12 +443,15 @@ Defaults to &#8220;celery_taskmeta&#8221;.</p>
 <div class="section" id="routing">
 <h3><a class="toc-backref" href="#id22">Routing</a><a class="headerlink" href="#routing" title="Permalink to this headline">¶</a></h3>
 <ul>
-<li><p class="first">CELERY_QUEUES
-The mapping of queues the worker consumes from. This is a dictionary
+<li><dl class="first docutils">
+<dt>CELERY_QUEUES</dt>
+<dd><p class="first">The mapping of queues the worker consumes from. This is a dictionary
 of queue name/options. See <a class="reference internal" href="userguide/routing.html"><em>Routing Tasks</em></a> for more information.</p>
 <p>The default is a queue/exchange/binding key of <tt class="docutils literal"><span class="pre">&quot;celery&quot;</span></tt>, with
 exchange type <tt class="docutils literal"><span class="pre">direct</span></tt>.</p>
-<p>You don&#8217;t have to care about this unless you want custom routing facilities.</p>
+<p class="last">You don&#8217;t have to care about this unless you want custom routing facilities.</p>
+</dd>
+</dl>
 </li>
 <li><dl class="first docutils">
 <dt>CELERY_DEFAULT_QUEUE</dt>
@@ -562,8 +565,10 @@ backends.</p>
 </dl>
 </li>
 <li><p class="first">CELERY_MAX_CACHED_RESULTS</p>
+<blockquote>
 <p>Total number of results to store before results are evicted from the
 result cache. The default is <tt class="docutils literal"><span class="pre">5000</span></tt>.</p>
+</blockquote>
 </li>
 <li><p class="first">CELERY_TRACK_STARTED</p>
 <blockquote>
@@ -588,9 +593,11 @@ been registered with <tt class="xref py py-mod docutils literal"><span class="pr
 </dl>
 </li>
 <li><p class="first">CELERY_DEFAULT_RATE_LIMIT</p>
+<blockquote>
 <p>The global default rate limit for tasks.</p>
 <p>This value is used for tasks that does not have a custom rate limit
 The default is no rate limit.</p>
+</blockquote>
 </li>
 <li><p class="first">CELERY_DISABLE_RATE_LIMITS</p>
 <blockquote>
@@ -617,8 +624,10 @@ to import signal handlers and additional remote control commands, etc.</p>
 </blockquote>
 </li>
 <li><p class="first">CELERYD_MAX_TASKS_PER_CHILD</p>
+<blockquote>
 <p>Maximum number of tasks a pool worker process can execute before
 it&#8217;s replaced with a new one. Default is no limit.</p>
+</blockquote>
 </li>
 <li><p class="first">CELERYD_TASK_TIME_LIMIT</p>
 <blockquote>
@@ -971,8 +980,8 @@ Can also be set via the <tt class="docutils literal"><span class="pre">--logfile
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="userguide/routing.html"
-                        title="previous chapter">Routing Tasks</a></p>
+  <p class="topless"><a href="userguide/monitoring.html"
+                        title="previous chapter">Monitoring Guide</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="cookbook/index.html"
                         title="next chapter">Cookbook</a></p>
@@ -1011,14 +1020,14 @@ Can also be set via the <tt class="docutils literal"><span class="pre">--logfile
           <a href="cookbook/index.html" title="Cookbook"
              >next</a> |</li>
         <li class="right" >
-          <a href="userguide/routing.html" title="Routing Tasks"
+          <a href="userguide/monitoring.html" title="Monitoring Guide"
              >previous</a> |</li>
-        <li><a href="index.html">Celery v2.0.2 (stable) documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v2.1.0a1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
     </div>
   </body>
 </html>

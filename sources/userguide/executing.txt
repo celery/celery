@@ -202,10 +202,10 @@ listen to different queues:
     ...                               routing_key="video.compress")
 
     >>> ImageRotateTask.apply_async(args=[filename, 360],
-                                    routing_key="image.rotate")
+    ...                             routing_key="image.rotate")
 
     >>> ImageCropTask.apply_async(args=[filename, selection],
-                                  routing_key="image.crop")
+    ...                           routing_key="image.crop")
     >>> UpdateReccomendationsTask.apply_async(routing_key="misc.recommend")
 
 

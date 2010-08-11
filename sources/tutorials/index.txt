@@ -8,6 +8,5 @@
 .. toctree::
     :maxdepth: 2
 
-    external
     otherqueues
     clickcounter

@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Tutorial: Creating a click counter using carrot and celery &mdash; Celery v2.0.2 (stable) documentation</title>
+    <title>Tutorial: Creating a click counter using carrot and celery &mdash; Celery v2.1.0a1 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.0.2 (stable)',
+        VERSION:     '2.1.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.0.2 (stable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.1.0a1 documentation" href="../index.html" />
     <link rel="up" title="Tutorials" href="index.html" />
     <link rel="next" title="Frequently Asked Questions" href="../faq.html" />
     <link rel="prev" title="Using Celery with Redis/Database as the messaging queue." href="otherqueues.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="otherqueues.html" title="Using Celery with Redis/Database as the messaging queue."
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.0.2 (stable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Tutorials</a> &raquo;</li> 
       </ul>
     </div>  
@@ -242,16 +242,17 @@ that site.</p>
 <h2><a class="toc-backref" href="#id5">Creating the periodic task</a><a class="headerlink" href="#creating-the-periodic-task" title="Permalink to this headline">¶</a></h2>
 <p>Processing the clicks every 30 minutes is easy using celery periodic tasks.</p>
 <p><em>clickmuncher/tasks.py</em>:</p>
-<div class="highlight-python"><pre>from celery.task import PeriodicTask
-from clickmuncher.messaging import process_clicks
-from datetime import timedelta
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">PeriodicTask</span>
+<span class="kn">from</span> <span class="nn">clickmuncher.messaging</span> <span class="kn">import</span> <span class="n">process_clicks</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">timedelta</span>
 
 
-class ProcessClicksTask(PeriodicTask):
-    run_every = timedelta(minutes=30)
+<span class="k">class</span> <span class="nc">ProcessClicksTask</span><span class="p">(</span><span class="n">PeriodicTask</span><span class="p">):</span>
+    <span class="n">run_every</span> <span class="o">=</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
 
-    def run(self, \*\*kwargs):
-        process_clicks()</pre>
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">process_clicks</span><span class="p">()</span>
+</pre></div>
 </div>
 <p>We subclass from <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.PeriodicTask" title="celery.task.base.PeriodicTask"><tt class="xref py py-class docutils literal"><span class="pre">celery.task.base.PeriodicTask</span></tt></a>, set the <tt class="docutils literal"><span class="pre">run_every</span></tt>
 attribute and in the body of the task just call the <tt class="docutils literal"><span class="pre">process_clicks</span></tt>
@@ -332,13 +333,13 @@ mailing-list or come join us in the #celery IRC channel at Freenode:
         <li class="right" >
           <a href="otherqueues.html" title="Using Celery with Redis/Database as the messaging queue."
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.0.2 (stable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" >Tutorials</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
     </div>
   </body>
 </html>

@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Utilities - celery.utils &mdash; Celery v2.0.2 (stable) documentation</title>
+    <title>Utilities - celery.utils &mdash; Celery v2.1.0a1 documentation</title>
     <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.0.2 (stable)',
+        VERSION:     '2.1.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.0.2 (stable) documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.1.0a1 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="Time and Date Utilities - celery.utils.timeutils" href="celery.utils.timeutils.html" />
     <link rel="prev" title="SQLAlchemy Session - celery.db.session" href="celery.db.session.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.db.session.html" title="SQLAlchemy Session - celery.db.session"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.0.2 (stable) documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.1.0a1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -56,6 +56,16 @@
   <div class="section" id="utilities-celery-utils">
 <h1>Utilities - celery.utils<a class="headerlink" href="#utilities-celery-utils" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="module-celery.utils"></span><dl class="function">
+<dt id="celery.utils.abbr">
+<tt class="descclassname">celery.utils.</tt><tt class="descname">abbr</tt><big>(</big><em>S</em>, <em>max</em>, <em>ellipsis='...'</em><big>)</big><a class="headerlink" href="#celery.utils.abbr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.abbrtask">
+<tt class="descclassname">celery.utils.</tt><tt class="descname">abbrtask</tt><big>(</big><em>S</em>, <em>max</em><big>)</big><a class="headerlink" href="#celery.utils.abbrtask" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
 <dt id="celery.utils.chunks">
 <tt class="descclassname">celery.utils.</tt><tt class="descname">chunks</tt><big>(</big><em>it</em>, <em>n</em><big>)</big><a class="headerlink" href="#celery.utils.chunks" title="Permalink to this definition">¶</a></dt>
 <dd><p>Split an iterator into chunks with <tt class="docutils literal"><span class="pre">n</span></tt> elements each.</p>
@@ -107,7 +117,6 @@ of using the <tt class="xref py py-meth docutils literal"><span class="pre">insp
 </tbody>
 </table>
 <p>Examples</p>
-<blockquote>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">foo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">logfile</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">loglevel</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
 <span class="gp">... </span>    <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="n">y</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">fun_takes_kwargs</span><span class="p">(</span><span class="n">foo</span><span class="p">,</span> <span class="p">[</span><span class="s">&quot;logfile&quot;</span><span class="p">,</span> <span class="s">&quot;loglevel&quot;</span><span class="p">,</span> <span class="s">&quot;task_id&quot;</span><span class="p">])</span>
@@ -119,7 +128,6 @@ of using the <tt class="xref py py-meth docutils literal"><span class="pre">insp
 <span class="go">[&quot;logfile&quot;, &quot;loglevel&quot;, &quot;task_id&quot;]</span>
 </pre></div>
 </div>
-</blockquote>
 </dd></dl>
 
 <dl class="function">
@@ -195,6 +203,12 @@ True</p>
 <tt class="descclassname">celery.utils.</tt><tt class="descname">mattrgetter</tt><big>(</big><em>*attrs</em><big>)</big><a class="headerlink" href="#celery.utils.mattrgetter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Like <tt class="xref py py-func docutils literal"><span class="pre">operator.itemgetter()</span></tt> but returns <tt class="xref docutils literal"><span class="pre">None</span></tt> on missing
 attributes instead of raising <tt class="xref py py-exc docutils literal"><span class="pre">AttributeError</span></tt>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.maybe_iso8601">
+<tt class="descclassname">celery.utils.</tt><tt class="descname">maybe_iso8601</tt><big>(</big><em>dt</em><big>)</big><a class="headerlink" href="#celery.utils.maybe_iso8601" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="docutils literal"><span class="pre">Either</span> <span class="pre">datetime</span> <span class="pre">|</span> <span class="pre">str</span> <span class="pre">-&gt;</span> <span class="pre">datetime</span> <span class="pre">or</span> <span class="pre">None</span> <span class="pre">-&gt;</span> <span class="pre">None</span></tt></p>
 </dd></dl>
 
 <dl class="function">
@@ -279,7 +293,7 @@ yield the last value infinitely.</p>
 
 <dl class="function">
 <dt id="celery.utils.retry_over_time">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">retry_over_time</tt><big>(</big><em>fun</em>, <em>catch</em>, <em>args=</em><span class="optional">[</span><span class="optional">]</span>, <em>kwargs={}</em>, <em>errback=&lt;function noop at 0x1039ebe60&gt;</em>, <em>max_retries=None</em>, <em>interval_start=2</em>, <em>interval_step=2</em>, <em>interval_max=30</em><big>)</big><a class="headerlink" href="#celery.utils.retry_over_time" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.utils.</tt><tt class="descname">retry_over_time</tt><big>(</big><em>fun</em>, <em>catch</em>, <em>args=</em><span class="optional">[</span><span class="optional">]</span>, <em>kwargs={}</em>, <em>errback=&lt;function noop at 0x103849758&gt;</em>, <em>max_retries=None</em>, <em>interval_start=2</em>, <em>interval_step=2</em>, <em>interval_max=30</em><big>)</big><a class="headerlink" href="#celery.utils.retry_over_time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retry the function over and over until max retries is exceeded.</p>
 <p>For each retry we sleep a for a while before we try again, this interval
 is increased for every retry until the max seconds is reached.</p>
@@ -309,6 +323,12 @@ retry.</li>
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.utils.truncate_text">
+<tt class="descclassname">celery.utils.</tt><tt class="descname">truncate_text</tt><big>(</big><em>text</em>, <em>maxlen=128</em>, <em>suffix='...'</em><big>)</big><a class="headerlink" href="#celery.utils.truncate_text" title="Permalink to this definition">¶</a></dt>
+<dd><p>Truncates text to a maximum number of characters.</p>
 </dd></dl>
 
 </div>
@@ -364,14 +384,14 @@ retry.</li>
         <li class="right" >
           <a href="celery.db.session.html" title="SQLAlchemy Session - celery.db.session"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.0.2 (stable) documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.1.0a1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
     </div>
   </body>
 </html>

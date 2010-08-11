@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Worker Message Listener - celery.worker.listener &mdash; Celery v2.0.2 (stable) documentation</title>
+    <title>Worker Message Listener - celery.worker.listener &mdash; Celery v2.1.0a1 documentation</title>
     <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.0.2 (stable)',
+        VERSION:     '2.1.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.0.2 (stable) documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.1.0a1 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="Executable Jobs - celery.worker.job" href="celery.worker.job.html" />
     <link rel="prev" title="Multiprocessing Worker - celery.worker" href="celery.worker.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.worker.html" title="Multiprocessing Worker - celery.worker"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.0.2 (stable) documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.1.0a1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -95,7 +95,7 @@ are acknowledged immediately and logged, so the message is not resent
 again, and again.</p>
 </li>
 <li><p class="first">If the task has an ETA/countdown, the task is moved to the <tt class="docutils literal"><span class="pre">eta_schedule</span></tt>
-so the <a class="reference internal" href="celery.worker.scheduler.html#celery.worker.scheduler.Scheduler" title="celery.worker.scheduler.Scheduler"><tt class="xref py py-class docutils literal"><span class="pre">Scheduler</span></tt></a> can schedule it at its
+so the <tt class="xref py py-class docutils literal"><span class="pre">timer2.Timer</span></tt> can schedule it at its
 deadline. Tasks without an eta are moved immediately to the <tt class="docutils literal"><span class="pre">ready_queue</span></tt>,
 so they can be picked up by the <a class="reference internal" href="celery.worker.controllers.html#celery.worker.controllers.Mediator" title="celery.worker.controllers.Mediator"><tt class="xref py py-class docutils literal"><span class="pre">Mediator</span></tt></a>
 to be sent to the pool.</p>
@@ -123,7 +123,7 @@ early, <em>then</em> close the connection.</p>
 </ul>
 <dl class="class">
 <dt id="celery.worker.listener.CarrotListener">
-<em class="property">class </em><tt class="descclassname">celery.worker.listener.</tt><tt class="descname">CarrotListener</tt><big>(</big><em>ready_queue</em>, <em>eta_schedule</em>, <em>logger</em>, <em>init_callback=&lt;function noop at 0x1039ebe60&gt;</em>, <em>send_events=False</em>, <em>hostname=None</em>, <em>initial_prefetch_count=2</em>, <em>pool=None</em><big>)</big><a class="headerlink" href="#celery.worker.listener.CarrotListener" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.worker.listener.</tt><tt class="descname">CarrotListener</tt><big>(</big><em>ready_queue</em>, <em>eta_schedule</em>, <em>logger</em>, <em>init_callback=&lt;function noop at 0x103849758&gt;</em>, <em>send_events=False</em>, <em>hostname=None</em>, <em>initial_prefetch_count=2</em>, <em>pool=None</em><big>)</big><a class="headerlink" href="#celery.worker.listener.CarrotListener" title="Permalink to this definition">¶</a></dt>
 <dd><p>Listen for messages received from the broker and
 move them the the ready queue for task processing.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -202,6 +202,11 @@ if events enabled.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="celery.worker.listener.CarrotListener.apply_eta_task">
+<tt class="descname">apply_eta_task</tt><big>(</big><em>task</em><big>)</big><a class="headerlink" href="#celery.worker.listener.CarrotListener.apply_eta_task" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="celery.worker.listener.CarrotListener.close_connection">
 <tt class="descname">close_connection</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.listener.CarrotListener.close_connection" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -238,7 +243,7 @@ if events enabled.</p>
 
 <dl class="method">
 <dt id="celery.worker.listener.CarrotListener.on_task">
-<tt class="descname">on_task</tt><big>(</big><em>task</em>, <em>eta=None</em><big>)</big><a class="headerlink" href="#celery.worker.listener.CarrotListener.on_task" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">on_task</tt><big>(</big><em>task</em><big>)</big><a class="headerlink" href="#celery.worker.listener.CarrotListener.on_task" title="Permalink to this definition">¶</a></dt>
 <dd><p>Handle received task.</p>
 <p>If the task has an <tt class="docutils literal"><span class="pre">eta</span></tt> we enter it into the ETA schedule,
 otherwise we move it the ready queue for immediate processing.</p>
@@ -389,14 +394,14 @@ when necessary.</p>
         <li class="right" >
           <a href="celery.worker.html" title="Multiprocessing Worker - celery.worker"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.0.2 (stable) documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.1.0a1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
     </div>
   </body>
 </html>

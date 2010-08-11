@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Configuration - celery.conf &mdash; Celery v2.0.2 (stable) documentation</title>
+    <title>Configuration - celery.conf &mdash; Celery v2.1.0a1 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.0.2 (stable)',
+        VERSION:     '2.1.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.0.2 (stable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.1.0a1 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="Remote Management of Workers - celery.task.control" href="celery.task.control.html" />
     <link rel="prev" title="Task Information and Utilities - celery.task" href="celery.task.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.task.html" title="Task Information and Utilities - celery.task"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.0.2 (stable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -429,14 +429,16 @@ Default is: <tt class="xref docutils literal"><span class="pre">None</span></tt>
 <dt id="celery.conf.CELERYD_CONCURRENCY">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">CELERYD_CONCURRENCY</tt><a class="headerlink" href="#celery.conf.CELERYD_CONCURRENCY" title="Permalink to this definition">¶</a></dt>
 <dd><p>The number of concurrent worker processes.
-If set to <tt class="docutils literal"><span class="pre">0</span></tt>, the total number of available CPUs/cores will be used.</p>
+If set to <tt class="docutils literal"><span class="pre">0</span></tt> (the default), the total number of available CPUs/cores
+will be used.</p>
 </dd></dl>
 
 <dl class="data">
 <dt id="celery.conf.CELERYD_PREFETCH_MULTIPLIER">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">CELERYD_PREFETCH_MULTIPLIER</tt><a class="headerlink" href="#celery.conf.CELERYD_PREFETCH_MULTIPLIER" title="Permalink to this definition">¶</a></dt>
 <dd><p>The number of concurrent workers is multipled by this number to yield
-the wanted AMQP QoS message prefetch count.</p>
+the wanted AMQP QoS message prefetch count.
+Default is: <tt class="docutils literal"><span class="pre">4</span></tt></p>
 </dd></dl>
 
 <dl class="data">
@@ -535,13 +537,13 @@ Default is <tt class="docutils literal"><span class="pre">&quot;celery.worker.co
         <li class="right" >
           <a href="celery.task.html" title="Task Information and Utilities - celery.task"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.0.2 (stable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
     </div>
   </body>
 </html>

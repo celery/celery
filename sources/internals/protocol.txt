@@ -42,6 +42,14 @@ Message format
     format. If not provided the message is not scheduled, but will be
     executed asap.
 
+* expires (introduced after v2.0.2)
+    ``string`` (ISO 8601)
+
+    Expiration date. This is the date and time in ISO 8601 format.
+    If not provided the message will never expire. The message
+    will be expired when the message is received and the expiration date
+    has been exceeded.
+
 Example message
 ===============
 

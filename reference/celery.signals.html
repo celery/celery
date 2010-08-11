@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Signals - celery.signals &mdash; Celery v2.0.2 (stable) documentation</title>
+    <title>Signals - celery.signals &mdash; Celery v2.1.0a1 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.0.2 (stable)',
+        VERSION:     '2.1.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.0.2 (stable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.1.0a1 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="Exceptions - celery.exceptions" href="celery.exceptions.html" />
     <link rel="prev" title="Periodic Task Schedule Behaviors - celery.task.schedules" href="celery.task.schedules.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.task.schedules.html" title="Periodic Task Schedule Behaviors - celery.task.schedules"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.0.2 (stable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -69,13 +69,14 @@
 <p>Several kinds of events trigger signals, you can connect to these signals
 to perform actions as they trigger.</p>
 <p>Example connecting to the <a class="reference internal" href="#celery.signals.task_sent" title="celery.signals.task_sent"><tt class="xref py py-data docutils literal"><span class="pre">task_sent</span></tt></a> signal:</p>
-<div class="highlight-python"><pre>from celery.signals import task_sent
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.signals</span> <span class="kn">import</span> <span class="n">task_sent</span>
 
-def task_sent_handler(sender=None, task_id=None, task=None, args=None,
-        kwargs=None, \*\*kwds):
-    print("Got signal task_sent for task id %s" % (task_id, ))
+<span class="k">def</span> <span class="nf">task_sent_handler</span><span class="p">(</span><span class="n">sender</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">task_id</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">task</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                      <span class="n">kwargs</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Got signal task_sent for task id </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">task_id</span><span class="p">,</span> <span class="p">))</span>
 
-task_sent.connect(task_sent_handler)</pre>
+<span class="n">task_sent</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">task_sent_handler</span><span class="p">)</span>
+</pre></div>
 </div>
 <p>Some signals also have a sender which you can filter by. For example the
 <a class="reference internal" href="#celery.signals.task_sent" title="celery.signals.task_sent"><tt class="xref py py-data docutils literal"><span class="pre">task_sent</span></tt></a> signal uses the task name as a sender, so you can
@@ -93,7 +94,7 @@ has been sent by providing the <tt class="docutils literal"><span class="pre">se
 <dl class="data">
 <dt id="celery.signals.task_sent">
 <tt class="descclassname">celery.signals.</tt><tt class="descname">task_sent</tt><a class="headerlink" href="#celery.signals.task_sent" title="Permalink to this definition">¶</a></dt>
-<dd><p>Triggered when a task has been sent to the broker.
+<dd><p>Dispatched when a task has been sent to the broker.
 Note that this is executed in the client process, the one sending
 the task, not in the worker.</p>
 <p>Sender is the name of the task being sent.</p>
@@ -141,7 +142,7 @@ the task, not in the worker.</p>
 <dl class="data">
 <dt id="celery.signals.task_prerun">
 <tt class="descclassname">celery.signals.</tt><tt class="descname">task_prerun</tt><a class="headerlink" href="#celery.signals.task_prerun" title="Permalink to this definition">¶</a></dt>
-<dd><p>Triggered before a task is executed.</p>
+<dd><p>Dispatched before a task is executed.</p>
 <p>Sender is the task class being executed.</p>
 <p>Provides arguments:</p>
 <ul>
@@ -175,7 +176,7 @@ the task, not in the worker.</p>
 <dl class="data">
 <dt id="celery.signals.task_postrun">
 <tt class="descclassname">celery.signals.</tt><tt class="descname">task_postrun</tt><a class="headerlink" href="#celery.signals.task_postrun" title="Permalink to this definition">¶</a></dt>
-<dd><p>Triggered after a task has been executed.</p>
+<dd><p>Dispatched after a task has been executed.</p>
 <p>Sender is the task class executed.</p>
 <p>Provides arguments:</p>
 <ul>
@@ -217,19 +218,25 @@ the task, not in the worker.</p>
 <dl class="data">
 <dt id="celery.signals.worker_init">
 <tt class="descclassname">celery.signals.</tt><tt class="descname">worker_init</tt><a class="headerlink" href="#celery.signals.worker_init" title="Permalink to this definition">¶</a></dt>
-<dd><p>Triggered before the worker is started.</p>
+<dd><p>Dispatched before the worker is started.</p>
 </dd></dl>
 
 <dl class="data">
 <dt id="celery.signals.worker_ready">
 <tt class="descclassname">celery.signals.</tt><tt class="descname">worker_ready</tt><a class="headerlink" href="#celery.signals.worker_ready" title="Permalink to this definition">¶</a></dt>
-<dd><p>Triggered when the worker is ready to accept work.</p>
+<dd><p>Dispatched when the worker is ready to accept work.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="celery.signals.worker_process_init">
+<tt class="descclassname">celery.signals.</tt><tt class="descname">worker_process_init</tt><a class="headerlink" href="#celery.signals.worker_process_init" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dispatched by each new pool worker process when it starts.</p>
 </dd></dl>
 
 <dl class="data">
 <dt id="celery.signals.worker_shutdown">
 <tt class="descclassname">celery.signals.</tt><tt class="descname">worker_shutdown</tt><a class="headerlink" href="#celery.signals.worker_shutdown" title="Permalink to this definition">¶</a></dt>
-<dd><p>Triggered when the worker is about to shut down.</p>
+<dd><p>Dispatched when the worker is about to shut down.</p>
 </dd></dl>
 
 </div>
@@ -300,13 +307,13 @@ the task, not in the worker.</p>
         <li class="right" >
           <a href="celery.task.schedules.html" title="Periodic Task Schedule Behaviors - celery.task.schedules"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.0.2 (stable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
     </div>
   </body>
 </html>

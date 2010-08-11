@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Worker Controller Threads - celery.worker.controllers &mdash; Celery v2.0.2 (stable) documentation</title>
+    <title>Worker Controller Threads - celery.worker.controllers &mdash; Celery v2.1.0a1 documentation</title>
     <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.0.2 (stable)',
+        VERSION:     '2.1.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.0.2 (stable) documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.1.0a1 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="Token Bucket (rate limiting) - celery.worker.buckets" href="celery.worker.buckets.html" />
     <link rel="prev" title="Executable Jobs - celery.worker.job" href="celery.worker.job.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.worker.job.html" title="Executable Jobs - celery.worker.job"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.0.2 (stable) documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.1.0a1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -56,48 +56,6 @@
   <div class="section" id="worker-controller-threads-celery-worker-controllers">
 <h1>Worker Controller Threads - celery.worker.controllers<a class="headerlink" href="#worker-controller-threads-celery-worker-controllers" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="module-celery.worker.controllers"></span><p>Worker Controller Threads</p>
-<dl class="class">
-<dt id="celery.worker.controllers.BackgroundThread">
-<em class="property">class </em><tt class="descclassname">celery.worker.controllers.</tt><tt class="descname">BackgroundThread</tt><a class="headerlink" href="#celery.worker.controllers.BackgroundThread" title="Permalink to this definition">¶</a></dt>
-<dd><p>Thread running an infinite loop which for every iteration
-calls its <a class="reference internal" href="#celery.worker.controllers.BackgroundThread.on_iteration" title="celery.worker.controllers.BackgroundThread.on_iteration"><tt class="xref py py-meth docutils literal"><span class="pre">on_iteration()</span></tt></a> method.</p>
-<p>This also implements graceful shutdown of the thread by providing
-the <a class="reference internal" href="#celery.worker.controllers.BackgroundThread.stop" title="celery.worker.controllers.BackgroundThread.stop"><tt class="xref py py-meth docutils literal"><span class="pre">stop()</span></tt></a> method.</p>
-<dl class="method">
-<dt id="celery.worker.controllers.BackgroundThread.on_iteration">
-<tt class="descname">on_iteration</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.controllers.BackgroundThread.on_iteration" title="Permalink to this definition">¶</a></dt>
-<dd><p>This is the method called for every iteration and must be
-implemented by every subclass of <a class="reference internal" href="#celery.worker.controllers.BackgroundThread" title="celery.worker.controllers.BackgroundThread"><tt class="xref py py-class docutils literal"><span class="pre">BackgroundThread</span></tt></a>.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.worker.controllers.BackgroundThread.on_start">
-<tt class="descname">on_start</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.controllers.BackgroundThread.on_start" title="Permalink to this definition">¶</a></dt>
-<dd><p>This handler is run at thread start, just before the infinite
-loop.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.worker.controllers.BackgroundThread.on_stop">
-<tt class="descname">on_stop</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.controllers.BackgroundThread.on_stop" title="Permalink to this definition">¶</a></dt>
-<dd><p>This handler is run when the thread is shutdown.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.worker.controllers.BackgroundThread.run">
-<tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.controllers.BackgroundThread.run" title="Permalink to this definition">¶</a></dt>
-<dd><p>This is the body of the thread.</p>
-<p>To start the thread use <tt class="xref py py-meth docutils literal"><span class="pre">start()</span></tt> instead.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.worker.controllers.BackgroundThread.stop">
-<tt class="descname">stop</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.controllers.BackgroundThread.stop" title="Permalink to this definition">¶</a></dt>
-<dd><p>Gracefully shutdown the thread.</p>
-</dd></dl>
-
-</dd></dl>
-
 <dl class="class">
 <dt id="celery.worker.controllers.Mediator">
 <em class="property">class </em><tt class="descclassname">celery.worker.controllers.</tt><tt class="descname">Mediator</tt><big>(</big><em>ready_queue</em>, <em>callback</em>, <em>logger=None</em><big>)</big><a class="headerlink" href="#celery.worker.controllers.Mediator" title="Permalink to this definition">¶</a></dt>
@@ -116,21 +74,19 @@ loop.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="celery.worker.controllers.Mediator.on_iteration">
-<tt class="descname">on_iteration</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.controllers.Mediator.on_iteration" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get tasks from bucket queue and apply the task callback.</p>
-</dd></dl>
+<dt id="celery.worker.controllers.Mediator.move">
+<tt class="descname">move</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.controllers.Mediator.move" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
-</dd></dl>
-
-<dl class="class">
-<dt id="celery.worker.controllers.ScheduleController">
-<em class="property">class </em><tt class="descclassname">celery.worker.controllers.</tt><tt class="descname">ScheduleController</tt><big>(</big><em>eta_schedule</em>, <em>logger=None</em>, <em>precision=None</em><big>)</big><a class="headerlink" href="#celery.worker.controllers.ScheduleController" title="Permalink to this definition">¶</a></dt>
-<dd><p>Schedules tasks with an ETA by moving them to the bucket queue.</p>
 <dl class="method">
-<dt id="celery.worker.controllers.ScheduleController.on_iteration">
-<tt class="descname">on_iteration</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.controllers.ScheduleController.on_iteration" title="Permalink to this definition">¶</a></dt>
-<dd><p>Wake-up scheduler</p>
+<dt id="celery.worker.controllers.Mediator.run">
+<tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.controllers.Mediator.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.controllers.Mediator.stop">
+<tt class="descname">stop</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.controllers.Mediator.stop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gracefully shutdown the thread.</p>
 </dd></dl>
 
 </dd></dl>
@@ -188,14 +144,14 @@ loop.</p>
         <li class="right" >
           <a href="celery.worker.job.html" title="Executable Jobs - celery.worker.job"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.0.2 (stable) documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.1.0a1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
     </div>
   </body>
 </html>

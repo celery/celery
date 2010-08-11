@@ -198,7 +198,7 @@ Task options
 * max_retries
 
     The maximum number of attempted retries before giving up.
-    If this is exceeded the :exc`~celery.execptions.MaxRetriesExceeded`
+    If this is exceeded the :exc`~celery.exceptions.MaxRetriesExceeded`
     exception will be raised. Note that you have to retry manually, it's
     not something that happens automatically.
 
@@ -329,7 +329,7 @@ blog/views.py
 .. code-block:: python
 
     from django import forms
-    frmo django.http import HttpResponseRedirect
+    from django.http import HttpResponseRedirect
     from django.template.context import RequestContext
     from django.shortcuts import get_object_or_404, render_to_response
 
@@ -540,12 +540,12 @@ Good:
 
     @task(ignore_result=True)
     def fetch_page(url, callback=None):
-        page = myparser.parse_document(page)
+        page = myhttplib.get(url)
         if callback:
             # The callback may have been serialized with JSON,
             # so best practice is to convert the subtask dict back
             # into a subtask object.
-            subtask(callback).delay(page)
+            subtask(callback).delay(url, page)
 
     @task(ignore_result=True)
     def parse_page(url, page, callback=None):
@@ -644,7 +644,7 @@ re-fetch the article in the task body:
 .. code-block:: python
 
     @task
-    def expand_abbreviations(article_id)
+    def expand_abbreviations(article_id):
         article = Article.objects.get(id=article_id)
         article.body.replace("MyCorp", "My Corporation")
         article.save()
@@ -653,3 +653,42 @@ re-fetch the article in the task body:
 
 There might even be performance benefits to this approach, as sending large
 messages may be expensive.
+
+Database transactions
+---------------------
+
+Let's look at another example:
+
+.. code-block:: python
+
+    from django.db import transaction
+
+    @transaction.commit_on_success
+    def create_article(request):
+        article = Article.objects.create(....)
+        expand_abbreviations.delay(article.pk)
+
+This is a Django view creating an article object in the database,
+then passing its primary key to a task. It uses the `commit_on_success`
+decorator, which will commit the transaction when the view returns, or
+roll back if the view raises an exception.
+
+There is a race condition if the task starts executing
+before the transaction has been committed: the database object does not exist
+yet!
+
+The solution is to **always commit transactions before applying tasks
+that depends on state from the current transaction**:
+
+.. code-block:: python
+
+    @transaction.commit_manually
+    def create_article(request):
+        try:
+            article = Article.objects.create(...)
+        except:
+            transaction.rollback()
+            raise
+        else:
+            transaction.commit()
+            expand_abbreviations.delay(article.pk)

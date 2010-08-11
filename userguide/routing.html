@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Routing Tasks &mdash; Celery v2.0.2 (stable) documentation</title>
+    <title>Routing Tasks &mdash; Celery v2.1.0a1 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.0.2 (stable)',
+        VERSION:     '2.1.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,9 +21,9 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.0.2 (stable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.1.0a1 documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
-    <link rel="next" title="Configuration and defaults" href="../configuration.html" />
+    <link rel="next" title="Monitoring Guide" href="monitoring.html" />
     <link rel="prev" title="HTTP Callback Tasks (Webhooks)" href="remote-tasks.html" /> 
   </head>
   <body>
@@ -37,12 +37,12 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="../configuration.html" title="Configuration and defaults"
+          <a href="monitoring.html" title="Monitoring Guide"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="remote-tasks.html" title="HTTP Callback Tasks (Webhooks)"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.0.2 (stable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User Guide</a> &raquo;</li> 
       </ul>
     </div>  
@@ -108,7 +108,7 @@ simple routing tasks.</p>
 <p>Say you have two servers, <tt class="docutils literal"><span class="pre">x</span></tt>, and <tt class="docutils literal"><span class="pre">y</span></tt> that handles regular tasks,
 and one server <tt class="docutils literal"><span class="pre">z</span></tt>, that only handles feed related tasks. You can use this
 configuration:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_ROUTES</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;feed.tasks.import_feed&quot;</span><span class="p">:</span> <span class="s">&quot;feeds&quot;</span><span class="p">}</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_ROUTES</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;feed.tasks.import_feed&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s">&quot;queue&quot;</span><span class="p">:</span> <span class="s">&quot;feeds&quot;</span><span class="p">}}</span>
 </pre></div>
 </div>
 <p>With this route enabled import feed tasks will be routed to the
@@ -201,19 +201,20 @@ tasks as well, maybe in times when there&#8217;s a lot of work to do:</p>
 </div>
 <p>If you have another queue but on another exchange you want to add,
 just specify a custom exchange and exchange type:</p>
-<div class="highlight-python"><pre>CELERY_QUEUES = {
-        "feed_tasks": {
-            "binding_key": "feed.#",
-        },
-        "regular_tasks": {
-            "binding_key": "task.#",
-        }
-        "image_tasks": {
-            "binding_key": "image.compress",
-            "exchange": "mediatasks",
-            "exchange_type": "direct",
-        },
-    }</pre>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_QUEUES</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">&quot;feed_tasks&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s">&quot;binding_key&quot;</span><span class="p">:</span> <span class="s">&quot;feed.#&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="s">&quot;regular_tasks&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s">&quot;binding_key&quot;</span><span class="p">:</span> <span class="s">&quot;task.#&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="s">&quot;image_tasks&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s">&quot;binding_key&quot;</span><span class="p">:</span> <span class="s">&quot;image.compress&quot;</span><span class="p">,</span>
+            <span class="s">&quot;exchange&quot;</span><span class="p">:</span> <span class="s">&quot;mediatasks&quot;</span><span class="p">,</span>
+            <span class="s">&quot;exchange_type&quot;</span><span class="p">:</span> <span class="s">&quot;direct&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">}</span>
+</pre></div>
 </div>
 <p>If you&#8217;re confused about these terms, you should read up on AMQP concepts.</p>
 <p>In addition to the <a class="reference internal" href="#amqp-primer"><em>AMQP Primer</em></a> below, there&#8217;s
@@ -234,10 +235,11 @@ message, and the body contains the name of the task to execute, the
 task id (UUID), the arguments to execute it with and some additional
 metadata - like the number of retries and its ETA (if any).</p>
 <p>This is an example task message represented as a Python dictionary:</p>
-<div class="highlight-python"><pre>{"task": "myapp.tasks.add",
- "id":
- "args": [4, 4],
- "kwargs": {}}</pre>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span><span class="s">&quot;task&quot;</span><span class="p">:</span> <span class="s">&quot;myapp.tasks.add&quot;</span><span class="p">,</span>
+ <span class="s">&quot;id&quot;</span><span class="p">:</span> <span class="s">&quot;54086c5e-6193-4575-8308-dbab76798756&quot;</span><span class="p">,</span>
+ <span class="s">&quot;args&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span>
+ <span class="s">&quot;kwargs&quot;</span><span class="p">:</span> <span class="p">{}}</span>
+</pre></div>
 </div>
 </div>
 <div class="section" id="producers-consumers-and-brokers">
@@ -568,8 +570,8 @@ returning a value and use that as the final route for the task.</p>
   <p class="topless"><a href="remote-tasks.html"
                         title="previous chapter">HTTP Callback Tasks (Webhooks)</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="../configuration.html"
-                        title="next chapter">Configuration and defaults</a></p>
+  <p class="topless"><a href="monitoring.html"
+                        title="next chapter">Monitoring Guide</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../sources/userguide/routing.txt"
@@ -602,18 +604,18 @@ returning a value and use that as the final route for the task.</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="../configuration.html" title="Configuration and defaults"
+          <a href="monitoring.html" title="Monitoring Guide"
              >next</a> |</li>
         <li class="right" >
           <a href="remote-tasks.html" title="HTTP Callback Tasks (Webhooks)"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.0.2 (stable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" >User Guide</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
     </div>
   </body>
 </html>

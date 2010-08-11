@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Task Information and Utilities - celery.task &mdash; Celery v2.0.2 (stable) documentation</title>
+    <title>Task Information and Utilities - celery.task &mdash; Celery v2.1.0a1 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.0.2 (stable)',
+        VERSION:     '2.1.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.0.2 (stable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.1.0a1 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="Configuration - celery.conf" href="celery.conf.html" />
     <link rel="prev" title="Task Result - celery.result" href="celery.result.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.result.html" title="Task Result - celery.result"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.0.2 (stable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -650,7 +650,7 @@ to track how many, or when all of the tasks has been completed.</p>
 <tt class="descname">run_every</tt><a class="headerlink" href="#celery.task.PeriodicTask.run_every" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>REQUIRED</em> Defines how often the task is run (its interval),
 it can be a <tt class="xref py py-class docutils literal"><span class="pre">timedelta</span></tt> object, a
-<a class="reference internal" href="celery.task.schedules.html#celery.task.schedules.crontab" title="celery.task.schedules.crontab"><tt class="xref py py-class docutils literal"><span class="pre">crontab</span></tt></a> object or an integer
+<tt class="xref py py-class docutils literal"><span class="pre">crontab</span></tt> object or an integer
 specifying the time in seconds.</p>
 </dd></dl>
 
@@ -673,7 +673,6 @@ not defined.</td>
 </tbody>
 </table>
 <p>Example</p>
-<blockquote>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">tasks</span><span class="p">,</span> <span class="n">PeriodicTask</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">timedelta</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">EveryThirtySecondsTask</span><span class="p">(</span><span class="n">PeriodicTask</span><span class="p">):</span>
@@ -712,7 +711,6 @@ not defined.</td>
 <span class="gp">... </span>        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Execute every 0:15 past the hour every day.&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-</blockquote>
 <dl class="method">
 <dt id="celery.task.PeriodicTask.is_due">
 <tt class="descname">is_due</tt><big>(</big><em>last_run_at</em><big>)</big><a class="headerlink" href="#celery.task.PeriodicTask.is_due" title="Permalink to this definition">¶</a></dt>
@@ -931,13 +929,13 @@ argument, as this attribute is intended for subclasses.</p>
         <li class="right" >
           <a href="celery.result.html" title="Task Result - celery.result"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.0.2 (stable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
     </div>
   </body>
 </html>

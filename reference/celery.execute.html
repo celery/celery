@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Executing Tasks - celery.execute &mdash; Celery v2.0.2 (stable) documentation</title>
+    <title>Executing Tasks - celery.execute &mdash; Celery v2.1.0a1 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.0.2 (stable)',
+        VERSION:     '2.1.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.0.2 (stable) documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.1.0a1 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="Task Result - celery.result" href="celery.result.html" />
     <link rel="prev" title="Task Sets, Subtasks and Callbacks - celery.task.sets" href="celery.task.sets.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.task.sets.html" title="Task Sets, Subtasks and Callbacks - celery.task.sets"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.0.2 (stable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -92,9 +92,13 @@ task (a <tt class="xref py py-class docutils literal"><span class="pre">dict</sp
 execute. Defaults to immediate delivery (Do not confuse that with
 the <tt class="docutils literal"><span class="pre">immediate</span></tt> setting, they are unrelated).</li>
 <li><strong>eta</strong> &#8211; A <tt class="xref py py-class docutils literal"><span class="pre">datetime</span></tt> object that describes the
-absolute time when the task should execute. May not be specified
-if <tt class="docutils literal"><span class="pre">countdown</span></tt> is also supplied. (Do not confuse this with the
-<tt class="docutils literal"><span class="pre">immediate</span></tt> setting, they are unrelated).</li>
+absolute time and date of when the task should execute. May not be
+specified if <tt class="docutils literal"><span class="pre">countdown</span></tt> is also supplied. (Do not confuse this
+with the <tt class="docutils literal"><span class="pre">immediate</span></tt> setting, they are unrelated).</li>
+<li><strong>expires</strong> &#8211; Either a <tt class="xref py py-class docutils literal"><span class="pre">int</span></tt>, describing the number of seconds,
+or a <tt class="xref py py-class docutils literal"><span class="pre">datetime</span></tt> object that describes the absolute time
+and date of when the task should expire.
+The task will not be executed after the expiration time.</li>
 <li><strong>connection</strong> &#8211; Re-use existing broker connection instead
 of establishing a new one. The <tt class="docutils literal"><span class="pre">connect_timeout</span></tt> argument is
 not respected if this is set.</li>
@@ -239,13 +243,13 @@ class.</p>
         <li class="right" >
           <a href="celery.task.sets.html" title="Task Sets, Subtasks and Callbacks - celery.task.sets"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.0.2 (stable) documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.0a1 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
     </div>
   </body>
 </html>

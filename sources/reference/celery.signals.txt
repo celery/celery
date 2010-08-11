@@ -19,7 +19,7 @@ Example connecting to the :data:`task_sent` signal:
     from celery.signals import task_sent
 
     def task_sent_handler(sender=None, task_id=None, task=None, args=None,
-            kwargs=None, \*\*kwds):
+                          kwargs=None, **kwds):
         print("Got signal task_sent for task id %s" % (task_id, ))
 
     task_sent.connect(task_sent_handler)
@@ -43,7 +43,7 @@ Task Signals
 
 .. data:: task_sent
 
-    Triggered when a task has been sent to the broker.
+    Dispatched when a task has been sent to the broker.
     Note that this is executed in the client process, the one sending
     the task, not in the worker.
 
@@ -71,7 +71,7 @@ Task Signals
 
 .. data:: task_prerun
 
-    Triggered before a task is executed.
+    Dispatched before a task is executed.
 
     Sender is the task class being executed.
 
@@ -91,7 +91,7 @@ Task Signals
 
 .. data:: task_postrun
 
-    Triggered after a task has been executed.
+    Dispatched after a task has been executed.
 
     Sender is the task class executed.
 
@@ -118,12 +118,16 @@ Worker Signals
 
 .. data:: worker_init
 
-    Triggered before the worker is started.
+    Dispatched before the worker is started.
 
 .. data:: worker_ready
 
-    Triggered when the worker is ready to accept work.
+    Dispatched when the worker is ready to accept work.
+
+.. data:: worker_process_init
+
+    Dispatched by each new pool worker process when it starts.
 
 .. data:: worker_shutdown
 
-    Triggered when the worker is about to shut down.
+    Dispatched when the worker is about to shut down.

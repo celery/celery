@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Clock Service - celery.beat &mdash; Celery v2.0.2 (stable) documentation</title>
+    <title>Clock Service - celery.beat &mdash; Celery v2.1.0a1 documentation</title>
     <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.0.2 (stable)',
+        VERSION:     '2.1.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.0.2 (stable) documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.1.0a1 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="Backends - celery.backends" href="celery.backends.html" />
     <link rel="prev" title="Thread Pool Support EXPERIMENTAL - celery.concurrency.threads" href="celery.concurrency.threads.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.concurrency.threads.html" title="Thread Pool Support EXPERIMENTAL - celery.concurrency.threads"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.0.2 (stable) documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.1.0a1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -58,15 +58,10 @@
 <span class="target" id="module-celery.beat"></span><p>Periodic Task Scheduler</p>
 <dl class="class">
 <dt id="celery.beat.ClockService">
-<em class="property">class </em><tt class="descclassname">celery.beat.</tt><tt class="descname">ClockService</tt><big>(</big><em>logger=None</em>, <em>max_interval=300</em>, <em>schedule_filename='celerybeat-schedule'</em><big>)</big><a class="headerlink" href="#celery.beat.ClockService" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.beat.</tt><tt class="descname">ClockService</tt><big>(</big><em>logger=None</em>, <em>max_interval=300</em>, <em>schedule={}</em>, <em>schedule_filename='celerybeat-schedule'</em>, <em>scheduler_cls=None</em><big>)</big><a class="headerlink" href="#celery.beat.ClockService" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="method">
 <dt id="celery.beat.ClockService.open_schedule">
 <tt class="descname">open_schedule</tt><big>(</big><em>filename</em><big>)</big><a class="headerlink" href="#celery.beat.ClockService.open_schedule" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="celery.beat.ClockService.schedule">
-<tt class="descname">schedule</tt><a class="headerlink" href="#celery.beat.ClockService.schedule" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -117,14 +112,17 @@ Default is <tt class="xref docutils literal"><span class="pre">False</span></tt>
 
 <dl class="class">
 <dt id="celery.beat.ScheduleEntry">
-<em class="property">class </em><tt class="descclassname">celery.beat.</tt><tt class="descname">ScheduleEntry</tt><big>(</big><em>name</em>, <em>last_run_at=None</em>, <em>total_run_count=None</em><big>)</big><a class="headerlink" href="#celery.beat.ScheduleEntry" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.beat.</tt><tt class="descname">ScheduleEntry</tt><big>(</big><em>name</em>, <em>schedule</em>, <em>args=()</em>, <em>kwargs={}</em>, <em>options={}</em>, <em>last_run_at=None</em>, <em>total_run_count=None</em><big>)</big><a class="headerlink" href="#celery.beat.ScheduleEntry" title="Permalink to this definition">¶</a></dt>
 <dd><p>An entry in the scheduler.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>task</strong> &#8211; see <a class="reference internal" href="#celery.beat.ScheduleEntry.task" title="celery.beat.ScheduleEntry.task"><tt class="xref py py-attr docutils literal"><span class="pre">task</span></tt></a>.</li>
+<li><strong>name</strong> &#8211; see <a class="reference internal" href="#celery.beat.ScheduleEntry.name" title="celery.beat.ScheduleEntry.name"><tt class="xref py py-attr docutils literal"><span class="pre">name</span></tt></a>.</li>
+<li><strong>schedule</strong> &#8211; see <a class="reference internal" href="#celery.beat.ScheduleEntry.schedule" title="celery.beat.ScheduleEntry.schedule"><tt class="xref py py-attr docutils literal"><span class="pre">schedule</span></tt></a>.</li>
+<li><strong>args</strong> &#8211; see <a class="reference internal" href="#celery.beat.ScheduleEntry.args" title="celery.beat.ScheduleEntry.args"><tt class="xref py py-attr docutils literal"><span class="pre">args</span></tt></a>.</li>
+<li><strong>kwargs</strong> &#8211; see <a class="reference internal" href="#celery.beat.ScheduleEntry.kwargs" title="celery.beat.ScheduleEntry.kwargs"><tt class="xref py py-attr docutils literal"><span class="pre">kwargs</span></tt></a>.</li>
 <li><strong>last_run_at</strong> &#8211; see <a class="reference internal" href="#celery.beat.ScheduleEntry.last_run_at" title="celery.beat.ScheduleEntry.last_run_at"><tt class="xref py py-attr docutils literal"><span class="pre">last_run_at</span></tt></a>.</li>
 <li><strong>total_run_count</strong> &#8211; see <a class="reference internal" href="#celery.beat.ScheduleEntry.total_run_count" title="celery.beat.ScheduleEntry.total_run_count"><tt class="xref py py-attr docutils literal"><span class="pre">total_run_count</span></tt></a>.</li>
 </ul>
@@ -133,9 +131,27 @@ Default is <tt class="xref docutils literal"><span class="pre">False</span></tt>
 </tbody>
 </table>
 <dl class="attribute">
-<dt id="celery.beat.ScheduleEntry.task">
-<tt class="descname">task</tt><a class="headerlink" href="#celery.beat.ScheduleEntry.task" title="Permalink to this definition">¶</a></dt>
-<dd><p>The task class.</p>
+<dt id="celery.beat.ScheduleEntry.name">
+<tt class="descname">name</tt><a class="headerlink" href="#celery.beat.ScheduleEntry.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>The task name.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.beat.ScheduleEntry.schedule">
+<tt class="descname">schedule</tt><a class="headerlink" href="#celery.beat.ScheduleEntry.schedule" title="Permalink to this definition">¶</a></dt>
+<dd><p>The schedule (run_every/crontab)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.beat.ScheduleEntry.args">
+<tt class="descname">args</tt><a class="headerlink" href="#celery.beat.ScheduleEntry.args" title="Permalink to this definition">¶</a></dt>
+<dd><p>Args to apply.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.beat.ScheduleEntry.kwargs">
+<tt class="descname">kwargs</tt><a class="headerlink" href="#celery.beat.ScheduleEntry.kwargs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keyword arguments to apply.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -152,7 +168,7 @@ Default is <tt class="xref docutils literal"><span class="pre">False</span></tt>
 
 <dl class="method">
 <dt id="celery.beat.ScheduleEntry.is_due">
-<tt class="descname">is_due</tt><big>(</big><em>task</em><big>)</big><a class="headerlink" href="#celery.beat.ScheduleEntry.is_due" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">is_due</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.beat.ScheduleEntry.is_due" title="Permalink to this definition">¶</a></dt>
 <dd><p>See <a class="reference internal" href="../../reference/celery.task.base.html#celery.task.base.PeriodicTask.is_due" title="celery.task.base.PeriodicTask.is_due"><tt class="xref py py-meth docutils literal"><span class="pre">celery.task.base.PeriodicTask.is_due()</span></tt></a>.</p>
 </dd></dl>
 
@@ -167,14 +183,13 @@ its date and count fields updated.</p>
 
 <dl class="class">
 <dt id="celery.beat.Scheduler">
-<em class="property">class </em><tt class="descclassname">celery.beat.</tt><tt class="descname">Scheduler</tt><big>(</big><em>registry=None</em>, <em>schedule=None</em>, <em>logger=None</em>, <em>max_interval=None</em><big>)</big><a class="headerlink" href="#celery.beat.Scheduler" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.beat.</tt><tt class="descname">Scheduler</tt><big>(</big><em>schedule=None</em>, <em>logger=None</em>, <em>max_interval=None</em><big>)</big><a class="headerlink" href="#celery.beat.Scheduler" title="Permalink to this definition">¶</a></dt>
 <dd><p>Scheduler for periodic tasks.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>registry</strong> &#8211; see <a class="reference internal" href="#celery.beat.Scheduler.registry" title="celery.beat.Scheduler.registry"><tt class="xref py py-attr docutils literal"><span class="pre">registry</span></tt></a>.</li>
 <li><strong>schedule</strong> &#8211; see <a class="reference internal" href="#celery.beat.Scheduler.schedule" title="celery.beat.Scheduler.schedule"><tt class="xref py py-attr docutils literal"><span class="pre">schedule</span></tt></a>.</li>
 <li><strong>logger</strong> &#8211; see <a class="reference internal" href="#celery.beat.Scheduler.logger" title="celery.beat.Scheduler.logger"><tt class="xref py py-attr docutils literal"><span class="pre">logger</span></tt></a>.</li>
 <li><strong>max_interval</strong> &#8211; see <a class="reference internal" href="#celery.beat.Scheduler.max_interval" title="celery.beat.Scheduler.max_interval"><tt class="xref py py-attr docutils literal"><span class="pre">max_interval</span></tt></a>.</li>
@@ -183,12 +198,6 @@ its date and count fields updated.</p>
 </tr>
 </tbody>
 </table>
-<dl class="attribute">
-<dt id="celery.beat.Scheduler.registry">
-<tt class="descname">registry</tt><a class="headerlink" href="#celery.beat.Scheduler.registry" title="Permalink to this definition">¶</a></dt>
-<dd><p>The task registry to use.</p>
-</dd></dl>
-
 <dl class="attribute">
 <dt id="celery.beat.Scheduler.schedule">
 <tt class="descname">schedule</tt><a class="headerlink" href="#celery.beat.Scheduler.schedule" title="Permalink to this definition">¶</a></dt>
@@ -207,6 +216,12 @@ its date and count fields updated.</p>
 <dd><p>Maximum time to sleep between re-checking the schedule.</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="celery.beat.Scheduler.Entry">
+<tt class="descname">Entry</tt><a class="headerlink" href="#celery.beat.Scheduler.Entry" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="#celery.beat.ScheduleEntry" title="celery.beat.ScheduleEntry"><tt class="xref py py-class docutils literal"><span class="pre">ScheduleEntry</span></tt></a></p>
+</dd></dl>
+
 <dl class="method">
 <dt id="celery.beat.Scheduler.apply_async">
 <tt class="descname">apply_async</tt><big>(</big><em>entry</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.beat.Scheduler.apply_async" title="Permalink to this definition">¶</a></dt>
@@ -218,13 +233,23 @@ its date and count fields updated.</p>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="celery.beat.Scheduler.get_task">
-<tt class="descname">get_task</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#celery.beat.Scheduler.get_task" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.beat.Scheduler.dict_to_entries">
+<tt class="descname">dict_to_entries</tt><big>(</big><em>dict_</em><big>)</big><a class="headerlink" href="#celery.beat.Scheduler.dict_to_entries" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="celery.beat.Scheduler.is_due">
-<tt class="descname">is_due</tt><big>(</big><em>entry</em><big>)</big><a class="headerlink" href="#celery.beat.Scheduler.is_due" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.beat.Scheduler.iterentries">
+<tt class="descname">iterentries</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.beat.Scheduler.iterentries" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.beat.Scheduler.maybe_schedule">
+<tt class="descname">maybe_schedule</tt><big>(</big><em>s</em>, <em>relative=False</em><big>)</big><a class="headerlink" href="#celery.beat.Scheduler.maybe_schedule" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.beat.Scheduler.reserve">
+<tt class="descname">reserve</tt><big>(</big><em>entry</em><big>)</big><a class="headerlink" href="#celery.beat.Scheduler.reserve" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -233,10 +258,9 @@ its date and count fields updated.</p>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="celery.beat.Scheduler.schedule_registry">
-<tt class="descname">schedule_registry</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.beat.Scheduler.schedule_registry" title="Permalink to this definition">¶</a></dt>
-<dd><p>Add the current contents of the registry to the schedule.</p>
-</dd></dl>
+<dt id="celery.beat.Scheduler.setup_schedule">
+<tt class="descname">setup_schedule</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.beat.Scheduler.setup_schedule" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="celery.beat.Scheduler.tick">
@@ -306,14 +330,14 @@ Executes all due tasks.</p>
         <li class="right" >
           <a href="celery.concurrency.threads.html" title="Thread Pool Support EXPERIMENTAL - celery.concurrency.threads"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.0.2 (stable) documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.1.0a1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
     </div>
   </body>
 </html>

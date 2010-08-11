@@ -456,10 +456,23 @@ var Search = {
       if (results.length) {
         var item = results.pop();
         var listItem = $('<li style="display:none"></li>');
-        listItem.append($('<a/>').attr(
-          'href',
-          item[0] + DOCUMENTATION_OPTIONS.FILE_SUFFIX +
-          highlightstring + item[2]).html(item[1]));
+        if (DOCUMENTATION_OPTIONS.FILE_SUFFIX == '') {
+          // dirhtml builder
+          var dirname = item[0] + '/';
+          if (dirname.match(/\/index\/$/)) {
+            dirname = dirname.substring(0, dirname.length-6);
+          } else if (dirname == 'index/') {
+            dirname = '';
+          }
+          listItem.append($('<a/>').attr('href',
+            DOCUMENTATION_OPTIONS.URL_ROOT + dirname +
+            highlightstring + item[2]).html(item[1]));
+        } else {
+          // normal html builders
+          listItem.append($('<a/>').attr('href',
+            item[0] + DOCUMENTATION_OPTIONS.FILE_SUFFIX +
+            highlightstring + item[2]).html(item[1]));
+        }
         if (item[3]) {
           listItem.append($('<span> (' + item[3] + ')</span>'));
           Search.output.append(listItem);
@@ -472,10 +485,10 @@ var Search = {
             if (data != '') {
               listItem.append($.makeSearchSummary(data, searchterms, hlterms));
               Search.output.append(listItem);
-              listItem.slideDown(5, function() {
-                displayNextItem();
-              });
             }
+            listItem.slideDown(5, function() {
+              displayNextItem();
+            });
           });
         } else {
           // no source available, just display title

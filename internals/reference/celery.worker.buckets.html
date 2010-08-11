@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Token Bucket (rate limiting) - celery.worker.buckets &mdash; Celery v2.0.2 (stable) documentation</title>
+    <title>Token Bucket (rate limiting) - celery.worker.buckets &mdash; Celery v2.1.0a1 documentation</title>
     <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.0.2 (stable)',
+        VERSION:     '2.1.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,9 +21,9 @@
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.0.2 (stable) documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.1.0a1 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
-    <link rel="next" title="Worker Scheduler - celery.worker.scheduler" href="celery.worker.scheduler.html" />
+    <link rel="next" title="Worker Heartbeats - celery.worker.heartbeat" href="celery.worker.heartbeat.html" />
     <link rel="prev" title="Worker Controller Threads - celery.worker.controllers" href="celery.worker.controllers.html" /> 
   </head>
   <body>
@@ -37,12 +37,12 @@
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="celery.worker.scheduler.html" title="Worker Scheduler - celery.worker.scheduler"
+          <a href="celery.worker.heartbeat.html" title="Worker Heartbeats - celery.worker.heartbeat"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="celery.worker.controllers.html" title="Worker Controller Threads - celery.worker.controllers"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.0.2 (stable) documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.1.0a1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -60,11 +60,6 @@
 <em class="property">class </em><tt class="descclassname">celery.worker.buckets.</tt><tt class="descname">FastQueue</tt><big>(</big><em>maxsize=0</em><big>)</big><a class="headerlink" href="#celery.worker.buckets.FastQueue" title="Permalink to this definition">¶</a></dt>
 <dd><p><tt class="xref py py-class docutils literal"><span class="pre">Queue.Queue</span></tt> supporting the interface of
 <a class="reference internal" href="#celery.worker.buckets.TokenBucketQueue" title="celery.worker.buckets.TokenBucketQueue"><tt class="xref py py-class docutils literal"><span class="pre">TokenBucketQueue</span></tt></a>.</p>
-<dl class="method">
-<dt id="celery.worker.buckets.FastQueue.can_consume">
-<tt class="descname">can_consume</tt><big>(</big><em>tokens=1</em><big>)</big><a class="headerlink" href="#celery.worker.buckets.FastQueue.can_consume" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 <dl class="method">
 <dt id="celery.worker.buckets.FastQueue.clear">
 <tt class="descname">clear</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.buckets.FastQueue.clear" title="Permalink to this definition">¶</a></dt>
@@ -213,51 +208,24 @@ the appropiate bucket.</p>
 <em class="property">class </em><tt class="descclassname">celery.worker.buckets.</tt><tt class="descname">TokenBucketQueue</tt><big>(</big><em>fill_rate</em>, <em>queue=None</em>, <em>capacity=1</em><big>)</big><a class="headerlink" href="#celery.worker.buckets.TokenBucketQueue" title="Permalink to this definition">¶</a></dt>
 <dd><p>Queue with rate limited get operations.</p>
 <p>This uses the token bucket algorithm to rate limit the queue on get
-operations.
-See <a class="reference external" href="http://en.wikipedia.org/wiki/Token_Bucket">http://en.wikipedia.org/wiki/Token_Bucket</a>
-Most of this code was stolen from an entry in the ASPN Python Cookbook:
-<a class="reference external" href="http://code.activestate.com/recipes/511490/">http://code.activestate.com/recipes/511490/</a></p>
+operations.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>fill_rate</strong> &#8211; see <a class="reference internal" href="#celery.worker.buckets.TokenBucketQueue.fill_rate" title="celery.worker.buckets.TokenBucketQueue.fill_rate"><tt class="xref py py-attr docutils literal"><span class="pre">fill_rate</span></tt></a>.</li>
-<li><strong>capacity</strong> &#8211; see <a class="reference internal" href="#celery.worker.buckets.TokenBucketQueue.capacity" title="celery.worker.buckets.TokenBucketQueue.capacity"><tt class="xref py py-attr docutils literal"><span class="pre">capacity</span></tt></a>.</li>
+<li><strong>fill_rate</strong> &#8211; The rate in tokens/second that the bucket will
+be refilled.</li>
+<li><strong>capacity</strong> &#8211; Maximum number of tokens in the bucket. Default is 1.</li>
 </ul>
 </td>
 </tr>
 </tbody>
 </table>
-<dl class="attribute">
-<dt id="celery.worker.buckets.TokenBucketQueue.fill_rate">
-<tt class="descname">fill_rate</tt><a class="headerlink" href="#celery.worker.buckets.TokenBucketQueue.fill_rate" title="Permalink to this definition">¶</a></dt>
-<dd><p>The rate in tokens/second that the bucket will be refilled.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.worker.buckets.TokenBucketQueue.capacity">
-<tt class="descname">capacity</tt><a class="headerlink" href="#celery.worker.buckets.TokenBucketQueue.capacity" title="Permalink to this definition">¶</a></dt>
-<dd><p>Maximum number of tokens in the bucket. Default is <tt class="docutils literal"><span class="pre">1</span></tt>.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.worker.buckets.TokenBucketQueue.timestamp">
-<tt class="descname">timestamp</tt><a class="headerlink" href="#celery.worker.buckets.TokenBucketQueue.timestamp" title="Permalink to this definition">¶</a></dt>
-<dd><p>Timestamp of the last time a token was taken out of the bucket.</p>
-</dd></dl>
-
 <dl class="exception">
 <dt id="celery.worker.buckets.TokenBucketQueue.RateLimitExceeded">
 <em class="property">exception </em><tt class="descname">RateLimitExceeded</tt><a class="headerlink" href="#celery.worker.buckets.TokenBucketQueue.RateLimitExceeded" title="Permalink to this definition">¶</a></dt>
 <dd><p>The token buckets rate limit has been exceeded.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.worker.buckets.TokenBucketQueue.can_consume">
-<tt class="descclassname">TokenBucketQueue.</tt><tt class="descname">can_consume</tt><big>(</big><em>tokens=1</em><big>)</big><a class="headerlink" href="#celery.worker.buckets.TokenBucketQueue.can_consume" title="Permalink to this definition">¶</a></dt>
-<dd><p>Consume tokens from the bucket. Returns True if there were
-sufficient tokens otherwise False.</p>
 </dd></dl>
 
 <dl class="method">
@@ -383,8 +351,8 @@ that evaluates lazily.</p>
   <p class="topless"><a href="celery.worker.controllers.html"
                         title="previous chapter">Worker Controller Threads - celery.worker.controllers</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="celery.worker.scheduler.html"
-                        title="next chapter">Worker Scheduler - celery.worker.scheduler</a></p>
+  <p class="topless"><a href="celery.worker.heartbeat.html"
+                        title="next chapter">Worker Heartbeats - celery.worker.heartbeat</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../../sources/internals/reference/celery.worker.buckets.txt"
@@ -417,19 +385,19 @@ that evaluates lazily.</p>
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="celery.worker.scheduler.html" title="Worker Scheduler - celery.worker.scheduler"
+          <a href="celery.worker.heartbeat.html" title="Worker Heartbeats - celery.worker.heartbeat"
              >next</a> |</li>
         <li class="right" >
           <a href="celery.worker.controllers.html" title="Worker Controller Threads - celery.worker.controllers"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.0.2 (stable) documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.1.0a1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
     </div>
   </body>
 </html>

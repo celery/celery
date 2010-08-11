@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Datastructures - celery.datastructures &mdash; Celery v2.0.2 (stable) documentation</title>
+    <title>Datastructures - celery.datastructures &mdash; Celery v2.1.0a1 documentation</title>
     <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.0.2 (stable)',
+        VERSION:     '2.1.0a1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.0.2 (stable) documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.1.0a1 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="Message Routers - celery.routes" href="celery.routes.html" />
     <link rel="prev" title="Serialization Tools - celery.serialization" href="celery.serialization.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.serialization.html" title="Serialization Tools - celery.serialization"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.0.2 (stable) documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.1.0a1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -233,6 +233,57 @@ reliable operations are increment and decrement.</p>
 
 </dd></dl>
 
+<dl class="class">
+<dt id="celery.datastructures.TokenBucket">
+<em class="property">class </em><tt class="descclassname">celery.datastructures.</tt><tt class="descname">TokenBucket</tt><big>(</big><em>fill_rate</em>, <em>capacity=1</em><big>)</big><a class="headerlink" href="#celery.datastructures.TokenBucket" title="Permalink to this definition">¶</a></dt>
+<dd><p>Token Bucket Algorithm.</p>
+<p>See <a class="reference external" href="http://en.wikipedia.org/wiki/Token_Bucket">http://en.wikipedia.org/wiki/Token_Bucket</a>
+Most of this code was stolen from an entry in the ASPN Python Cookbook:
+<a class="reference external" href="http://code.activestate.com/recipes/511490/">http://code.activestate.com/recipes/511490/</a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>fill_rate</strong> &#8211; see <a class="reference internal" href="#celery.datastructures.TokenBucket.fill_rate" title="celery.datastructures.TokenBucket.fill_rate"><tt class="xref py py-attr docutils literal"><span class="pre">fill_rate</span></tt></a>.</li>
+<li><strong>capacity</strong> &#8211; see <a class="reference internal" href="#celery.datastructures.TokenBucket.capacity" title="celery.datastructures.TokenBucket.capacity"><tt class="xref py py-attr docutils literal"><span class="pre">capacity</span></tt></a>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="celery.datastructures.TokenBucket.fill_rate">
+<tt class="descname">fill_rate</tt><a class="headerlink" href="#celery.datastructures.TokenBucket.fill_rate" title="Permalink to this definition">¶</a></dt>
+<dd><p>The rate in tokens/second that the bucket will be refilled.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.datastructures.TokenBucket.capacity">
+<tt class="descname">capacity</tt><a class="headerlink" href="#celery.datastructures.TokenBucket.capacity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maximum number of tokens in the bucket. Default is <tt class="docutils literal"><span class="pre">1</span></tt>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.datastructures.TokenBucket.timestamp">
+<tt class="descname">timestamp</tt><a class="headerlink" href="#celery.datastructures.TokenBucket.timestamp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Timestamp of the last time a token was taken out of the bucket.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.datastructures.TokenBucket.can_consume">
+<tt class="descname">can_consume</tt><big>(</big><em>tokens=1</em><big>)</big><a class="headerlink" href="#celery.datastructures.TokenBucket.can_consume" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.datastructures.TokenBucket.expected_time">
+<tt class="descname">expected_time</tt><big>(</big><em>tokens=1</em><big>)</big><a class="headerlink" href="#celery.datastructures.TokenBucket.expected_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the expected time in seconds when a new token should be
+available. <em>Note: consumes a token from the bucket</em></p>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="function">
 <dt id="celery.datastructures.consume_queue">
 <tt class="descclassname">celery.datastructures.</tt><tt class="descname">consume_queue</tt><big>(</big><em>queue</em><big>)</big><a class="headerlink" href="#celery.datastructures.consume_queue" title="Permalink to this definition">¶</a></dt>
@@ -303,14 +354,14 @@ reliable operations are increment and decrement.</p>
         <li class="right" >
           <a href="celery.serialization.html" title="Serialization Tools - celery.serialization"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.0.2 (stable) documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.1.0a1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2009, Ask Solem.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
     </div>
   </body>
 </html>
