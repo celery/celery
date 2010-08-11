@@ -92,7 +92,6 @@ setup(
     entry_points={
         'console_scripts': [
             'celeryd = celery.bin.celeryd:main',
-            'celeryinit = celery.bin.celeryinit:main',
             'celerybeat = celery.bin.celerybeat:main',
             'camqadm = celery.bin.camqadm:main',
             'celeryev = celery.bin.celeryev:main',
