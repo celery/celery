@@ -55,6 +55,9 @@ class TestAsyncResult(unittest.TestCase):
         self.assertFalse(nok_res.successful())
         self.assertFalse(nok_res2.successful())
 
+        pending_res = AsyncResult(gen_unique_id())
+        self.assertFalse(pending_res.successful())
+
     def test_str(self):
         ok_res = AsyncResult(self.task1["id"])
         ok2_res = AsyncResult(self.task2["id"])
@@ -62,6 +65,10 @@ class TestAsyncResult(unittest.TestCase):
         self.assertEqual(str(ok_res), self.task1["id"])
         self.assertEqual(str(ok2_res), self.task2["id"])
         self.assertEqual(str(nok_res), self.task3["id"])
+
+        pending_id = gen_unique_id()
+        pending_res = AsyncResult(pending_id)
+        self.assertEqual(str(pending_res), pending_id)
 
     def test_repr(self):
         ok_res = AsyncResult(self.task1["id"])
@@ -74,6 +81,11 @@ class TestAsyncResult(unittest.TestCase):
         self.assertEqual(repr(nok_res), "<AsyncResult: %s>" % (
                 self.task3["id"]))
 
+        pending_id = gen_unique_id()
+        pending_res = AsyncResult(pending_id)
+        self.assertEqual(repr(pending_res), "<AsyncResult: %s>" % (
+                pending_id))
+
     def test_get_traceback(self):
         ok_res = AsyncResult(self.task1["id"])
         nok_res = AsyncResult(self.task3["id"])
@@ -81,6 +93,9 @@ class TestAsyncResult(unittest.TestCase):
         self.assertFalse(ok_res.traceback)
         self.assertTrue(nok_res.traceback)
         self.assertTrue(nok_res2.traceback)
+
+        pending_res = AsyncResult(gen_unique_id())
+        self.assertFalse(pending_res.traceback)
 
     def test_get(self):
         ok_res = AsyncResult(self.task1["id"])
@@ -93,9 +108,13 @@ class TestAsyncResult(unittest.TestCase):
         self.assertRaises(KeyError, nok_res.get)
         self.assertIsInstance(nok2_res.result, KeyError)
 
+
     def test_get_timeout(self):
         res = AsyncResult(self.task4["id"]) # has RETRY status
         self.assertRaises(TimeoutError, res.get, timeout=0.1)
+
+        pending_res = AsyncResult(gen_unique_id())
+        self.assertRaises(TimeoutError, pending_res.get, timeout=0.1)
 
     @skip_if_quick
     def test_get_timeout_longer(self):
@@ -108,6 +127,8 @@ class TestAsyncResult(unittest.TestCase):
                AsyncResult(self.task3["id"]))
         self.assertTrue(all(result.ready() for result in oks))
         self.assertFalse(AsyncResult(self.task4["id"]).ready())
+
+        self.assertFalse(AsyncResult(gen_unique_id()).ready())
 
 
 class MockAsyncResultFailure(AsyncResult):
