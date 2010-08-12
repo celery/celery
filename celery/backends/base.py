@@ -157,7 +157,7 @@ class BaseDictBackend(BaseBackend):
 
     def get_traceback(self, task_id):
         """Get the traceback for a failed task."""
-        return self.get_task_meta(task_id)["traceback"]
+        return self.get_task_meta(task_id).get("traceback")
 
     def get_result(self, task_id):
         """Get the result of a task."""
