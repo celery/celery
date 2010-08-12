@@ -276,11 +276,3 @@ def get_consumer_set(connection, queues=None, **options):
                             backend=cset.backend, **queue_options)
         cset.consumers.append(consumer)
     return cset
-
-
-@with_connection
-def reply(data, exchange, routing_key, connection=None, connect_timeout=None,
-        **kwargs):
-    pub = ControlReplyPublisher(connection, exchange=exchange,
-                    routing_key=routing_key, **kwargs)
-    pub.send(data)
