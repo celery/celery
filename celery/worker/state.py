@@ -37,10 +37,7 @@ def task_accepted(request):
 
 def task_ready(request):
     """Updates global state when a task is ready."""
-    try:
-        active_requests.remove(request)
-    except KeyError:
-        pass
+    active_requests.discard(request)
 
 
 class Persistent(object):
