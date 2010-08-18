@@ -10,13 +10,13 @@ from multiprocessing.util import Finalize
 
 from celery.utils.timer2 import Timer
 
+from celery import beat
 from celery import conf
 from celery import log
 from celery import registry
 from celery import platform
 from celery import signals
 from celery.log import setup_logger
-from celery.beat import EmbeddedClockService
 from celery.utils import noop, instantiate
 
 from celery.worker import state
@@ -58,7 +58,7 @@ class WorkController(object):
     :param concurrency: see :attr:`concurrency`.
     :param logfile: see :attr:`logfile`.
     :param loglevel: see :attr:`loglevel`.
-    :param embed_clockservice: see :attr:`run_clockservice`.
+    :param embed_clockservice: see :attr:`embed_clockservice`.
     :param send_events: see :attr:`send_events`.
 
     .. attribute:: concurrency
@@ -176,9 +176,9 @@ class WorkController(object):
                                on_error=self.on_timer_error,
                                on_tick=self.on_timer_tick)
 
-        self.clockservice = None
+        self.beat = None
         if self.embed_clockservice:
-            self.clockservice = EmbeddedClockService(logger=self.logger,
+            self.beat = beat.EmbeddedService(logger=self.logger,
                                     schedule_filename=schedule_filename)
 
         prefetch_count = self.concurrency * conf.CELERYD_PREFETCH_MULTIPLIER
@@ -198,7 +198,7 @@ class WorkController(object):
         self.components = filter(None, (self.pool,
                                         self.mediator,
                                         self.scheduler,
-                                        self.clockservice,
+                                        self.beat,
                                         self.listener))
 
     def start(self):
