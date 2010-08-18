@@ -68,9 +68,8 @@ class ScheduleEntry(object):
 
     """
 
-    def __init__(self, name, schedule, args=(), kwargs={},
-            options={}, last_run_at=None, total_run_count=None,
-            relative=False):
+    def __init__(self, name, last_run_at=None, total_run_count=None,
+            schedule=None, args=(), kwargs={}, options={}, relative=False):
         self.name = name
         self.schedule = maybe_schedule(schedule, relative)
         self.args = args
@@ -82,13 +81,13 @@ class ScheduleEntry(object):
     def next(self):
         """Returns a new instance of the same class, but with
         its date and count fields updated."""
-        return self.__class__(self.name,
-                              self.schedule,
-                              self.args,
-                              self.kwargs,
-                              self.options,
-                              datetime.now(),
-                              self.total_run_count + 1)
+        return self.__class__(name=self.name,
+                              schedule=self.schedule,
+                              args=self.args,
+                              kwargs=self.kwargs,
+                              options=self.options,
+                              last_run_at=datetime.now(),
+                              total_run_count=self.total_run_count + 1)
 
     def update(self, other):
         """Update values from another entry.
@@ -184,7 +183,7 @@ class Scheduler(UserDict):
         new_entry = self[entry.name] = entry.next()
         return new_entry
 
-    def apply_async(self, entry, **kwargs):
+    def apply_async(self, entry, connection=None, **kwargs):
         # Update timestamps and run counts before we actually execute,
         # so we have that done if an exception is raised (doesn't schedule
         # forever.)
@@ -192,7 +191,7 @@ class Scheduler(UserDict):
 
         try:
             result = send_task(entry.name, entry.args, entry.kwargs,
-                               **entry.options)
+                               connection=connection, **entry.options)
         except Exception, exc:
             raise SchedulingError("Couldn't apply scheduled task %s: %s" % (
                     entry.name, exc))
