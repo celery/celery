@@ -10,7 +10,7 @@
 
 .. cmdoption:: -S, --scheduler
 
-    Scheduler class to use. Default is celery.beat.Scheduler
+    Scheduler class to use. Default is celery.beat.PersistentScheduler
 
 .. cmdoption:: -f, --logfile
 
@@ -27,10 +27,10 @@ import optparse
 import traceback
 
 import celery
+from celery import beat
 from celery import conf
 from celery import platform
 from celery.log import emergency_error
-from celery.beat import ClockService
 from celery.utils import info
 
 STARTUP_INFO_FMT = """
@@ -53,7 +53,8 @@ OPTION_LIST = (
     optparse.make_option('-S', '--scheduler',
             default=None,
             action="store", dest="scheduler_cls",
-            help="Scheduler class. Default is celery.beat.Scheduler"),
+            help="Scheduler class. Default is "
+                 "celery.beat.PersistentScheduler"),
     optparse.make_option('-f', '--logfile', default=conf.CELERYBEAT_LOG_FILE,
             action="store", dest="logfile",
             help="Path to log file."),
@@ -65,7 +66,7 @@ OPTION_LIST = (
 
 
 class Beat(object):
-    ClockService = ClockService
+    Service = beat.Service
 
     def __init__(self, loglevel=conf.CELERYBEAT_LOG_LEVEL,
             logfile=conf.CELERYBEAT_LOG_FILE,
@@ -94,10 +95,10 @@ class Beat(object):
     def start_scheduler(self):
         from celery.log import setup_logger
         logger = setup_logger(self.loglevel, self.logfile, name="celery.beat")
-        beat = self.ClockService(logger=logger,
-                                 max_interval=self.max_interval,
-                                 scheduler_cls=self.scheduler_cls,
-                                 schedule_filename=self.schedule)
+        beat = self.Service(logger=logger,
+                            max_interval=self.max_interval,
+                            scheduler_cls=self.scheduler_cls,
+                            schedule_filename=self.schedule)
 
         try:
             self.install_sync_handler(beat)
