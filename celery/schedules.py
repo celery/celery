@@ -210,6 +210,11 @@ class crontab(schedule):
         self.day_of_week = self._expand_cronspec(day_of_week, 7)
         self.nowfun = nowfun
 
+    def __reduce__(self):
+        return (self.__class__, (self.minute,
+                                 self.hour,
+                                 self.day_of_week), None)
+
     def remaining_estimate(self, last_run_at):
         # remaining_estimate controls the frequency of scheduler
         # ticks. The scheduler needs to wake up every second in this case.
