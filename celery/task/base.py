@@ -12,7 +12,7 @@ from celery.messaging import TaskPublisher, TaskConsumer
 from celery.messaging import establish_connection as _establish_connection
 from celery.registry import tasks
 from celery.result import BaseAsyncResult, EagerResult
-from celery.schedules import schedule
+from celery.schedules import maybe_schedule
 from celery.utils.timeutils import timedelta_seconds
 
 from celery.task.sets import TaskSet, subtask
@@ -616,9 +616,13 @@ class PeriodicTask(Task):
         if not hasattr(self, "run_every"):
             raise NotImplementedError(
                     "Periodic tasks must have a run_every attribute")
+        self.run_every = maybe_schedule(self.run_every, self.relative)
 
-        warnings.warn(PERIODIC_DEPRECATION_TEXT,
-                        PendingDeprecationWarning)
+        # Periodic task classes is pending deprecation.
+        warnings.warn(PendingDeprecationWarning(PERIODIC_DEPRECATION_TEXT))
+
+        # For backward compatibility, add the periodic task to the
+        # configuration schedule instead.
         conf.CELERYBEAT_SCHEDULE[self.name] = {
                 "name": self.name,
                 "schedule": self.run_every,

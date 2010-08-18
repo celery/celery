@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from pyparsing import (Word, Literal, ZeroOrMore, Optional,
                        Group, StringEnd, alphas)
 
@@ -229,3 +229,11 @@ class crontab(schedule):
                    now.hour in self.hour and
                    now.minute in self.minute)
         return due, when
+
+
+def maybe_schedule(s, relative=False):
+    if isinstance(s, int):
+        s = timedelta(seconds=s)
+    if isinstance(s, timedelta):
+        return schedule(s, relative)
+    return s

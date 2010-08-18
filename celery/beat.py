@@ -7,14 +7,14 @@ import time
 import shelve
 import threading
 import multiprocessing
-from datetime import datetime, timedelta
+from datetime import datetime
 from UserDict import UserDict
 
 from celery import log
 from celery import conf
 from celery import platform
 from celery.execute import send_task
-from celery.schedules import schedule
+from celery.schedules import maybe_schedule
 from celery.messaging import establish_connection
 from celery.utils import instantiate
 from celery.utils.info import humanize_seconds
@@ -22,14 +22,6 @@ from celery.utils.info import humanize_seconds
 
 class SchedulingError(Exception):
     """An error occured while scheduling a task."""
-
-
-def maybe_schedule(s, relative=False):
-    if isinstance(s, int):
-        s = timedelta(seconds=s)
-    if isinstance(s, timedelta):
-        return schedule(s, relative)
-    return s
 
 
 class ScheduleEntry(object):

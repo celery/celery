@@ -473,11 +473,11 @@ class test_WorkController(unittest.TestCase):
         self.assertTrue(worker.mediator)
         self.assertTrue(worker.components)
 
-    def test_with_embedded_clockservice(self):
+    def test_with_embedded_celerybeat(self):
         worker = WorkController(concurrency=1, loglevel=0,
                                 embed_clockservice=True)
-        self.assertTrue(worker.clockservice)
-        self.assertIn(worker.clockservice, worker.components)
+        self.assertTrue(worker.beat)
+        self.assertIn(worker.beat, worker.components)
 
     def test_process_task(self):
         worker = self.worker
