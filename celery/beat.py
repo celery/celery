@@ -70,16 +70,14 @@ class ScheduleEntry(object):
         self.last_run_at = last_run_at or datetime.now()
         self.total_run_count = total_run_count or 0
 
-    def next(self):
+    def next(self, last_run_at=None):
         """Returns a new instance of the same class, but with
         its date and count fields updated."""
-        return self.__class__(name=self.name,
-                              schedule=self.schedule,
-                              args=self.args,
-                              kwargs=self.kwargs,
-                              options=self.options,
-                              last_run_at=datetime.now(),
-                              total_run_count=self.total_run_count + 1)
+        last_run_at = last_run_at or datetime.now()
+        total_run_count = self.total_run_count + 1
+        return self.__class__(**dict(self,
+                                     last_run_at=last_run_at,
+                                     total_run_count=total_run_count))
 
     def update(self, other):
         """Update values from another entry.
@@ -96,6 +94,9 @@ class ScheduleEntry(object):
     def is_due(self):
         """See :meth:`celery.task.base.PeriodicTask.is_due`."""
         return self.schedule.is_due(self.last_run_at)
+
+    def __iter__(self):
+        return vars(self).iteritems()
 
     def __repr__(self):
         return "<Entry: %s(*%s, **%s) {%s}>" % (self.name,
@@ -130,9 +131,9 @@ class Scheduler(UserDict):
             **kwargs):
         UserDict.__init__(self)
         if schedule is None:
-            schedule = self.dict_to_entries(conf.CELERYBEAT_SCHEDULE)
+            schedule = {}
         self.data = schedule
-        self.logger = logger or log.get_default_logger("celery.beat")
+        self.logger = logger or log.get_default_logger(name="celery.beat")
         self.max_interval = max_interval or conf.CELERYBEAT_MAX_LOOP_INTERVAL
         self.setup_schedule()
 
@@ -182,12 +183,15 @@ class Scheduler(UserDict):
         entry = self.reserve(entry)
 
         try:
-            result = send_task(entry.name, entry.args, entry.kwargs,
-                               connection=connection, **entry.options)
+            result = self.send_task(entry.name, entry.args, entry.kwargs,
+                                    connection=connection, **entry.options)
         except Exception, exc:
             raise SchedulingError("Couldn't apply scheduled task %s: %s" % (
                     entry.name, exc))
         return result
+
+    def send_task(self, *args, **kwargs): # pragma: no cover
+        return send_task(*args, **kwargs)
 
     def setup_schedule(self):
         pass
@@ -198,20 +202,36 @@ class Scheduler(UserDict):
     def close(self):
         self.sync()
 
-    def dict_to_entries(self, dict_):
-        return dict((name, self.Entry(**entry))
-                        for name, entry in dict_.items())
+    def add(self, **kwargs):
+        entry = self.Entry(**kwargs)
+        self[entry.name] = entry
+        return entry
+
+    def update_from_dict(self, dict_):
+        self.update(dict((name, self.Entry(name, **entry))
+                            for name, entry in dict_.items()))
+
+    def merge_inplace(self, b):
+        A, B = set(self.keys()), set(b.keys())
+
+        # Remove items from disk not in the schedule anymore.
+        for key in A ^ B:
+            self.pop(key, None)
+
+        # Update and add new items in the schedule
+        for key in B:
+            entry = self.Entry(**dict(b[key]))
+            if self.get(key):
+                self[key].update(entry)
+            else:
+                self[key] = entry
 
     def get_schedule(self):
         return self.data
 
-    def _set_schedule(self, schedule):
-        self.data = schedule
-
-    def _get_schedule(self):
+    @property
+    def schedule(self):
         return self.get_schedule()
-
-    schedule = property(_get_schedule, _set_schedule)
 
 
 class PersistentScheduler(Scheduler):
@@ -225,24 +245,10 @@ class PersistentScheduler(Scheduler):
 
     def setup_schedule(self):
         self._store = self.persistence.open(self.schedule_filename)
-        self._diskmerge(self._store, conf.CELERYBEAT_SCHEDULE)
+        self.data = self._store
+        self.merge_inplace(conf.CELERYBEAT_SCHEDULE)
         self.sync()
-        self.schedule = self._store
-
-    def _diskmerge(self, a, b):
-        A, B = set(a), set(b)
-
-        # Remove items from disk not in the schedule anymore.
-        for key in A ^ B:
-            a.pop(key, None)
-
-        # Update and add new items in the schedule
-        for key in B:
-            entry = self.Entry(**b[key])
-            if a.get(key):
-                a[key].update(entry)
-            else:
-                a[key] = entry
+        self.data = self._store
 
     def sync(self):
         if self._store is not None:
@@ -310,10 +316,10 @@ class Service(object):
         if self._scheduler is None:
             filename = self.schedule_filename
             self._scheduler = instantiate(self.scheduler_cls,
-                                          schedule=self.schedule,
                                           schedule_filename=filename,
                                           logger=self.logger,
                                           max_interval=self.max_interval)
+            self._scheduler.update_from_dict(self.schedule)
         return self._scheduler
 
 

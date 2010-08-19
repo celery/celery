@@ -30,6 +30,11 @@ class schedule(object):
             return True, timedelta_seconds(self.run_every)
         return False, rem
 
+    def __eq__(self, other):
+        if isinstance(other, schedule):
+            return self.run_every == other.run_every
+        return self.run_every == other
+
 
 class crontab_parser(object):
     """Parser for crontab expressions. Any expression of the form 'groups' (see
@@ -229,6 +234,13 @@ class crontab(schedule):
                    now.hour in self.hour and
                    now.minute in self.minute)
         return due, when
+
+    def __eq__(self, other):
+        if isinstance(other, crontab):
+            return (other.day_of_week == self.day_of_week and
+                    other.hour == self.hour and
+                    other.minute == self.minute)
+        return other is self
 
 
 def maybe_schedule(s, relative=False):

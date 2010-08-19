@@ -1,16 +1,12 @@
 import logging
 import unittest2 as unittest
+
 from datetime import datetime, timedelta
 
-from celery import log
 from celery import beat
-from celery import conf
-from celery.task.base import Task
+from celery.result import AsyncResult
 from celery.schedules import schedule
 from celery.utils import gen_unique_id
-from celery.task.base import PeriodicTask
-from celery.registry import TaskRegistry
-from celery.result import AsyncResult
 
 
 class Object(object):
@@ -42,6 +38,194 @@ class MockService(object):
         self.stopped = True
 
 
+class test_ScheduleEntry(unittest.TestCase):
+    Entry = beat.ScheduleEntry
+
+    def create_entry(self, **kwargs):
+        entry = dict(name="celery.unittest.add",
+                     schedule=schedule(timedelta(seconds=10)),
+                     args=(2, 2),
+                     options={"routing_key": "cpu"})
+        return self.Entry(**dict(entry, **kwargs))
+
+    def test_next(self):
+        entry = self.create_entry(schedule=10)
+        self.assertTrue(entry.last_run_at)
+        self.assertIsInstance(entry.last_run_at, datetime)
+        self.assertEqual(entry.total_run_count, 0)
+
+        next_run_at = entry.last_run_at + timedelta(seconds=10)
+        next = entry.next(next_run_at)
+        self.assertGreaterEqual(next.last_run_at, next_run_at)
+        self.assertEqual(next.total_run_count, 1)
+
+    def test_is_due(self):
+        entry = self.create_entry(schedule=timedelta(seconds=10))
+        due1, next_time_to_run1 = entry.is_due()
+        self.assertFalse(due1)
+        self.assertGreater(next_time_to_run1, 9)
+
+        next_run_at = entry.last_run_at - timedelta(seconds=10)
+        next = entry.next(next_run_at)
+        due2, next_time_to_run2 = next.is_due()
+        self.assertTrue(due2)
+        self.assertGreater(next_time_to_run2, 9)
+
+    def test_repr(self):
+        entry = self.create_entry()
+        self.assertIn("<Entry:", repr(entry))
+
+    def test_update(self):
+        entry = self.create_entry()
+        self.assertEqual(entry.schedule, timedelta(seconds=10))
+        self.assertTupleEqual(entry.args, (2, 2))
+        self.assertDictEqual(entry.kwargs, {})
+        self.assertDictEqual(entry.options, {"routing_key": "cpu"})
+
+        entry2 = self.create_entry(schedule=timedelta(minutes=20),
+                                   args=(16, 16),
+                                   kwargs={"callback": "foo.bar.baz"},
+                                   options={"routing_key": "urgent"})
+        entry.update(entry2)
+        self.assertEqual(entry.schedule, schedule(timedelta(minutes=20)))
+        self.assertTupleEqual(entry.args, (16, 16))
+        self.assertDictEqual(entry.kwargs, {"callback": "foo.bar.baz"})
+        self.assertDictEqual(entry.options, {"routing_key": "urgent"})
+
+
+class MockLogger(logging.Logger):
+
+    def __init__(self, *args, **kwargs):
+        self.logged = []
+        logging.Logger.__init__(self, *args, **kwargs)
+
+    def _log(self, level, msg, args, **kwargs):
+        self.logged.append((level, msg))
+
+
+class mScheduler(beat.Scheduler):
+
+    def __init__(self, *args, **kwargs):
+        self.sent = []
+        beat.Scheduler.__init__(self, *args, **kwargs)
+        self.logger = MockLogger("celery.beat", logging.ERROR)
+
+    def send_task(self, name=None, args=None, kwargs=None, **options):
+        self.sent.append({"name": name,
+                          "args": args,
+                          "kwargs": kwargs,
+                          "options": options})
+        return AsyncResult(gen_unique_id())
+
+
+class mSchedulerSchedulingError(mScheduler):
+
+    def send_task(self, *args, **kwargs):
+        raise beat.SchedulingError("Could not apply task")
+
+
+class mSchedulerRuntimeError(mScheduler):
+
+    def maybe_due(self, *args, **kwargs):
+        raise RuntimeError("dict modified while itervalues")
+
+
+class mocked_schedule(schedule):
+
+    def __init__(self, is_due, next_run_at):
+        self._is_due = is_due
+        self._next_run_at = next_run_at
+        self.run_every = timedelta(seconds=1)
+
+    def is_due(self, last_run_at):
+        return self._is_due, self._next_run_at
+
+
+always_due = mocked_schedule(True, 1)
+always_pending = mocked_schedule(False, 1)
+
+
+class test_Scheduler(unittest.TestCase):
+
+    def test_due_tick(self):
+        scheduler = mScheduler()
+        scheduler.add(name="test_due_tick",
+                      schedule=always_due,
+                      args=(1, 2),
+                      kwargs={"foo": "bar"})
+        self.assertEqual(scheduler.tick(), 1)
+
+    def test_due_tick_SchedulingError(self):
+        scheduler = mSchedulerSchedulingError()
+        scheduler.add(name="test_due_tick_SchedulingError",
+                      schedule=always_due)
+        self.assertEqual(scheduler.tick(), 1)
+        self.assertTrue(scheduler.logger.logged[0])
+        level, msg = scheduler.logger.logged[0]
+        self.assertEqual(level, logging.ERROR)
+        self.assertIn("Couldn't apply scheduled task", msg)
+
+    def test_due_tick_RuntimeError(self):
+        scheduler = mSchedulerRuntimeError()
+        scheduler.add(name="test_due_tick_RuntimeError",
+                      schedule=always_due)
+        self.assertEqual(scheduler.tick(), scheduler.max_interval)
+
+    def test_pending_tick(self):
+        scheduler = mScheduler()
+        scheduler.add(name="test_pending_tick",
+                      schedule=always_pending)
+        self.assertEqual(scheduler.tick(), 1)
+
+    def test_honors_max_interval(self):
+        scheduler = mScheduler()
+        maxi = scheduler.max_interval
+        scheduler.add(name="test_honors_max_interval",
+                      schedule=mocked_schedule(False, maxi * 4))
+        self.assertEqual(scheduler.tick(), maxi)
+
+    def test_ticks(self):
+        scheduler = mScheduler()
+        nums = [600, 300, 650, 120, 250, 36]
+        expected = min(nums, scheduler.max_interval)
+
+        s = dict(("test_ticks%s" % i,
+                 {"schedule": mocked_schedule(False, j)})
+                    for i, j in enumerate(nums))
+        scheduler.update_from_dict(s)
+        self.assertEqual(scheduler.tick(), min(nums))
+
+    def test_schedule_no_remain(self):
+        scheduler = mScheduler()
+        scheduler.add(name="test_schedule_no_remain",
+                      schedule=mocked_schedule(False, None))
+        self.assertEqual(scheduler.tick(), scheduler.max_interval)
+
+    def test_interface(self):
+        scheduler = mScheduler()
+        scheduler.sync()
+        scheduler.setup_schedule()
+        scheduler.close()
+
+    def test_set_schedule(self):
+        scheduler = mScheduler()
+        a, b = scheduler.schedule, {}
+        scheduler.schedule = b
+        self.assertIs(scheduler.schedule, b)
+
+    def test_merge_inplace(self):
+        a = mScheduler()
+        b = mScheduler()
+        a.update_from_dict({"foo": {"schedule": mocked_schedule(True, 10)},
+                            "bar": {"schedule": mocked_schedule(True, 20)}})
+        b.update_from_dict({"bar": {"schedule": mocked_schedule(True, 40)},
+                            "baz": {"schedule": mocked_schedule(True, 10)}})
+        a.merge_inplace(b)
+
+        self.assertNotIn("foo", a)
+        self.assertIn("baz", a)
+        self.assertEqual(a["bar"].schedule._next_run_at, 40)
+
 
 class test_Service(unittest.TestCase):
 
@@ -67,8 +251,15 @@ class test_Service(unittest.TestCase):
         s.stop(wait=True)
         self.assertTrue(s._shutdown.isSet())
 
+        p = s.scheduler._store
+        s.scheduler._store = None
+        try:
+            s.scheduler.sync()
+        finally:
+            s.scheduler._store = p
 
-class TestEmbeddedService(unittest.TestCase):
+
+class test_EmbeddedService(unittest.TestCase):
 
     def test_start_stop_process(self):
         s = beat.EmbeddedService()
