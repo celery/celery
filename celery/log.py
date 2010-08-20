@@ -7,6 +7,7 @@ import sys
 import traceback
 
 from multiprocessing import current_process
+from multiprocessing import util as mputil
 
 from celery import conf
 from celery import signals
@@ -62,10 +63,8 @@ def setup_logging_subsystem(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
     if not _setup:
         ensure_process_aware_logger()
         logging.Logger.manager.loggerDict.clear()
-        from multiprocessing import util as mputil
         try:
-            if mputil._logger is not None:
-                mputil.logger = None
+            mputil._logger = None
         except AttributeError:
             pass
         receivers = signals.setup_logging.send(sender=None,
@@ -75,8 +74,10 @@ def setup_logging_subsystem(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
                                                colorize=colorize)
         if not receivers:
             root = logging.getLogger()
-            _setup_logger(root, logfile, format, colorize, **kwargs)
-            root.setLevel(loglevel)
+            mp = mputil.get_logger()
+            for logger in (root, mp):
+                _setup_logger(logger, logfile, format, colorize, **kwargs)
+                logger.setLevel(loglevel)
         _setup = True
         return receivers
 
