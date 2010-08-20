@@ -23,7 +23,7 @@ allow that user access to that virtual host::
 
     $ rabbitmqctl add_vhost myvhost
 
-    $ rabbitmqctl set_permissions -p myvhost myuser "" ".*" ".*"
+    $ rabbitmqctl set_permissions -p myvhost myuser ".*" ".*" ".*"
 
 See the RabbitMQ `Admin Guide`_ for more information about `access control`_.
 
