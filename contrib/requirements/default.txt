@@ -1,4 +1,3 @@
-mailer
 python-dateutil
 sqlalchemy
 anyjson

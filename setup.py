@@ -36,7 +36,6 @@ except ImportError:
 
 install_requires.extend([
     "python-dateutil",
-    "mailer",
     "sqlalchemy",
     "anyjson",
     "carrot>=0.10.5",
