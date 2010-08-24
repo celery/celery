@@ -60,9 +60,11 @@ class ScheduleEntry(object):
 
     """
 
-    def __init__(self, name, last_run_at=None, total_run_count=None,
-            schedule=None, args=(), kwargs={}, options={}, relative=False):
+    def __init__(self, name=None, task=None, last_run_at=None,
+            total_run_count=None, schedule=None, args=(), kwargs={},
+            options={}, relative=False):
         self.name = name
+        self.task = task
         self.schedule = maybe_schedule(schedule, relative)
         self.args = args
         self.kwargs = kwargs
@@ -86,6 +88,7 @@ class ScheduleEntry(object):
         kwargs, options).
 
         """
+        self.task = other.task
         self.schedule = other.schedule
         self.args = other.args
         self.kwargs = other.kwargs
@@ -99,10 +102,11 @@ class ScheduleEntry(object):
         return vars(self).iteritems()
 
     def __repr__(self):
-        return "<Entry: %s(*%s, **%s) {%s}>" % (self.name,
-                                                self.args,
-                                                self.kwargs,
-                                                self.schedule)
+        return "<Entry: %s %s(*%s, **%s) {%s}>" % (self.name,
+                                                   self.task,
+                                                   self.args,
+                                                   self.kwargs,
+                                                   self.schedule)
 
 
 class Scheduler(UserDict):
@@ -141,13 +145,13 @@ class Scheduler(UserDict):
         is_due, next_time_to_run = entry.is_due()
 
         if is_due:
-            self.logger.debug("Scheduler: Sending due task %s" % entry.name)
+            self.logger.debug("Scheduler: Sending due task %s" % entry.task)
             try:
                 result = self.apply_async(entry, connection=connection)
             except SchedulingError, exc:
                 self.logger.error("Scheduler: %s" % exc)
             else:
-                self.logger.debug("%s sent. id->%s" % (entry.name,
+                self.logger.debug("%s sent. id->%s" % (entry.task,
                                                        result.task_id))
         return next_time_to_run
 
@@ -183,7 +187,7 @@ class Scheduler(UserDict):
         entry = self.reserve(entry)
 
         try:
-            result = self.send_task(entry.name, entry.args, entry.kwargs,
+            result = self.send_task(entry.task, entry.args, entry.kwargs,
                                     connection=connection, **entry.options)
         except Exception, exc:
             raise SchedulingError("Couldn't apply scheduled task %s: %s" % (

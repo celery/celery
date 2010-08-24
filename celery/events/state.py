@@ -136,6 +136,15 @@ class State(object):
     buffer = deque()
     frozen = False
 
+    def __init__(self, callback=None,
+            max_workers_in_memory=5000, max_tasks_in_memory=10000):
+        self.workers = LocalCache(max_workers_in_memory)
+        self.tasks = LocalCache(max_tasks_in_memory)
+        self.event_callback = callback
+        self.group_handlers = {"worker": self.worker_event,
+                               "task": self.task_event}
+        self._resource = RLock()
+
     def freeze(self, buffer=True):
         """Stop recording the event stream.
 
@@ -182,14 +191,6 @@ class State(object):
         finally:
             self.thaw(replay=True)
 
-    def __init__(self, callback=None,
-            max_workers_in_memory=5000, max_tasks_in_memory=10000):
-        self.workers = LocalCache(max_workers_in_memory)
-        self.tasks = LocalCache(max_tasks_in_memory)
-        self.event_callback = callback
-        self.group_handlers = {"worker": self.worker_event,
-                               "task": self.task_event}
-        self._resource = RLock()
 
     def clear_tasks(self, ready=True):
         if ready:

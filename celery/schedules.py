@@ -210,15 +210,23 @@ class crontab(schedule):
 
     def __init__(self, minute='*', hour='*', day_of_week='*',
             nowfun=datetime.now):
+        self._orig_minute = minute
+        self._orig_hour = hour
+        self._orig_day_of_week = day_of_week
         self.hour = self._expand_cronspec(hour, 24)
         self.minute = self._expand_cronspec(minute, 60)
         self.day_of_week = self._expand_cronspec(day_of_week, 7)
         self.nowfun = nowfun
 
+    def __repr__(self):
+        return "%s %s %s (m/d/h)" % (self._orig_minute or "*",
+                                     self._orig_hour or "*",
+                                     self._orig_day_of_week or "*")
+
     def __reduce__(self):
-        return (self.__class__, (self.minute,
-                                 self.hour,
-                                 self.day_of_week), None)
+        return (self.__class__, (self._orig_minute,
+                                 self._orig_hour,
+                                 self._orig_day_of_week), None)
 
     def remaining_estimate(self, last_run_at):
         # remaining_estimate controls the frequency of scheduler
