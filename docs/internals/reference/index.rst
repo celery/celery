@@ -36,6 +36,9 @@
     celery.datastructures
     celery.routes
     celery.log
+    celery.events.snapshot
+    celery.events.cursesmon
+    celery.events.dumper
     celery.db.models
     celery.db.session
     celery.utils
@@ -45,6 +48,7 @@
     celery.utils.mail
     celery.utils.patch
     celery.utils.functional
+    celery.utils.timer2
     celery.utils.dispatch
     celery.utils.dispatch.signal
     celery.utils.dispatch.saferef
