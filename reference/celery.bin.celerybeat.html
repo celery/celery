@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Celery Periodic Task Server - celery.bin.celerybeat &mdash; Celery v2.1.0a1 documentation</title>
+    <title>Celery Periodic Task Server - celery.bin.celerybeat &mdash; Celery v2.1.0a2 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.1.0a1',
+        VERSION:     '2.1.0a2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.0a1 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.1.0a2 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="celeryev: Curses Event Viewer - celery.bin.celeryev" href="celery.bin.celeryev.html" />
     <link rel="prev" title="Celery Worker Daemon - celery.bin.celeryd" href="celery.bin.celeryd.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.bin.celeryd.html" title="Celery Worker Daemon - celery.bin.celeryd"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.0a1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -65,7 +65,7 @@ The extension &#8220;.db&#8221; will be appended to the filename.</p>
 <dl class="cmdoption">
 <dt id="cmdoption-celerybeat-S">
 <tt class="descname">-S</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">--scheduler</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celerybeat-S" title="Permalink to this definition">¶</a></dt>
-<dd><p>Scheduler class to use. Default is celery.beat.Scheduler</p>
+<dd><p>Scheduler class to use. Default is celery.beat.PersistentScheduler</p>
 </dd></dl>
 
 <dl class="cmdoption">
@@ -85,37 +85,32 @@ The extension &#8220;.db&#8221; will be appended to the filename.</p>
 <dt id="celery.bin.celerybeat.Beat">
 <em class="property">class </em><tt class="descclassname">celery.bin.celerybeat.</tt><tt class="descname">Beat</tt><big>(</big><em>loglevel='INFO'</em>, <em>logfile=None</em>, <em>schedule='celerybeat-schedule'</em>, <em>max_interval=None</em>, <em>scheduler_cls=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.bin.celerybeat.Beat" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="class">
-<dt id="celery.bin.celerybeat.Beat.ClockService">
-<em class="property">class </em><tt class="descname">ClockService</tt><big>(</big><em>logger=None</em>, <em>max_interval=300</em>, <em>schedule={}</em>, <em>schedule_filename='celerybeat-schedule'</em>, <em>scheduler_cls=None</em><big>)</big><a class="headerlink" href="#celery.bin.celerybeat.Beat.ClockService" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
-<dt id="celery.bin.celerybeat.Beat.ClockService.open_schedule">
-<tt class="descname">open_schedule</tt><big>(</big><em>filename</em><big>)</big><a class="headerlink" href="#celery.bin.celerybeat.Beat.ClockService.open_schedule" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.bin.celerybeat.Beat.Service">
+<em class="property">class </em><tt class="descname">Service</tt><big>(</big><em>logger=None</em>, <em>max_interval=300</em>, <em>schedule={}</em>, <em>schedule_filename='celerybeat-schedule'</em>, <em>scheduler_cls=None</em><big>)</big><a class="headerlink" href="#celery.bin.celerybeat.Beat.Service" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="celery.bin.celerybeat.Beat.Service.scheduler">
+<tt class="descname">scheduler</tt><a class="headerlink" href="#celery.bin.celerybeat.Beat.Service.scheduler" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="celery.bin.celerybeat.Beat.ClockService.scheduler">
-<tt class="descname">scheduler</tt><a class="headerlink" href="#celery.bin.celerybeat.Beat.ClockService.scheduler" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="celery.bin.celerybeat.Beat.ClockService.scheduler_cls">
-<tt class="descname">scheduler_cls</tt><a class="headerlink" href="#celery.bin.celerybeat.Beat.ClockService.scheduler_cls" title="Permalink to this definition">¶</a></dt>
-<dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">Scheduler</span></tt></p>
+<dt id="celery.bin.celerybeat.Beat.Service.scheduler_cls">
+<tt class="descname">scheduler_cls</tt><a class="headerlink" href="#celery.bin.celerybeat.Beat.Service.scheduler_cls" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">PersistentScheduler</span></tt></p>
 </dd></dl>
 
 <dl class="method">
-<dt id="celery.bin.celerybeat.Beat.ClockService.start">
-<tt class="descname">start</tt><big>(</big><em>embedded_process=False</em><big>)</big><a class="headerlink" href="#celery.bin.celerybeat.Beat.ClockService.start" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.bin.celerybeat.Beat.Service.start">
+<tt class="descname">start</tt><big>(</big><em>embedded_process=False</em><big>)</big><a class="headerlink" href="#celery.bin.celerybeat.Beat.Service.start" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="celery.bin.celerybeat.Beat.ClockService.stop">
-<tt class="descname">stop</tt><big>(</big><em>wait=False</em><big>)</big><a class="headerlink" href="#celery.bin.celerybeat.Beat.ClockService.stop" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.bin.celerybeat.Beat.Service.stop">
+<tt class="descname">stop</tt><big>(</big><em>wait=False</em><big>)</big><a class="headerlink" href="#celery.bin.celerybeat.Beat.Service.stop" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="celery.bin.celerybeat.Beat.ClockService.sync">
-<tt class="descname">sync</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celerybeat.Beat.ClockService.sync" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.bin.celerybeat.Beat.Service.sync">
+<tt class="descname">sync</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celerybeat.Beat.Service.sync" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -223,12 +218,12 @@ the celerybeat schedule.</p>
         <li class="right" >
           <a href="celery.bin.celeryd.html" title="Celery Worker Daemon - celery.bin.celeryd"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.0a1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.0a2 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2009, Ask Solem.
+        &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
     </div>
   </body>

@@ -21,7 +21,7 @@ Important notes
     By our previous versioning scheme this stable release should have
     been version 2.2.
 
-    The document describing the our release cycle and versioning scheme
+    The document describing our release cycle and versioning scheme
     can be found at `Wiki: Release Cycle`_.
 
 .. _`semver`: http://semver.org
