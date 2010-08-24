@@ -148,6 +148,8 @@ class Timer(Thread):
             delay = scheduler.next() or self.precision
             if self.on_tick:
                 self.on_tick(delay)
+            if sleep is None:
+                break
             sleep(delay)
         self._stopped.set()
 
