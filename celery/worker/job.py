@@ -14,7 +14,6 @@ from celery.loaders import current_loader
 from celery.registry import tasks
 from celery.utils import noop, kwdict, fun_takes_kwargs
 from celery.utils import truncate_text, maybe_iso8601
-from celery.utils.compat import any
 from celery.utils.mail import mail_admins
 from celery.worker import state
 

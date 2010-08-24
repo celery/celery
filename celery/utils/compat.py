@@ -333,7 +333,7 @@ class _CompatLoggerAdapter(object):
             msg, kwargs = self.process(msg, kwargs)
             self._log(level, msg, args, **kwargs)
 
-    def makeRecord(self, name, level, fn, lno, msg, args, exc_info, 
+    def makeRecord(self, name, level, fn, lno, msg, args, exc_info,
             func=None, extra=None):
         rv = logging.LogRecord(name, level, fn, lno,
                                msg, args, exc_info, func)

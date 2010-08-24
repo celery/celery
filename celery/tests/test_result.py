@@ -108,7 +108,6 @@ class TestAsyncResult(unittest.TestCase):
         self.assertRaises(KeyError, nok_res.get)
         self.assertIsInstance(nok2_res.result, KeyError)
 
-
     def test_get_timeout(self):
         res = AsyncResult(self.task4["id"]) # has RETRY status
         self.assertRaises(TimeoutError, res.get, timeout=0.1)

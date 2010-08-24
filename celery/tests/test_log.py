@@ -29,10 +29,12 @@ def get_handlers(logger):
         return logger.logger.handlers
     return logger.handlers
 
+
 def set_handlers(logger, new_handlers):
     if isinstance(logger, LoggerAdapter):
         logger.logger.handlers = new_handlers
     logger.handlers = new_handlers
+
 
 @contextmanager
 def wrap_logger(logger, loglevel=logging.ERROR):
@@ -107,7 +109,7 @@ class test_default_logger(unittest.TestCase):
         set_handlers(l, [])
         tempfile = mktemp(suffix="unittest", prefix="celery")
         l = self.setup_logger(logfile=tempfile, loglevel=0, root=False)
-        self.assertIsInstance(get_handlers(l)[0 ],
+        self.assertIsInstance(get_handlers(l)[0],
                               logging.FileHandler)
 
     def test_emergency_error_stderr(self):

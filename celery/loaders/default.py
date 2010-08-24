@@ -23,7 +23,6 @@ DEFAULT_UNCONFIGURED_SETTINGS = {
 }
 
 
-
 def wanted_module_item(item):
     return not item.startswith("_")
 

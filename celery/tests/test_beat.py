@@ -187,8 +187,6 @@ class test_Scheduler(unittest.TestCase):
     def test_ticks(self):
         scheduler = mScheduler()
         nums = [600, 300, 650, 120, 250, 36]
-        expected = min(nums, scheduler.max_interval)
-
         s = dict(("test_ticks%s" % i,
                  {"schedule": mocked_schedule(False, j)})
                     for i, j in enumerate(nums))

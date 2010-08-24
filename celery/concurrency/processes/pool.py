@@ -793,9 +793,6 @@ class ApplyResult(object):
         assert self._ready
         return self._success
 
-    def accepted(self):
-        return self._accepted
-
     def worker_pids(self):
         return filter(None, [self._worker_pid])
 

@@ -65,6 +65,7 @@ class RetryTaskError(Exception):
         Exception.__init__(self, message, exc, *args,
                            **kwargs)
 
+
 class TaskRevokedError(Exception):
     """The task has been revoked, so no result available."""
     pass
@@ -72,4 +73,3 @@ class TaskRevokedError(Exception):
 
 class NotConfigured(UserWarning):
     """Celery has not been configured, as no config module has been found."""
-

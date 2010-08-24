@@ -78,12 +78,10 @@ from __future__ import generators
 import socket
 import warnings
 
-from datetime import datetime
-
 from carrot.connection import AMQPConnectionException
 
 from celery import conf
-from celery.utils import noop, retry_over_time, maybe_iso8601
+from celery.utils import noop, retry_over_time
 from celery.worker.job import TaskRequest, InvalidTaskError
 from celery.worker.control import ControlDispatch
 from celery.worker.heartbeat import Heart

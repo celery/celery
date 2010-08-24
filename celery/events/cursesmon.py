@@ -8,16 +8,12 @@ from datetime import datetime
 from itertools import count
 from textwrap import wrap
 
-from carrot.utils import rpartition
-
 from celery import states
 from celery.events import EventReceiver
 from celery.events.state import State
 from celery.messaging import establish_connection
 from celery.task import control
 from celery.utils import abbr, abbrtask
-
-
 
 
 class CursesMonitor(object):

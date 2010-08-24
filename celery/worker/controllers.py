@@ -7,7 +7,6 @@ import time
 import threading
 from Queue import Empty as QueueEmpty
 
-from celery import conf
 from celery import log
 
 

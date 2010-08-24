@@ -8,8 +8,6 @@ import logging
 import traceback
 from multiprocessing.util import Finalize
 
-from celery.utils.timer2 import Timer
-
 from celery import beat
 from celery import conf
 from celery import log
@@ -258,4 +256,3 @@ class WorkController(object):
 
     def on_timer_tick(self, delay):
         self.timer_debug("Scheduler wake-up! Next eta %s secs." % delay)
-

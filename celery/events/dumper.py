@@ -4,7 +4,6 @@ from datetime import datetime
 
 from celery.datastructures import LocalCache
 from celery.events import EventReceiver
-from celery.events.state import State
 from celery.messaging import establish_connection
 
 
@@ -51,7 +50,6 @@ class Dumper(object):
         sep = fields and ":" or ""
         print("%s [%s] %s%s %s %s" % (hostname, timestamp,
                                     humanize_type(type), sep, task, fields))
-
 
 
 def evdump():

@@ -191,7 +191,6 @@ class State(object):
         finally:
             self.thaw(replay=True)
 
-
     def clear_tasks(self, ready=True):
         if ready:
             self.tasks = dict((uuid, task)

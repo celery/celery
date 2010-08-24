@@ -1,8 +1,6 @@
 import sys
 import warnings
 
-from datetime import timedelta
-
 from celery import conf
 from celery.backends import default_backend
 from celery.exceptions import MaxRetriesExceededError, RetryTaskError
