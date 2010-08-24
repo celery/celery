@@ -17,7 +17,7 @@
     celery.conf
     celery.task.control
     celery.task.http
-    celery.task.schedules
+    celery.schedules
     celery.signals
     celery.exceptions
     celery.task.builtins

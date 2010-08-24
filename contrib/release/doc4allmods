@@ -4,6 +4,7 @@ PACKAGE="$1"
 SKIP_PACKAGES="$PACKAGE tests management urls"
 SKIP_FILES="celery.bin.rst celery.contrib.rst
             celery.contrib.batches.rst
+            celery.task.schedules.rst
             celery.models.rst
             celery.concurrency.rst
             celery.db.rst
