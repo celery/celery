@@ -16,7 +16,6 @@ from celery import log
 from celery import registry
 from celery import platform
 from celery import signals
-from celery.log import setup_logger
 from celery.utils import noop, instantiate
 
 from celery.worker import state
@@ -134,7 +133,7 @@ class WorkController(object):
         self.loglevel = loglevel or self.loglevel
         self.concurrency = concurrency or self.concurrency
         self.logfile = logfile or self.logfile
-        self.logger = setup_logger(loglevel, logfile)
+        self.logger = log.get_default_logger()
         self.hostname = hostname or socket.gethostname()
         self.embed_clockservice = embed_clockservice
         self.ready_callback = ready_callback
