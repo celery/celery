@@ -56,8 +56,8 @@ class Task(Element):
                     "result", "eta", "runtime", "expires",
                     "exception")
 
-    _merge_rules = {"RECEIVED": ("name", "args", "kwargs",
-                                 "retries", "eta", "expires")}
+    _merge_rules = {states.RECEIVED: ("name", "args", "kwargs",
+                                      "retries", "eta", "expires")}
 
     _defaults = dict(uuid=None,
                      name=None,
@@ -95,14 +95,25 @@ class Task(Element):
     def ready(self):
         return self.state in states.READY_STATES
 
-    def update(self, d, **extra):
+    def update(self, state, timestamp, fields):
         if self.worker:
-            self.worker.on_heartbeat(timestamp=time.time())
-        return super(Task, self).update(d, **extra)
+            self.worker.on_heartbeat(timestamp=timestamp)
+        if state < self.state:
+            self.merge(state, timestamp, fields)
+        else:
+            self.state = state
+            self.timestamp = timestamp
+            super(Task, self).update(fields)
+
+    def merge(self, state, timestamp, fields):
+        keep = self._merge_rules.get(state)
+        if keep is not None:
+            fields = dict((key, fields[key]) for key in keep)
+            super(Task, self).update(fields)
 
     def on_received(self, timestamp=None, **fields):
         self.received = timestamp
-        self.update("RECEIVED", timestamp, fields)
+        self.update(states.RECEIVED, timestamp, fields)
 
     def on_started(self, timestamp=None, **fields):
         self.started = timestamp
@@ -215,14 +226,13 @@ class State(object):
                     hostname=hostname, **kwargs)
         return worker
 
-    def get_or_create_task(self, uuid, **kwargs):
+    def get_or_create_task(self, uuid):
         """Get or create task by uuid."""
         try:
-            task = self.tasks[uuid]
-            task.update(kwargs)
+            return self.tasks[uuid]
         except KeyError:
-            task = self.tasks[uuid] = Task(uuid=uuid, **kwargs)
-        return task
+            task = self.tasks[uuid] = Task(uuid=uuid)
+            return task
 
     def worker_event(self, type, fields):
         """Process worker event."""

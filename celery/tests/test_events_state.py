@@ -55,13 +55,13 @@ class ev_task_states(replay):
               args="(2, 2)", kwargs="{'foo': 'bar'}",
               retries=0, eta=None, hostname="utest1"),
         Event("task-started", uuid=uuid, hostname="utest1"),
-        Event("task-succeeded", uuid=uuid, result="4",
-              runtime=0.1234, hostname="utest1"),
-        Event("task-failed", uuid=uuid, exception="KeyError('foo')",
-              traceback="line 1 at main", hostname="utest1"),
+        Event("task-revoked", uuid=uuid, hostname="utest1"),
         Event("task-retried", uuid=uuid, exception="KeyError('bar')",
               traceback="line 2 at main", hostname="utest1"),
-        Event("task-revoked", uuid=uuid, hostname="utest1"),
+        Event("task-failed", uuid=uuid, exception="KeyError('foo')",
+              traceback="line 1 at main", hostname="utest1"),
+        Event("task-succeeded", uuid=uuid, result="4",
+              runtime=0.1234, hostname="utest1"),
     ]
 
 
@@ -150,7 +150,7 @@ class test_State(unittest.TestCase):
         r.next()
         self.assertTrue(r.uuid in r.state.tasks)
         task = r.state.tasks[r.uuid]
-        self.assertEqual(task.state, "RECEIVED")
+        self.assertEqual(task.state, states.RECEIVED)
         self.assertTrue(task.received)
         self.assertEqual(task.timestamp, task.received)
         self.assertEqual(task.worker.hostname, "utest1")
@@ -164,23 +164,12 @@ class test_State(unittest.TestCase):
         self.assertEqual(task.timestamp, task.started)
         self.assertEqual(task.worker.hostname, "utest1")
 
-        # SUCCESS
+        # REVOKED
         r.next()
-        self.assertEqual(task.state, states.SUCCESS)
-        self.assertTrue(task.succeeded)
-        self.assertEqual(task.timestamp, task.succeeded)
+        self.assertEqual(task.state, states.REVOKED)
+        self.assertTrue(task.revoked)
+        self.assertEqual(task.timestamp, task.revoked)
         self.assertEqual(task.worker.hostname, "utest1")
-        self.assertEqual(task.result, "4")
-        self.assertEqual(task.runtime, 0.1234)
-
-        # FAILURE
-        r.next()
-        self.assertEqual(task.state, states.FAILURE)
-        self.assertTrue(task.failed)
-        self.assertEqual(task.timestamp, task.failed)
-        self.assertEqual(task.worker.hostname, "utest1")
-        self.assertEqual(task.exception, "KeyError('foo')")
-        self.assertEqual(task.traceback, "line 1 at main")
 
         # RETRY
         r.next()
@@ -191,12 +180,23 @@ class test_State(unittest.TestCase):
         self.assertEqual(task.exception, "KeyError('bar')")
         self.assertEqual(task.traceback, "line 2 at main")
 
-        # REVOKED
+        # FAILURE
         r.next()
-        self.assertEqual(task.state, states.REVOKED)
-        self.assertTrue(task.revoked)
-        self.assertEqual(task.timestamp, task.revoked)
+        self.assertEqual(task.state, states.FAILURE)
+        self.assertTrue(task.failed)
+        self.assertEqual(task.timestamp, task.failed)
         self.assertEqual(task.worker.hostname, "utest1")
+        self.assertEqual(task.exception, "KeyError('foo')")
+        self.assertEqual(task.traceback, "line 1 at main")
+
+        # SUCCESS
+        r.next()
+        self.assertEqual(task.state, states.SUCCESS)
+        self.assertTrue(task.succeeded)
+        self.assertEqual(task.timestamp, task.succeeded)
+        self.assertEqual(task.worker.hostname, "utest1")
+        self.assertEqual(task.result, "4")
+        self.assertEqual(task.runtime, 0.1234)
 
     def test_freeze_thaw__buffering(self):
         s = State()
