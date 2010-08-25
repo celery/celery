@@ -36,17 +36,17 @@ class Mediator(threading.Thread):
     def move(self):
         try:
             # This blocks until there's a message in the queue.
-            task = self.ready_queue.get(timeout=1)
+            task = self.ready_queue.get(timeout=1.0)
         except QueueEmpty:
-            time.sleep(0.2)
-        else:
-            if task.revoked():
-                return
+            return
 
-            self.logger.debug(
-                "Mediator: Running callback for task: %s[%s]" % (
-                    task.task_name, task.task_id))
-            self.callback(task) # execute
+        if task.revoked():
+            return
+
+        self.logger.debug(
+            "Mediator: Running callback for task: %s[%s]" % (
+                task.task_name, task.task_id))
+        self.callback(task) # execute
 
     def run(self):
         while not self._shutdown.isSet():
