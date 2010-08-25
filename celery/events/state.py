@@ -229,11 +229,12 @@ class State(object):
 
     def worker_event(self, type, fields):
         """Process worker event."""
-        hostname = fields.pop("hostname")
-        worker = self.get_or_create_worker(hostname)
-        handler = getattr(worker, "on_%s" % type)
-        if handler:
-            handler(**fields)
+        hostname = fields.pop("hostname", None)
+        if hostname:
+            worker = self.get_or_create_worker(hostname)
+            handler = getattr(worker, "on_%s" % type, None)
+            if handler:
+                handler(**fields)
 
     def task_event(self, type, fields):
         """Process task event."""
@@ -241,7 +242,7 @@ class State(object):
         hostname = fields.pop("hostname")
         worker = self.get_or_create_worker(hostname)
         task = self.get_or_create_task(uuid)
-        handler = getattr(task, "on_%s" % type)
+        handler = getattr(task, "on_%s" % type, None)
         if type == "received":
             self.task_count += 1
         if handler:
