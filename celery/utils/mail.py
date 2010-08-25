@@ -37,7 +37,7 @@ class Mailer(object):
         client = smtplib.SMTP(self.host, self.port)
 
         if self.user and self.password:
-            server.login(self.user, self.password)
+            client.login(self.user, self.password)
 
         client.sendmail(message.sender, message.to, str(message))
         client.quit()
