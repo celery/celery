@@ -2,6 +2,7 @@ import time
 import socket
 import threading
 
+from collections import deque
 from itertools import count
 
 from celery.messaging import EventPublisher, EventConsumer
@@ -43,6 +44,7 @@ class EventDispatcher(object):
         self.enabled = enabled
         self._lock = threading.Lock()
         self.publisher = None
+        self._outbound_buffer = deque()
 
         if self.enabled:
             self.enable()
@@ -68,10 +70,19 @@ class EventDispatcher(object):
             return
 
         self._lock.acquire()
+        event = Event(type, hostname=self.hostname, **fields)
         try:
-            self.publisher.send(Event(type, hostname=self.hostname, **fields))
+            try:
+                self.publisher.send(event)
+            except Exception, exc:
+                self._outbound_buffer.append((event, exc))
         finally:
             self._lock.release()
+
+    def flush(self):
+        while self._outbound_buffer:
+            event, _ = self._outbound_buffer.popleft()
+            self.publisher.send(event)
 
     def close(self):
         """Close the event dispatcher."""
