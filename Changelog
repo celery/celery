@@ -189,6 +189,34 @@ News
 Fixes
 -----
 
+* Compat ``LoggerAdapter`` implementation: Now works for Python 2.4.
+
+    Also added support for several new methods:
+    ``fatal``, ``makeRecord``, ``_log``, ``log``, ``isEnabledFor``,
+    ``addHandler``, ``removeHandler``.
+
+Documentation
+-------------
+
+* tutorials/external moved to new section: "community"
+
+2.0.3
+=====
+:release-date: TBA
+
+Fixes
+-----
+
+* celeryd: Properly handle connection errors while closing consumers.
+
+* celeryd: Events are now buffered while the connection is down,
+  and re-sent when the connection is re-established.
+
+* No longer depends on the ``mailer`` package.
+
+    This package had a namespace collision with ``django-mailer``,
+    so its functionality was replaced.
+
 * Redis result backend: Redis doesn't have database names,
   database numbers. The default database is now 0.
 
@@ -197,24 +225,65 @@ Fixes
 
     See http://github.com/ask/celery/issues/issue/170
 
-* Worker crashed if the value of CELERY_TASK_ERROR_WHITELIST was
+* Worker crashed if the value of ``CELERY_TASK_ERROR_WHITELIST`` was
   not iterable
-
-* Compat ``LoggerAdapter`` implementation: Now works for Python 2.4.
-
-    Also added support for several new methods:
-    ``fatal``, ``makeRecord``, ``_log``, ``log``, ``isEnabledFor``,
-    ``addHandler``, ``removeHandler``.
 
 * :func:`~celery.execute.apply`: Make sure ``kwargs["task_id"]`` is
   always set.
 
+* ``AsyncResult.traceback``: Now returns ``None``, instead of raising
+  :exc:`KeyError` if traceback is missing.
+
+* :class:`~celery.task.control.inspect`: Replies did not work correctly
+  if no destination was specified.
+
+* If a task wanted to store a result but keep the state in a custom
+  state, ``encode_result`` returned None so nothing was passed
+  to the backend.
+
+* celeryd: A warning is now emitted if sending of task error
+  e-mails fails.
+
+* Debian init scripts: Commands should not run in a subshell
+
+    See http://github.com/ask/celery/issues/issue/163
+
+* Debian init scripts: Use abspath for celeryd to allow stat
+
+    See http://github.com/ask/celery/issues/issue/162
+
 Documentation
 -------------
 
+* getting-started/broker-installation: Fixed typo
+
+    ``set_permissions ""`` -> ``set_permissions ".*"``.
+
 * Tasks Userguide: Added section on database transactions.
 
-* tutorials/external moved to new section: "community"
+    See http://github.com/ask/celery/issues/issue/169
+
+* Routing Userguide: Fixed typo ``"feed": -> {"queue": "feeds"}``.
+
+    See http://github.com/ask/celery/issues/issue/169
+
+* Documented the default values for the ``CELERYD_CONCURRENCY``
+  and ``CELERYD_PREFETCH_MULTIPLIER`` settings.
+
+* Tasks Userguide: Fixed typos in the subtask example
+
+* celery.signals: Documented worker_process_init.
+
+* Daemonization cookbook: Need to export DJANGO_SETTINGS_MODULE in
+  ``/etc/default/celeryd``.
+
+* Added some more FAQs from stack overflow
+
+* Daemonization cookbook: Fixed typo ``CELERYD_LOGFILE/CELERYD_PIDFILE``
+
+    to ``CELERYD_LOG_FILE`` / ``CELERYD_PID_FILE``
+
+    Also added troubleshooting section for the init scripts.
 
 
 2.0.2
