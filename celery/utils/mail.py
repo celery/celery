@@ -1,9 +1,14 @@
 import smtplib
+import warnings
 
 try:
     from email.mime.text import MIMEText
 except ImportError:
     from email.MIMEText import MIMEText
+
+
+class SendmailWarning(UserWarning):
+    """Problem happened while sending the e-mail message."""
 
 
 class Message(object):
@@ -14,6 +19,7 @@ class Message(object):
         self.sender = sender
         self.subject = subject
         self.body = body
+        self.charset = charset
 
         if not isinstance(self.to, (list, tuple)):
             self.to = [self.to]
@@ -60,6 +66,9 @@ def mail_admins(subject, message, fail_silently=False):
                         conf.EMAIL_HOST_USER,
                         conf.EMAIL_HOST_PASSWORD)
         mailer.send(message)
-    except Exception:
+    except Exception, exc:
         if not fail_silently:
             raise
+        warnings.warn(SendmailWarning(
+            "Mail could not be sent: %r %r" % (
+                exc, {"To": to, "Subject": subject})))
