@@ -56,6 +56,9 @@ class Task(Element):
                     "result", "eta", "runtime", "expires",
                     "exception")
 
+    _merge_rules = {"RECEIVED": ("name", "args", "kwargs",
+                                 "retries", "eta", "expires")}
+
     _defaults = dict(uuid=None,
                      name=None,
                      state=states.PENDING,
@@ -99,33 +102,27 @@ class Task(Element):
 
     def on_received(self, timestamp=None, **fields):
         self.received = timestamp
-        self.state = "RECEIVED"
-        self.update(fields, timestamp=timestamp)
+        self.update("RECEIVED", timestamp, fields)
 
     def on_started(self, timestamp=None, **fields):
-        self.state = states.STARTED
         self.started = timestamp
-        self.update(fields, timestamp=timestamp)
+        self.update(states.STARTED, timestamp, fields)
 
     def on_failed(self, timestamp=None, **fields):
-        self.state = states.FAILURE
         self.failed = timestamp
-        self.update(fields, timestamp=timestamp)
+        self.update(states.FAILURE, timestamp, fields)
 
     def on_retried(self, timestamp=None, **fields):
-        self.state = states.RETRY
         self.retried = timestamp
-        self.update(fields, timestamp=timestamp)
+        self.update(states.RETRY, timestamp, fields)
 
     def on_succeeded(self, timestamp=None, **fields):
-        self.state = states.SUCCESS
         self.succeeded = timestamp
-        self.update(fields, timestamp=timestamp)
+        self.update(states.SUCCESS, timestamp, fields)
 
     def on_revoked(self, timestamp=None, **fields):
-        self.state = states.REVOKED
         self.revoked = timestamp
-        self.update(fields, timestamp=timestamp)
+        self.update(states.REVOKED, timestamp, fields)
 
 
 class State(object):
