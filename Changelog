@@ -218,7 +218,7 @@ Fixes
     so its functionality was replaced.
 
 * Redis result backend: Redis doesn't have database names,
-  database numbers. The default database is now 0.
+  but database numbers. The default database is now 0.
 
 * :class:`~celery.task.control.inspect`:
   Was requesting an invalid command because of a typo.
@@ -237,11 +237,9 @@ Fixes
 * :class:`~celery.task.control.inspect`: Replies did not work correctly
   if no destination was specified.
 
-* If a task wanted to store a result but keep the state in a custom
-  state, ``encode_result`` returned None so nothing was passed
-  to the backend.
+* Can now store result/metadata for custom states.
 
-* celeryd: A warning is now emitted if sending of task error
+* celeryd: A warning is now emitted if the sending of task error
   e-mails fails.
 
 * Debian init scripts: Commands should not run in a subshell
