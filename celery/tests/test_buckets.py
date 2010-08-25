@@ -197,7 +197,7 @@ class test_TaskBucket(unittest.TestCase):
     @skip_if_disabled
     def test_on_empty_buckets__get_raises_empty(self):
         b = buckets.TaskBucket(task_registry=self.registry)
-        self.assertRaises(buckets.QueueEmpty, b.get)
+        self.assertRaises(buckets.QueueEmpty, b.get, block=False)
         self.assertEqual(b.qsize(), 0)
 
     @skip_if_disabled
