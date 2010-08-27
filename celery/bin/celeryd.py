@@ -322,7 +322,12 @@ class Worker(object):
             # only install HUP handler if detached from terminal,
             # so closing the terminal window doesn't restart celeryd
             # into the background.
-            install_worker_restart_handler(worker)
+            if IS_OSX:
+                # OS X can't exec from a process using threads.
+                # See http://github.com/ask/celery/issues#issue/152
+                install_HUP_not_supported_handler(worker)
+            else:
+                install_worker_restart_handler(worker)
         install_worker_term_handler(worker)
         install_worker_int_handler(worker)
         signals.worker_init.send(sender=worker)
@@ -385,6 +390,15 @@ def install_worker_restart_handler(worker):
         os.execv(sys.executable, [sys.executable] + sys.argv)
 
     platform.install_signal_handler("SIGHUP", restart_worker_sig_handler)
+
+
+def install_HUP_not_supported_handler(worker):
+
+    def warn_on_HUP_handler(signum, frame):
+        worker.logger.error("SIGHUP not supported: "
+            "Restarting with HUP is unstable on this platform!")
+
+    platform.install_signal_handler("SIGHUP", warn_on_HUP_handler)
 
 
 def parse_options(arguments):
