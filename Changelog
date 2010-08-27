@@ -225,6 +225,27 @@ Fixes
 
     See http://github.com/ask/celery/issues/issue/170
 
+* ``CELERY_ROUTES``: Values defined in the route should now have precedence
+  over values defined in ``CELERY_QUEUES`` when they are merged.
+
+    With the follow settings::
+
+        CELERY_QUEUES = {"cpubound": {"exchange": "cpubound",
+                                      "routing_key": "cpubound"}}
+
+        CELERY_ROUTES = {"tasks.add": {"queue": "cpubound",
+                                       "routing_key": "tasks.add",
+                                       "serializer": "json"}}
+
+    The final routing options for ``tasks.add`` will become::
+
+        {"exchange": "cpubound",
+         "routing_key": "tasks.add",
+         "serializer": "json"}
+
+    This was not the case before. Because of a bug the values
+    in ``CELERY_QUEUES`` would take precedence.
+
 * Worker crashed if the value of ``CELERY_TASK_ERROR_WHITELIST`` was
   not iterable
 
