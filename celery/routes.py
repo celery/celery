@@ -64,7 +64,7 @@ class Router(object):
                     raise QueueNotFound(
                         "Queue '%s' is not defined in CELERY_QUEUES" % queue)
             dest.setdefault("routing_key", dest.get("binding_key"))
-            return dict(route, **dest)
+            return dict(dest, **route)
 
         return route
 
