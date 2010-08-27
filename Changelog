@@ -207,26 +207,27 @@ Documentation
 Fixes
 -----
 
-* celeryd: Properly handle connection errors while closing consumers.
+* celeryd: Properly handle connection errors happening while
+  closing consumers.
 
-* celeryd: Events are now buffered while the connection is down,
-  and re-sent when the connection is re-established.
+* celeryd: Events are now buffered if the connection is down,
+  then sent when the connection is re-established.
 
 * No longer depends on the ``mailer`` package.
 
     This package had a namespace collision with ``django-mailer``,
     so its functionality was replaced.
 
-* Redis result backend: Redis doesn't have database names,
-  but database numbers. The default database is now 0.
+* Redis result backend: Documentation typos: Redis doesn't have
+  database names, but database numbers. The default database is now 0.
 
 * :class:`~celery.task.control.inspect`:
-  Was requesting an invalid command because of a typo.
+  ``registered_tasks`` was requesting an invalid command because of a typo.
 
     See http://github.com/ask/celery/issues/issue/170
 
 * ``CELERY_ROUTES``: Values defined in the route should now have precedence
-  over values defined in ``CELERY_QUEUES`` when they are merged.
+  over values defined in ``CELERY_QUEUES`` when merging the two.
 
     With the follow settings::
 
@@ -243,11 +244,11 @@ Fixes
          "routing_key": "tasks.add",
          "serializer": "json"}
 
-    This was not the case before. Because of a bug the values
+    This was not the case before: the values
     in ``CELERY_QUEUES`` would take precedence.
 
 * Worker crashed if the value of ``CELERY_TASK_ERROR_WHITELIST`` was
-  not iterable
+  not an iterable
 
 * :func:`~celery.execute.apply`: Make sure ``kwargs["task_id"]`` is
   always set.
@@ -268,8 +269,8 @@ Fixes
 
     See http://github.com/ask/celery/issues/issue/160
 
-* celeryd: On OS X it is not possible to run exec in a process
-  that is running with threads.
+* celeryd: On OS X it is not possible to run ``os.exec*`` in a process
+  that is threaded.
 
       This breaks the SIGHUP restart handler,
       and is now disabled on OS X, emitting a warning instead.
@@ -282,7 +283,7 @@ Fixes
     See http://github.com/ask/celery/issues/issue/175
 
 * Using urllib2 in a periodic task on OS X crashed because
-  of OS X proxy autodetection.
+  of the proxy autodetection used in OS X.
 
     This is now fixed by using a workaround.
     See http://github.com/ask/celery/issues/issue/143
