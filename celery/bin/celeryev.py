@@ -471,7 +471,7 @@ def eventtop():
         while True:
             try:
                 conn.connection.drain_events()
-            except socket.timeout:
+            except (socket.timeout, socket.error):
                 pass
     except Exception:
         refresher.shutdown = True
