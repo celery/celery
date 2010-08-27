@@ -95,13 +95,13 @@ class state(str):
     def __le__(self, other):
         return self.compare(other, lambda a, b: a >= b, False)
 
-PENDING = state("PENDING")
-RECEIVED = state("RECEIVED")
-STARTED = state("STARTED")
-SUCCESS = state("SUCCESS")
-FAILURE = state("FAILURE")
-REVOKED = state("REVOKED")
-RETRY = state("RETRY")
+PENDING = "PENDING"
+RECEIVED = "RECEIVED"
+STARTED = "STARTED"
+SUCCESS = "SUCCESS"
+FAILURE = "FAILURE"
+REVOKED = "REVOKED"
+RETRY = "RETRY"
 
 READY_STATES = frozenset([SUCCESS, FAILURE, REVOKED])
 UNREADY_STATES = frozenset([PENDING, RECEIVED, STARTED, RETRY])

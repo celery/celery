@@ -98,7 +98,7 @@ class Task(Element):
     def update(self, state, timestamp, fields):
         if self.worker:
             self.worker.on_heartbeat(timestamp=timestamp)
-        if state < self.state:
+        if states.state(state) < states.state(self.state):
             self.merge(state, timestamp, fields)
         else:
             self.state = state
