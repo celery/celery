@@ -132,7 +132,13 @@ class EventReceiver(object):
             for iteration in count(0):
                 if limit and iteration > limit:
                     break
-                consumer.connection.drain_events(timeout=timeout)
+                try:
+                    consumer.connection.drain_events(timeout=timeout)
+                except socket.timeout:
+                    if timeout:
+                        raise
+                except socket.error:
+                    pass
         finally:
             consumer.close()
 
