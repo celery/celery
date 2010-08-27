@@ -33,6 +33,9 @@ class TraceInfo(object):
             return cls(states.RETRY, retval=exc, exc_info=sys.exc_info())
         except Exception, exc:
             return cls(states.FAILURE, retval=exc, exc_info=sys.exc_info())
+        except:
+            # For Python2.4 where raising strings are still allowed.
+            return cls(states.FAILURE, retval=None, exc_info=sys.exc_info())
 
 
 class TaskTrace(object):
