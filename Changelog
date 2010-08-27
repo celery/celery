@@ -263,6 +263,30 @@ Fixes
 * celeryd: A warning is now emitted if the sending of task error
   e-mails fails.
 
+* celeryev: Curses monitor no longer crashes if the terminal window
+  is resized.
+
+    See http://github.com/ask/celery/issues/issue/160
+
+* celeryd: On OS X it is not possible to run exec in a process
+  that is running with threads.
+
+      This breaks the SIGHUP restart handler,
+      and is now disabled on OS X, emitting a warning instead.
+
+    See http://github.com/ask/celery/issues/issue/152
+
+* :mod:`celery.execute.trace`: Properly handle ``raise(str)``,
+  which is still allowed in Python 2.4.
+
+    See http://github.com/ask/celery/issues/issue/175
+
+* Using urllib2 in a periodic task on OS X crashed because
+  of OS X proxy autodetection.
+
+    This is now fixed by using a workaround.
+    See http://github.com/ask/celery/issues/issue/143
+
 * Debian init scripts: Commands should not run in a subshell
 
     See http://github.com/ask/celery/issues/issue/163
