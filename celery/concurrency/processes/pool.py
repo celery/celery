@@ -249,7 +249,7 @@ class TimeoutHandler(PoolThread):
 
         def _on_soft_timeout(job, i):
             debug('soft time limit exceeded for %i' % i)
-            process, _index = _process_by_pid(job._accept_pid)
+            process, _index = _process_by_pid(job._worker_pid)
             if not process:
                 return
 
@@ -258,7 +258,7 @@ class TimeoutHandler(PoolThread):
                 job._timeout_callback(soft=True)
 
             try:
-                os.kill(job._accept_pid, SIG_SOFT_TIMEOUT)
+                os.kill(job._worker_pid, SIG_SOFT_TIMEOUT)
             except OSError, exc:
                 if exc.errno == errno.ESRCH:
                     pass
@@ -270,7 +270,7 @@ class TimeoutHandler(PoolThread):
         def _on_hard_timeout(job, i):
             debug('hard time limit exceeded for %i', i)
             # Remove from _pool
-            process = _pop_by_pid(job._accept_pid)
+            process = _pop_by_pid(job._worker_pid)
             # Remove from cache and set return value to an exception
             job._set(i, (False, TimeLimitExceeded()))
             # Run timeout callback
