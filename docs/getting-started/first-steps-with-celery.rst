@@ -70,6 +70,10 @@ Let's create our ``celeryconfig.py``.
 
    We only have a single task module, ``tasks.py``, which we added earlier::
 
+        import os
+        import sys
+        sys.path.insert(0, os.getcwd())
+
         CELERY_IMPORTS = ("tasks", )
 
 That's it.
