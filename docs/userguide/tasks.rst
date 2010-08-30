@@ -206,7 +206,7 @@ Task options
 
     Default time in seconds before a retry of the task should be
     executed. Can be either an ``int`` or a ``float``.
-    Default is a 1 minute delay (``60 seconds``).
+    Default is a 3 minute delay (``180 seconds``).
 
 * rate_limit
 
