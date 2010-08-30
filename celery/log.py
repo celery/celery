@@ -12,6 +12,7 @@ from multiprocessing import util as mputil
 from celery import conf
 from celery import signals
 from celery.utils import noop
+from celery.utils import term
 from celery.utils.compat import LoggerAdapter
 from celery.utils.patch import ensure_process_aware_logger
 
@@ -20,14 +21,10 @@ from celery.utils.patch import ensure_process_aware_logger
 # will do nothing.
 _setup = False
 
-BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
-RESET_SEQ = "\033[0m"
-COLOR_SEQ = "\033[1;%dm"
-BOLD_SEQ = "\033[1m"
-COLORS = {"DEBUG": BLUE,
-          "WARNING": YELLOW,
-          "ERROR": RED,
-          "CRITICAL": MAGENTA}
+COLORS = {"DEBUG": term.blue,
+          "WARNING": term.yellow,
+          "ERROR": term.red,
+          "CRITICAL": term.magenta}
 
 
 class ColorFormatter(logging.Formatter):
@@ -39,8 +36,8 @@ class ColorFormatter(logging.Formatter):
     def format(self, record):
         levelname = record.levelname
         if self.use_color and levelname in COLORS:
-            record.msg = COLOR_SEQ % (
-                    30 + COLORS[levelname]) + record.msg + RESET_SEQ
+            record.msg = term.colored(COLORS[levelname](record.msg))
+
         # Very ugly, but have to make sure processName is supported
         # by foreign logger instances.
         # (processName is always supported by Python 2.7)
