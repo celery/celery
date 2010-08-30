@@ -50,7 +50,7 @@ def install_signal_handler(signal_name, handler):
 def set_process_title(progname, info=None):
     """Set the ps name for the currently running process.
 
-    Only works if :mod`setproctitle` is installed.
+    Only works if :mod:`setproctitle` is installed.
 
     """
     proctitle = "[%s]" % progname
