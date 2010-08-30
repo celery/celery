@@ -152,15 +152,20 @@ class inspect(Command):
         if destination and isinstance(destination, basestring):
             destination = map(str.strip, destination.split(","))
 
+        def on_reply(message_data):
+            node = message_data.keys()[0]
+            reply = message_data[node]
+            status, preply = prettify(reply)
+            self.say("->", t.cyan(node, ": ") + t.reset() + status,
+                    indent(preply))
+
         self.say("<-", command)
-        i = inspect(destination=destination, timeout=timeout)
+        i = inspect(destination=destination,
+                    timeout=timeout,
+                    callback=on_reply)
         replies = getattr(i, command)()
         if not replies:
             raise Error("No nodes replied within time constraint.")
-        for node, reply in replies.items():
-            status, preply = prettify(reply)
-            self.say("->", t.cyan(node, ": ") + t.reset() + status,
-                     indent(preply))
         return replies
 
     def say(self, direction, title, body=""):
@@ -250,10 +255,7 @@ class celeryctl(object):
             cls = self.commands["help"]
             argv.insert(1, "help")
         cls = self.commands.get(command) or self.commands["help"]
-        try:
-            cls().run_from_argv(argv)
-        except TypeError:
-            return self.execute("help", argv)
+        cls().run_from_argv(argv)
 
     def execute_from_commandline(self, argv=None):
         if argv is None:
