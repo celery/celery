@@ -162,13 +162,15 @@ class ControlReplyConsumer(Consumer):
                                                    routing_key=ticket,
                                                    **kwargs)
 
-    def collect(self, limit=None, timeout=1):
+    def collect(self, limit=None, timeout=1, callback=None):
         responses = []
 
-        def callback(message_data, message):
+        def on_message(message_data, message):
+            if callback:
+                callback(message_data)
             responses.append(message_data)
 
-        self.callbacks = [callback]
+        self.callbacks = [on_message]
         self.consume()
         for i in limit and range(limit) or count():
             try:
