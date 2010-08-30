@@ -13,6 +13,18 @@ TASK_INFO_FIELDS = ("exchange", "routing_key", "rate_limit")
 
 
 @Panel.register
+def diagnose(panel, timeout=None, **kwargs):
+    info = panel.listener.pool.diagnose(timeout=timeout)
+
+    if info["waiting"]:
+        panel.logger.error("Diagnose failed: %r" % (info, ))
+        return {"error": info}
+
+    panel.logger.info("Diagnose complete: %r" % (info, ))
+    return {"ok": info}
+
+
+@Panel.register
 def revoke(panel, task_id, task_name=None, **kwargs):
     """Revoke task by task id."""
     revoked.add(task_id)

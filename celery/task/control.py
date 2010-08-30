@@ -112,6 +112,7 @@ class inspect(object):
 
     def _request(self, command, **kwargs):
         return self._prepare(broadcast(command, arguments=kwargs,
+                                      destination=self.destination,
                                       timeout=self.timeout, reply=True))
 
     def active(self, safe=False):
@@ -137,6 +138,10 @@ class inspect(object):
 
     def disable_events(self):
         return self._request("disable_events")
+
+    def diagnose(self):
+        diagnose_timeout = self.timeout * 0.85 # 15% of timeout
+        return self._request("diagnose", timeout=diagnose_timeout)
 
 
 @with_connection
