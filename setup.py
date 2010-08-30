@@ -94,6 +94,7 @@ setup(
             'celerybeat = celery.bin.celerybeat:main',
             'camqadm = celery.bin.camqadm:main',
             'celeryev = celery.bin.celeryev:main',
+            'celeryctl = celery.bin.celeryctl:main',
             'celeryd-multi = celery.bin.celeryd_multi:main',
             ],
     },
