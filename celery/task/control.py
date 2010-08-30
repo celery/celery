@@ -143,6 +143,9 @@ class inspect(object):
         diagnose_timeout = self.timeout * 0.85 # 15% of timeout
         return self._request("diagnose", timeout=diagnose_timeout)
 
+    def ping(self):
+        return self._request("ping")
+
 
 @with_connection
 def broadcast(command, arguments=None, destination=None, connection=None,
