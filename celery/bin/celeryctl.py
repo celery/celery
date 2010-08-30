@@ -2,11 +2,13 @@ import os
 import sys
 
 from optparse import OptionParser, make_option as Option
-from pprint import pprint
+from pprint import pprint, pformat
+from textwrap import wrap
 
 from anyjson import deserialize
 
 from celery import __version__
+from celery.utils import term as t
 
 
 commands = {}
@@ -107,21 +109,30 @@ class apply(Command):
 apply = command(apply)
 
 class inspect(Command):
-    choices = ("active", "scheduled", "reserved",
-               "stats", "revoked", "registered_tasks",
-               "enable_events", "disable_events")
+    choices = {"active": 10,
+               "scheduled": 1.0,
+               "reserved": 1.0,
+               "stats": 1.0,
+               "revoked": 1.0,
+               "registered_tasks": 1.0,
+               "enable_events": 1.0,
+               "disable_events": 1.0,
+               "diagnose": 2.0}
     option_list = Command.option_list + (
+                Option("--quiet", "-q", action="store_true", dest="quiet",
+                       default=False),
                 Option("--timeout", "-t", type="float", dest="timeout",
-                    default=1.0,
+                    default=None,
                     help="Timeout in seconds (float) waiting for reply"),
                 Option("--destination", "-d", dest="destination",
                     help="Comma separated list of destination node names."))
 
     def usage(self, command):
         return "%%prog %s [options] %s [%s]" % (
-                command, self.args, "|".join(self.choices))
+                command, self.args, "|".join(self.choices.keys()))
 
     def run(self, *args, **kwargs):
+        self.quiet = kwargs.get("quiet", False)
         if not args:
             return "Missing inspect command. See --help"
         command = args[0]
@@ -130,12 +141,66 @@ class inspect(Command):
         from celery.task.control import inspect
 
         destination = kwargs.get("destination")
-        timeout = kwargs.get("timeout", 2.0)
+        timeout = kwargs.get("timeout") or self.choices[command]
         if destination and isinstance(destination, basestring):
             destination = map(str.strip, destination.split(","))
 
+        self.say("<-", command)
         i = inspect(destination=destination, timeout=timeout)
-        pprint(getattr(i, command)())
+        replies = getattr(i, command)()
+        if not replies:
+            return t.colored(t.red(t.bold("Error: "),
+                            "No nodes replied within time constraint."))
+        for node, reply in replies.items():
+            status, preply = prettify(reply)
+            self.say("->", t.cyan(node, ": ") + t.reset() + status,
+                     indent(preply))
+            #print(t.colored(t.bold(t.white("-> "), t.cyan(node, ": "),
+            #                t.reset(), status)))
+            #print(indent(preply))
+
+    def say(self, direction, title, body=""):
+        if direction == "<-" and self.quiet:
+            return
+        dirstr = not self.quiet and t.bold(t.white(direction), " ") or ""
+        print(t.colored(dirstr, title))
+        if body and not self.quiet:
+            print(body)
+
+
+def prettify_list(n):
+    if not n:
+        return "- empty -"
+    return "\n".join(t.colored(t.white("*"), t.reset(), " %s" % (item, ))
+                        for item in n)
+
+OK = t.colored(t.green("OK"))
+ERROR = t.colored(t.red("ERROR"))
+def prettify_dict_ok_error(n):
+    if "ok" in n:
+        return (OK,
+                indent(prettify(n["ok"])[1]))
+    elif "error" in n:
+        return (ERROR,
+                indent(prettify(n["error"])[1]))
+
+
+def prettify(n):
+    if isinstance(n, list):
+        return OK, prettify_list(n)
+    if isinstance(n, dict):
+        if "ok" in n or "error" in n:
+            return prettify_dict_ok_error(n)
+    if isinstance(n, basestring):
+        return OK, unicode(n)
+    return OK, pformat(n)
+
+
+def indent(s, n=4):
+    i = [" " * 4 + l for l in s.split("\n")]
+    return "\n".join("\n".join(wrap(j)) for j in i)
+
+
 inspect = command(inspect)
 
 
