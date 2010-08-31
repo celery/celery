@@ -116,7 +116,6 @@ class AMQPBackend(BaseDictBackend):
         return self.poll(task_id)
 
     def wait_for(self, task_id, timeout=None, cache=True):
-        time_start = time()
         if task_id in self._cache:
             cached_meta = self._cache[task_id]
 
