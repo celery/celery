@@ -1,11 +1,18 @@
 from datetime import datetime
 
-
 from celery import conf
 from celery.backends.base import BaseDictBackend
 from celery.db.models import Task, TaskSet
 from celery.db.session import ResultSession
 from celery.exceptions import ImproperlyConfigured
+
+try:
+    import sqlalchemy as _
+except ImportError:
+    raise ImproperlyConfigured(
+        "The database result backend requires SQLAlchemy to be installed."
+        "See http://pypi.python.org/pypi/SQLAlchemy")
+
 
 
 class DatabaseBackend(BaseDictBackend):

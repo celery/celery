@@ -36,7 +36,6 @@ except ImportError:
 
 install_requires.extend([
     "python-dateutil",
-    "sqlalchemy",
     "anyjson",
     "carrot>=0.10.5",
     "pyparsing",
@@ -54,7 +53,7 @@ else:
     long_description = "See http://pypi.python.org/pypi/celery"
 
 setup(
-    name='celery',
+    name="celery",
     version=distmeta.__version__,
     description=distmeta.__doc__,
     author=distmeta.__author__,
