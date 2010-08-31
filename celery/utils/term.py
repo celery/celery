@@ -55,7 +55,7 @@ class colored(object):
         return prefix + reduce(self._add, self.s) + suffix
 
     def node(self, s, op):
-        return self.__class__(*s, enabled=self.enabled, op=op)
+        return self.__class__(enabled=self.enabled, op=op, *s)
 
     def black(self, *s):
         return self.node(s, fg(30 + BLACK))
