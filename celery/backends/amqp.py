@@ -25,7 +25,7 @@ class ResultPublisher(Publisher):
     delivery_mode = conf.RESULT_PERSISTENT and 2 or 1
     serializer = conf.RESULT_SERIALIZER
     durable = conf.RESULT_PERSISTENT
-    auto_delete = True
+    auto_delete = False
 
     def __init__(self, connection, task_id, **kwargs):
         super(ResultPublisher, self).__init__(connection,
@@ -38,7 +38,7 @@ class ResultConsumer(Consumer):
     exchange_type = conf.RESULT_EXCHANGE_TYPE
     durable = conf.RESULT_PERSISTENT
     no_ack = True
-    auto_delete = True
+    auto_delete = False
 
     def __init__(self, connection, task_id, expires=None, **kwargs):
         routing_key = task_id.replace("-", "")
