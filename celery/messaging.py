@@ -4,6 +4,8 @@ Sending and Receiving Messages
 
 """
 import socket
+import warnings
+
 from datetime import datetime, timedelta
 from itertools import count
 
@@ -215,9 +217,29 @@ class BroadcastConsumer(Consumer):
     no_ack = True
 
     def __init__(self, *args, **kwargs):
-        hostname = kwargs.pop("hostname", None) or socket.gethostname()
-        self.queue = "%s_%s" % (self.queue, hostname)
+        self.hostname = kwargs.pop("hostname", None) or socket.gethostname()
+        self.queue = "%s_%s" % (self.queue, self.hostname)
         super(BroadcastConsumer, self).__init__(*args, **kwargs)
+
+    def verify_exclusive(self):
+        # XXX Kombu material
+        channel = getattr(self.backend, "channel")
+        if channel and hasattr(channel, "queue_declare"):
+            try:
+                _, _, consumers = channel.queue_declare(self.queue,
+                                                        passive=True)
+            except ValueError:
+                pass
+            else:
+                if consumers:
+                    warnings.warn(UserWarning(
+                        "A node named %s is already using this process "
+                        "mailbox. Maybe you should specify a custom name "
+                        "for this node with the -n argument?" % self.hostname))
+
+    def consume(self, *args, **kwargs):
+        self.verify_exclusive()
+        return super(BroadcastConsumer, self).consume(*args, **kwargs)
 
 
 def establish_connection(hostname=None, userid=None, password=None,
