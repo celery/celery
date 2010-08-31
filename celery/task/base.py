@@ -217,6 +217,10 @@ class BaseTask(object):
         The global default can be overriden by the :setting:`CELERY_ACKS_LATE`
         setting.
 
+    .. attribute:: expires
+
+        Default task expiry time in seconds or a :class:`~datetime.datetime`.
+
     """
     __metaclass__ = TaskType
 
@@ -247,6 +251,7 @@ class BaseTask(object):
     backend = None
     track_started = False
     acks_late = False
+    expires = None
 
     MaxRetriesExceededError = MaxRetriesExceededError
 
@@ -434,6 +439,7 @@ class BaseTask(object):
         options = router.route(options, self.name, args, kwargs)
         exchange = options.get("exchange")
         exchange_type = options.get("exchange_type")
+        expires = expires or task.expires
 
         publish = publisher or self.get_publisher(connection,
                                                   exchange=exchange,
