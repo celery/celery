@@ -96,7 +96,10 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
     options = router.route(options, task.name, args, kwargs)
     exchange = options.get("exchange")
     exchange_type = options.get("exchange_type")
-
+    
+    if not expires: # If expires has not been passed to this function, get it from the task (it may still be None)
+        expires = task.expires
+    
     publish = publisher or task.get_publisher(connection, exchange=exchange,
                                               exchange_type=exchange_type)
     try:
