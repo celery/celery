@@ -8,7 +8,7 @@ from textwrap import wrap
 from anyjson import deserialize
 
 from celery import __version__
-from celery.utils import term as t
+from celery.utils import term
 
 
 commands = {}
@@ -26,17 +26,41 @@ def command(fun):
 class Command(object):
     help = ""
     args = ""
+    version = __version__
+
     option_list = (
+        Option("--quiet", "-q", action="store_true", dest="quiet",
+                default=False),
         Option("--conf", dest="conf",
             help="Celery config module name (default: celeryconfig)"),
         Option("--loader", dest="loader",
             help="Celery loaders module name (default: default)"),
+        Option("--no-color", "-C", dest="no_color", action="store_true",
+            help="Don't colorize output."),
     )
+
+    def __init__(self, no_color=False):
+        self.colored = term.colored(enabled=not no_color)
+
+    def __call__(self, *args, **kwargs):
+        try:
+            self.run(*args, **kwargs)
+        except Error, exc:
+            self.error(self.colored.red("Error: %s" % exc))
+
+    def error(self, s):
+        return self.out(s, fh=sys.stderr)
+
+    def out(self, s, fh=sys.stdout):
+        s = str(s)
+        if not s.endswith("\n"):
+            s += "\n"
+        sys.stdout.write(s)
 
     def create_parser(self, prog_name, command):
         return OptionParser(prog=prog_name,
                             usage=self.usage(command),
-                            version=self.get_version(),
+                            version=self.version,
                             option_list=self.option_list)
 
     def run_from_argv(self, argv):
@@ -49,23 +73,42 @@ class Command(object):
             os.environ["CELERY_LOADER"] = options.loader
         if options.conf:
             os.environ["CELERY_CONFIG_MODULE"] = options.conf
+        self.colored = term.colored(enabled=not options.no_color)
         self(*args, **options.__dict__)
-
-    def __call__(self, *args, **kwargs):
-        try:
-            self.run(*args, **kwargs)
-        except Error, exc:
-            sys.stderr.write(t.colored(t.red(
-                                t.bold("Error: %s\n" % (exc, )))))
 
     def run(self, *args, **kwargs):
         raise NotImplementedError()
 
-    def get_version(self):
-        return __version__
-
     def usage(self, command):
         return "%%prog %s [options] %s" % (command, self.args)
+
+    def prettify_list(self, n):
+        c = self.colored
+        if not n:
+            return "- empty -"
+        return "\n".join(str(c.reset(c.white("*"), " %s" % (item, )))
+                            for item in n)
+
+    def prettify_dict_ok_error(self, n):
+        c = self.colored
+        if "ok" in n:
+            return (c.green("OK"),
+                    indent(self.prettify(n["ok"])[1]))
+        elif "error" in n:
+            return (c.red("ERROR"),
+                    indent(self.prettify(n["error"])[1]))
+
+
+    def prettify(self, n):
+        OK = str(self.colored.green("OK"))
+        if isinstance(n, list):
+            return OK, self.prettify_list(n)
+        if isinstance(n, dict):
+            if "ok" in n or "error" in n:
+                return self.prettify_dict_ok_error(n)
+        if isinstance(n, basestring):
+            return OK, unicode(n)
+        return OK, pformat(n)
 
 
 class apply(Command):
@@ -111,8 +154,27 @@ class apply(Command):
                         eta=kw.get("eta"),
                         expires=expires)
 
-        print(res.task_id)
+        self.out(res.task_id)
 apply = command(apply)
+
+
+class result(Command):
+    args = "<task_id>"
+    option_list = Command.option_list + (
+            Option("--task", "-t", dest="task"),
+    )
+
+    def run(self, task_id, *args, **kwargs):
+        from celery import registry
+        from celery.result import AsyncResult
+        result_cls = AsyncResult
+        task = kwargs.get("task")
+
+        if task:
+            result_cls = registry.tasks[task].AsyncResult
+        result = result_cls(task_id)
+        self.out(self.prettify(result.get())[1])
+result = command(result)
 
 class inspect(Command):
     choices = {"active": 10,
@@ -126,8 +188,6 @@ class inspect(Command):
                "diagnose": 2.0,
                "ping": 0.2}
     option_list = Command.option_list + (
-                Option("--quiet", "-q", action="store_true", dest="quiet",
-                       default=False),
                 Option("--timeout", "-t", type="float", dest="timeout",
                     default=None,
                     help="Timeout in seconds (float) waiting for reply"),
@@ -153,11 +213,11 @@ class inspect(Command):
             destination = map(str.strip, destination.split(","))
 
         def on_reply(message_data):
+            c = self.colored
             node = message_data.keys()[0]
             reply = message_data[node]
-            status, preply = prettify(reply)
-            self.say("->", t.cyan(node, ": ") + t.reset() + status,
-                    indent(preply))
+            status, preply = self.prettify(reply)
+            self.say("->", c.cyan(node, ": ") + status, indent(preply))
 
         self.say("<-", command)
         i = inspect(destination=destination,
@@ -169,40 +229,15 @@ class inspect(Command):
         return replies
 
     def say(self, direction, title, body=""):
+        c = self.colored
         if direction == "<-" and self.quiet:
             return
-        dirstr = not self.quiet and t.bold(t.white(direction), " ") or ""
-        print(t.colored(dirstr, title))
+        dirstr = not self.quiet and c.bold(c.white(direction), " ") or ""
+        self.out(c.reset(dirstr, title))
         if body and not self.quiet:
-            print(body)
+            self.out(body)
 inspect = command(inspect)
 
-def prettify_list(n):
-    if not n:
-        return "- empty -"
-    return "\n".join(t.colored(t.white("*"), t.reset(), " %s" % (item, ))
-                        for item in n)
-
-OK = t.colored(t.green("OK"))
-ERROR = t.colored(t.red("ERROR"))
-def prettify_dict_ok_error(n):
-    if "ok" in n:
-        return (OK,
-                indent(prettify(n["ok"])[1]))
-    elif "error" in n:
-        return (ERROR,
-                indent(prettify(n["error"])[1]))
-
-
-def prettify(n):
-    if isinstance(n, list):
-        return OK, prettify_list(n)
-    if isinstance(n, dict):
-        if "ok" in n or "error" in n:
-            return prettify_dict_ok_error(n)
-    if isinstance(n, basestring):
-        return OK, unicode(n)
-    return OK, pformat(n)
 
 
 def indent(s, n=4):
@@ -211,17 +246,18 @@ def indent(s, n=4):
 
 
 class status(Command):
+    option_list = inspect.option_list
 
     def run(self, *args, **kwargs):
-        replies = inspect().run("ping", quiet=True)
+        replies = inspect(no_color=kwargs.get("no_color", False)) \
+                            .run("ping", **dict(kwargs, quiet=True))
         if not replies:
             raise Error("No nodes replied within time constraint")
         nodecount = len(replies)
-        print("\n%s %s online." % (nodecount,
-                                   nodecount > 1 and "nodes" or "node"))
+        if not kwargs.get("quiet", False):
+            self.out("\n%s %s online." % (nodecount,
+                                          nodecount > 1 and "nodes" or "node"))
 status = command(status)
-
-
 
 
 class help(Command):
@@ -238,7 +274,7 @@ class help(Command):
                 "Available commands:"]
         for command in list(sorted(commands.keys())):
             usage.append("    %s" % command)
-        print("\n".join(usage))
+        self.out("\n".join(usage))
 help = command(help)
 
 
@@ -255,7 +291,10 @@ class celeryctl(object):
             cls = self.commands["help"]
             argv.insert(1, "help")
         cls = self.commands.get(command) or self.commands["help"]
-        cls().run_from_argv(argv)
+        try:
+            cls().run_from_argv(argv)
+        except Error:
+            return self.execute("help", argv)
 
     def execute_from_commandline(self, argv=None):
         if argv is None:
@@ -264,11 +303,15 @@ class celeryctl(object):
             command = argv[1]
         except IndexError:
             command = "help"
+            argv.insert(1, "help")
         return self.execute(command, argv)
 
 
 def main():
-    celeryctl().execute_from_commandline()
+    try:
+        celeryctl().execute_from_commandline()
+    except KeyboardInterrupt:
+        pass
 
 if __name__ == "__main__":
     main()

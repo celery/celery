@@ -12,19 +12,19 @@ from multiprocessing import util as mputil
 from celery import conf
 from celery import signals
 from celery.utils import noop
-from celery.utils import term
 from celery.utils.compat import LoggerAdapter
 from celery.utils.patch import ensure_process_aware_logger
+from celery.utils.term import colored
 
 # The logging subsystem is only configured once per process.
 # setup_logging_subsystem sets this flag, and subsequent calls
 # will do nothing.
 _setup = False
 
-COLORS = {"DEBUG": term.blue,
-          "WARNING": term.yellow,
-          "ERROR": term.red,
-          "CRITICAL": term.magenta}
+COLORS = {"DEBUG": "blue",
+          "WARNING": "yellow",
+          "ERROR": "red",
+          "CRITICAL": "magenta"}
 
 
 class ColorFormatter(logging.Formatter):
@@ -35,8 +35,9 @@ class ColorFormatter(logging.Formatter):
 
     def format(self, record):
         levelname = record.levelname
+
         if self.use_color and levelname in COLORS:
-            record.msg = term.colored(COLORS[levelname](record.msg))
+            record.msg = str(colored().names[COLORS[levelname]](record.msg))
 
         # Very ugly, but have to make sure processName is supported
         # by foreign logger instances.

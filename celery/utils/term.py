@@ -3,45 +3,125 @@
 
 term utils.
 
->>> colored(red("the quick "),
-...         blue("brown ", bold("fox ")),
-...         magenta(underline("jumps over")),
-...         yellow("the lazy")
-...         green("dog"))
+>>> c = colored(enabled=True)
+>>> print(str(c.red("the quick "), c.blue("brown ", c.bold("fox ")),
+              c.magenta(c.underline("jumps over")),
+              c.yellow(" the lazy "),
+              c.green("dog ")))
 
 """
-from operator import add
-
-
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
 OP_SEQ = "\033[%dm"
 RESET_SEQ = "\033[0m"
 COLOR_SEQ = "\033[1;%dm"
-
-fold = lambda a: reduce(add, a)
-
-reset = lambda: RESET_SEQ
-colored = lambda *s: fold(s) + RESET_SEQ
 fg = lambda s: COLOR_SEQ % s
-black = lambda *s: fg(30 + BLACK) + fold(s)
-red = lambda *s: fg(30 + RED) + fold(s)
-green = lambda *s: fg(30 + GREEN) + fold(s)
-yellow = lambda *s: fg(30 + YELLOW) + fold(s)
-blue = lambda *s: fg(30 + BLUE) + fold(s)
-magenta = lambda *s: fg(30 + MAGENTA) + fold(s)
-cyan = lambda *s: fg(30 + CYAN) + fold(s)
-white = lambda *s: fg(30 + WHITE) + fold(s)
-bold = lambda *s: OP_SEQ % 1 + fold(s)
-underline = lambda *s: OP_SEQ % 4 + fold(s)
-blink = lambda *s: OP_SEQ % 5 + fold(s)
-reverse = lambda *s: OP_SEQ % 7 + fold(s)
-bright = lambda *s: OP_SEQ % 8 + fold(s)
-ired = lambda *s: fg(40 + RED) + fold(s)
-igreen = lambda *s: fg(40 + GREEN) + fold(s)
-iyellow = lambda *s: fg(40 + YELLOW) + fold(s)
-iblue = lambda *s: fg(40 + BLUE) + fold(s)
-imagenta = lambda *s: fg(40 + MAGENTA) + fold(s)
-icyan = lambda *s: fg(40 + CYAN) + fold(s)
-iwhite = lambda *s: fg(40 + WHITE) + fold(s)
 
+class colored(object):
 
+    def __init__(self, *s, **kwargs):
+        self.s = s
+        self.enabled = kwargs.get("enabled", True)
+        self.op = kwargs.get("op", "")
+        self.names = {"black": self.black,
+                      "red": self.red,
+                      "green": self.green,
+                      "yellow": self.yellow,
+                      "blue": self.blue,
+                      "magenta": self.magenta,
+                      "cyan": self.cyan,
+                      "white": self.white}
+
+    def _add(self, a, b):
+        return str(a) + str(b)
+
+    def _fold_no_color(self, a, b):
+        try:
+            A = a.no_color()
+        except AttributeError:
+            A = str(a)
+        try:
+            B = b.no_color()
+        except AttributeError:
+            B = str(b)
+        return A + B
+
+    def no_color(self):
+        return reduce(self._fold_no_color, self.s)
+
+    def __str__(self):
+        prefix, suffix = "", ""
+        if self.enabled:
+            prefix, suffix = self.op, RESET_SEQ
+        return prefix + reduce(self._add, self.s) + suffix
+
+    def node(self, s, op):
+        return self.__class__(*s, enabled=self.enabled, op=op)
+
+    def black(self, *s):
+        return self.node(s, fg(30 + BLACK))
+
+    def red(self, *s):
+        return self.node(s, fg(30 + RED))
+
+    def green(self, *s):
+        return self.node(s, fg(30 + GREEN))
+
+    def yellow(self, *s):
+        return self.node(s, fg(30 + YELLOW))
+
+    def blue(self, *s):
+        return self.node(s, fg(30 + BLUE))
+
+    def magenta(self, *s):
+        return self.node(s, fg(30 + MAGENTA))
+
+    def cyan(self, *s):
+        return self.node(s, fg(30 + CYAN))
+
+    def white(self, *s):
+        return self.node(s, fg(30 + WHITE))
+
+    def __repr__(self):
+        return repr(self.no_color())
+
+    def bold(self, *s):
+        return self.node(s, OP_SEQ % 1)
+
+    def underline(self, *s):
+        return self.node(s, OP_SEQ % 4)
+
+    def blink(self, *s):
+        return self.node(s, OP_SEQ % 5)
+
+    def reverse(self, *s):
+        return self.node(s, OP_SEQ % 7)
+
+    def bright(self, *s):
+        return self.node(s, OP_SEQ % 8)
+
+    def ired(self, *s):
+        return self.node(s, fg(40 + RED))
+
+    def igreen(self, *s):
+        return self.node(s, fg(40 + GREEN))
+
+    def iyellow(self, *s):
+        return self.node(s, fg(40 + YELLOW))
+
+    def iblue(self, *s):
+        return self.node(s, fg(40, BLUE))
+
+    def imagenta(self, *s):
+        return self.node(s, fg(40 + MAGENTA))
+
+    def icyan(self, *s):
+        return self.node(s, fg(40 + CYAN))
+
+    def iwhite(self, *s):
+        return self.node(s, fg(40 + WHITE))
+
+    def reset(self, *s):
+        return self.node(s, RESET_SEQ)
+
+    def __add__(self, other):
+        return str(self) + str(other)
