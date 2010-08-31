@@ -1,6 +1,7 @@
 """celery.backends.amqp"""
 import socket
 import time
+import warnings
 
 from datetime import timedelta
 
@@ -12,6 +13,10 @@ from celery.backends.base import BaseDictBackend
 from celery.exceptions import TimeoutError
 from celery.messaging import establish_connection
 from celery.utils import timeutils
+
+
+class AMQResultWarning(UserWarning):
+    pass
 
 
 class ResultPublisher(Publisher):
@@ -95,7 +100,8 @@ class AMQPBackend(BaseDictBackend):
                               auto_delete=self.auto_delete,
                               expires=self.expires)
 
-    def store_result(self, task_id, result, status, traceback=None):
+    def store_result(self, task_id, result, status, traceback=None,
+            max_retries=20, retry_delay=0.2):
         """Send task return value and status."""
         result = self.encode_result(result, status)
 
@@ -104,11 +110,19 @@ class AMQPBackend(BaseDictBackend):
                 "status": status,
                 "traceback": traceback}
 
-        publisher = self._create_publisher(task_id, self.connection)
-        try:
-            publisher.send(meta)
-        finally:
-            publisher.close()
+        for i in range(max_retries + 1):
+            try:
+                publisher = self._create_publisher(task_id, self.connection)
+                publisher.send(meta)
+                publisher.close()
+            except Exception, exc:
+                if not max_retries:
+                    raise
+                self._connection = None
+                warnings.warn(AMQResultWarning(
+                    "Error sending result %s: %r" % (task_id, exc)))
+                time.sleep(retry_delay)
+            break
 
         return result
 
@@ -132,7 +146,6 @@ class AMQPBackend(BaseDictBackend):
             raise self.exception_to_python(meta["result"])
         else:
             return self.wait_for(task_id, timeout, cache)
-
 
     def poll(self, task_id):
         consumer = self._create_consumer(task_id, self.connection)
