@@ -259,6 +259,9 @@ class TaskSetResult(object):
         """``iter(res)`` -> ``res.iterate()``."""
         return self.iterate()
 
+    def __getitem__(self, index):
+        return self.subtasks[index]
+
     def iterate(self):
         """Iterate over the return values of the tasks as they finish
         one by one.
