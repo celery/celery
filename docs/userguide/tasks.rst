@@ -571,16 +571,21 @@ Performance and Strategies
 Granularity
 -----------
 
-The task's granularity is the degree of parallelization your task have.
-It's better to have many small tasks, than a few long running ones.
+The task granularity is the amount of computation needed by each subtask.
+It's generally better to split your problem up in many small tasks, than
+having a few long running ones.
 
-With smaller tasks, you can process more tasks in parallel and the tasks
+With smaller tasks you can process more tasks in parallel and the tasks
 won't run long enough to block the worker from processing other waiting tasks.
 
-However, there's a limit. Sending messages takes processing power and bandwidth. If
-your tasks are so short the overhead of passing them around is worse than
-just executing them in-line, you should reconsider your strategy. There is no
-universal answer here.
+However, executing a task does have overhead. A message needs to be sent, data
+may not be local, etc. So if the tasks are too fine-grained the additional
+overhead may not be worth it in the end.
+
+See the book `Art of Concurrency`_ for more information about task
+granularity.
+
+.. _`Art of Concurrency`: http://oreilly.com/catalog/9780596521547
 
 Data locality
 -------------
