@@ -40,6 +40,24 @@ http://botland.oebfare.com/logger/celery/
 News
 ====
 
+Django and asynchronous jobs
+----------------------------
+http://www.davidfischer.name/2010/09/django-and-asynchronous-jobs/
+
+Celery presentation at PyCon India 2010
+---------------------------------------
+
+http://in.pycon.org/2010/talks/50-python-celery
+http://in.pycon.org/2010/static/files/talks/50/mahendra-celery-pycon-2010.pdf
+
+celery, django and virtualenv playing nice.
+-------------------------------------------
+http://tumblr.whatupderek.com/post/1072002968/celery-django-and-virtualenv-playing-nice
+
+Django Task Queueing with Celery
+--------------------------------
+http://justinvoss.wordpress.com/2010/06/22/django-task-queueing-with-celery/
+
 django-celery presentation at DJUGL 2010.
 -----------------------------------------
 
@@ -70,6 +88,10 @@ http://www.slideshare.net/matclayton/django-celery
 Django/Celery Quickstart (or, how I learned to stop using cron and love celery)
 -------------------------------------------------------------------------------
 http://bitkickers.blogspot.com/2010/07/djangocelery-quickstart-or-how-i.html
+
+Using Python magic to improve the deferred API
+----------------------------------------------
+http://blog.notdot.net/2010/06/Using-Python-magic-to-improve-the-deferred-API
 
 How Celery, Carrot, and your messaging stack work
 -------------------------------------------------
