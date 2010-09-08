@@ -244,21 +244,21 @@ class BroadcastConsumer(Consumer):
 
 def establish_connection(hostname=None, userid=None, password=None,
         virtual_host=None, port=None, ssl=None, insist=None,
-        connect_timeout=None, backend_cls=None):
+        connect_timeout=None, backend_cls=None, defaults=conf):
     """Establish a connection to the message broker."""
     if insist is None:
-        insist = conf.BROKER_INSIST
+        insist = defaults.BROKER_INSIST
     if ssl is None:
-        ssl = conf.BROKER_USE_SSL
+        ssl = defaults.BROKER_USE_SSL
     if connect_timeout is None:
-        connect_timeout = conf.BROKER_CONNECTION_TIMEOUT
+        connect_timeout = defaults.BROKER_CONNECTION_TIMEOUT
 
-    return BrokerConnection(hostname or conf.BROKER_HOST,
-                            userid or conf.BROKER_USER,
-                            password or conf.BROKER_PASSWORD,
-                            virtual_host or conf.BROKER_VHOST,
-                            port or conf.BROKER_PORT,
-                            backend_cls=backend_cls or conf.BROKER_BACKEND,
+    return BrokerConnection(hostname or defaults.BROKER_HOST,
+                            userid or defaults.BROKER_USER,
+                            password or defaults.BROKER_PASSWORD,
+                            virtual_host or defaults.BROKER_VHOST,
+                            port or defaults.BROKER_PORT,
+                            backend_cls=backend_cls or defaults.BROKER_BACKEND,
                             insist=insist, ssl=ssl,
                             connect_timeout=connect_timeout)
 
