@@ -171,25 +171,27 @@ OPTION_LIST = (
 class Worker(object):
     WorkController = WorkController
 
-    def __init__(self, concurrency=conf.CELERYD_CONCURRENCY,
-            loglevel=conf.CELERYD_LOG_LEVEL, logfile=conf.CELERYD_LOG_FILE,
+    def __init__(self, concurrency=None, loglevel=None, logfile=None,
             hostname=None, discard=False, run_clockservice=False,
-            schedule=conf.CELERYBEAT_SCHEDULE_FILENAME,
-            task_time_limit=conf.CELERYD_TASK_TIME_LIMIT,
-            task_soft_time_limit=conf.CELERYD_TASK_SOFT_TIME_LIMIT,
-            max_tasks_per_child=conf.CELERYD_MAX_TASKS_PER_CHILD,
-            queues=None, events=False, db=None, **kwargs):
-        self.concurrency = concurrency or multiprocessing.cpu_count()
-        self.loglevel = loglevel
-        self.logfile = logfile
+            schedule=None, task_time_limit=None, task_soft_time_limit=None,
+            max_tasks_per_child=None, queues=None, events=False, db=None,
+            defaults=conf, **kwargs):
+        self.concurrency = (concurrency or
+                            defaults.CELERYD_CONCURRENCY or
+                            multiprocessing.cpu_count())
+        self.loglevel = loglevel or defaults.CELERYD_LOG_LEVEL
+        self.logfile = logfile or defaults.CELERYD_LOG_FILE
         self.hostname = hostname or socket.gethostname()
         self.discard = discard
         self.run_clockservice = run_clockservice
-        self.schedule = schedule
+        self.schedule = schedule or defaults.CELERYBEAT_SCHEDULE_FILENAME
         self.events = events
-        self.task_time_limit = task_time_limit
-        self.task_soft_time_limit = task_soft_time_limit
-        self.max_tasks_per_child = max_tasks_per_child
+        self.task_time_limit = (task_time_limit or
+                                defaults.CELERYD_TASK_TIME_LIMIT)
+        self.task_soft_time_limit = (task_soft_time_limit or
+                                     defaults.CELERYD_TASK_SOFT_TIME_LIMIT)
+        self.max_tasks_per_child = (max_tasks_per_child or
+                                    defaults.CELERYD_MAX_TASKS_PER_CHILD)
         self.db = db
         self.queues = queues or []
         self._isatty = sys.stdout.isatty()
