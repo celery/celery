@@ -71,7 +71,7 @@ class subtask(AttributeDict):
             task_name = task
 
         init(task=task_name, args=tuple(args or ()),
-                             kwargs=dict(kwargs, **extra) or {},
+                             kwargs=dict(kwargs or {}, **extra),
                              options=options or {})
 
     def delay(self, *argmerge, **kwmerge):
