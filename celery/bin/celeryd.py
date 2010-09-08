@@ -420,6 +420,7 @@ def run_worker(**options):
 
 
 def main():
+    multiprocessing.freeze_support()
     options = parse_options(sys.argv[1:])
     return run_worker(**vars(options))
 
