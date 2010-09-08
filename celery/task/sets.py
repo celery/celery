@@ -70,8 +70,9 @@ class subtask(AttributeDict):
         except AttributeError:
             task_name = task
 
-        init(task=task_name, args=tuple(args or ()), kwargs=kwargs or (),
-             options=options or ())
+        init(task=task_name, args=tuple(args or ()),
+                             kwargs=dict(kwargs, **extra) or {},
+                             options=options or {})
 
     def delay(self, *argmerge, **kwmerge):
         """Shortcut to ``apply_async(argmerge, kwargs)``."""
