@@ -40,7 +40,7 @@ class TraceInfo(object):
 
 class TaskTrace(object):
 
-    def __init__(self, task_name, task_id, args, kwargs, task=None):
+    def __init__(self, task_name, task_id, args, kwargs, task=None, **_):
         self.task_id = task_id
         self.task_name = task_name
         self.args = args

@@ -1,3 +1,4 @@
+import os
 import sys
 import time
 import socket
@@ -74,7 +75,8 @@ class WorkerTaskTrace(TaskTrace):
     """
 
     def __init__(self, *args, **kwargs):
-        self.loader = kwargs.pop("loader", current_loader())
+        self.loader = kwargs.get("loader") or current_loader()
+        self.hostname = kwargs.get("hostname") or socket.gethostname()
         super(WorkerTaskTrace, self).__init__(*args, **kwargs)
 
         self._store_errors = True
@@ -98,7 +100,9 @@ class WorkerTaskTrace(TaskTrace):
         """Execute, trace and store the result of the task."""
         self.loader.on_task_init(self.task_id, self.task)
         if self.task.track_started:
-            self.task.backend.mark_as_started(self.task_id)
+            self.task.backend.mark_as_started(self.task_id,
+                                              pid=os.getpid(),
+                                              hostname=self.hostname)
         try:
             return super(WorkerTaskTrace, self).execute()
         finally:
@@ -335,7 +339,8 @@ class TaskRequest(object):
         if not self.task.acks_late:
             self.acknowledge()
 
-        tracer = WorkerTaskTrace(*self._get_tracer_args(loglevel, logfile))
+        tracer = WorkerTaskTrace(*self._get_tracer_args(loglevel, logfile),
+                                 **{"hostname": self.hostname})
         retval = tracer.execute()
         self.acknowledge()
         return retval
@@ -361,10 +366,13 @@ class TaskRequest(object):
 
         args = self._get_tracer_args(loglevel, logfile)
         self.time_start = time.time()
-        result = pool.apply_async(execute_and_trace, args=args,
-                    accept_callback=self.on_accepted,
-                    timeout_callback=self.on_timeout,
-                    callbacks=[self.on_success], errbacks=[self.on_failure])
+        result = pool.apply_async(execute_and_trace,
+                                  args=args,
+                                  kwargs={"hostname": self.hostname},
+                                  accept_callback=self.on_accepted,
+                                  timeout_callback=self.on_timeout,
+                                  callbacks=[self.on_success],
+                                  errbacks=[self.on_failure])
         return result
 
     def on_accepted(self):

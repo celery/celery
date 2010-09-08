@@ -32,9 +32,9 @@ class BaseBackend(object):
         raise NotImplementedError(
                 "store_result is not supported by this backend.")
 
-    def mark_as_started(self, task_id):
+    def mark_as_started(self, task_id, **meta):
         """Mark a task as started"""
-        return self.store_result(task_id, None, status=states.STARTED)
+        return self.store_result(task_id, meta, status=states.STARTED)
 
     def mark_as_done(self, task_id, result):
         """Mark task as successfully executed."""
