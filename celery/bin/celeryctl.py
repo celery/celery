@@ -98,7 +98,6 @@ class Command(object):
             return (c.red("ERROR"),
                     indent(self.prettify(n["error"])[1]))
 
-
     def prettify(self, n):
         OK = str(self.colored.green("OK"))
         if isinstance(n, list):
@@ -203,6 +202,8 @@ class inspect(Command):
         if not args:
             raise Error("Missing inspect command. See --help")
         command = args[0]
+        if command == "help":
+            raise Error("Did you mean 'inspect --help'?")
         if command not in self.choices:
             raise Error("Unknown inspect command: %s" % command)
         from celery.task.control import inspect
@@ -239,9 +240,8 @@ class inspect(Command):
 inspect = command(inspect)
 
 
-
 def indent(s, n=4):
-    i = [" " * 4 + l for l in s.split("\n")]
+    i = [" " * n + l for l in s.split("\n")]
     return "\n".join("\n".join(wrap(j)) for j in i)
 
 
