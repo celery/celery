@@ -26,11 +26,16 @@
     Also run the ``celerybeat`` periodic task scheduler. Please note that
     there must only be one instance of this service.
 
-.. cmdoption:: -Q, queues
+.. cmdoption:: -Q, --queues
 
-    List of queues to enable for this worker separated by comma.
+    List of queues to enable for this worker, separated by comma.
     By default all configured queues are enabled.
     Example: ``-Q video,image``
+
+.. cmdoption:: -I, --include
+
+    Comma separated list of additional modules to import.
+    Example: -I foo.tasks,bar.tasks
 
 .. cmdoption:: -s, --schedule
 
@@ -165,6 +170,10 @@ OPTION_LIST = (
             help="Comma separated list of queues to enable for this worker. "
                  "By default all configured queues are enabled. "
                  "Example: -Q video,image"),
+    optparse.make_option('--include', '-I', default=[],
+            action="store", dest="include",
+            help="Comma separated list of additional modules to import. "
+                 "Example: -I foo.tasks,bar.tasks"),
 )
 
 
@@ -175,7 +184,7 @@ class Worker(object):
             hostname=None, discard=False, run_clockservice=False,
             schedule=None, task_time_limit=None, task_soft_time_limit=None,
             max_tasks_per_child=None, queues=None, events=False, db=None,
-            defaults=conf, **kwargs):
+            include=None, defaults=conf, **kwargs):
         self.concurrency = (concurrency or
                             defaults.CELERYD_CONCURRENCY or
                             multiprocessing.cpu_count())
@@ -194,10 +203,13 @@ class Worker(object):
                                     defaults.CELERYD_MAX_TASKS_PER_CHILD)
         self.db = db
         self.queues = queues or []
+        self.include = include or []
         self._isatty = sys.stdout.isatty()
 
         if isinstance(self.queues, basestring):
             self.queues = self.queues.split(",")
+        if isinstance(self.include, basestring):
+            self.include = self.include.split(",")
 
         if not isinstance(self.loglevel, int):
             self.loglevel = conf.LOG_LEVELS[self.loglevel.upper()]
@@ -248,6 +260,7 @@ class Worker(object):
         if not self.loader.configured:
             raise ImproperlyConfigured(
                     "Celery needs to be configured to run celeryd.")
+        map(self.loader.import_module, self.include)
 
     def redirect_stdouts_to_logger(self):
         from celery import log

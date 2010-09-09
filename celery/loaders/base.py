@@ -37,6 +37,9 @@ class BaseLoader(object):
         pass
 
     def import_task_module(self, module):
+        return self.import_module(module)
+
+    def import_module(self, module):
         return import_module(module)
 
     def import_default_modules(self):
