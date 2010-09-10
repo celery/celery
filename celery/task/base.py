@@ -157,6 +157,11 @@ class Task(object):
 
         Don't store the return value of this task.
 
+    .. attribute:: store_errors_even_if_ignored
+
+        If true, errors will be stored even if the task is configured
+        to ignore results.
+
     .. attribute:: disable_error_emails
 
         Disable all error e-mails for this task (only applicable if
@@ -220,6 +225,7 @@ class Task(object):
     priority = None
 
     ignore_result = conf.IGNORE_RESULT
+    store_errors_even_if_ignored = conf.STORE_ERRORS_EVEN_IF_IGNORED
     disable_error_emails = False
     max_retries = 3
     default_retry_delay = 3 * 60

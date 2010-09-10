@@ -81,7 +81,7 @@ class WorkerTaskTrace(TaskTrace):
 
         self._store_errors = True
         if self.task.ignore_result:
-            self._store_errors = conf.STORE_ERRORS_EVEN_IF_IGNORED
+            self._store_errors = self.task.store_errors_even_if_ignored
         self.super = super(WorkerTaskTrace, self)
 
     def execute_safe(self, *args, **kwargs):
