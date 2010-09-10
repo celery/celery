@@ -9,7 +9,6 @@ import traceback
 from multiprocessing.util import Finalize
 
 from celery import beat
-from celery import conf
 from celery import log
 from celery import registry
 from celery import platform
@@ -50,99 +49,61 @@ def process_initializer():
 
 
 class WorkController(object):
-    """Executes tasks waiting in the task queue.
-
-    :param concurrency: see :attr:`concurrency`.
-    :param logfile: see :attr:`logfile`.
-    :param loglevel: see :attr:`loglevel`.
-    :param embed_clockservice: see :attr:`embed_clockservice`.
-    :param send_events: see :attr:`send_events`.
-
-    .. attribute:: concurrency
-
-        The number of simultaneous processes doing work (default:
-        ``conf.CELERYD_CONCURRENCY``)
-
-    .. attribute:: loglevel
-
-        The loglevel used (default: :const:`logging.INFO`)
-
-    .. attribute:: logfile
-
-        The logfile used, if no logfile is specified it uses ``stderr``
-        (default: `celery.conf.CELERYD_LOG_FILE`).
-
-    .. attribute:: embed_clockservice
-
-        If ``True``, celerybeat is embedded, running in the main worker
-        process as a thread.
-
-    .. attribute:: send_events
-
-        Enable the sending of monitoring events, these events can be captured
-        by monitors (celerymon).
-
-    .. attribute:: logger
-
-        The :class:`logging.Logger` instance used for logging.
-
-    .. attribute:: pool
-
-        The :class:`multiprocessing.Pool` instance used.
-
-    .. attribute:: ready_queue
-
-        The :class:`Queue.Queue` that holds tasks ready for immediate
-        processing.
-
-    .. attribute:: schedule_controller
-
-        Instance of :class:`celery.worker.controllers.ScheduleController`.
-
-    .. attribute:: mediator
-
-        Instance of :class:`celery.worker.controllers.Mediator`.
-
-    .. attribute:: listener
-
-        Instance of :class:`CarrotListener`.
-
-    """
     loglevel = logging.ERROR
-    concurrency = conf.CELERYD_CONCURRENCY
-    logfile = conf.CELERYD_LOG_FILE
     _state = None
     _running = 0
 
     def __init__(self, concurrency=None, logfile=None, loglevel=None,
-            send_events=conf.SEND_EVENTS, hostname=None,
-            ready_callback=noop, embed_clockservice=False,
-            pool_cls=conf.CELERYD_POOL, listener_cls=conf.CELERYD_LISTENER,
-            mediator_cls=conf.CELERYD_MEDIATOR,
-            eta_scheduler_cls=conf.CELERYD_ETA_SCHEDULER,
-            schedule_filename=conf.CELERYBEAT_SCHEDULE_FILENAME,
-            task_time_limit=conf.CELERYD_TASK_TIME_LIMIT,
-            task_soft_time_limit=conf.CELERYD_TASK_SOFT_TIME_LIMIT,
-            max_tasks_per_child=conf.CELERYD_MAX_TASKS_PER_CHILD,
-            pool_putlocks=conf.CELERYD_POOL_PUTLOCKS,
-            db=conf.CELERYD_STATE_DB):
+            send_events=None, hostname=None, ready_callback=noop,
+            embed_clockservice=False, pool_cls=None, listener_cls=None,
+            mediator_cls=None, eta_scheduler_cls=None,
+            schedule_filename=None, task_time_limit=None,
+            task_soft_time_limit=None, max_tasks_per_child=None,
+            pool_putlocks=None, db=None, prefetch_multiplier=None,
+            eta_scheduler_precision=None, queues=None,
+            disable_rate_limits=None, defaults=None):
+
+        if defaults is None:
+            from celery import conf as defaults
+        self.defaults = defaults
 
         # Options
         self.loglevel = loglevel or self.loglevel
-        self.concurrency = concurrency or self.concurrency
-        self.logfile = logfile or self.logfile
+        self.concurrency = concurrency or defaults.CELERYD_CONCURRENCY
+        self.logfile = logfile or defaults.CELERYD_LOG_FILE
         self.logger = log.get_default_logger()
+        if send_events is None:
+            send_events = defaults.SEND_EVENTS
+        self.send_events = send_events
+        self.pool_cls = pool_cls or defaults.CELERYD_POOL
+        self.listener_cls = listener_cls or defaults.CELERYD_LISTENER
+        self.mediator_cls = mediator_cls or defaults.CELERYD_MEDIATOR
+        self.eta_scheduler_cls = eta_scheduler_cls or \
+                                    defaults.CELERYD_ETA_SCHEDULER
+        self.schedule_filename = schedule_filename or \
+                                    defaults.CELERYBEAT_SCHEDULE_FILENAME
         self.hostname = hostname or socket.gethostname()
         self.embed_clockservice = embed_clockservice
         self.ready_callback = ready_callback
-        self.send_events = send_events
-        self.task_time_limit = task_time_limit
-        self.task_soft_time_limit = task_soft_time_limit
-        self.max_tasks_per_child = max_tasks_per_child
-        self.pool_putlocks = pool_putlocks
+        self.task_time_limit = task_time_limit or \
+                                defaults.CELERYD_TASK_TIME_LIMIT
+        self.task_soft_time_limit = task_soft_time_limit or \
+                                defaults.CELERYD_TASK_SOFT_TIME_LIMIT
+        self.max_tasks_per_child = max_tasks_per_child or \
+                                defaults.CELERYD_MAX_TASKS_PER_CHILD
+        self.pool_putlocks = pool_putlocks or \
+                                defaults.CELERYD_POOL_PUTLOCKS
+        self.eta_scheduler_precision = eta_scheduler_precision or \
+                                defaults.CELERYD_ETA_SCHEDULER_PRECISION
+        self.prefetch_multiplier = prefetch_multiplier or \
+                                defaults.CELERYD_PREFETCH_MULTIPLIER
         self.timer_debug = log.SilenceRepeated(self.logger.debug,
                                                max_iterations=10)
-        self.db = db
+        self.db = db or defaults.CELERYD_STATE_DB
+        self.disable_rate_limits = disable_rate_limits or \
+                                defaults.DISABLE_RATE_LIMITS
+        self.queues = queues
+
         self._finalize = Finalize(self, self.stop, exitpriority=1)
 
         if self.db:
@@ -150,7 +111,7 @@ class WorkController(object):
             Finalize(persistence, persistence.save, exitpriority=5)
 
         # Queues
-        if conf.DISABLE_RATE_LIMITS:
+        if disable_rate_limits:
             self.ready_queue = FastQueue()
         else:
             self.ready_queue = TaskBucket(task_registry=registry.tasks)
@@ -158,28 +119,28 @@ class WorkController(object):
         self.logger.debug("Instantiating thread components...")
 
         # Threads + Pool + Consumer
-        self.pool = instantiate(pool_cls, self.concurrency,
+        self.pool = instantiate(self.pool_cls, self.concurrency,
                                 logger=self.logger,
                                 initializer=process_initializer,
                                 maxtasksperchild=self.max_tasks_per_child,
                                 timeout=self.task_time_limit,
                                 soft_timeout=self.task_soft_time_limit,
                                 putlocks=self.pool_putlocks)
-        self.mediator = instantiate(mediator_cls, self.ready_queue,
+        self.mediator = instantiate(self.mediator_cls, self.ready_queue,
                                     callback=self.process_task,
                                     logger=self.logger)
-        self.scheduler = instantiate(eta_scheduler_cls,
-                               precision=conf.CELERYD_ETA_SCHEDULER_PRECISION,
+        self.scheduler = instantiate(self.eta_scheduler_cls,
+                               precision=eta_scheduler_precision,
                                on_error=self.on_timer_error,
                                on_tick=self.on_timer_tick)
 
         self.beat = None
         if self.embed_clockservice:
             self.beat = beat.EmbeddedService(logger=self.logger,
-                                    schedule_filename=schedule_filename)
+                                    schedule_filename=self.schedule_filename)
 
-        prefetch_count = self.concurrency * conf.CELERYD_PREFETCH_MULTIPLIER
-        self.listener = instantiate(listener_cls,
+        prefetch_count = self.concurrency * self.prefetch_multiplier
+        self.listener = instantiate(self.listener_cls,
                                     self.ready_queue,
                                     self.scheduler,
                                     logger=self.logger,
@@ -187,7 +148,9 @@ class WorkController(object):
                                     send_events=self.send_events,
                                     init_callback=self.ready_callback,
                                     initial_prefetch_count=prefetch_count,
-                                    pool=self.pool)
+                                    pool=self.pool,
+                                    queues=self.queues,
+                                    defaults=self.defaults)
 
         # The order is important here;
         #   the first in the list is the first to start,

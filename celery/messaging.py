@@ -291,7 +291,7 @@ def get_consumer_set(connection, queues=None, **options):
     Defaults to the queues in ``CELERY_QUEUES``.
 
     """
-    queues = queues or conf.get_queues()
+    queues = conf.prepare_queues(queues, conf)
     cset = ConsumerSet(connection)
     for queue_name, queue_options in queues.items():
         queue_options = dict(queue_options)

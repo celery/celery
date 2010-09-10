@@ -250,7 +250,7 @@ def prepare(m, source=settings, defaults=_DEFAULTS):
 
 prepare(sys.modules[__name__])
 
-def _init_queues(queues):
+def _init_queues(queues, default_exchange=None, default_exchange_type=None):
     """Convert configuration mapping to a table of queues digestible
     by a :class:`carrot.messaging.ConsumerSet`."""
 
@@ -264,5 +264,9 @@ def _init_queues(queues):
     return dict((queue, _defaults(opts)) for queue, opts in queues.items())
 
 
-def get_queues():
-    return _init_queues(QUEUES)
+def get_queues(): # TODO deprecate
+    return _init_queues(QUEUES, DEFAULT_EXCHANGE, DEFAULT_EXCHANGE_TYPE)
+
+
+def prepare_queues(queues, defaults):
+    return _init_queues(queues, defaults.DEFAULT_EXCHANGE,

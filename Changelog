@@ -189,6 +189,11 @@ News
 Fixes
 -----
 
+* AMQP result backend: ``result.get()`` returned and cached
+   ``None`` for states other than success and failure states.
+
+   See http://github.com/ask/celery/issues/issue/179
+
 * Compat ``LoggerAdapter`` implementation: Now works for Python 2.4.
 
     Also added support for several new methods:

@@ -17,7 +17,7 @@ extract_exec_options = mattrgetter("queue", "routing_key", "exchange",
 @with_connection
 def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
         task_id=None, publisher=None, connection=None, connect_timeout=None,
-        router=None, expires=None, **options):
+        router=None, expires=None, queues=None, **options):
     """Run a task asynchronously by the celery daemon(s).
 
     :param task: The :class:`~celery.task.base.Task` to run.
@@ -84,7 +84,8 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
     replaced by a local :func:`apply` call instead.
 
     """
-    router = router or Router(conf.ROUTES, conf.get_queues(),
+    queues = conf.prepare_queues(queues or conf.QUEUES, conf)
+    router = router or Router(conf.ROUTES, queues,
                               conf.CREATE_MISSING_QUEUES)
 
     if conf.ALWAYS_EAGER:

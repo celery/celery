@@ -80,7 +80,6 @@ import warnings
 
 from carrot.connection import AMQPConnectionException
 
-from celery import conf
 from celery.utils import noop, retry_over_time
 from celery.worker.job import TaskRequest, InvalidTaskError
 from celery.worker.control import ControlDispatch
@@ -200,7 +199,12 @@ class CarrotListener(object):
 
     def __init__(self, ready_queue, eta_schedule, logger,
             init_callback=noop, send_events=False, hostname=None,
-            initial_prefetch_count=2, pool=None):
+            initial_prefetch_count=2, pool=None, queues=None, defaults=None):
+
+        if defaults is None:
+            from celery import conf as defaults
+        self.defaults = defaults
+
         self.connection = None
         self.task_consumer = None
         self.ready_queue = ready_queue
@@ -216,6 +220,7 @@ class CarrotListener(object):
         self.control_dispatch = ControlDispatch(logger=logger,
                                                 hostname=self.hostname,
                                                 listener=self)
+        self.queues = queues
 
     def start(self):
         """Start the consumer.
@@ -376,7 +381,8 @@ class CarrotListener(object):
 
         self.connection = self._open_connection()
         self.logger.debug("CarrotListener: Connection Established.")
-        self.task_consumer = get_consumer_set(connection=self.connection)
+        self.task_consumer = get_consumer_set(connection=self.connection,
+                                              queues=self.queues)
         # QoS: Reset prefetch window.
         self.qos = QoS(self.task_consumer,
                        self.initial_prefetch_count, self.logger)
@@ -426,16 +432,16 @@ class CarrotListener(object):
 
         def _establish_connection():
             """Establish a connection to the broker."""
-            conn = establish_connection()
+            conn = establish_connection(defaults=self.defaults)
             conn.connect() # Connection is established lazily, so connect.
             return conn
 
-        if not conf.BROKER_CONNECTION_RETRY:
+        if not self.defaults.BROKER_CONNECTION_RETRY:
             return _establish_connection()
 
         conn = retry_over_time(_establish_connection, (socket.error, IOError),
-                               errback=_connection_error_handler,
-                               max_retries=conf.BROKER_CONNECTION_MAX_RETRIES)
+                    errback=_connection_error_handler,
+                    max_retries=self.defaults.BROKER_CONNECTION_MAX_RETRIES)
         return conn
 
     def stop(self):

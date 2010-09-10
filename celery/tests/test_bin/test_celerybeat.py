@@ -4,7 +4,8 @@ import unittest2 as unittest
 
 from celery import beat
 from celery import platform
-from celery.bin import celerybeat as celerybeat
+from celery.bin import celerybeat as celerybeat_bin
+from celery.apps import beat as celerybeat
 
 
 class MockService(beat.Service):
@@ -94,7 +95,7 @@ class test_div(unittest.TestCase):
     def test_main(self):
         sys.argv = [sys.argv[0], "-s", "foo"]
         try:
-            celerybeat.main()
+            celerybeat_bin.main()
             self.assertTrue(MockBeat.running)
         finally:
             MockBeat.running = False
@@ -107,5 +108,6 @@ class test_div(unittest.TestCase):
             MockBeat.running = False
 
     def test_parse_options(self):
-        options = celerybeat.parse_options(["-s", "foo"])
+        cmd = celerybeat_bin.BeatCommand()
+        options, args = cmd.parse_options("celerybeat", ["-s", "foo"])
         self.assertEqual(options.schedule, "foo")

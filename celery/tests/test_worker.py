@@ -457,12 +457,9 @@ class test_WorkController(unittest.TestCase):
         self.worker.logger = MockLogger()
 
     def test_with_rate_limits_disabled(self):
-        conf.DISABLE_RATE_LIMITS = True
-        try:
-            worker = WorkController(concurrency=1, loglevel=0)
-            self.assertIsInstance(worker.ready_queue, FastQueue)
-        finally:
-            conf.DISABLE_RATE_LIMITS = False
+        worker = WorkController(concurrency=1, loglevel=0,
+                                disable_rate_limits=True)
+        self.assertIsInstance(worker.ready_queue, FastQueue)
 
     def test_attrs(self):
         worker = self.worker

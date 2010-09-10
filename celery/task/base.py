@@ -230,7 +230,7 @@ class Task(object):
 
     ignore_result = conf.IGNORE_RESULT
     store_errors_even_if_ignored = conf.STORE_ERRORS_EVEN_IF_IGNORED
-    send_error_emails = conf.CELERYD_SEND_TASK_ERROR_EMAILS
+    send_error_emails = conf.CELERY_SEND_TASK_ERROR_EMAILS
     error_whitelist = conf.CELERY_TASK_ERROR_WHITELIST
     disable_error_emails = False # FIXME
     max_retries = 3

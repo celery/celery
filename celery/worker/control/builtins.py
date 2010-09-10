@@ -1,10 +1,9 @@
 from datetime import datetime
 
-from celery import conf
 from celery import log
 from celery.backends import default_backend
 from celery.registry import tasks
-from celery.utils import timeutils
+from celery.utils import timeutils, LOG_LEVELS
 from celery.worker import state
 from celery.worker.state import revoked
 from celery.worker.control.registry import Panel
@@ -65,7 +64,7 @@ def disable_events(panel):
 def set_loglevel(panel, loglevel=None):
     if loglevel is not None:
         if not isinstance(loglevel, int):
-            loglevel = conf.LOG_LEVELS[loglevel.upper()]
+            loglevel = LOG_LEVELS[loglevel.upper()]
         log.get_default_logger(loglevel=loglevel)
     return {"ok": loglevel}
 
@@ -93,7 +92,7 @@ def rate_limit(panel, task_name, rate_limit, **kwargs):
             task_name, ))
         return {"error": "unknown task"}
 
-    if conf.DISABLE_RATE_LIMITS:
+    if not hasattr(panel.listener.ready_queue, "refresh"):
         panel.logger.error("Rate limit attempt, but rate limits disabled.")
         return {"error": "rate limits disabled"}
 

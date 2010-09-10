@@ -64,12 +64,12 @@ class Worker(object):
         self.max_tasks_per_child = (max_tasks_per_child or
                                     defaults.CELERYD_MAX_TASKS_PER_CHILD)
         self.db = db
-        self.queues = queues or []
+        self.use_queues = queues or []
         self.include = include or []
         self._isatty = sys.stdout.isatty()
 
-        if isinstance(self.queues, basestring):
-            self.queues = self.queues.split(",")
+        if isinstance(self.use_queues, basestring):
+            self.use_queues = self.use_queues.split(",")
         if isinstance(self.include, basestring):
             self.include = self.include.split(",")
 
@@ -103,17 +103,20 @@ class Worker(object):
 
     def init_queues(self):
         conf = self.defaults
-        if self.queues:
-            conf.QUEUES = dict((queue, options)
-                                for queue, options in conf.QUEUES.items()
-                                    if queue in self.queues)
-            for queue in self.queues:
-                if queue not in conf.QUEUES:
+        from celery.conf import prepare_queues
+        queues = prepare_queues(conf.QUEUES, conf)
+        if self.use_queues:
+            queues = dict((queue, options)
+                                for queue, options in queues.items()
+                                    if queue in self.use_queues)
+            for queue in self.use_queues:
+                if queue not in queues:
                     if conf.CREATE_MISSING_QUEUES:
-                        Router(queues=conf.QUEUES).add_queue(queue)
+                        Router(queues=queues).add_queue(queue)
                     else:
                         raise ImproperlyConfigured(
                             "Queue '%s' not defined in CELERY_QUEUES" % queue)
+        self.queues = queues
 
     def init_loader(self):
         from celery.loaders import current_loader, load_settings
@@ -159,11 +162,9 @@ class Worker(object):
             include_builtins = self.loglevel <= logging.DEBUG
             tasklist = self.tasklist(include_builtins=include_builtins)
 
-        queues = self.defaults.get_queues()
-
         return STARTUP_INFO_FMT % {
             "conninfo": info.format_broker_info(),
-            "queues": info.format_queues(queues, indent=8),
+            "queues": info.format_queues(self.queues, indent=8),
             "concurrency": self.concurrency,
             "loglevel": LOG_LEVELS[self.loglevel],
             "logfile": self.logfile or "[stderr]",
@@ -183,6 +184,7 @@ class Worker(object):
                                 schedule_filename=self.schedule,
                                 send_events=self.events,
                                 db=self.db,
+                                queues=self.queues,
                                 max_tasks_per_child=self.max_tasks_per_child,
                                 task_time_limit=self.task_time_limit,
                                 task_soft_time_limit=self.task_soft_time_limit)
