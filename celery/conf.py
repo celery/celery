@@ -5,6 +5,7 @@ from datetime import timedelta
 
 from celery import routes
 from celery.loaders import load_settings
+from celery.utils import LOG_LEVELS
 
 DEFAULT_PROCESS_LOG_FMT = """
     [%(asctime)s: %(levelname)s/%(processName)s] %(message)s
@@ -14,10 +15,6 @@ DEFAULT_TASK_LOG_FMT = " ".join("""
     [%(asctime)s: %(levelname)s/%(processName)s]
     [%(task_name)s(%(task_id)s)] %(message)s
 """.strip().split())
-
-LOG_LEVELS = dict(logging._levelNames)
-LOG_LEVELS["FATAL"] = logging.FATAL
-LOG_LEVELS[logging.FATAL] = "FATAL"
 
 settings = load_settings()
 

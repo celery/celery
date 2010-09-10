@@ -7,6 +7,8 @@ try:
 except ImportError:
     ctypes = None
 import importlib
+import logging
+
 from datetime import datetime
 from uuid import UUID, uuid4, _uuid_generate_random
 from inspect import getargspec
@@ -18,6 +20,12 @@ from dateutil.parser import parse as parse_iso8601
 from celery.utils.compat import all, any, defaultdict
 from celery.utils.timeutils import timedelta_seconds # was here before
 from celery.utils.functional import curry
+
+
+LOG_LEVELS = dict(logging._levelNames)
+LOG_LEVELS["FATAL"] = logging.FATAL
+LOG_LEVELS[logging.FATAL] = "FATAL"
+
 
 
 class promise(object):

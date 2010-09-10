@@ -9,7 +9,8 @@ from StringIO import StringIO
 from celery import conf
 from celery import platform
 from celery import signals
-from celery.bin import celeryd as cd
+from celery.apps import worker as cd
+from celery.bin.celeryd import WorkerCommand, main as celeryd_main
 from celery.exceptions import ImproperlyConfigured
 from celery.utils import patch
 from celery.utils.functional import wraps
@@ -153,10 +154,6 @@ class test_Worker(unittest.TestCase):
 class test_funs(unittest.TestCase):
 
     @disable_stdouts
-    def test_dump_version(self):
-        self.assertRaises(SystemExit, cd.dump_version)
-
-    @disable_stdouts
     def test_set_process_status(self):
         prev1, sys.argv = sys.argv, ["Arg0"]
         try:
@@ -176,7 +173,8 @@ class test_funs(unittest.TestCase):
 
     @disable_stdouts
     def test_parse_options(self):
-        opts = cd.parse_options(["--concurrency=512"])
+        cmd = WorkerCommand()
+        opts, args = cmd.parse_options("celeryd", ["--concurrency=512"])
         self.assertEqual(opts.concurrency, 512)
 
     @disable_stdouts
@@ -192,7 +190,7 @@ class test_funs(unittest.TestCase):
         p, cd.Worker = cd.Worker, Worker
         s, sys.argv = sys.argv, ["celeryd", "--discard"]
         try:
-            cd.main()
+            celeryd_main()
         finally:
             cd.Worker = p
             sys.argv = s
