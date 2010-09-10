@@ -74,7 +74,6 @@ from celery.bin.base import Command, Option
 
 
 class WorkerCommand(Command):
-    version = __version__
 
     def run(self, *args, **kwargs):
         from celery.apps.worker import Worker

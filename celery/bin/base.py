@@ -3,10 +3,12 @@ import sys
 
 from optparse import OptionParser, make_option as Option
 
+from celery import __version__
+
 
 class Command(object):
     args = ''
-    version = ''
+    version = __version__
     option_list = ()
 
     Parser = OptionParser
