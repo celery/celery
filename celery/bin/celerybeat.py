@@ -68,16 +68,13 @@ OPTION_LIST = (
 class Beat(object):
     Service = beat.Service
 
-    def __init__(self, loglevel=conf.CELERYBEAT_LOG_LEVEL,
-            logfile=conf.CELERYBEAT_LOG_FILE,
-            schedule=conf.CELERYBEAT_SCHEDULE_FILENAME,
-            max_interval=None,
-            scheduler_cls=None, **kwargs):
+    def __init__(self, loglevel=None, logfile=None, schedule=None,
+            max_interval=None, scheduler_cls=None, defaults=conf, **kwargs):
         """Starts the celerybeat task scheduler."""
 
-        self.loglevel = loglevel
-        self.logfile = logfile
-        self.schedule = schedule
+        self.loglevel = loglevel or defaults.CELERYBEAT_LOG_LEVEL
+        self.logfile = logfile or defaults.CELERYBEAT_LOG_FILE
+        self.schedule = schedule or defaults.CELERYBEAT_SCHEDULE_FILENAME
         self.scheduler_cls = scheduler_cls
         self.max_interval = max_interval
 

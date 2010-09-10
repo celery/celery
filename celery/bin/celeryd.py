@@ -119,7 +119,7 @@ OPTION_LIST = (
         action="store", dest="concurrency", type="int",
         help="Number of child processes processing the queue."),
     Option('-V', '--version',
-        action="callback", callback=dump_version,
+        action="callback", callback=dump_version, nargs=0,
         help="Show version information and exit."),
     Option('--purge', '--discard', default=False,
         action="store_true", dest="discard",
