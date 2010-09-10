@@ -1,6 +1,7 @@
 import logging
-import optparse
 import sys
+
+from optparse import OptionParser, make_option as Option
 
 from celery.events.cursesmon import evtop
 from celery.events.dumper import evdump
@@ -8,22 +9,22 @@ from celery.events.snapshot import evcam
 
 
 OPTION_LIST = (
-    optparse.make_option('-d', '--dump',
+    Option('-d', '--dump',
         action="store_true", dest="dump",
         help="Dump events to stdout."),
-    optparse.make_option('-c', '--camera',
+    Option('-c', '--camera',
         action="store", dest="camera",
         help="Camera class to take event snapshots with."),
-    optparse.make_option('-F', '--frequency', '--freq',
+    Option('-F', '--frequency', '--freq',
         action="store", dest="frequency", type="float", default=1.0,
         help="Recording: Snapshot frequency."),
-    optparse.make_option('-r', '--maxrate',
+    Option('-r', '--maxrate',
         action="store", dest="maxrate", default=None,
         help="Recording: Shutter rate limit (e.g. 10/m)"),
-    optparse.make_option('-l', '--loglevel',
+    Option('-l', '--loglevel',
         action="store", dest="loglevel", default="WARNING",
         help="Loglevel. Default is WARNING."),
-    optparse.make_option('-f', '--logfile',
+    Option('-f', '--logfile',
         action="store", dest="logfile", default=None,
         help="Log file. Default is <stderr>"),
 )
@@ -41,7 +42,7 @@ def run_celeryev(dump=False, camera=None, frequency=1.0, maxrate=None,
 
 def parse_options(arguments):
     """Parse the available options to ``celeryev``."""
-    parser = optparse.OptionParser(option_list=OPTION_LIST)
+    parser = OptionParser(option_list=OPTION_LIST)
     options, values = parser.parse_args(arguments)
     return options
 

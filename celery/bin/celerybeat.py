@@ -23,8 +23,9 @@
 
 """
 import sys
-import optparse
 import traceback
+
+from optparse import OptionParser, make_option as Option
 
 import celery
 from celery import beat
@@ -41,27 +42,26 @@ Configuration ->
 """.strip()
 
 OPTION_LIST = (
-    optparse.make_option('-s', '--schedule',
-            default=conf.CELERYBEAT_SCHEDULE_FILENAME,
-            action="store", dest="schedule",
-            help="Path to the schedule database. The extension \
-                    '.db' will be appended to the filename. Default: %s" % (
-                    conf.CELERYBEAT_SCHEDULE_FILENAME)),
-    optparse.make_option('--max-interval',
-            default=3600, type="int", dest="max_interval",
-            help="Maximum time to sleep between rechecking the schedule."),
-    optparse.make_option('-S', '--scheduler',
-            default=None,
-            action="store", dest="scheduler_cls",
-            help="Scheduler class. Default is "
-                 "celery.beat.PersistentScheduler"),
-    optparse.make_option('-f', '--logfile', default=conf.CELERYBEAT_LOG_FILE,
-            action="store", dest="logfile",
-            help="Path to log file."),
-    optparse.make_option('-l', '--loglevel',
-            default=conf.CELERYBEAT_LOG_LEVEL,
-            action="store", dest="loglevel",
-            help="Loglevel. One of DEBUG/INFO/WARNING/ERROR/CRITICAL."),
+    Option('-s', '--schedule',
+        default=conf.CELERYBEAT_SCHEDULE_FILENAME,
+        action="store", dest="schedule",
+        help="Path to the schedule database. The extension "
+             "'.db' will be appended to the filename. Default: %s" % (
+                    conf.CELERYBEAT_SCHEDULE_FILENAME, )),
+    Option('--max-interval',
+        default=3600, type="int", dest="max_interval",
+        help="Maximum time to sleep between re-reading the schedule."),
+    Option('-S', '--scheduler',
+        default=None,
+        action="store", dest="scheduler_cls",
+        help="Scheduler class. Default is celery.beat.PersistentScheduler"),
+    Option('-f', '--logfile', default=conf.CELERYBEAT_LOG_FILE,
+        action="store", dest="logfile",
+        help="Path to log file."),
+    Option('-l', '--loglevel',
+        default=conf.CELERYBEAT_LOG_LEVEL,
+        action="store", dest="loglevel",
+        help="Loglevel. One of DEBUG/INFO/WARNING/ERROR/CRITICAL."),
 )
 
 
@@ -141,7 +141,7 @@ class Beat(object):
 
 def parse_options(arguments):
     """Parse the available options to ``celeryd``."""
-    parser = optparse.OptionParser(option_list=OPTION_LIST)
+    parser = OptionParser(option_list=OPTION_LIST)
     options, values = parser.parse_args(arguments)
     return options
 

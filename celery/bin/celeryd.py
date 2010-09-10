@@ -76,7 +76,9 @@ import platform as _platform
 import warnings
 import multiprocessing
 
-import celery
+from optparse import OptionParser, make_option as Option
+
+from celery import __version__
 from celery import conf
 from celery import signals
 from celery import platform
@@ -107,73 +109,73 @@ TASK_LIST_FMT = """    . tasks ->\n%s"""
 
 
 def dump_version(*args):
-    print("celeryd v%s" % celery.__version__)
+    print("celeryd v%s" % __version__)
     sys.exit(0)
 
 
 OPTION_LIST = (
-    optparse.make_option('-c', '--concurrency',
-            default=conf.CELERYD_CONCURRENCY,
-            action="store", dest="concurrency", type="int",
-            help="Number of child processes processing the queue."),
-    optparse.make_option('-V', '--version',
-            action="callback", callback=dump_version,
-            help="Show version information and exit."),
-    optparse.make_option('--purge', '--discard', default=False,
-            action="store_true", dest="discard",
-            help="Discard all waiting tasks before the server is started. "
-                 "WARNING: This is unrecoverable, and the tasks will be "
-                 "deleted from the messaging server."),
-    optparse.make_option('-f', '--logfile', default=conf.CELERYD_LOG_FILE,
-            action="store", dest="logfile",
-            help="Path to log file."),
-    optparse.make_option('-l', '--loglevel', default=conf.CELERYD_LOG_LEVEL,
-            action="store", dest="loglevel",
-            help="Choose between DEBUG/INFO/WARNING/ERROR/CRITICAL/FATAL."),
-    optparse.make_option('-n', '--hostname', default=None,
-            action="store", dest="hostname",
-            help="Set custom host name. E.g. 'foo.example.com'."),
-    optparse.make_option('-B', '--beat', default=False,
-            action="store_true", dest="run_clockservice",
-            help="Also run the celerybeat periodic task scheduler. \
-                  Please note that only one instance must be running."),
-    optparse.make_option('-s', '--schedule',
-            default=conf.CELERYBEAT_SCHEDULE_FILENAME,
-            action="store", dest="schedule",
-            help="Path to the schedule database if running with the -B \
-                    option. The extension '.db' will be appended to the \
-                    filename. Default: %s" % (
-                    conf.CELERYBEAT_SCHEDULE_FILENAME)),
-    optparse.make_option('-S', '--statedb', default=conf.CELERYD_STATE_DB,
-            action="store", dest="db",
-            help="Path to the state database. The extension '.db' will \
-                 be appended to the filename. Default: %s" % (
-                     conf.CELERYD_STATE_DB)),
-    optparse.make_option('-E', '--events', default=conf.SEND_EVENTS,
-            action="store_true", dest="events",
-            help="Send events so celery can be monitored by e.g. celerymon."),
-    optparse.make_option('--time-limit',
-            default=conf.CELERYD_TASK_TIME_LIMIT,
-            action="store", type="int", dest="task_time_limit",
-            help="Enables a hard time limit (in seconds) for tasks."),
-    optparse.make_option('--soft-time-limit',
-            default=conf.CELERYD_TASK_SOFT_TIME_LIMIT,
-            action="store", type="int", dest="task_soft_time_limit",
-            help="Enables a soft time limit (in seconds) for tasks."),
-    optparse.make_option('--maxtasksperchild',
-            default=conf.CELERYD_MAX_TASKS_PER_CHILD,
-            action="store", type="int", dest="max_tasks_per_child",
-            help="Maximum number of tasks a pool worker can execute"
-                 "before it's terminated and replaced by a new worker."),
-    optparse.make_option('--queues', '-Q', default=[],
-            action="store", dest="queues",
-            help="Comma separated list of queues to enable for this worker. "
-                 "By default all configured queues are enabled. "
-                 "Example: -Q video,image"),
-    optparse.make_option('--include', '-I', default=[],
-            action="store", dest="include",
-            help="Comma separated list of additional modules to import. "
-                 "Example: -I foo.tasks,bar.tasks"),
+    Option('-c', '--concurrency',
+        default=conf.CELERYD_CONCURRENCY,
+        action="store", dest="concurrency", type="int",
+        help="Number of child processes processing the queue."),
+    Option('-V', '--version',
+        action="callback", callback=dump_version,
+        help="Show version information and exit."),
+    Option('--purge', '--discard', default=False,
+        action="store_true", dest="discard",
+        help="Discard all waiting tasks before the server is started. "
+             "WARNING: This is unrecoverable, and the tasks will be "
+             "deleted from the messaging server."),
+    Option('-f', '--logfile', default=conf.CELERYD_LOG_FILE,
+        action="store", dest="logfile",
+        help="Path to log file."),
+    Option('-l', '--loglevel', default=conf.CELERYD_LOG_LEVEL,
+        action="store", dest="loglevel",
+        help="Choose between DEBUG/INFO/WARNING/ERROR/CRITICAL/FATAL."),
+    Option('-n', '--hostname', default=None,
+        action="store", dest="hostname",
+        help="Set custom host name. E.g. 'foo.example.com'."),
+    Option('-B', '--beat', default=False,
+        action="store_true", dest="run_clockservice",
+        help="Also run the celerybeat periodic task scheduler. "
+             "Please note that only one instance of celerybeat should be "
+             "running at any one time."),
+    Option('-s', '--schedule',
+        default=conf.CELERYBEAT_SCHEDULE_FILENAME,
+        action="store", dest="schedule",
+        help="Path to the schedule database if running with the -B \
+              option. The extension '.db' will be appended to the \
+              filename. Default: %s" % conf.CELERYBEAT_SCHEDULE_FILENAME),
+    Option('-S', '--statedb', default=conf.CELERYD_STATE_DB,
+        action="store", dest="db",
+        help="Path to the state database. The extension '.db' will "
+             "be appended to the filename. Default: %s" % (
+                        conf.CELERYD_STATE_DB, )),
+    Option('-E', '--events', default=conf.SEND_EVENTS,
+        action="store_true", dest="events",
+        help="Send events so celery can be monitored by e.g. celerymon."),
+    Option('--time-limit',
+        default=conf.CELERYD_TASK_TIME_LIMIT,
+        action="store", type="int", dest="task_time_limit",
+        help="Enables a hard time limit (in seconds) for tasks."),
+    Option('--soft-time-limit',
+        default=conf.CELERYD_TASK_SOFT_TIME_LIMIT,
+        action="store", type="int", dest="task_soft_time_limit",
+        help="Enables a soft time limit (in seconds) for tasks."),
+    Option('--maxtasksperchild',
+        default=conf.CELERYD_MAX_TASKS_PER_CHILD,
+        action="store", type="int", dest="max_tasks_per_child",
+        help="Maximum number of tasks a pool worker can execute"
+             "before it's terminated and replaced by a new worker."),
+    Option('--queues', '-Q', default=[],
+        action="store", dest="queues",
+        help="Comma separated list of queues to enable for this worker. "
+             "By default all configured queues are enabled. "
+             "Example: -Q video,image"),
+    Option('--include', '-I', default=[],
+        action="store", dest="include",
+        help="Comma separated list of additional modules to import. "
+             "Example: -I foo.tasks,bar.tasks"),
 )
 
 
@@ -219,8 +221,7 @@ class Worker(object):
         self.init_queues()
         self.worker_init()
         self.redirect_stdouts_to_logger()
-        print("celery@%s v%s is starting." % (self.hostname,
-                                              celery.__version__))
+        print("celery@%s v%s is starting." % (self.hostname, __version__))
 
         if getattr(self.settings, "DEBUG", False):
             warnings.warn("Using settings.DEBUG leads to a memory leak, "
