@@ -6,7 +6,6 @@ import warnings
 
 from datetime import datetime
 
-from celery import conf
 from celery import log
 from celery import platform
 from celery.datastructures import ExceptionInfo
@@ -442,8 +441,8 @@ class TaskRequest(object):
 
         task_obj = tasks.get(self.task_name, object)
         self.send_error_email(task_obj, context, exc_info.exception,
-                              enabled=conf.CELERY_SEND_TASK_ERROR_EMAILS,
-                              whitelist=conf.CELERY_TASK_ERROR_WHITELIST)
+                              enabled=task_obj.send_error_emails
+                              whitelist=task_obj.error_whitelist)
 
     def send_error_email(self, task, context, exc,
             whitelist=None, enabled=False, fail_silently=True):

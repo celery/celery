@@ -162,10 +162,14 @@ class Task(object):
         If true, errors will be stored even if the task is configured
         to ignore results.
 
-    .. attribute:: disable_error_emails
+    .. attribute:: send_error_emails
 
-        Disable all error e-mails for this task (only applicable if
-        ``settings.CELERY_SEND_TASK_ERROR_EMAILS`` is on.)
+        If true, an e-mail will be sent to the admins whenever
+        a task of this type raises an exception.
+
+    .. attribute:: error_whitelist
+
+        List of exception types to send error e-mails for.
 
     .. attribute:: serializer
 
@@ -226,7 +230,9 @@ class Task(object):
 
     ignore_result = conf.IGNORE_RESULT
     store_errors_even_if_ignored = conf.STORE_ERRORS_EVEN_IF_IGNORED
-    disable_error_emails = False
+    send_error_emails = conf.CELERYD_SEND_TASK_ERROR_EMAILS
+    error_whitelist = conf.CELERY_TASK_ERROR_WHITELIST
+    disable_error_emails = False # FIXME
     max_retries = 3
     default_retry_delay = 3 * 60
     serializer = conf.TASK_SERIALIZER
