@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from dateutil import relativedelta as rd
 from pyparsing import (Word, Literal, ZeroOrMore, Optional,
                        Group, StringEnd, alphas)
 
@@ -229,19 +230,63 @@ class crontab(schedule):
                                  self._orig_day_of_week), None)
 
     def remaining_estimate(self, last_run_at):
-        # remaining_estimate controls the frequency of scheduler
-        # ticks. The scheduler needs to wake up every second in this case.
-        return 1
+        """Returns when the periodic task should run next as a timedelta."""
+        weekday = last_run_at.isoweekday()
+        execute_this_hour = weekday in self.day_of_week \
+                            and last_run_at.hour in self.hour \
+                            and last_run_at.minute < max(self.minute)
+
+        if execute_this_hour:
+            next_minute = min([minute for minute in self.minute
+                               if minute > last_run_at.minute])
+            delta = rd.relativedelta(minute=next_minute,
+                                     second=0,
+                                     microsecond=0)
+        else:
+            next_minute = min(self.minute)
+
+            execute_today = weekday in self.day_of_week \
+                            and (last_run_at.hour < max(self.hour) or \
+                                 execute_this_hour)
+
+            if execute_today:
+                next_hour = min([hour for hour in self.hour if \
+                                 hour > last_run_at.hour])
+                delta = rd.relativedelta(hour=next_hour,
+                                         minute=next_minute,
+                                         second=0,
+                                         microsecond=0)
+            else:
+                next_hour = min(self.hour)
+                iso_next_day = min([day for day in self.day_of_week if \
+                                    day > weekday] or self.day_of_week)
+                add_week = iso_next_day == weekday
+                
+                delta = rd.relativedelta(weeks=1 if add_week else 0,
+                                         weekday=(iso_next_day - 1) % 7,
+                                         hour=next_hour,
+                                         minute=next_minute,
+                                         second=0,
+                                         microsecond=0)
+                
+        return remaining(last_run_at, delta, now=self.nowfun())
 
     def is_due(self, last_run_at):
-        now = self.nowfun()
-        last = now - last_run_at
-        due, when = False, 1
-        if last.days > 0 or last.seconds > 60:
-            due = (now.isoweekday() % 7 in self.day_of_week and
-                   now.hour in self.hour and
-                   now.minute in self.minute)
-        return due, when
+        """Returns tuple of two items ``(is_due, next_time_to_run)``,
+        where next time to run is in seconds.
+
+        See :meth:`celery.task.base.PeriodicTask.is_due` for more information.
+
+        """
+        rem_delta = self.remaining_estimate(last_run_at)
+        rem = timedelta_seconds(rem_delta)
+        due = rem == 0
+        if due:
+            rem_delta = self.remaining_estimate(last_run_at=self.nowfun())
+            rem = timedelta_seconds(rem_delta)
+            
+        return due, rem
+
 
     def __eq__(self, other):
         if isinstance(other, crontab):
@@ -257,3 +302,4 @@ def maybe_schedule(s, relative=False):
     if isinstance(s, timedelta):
         return schedule(s, relative)
     return s
+
