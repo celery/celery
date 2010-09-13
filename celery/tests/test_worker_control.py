@@ -5,6 +5,7 @@ from celery.utils.timer2 import Timer
 
 from celery import conf
 from celery.decorators import task
+from celery.defaults import default_app
 from celery.registry import tasks
 from celery.task.builtins import PingTask
 from celery.utils import gen_unique_id
@@ -46,6 +47,7 @@ class Listener(object):
                                          args=(2, 2),
                                          kwargs={}))
         self.eta_schedule = Timer()
+        self.app = default_app
         self.event_dispatcher = Dispatcher()
 
 

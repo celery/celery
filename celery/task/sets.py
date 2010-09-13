@@ -2,9 +2,9 @@ import warnings
 
 from UserList import UserList
 
-from celery import conf
 from celery import registry
 from celery.datastructures import AttributeDict
+from celery.defaults import app_or_default
 from celery.messaging import with_connection
 from celery.messaging import TaskPublisher
 from celery.result import TaskSetResult
@@ -146,8 +146,7 @@ class TaskSet(UserList):
         self.total = len(self.tasks)
 
     @with_connection
-    def apply_async(self, connection=None,
-            connect_timeout=conf.BROKER_CONNECTION_TIMEOUT):
+    def apply_async(self, connection=None, connect_timeout=None, app=None):
         """Run all tasks in the taskset.
 
         Returns a :class:`celery.result.TaskSetResult` instance.
@@ -177,7 +176,7 @@ class TaskSet(UserList):
             [True, True]
 
         """
-        if conf.ALWAYS_EAGER:
+        if app_or_default(app).conf.CELERY_ALWAYS_EAGER:
             return self.apply()
 
         taskset_id = gen_unique_id()

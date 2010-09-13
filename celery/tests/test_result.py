@@ -3,10 +3,10 @@ from __future__ import generators
 import unittest2 as unittest
 
 from celery import states
+from celery.defaults import default_app
 from celery.utils import gen_unique_id
 from celery.utils.compat import all
 from celery.result import AsyncResult, TaskSetResult
-from celery.backends import default_backend
 from celery.exceptions import TimeoutError
 from celery.task.base import Task
 
@@ -20,12 +20,12 @@ def mock_task(name, status, result):
 def save_result(task):
     traceback = "Some traceback"
     if task["status"] == states.SUCCESS:
-        default_backend.mark_as_done(task["id"], task["result"])
+        default_app.backend.mark_as_done(task["id"], task["result"])
     elif task["status"] == states.RETRY:
-        default_backend.mark_as_retry(task["id"], task["result"],
+        default_app.backend.mark_as_retry(task["id"], task["result"],
                 traceback=traceback)
     else:
-        default_backend.mark_as_failure(task["id"], task["result"],
+        default_app.backend.mark_as_failure(task["id"], task["result"],
                 traceback=traceback)
 
 

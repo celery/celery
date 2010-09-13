@@ -77,11 +77,11 @@ class WorkerCommand(Command):
 
     def run(self, *args, **kwargs):
         from celery.apps.worker import Worker
-        kwargs["defaults"] = self.defaults
+        kwargs["app"] = self.app
         return Worker(*args, **kwargs).run()
 
     def get_options(self):
-        conf = self.defaults
+        conf = self.app.conf
         return (
             Option('-c', '--concurrency',
                 default=conf.CELERYD_CONCURRENCY,
@@ -119,7 +119,7 @@ class WorkerCommand(Command):
                 help="Path to the state database. The extension '.db' will "
                      "be appended to the filename. Default: %s" % (
                         conf.CELERYD_STATE_DB, )),
-            Option('-E', '--events', default=conf.SEND_EVENTS,
+            Option('-E', '--events', default=conf.CELERY_SEND_EVENTS,
                 action="store_true", dest="events",
                 help="Send events so the worker can be monitored by "
                      "celeryev, celerymon and other monitors.."),

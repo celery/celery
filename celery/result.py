@@ -6,7 +6,7 @@ from copy import copy
 from itertools import imap
 
 from celery import states
-from celery.backends import default_backend
+from celery.defaults import default_app
 from celery.datastructures import PositionQueue
 from celery.exceptions import TimeoutError
 from celery.messaging import with_connection
@@ -165,7 +165,8 @@ class AsyncResult(BaseAsyncResult):
     """
 
     def __init__(self, task_id, backend=None):
-        super(AsyncResult, self).__init__(task_id, backend or default_backend)
+        backend = backend or default_app.backend
+        super(AsyncResult, self).__init__(task_id, backend)
 
 
 class TaskSetResult(object):
@@ -324,7 +325,7 @@ class TaskSetResult(object):
                         time.time() >= time_start + timeout:
                     on_timeout()
 
-    def save(self, backend=default_backend):
+    def save(self, backend=None):
         """Save taskset result for later retrieval using :meth:`restore`.
 
         Example:
@@ -333,11 +334,15 @@ class TaskSetResult(object):
             >>> result = TaskSetResult.restore(task_id)
 
         """
+        if backend is None:
+            backend = default_app.backend
         backend.save_taskset(self.taskset_id, self)
 
     @classmethod
-    def restore(self, taskset_id, backend=default_backend):
+    def restore(self, taskset_id, backend=None):
         """Restore previously saved taskset result."""
+        if backend is None:
+            backend = default_app.backend
         return backend.restore_taskset(taskset_id)
 
     @property

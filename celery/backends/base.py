@@ -1,7 +1,6 @@
 """celery.backends.base"""
 import time
 
-from celery import conf
 from celery import states
 from celery.exceptions import TimeoutError, TaskRevokedError
 from celery.serialization import pickle, get_pickled_exception
@@ -19,7 +18,8 @@ class BaseBackend(object):
     TimeoutError = TimeoutError
 
     def __init__(self, *args, **kwargs):
-        pass
+        from celery.defaults import app_or_default
+        self.app = app_or_default(kwargs.get("app"))
 
     def encode_result(self, result, status):
         if status in self.EXCEPTION_STATES:
@@ -144,7 +144,7 @@ class BaseDictBackend(BaseBackend):
     def __init__(self, *args, **kwargs):
         super(BaseDictBackend, self).__init__(*args, **kwargs)
         self._cache = LocalCache(limit=kwargs.get("max_cached_results") or
-                                 conf.MAX_CACHED_RESULTS)
+                                 self.app.conf.CELERY_MAX_CACHED_RESULTS)
 
     def store_result(self, task_id, result, status, traceback=None):
         """Store task result and status."""

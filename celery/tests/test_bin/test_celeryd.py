@@ -6,9 +6,9 @@ import unittest2 as unittest
 from multiprocessing import get_logger, current_process
 from StringIO import StringIO
 
-from celery import conf
 from celery import platform
 from celery import signals
+from celery.defaults import default_app
 from celery.apps import worker as cd
 from celery.bin.celeryd import WorkerCommand, main as celeryd_main
 from celery.exceptions import ImproperlyConfigured
@@ -54,7 +54,8 @@ class test_Worker(unittest.TestCase):
     @disable_stdouts
     def test_queues_string(self):
         worker = self.Worker(queues="foo,bar,baz")
-        self.assertEqual(worker.queues, ["foo", "bar", "baz"])
+        worker.init_queues()
+        self.assertEqual(worker.use_queues, ["foo", "bar", "baz"])
 
     @disable_stdouts
     def test_loglevel_string(self):
@@ -119,24 +120,27 @@ class test_Worker(unittest.TestCase):
 
     @disable_stdouts
     def test_init_queues(self):
-        p, conf.QUEUES = conf.QUEUES, {
+        c = default_app.conf
+        p, c.CELERY_QUEUES = c.CELERY_QUEUES, {
                 "celery": {"exchange": "celery",
                            "binding_key": "celery"},
                 "video": {"exchange": "video",
                            "binding_key": "video"}}
         try:
-            self.Worker(queues=["video"]).init_queues()
-            self.assertIn("video", conf.QUEUES)
-            self.assertNotIn("celery", conf.QUEUES)
+            worker = self.Worker(queues=["video"])
+            worker.init_queues()
+            self.assertIn("video", worker.queues)
+            self.assertNotIn("celery", worker.queues)
 
-            conf.CREATE_MISSING_QUEUES = False
+            c.CELERY_CREATE_MISSING_QUEUES = False
             self.assertRaises(ImproperlyConfigured,
                     self.Worker(queues=["image"]).init_queues)
-            conf.CREATE_MISSING_QUEUES = True
-            self.Worker(queues=["image"]).init_queues()
-            self.assertIn("image", conf.QUEUES)
+            c.CELERY_CREATE_MISSING_QUEUES = True
+            worker = self.Worker(queues=["image"])
+            worker.init_queues()
+            self.assertIn("image", worker.queues)
         finally:
-            conf.QUEUES = p
+            c.CELERY_QUEUES = p
 
     @disable_stdouts
     def test_on_listener_ready(self):

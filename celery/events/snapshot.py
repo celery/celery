@@ -1,12 +1,11 @@
 from celery.utils import timer2
 
-from celery import conf
 from celery import log
 from celery.datastructures import TokenBucket
 from celery.events import EventReceiver
 from celery.events.state import State
 from celery.messaging import establish_connection
-from celery.utils import instantiate
+from celery.utils import instantiate, LOG_LEVELS
 from celery.utils.dispatch import Signal
 from celery.utils.timeutils import rate
 
@@ -74,7 +73,7 @@ class Polaroid(object):
 def evcam(camera, freq=1.0, maxrate=None, loglevel=0,
         logfile=None):
     if not isinstance(loglevel, int):
-        loglevel = conf.LOG_LEVELS[loglevel.upper()]
+        loglevel = LOG_LEVELS[loglevel.upper()]
     logger = log.setup_logger(loglevel=loglevel,
                               logfile=logfile,
                               name="celery.evcam")

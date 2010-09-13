@@ -1,7 +1,6 @@
 from datetime import datetime
 
 from celery import log
-from celery.backends import default_backend
 from celery.registry import tasks
 from celery.utils import timeutils, LOG_LEVELS
 from celery.worker import state
@@ -26,8 +25,9 @@ def diagnose(panel, timeout=None, **kwargs):
 @Panel.register
 def revoke(panel, task_id, task_name=None, **kwargs):
     """Revoke task by task id."""
+    app = panel.listener.app
     revoked.add(task_id)
-    backend = default_backend
+    backend = app.backend
     if task_name: # Use custom task backend (if any)
         try:
             backend = tasks[task_name].backend

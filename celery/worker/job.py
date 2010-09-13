@@ -9,12 +9,11 @@ from datetime import datetime
 from celery import log
 from celery import platform
 from celery.datastructures import ExceptionInfo
+from celery.defaults import app_or_default, default_app
 from celery.execute.trace import TaskTrace
-from celery.loaders import current_loader
 from celery.registry import tasks
 from celery.utils import noop, kwdict, fun_takes_kwargs
 from celery.utils import truncate_text, maybe_iso8601
-from celery.utils.mail import mail_admins
 from celery.worker import state
 
 # pep8.py borks on a inline signature separator and
@@ -74,7 +73,7 @@ class WorkerTaskTrace(TaskTrace):
     """
 
     def __init__(self, *args, **kwargs):
-        self.loader = kwargs.get("loader") or current_loader()
+        self.loader = kwargs.get("loader") or default_app.loader
         self.hostname = kwargs.get("hostname") or socket.gethostname()
         super(WorkerTaskTrace, self).__init__(*args, **kwargs)
 
@@ -213,7 +212,8 @@ class TaskRequest(object):
     def __init__(self, task_name, task_id, args, kwargs,
             on_ack=noop, retries=0, delivery_info=None, hostname=None,
             email_subject=None, email_body=None, logger=None,
-            eventer=None, eta=None, expires=None, **opts):
+            eventer=None, eta=None, expires=None, app=None, **opts):
+        self.app = app_or_default(app)
         self.task_name = task_name
         self.task_id = task_id
         self.retries = retries
@@ -252,7 +252,7 @@ class TaskRequest(object):
 
     @classmethod
     def from_message(cls, message, message_data, logger=None, eventer=None,
-            hostname=None):
+            hostname=None, app=None):
         """Create a :class:`TaskRequest` from a task message sent by
         :class:`celery.messaging.TaskPublisher`.
 
@@ -282,7 +282,7 @@ class TaskRequest(object):
                    retries=retries, on_ack=message.ack,
                    delivery_info=delivery_info, logger=logger,
                    eventer=eventer, hostname=hostname,
-                   eta=eta, expires=expires)
+                   eta=eta, expires=expires, app=app)
 
     def extend_with_default_kwargs(self, loglevel, logfile):
         """Extend the tasks keyword arguments with standard task arguments.
@@ -339,7 +339,8 @@ class TaskRequest(object):
             self.acknowledge()
 
         tracer = WorkerTaskTrace(*self._get_tracer_args(loglevel, logfile),
-                                 **{"hostname": self.hostname})
+                                 **{"hostname": self.hostname,
+                                    "loader": self.app.loader})
         retval = tracer.execute()
         self.acknowledge()
         return retval
@@ -452,7 +453,7 @@ class TaskRequest(object):
                     return
             subject = self.email_subject.strip() % context
             body = self.email_body.strip() % context
-            return mail_admins(subject, body, fail_silently=fail_silently)
+            self.app.mail_admins(subject, body, fail_silently=fail_silently)
 
     def __repr__(self):
         return '<%s: {name:"%s", id:"%s", args:"%s", kwargs:"%s"}>' % (

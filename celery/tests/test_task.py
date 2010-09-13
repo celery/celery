@@ -8,13 +8,13 @@ from pyparsing import ParseException
 from celery import conf
 from celery import task
 from celery import messaging
+from celery.defaults import default_app
 from celery.task.schedules import crontab, crontab_parser
 from celery.utils import timeutils
 from celery.utils import gen_unique_id, parse_iso8601
 from celery.utils.functional import wraps
 from celery.result import EagerResult
 from celery.execute import send_task
-from celery.backends import default_backend
 from celery.decorators import task as task_dec
 from celery.exceptions import RetryTaskError
 
@@ -327,7 +327,7 @@ class TestCeleryTasks(unittest.TestCase):
         self.assertIsNone(consumer.fetch())
 
         self.assertFalse(presult.successful())
-        default_backend.mark_as_done(presult.task_id, result=None)
+        t1.backend.mark_as_done(presult.task_id, result=None)
         self.assertTrue(presult.successful())
 
         publisher = t1.get_publisher()
@@ -398,11 +398,11 @@ class TestTaskApply(unittest.TestCase):
         self.assertRaises(KeyError, RaisingTask.apply, throw=True)
 
     def test_apply_with_CELERY_EAGER_PROPAGATES_EXCEPTIONS(self):
-        conf.EAGER_PROPAGATES_EXCEPTIONS = True
+        default_app.conf.CELERY_EAGER_PROPAGATES_EXCEPTIONS = True
         try:
             self.assertRaises(KeyError, RaisingTask.apply)
         finally:
-            conf.EAGER_PROPAGATES_EXCEPTIONS = False
+            default_app.conf.CELERY_EAGER_PROPAGATES_EXCEPTIONS = False
 
     def test_apply(self):
         IncrementCounterTask.count = 0

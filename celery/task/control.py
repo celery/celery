@@ -1,12 +1,10 @@
-from celery import conf
 from celery.utils import gen_unique_id
 from celery.messaging import BroadcastPublisher, ControlReplyConsumer
 from celery.messaging import with_connection, get_consumer_set
 
 
 @with_connection
-def discard_all(connection=None,
-        connect_timeout=conf.BROKER_CONNECTION_TIMEOUT):
+def discard_all(connection=None, connect_timeout=None):
     """Discard all waiting tasks.
 
     This will ignore all tasks waiting for execution, and they will
@@ -151,8 +149,8 @@ class inspect(object):
 
 @with_connection
 def broadcast(command, arguments=None, destination=None, connection=None,
-        connect_timeout=conf.BROKER_CONNECTION_TIMEOUT, reply=False,
-        timeout=1, limit=None, callback=None):
+        connect_timeout=None, reply=False, timeout=1, limit=None,
+        callback=None):
     """Broadcast a control command to the celery workers.
 
     :param command: Name of command to send.

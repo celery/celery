@@ -11,8 +11,8 @@ from datetime import datetime
 from UserDict import UserDict
 
 from celery import log
-from celery import conf
 from celery import platform
+from celery.defaults import app_or_default
 from celery.execute import send_task
 from celery.schedules import maybe_schedule
 from celery.messaging import establish_connection
@@ -132,10 +132,12 @@ class Scheduler(UserDict):
     Entry = ScheduleEntry
 
     def __init__(self, schedule=None, logger=None, max_interval=None,
-            **kwargs):
+            app=None, **kwargs):
         UserDict.__init__(self)
         if schedule is None:
             schedule = {}
+        self.app = app_or_default(app)
+        conf = self.app.conf
         self.data = schedule
         self.logger = logger or log.get_default_logger(name="celery.beat")
         self.max_interval = max_interval or conf.CELERYBEAT_MAX_LOOP_INTERVAL
@@ -250,7 +252,7 @@ class PersistentScheduler(Scheduler):
     def setup_schedule(self):
         self._store = self.persistence.open(self.schedule_filename)
         self.data = self._store
-        self.merge_inplace(conf.CELERYBEAT_SCHEDULE)
+        self.merge_inplace(self.app.conf.CELERYBEAT_SCHEDULE)
         self.sync()
         self.data = self._store
 
@@ -268,15 +270,16 @@ class Service(object):
     scheduler_cls = PersistentScheduler
 
     def __init__(self, logger=None,
-            max_interval=conf.CELERYBEAT_MAX_LOOP_INTERVAL,
-            schedule=conf.CELERYBEAT_SCHEDULE,
-            schedule_filename=conf.CELERYBEAT_SCHEDULE_FILENAME,
-            scheduler_cls=None):
-        self.max_interval = max_interval
+            max_interval=None, schedule=None, schedule_filename=None,
+            scheduler_cls=None, app=None):
+        self.app = app_or_default(app)
+        self.max_interval = max_interval or \
+                            self.app.conf.CELERYBEAT_MAX_LOOP_INTERVAL
         self.scheduler_cls = scheduler_cls or self.scheduler_cls
         self.logger = logger or log.get_default_logger(name="celery.beat")
-        self.schedule = schedule
-        self.schedule_filename = schedule_filename
+        self.schedule = schedule or self.app.conf.CELERYBEAT_SCHEDULE
+        self.schedule_filename = schedule_filename or \
+                                    self.app.conf.CELERYBEAT_SCHEDULE_FILENAME
 
         self._scheduler = None
         self._shutdown = threading.Event()
@@ -320,6 +323,7 @@ class Service(object):
         if self._scheduler is None:
             filename = self.schedule_filename
             self._scheduler = instantiate(self.scheduler_cls,
+                                          app=self.app,
                                           schedule_filename=filename,
                                           logger=self.logger,
                                           max_interval=self.max_interval)

@@ -6,6 +6,8 @@ try:
 except ImportError:
     from email.MIMEText import MIMEText
 
+from celery.defaults import app_or_default
+
 
 class SendmailWarning(UserWarning):
     """Problem happened while sending the e-mail message."""
@@ -24,6 +26,9 @@ class Message(object):
         if not isinstance(self.to, (list, tuple)):
             self.to = [self.to]
 
+    def __repr__(self):
+        return "<E-mail: To:%r Subject:%r>" % (self.to, self.subject)
+
     def __str__(self):
         msg = MIMEText(self.body, "plain", self.charset)
         msg["Subject"] = self.subject
@@ -40,35 +45,17 @@ class Mailer(object):
         self.user = user
         self.password = password
 
-    def send(self, message):
-        client = smtplib.SMTP(self.host, self.port)
+    def send(self, message, fail_silently=False):
+        try:
+            client = smtplib.SMTP(self.host, self.port)
 
-        if self.user and self.password:
-            client.login(self.user, self.password)
+            if self.user and self.password:
+                client.login(self.user, self.password)
 
-        client.sendmail(message.sender, message.to, str(message))
-        client.quit()
-
-
-def mail_admins(subject, message, fail_silently=False):
-    """Send a message to the admins in conf.ADMINS."""
-    from celery import conf
-
-    if not conf.ADMINS:
-        return
-
-    to = [admin_email for _, admin_email in conf.ADMINS]
-    message = Message(sender=conf.SERVER_EMAIL, to=to,
-                      subject=subject, body=message)
-
-    try:
-        mailer = Mailer(conf.EMAIL_HOST, conf.EMAIL_PORT,
-                        conf.EMAIL_HOST_USER,
-                        conf.EMAIL_HOST_PASSWORD)
-        mailer.send(message)
-    except Exception, exc:
-        if not fail_silently:
-            raise
-        warnings.warn(SendmailWarning(
-            "Mail could not be sent: %r %r" % (
-                exc, {"To": to, "Subject": subject})))
+            client.sendmail(message.sender, message.to, str(message))
+            client.quit()
+        except Exception, exc:
+            if not fail_silently:
+                raise
+            warnings.warn(SendmailWarning(
+                "E-mail could not be sent: %r %r" % (exc, message)))

@@ -9,8 +9,8 @@ import traceback
 from multiprocessing import current_process
 from multiprocessing import util as mputil
 
-from celery import conf
 from celery import signals
+from celery.defaults import app_or_default
 from celery.utils import noop
 from celery.utils.compat import LoggerAdapter
 from celery.utils.patch import ensure_process_aware_logger
@@ -54,9 +54,16 @@ def get_task_logger(loglevel=None, name=None):
     return logger
 
 
-def setup_logging_subsystem(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
-        format=conf.CELERYD_LOG_FORMAT, colorize=conf.CELERYD_LOG_COLOR,
-        **kwargs):
+def setup_logging_subsystem(loglevel=None, logfile=None,
+        format=None, colorize=None, **kwargs):
+    app = app_or_default(kwargs.get("app"))
+    loglevel = loglevel or app.conf.CELERYD_LOG_LEVEL
+    format = format or app.conf.CELERYD_LOG_FORMAT
+    if colorize is None:
+        colorize = app.conf.CELERYD_LOG_COLOR
+
+    print("COLORIZE: %s" % (app.conf.CELERYD_LOG_COLOR, ))
+
     global _setup
     if not _setup:
         try:
@@ -100,15 +107,21 @@ def get_default_logger(loglevel=None, name="celery"):
     return logger
 
 
-def setup_logger(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
-        format=conf.CELERYD_LOG_FORMAT, colorize=conf.CELERYD_LOG_COLOR,
-        name="celery", root=True, **kwargs):
+def setup_logger(loglevel=None, logfile=None,
+        format=None, colorize=None, name="celery", root=True,
+        app=None, **kwargs):
     """Setup the ``multiprocessing`` logger. If ``logfile`` is not specified,
     then ``stderr`` is used.
 
     Returns logger object.
 
     """
+    app = app_or_default(app)
+    loglevel = loglevel or app.conf.CELERYD_LOG_LEVEL
+    format = format or app.conf.CELERYD_LOG_FORMAT
+    if colorize is None:
+        colorize = app.conf.CELERYD_LOG_COLOR
+
     if not root:
         return _setup_logger(get_default_logger(loglevel, name),
                              logfile, format, colorize, **kwargs)
@@ -116,15 +129,20 @@ def setup_logger(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
     return get_default_logger(name=name)
 
 
-def setup_task_logger(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
-        format=conf.CELERYD_TASK_LOG_FORMAT, colorize=conf.CELERYD_LOG_COLOR,
-        task_kwargs=None, **kwargs):
+def setup_task_logger(loglevel=None, logfile=None, format=None, colorize=None,
+        task_kwargs=None, app=None, **kwargs):
     """Setup the task logger. If ``logfile`` is not specified, then
     ``stderr`` is used.
 
     Returns logger object.
 
     """
+    app = app_or_default(app)
+    loglevel = loglevel or app.conf.CELERYD_LOG_LEVEL
+    format = format or app.conf.CELERYD_LOG_FORMAT
+    if colorize is None:
+        colorize = app.conf.CELERYD_LOG_COLOR
+
     if task_kwargs is None:
         task_kwargs = {}
     task_kwargs.setdefault("task_id", "-?-")

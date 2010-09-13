@@ -12,8 +12,8 @@ from itertools import count
 from carrot.connection import BrokerConnection
 from carrot.messaging import Publisher, Consumer, ConsumerSet as _ConsumerSet
 
-from celery import conf
 from celery import signals
+from celery.defaults import app_or_default, default_app
 from celery.utils import gen_unique_id, mitemgetter, noop
 from celery.utils.functional import wraps
 
@@ -23,7 +23,6 @@ MSG_OPTIONS = ("mandatory", "priority", "immediate",
 
 get_msg_options = mitemgetter(*MSG_OPTIONS)
 extract_msg_options = lambda d: dict(zip(MSG_OPTIONS, get_msg_options(d)))
-default_queue = conf.get_queues()[conf.DEFAULT_QUEUE]
 
 _queues_declared = False
 _exchanges_declared = set()
@@ -31,19 +30,26 @@ _exchanges_declared = set()
 
 class TaskPublisher(Publisher):
     """Publish tasks."""
-    exchange = default_queue["exchange"]
-    exchange_type = default_queue["exchange_type"]
-    routing_key = conf.DEFAULT_ROUTING_KEY
-    serializer = conf.TASK_SERIALIZER
     auto_declare = False
 
     def __init__(self, *args, **kwargs):
+        self.app = app = app_or_default(kwargs.get("app"))
+        _, default_queue = app.get_default_queue()
+        kwargs["exchange"] = kwargs.get("exchange") or \
+                                    default_queue["exchange"]
+        kwargs["exchange_type"] = kwargs.get("exchange_type") or \
+                                    default_queue["exchange_type"]
+        kwargs["routing_key"] = kwargs.get("routing_key") or \
+                                    app.conf.CELERY_DEFAULT_ROUTING_KEY
+        kwargs["serializer"] = kwargs.get("serializer") or \
+                                    app.conf.CELERY_TASK_SERIALIZER
         super(TaskPublisher, self).__init__(*args, **kwargs)
 
         # Make sure all queues are declared.
         global _queues_declared
         if not _queues_declared:
-            consumers = get_consumer_set(self.connection)
+            consumers = self.app.get_consumer_set(self.connection,
+                                                  self.app.get_queues())
             consumers.close()
             _queues_declared = True
         self.declare()
@@ -125,27 +131,18 @@ class ConsumerSet(_ConsumerSet):
 
 class TaskConsumer(Consumer):
     """Consume tasks"""
-    queue = conf.DEFAULT_QUEUE
-    exchange = default_queue["exchange"]
-    routing_key = default_queue["binding_key"]
-    exchange_type = default_queue["exchange_type"]
 
-
-class EventPublisher(Publisher):
-    """Publish events"""
-    exchange = conf.EVENT_EXCHANGE
-    exchange_type = conf.EVENT_EXCHANGE_TYPE
-    routing_key = conf.EVENT_ROUTING_KEY
-    serializer = conf.EVENT_SERIALIZER
-
-
-class EventConsumer(Consumer):
-    """Consume events"""
-    queue = conf.EVENT_QUEUE
-    exchange = conf.EVENT_EXCHANGE
-    exchange_type = conf.EVENT_EXCHANGE_TYPE
-    routing_key = conf.EVENT_ROUTING_KEY
-    no_ack = True
+    def __init__(self, *args, **kwargs):
+        app = app_or_default(kwargs.get("app"))
+        default_queue_name, default_queue = app.get_default_queue()
+        kwargs["queue"] = kwargs.get("queue") or default_queue_name
+        kwargs["exchange"] = kwargs.get("exchange") or \
+                                default_queue["exchange"]
+        kwargs["exchange_type"] = kwargs.get("exchange_type") or \
+                                default_queue["exchange_type"]
+        kwargs["routing_key"] = kwargs.get("routing_key") or \
+                                    default_queue["binding_key"]
+        super(TaskConsumer, self).__init__(*args, **kwargs)
 
 
 class ControlReplyConsumer(Consumer):
@@ -196,13 +193,20 @@ class BroadcastPublisher(Publisher):
 
     ReplyTo = ControlReplyConsumer
 
-    exchange = conf.BROADCAST_EXCHANGE
-    exchange_type = conf.BROADCAST_EXCHANGE_TYPE
+    def __init__(self, *args, **kwargs):
+        app = self.app = app_or_default(kwargs.get("app"))
+        kwargs["exchange"] = kwargs.get("exchange") or \
+                                app.conf.CELERY_BROADCAST_EXCHANGE
+        kwargs["exchange_type"] = kwargs.get("exchange_type") or \
+                                app.conf.CELERY_BROADCAST_EXCHANGE_TYPE
+        super(BroadcastPublisher, self).__init__(*args, **kwargs)
 
     def send(self, type, arguments, destination=None, reply_ticket=None):
         """Send broadcast command."""
         arguments["command"] = type
         arguments["destination"] = destination
+        reply_to = self.ReplyTo(self.connection, None, app=self.app,
+                                auto_declare=False)
         if reply_ticket:
             arguments["reply_to"] = {"exchange": self.ReplyTo.exchange,
                                      "routing_key": reply_ticket}
@@ -211,12 +215,16 @@ class BroadcastPublisher(Publisher):
 
 class BroadcastConsumer(Consumer):
     """Consume broadcast commands"""
-    queue = conf.BROADCAST_QUEUE
-    exchange = conf.BROADCAST_EXCHANGE
-    exchange_type = conf.BROADCAST_EXCHANGE_TYPE
     no_ack = True
 
     def __init__(self, *args, **kwargs):
+        self.app = app = app_or_default(kwargs.get("app"))
+        kwargs["queue"] = kwargs.get("queue") or \
+                            app.conf.CELERY_BROADCAST_QUEUE
+        kwargs["exchange"] = kwargs.get("exchange") or \
+                            app.conf.CELERY_BROADCAST_EXCHANGE
+        kwargs["exchange_type"] = kwargs.get("exchange_type") or \
+                            app.conf.CELERY_BROADCAST_EXCHANGE_TYPE
         self.hostname = kwargs.pop("hostname", None) or socket.gethostname()
         self.queue = "%s_%s" % (self.queue, self.hostname)
         super(BroadcastConsumer, self).__init__(*args, **kwargs)
@@ -244,21 +252,22 @@ class BroadcastConsumer(Consumer):
 
 def establish_connection(hostname=None, userid=None, password=None,
         virtual_host=None, port=None, ssl=None, insist=None,
-        connect_timeout=None, backend_cls=None, defaults=conf):
+        connect_timeout=None, backend_cls=None, app=None):
     """Establish a connection to the message broker."""
+    app = app_or_default(app)
     if insist is None:
-        insist = defaults.BROKER_INSIST
+        insist = app.conf.get("BROKER_INSIST")
     if ssl is None:
-        ssl = defaults.BROKER_USE_SSL
+        ssl = app.conf.get("BROKER_USE_SSL")
     if connect_timeout is None:
-        connect_timeout = defaults.BROKER_CONNECTION_TIMEOUT
+        connect_timeout = app.conf.get("BROKER_CONNECTION_TIMEOUT")
 
-    return BrokerConnection(hostname or defaults.BROKER_HOST,
-                            userid or defaults.BROKER_USER,
-                            password or defaults.BROKER_PASSWORD,
-                            virtual_host or defaults.BROKER_VHOST,
-                            port or defaults.BROKER_PORT,
-                            backend_cls=backend_cls or defaults.BROKER_BACKEND,
+    return BrokerConnection(hostname or app.conf.BROKER_HOST,
+                            userid or app.conf.BROKER_USER,
+                            password or app.conf.BROKER_PASSWORD,
+                            virtual_host or app.conf.BROKER_VHOST,
+                            port or app.conf.BROKER_PORT,
+                            backend_cls=backend_cls or app.conf.BROKER_BACKEND,
                             insist=insist, ssl=ssl,
                             connect_timeout=connect_timeout)
 
@@ -271,7 +280,8 @@ def with_connection(fun):
     @wraps(fun)
     def _inner(*args, **kwargs):
         connection = kwargs.get("connection")
-        timeout = kwargs.get("connect_timeout", conf.BROKER_CONNECTION_TIMEOUT)
+        timeout = kwargs.get("connect_timeout",
+                    default_app.conf.get("BROKER_CONNECTION_TIMEOUT"))
         kwargs["connection"] = conn = connection or \
                 establish_connection(connect_timeout=timeout)
         close_connection = not connection and conn.close or noop
@@ -291,12 +301,4 @@ def get_consumer_set(connection, queues=None, **options):
     Defaults to the queues in ``CELERY_QUEUES``.
 
     """
-    queues = conf.prepare_queues(queues, conf)
-    cset = ConsumerSet(connection)
-    for queue_name, queue_options in queues.items():
-        queue_options = dict(queue_options)
-        queue_options["routing_key"] = queue_options.pop("binding_key", None)
-        consumer = Consumer(connection, queue=queue_name,
-                            backend=cset.backend, **queue_options)
-        cset.consumers.append(consumer)
-    return cset
+    return default_app.get_consumer_set(connection, queues, **options)

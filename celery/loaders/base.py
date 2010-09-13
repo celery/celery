@@ -24,6 +24,10 @@ class BaseLoader(object):
     override_backends = {}
     configured = False
 
+    def __init__(self, app=None, **kwargs):
+        from celery.defaults import app_or_default
+        self.app = app_or_default(app)
+
     def on_task_init(self, task_id, task):
         """This method is called before a task is executed."""
         pass

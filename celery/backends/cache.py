@@ -2,7 +2,6 @@ from datetime import timedelta
 
 from carrot.utils import partition
 
-from celery import conf
 from celery.backends.base import KeyValueStoreBackend
 from celery.exceptions import ImproperlyConfigured
 from celery.utils import timeutils
@@ -47,13 +46,16 @@ backends = {"memcache": get_best_memcache,
 class CacheBackend(KeyValueStoreBackend):
     _client = None
 
-    def __init__(self, expires=conf.TASK_RESULT_EXPIRES,
-            backend=conf.CACHE_BACKEND, options={}, **kwargs):
+    def __init__(self, expires=None, backend=None, options={}, **kwargs):
         super(CacheBackend, self).__init__(self, **kwargs)
+
         if isinstance(expires, timedelta):
             expires = timeutils.timedelta_seconds(expires)
-        self.expires = expires
-        self.options = dict(conf.CACHE_BACKEND_OPTIONS, **options)
+        self.expires = expires or self.app.conf.CELERY_TASK_RESULT_EXPIRES
+        self.options = dict(self.app.conf.CELERY_CACHE_BACKEND_OPTIONS,
+                            **options)
+
+        backend = backend or self.app.conf.CELERY_CACHE_BACKEND
         self.backend, _, servers = partition(backend, "://")
         self.servers = servers.split(";")
         try:

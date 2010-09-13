@@ -6,9 +6,7 @@ try:
 except ImportError:
     pymongo = None
 
-from celery import conf
 from celery import states
-from celery.loaders import load_settings
 from celery.backends.base import BaseDictBackend
 from celery.exceptions import ImproperlyConfigured
 from celery.serialization import pickle
@@ -36,16 +34,14 @@ class MongoBackend(BaseDictBackend):
 
         """
         self.result_expires = kwargs.get("result_expires") or \
-                                conf.TASK_RESULT_EXPIRES
+                                self.app.conf.CELERY_TASK_RESULT_EXPIRES
 
         if not pymongo:
             raise ImproperlyConfigured(
                 "You need to install the pymongo library to use the "
                 "MongoDB backend.")
 
-        settings = load_settings()
-
-        config = getattr(settings, "CELERY_MONGODB_BACKEND_SETTINGS", None)
+        config = self.app.conf.get("CELERY_MONGODB_BACKEND_SETTINGS", None)
         if config is not None:
             if not isinstance(config, dict):
                 raise ImproperlyConfigured(

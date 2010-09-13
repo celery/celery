@@ -7,7 +7,6 @@ from datetime import timedelta
 
 from carrot.messaging import Consumer, Publisher
 
-from celery import conf
 from celery import states
 from celery.backends.base import BaseDictBackend
 from celery.exceptions import TimeoutError
@@ -20,11 +19,6 @@ class AMQResultWarning(UserWarning):
 
 
 class ResultPublisher(Publisher):
-    exchange = conf.RESULT_EXCHANGE
-    exchange_type = conf.RESULT_EXCHANGE_TYPE
-    delivery_mode = conf.RESULT_PERSISTENT and 2 or 1
-    serializer = conf.RESULT_SERIALIZER
-    durable = conf.RESULT_PERSISTENT
     auto_delete = False
 
     def __init__(self, connection, task_id, **kwargs):
@@ -34,9 +28,6 @@ class ResultPublisher(Publisher):
 
 
 class ResultConsumer(Consumer):
-    exchange = conf.RESULT_EXCHANGE
-    exchange_type = conf.RESULT_EXCHANGE_TYPE
-    durable = conf.RESULT_PERSISTENT
     no_ack = True
     auto_delete = False
 
@@ -62,22 +53,25 @@ class AMQPBackend(BaseDictBackend):
     _connection = None
 
     def __init__(self, connection=None, exchange=None, exchange_type=None,
-            persistent=None, serializer=None, auto_delete=None,
+            persistent=None, serializer=None, auto_delete=False,
             expires=None, **kwargs):
+        super(AMQPBackend, self).__init__(**kwargs)
+        conf = self.app.conf
         self._connection = connection
-        self.exchange = exchange
-        self.exchange_type = exchange_type
+        self.exchange = exchange or conf.CELERY_RESULT_EXCHANGE
+        self.exchange_type = exchange_type or conf.CELERY_RESULT_EXCHANGE_TYPE
+        if persistent is None:
+            persistent = conf.CELERY_RESULT_PERSISTENT
         self.persistent = persistent
-        self.serializer = serializer
+        self.serializer = serializer or conf.CELERY_RESULT_SERIALIZER
         self.auto_delete = auto_delete
         self.expires = expires
         if self.expires is None:
-            self.expires = conf.TASK_RESULT_EXPIRES
+            self.expires = conf.CELERY_TASK_RESULT_EXPIRES
         if isinstance(self.expires, timedelta):
             self.expires = timeutils.timedelta_seconds(self.expires)
         if self.expires is not None:
             self.expires = int(self.expires)
-        super(AMQPBackend, self).__init__(**kwargs)
 
     def _create_publisher(self, task_id, connection):
         delivery_mode = self.persistent and 2 or 1
@@ -89,6 +83,7 @@ class AMQPBackend(BaseDictBackend):
                                exchange=self.exchange,
                                exchange_type=self.exchange_type,
                                delivery_mode=delivery_mode,
+                               durable=self.persistent,
                                serializer=self.serializer,
                                auto_delete=self.auto_delete)
 

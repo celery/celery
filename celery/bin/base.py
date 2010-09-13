@@ -4,6 +4,7 @@ import sys
 from optparse import OptionParser, make_option as Option
 
 from celery import __version__
+from celery.defaults import app_or_default
 
 
 class Command(object):
@@ -13,12 +14,8 @@ class Command(object):
 
     Parser = OptionParser
 
-    def __init__(self, defaults=None):
-        self.defaults = defaults
-
-        if self.defaults is None:
-            from celery import conf
-            self.defaults = conf
+    def __init__(self, app=None):
+        self.app = app_or_default(app)
 
     def parse_options(self, prog_name, arguments):
         """Parse the available options."""

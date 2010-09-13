@@ -5,7 +5,9 @@ import threading
 from collections import deque
 from itertools import count
 
-from celery.messaging import EventPublisher, EventConsumer
+from carrot.messaging import Publisher, Consumer
+
+from celery.defaults import app_or_default
 
 
 def create_event(type, fields):
@@ -38,7 +40,8 @@ class EventDispatcher(object):
 
     """
 
-    def __init__(self, connection, hostname=None, enabled=True):
+    def __init__(self, connection, hostname=None, enabled=True, app=None):
+        self.app = app_or_default(app)
         self.connection = connection
         self.hostname = hostname or socket.gethostname()
         self.enabled = enabled
@@ -50,8 +53,13 @@ class EventDispatcher(object):
             self.enable()
 
     def enable(self):
+        conf = self.app.conf
         self.enabled = True
-        self.publisher = EventPublisher(self.connection)
+        self.publisher = Publisher(self.connection,
+                                exchange=conf.CELERY_EVENT_EXCHANGE,
+                                exchange_type=conf.CELERY_EVENT_EXCHANGE_TYPE,
+                                routing_key=conf.CELERY_EVENT_ROUTING_KEY,
+                                serializer=conf.CELERY_EVENT_SERIALIZER)
 
     def disable(self):
         self.enabled = False
@@ -103,7 +111,8 @@ class EventReceiver(object):
     """
     handlers = {}
 
-    def __init__(self, connection, handlers=None):
+    def __init__(self, connection, handlers=None, app=None):
+        self.app = app_or_default(app)
         self.connection = connection
         if handlers is not None:
             self.handlers = handlers
@@ -115,7 +124,13 @@ class EventReceiver(object):
         handler and handler(event)
 
     def consumer(self):
-        consumer = EventConsumer(self.connection)
+        conf = self.app.conf
+        consumer = Consumer(self.connection,
+                            queue=conf.CELERY_EVENT_QUEUE,
+                            exchange=conf.CELERY_EVENT_EXCHANGE,
+                            exchange_type=conf.CELERY_EVENT_EXCHANGE_TYPE,
+                            routing_key=conf.CELERY_EVENT_ROUTING_KEY,
+                            no_ack=True)
         consumer.register_callback(self._receive)
         return consumer
 

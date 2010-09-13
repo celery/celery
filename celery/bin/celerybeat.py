@@ -29,11 +29,11 @@ class BeatCommand(Command):
 
     def run(self, *args, **kwargs):
         from celery.apps.beat import Beat
-        kwargs["defaults"] = self.defaults
+        kwargs["app"] = self.app
         return Beat(*args, **kwargs).run()
 
     def get_options(self):
-        conf = self.defaults
+        conf = self.app.conf
 
         return (
             Option('-s', '--schedule',

@@ -13,6 +13,7 @@ from celery import log
 from celery import registry
 from celery import platform
 from celery import signals
+from celery.defaults import app_or_default
 from celery.utils import noop, instantiate
 
 from celery.worker import state
@@ -61,47 +62,47 @@ class WorkController(object):
             task_soft_time_limit=None, max_tasks_per_child=None,
             pool_putlocks=None, db=None, prefetch_multiplier=None,
             eta_scheduler_precision=None, queues=None,
-            disable_rate_limits=None, defaults=None):
+            disable_rate_limits=None, app=None):
 
-        if defaults is None:
-            from celery import conf as defaults
-        self.defaults = defaults
+        self.app = app_or_default(app)
+        conf = self.app.conf
+        queues = queues or self.app.get_queues()
 
         # Options
         self.loglevel = loglevel or self.loglevel
-        self.concurrency = concurrency or defaults.CELERYD_CONCURRENCY
-        self.logfile = logfile or defaults.CELERYD_LOG_FILE
+        self.concurrency = concurrency or conf.CELERYD_CONCURRENCY
+        self.logfile = logfile or conf.CELERYD_LOG_FILE
         self.logger = log.get_default_logger()
         if send_events is None:
-            send_events = defaults.SEND_EVENTS
+            send_events = conf.CELERY_SEND_EVENTS
         self.send_events = send_events
-        self.pool_cls = pool_cls or defaults.CELERYD_POOL
-        self.listener_cls = listener_cls or defaults.CELERYD_LISTENER
-        self.mediator_cls = mediator_cls or defaults.CELERYD_MEDIATOR
+        self.pool_cls = pool_cls or conf.CELERYD_POOL
+        self.listener_cls = listener_cls or conf.CELERYD_LISTENER
+        self.mediator_cls = mediator_cls or conf.CELERYD_MEDIATOR
         self.eta_scheduler_cls = eta_scheduler_cls or \
-                                    defaults.CELERYD_ETA_SCHEDULER
+                                    conf.CELERYD_ETA_SCHEDULER
         self.schedule_filename = schedule_filename or \
-                                    defaults.CELERYBEAT_SCHEDULE_FILENAME
+                                    conf.CELERYBEAT_SCHEDULE_FILENAME
         self.hostname = hostname or socket.gethostname()
         self.embed_clockservice = embed_clockservice
         self.ready_callback = ready_callback
         self.task_time_limit = task_time_limit or \
-                                defaults.CELERYD_TASK_TIME_LIMIT
+                                conf.CELERYD_TASK_TIME_LIMIT
         self.task_soft_time_limit = task_soft_time_limit or \
-                                defaults.CELERYD_TASK_SOFT_TIME_LIMIT
+                                conf.CELERYD_TASK_SOFT_TIME_LIMIT
         self.max_tasks_per_child = max_tasks_per_child or \
-                                defaults.CELERYD_MAX_TASKS_PER_CHILD
+                                conf.CELERYD_MAX_TASKS_PER_CHILD
         self.pool_putlocks = pool_putlocks or \
-                                defaults.CELERYD_POOL_PUTLOCKS
+                                conf.CELERYD_POOL_PUTLOCKS
         self.eta_scheduler_precision = eta_scheduler_precision or \
-                                defaults.CELERYD_ETA_SCHEDULER_PRECISION
+                                conf.CELERYD_ETA_SCHEDULER_PRECISION
         self.prefetch_multiplier = prefetch_multiplier or \
-                                defaults.CELERYD_PREFETCH_MULTIPLIER
+                                conf.CELERYD_PREFETCH_MULTIPLIER
         self.timer_debug = log.SilenceRepeated(self.logger.debug,
                                                max_iterations=10)
-        self.db = db or defaults.CELERYD_STATE_DB
+        self.db = db or conf.CELERYD_STATE_DB
         self.disable_rate_limits = disable_rate_limits or \
-                                defaults.DISABLE_RATE_LIMITS
+                                conf.CELERY_DISABLE_RATE_LIMITS
         self.queues = queues
 
         self._finalize = Finalize(self, self.stop, exitpriority=1)
@@ -150,7 +151,7 @@ class WorkController(object):
                                     initial_prefetch_count=prefetch_count,
                                     pool=self.pool,
                                     queues=self.queues,
-                                    defaults=self.defaults)
+                                    app=self.app)
 
         # The order is important here;
         #   the first in the list is the first to start,

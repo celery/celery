@@ -9,6 +9,7 @@ import warnings
 from celery import __version__
 from celery import platform
 from celery import signals
+from celery.defaults import app_or_default
 from celery.exceptions import ImproperlyConfigured
 from celery.routes import Router
 from celery.task import discard_all
@@ -42,29 +43,27 @@ class Worker(object):
             hostname=None, discard=False, run_clockservice=False,
             schedule=None, task_time_limit=None, task_soft_time_limit=None,
             max_tasks_per_child=None, queues=None, events=False, db=None,
-            include=None, defaults=None, **kwargs):
-        if defaults is None:
-            from celery import conf
-            defaults = conf
-        self.defaults = defaults
+            include=None, app=None, **kwargs):
+        self.app = app = app_or_default(app)
         self.concurrency = (concurrency or
-                            defaults.CELERYD_CONCURRENCY or
+                            app.conf.CELERYD_CONCURRENCY or
                             multiprocessing.cpu_count())
-        self.loglevel = loglevel or defaults.CELERYD_LOG_LEVEL
-        self.logfile = logfile or defaults.CELERYD_LOG_FILE
+        self.loglevel = loglevel or app.conf.CELERYD_LOG_LEVEL
+        self.logfile = logfile or app.conf.CELERYD_LOG_FILE
         self.hostname = hostname or socket.gethostname()
         self.discard = discard
         self.run_clockservice = run_clockservice
-        self.schedule = schedule or defaults.CELERYBEAT_SCHEDULE_FILENAME
+        self.schedule = schedule or app.conf.CELERYBEAT_SCHEDULE_FILENAME
         self.events = events
         self.task_time_limit = (task_time_limit or
-                                defaults.CELERYD_TASK_TIME_LIMIT)
+                                app.conf.CELERYD_TASK_TIME_LIMIT)
         self.task_soft_time_limit = (task_soft_time_limit or
-                                     defaults.CELERYD_TASK_SOFT_TIME_LIMIT)
+                                     app.conf.CELERYD_TASK_SOFT_TIME_LIMIT)
         self.max_tasks_per_child = (max_tasks_per_child or
-                                    defaults.CELERYD_MAX_TASKS_PER_CHILD)
+                                    app.conf.CELERYD_MAX_TASKS_PER_CHILD)
         self.db = db
         self.use_queues = queues or []
+        self.queues = None
         self.include = include or []
         self._isatty = sys.stdout.isatty()
 
@@ -83,7 +82,7 @@ class Worker(object):
         self.redirect_stdouts_to_logger()
         print("celery@%s v%s is starting." % (self.hostname, __version__))
 
-        if getattr(self.settings, "DEBUG", False):
+        if getattr(self.settings, "DEBUG", False): # XXX
             warnings.warn("Using settings.DEBUG leads to a memory leak, "
                     "never use this setting in a production environment!")
 
@@ -102,16 +101,14 @@ class Worker(object):
         print("celery@%s has started." % self.hostname)
 
     def init_queues(self):
-        conf = self.defaults
-        from celery.conf import prepare_queues
-        queues = prepare_queues(conf.QUEUES, conf)
+        queues = self.app.get_queues()
         if self.use_queues:
             queues = dict((queue, options)
                                 for queue, options in queues.items()
                                     if queue in self.use_queues)
             for queue in self.use_queues:
                 if queue not in queues:
-                    if conf.CREATE_MISSING_QUEUES:
+                    if self.app.conf.CELERY_CREATE_MISSING_QUEUES:
                         Router(queues=queues).add_queue(queue)
                     else:
                         raise ImproperlyConfigured(
@@ -119,18 +116,15 @@ class Worker(object):
         self.queues = queues
 
     def init_loader(self):
-        from celery.loaders import current_loader, load_settings
-        self.loader = current_loader()
-        self.settings = load_settings()
-        if not self.loader.configured:
-            raise ImproperlyConfigured(
-                    "Celery needs to be configured to run celeryd.")
+        self.loader = self.app.loader
+        self.settings = self.app.conf
         map(self.loader.import_module, self.include)
 
     def redirect_stdouts_to_logger(self):
         from celery import log
         handled = log.setup_logging_subsystem(loglevel=self.loglevel,
-                                              logfile=self.logfile)
+                                              logfile=self.logfile,
+                                              app=self.app)
         # Redirect stdout/stderr to our logger.
         if not handled:
             logger = log.get_default_logger()
@@ -175,7 +169,8 @@ class Worker(object):
         }
 
     def run_worker(self):
-        worker = self.WorkController(concurrency=self.concurrency,
+        worker = self.WorkController(app=self.app,
+                                concurrency=self.concurrency,
                                 loglevel=self.loglevel,
                                 logfile=self.logfile,
                                 hostname=self.hostname,

@@ -14,9 +14,7 @@ import time
 from datetime import datetime
 
 from celery.backends.base import BaseDictBackend
-from celery import conf
 from celery.exceptions import ImproperlyConfigured
-from celery.loaders import load_settings
 from celery.log import setup_logger
 from celery.serialization import pickle
 from celery import states
@@ -50,34 +48,33 @@ class CassandraBackend(BaseDictBackend):
         the ``CASSANDRA_SERVERS`` setting is not set.
 
         """
-        self.logger = setup_logger("celery.backends.cassandra")
+        super(CassandraBackend, self).__init__(**kwargs)
+        self.logger = setup_logger(name="celery.backends.cassandra",
+                                   app=self.app)
 
         self.result_expires = kwargs.get("result_expires") or \
-                                conf.TASK_RESULT_EXPIRES
+                                self.app.conf.CELERY_TASK_RESULT_EXPIRES
 
         if not pycassa:
             raise ImproperlyConfigured(
                     "You need to install the pycassa library to use the "
                     "Cassandra backend. See http://github.com/vomjom/pycassa")
 
-        settings = load_settings()
-
         self.servers = servers or \
-                         getattr(settings, "CASSANDRA_SERVERS", self.servers)
+                        self.app.conf.get("CASSANDRA_SERVERS", self.servers)
         self.keyspace = keyspace or \
-                          getattr(settings, "CASSANDRA_KEYSPACE",
-                                  self.keyspace)
+                            self.app.conf.get("CASSANDRA_KEYSPACE",
+                                              self.keyspace)
         self.column_family = column_family or \
-                               getattr(settings, "CASSANDRA_COLUMN_FAMILY",
-                                       self.column_family)
+                                self.app.conf.get("CASSANDRA_COLUMN_FAMILY",
+                                                  self.column_family)
         self.cassandra_options = dict(cassandra_options or {},
-                                   **getattr(settings,
-                                             "CASSANDRA_OPTIONS", {}))
+                                   **self.app.conf.get("CASSANDRA_OPTIONS",
+                                                       {}))
         if not self.servers or not self.keyspace or not self.column_family:
             raise ImproperlyConfigured(
                     "Cassandra backend not configured.")
 
-        super(CassandraBackend, self).__init__()
         self._column_family = None
 
     def _retry_on_error(func):

@@ -4,7 +4,6 @@ try:
 except ImportError:
     pytyrant = None
 
-from celery.loaders import load_settings
 from celery.backends.base import KeyValueStoreBackend
 from celery.exceptions import ImproperlyConfigured
 
@@ -24,30 +23,31 @@ class TyrantBackend(KeyValueStoreBackend):
     tyrant_host = None
     tyrant_port = None
 
-    def __init__(self, tyrant_host=None, tyrant_port=None):
+    def __init__(self, tyrant_host=None, tyrant_port=None, **kwargs):
         """Initialize Tokyo Tyrant backend instance.
 
         Raises :class:`celery.exceptions.ImproperlyConfigured` if
         :setting:`TT_HOST` or :setting:`TT_PORT` is not set.
 
         """
+        super(TyrantBackend, self).__init__(**kwargs)
 
         if not pytyrant:
             raise ImproperlyConfigured(
                     "You need to install the pytyrant library to use the "
                   + "Tokyo Tyrant backend.")
-        settings = load_settings()
-        self.tyrant_host = tyrant_host or \
-                            getattr(settings, "TT_HOST", self.tyrant_host)
-        self.tyrant_port = tyrant_port or \
-                            getattr(settings, "TT_PORT", self.tyrant_port)
+        self.tyrant_host = (tyrant_host or
+                            self.app.conf.get("TT_HOST") or
+                            self.tyrant_host)
+        self.tyrant_port = (tyrant_port or
+                            self.app.conf.get("TT_PORT") or
+                            self.tyrant_port)
         if self.tyrant_port:
             self.tyrant_port = int(self.tyrant_port)
         if not self.tyrant_host or not self.tyrant_port:
             raise ImproperlyConfigured(
                 "To use the Tokyo Tyrant backend, you have to "
                 "set the TT_HOST and TT_PORT settings in your settings.py")
-        super(TyrantBackend, self).__init__()
         self._connection = None
 
     def open(self):

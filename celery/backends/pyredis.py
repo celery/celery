@@ -1,7 +1,6 @@
 import warnings
 
 
-from celery.loaders import load_settings
 from celery.backends.base import KeyValueStoreBackend
 from celery.exceptions import ImproperlyConfigured
 
@@ -42,25 +41,28 @@ class RedisBackend(KeyValueStoreBackend):
             redis_timeout=None,
             redis_password=None,
             redis_connect_retry=None,
-            redis_connect_timeout=None):
+            redis_connect_timeout=None, **kwargs):
+        super(RedisBackend, self).__init__(**kwargs)
         if redis is None:
             raise ImproperlyConfigured(
                     "You need to install the redis library in order to use "
                   + "Redis result store backend.")
 
-        settings = load_settings()
-        self.redis_host = redis_host or \
-                            getattr(settings, "REDIS_HOST", self.redis_host)
-        self.redis_port = redis_port or \
-                            getattr(settings, "REDIS_PORT", self.redis_port)
-        self.redis_db = redis_db or \
-                            getattr(settings, "REDIS_DB", self.redis_db)
-        self.redis_password = redis_password or \
-                            getattr(settings, "REDIS_PASSWORD",
-                                    self.redis_password)
+        self.redis_host = (redis_host or
+                           self.app.conf.get("REDIS_HOST") or
+                           self.redis_host)
+        self.redis_port = (redis_port or
+                           self.app.conf.get("REDIS_PORT") or
+                           self.redis_port)
+        self.redis_db = (redis_db or
+                         self.app.conf.get("REDIS_DB") or
+                         self.redis_db)
+        self.redis_password = (redis_password or
+                               self.app.conf.get("REDIS_PASSWORD") or
+                               self.redis_password)
 
         for setting_name in self.deprecated_settings:
-            if getattr(settings, setting_name, None) is not None:
+            if self.app.conf.get(setting_name) is not None:
                 warnings.warn(
                     "The setting '%s' is no longer supported by the "
                     "python Redis client!" % setting_name.upper(),
@@ -72,7 +74,6 @@ class RedisBackend(KeyValueStoreBackend):
             raise ImproperlyConfigured(
                 "In order to use the Redis result store backend, you have to "
                 "set the REDIS_HOST and REDIS_PORT settings")
-        super(RedisBackend, self).__init__()
         self._connection = None
 
     def open(self):

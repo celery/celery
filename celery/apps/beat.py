@@ -5,6 +5,7 @@ import traceback
 from celery import __version__
 from celery import beat
 from celery import platform
+from celery.defaults import app_or_default
 from celery.log import emergency_error
 from celery.utils import info, LOG_LEVELS
 
@@ -20,16 +21,13 @@ class Beat(object):
     Service = beat.Service
 
     def __init__(self, loglevel=None, logfile=None, schedule=None,
-            max_interval=None, scheduler_cls=None, defaults=None, **kwargs):
+            max_interval=None, scheduler_cls=None, app=None, **kwargs):
         """Starts the celerybeat task scheduler."""
+        self.app = app = app_or_default(app)
 
-        if defaults is None:
-            from celery import conf as defaults
-        self.defaults = defaults
-
-        self.loglevel = loglevel or defaults.CELERYBEAT_LOG_LEVEL
-        self.logfile = logfile or defaults.CELERYBEAT_LOG_FILE
-        self.schedule = schedule or defaults.CELERYBEAT_SCHEDULE_FILENAME
+        self.loglevel = loglevel or app.conf.CELERYBEAT_LOG_LEVEL
+        self.logfile = logfile or app.conf.CELERYBEAT_LOG_FILE
+        self.schedule = schedule or app.conf.CELERYBEAT_SCHEDULE_FILENAME
         self.scheduler_cls = scheduler_cls
         self.max_interval = max_interval
 
@@ -48,14 +46,16 @@ class Beat(object):
     def setup_logging(self):
         from celery import log
         handled = log.setup_logging_subsystem(loglevel=self.loglevel,
-                                              logfile=self.logfile)
+                                              logfile=self.logfile,
+                                              app=self.app)
         if not handled:
             logger = log.get_default_logger(name="celery.beat")
             log.redirect_stdouts_to_logger(logger, loglevel=logging.WARNING)
         return logger
 
     def start_scheduler(self, logger=None):
-        beat = self.Service(logger=logger,
+        beat = self.Service(app=self.app,
+                            logger=logger,
                             max_interval=self.max_interval,
                             scheduler_cls=self.scheduler_cls,
                             schedule_filename=self.schedule)

@@ -1,6 +1,5 @@
 from datetime import datetime
 
-from celery import conf
 from celery.backends.base import BaseDictBackend
 from celery.db.models import Task, TaskSet
 from celery.db.session import ResultSession
@@ -20,16 +19,17 @@ class DatabaseBackend(BaseDictBackend):
 
     def __init__(self, dburi=None, result_expires=None,
             engine_options=None, **kwargs):
-        self.result_expires = result_expires or conf.TASK_RESULT_EXPIRES
-        self.dburi = dburi or conf.RESULT_DBURI
+        super(DatabaseBackend, self).__init__(**kwargs)
+        self.result_expires = result_expires or \
+                                self.app.conf.CELERY_TASK_RESULT_EXPIRES
+        self.dburi = dburi or self.app.conf.CELERY_RESULT_DBURI
         self.engine_options = dict(engine_options or {},
-                                   **conf.RESULT_ENGINE_OPTIONS or {})
+                        **self.app.conf.CELERY_RESULT_ENGINE_OPTIONS or {})
         if not self.dburi:
             raise ImproperlyConfigured(
                     "Missing connection string! Do you have "
                     "CELERY_RESULT_DBURI set to a real value?")
 
-        super(DatabaseBackend, self).__init__(**kwargs)
 
     def ResultSession(self):
         return ResultSession(dburi=self.dburi, **self.engine_options)

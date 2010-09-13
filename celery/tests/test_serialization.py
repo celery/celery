@@ -7,7 +7,7 @@ from celery.tests.utils import execute_context, mask_modules
 class TestAAPickle(unittest.TestCase):
 
     def test_no_cpickle(self):
-        prev = sys.modules.pop("celery.serialization")
+        prev = sys.modules.pop("celery.serialization", None)
         try:
             def with_cPickle_masked(_val):
                 from celery.serialization import pickle

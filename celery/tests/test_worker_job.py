@@ -9,8 +9,8 @@ from StringIO import StringIO
 from carrot.backends.base import BaseMessage
 
 from celery import states
-from celery.backends import default_backend
 from celery.datastructures import ExceptionInfo
+from celery.defaults import default_app
 from celery.decorators import task as task_dec
 from celery.exceptions import RetryTaskError, NotRegistered
 from celery.log import setup_logger
@@ -127,14 +127,14 @@ class test_TaskRequest(unittest.TestCase):
     def test_send_email(self):
         from celery import conf
         from celery.worker import job
-        old_mail_admins = job.mail_admins
+        old_mail_admins = default_app.mail_admins
         old_enable_mails = mytask.send_error_emails
         mail_sent = [False]
 
         def mock_mail_admins(*args, **kwargs):
             mail_sent[0] = True
 
-        job.mail_admins = mock_mail_admins
+        default_app.mail_admins = mock_mail_admins
         mytask.send_error_emails = True
         try:
             tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
@@ -152,7 +152,7 @@ class test_TaskRequest(unittest.TestCase):
             self.assertFalse(mail_sent[0])
 
         finally:
-            job.mail_admins = old_mail_admins
+            default_app.mail_admins = old_mail_admins
             mytask.send_error_emails = old_enable_mails
 
     def test_already_revoked(self):
@@ -365,7 +365,7 @@ class test_TaskRequest(unittest.TestCase):
         tid = gen_unique_id()
         tw = TaskRequest(mytask.name, tid, [4], {"f": "x"})
         self.assertEqual(tw.execute(), 256)
-        meta = default_backend.get_task_meta(tid)
+        meta = mytask.backend.get_task_meta(tid)
         self.assertEqual(meta["result"], 256)
         self.assertEqual(meta["status"], states.SUCCESS)
 
@@ -373,7 +373,7 @@ class test_TaskRequest(unittest.TestCase):
         tid = gen_unique_id()
         tw = TaskRequest(mytask_no_kwargs.name, tid, [4], {})
         self.assertEqual(tw.execute(), 256)
-        meta = default_backend.get_task_meta(tid)
+        meta = mytask_no_kwargs.backend.get_task_meta(tid)
         self.assertEqual(meta["result"], 256)
         self.assertEqual(meta["status"], states.SUCCESS)
 
@@ -381,7 +381,7 @@ class test_TaskRequest(unittest.TestCase):
         tid = gen_unique_id()
         tw = TaskRequest(mytask_some_kwargs.name, tid, [4], {})
         self.assertEqual(tw.execute(logfile="foobaz.log"), 256)
-        meta = default_backend.get_task_meta(tid)
+        meta = mytask_some_kwargs.backend.get_task_meta(tid)
         self.assertEqual(some_kwargs_scratchpad.get("logfile"), "foobaz.log")
         self.assertEqual(meta["result"], 256)
         self.assertEqual(meta["status"], states.SUCCESS)
@@ -391,7 +391,7 @@ class test_TaskRequest(unittest.TestCase):
         tw = TaskRequest(mytask.name, tid, [4], {"f": "x"},
                         on_ack=on_ack)
         self.assertEqual(tw.execute(), 256)
-        meta = default_backend.get_task_meta(tid)
+        meta = mytask.backend.get_task_meta(tid)
         self.assertTrue(scratch["ACK"])
         self.assertEqual(meta["result"], 256)
         self.assertEqual(meta["status"], states.SUCCESS)
@@ -400,7 +400,7 @@ class test_TaskRequest(unittest.TestCase):
         tid = gen_unique_id()
         tw = TaskRequest(mytask_raising.name, tid, [4], {"f": "x"})
         self.assertIsInstance(tw.execute(), ExceptionInfo)
-        meta = default_backend.get_task_meta(tid)
+        meta = mytask_raising.backend.get_task_meta(tid)
         self.assertEqual(meta["status"], states.FAILURE)
         self.assertIsInstance(meta["result"], KeyError)
 

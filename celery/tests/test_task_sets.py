@@ -3,6 +3,7 @@ import unittest2 as unittest
 import simplejson
 
 from celery import conf
+from celery.defaults import default_app
 from celery.task import Task
 from celery.task.sets import subtask, TaskSet
 
@@ -139,11 +140,11 @@ class test_TaskSet(unittest.TestCase):
 
         ts = MockTaskSet([MockTask.subtask((i, i))
                         for i in (2, 4, 8)])
-        conf.ALWAYS_EAGER = True
+        default_app.conf.CELERY_ALWAYS_EAGER = True
         try:
             ts.apply_async()
         finally:
-            conf.ALWAYS_EAGER = False
+            default_app.conf.CELERY_ALWAYS_EAGER = False
         self.assertEqual(ts.applied, 1)
 
     def test_apply_async(self):

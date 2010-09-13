@@ -1,5 +1,5 @@
-from celery import conf
 from celery.datastructures import ExceptionInfo
+from celery.defaults import app_or_default
 from celery.execute.trace import TaskTrace
 from celery.messaging import with_connection
 from celery.messaging import TaskPublisher
@@ -17,7 +17,7 @@ extract_exec_options = mattrgetter("queue", "routing_key", "exchange",
 @with_connection
 def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
         task_id=None, publisher=None, connection=None, connect_timeout=None,
-        router=None, expires=None, queues=None, **options):
+        router=None, expires=None, queues=None, app=None, **options):
     """Run a task asynchronously by the celery daemon(s).
 
     :param task: The :class:`~celery.task.base.Task` to run.
@@ -84,11 +84,12 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
     replaced by a local :func:`apply` call instead.
 
     """
-    queues = conf.prepare_queues(queues or conf.QUEUES, conf)
-    router = router or Router(conf.ROUTES, queues,
-                              conf.CREATE_MISSING_QUEUES)
+    app = app_or_default(app)
+    queues = queues or app.get_queues()
+    router = router or Router(app.conf.CELERY_ROUTES, queues,
+                              app.conf.CELERY_CREATE_MISSING_QUEUES)
 
-    if conf.ALWAYS_EAGER:
+    if app.conf.CELERY_ALWAYS_EAGER:
         return apply(task, args, kwargs, task_id=task_id)
 
     task = tasks[task.name] # get instance from registry
@@ -103,7 +104,7 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
     try:
         task_id = publish.delay_task(task.name, args, kwargs, task_id=task_id,
                                      countdown=countdown, eta=eta,
-                                     expires=expires, **options)
+                                     expires=expires, app=app, **options)
     finally:
         publisher or publish.close()
 
@@ -163,7 +164,7 @@ def delay_task(task_name, *args, **kwargs):
     return apply_async(tasks[task_name], args, kwargs)
 
 
-def apply(task, args, kwargs, **options):
+def apply(task, args, kwargs, app=None, **options):
     """Apply the task locally.
 
     :keyword throw: Re-raise task exceptions. Defaults to
@@ -173,11 +174,12 @@ def apply(task, args, kwargs, **options):
     :class:`celery.result.EagerResult` instance.
 
     """
+    app = app_or_default(app)
     args = args or []
     kwargs = kwargs or {}
     task_id = options.get("task_id") or gen_unique_id()
     retries = options.get("retries", 0)
-    throw = options.pop("throw", conf.EAGER_PROPAGATES_EXCEPTIONS)
+    throw = options.pop("throw", app.conf.CELERY_EAGER_PROPAGATES_EXCEPTIONS)
 
     task = tasks[task.name] # Make sure we get the instance, not class.
 
