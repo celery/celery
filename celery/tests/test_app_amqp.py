@@ -1,6 +1,6 @@
 import unittest2 as unittest
 
-from celery.messaging import MSG_OPTIONS, extract_msg_options
+from celery.app.amqp import MSG_OPTIONS, extract_msg_options
 
 
 class TestMsgOptions(unittest.TestCase):

@@ -1,10 +1,8 @@
 from celery.utils import timer2
 
-from celery import log
 from celery.datastructures import TokenBucket
 from celery.events import EventReceiver
 from celery.events.state import State
-from celery.messaging import establish_connection
 from celery.utils import instantiate, LOG_LEVELS
 from celery.utils.dispatch import Signal
 from celery.utils.timeutils import rate
@@ -17,11 +15,12 @@ class Polaroid(object):
     _tref = None
 
     def __init__(self, state, freq=1.0, maxrate=None,
-            cleanup_freq=3600.0, logger=None):
+            cleanup_freq=3600.0, logger=None, app=None):
+        self.app = app_or_default(app)
         self.state = state
         self.freq = freq
         self.cleanup_freq = cleanup_freq
-        self.logger = logger or log.get_default_logger(name="celery.cam")
+        self.logger = logger or app.log.get_default_logger(name="celery.cam")
         self.maxrate = maxrate and TokenBucket(rate(maxrate))
 
     def install(self):
@@ -71,21 +70,22 @@ class Polaroid(object):
 
 
 def evcam(camera, freq=1.0, maxrate=None, loglevel=0,
-        logfile=None):
+        logfile=None, app=None):
+    app = app_or_default(app)
     if not isinstance(loglevel, int):
         loglevel = LOG_LEVELS[loglevel.upper()]
-    logger = log.setup_logger(loglevel=loglevel,
-                              logfile=logfile,
-                              name="celery.evcam")
+    logger = app.log.setup_logger(loglevel=loglevel,
+                                  logfile=logfile,
+                                  name="celery.evcam")
     logger.info(
         "-> evcam: Taking snapshots with %s (every %s secs.)\n" % (
             camera, freq))
     state = State()
-    cam = instantiate(camera, state,
+    cam = instantiate(camera, state, app=app,
                       freq=freq, maxrate=maxrate, logger=logger)
     cam.install()
-    conn = establish_connection()
-    recv = EventReceiver(conn, handlers={"*": state.event})
+    conn = app.broker_connection()
+    recv = EventReceiver(conn, app=app, handlers={"*": state.event})
     try:
         try:
             recv.capture(limit=None)

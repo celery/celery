@@ -11,7 +11,6 @@ from celery import platform
 from celery import signals
 from celery.app import app_or_default
 from celery.exceptions import ImproperlyConfigured
-from celery.routes import Router
 from celery.utils import info, get_full_cls_name, LOG_LEVELS
 from celery.worker import WorkController
 
@@ -100,7 +99,8 @@ class Worker(object):
         print("celery@%s has started." % self.hostname)
 
     def init_queues(self):
-        queues = self.app.get_queues()
+        amqp = self.app.amqp
+        queues = amqp.get_queues()
         if self.use_queues:
             queues = dict((queue, options)
                                 for queue, options in queues.items()
@@ -108,7 +108,7 @@ class Worker(object):
             for queue in self.use_queues:
                 if queue not in queues:
                     if self.app.conf.CELERY_CREATE_MISSING_QUEUES:
-                        Router(queues=queues).add_queue(queue)
+                        amqp.Router(queues=queues).add_queue(queue)
                     else:
                         raise ImproperlyConfigured(
                             "Queue '%s' not defined in CELERY_QUEUES" % queue)
@@ -120,14 +120,12 @@ class Worker(object):
         map(self.loader.import_module, self.include)
 
     def redirect_stdouts_to_logger(self):
-        from celery import log
-        handled = log.setup_logging_subsystem(loglevel=self.loglevel,
-                                              logfile=self.logfile,
-                                              app=self.app)
-        # Redirect stdout/stderr to our logger.
+        handled = self.app.log.setup_logging_subsystem(loglevel=self.loglevel,
+                                                       logfile=self.logfile)
         if not handled:
-            logger = log.get_default_logger()
-            log.redirect_stdouts_to_logger(logger, loglevel=logging.WARNING)
+            logger = self.app.log.get_default_logger()
+            self.app.log.redirect_stdouts_to_logger(logger,
+                                                    loglevel=logging.WARNING)
 
     def purge_messages(self):
         count = self.app.control.discard_all()

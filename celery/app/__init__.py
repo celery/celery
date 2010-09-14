@@ -1,4 +1,10 @@
+import os
+
+from inspect import getargspec
+
+from celery import registry
 from celery.app import base
+from celery.utils.functional import wraps
 
 
 class App(base.BaseApp):
@@ -79,12 +85,20 @@ class App(base.BaseApp):
 
 default_app = App()
 
-counts = [0]
-from multiprocessing import current_process
-def app_or_default(app=None):
-    if app is None:
-        if counts[0] >= 1:
+
+if os.environ.get("CELERY_TRACE_APP"):
+    from multiprocessing import current_process
+    def app_or_default(app=None):
+        if app is None:
+            if current_process()._name == "MainProcess":
+                raise Exception("DEFAULT APP")
             print("RETURNING TO DEFAULT APP")
-        counts[0] += 1
-        return default_app
-    return app
+            import traceback
+            traceback.print_stack()
+            return default_app
+        return app
+else:
+    def app_or_default(app=None):
+        if app is None:
+            return default_app
+        return app

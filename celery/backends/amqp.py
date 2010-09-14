@@ -10,7 +10,6 @@ from carrot.messaging import Consumer, Publisher
 from celery import states
 from celery.backends.base import BaseDictBackend
 from celery.exceptions import TimeoutError
-from celery.messaging import establish_connection
 from celery.utils import timeutils
 
 
@@ -193,7 +192,7 @@ class AMQPBackend(BaseDictBackend):
     @property
     def connection(self):
         if not self._connection:
-            self._connection = establish_connection()
+            self._connection = self.app.broker_connection()
         return self._connection
 
     def reload_task_result(self, task_id):

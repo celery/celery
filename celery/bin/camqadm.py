@@ -14,9 +14,10 @@ from itertools import count
 from amqplib import client_0_8 as amqp
 from carrot.utils import partition
 
+from celery import Celery
+from celery.app import app_or_default
 from celery.utils import info
 from celery.utils import padlist
-from celery.messaging import establish_connection
 
 # Valid string -> bool coercions.
 BOOLS = {"1": True, "0": False,
@@ -331,6 +332,7 @@ class AMQPAdmin(object):
     """The celery ``camqadm`` utility."""
 
     def __init__(self, *args, **kwargs):
+        self.app = app_or_default(kwargs.get("app"))
         self.silent = bool(args)
         if "silent" in kwargs:
             self.silent = kwargs["silent"]
@@ -339,8 +341,9 @@ class AMQPAdmin(object):
     def connect(self, conn=None):
         if conn:
             conn.close()
-        self.say("-> connecting to %s." % info.format_broker_info())
-        conn = establish_connection()
+        self.say("-> connecting to %s." % (
+                    info.format_broker_info(app=self.app)))
+        conn = self.app.broker_connection()
         conn.connect()
         self.say("-> connected.")
         return conn
@@ -364,6 +367,7 @@ def parse_options(arguments):
 
 
 def camqadm(*args, **options):
+    options["app"] = Celery()
     return AMQPAdmin(*args, **options).run()
 
 

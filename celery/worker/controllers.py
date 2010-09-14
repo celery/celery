@@ -7,7 +7,7 @@ import time
 import threading
 from Queue import Empty as QueueEmpty
 
-from celery import log
+from celery.app import app_or_default
 
 
 class Mediator(threading.Thread):
@@ -24,9 +24,11 @@ class Mediator(threading.Thread):
 
     """
 
-    def __init__(self, ready_queue, callback, logger=None):
+    def __init__(self, ready_queue, callback, logger=None,
+            app=None):
         threading.Thread.__init__(self)
-        self.logger = logger or log.get_default_logger()
+        self.app = app_or_default(app)
+        self.logger = logger or self.app.log.get_default_logger()
         self.ready_queue = ready_queue
         self.callback = callback
         self._shutdown = threading.Event()

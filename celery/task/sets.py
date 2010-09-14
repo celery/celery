@@ -183,7 +183,7 @@ class TaskSet(UserList):
             return self.apply()
 
         taskset_id = gen_unique_id()
-        publisher = TaskPublisher(connection=connection)
+        publisher = self.app.amqp.TaskPublisher(connection=connection)
         try:
             results = [task.apply_async(taskset_id=taskset_id,
                                         publisher=publisher)
@@ -191,7 +191,7 @@ class TaskSet(UserList):
         finally:
             publisher.close()
 
-        return TaskSetResult(taskset_id, results, app=self.app)
+        return self.app.TaskSetResult(taskset_id, results)
 
     def apply(self):
         """Applies the taskset locally."""

@@ -6,7 +6,6 @@ import warnings
 
 from datetime import datetime
 
-from celery import log
 from celery import platform
 from celery.app import app_or_default, default_app
 from celery.datastructures import ExceptionInfo
@@ -224,7 +223,7 @@ class TaskRequest(object):
         self.on_ack = on_ack
         self.delivery_info = delivery_info or {}
         self.hostname = hostname or socket.gethostname()
-        self.logger = logger or log.get_default_logger()
+        self.logger = logger or self.app.log.get_default_logger()
         self.eventer = eventer
         self.email_subject = email_subject or self.email_subject
         self.email_body = email_body or self.email_body
@@ -254,7 +253,7 @@ class TaskRequest(object):
     def from_message(cls, message, message_data, logger=None, eventer=None,
             hostname=None, app=None):
         """Create a :class:`TaskRequest` from a task message sent by
-        :class:`celery.messaging.TaskPublisher`.
+        :class:`celery.app.amqp.TaskPublisher`.
 
         :raises UnknownTaskError: if the message does not describe a task,
             the message is also rejected.

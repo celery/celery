@@ -3,8 +3,6 @@ import sys
 
 from datetime import timedelta
 
-from carrot.connection import BrokerConnection
-
 from celery import routes
 from celery.app.defaults import DEFAULTS
 from celery.datastructures import AttributeDict
@@ -13,10 +11,12 @@ from celery.utils.functional import wraps
 
 
 class BaseApp(object):
+    _amqp = None
     _backend = None
     _conf = None
     _control = None
     _loader = None
+    _log = None
 
     def __init__(self, loader=None, backend_cls=None):
         self.loader_cls = loader or os.environ.get("CELERY_LOADER", "default")
@@ -28,29 +28,66 @@ class BaseApp(object):
                 return value
         return self.conf.get(default_key)
 
-    def get_queues(self):
-        c = self.conf
-        queues = c.CELERY_QUEUES
+    def merge(self, a, b):
+        """Like ``dict(a, **b)`` except it will keep values from ``a``
+        if the value in ``b`` is :const:`None`""".
+        b = dict(b)
+        for key, value in a.items():
+            if b.get(key) is None:
+                b[key] = value
+        return b
 
-        def _defaults(opts):
-            opts.setdefault("exchange", c.CELERY_DEFAULT_EXCHANGE),
-            opts.setdefault("exchange_type", c.CELERY_DEFAULT_EXCHANGE_TYPE)
-            opts.setdefault("binding_key", c.CELERY_DEFAULT_EXCHANGE)
-            opts.setdefault("routing_key", opts.get("binding_key"))
-            return opts
 
-        return dict((queue, _defaults(opts))
-                    for queue, opts in queues.items())
+    def AsyncResult(self, task_id, backend=None):
+        from celery.result import BaseAsyncResult
+        return BaseAsyncResult(task_id, app=self,
+                               backend=backend or self.backend)
 
-    def get_default_queue(self):
-        q = self.conf.CELERY_DEFAULT_QUEUE
-        return q, self.get_queues()[q]
+    def TaskSetResult(self, taskset_id, results, **kwargs):
+        from celery.result import TaskSetResult
+        return TaskSetResult(taskset_id, results, app=self)
+
+
+    def send_task(self, name, args=None, kwargs=None, countdown=None,
+            eta=None, task_id=None, publisher=None, connection=None,
+            connect_timeout=None, result_cls=None, expires=None,
+            **options):
+        """Send task by name.
+
+        Useful if you don't have access to the task class.
+
+        :param name: Name of task to execute.
+
+        Supports the same arguments as
+        :meth:`~celery.task.base.BaseTask.apply_async`.
+
+        """
+        result_cls = result_cls or self.AsyncResult
+        exchange = options.get("exchange")
+        exchange_type = options.get("exchange_type")
+
+        def _do_publish(connection=None, **_):
+            publish = publisher or self.amqp.TaskPublisher(connection,
+                                            exchange=exchange,
+                                            exchange_type=exchange_type)
+            try:
+                new_id = publish.delay_task(name, args, kwargs,
+                                            task_id=task_id,
+                                            countdown=countdown, eta=eta,
+                                            expires=expires, **options)
+            finally:
+                publisher or publish.close()
+
+            return result_cls(new_id)
+
+        return self.with_default_connection(_do_publish)(
+                connection=connection, connect_timeout=connect_timeout)
 
     def broker_connection(self, hostname=None, userid=None,
             password=None, virtual_host=None, port=None, ssl=None,
             insist=None, connect_timeout=None, backend_cls=None):
         """Establish a connection to the message broker."""
-        return BrokerConnection(
+        return self.amqp.BrokerConnection(
                     hostname or self.conf.BROKER_HOST,
                     userid or self.conf.BROKER_USER,
                     password or self.conf.BROKER_PASSWORD,
@@ -77,21 +114,6 @@ class BaseApp(object):
             finally:
                 close_connection()
         return _inner
-
-    def get_consumer_set(self, connection, queues=None, **options):
-        from celery.messaging import ConsumerSet, Consumer
-
-        queues = queues or self.get_queues()
-
-        cset = ConsumerSet(connection)
-        for queue_name, queue_options in queues.items():
-            queue_options = dict(queue_options)
-            queue_options["routing_key"] = queue_options.pop("binding_key",
-                                                             None)
-            consumer = Consumer(connection, queue=queue_name,
-                                backend=cset.backend, **queue_options)
-            cset.consumers.append(consumer)
-        return cset
 
     def pre_config_merge(self, c):
         if not c.get("CELERY_RESULT_BACKEND"):
@@ -136,6 +158,13 @@ class BaseApp(object):
         mailer.send(message, fail_silently=fail_silently)
 
     @property
+    def amqp(self):
+        if self._amqp is None:
+            from celery.app.amqp import AMQP
+            self._amqp = AMQP(self)
+        return self._amqp
+
+    @property
     def backend(self):
         if self._backend is None:
             from celery.backends import get_backend_cls
@@ -165,3 +194,10 @@ class BaseApp(object):
             from celery.task.control import Control
             self._control = Control(app=self)
         return self._control
+
+    @property
+    def log(self):
+        if self._log is None:
+            from celery.log import Logging
+            self._log = Logging(app=self)
+        return self._log

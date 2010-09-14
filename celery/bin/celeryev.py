@@ -3,6 +3,8 @@ import sys
 
 from optparse import OptionParser, make_option as Option
 
+from celery import Celery
+from celery.app import app_or_default
 from celery.events.cursesmon import evtop
 from celery.events.dumper import evdump
 from celery.events.snapshot import evcam
@@ -31,13 +33,14 @@ OPTION_LIST = (
 
 
 def run_celeryev(dump=False, camera=None, frequency=1.0, maxrate=None,
-        loglevel=logging.WARNING, logfile=None, **kwargs):
+        loglevel=logging.WARNING, logfile=None, app=None, **kwargs):
+    app = app_or_default(app)
     if dump:
-        return evdump()
+        return evdump(app=app)
     if camera:
-        return evcam(camera, frequency, maxrate,
+        return evcam(camera, frequency, maxrate, app=app,
                      loglevel=loglevel, logfile=logfile)
-    return evtop()
+    return evtop(app=app)
 
 
 def parse_options(arguments):
@@ -49,7 +52,8 @@ def parse_options(arguments):
 
 def main():
     options = parse_options(sys.argv[1:])
-    return run_celeryev(**vars(options))
+    app = Celery()
+    return run_celeryev(app=app, **vars(options))
 
 if __name__ == "__main__":
     main()

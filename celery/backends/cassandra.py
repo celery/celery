@@ -15,7 +15,6 @@ from datetime import datetime
 
 from celery.backends.base import BaseDictBackend
 from celery.exceptions import ImproperlyConfigured
-from celery.log import setup_logger
 from celery.serialization import pickle
 from celery import states
 
@@ -49,8 +48,8 @@ class CassandraBackend(BaseDictBackend):
 
         """
         super(CassandraBackend, self).__init__(**kwargs)
-        self.logger = setup_logger(name="celery.backends.cassandra",
-                                   app=self.app)
+        self.logger = self.app.log.setup_logger(
+                            name="celery.backends.cassandra")
 
         self.result_expires = kwargs.get("result_expires") or \
                                 self.app.conf.CELERY_TASK_RESULT_EXPIRES

@@ -1,4 +1,3 @@
-from celery import log
 from celery.app import app_or_default
 from celery.pidbox import ControlReplyPublisher
 from celery.utils import kwdict
@@ -13,10 +12,11 @@ class ControlDispatch(object):
 
     def __init__(self, logger=None, hostname=None, listener=None, app=None):
         self.app = app_or_default(app)
-        self.logger = logger or log.get_default_logger()
+        self.logger = logger or self.app.log.get_default_logger()
         self.hostname = hostname
         self.listener = listener
-        self.panel = self.Panel(self.logger, self.listener, self.hostname)
+        self.panel = self.Panel(self.logger, self.listener, self.hostname,
+                                app=self.app)
 
     def reply(self, data, exchange, routing_key, **kwargs):
 

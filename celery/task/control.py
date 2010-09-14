@@ -68,7 +68,7 @@ class Inspect(object):
 
 class Control(object):
 
-    def __init__(self, app=None):
+    def __init__(self, app):
         self.app = app
 
     def inspect(self, destination=None, timeout=1, callback=None):
@@ -86,7 +86,7 @@ class Control(object):
         """
 
         def _do_discard(connection=None, connect_timeout=None):
-            consumers = self.app.get_consumer_set(connection=connection)
+            consumers = self.app.amqp.get_consumer_set(connection=connection)
             try:
                 return consumers.discard_all()
             finally:
@@ -196,10 +196,10 @@ class Control(object):
 
         def _do_broadcast(connection=None, connect_timeout=None):
 
-            broadcaster = BroadcastPublisher(connection)
+            broadcaster = BroadcastPublisher(connection, app=self.app)
             try:
                 broadcaster.send(command, arguments, destination=destination,
-                               reply_ticket=reply_ticket)
+                                 reply_ticket=reply_ticket)
             finally:
                 broadcaster.close()
 

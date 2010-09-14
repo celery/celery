@@ -10,12 +10,10 @@ import multiprocessing
 from datetime import datetime
 from UserDict import UserDict
 
-from celery import log
 from celery import platform
 from celery.app import app_or_default
-from celery.execute import send_task
+from celery.log import SilenceRepeated
 from celery.schedules import maybe_schedule
-from celery.messaging import establish_connection
 from celery.utils import instantiate
 from celery.utils.info import humanize_seconds
 
@@ -139,7 +137,8 @@ class Scheduler(UserDict):
         self.app = app_or_default(app)
         conf = self.app.conf
         self.data = schedule
-        self.logger = logger or log.get_default_logger(name="celery.beat")
+        self.logger = logger or self.app.log.get_default_logger(
+                                                name="celery.beat")
         self.max_interval = max_interval or conf.CELERYBEAT_MAX_LOOP_INTERVAL
         self.setup_schedule()
 
@@ -164,7 +163,7 @@ class Scheduler(UserDict):
 
         """
         remaining_times = []
-        connection = establish_connection()
+        connection = self.app.broker_connection()
         try:
             try:
                 for entry in self.schedule.itervalues():
@@ -197,7 +196,7 @@ class Scheduler(UserDict):
         return result
 
     def send_task(self, *args, **kwargs): # pragma: no cover
-        return send_task(*args, **kwargs)
+        return self.app.send_task(*args, **kwargs)
 
     def setup_schedule(self):
         pass
@@ -276,7 +275,8 @@ class Service(object):
         self.max_interval = max_interval or \
                             self.app.conf.CELERYBEAT_MAX_LOOP_INTERVAL
         self.scheduler_cls = scheduler_cls or self.scheduler_cls
-        self.logger = logger or log.get_default_logger(name="celery.beat")
+        self.logger = logger or self.app.log.get_default_logger(
+                                                name="celery.beat")
         self.schedule = schedule or self.app.conf.CELERYBEAT_SCHEDULE
         self.schedule_filename = schedule_filename or \
                                     self.app.conf.CELERYBEAT_SCHEDULE_FILENAME
@@ -285,8 +285,8 @@ class Service(object):
         self._shutdown = threading.Event()
         self._stopped = threading.Event()
         silence = self.max_interval < 60 and 10 or 1
-        self.debug = log.SilenceRepeated(self.logger.debug,
-                                         max_iterations=silence)
+        self.debug = SilenceRepeated(self.logger.debug,
+                                     max_iterations=silence)
 
     def start(self, embedded_process=False):
         self.logger.info("Celerybeat: Starting...")

@@ -44,13 +44,12 @@ class Beat(object):
         self.start_scheduler(logger)
 
     def setup_logging(self):
-        from celery import log
-        handled = log.setup_logging_subsystem(loglevel=self.loglevel,
-                                              logfile=self.logfile,
-                                              app=self.app)
+        handled = self.app.log.setup_logging_subsystem(loglevel=self.loglevel,
+                                                       logfile=self.logfile)
         if not handled:
-            logger = log.get_default_logger(name="celery.beat")
-            log.redirect_stdouts_to_logger(logger, loglevel=logging.WARNING)
+            logger = self.app.log.get_default_logger(name="celery.beat")
+            self.app.log.redirect_stdouts_to_logger(logger,
+                                                    loglevel=logging.WARNING)
         return logger
 
     def start_scheduler(self, logger=None):
@@ -71,8 +70,7 @@ class Beat(object):
     def init_loader(self):
         # Run the worker init handler.
         # (Usually imports task modules and such.)
-        from celery.loaders import current_loader
-        current_loader().init_worker()
+        self.app.loader.init_worker()
 
     def startup_info(self):
         return STARTUP_INFO_FMT % {

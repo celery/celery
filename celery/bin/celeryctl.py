@@ -8,6 +8,8 @@ from textwrap import wrap
 from anyjson import deserialize
 
 from celery import __version__
+from celery import Celery
+from celery.app import app_or_default
 from celery.utils import term
 
 
@@ -39,7 +41,8 @@ class Command(object):
             help="Don't colorize output."),
     )
 
-    def __init__(self, no_color=False):
+    def __init__(self, app=None, no_color=False):
+        self.app = app_or_default(app)
         self.colored = term.colored(enabled=not no_color)
 
     def __call__(self, *args, **kwargs):
@@ -125,8 +128,6 @@ class apply(Command):
     )
 
     def run(self, name, *_, **kw):
-        from celery.execute import send_task
-
         # Positional args.
         args = kw.get("args") or ()
         if isinstance(args, basestring):
@@ -144,15 +145,14 @@ class apply(Command):
         except (TypeError, ValueError):
             pass
 
-        res = send_task(name, args=args, kwargs=kwargs,
-                        countdown=kw.get("countdown"),
-                        serializer=kw.get("serializer"),
-                        queue=kw.get("queue"),
-                        exchange=kw.get("exchange"),
-                        routing_key=kw.get("routing_key"),
-                        eta=kw.get("eta"),
-                        expires=expires)
-
+        res = self.app.send_task(name, args=args, kwargs=kwargs,
+                                 countdown=kw.get("countdown"),
+                                 serializer=kw.get("serializer"),
+                                 queue=kw.get("queue"),
+                                 exchange=kw.get("exchange"),
+                                 routing_key=kw.get("routing_key"),
+                                 eta=kw.get("eta"),
+                                 expires=expires)
         self.out(res.task_id)
 apply = command(apply)
 
@@ -165,8 +165,7 @@ class result(Command):
 
     def run(self, task_id, *args, **kwargs):
         from celery import registry
-        from celery.result import AsyncResult
-        result_cls = AsyncResult
+        result_cls = self.app.AsyncResult
         task = kwargs.get("task")
 
         if task:
@@ -206,7 +205,6 @@ class inspect(Command):
             raise Error("Did you mean 'inspect --help'?")
         if command not in self.choices:
             raise Error("Unknown inspect command: %s" % command)
-        from celery.task.control import inspect
 
         destination = kwargs.get("destination")
         timeout = kwargs.get("timeout") or self.choices[command]
@@ -221,9 +219,9 @@ class inspect(Command):
             self.say("->", c.cyan(node, ": ") + status, indent(preply))
 
         self.say("<-", command)
-        i = inspect(destination=destination,
-                    timeout=timeout,
-                    callback=on_reply)
+        i = self.app.control.inspect(destination=destination,
+                                     timeout=timeout,
+                                     callback=on_reply)
         replies = getattr(i, command)()
         if not replies:
             raise Error("No nodes replied within time constraint.")
@@ -281,6 +279,9 @@ help = command(help)
 class celeryctl(object):
     commands = commands
 
+    def __init__(self, app=None):
+        self.app = app_or_default(app)
+
     def execute(self, command, argv=None):
         if argv is None:
             argv = sys.arg
@@ -292,7 +293,7 @@ class celeryctl(object):
             argv.insert(1, "help")
         cls = self.commands.get(command) or self.commands["help"]
         try:
-            cls().run_from_argv(argv)
+            cls(app=self.app).run_from_argv(argv)
         except Error:
             return self.execute("help", argv)
 
@@ -309,7 +310,8 @@ class celeryctl(object):
 
 def main():
     try:
-        celeryctl().execute_from_commandline()
+        app = Celery()
+        celeryctl(app).execute_from_commandline()
     except KeyboardInterrupt:
         pass
 

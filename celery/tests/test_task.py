@@ -6,7 +6,6 @@ from pyparsing import ParseException
 
 
 from celery import task
-from celery import messaging
 from celery.app import default_app
 from celery.task.schedules import crontab, crontab_parser
 from celery.utils import timeutils
@@ -200,9 +199,14 @@ class TestTaskRetries(unittest.TestCase):
 
 
 class MockPublisher(object):
+    _declared = False
 
     def __init__(self, *args, **kwargs):
         self.kwargs = kwargs
+        self.connection = default_app.broker_connection()
+
+    def declare(self):
+        self._declared = True
 
 
 class TestCeleryTasks(unittest.TestCase):
@@ -330,18 +334,20 @@ class TestCeleryTasks(unittest.TestCase):
         self.assertTrue(presult.successful())
 
         publisher = t1.get_publisher()
-        self.assertIsInstance(publisher, messaging.TaskPublisher)
+        print("EXCHANGE IS: %r" % (task.Task.exchange, ))
+        self.assertTrue(publisher.exchange)
 
     def test_get_publisher(self):
-        from celery.task import base
-        old_pub = base.TaskPublisher
-        base.TaskPublisher = MockPublisher
+        from celery.app import amqp
+        old_pub = amqp.TaskPublisher
+        amqp.TaskPublisher = MockPublisher
         try:
             p = IncrementCounterTask.get_publisher(exchange="foo",
                                                    connection="bar")
             self.assertEqual(p.kwargs["exchange"], "foo")
+            self.assertTrue(p._declared)
         finally:
-            base.TaskPublisher = old_pub
+            amqp.TaskPublisher = old_pub
 
     def test_get_logger(self):
         T1 = self.createTaskCls("T1", "c.unittest.t.t1")

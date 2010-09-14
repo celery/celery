@@ -9,11 +9,11 @@ import traceback
 from multiprocessing.util import Finalize
 
 from celery import beat
-from celery import log
 from celery import registry
 from celery import platform
 from celery import signals
 from celery.app import app_or_default
+from celery.log import SilenceRepeated
 from celery.utils import noop, instantiate
 
 from celery.worker import state
@@ -66,13 +66,12 @@ class WorkController(object):
 
         self.app = app_or_default(app)
         conf = self.app.conf
-        queues = queues or self.app.get_queues()
 
         # Options
         self.loglevel = loglevel or self.loglevel
         self.concurrency = concurrency or conf.CELERYD_CONCURRENCY
         self.logfile = logfile or conf.CELERYD_LOG_FILE
-        self.logger = log.get_default_logger()
+        self.logger = self.app.log.get_default_logger()
         if send_events is None:
             send_events = conf.CELERY_SEND_EVENTS
         self.send_events = send_events
@@ -98,8 +97,8 @@ class WorkController(object):
                                 conf.CELERYD_ETA_SCHEDULER_PRECISION
         self.prefetch_multiplier = prefetch_multiplier or \
                                 conf.CELERYD_PREFETCH_MULTIPLIER
-        self.timer_debug = log.SilenceRepeated(self.logger.debug,
-                                               max_iterations=10)
+        self.timer_debug = SilenceRepeated(self.logger.debug,
+                                           max_iterations=10)
         self.db = db or conf.CELERYD_STATE_DB
         self.disable_rate_limits = disable_rate_limits or \
                                 conf.CELERY_DISABLE_RATE_LIMITS
@@ -128,6 +127,7 @@ class WorkController(object):
                                 soft_timeout=self.task_soft_time_limit,
                                 putlocks=self.pool_putlocks)
         self.mediator = instantiate(self.mediator_cls, self.ready_queue,
+                                    app=self.app,
                                     callback=self.process_task,
                                     logger=self.logger)
         self.scheduler = instantiate(self.eta_scheduler_cls,

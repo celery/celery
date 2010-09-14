@@ -10,7 +10,7 @@ from multiprocessing import current_process
 from multiprocessing import util as mputil
 
 from celery import signals
-from celery.app import app_or_default
+from celery.app import default_app
 from celery.utils import noop
 from celery.utils.compat import LoggerAdapter
 from celery.utils.patch import ensure_process_aware_logger
@@ -47,25 +47,29 @@ class ColorFormatter(logging.Formatter):
         return logging.Formatter.format(self, record)
 
 
-def get_task_logger(loglevel=None, name=None):
-    logger = logging.getLogger(name or "celery.task.default")
-    if loglevel is not None:
-        logger.setLevel(loglevel)
-    return logger
+class Logging(object):
+    _setup = False
 
+    def __init__(self, app):
+        self.app = app
+        self.loglevel = self.app.conf.CELERYD_LOG_LEVEL
+        self.format = self.app.conf.CELERYD_LOG_FORMAT
 
-def setup_logging_subsystem(loglevel=None, logfile=None,
-        format=None, colorize=None, **kwargs):
-    app = app_or_default(kwargs.get("app"))
-    loglevel = loglevel or app.conf.CELERYD_LOG_LEVEL
-    format = format or app.conf.CELERYD_LOG_FORMAT
-    if colorize is None:
-        colorize = app.conf.CELERYD_LOG_COLOR
+    def get_task_logger(self, loglevel=None, name=None):
+        logger = logging.getLogger(name or "celery.task.default")
+        if loglevel is not None:
+            logger.setLevel(loglevel)
+        return logger
 
-    print("COLORIZE: %s" % (app.conf.CELERYD_LOG_COLOR, ))
+    def setup_logging_subsystem(self, loglevel=None, logfile=None,
+            format=None, colorize=None, **kwargs):
+        loglevel = loglevel or self.loglevel
+        format = format or self.format
+        colorize = self.app.either("CELERYD_LOG_COLOR", colorize)
 
-    global _setup
-    if not _setup:
+        if self.__class__._setup:
+            return
+
         try:
             mputil._logger = None
         except AttributeError:
@@ -81,88 +85,104 @@ def setup_logging_subsystem(loglevel=None, logfile=None,
             root = logging.getLogger()
             mp = mputil.get_logger()
             for logger in (root, mp):
-                _setup_logger(logger, logfile, format, colorize, **kwargs)
+                self._setup_logger(logger, logfile,
+                                   format, colorize, **kwargs)
                 logger.setLevel(loglevel)
-        _setup = True
+        self.__class__._setup = True
         return receivers
 
+    def _detect_handler(self, logfile=None):
+        """Create log handler with either a filename, an open stream
+        or ``None`` (stderr)."""
+        if not logfile or hasattr(logfile, "write"):
+            return logging.StreamHandler(logfile)
+        return logging.FileHandler(logfile)
 
-def _detect_handler(logfile=None):
-    """Create log handler with either a filename, an open stream
-    or ``None`` (stderr)."""
-    if not logfile or hasattr(logfile, "write"):
-        return logging.StreamHandler(logfile)
-    return logging.FileHandler(logfile)
+    def get_default_logger(self, loglevel=None, name="celery"):
+        """Get default logger instance.
 
+        :keyword loglevel: Initial log level.
 
-def get_default_logger(loglevel=None, name="celery"):
-    """Get default logger instance.
-
-    :keyword loglevel: Initial log level.
-
-    """
-    logger = logging.getLogger(name)
-    if loglevel is not None:
-        logger.setLevel(loglevel)
-    return logger
-
-
-def setup_logger(loglevel=None, logfile=None,
-        format=None, colorize=None, name="celery", root=True,
-        app=None, **kwargs):
-    """Setup the ``multiprocessing`` logger. If ``logfile`` is not specified,
-    then ``stderr`` is used.
-
-    Returns logger object.
-
-    """
-    app = app_or_default(app)
-    loglevel = loglevel or app.conf.CELERYD_LOG_LEVEL
-    format = format or app.conf.CELERYD_LOG_FORMAT
-    if colorize is None:
-        colorize = app.conf.CELERYD_LOG_COLOR
-
-    if not root:
-        return _setup_logger(get_default_logger(loglevel, name),
-                             logfile, format, colorize, **kwargs)
-    setup_logging_subsystem(loglevel, logfile, format, colorize, **kwargs)
-    return get_default_logger(name=name)
-
-
-def setup_task_logger(loglevel=None, logfile=None, format=None, colorize=None,
-        task_kwargs=None, app=None, **kwargs):
-    """Setup the task logger. If ``logfile`` is not specified, then
-    ``stderr`` is used.
-
-    Returns logger object.
-
-    """
-    app = app_or_default(app)
-    loglevel = loglevel or app.conf.CELERYD_LOG_LEVEL
-    format = format or app.conf.CELERYD_LOG_FORMAT
-    if colorize is None:
-        colorize = app.conf.CELERYD_LOG_COLOR
-
-    if task_kwargs is None:
-        task_kwargs = {}
-    task_kwargs.setdefault("task_id", "-?-")
-    task_name = task_kwargs.get("task_name")
-    task_kwargs.setdefault("task_name", "-?-")
-    logger = _setup_logger(get_task_logger(loglevel, task_name),
-                            logfile, format, colorize, **kwargs)
-    return LoggerAdapter(logger, task_kwargs)
-
-
-def _setup_logger(logger, logfile, format, colorize,
-        formatter=ColorFormatter, **kwargs):
-
-    if logger.handlers: # Logger already configured
+        """
+        logger = logging.getLogger(name)
+        if loglevel is not None:
+            logger.setLevel(loglevel)
         return logger
 
-    handler = _detect_handler(logfile)
-    handler.setFormatter(formatter(format, use_color=colorize))
-    logger.addHandler(handler)
-    return logger
+    def setup_logger(self, loglevel=None, logfile=None,
+            format=None, colorize=None, name="celery", root=True,
+            app=None, **kwargs):
+        """Setup the ``multiprocessing`` logger.
+
+        If ``logfile`` is not specified, then ``sys.stderr`` is used.
+
+        Returns logger object.
+
+        """
+        loglevel = loglevel or self.loglevel
+        format = format or self.format
+        colorize = self.app.either("CELERYD_LOG_COLOR", colorize)
+
+        if not root:
+            return self._setup_logger(self.get_default_logger(loglevel, name),
+                                      logfile, format, colorize, **kwargs)
+        self.setup_logging_subsystem(loglevel, logfile,
+                                     format, colorize, **kwargs)
+        return self.get_default_logger(name=name)
+
+    def setup_task_logger(self, loglevel=None, logfile=None, format=None,
+            colorize=None, task_kwargs=None, app=None, **kwargs):
+        """Setup the task logger.
+
+        If ``logfile`` is not specified, then ``sys.stderr`` is used.
+
+        Returns logger object.
+
+        """
+        loglevel = loglevel or self.loglevel
+        format = format or self.format
+        colorize = self.app.either("CELERYD_LOG_COLOR", colorize)
+
+        if task_kwargs is None:
+            task_kwargs = {}
+        task_kwargs.setdefault("task_id", "-?-")
+        task_name = task_kwargs.get("task_name")
+        task_kwargs.setdefault("task_name", "-?-")
+        logger = self._setup_logger(self.get_task_logger(loglevel, task_name),
+                                    logfile, format, colorize, **kwargs)
+        return LoggerAdapter(logger, task_kwargs)
+
+    def redirect_stdouts_to_logger(self, logger, loglevel=None):
+        """Redirect :class:`sys.stdout` and :class:`sys.stderr` to a
+        logging instance.
+
+        :param logger: The :class:`logging.Logger` instance to redirect to.
+        :param loglevel: The loglevel redirected messages will be logged as.
+
+        """
+        proxy = LoggingProxy(logger, loglevel)
+        sys.stdout = sys.stderr = proxy
+        return proxy
+
+    def _setup_logger(self, logger, logfile, format, colorize,
+            formatter=ColorFormatter, **kwargs):
+
+        if logger.handlers: # Logger already configured
+            return logger
+
+        handler = self._detect_handler(logfile)
+        handler.setFormatter(formatter(format, use_color=colorize))
+        logger.addHandler(handler)
+        return logger
+
+
+_default_logging = Logging(default_app)
+setup_logging_subsystem = _default_logging.setup_logging_subsystem
+get_default_logger = _default_logging.get_default_logger
+setup_logger = _default_logging.setup_logger
+setup_task_logger = _default_logging.setup_task_logger
+get_task_logger = _default_logging.get_task_logger
+redirect_stdouts_to_logger = _default_logging.redirect_stdouts_to_logger
 
 
 def emergency_error(logfile, message):
@@ -184,18 +204,6 @@ def emergency_error(logfile, message):
     finally:
         closefh()
 
-
-def redirect_stdouts_to_logger(logger, loglevel=None):
-    """Redirect :class:`sys.stdout` and :class:`sys.stderr` to a
-    logging instance.
-
-    :param logger: The :class:`logging.Logger` instance to redirect to.
-    :param loglevel: The loglevel redirected messages will be logged as.
-
-    """
-    proxy = LoggingProxy(logger, loglevel)
-    sys.stdout = sys.stderr = proxy
-    return proxy
 
 
 class LoggingProxy(object):

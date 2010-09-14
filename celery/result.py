@@ -41,13 +41,8 @@ class BaseAsyncResult(object):
         The workers will ignore the task if received.
 
         """
-
-        def _do_revoke(connection=None, connect_timeout=None):
-            from celery.task import control
-            control.revoke(self.task_id, connection=connection,
-                           connect_timeout=connect_timeout)
-        self.app.with_default_connection(_do_revoke)(
-                connection=connection, connect_timeout=connect_timeout)
+        self.app.control.revoke(self.task_id, connection=connection,
+                                connect_timeout=connect_timeout)
 
     def wait(self, timeout=None):
         """Wait for task, and return the result when it arrives.

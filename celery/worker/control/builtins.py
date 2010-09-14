@@ -1,6 +1,5 @@
 from datetime import datetime
 
-from celery import log
 from celery.registry import tasks
 from celery.utils import timeutils, LOG_LEVELS
 from celery.worker import state
@@ -25,7 +24,7 @@ def diagnose(panel, timeout=None, **kwargs):
 @Panel.register
 def revoke(panel, task_id, task_name=None, **kwargs):
     """Revoke task by task id."""
-    app = panel.listener.app
+    app = panel.app
     revoked.add(task_id)
     backend = app.backend
     if task_name: # Use custom task backend (if any)
@@ -65,7 +64,7 @@ def set_loglevel(panel, loglevel=None):
     if loglevel is not None:
         if not isinstance(loglevel, int):
             loglevel = LOG_LEVELS[loglevel.upper()]
-        log.get_default_logger(loglevel=loglevel)
+        panel.app.log.get_default_logger(loglevel=loglevel)
     return {"ok": loglevel}
 
 

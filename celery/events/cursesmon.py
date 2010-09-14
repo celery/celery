@@ -9,10 +9,9 @@ from itertools import count
 from textwrap import wrap
 
 from celery import states
+from celery.app import app_or_default
 from celery.events import EventReceiver
 from celery.events.state import State
-from celery.messaging import establish_connection
-from celery.task import control
 from celery.utils import abbr, abbrtask
 
 
@@ -33,7 +32,8 @@ class CursesMonitor(object):
     greet = "celeryev %s" % celery.__version__
     info_str = "Info: "
 
-    def __init__(self, state, keymap=None):
+    def __init__(self, state, keymap=None, app=None):
+        self.app = app_or_default(app)
         self.keymap = keymap or self.keymap
         self.state = state
         default_keymap = {"J": self.move_selection_down,
@@ -129,7 +129,8 @@ class CursesMonitor(object):
         rlimit = self.readline(my - 2, 3 + len(r))
 
         if rlimit:
-            reply = control.rate_limit(task.name, rlimit.strip(), reply=True)
+            reply = self.app.control.rate_limit(task.name,
+                                                rlimit.strip(), reply=True)
             self.alert_remote_control_reply(reply)
 
     def alert_remote_control_reply(self, reply):
@@ -181,7 +182,7 @@ class CursesMonitor(object):
     def revoke_selection(self):
         if not self.selected_task:
             return curses.beep()
-        reply = control.revoke(self.selected_task, reply=True)
+        reply = self.app.control.revoke(self.selected_task, reply=True)
         self.alert_remote_control_reply(reply)
 
     def selection_info(self):
@@ -384,15 +385,16 @@ class DisplayThread(threading.Thread):
             self.display.nap()
 
 
-def evtop():
+def evtop(app=None):
     sys.stderr.write("-> evtop: starting capture...\n")
+    app = app_or_default(app)
     state = State()
     display = CursesMonitor(state)
     display.init_screen()
     refresher = DisplayThread(display)
     refresher.start()
-    conn = establish_connection()
-    recv = EventReceiver(conn, handlers={"*": state.event})
+    conn = app.broker_connection()
+    recv = EventReceiver(conn, app=app, handlers={"*": state.event})
     try:
         recv.capture(limit=None)
     except Exception:

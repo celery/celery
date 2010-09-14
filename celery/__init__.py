@@ -11,4 +11,4 @@ __docformat__ = "restructuredtext"
 
 def Celery(*args, **kwargs):
     from celery import app
-    return app.Celery(*args, **kwargs)
+    return app.App(*args, **kwargs)

@@ -2,9 +2,9 @@ import sys
 
 from datetime import datetime
 
+from celery.app import app_or_default
 from celery.datastructures import LocalCache
 from celery.events import EventReceiver
-from celery.messaging import establish_connection
 
 
 TASK_NAMES = LocalCache(0xFFF)
@@ -52,11 +52,12 @@ class Dumper(object):
                                     humanize_type(type), sep, task, fields))
 
 
-def evdump():
+def evdump(app=None):
     sys.stderr.write("-> evdump: starting capture...\n")
+    app = app_or_default(app)
     dumper = Dumper()
-    conn = establish_connection()
-    recv = EventReceiver(conn, handlers={"*": dumper.on_event})
+    conn = app.broker_connection()
+    recv = EventReceiver(conn, app=app, handlers={"*": dumper.on_event})
     try:
         recv.capture()
     except (KeyboardInterrupt, SystemExit):

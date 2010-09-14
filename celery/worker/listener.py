@@ -381,7 +381,7 @@ class CarrotListener(object):
 
         self.connection = self._open_connection()
         self.logger.debug("CarrotListener: Connection Established.")
-        self.task_consumer = self.app.get_consumer_set(
+        self.task_consumer = self.app.amqp.get_consumer_set(
                                         connection=self.connection,
                                         queues=self.queues)
         # QoS: Reset prefetch window.
