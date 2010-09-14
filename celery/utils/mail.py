@@ -6,8 +6,6 @@ try:
 except ImportError:
     from email.MIMEText import MIMEText
 
-from celery.defaults import app_or_default
-
 
 class SendmailWarning(UserWarning):
     """Problem happened while sending the e-mail message."""

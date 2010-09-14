@@ -1,7 +1,6 @@
+from celery.app import app_or_default, default_app
 from celery.datastructures import ExceptionInfo
-from celery.defaults import app_or_default
 from celery.execute.trace import TaskTrace
-from celery.messaging import with_connection
 from celery.messaging import TaskPublisher
 from celery.registry import tasks
 from celery.result import AsyncResult, EagerResult
@@ -14,7 +13,7 @@ extract_exec_options = mattrgetter("queue", "routing_key", "exchange",
                                    "delivery_mode")
 
 
-@with_connection
+@default_app.with_default_connection
 def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
         task_id=None, publisher=None, connection=None, connect_timeout=None,
         router=None, expires=None, queues=None, app=None, **options):
@@ -111,7 +110,7 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
     return task.AsyncResult(task_id)
 
 
-@with_connection
+@default_app.with_default_connection
 def send_task(name, args=None, kwargs=None, countdown=None, eta=None,
         task_id=None, publisher=None, connection=None, connect_timeout=None,
         result_cls=AsyncResult, expires=None, **options):

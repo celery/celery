@@ -7,7 +7,7 @@ from itertools import count
 
 from carrot.messaging import Publisher, Consumer
 
-from celery.defaults import app_or_default
+from celery.app import app_or_default
 
 
 def create_event(type, fields):

@@ -13,7 +13,7 @@ from celery import log
 from celery import registry
 from celery import platform
 from celery import signals
-from celery.defaults import app_or_default
+from celery.app import app_or_default
 from celery.utils import noop, instantiate
 
 from celery.worker import state

@@ -80,16 +80,16 @@ import warnings
 
 from carrot.connection import AMQPConnectionException
 
-from celery.defaults import app_or_default
+from celery.app import app_or_default
+from celery.datastructures import SharedCounter
+from celery.events import EventDispatcher
+from celery.exceptions import NotRegistered
+from celery.pidbox import BroadcastConsumer
 from celery.utils import noop, retry_over_time
+
 from celery.worker.job import TaskRequest, InvalidTaskError
 from celery.worker.control import ControlDispatch
 from celery.worker.heartbeat import Heart
-from celery.events import EventDispatcher
-from celery.messaging import establish_connection
-from celery.messaging import get_consumer_set, BroadcastConsumer
-from celery.exceptions import NotRegistered
-from celery.datastructures import SharedCounter
 
 RUN = 0x1
 CLOSE = 0x2
@@ -215,10 +215,11 @@ class CarrotListener(object):
         self.event_dispatcher = None
         self.heart = None
         self.pool = pool
-        self.control_dispatch = ControlDispatch(logger=logger,
+        self.control_dispatch = ControlDispatch(app=self.app,
+                                                logger=logger,
                                                 hostname=self.hostname,
                                                 listener=self)
-        self.queues = queues or self.app.get_queues()
+        self.queues = queues
 
     def start(self):
         """Start the consumer.
@@ -390,6 +391,7 @@ class CarrotListener(object):
 
         self.task_consumer.on_decode_error = self.on_decode_error
         self.broadcast_consumer = BroadcastConsumer(self.connection,
+                                                    app=self.app,
                                                     hostname=self.hostname)
         self.task_consumer.register_callback(self.receive_message)
 
@@ -397,6 +399,7 @@ class CarrotListener(object):
         if self.event_dispatcher:
             self.event_dispatcher.flush()
         self.event_dispatcher = EventDispatcher(self.connection,
+                                                app=self.app,
                                                 hostname=self.hostname,
                                                 enabled=self.send_events)
         self.heart = Heart(self.event_dispatcher)

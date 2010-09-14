@@ -25,7 +25,7 @@ class BaseLoader(object):
     configured = False
 
     def __init__(self, app=None, **kwargs):
-        from celery.defaults import app_or_default
+        from celery.app import app_or_default
         self.app = app_or_default(app)
 
     def on_task_init(self, task_id, task):

@@ -27,7 +27,6 @@ LOG_LEVELS["FATAL"] = logging.FATAL
 LOG_LEVELS[logging.FATAL] = "FATAL"
 
 
-
 class promise(object):
     """A promise.
 
@@ -386,3 +385,9 @@ def abbrtask(S, max):
         module = abbr(module, max - len(cls), False)
         return module + "[.]" + cls
     return S
+
+
+def isatty(fh):
+    # Fixes bug with mod_wsgi:
+    #   mod_wsgi.Log object has no attribute isatty.
+    return getattr(fh, "isatty", None) and fh.isatty()

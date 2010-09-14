@@ -18,7 +18,7 @@ class BaseBackend(object):
     TimeoutError = TimeoutError
 
     def __init__(self, *args, **kwargs):
-        from celery.defaults import app_or_default
+        from celery.app import app_or_default
         self.app = app_or_default(kwargs.get("app"))
 
     def encode_result(self, result, status):

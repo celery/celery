@@ -9,7 +9,6 @@ from carrot.backends.base import BaseMessage
 from carrot.connection import BrokerConnection
 from celery.utils.timer2 import Timer
 
-from celery import conf
 from celery.decorators import task as task_dec
 from celery.decorators import periodic_task as periodic_task_dec
 from celery.serialization import pickle
@@ -380,11 +379,12 @@ class test_CarrotListener(unittest.TestCase):
                                timedelta(days=1)).isoformat())
 
         l.reset_connection()
-        p, conf.BROKER_CONNECTION_RETRY = conf.BROKER_CONNECTION_RETRY, False
+        p = l.app.conf.BROKER_CONNECTION_RETRY
+        l.app.conf.BROKER_CONNECTION_RETRY = False
         try:
             l.reset_connection()
         finally:
-            conf.BROKER_CONNECTION_RETRY = p
+            l.app.conf.BROKER_CONNECTION_RETRY = p
         l.receive_message(m.decode(), m)
 
         in_hold = self.eta_schedule.queue[0]

@@ -7,3 +7,8 @@ __author__ = "Ask Solem"
 __contact__ = "ask@celeryproject.org"
 __homepage__ = "http://github.com/ask/celery/"
 __docformat__ = "restructuredtext"
+
+
+def Celery(*args, **kwargs):
+    from celery import app
+    return app.Celery(*args, **kwargs)

@@ -9,11 +9,10 @@ import warnings
 from celery import __version__
 from celery import platform
 from celery import signals
-from celery.defaults import app_or_default
+from celery.app import app_or_default
 from celery.exceptions import ImproperlyConfigured
 from celery.routes import Router
-from celery.task import discard_all
-from celery.utils import info,get_full_cls_name, LOG_LEVELS
+from celery.utils import info, get_full_cls_name, LOG_LEVELS
 from celery.worker import WorkController
 
 
@@ -131,10 +130,9 @@ class Worker(object):
             log.redirect_stdouts_to_logger(logger, loglevel=logging.WARNING)
 
     def purge_messages(self):
-        discarded_count = discard_all()
-        what = discarded_count > 1 and "messages" or "message"
-        print("discard: Erased %d %s from the queue.\n" % (
-            discarded_count, what))
+        count = self.app.control.discard_all()
+        what = (not count or count > 1) and "messages" or "message"
+        print("discard: Erased %d %s from the queue.\n" % (count, what))
 
     def worker_init(self):
         # Run the worker init handler.
@@ -157,7 +155,7 @@ class Worker(object):
             tasklist = self.tasklist(include_builtins=include_builtins)
 
         return STARTUP_INFO_FMT % {
-            "conninfo": info.format_broker_info(),
+            "conninfo": info.format_broker_info(app=self.app),
             "queues": info.format_queues(self.queues, indent=8),
             "concurrency": self.concurrency,
             "loglevel": LOG_LEVELS[self.loglevel],

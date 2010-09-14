@@ -3,24 +3,30 @@ import sys
 
 from datetime import timedelta
 
+from carrot.connection import BrokerConnection
+
 from celery import routes
+from celery.app.defaults import DEFAULTS
 from celery.datastructures import AttributeDict
-from celery.defaults.conf import DEFAULTS
-
-def isatty(fh):
-    # Fixes bug with mod_wsgi:
-    #   mod_wsgi.Log object has no attribute isatty.
-    return getattr(fh, "isatty", None) and fh.isatty()
+from celery.utils import noop, isatty
+from celery.utils.functional import wraps
 
 
-class DefaultApp(object):
+class BaseApp(object):
     _backend = None
     _conf = None
+    _control = None
     _loader = None
 
     def __init__(self, loader=None, backend_cls=None):
         self.loader_cls = loader or os.environ.get("CELERY_LOADER", "default")
         self.backend_cls = backend_cls
+
+    def either(self, default_key, *values):
+        for value in values:
+            if value is not None:
+                return value
+        return self.conf.get(default_key)
 
     def get_queues(self):
         c = self.conf
@@ -40,19 +46,37 @@ class DefaultApp(object):
         q = self.conf.CELERY_DEFAULT_QUEUE
         return q, self.get_queues()[q]
 
-    def broker_connection(self, **kwargs):
-        from celery.messaging import establish_connection
-        return establish_connection(app=self, **kwargs)
+    def broker_connection(self, hostname=None, userid=None,
+            password=None, virtual_host=None, port=None, ssl=None,
+            insist=None, connect_timeout=None, backend_cls=None):
+        """Establish a connection to the message broker."""
+        return BrokerConnection(
+                    hostname or self.conf.BROKER_HOST,
+                    userid or self.conf.BROKER_USER,
+                    password or self.conf.BROKER_PASSWORD,
+                    virtual_host or self.conf.BROKER_VHOST,
+                    port or self.conf.BROKER_PORT,
+                    backend_cls=backend_cls or self.conf.BROKER_BACKEND,
+                    insist=self.either("BROKER_INSIST", insist),
+                    ssl=self.either("BROKER_USE_SSL", ssl),
+                    connect_timeout=self.either(
+                                "BROKER_CONNECTION_TIMEOUT", connect_timeout))
 
-    def pre_config_merge(self, c):
-        if not c.get("CELERY_RESULT_BACKEND"):
-            c["CELERY_RESULT_BACKEND"] = c.get("CELERY_BACKEND")
-        if not c.get("BROKER_BACKEND"):
-            c["BROKER_BACKEND"] = c.get("BROKER_TRANSPORT")  or \
-                                    c.get("CARROT_BACKEND")
-        c.setdefault("CELERY_SEND_TASK_ERROR_EMAILS",
-                     c.get("SEND_CELERY_TASK_ERROR_EMAILS"))
-        return c
+    def with_default_connection(self, fun):
+
+        @wraps(fun)
+        def _inner(*args, **kwargs):
+            connection = kwargs.get("connection")
+            timeout = kwargs.get("connect_timeout")
+            kwargs["connection"] = conn = connection or \
+                    self.broker_connection(connect_timeout=timeout)
+            close_connection = not connection and conn.close or noop
+
+            try:
+                return fun(*args, **kwargs)
+            finally:
+                close_connection()
+        return _inner
 
     def get_consumer_set(self, connection, queues=None, **options):
         from celery.messaging import ConsumerSet, Consumer
@@ -68,6 +92,16 @@ class DefaultApp(object):
                                 backend=cset.backend, **queue_options)
             cset.consumers.append(consumer)
         return cset
+
+    def pre_config_merge(self, c):
+        if not c.get("CELERY_RESULT_BACKEND"):
+            c["CELERY_RESULT_BACKEND"] = c.get("CELERY_BACKEND")
+        if not c.get("BROKER_BACKEND"):
+            c["BROKER_BACKEND"] = c.get("BROKER_TRANSPORT")  or \
+                                    c.get("CARROT_BACKEND")
+        c.setdefault("CELERY_SEND_TASK_ERROR_EMAILS",
+                     c.get("SEND_CELERY_TASK_ERROR_EMAILS"))
+        return c
 
     def post_config_merge(self, c):
         if not c.get("CELERY_QUEUES"):
@@ -125,10 +159,9 @@ class DefaultApp(object):
                             AttributeDict(DEFAULTS, **config))
         return self._conf
 
-default_app = DefaultApp()
-
-
-def app_or_default(app=None):
-    if app is None:
-        return default_app
-    return app
+    @property
+    def control(self):
+        if self._control is None:
+            from celery.task.control import Control
+            self._control = Control(app=self)
+        return self._control

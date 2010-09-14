@@ -1,12 +1,11 @@
 import sys
 import warnings
 
-from celery.defaults import default_app
+from celery.app import default_app
 from celery.exceptions import MaxRetriesExceededError, RetryTaskError
 from celery.execute import apply_async, apply
 from celery.log import setup_task_logger
 from celery.messaging import TaskPublisher, TaskConsumer
-from celery.messaging import establish_connection as _establish_connection
 from celery.registry import tasks
 from celery.result import BaseAsyncResult, EagerResult
 from celery.schedules import maybe_schedule
@@ -71,7 +70,6 @@ class TaskType(type):
 
 
 def create_task_cls(app):
-
 
     class Task(object):
         """A celery task.
@@ -289,7 +287,7 @@ def create_task_cls(app):
         def establish_connection(self,
             connect_timeout=app.conf.BROKER_CONNECTION_TIMEOUT):
             """Establish a connection to the message broker."""
-            return _establish_connection(connect_timeout=connect_timeout)
+            return app.broker_connection(connect_timeout=connect_timeout)
 
         @classmethod
         def get_publisher(self, connection=None, exchange=None,
@@ -366,7 +364,15 @@ def create_task_cls(app):
             :returns :class:`celery.result.AsyncResult`:
 
             """
-            return apply_async(self, args, kwargs, **options)
+            conn = None
+            if not options.get("connection") or options.get("publisher"):
+                conn = options["connection"] = self.establish_connection(
+                            connect_timeout=options.get("connect_timeout"))
+            try:
+                return apply_async(self, args, kwargs, **options)
+            finally:
+                if conn:
+                    conn.close()
 
         @classmethod
         def retry(self, args=None, kwargs=None, exc=None, throw=True,
@@ -468,7 +474,8 @@ def create_task_cls(app):
             :param task_id: Task id to get result for.
 
             """
-            return BaseAsyncResult(task_id, backend=self.backend)
+            return BaseAsyncResult(task_id,
+                                   backend=self.backend, app=self.app)
 
         def on_retry(self, exc, task_id, args, kwargs, einfo=None):
             """Retry handler.
@@ -571,6 +578,7 @@ def create_task_cls(app):
         def __name__(self):
             return self.__class__.__name__
 
+    Task.app = app
     return Task
 
 Task = create_task_cls(default_app)

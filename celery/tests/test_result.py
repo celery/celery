@@ -3,7 +3,7 @@ from __future__ import generators
 import unittest2 as unittest
 
 from celery import states
-from celery.defaults import default_app
+from celery.app import default_app
 from celery.utils import gen_unique_id
 from celery.utils.compat import all
 from celery.result import AsyncResult, TaskSetResult

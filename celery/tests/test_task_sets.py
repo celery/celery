@@ -2,8 +2,7 @@ import unittest2 as unittest
 
 import simplejson
 
-from celery import conf
-from celery.defaults import default_app
+from celery.app import default_app
 from celery.task import Task
 from celery.task.sets import subtask, TaskSet
 

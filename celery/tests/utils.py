@@ -7,6 +7,7 @@ from StringIO import StringIO
 
 from nose import SkipTest
 
+from celery.app import default_app
 from celery.utils.functional import wraps
 
 
@@ -70,7 +71,6 @@ from celery.utils import noop
 @contextmanager
 def eager_tasks():
 
-    from celery.defaults import default_app
     prev = default_app.conf.CELERY_ALWAYS_EAGER
     default_app.conf.CELERY_ALWAYS_EAGER = True
 
@@ -83,7 +83,6 @@ def with_eager_tasks(fun):
 
     @wraps(fun)
     def _inner(*args, **kwargs):
-        from celery.defaults import default_app
         prev = default_app.conf.CELERY_ALWAYS_EAGER
         default_app.conf.CELERY_ALWAYS_EAGER = True
         try:

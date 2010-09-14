@@ -3,9 +3,8 @@ import warnings
 from UserList import UserList
 
 from celery import registry
+from celery.app import app_or_default
 from celery.datastructures import AttributeDict
-from celery.defaults import app_or_default
-from celery.messaging import with_connection
 from celery.messaging import TaskPublisher
 from celery.result import TaskSetResult
 from celery.utils import gen_unique_id
@@ -127,7 +126,7 @@ class TaskSet(UserList):
     _task = None # compat
     _task_name = None # compat
 
-    def __init__(self, task=None, tasks=None):
+    def __init__(self, task=None, tasks=None, app=None):
         if task is not None:
             if hasattr(task, "__iter__"):
                 tasks = task
@@ -142,11 +141,15 @@ class TaskSet(UserList):
                                 "cls": task.__class__.__name__},
                               DeprecationWarning)
 
+        self.app = app_or_default(app)
         self.data = list(tasks)
         self.total = len(self.tasks)
 
-    @with_connection
-    def apply_async(self, connection=None, connect_timeout=None, app=None):
+    def apply_async(self, connection=None, connect_timeout=None):
+        return self.app.with_default_connection(self._apply_async)(
+                connection=connection, connect_timeout=connect_timeout)
+
+    def _apply_async(self, connection=None, connect_timeout=None):
         """Run all tasks in the taskset.
 
         Returns a :class:`celery.result.TaskSetResult` instance.
@@ -176,7 +179,7 @@ class TaskSet(UserList):
             [True, True]
 
         """
-        if app_or_default(app).conf.CELERY_ALWAYS_EAGER:
+        if self.app.conf.CELERY_ALWAYS_EAGER:
             return self.apply()
 
         taskset_id = gen_unique_id()
@@ -188,7 +191,7 @@ class TaskSet(UserList):
         finally:
             publisher.close()
 
-        return TaskSetResult(taskset_id, results)
+        return TaskSetResult(taskset_id, results, app=self.app)
 
     def apply(self):
         """Applies the taskset locally."""
@@ -196,7 +199,8 @@ class TaskSet(UserList):
 
         # This will be filled with EagerResults.
         return TaskSetResult(taskset_id, [task.apply(taskset_id=taskset_id)
-                                            for task in self.tasks])
+                                            for task in self.tasks],
+                             app=self.app)
 
     @property
     def tasks(self):

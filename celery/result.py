@@ -6,10 +6,9 @@ from copy import copy
 from itertools import imap
 
 from celery import states
-from celery.defaults import default_app
+from celery.app import app_or_default
 from celery.datastructures import PositionQueue
 from celery.exceptions import TimeoutError
-from celery.messaging import with_connection
 from celery.utils import any, all
 
 
@@ -31,9 +30,10 @@ class BaseAsyncResult(object):
 
     TimeoutError = TimeoutError
 
-    def __init__(self, task_id, backend):
+    def __init__(self, task_id, backend, app=None):
         self.task_id = task_id
         self.backend = backend
+        self.app = app_or_default(app)
 
     def revoke(self, connection=None, connect_timeout=None):
         """Send revoke signal to all workers.
@@ -41,9 +41,13 @@ class BaseAsyncResult(object):
         The workers will ignore the task if received.
 
         """
-        from celery.task import control
-        control.revoke(self.task_id, connection=connection,
-                       connect_timeout=connect_timeout)
+
+        def _do_revoke(connection=None, connect_timeout=None):
+            from celery.task import control
+            control.revoke(self.task_id, connection=connection,
+                           connect_timeout=connect_timeout)
+        self.app.with_default_connection(_do_revoke)(
+                connection=connection, connect_timeout=connect_timeout)
 
     def wait(self, timeout=None):
         """Wait for task, and return the result when it arrives.
@@ -164,9 +168,10 @@ class AsyncResult(BaseAsyncResult):
 
     """
 
-    def __init__(self, task_id, backend=None):
-        backend = backend or default_app.backend
-        super(AsyncResult, self).__init__(task_id, backend)
+    def __init__(self, task_id, backend=None, app=None):
+        app = app_or_default(app)
+        backend = backend or app.backend
+        super(AsyncResult, self).__init__(task_id, backend, app=app)
 
 
 class TaskSetResult(object):
@@ -189,9 +194,10 @@ class TaskSetResult(object):
 
     """
 
-    def __init__(self, taskset_id, subtasks):
+    def __init__(self, taskset_id, subtasks, app=None):
         self.taskset_id = taskset_id
         self.subtasks = subtasks
+        self.app = app_or_default(app)
 
     def itersubtasks(self):
         """Taskset subtask iterator.
@@ -251,10 +257,14 @@ class TaskSetResult(object):
         return sum(imap(int, (subtask.successful()
                                 for subtask in self.itersubtasks())))
 
-    @with_connection
     def revoke(self, connection=None, connect_timeout=None):
-        for subtask in self.subtasks:
-            subtask.revoke(connection=connection)
+
+        def _do_revoke(connection=None, connect_timeout=None):
+            for subtask in self.subtasks:
+                subtask.revoke(connection=connection)
+
+        return self.app.with_default_connection(_do_revoke)(
+                connection=connection, connect_timeout=connect_timeout)
 
     def __iter__(self):
         """``iter(res)`` -> ``res.iterate()``."""
@@ -335,14 +345,14 @@ class TaskSetResult(object):
 
         """
         if backend is None:
-            backend = default_app.backend
+            backend = self.app.backend
         backend.save_taskset(self.taskset_id, self)
 
     @classmethod
     def restore(self, taskset_id, backend=None):
         """Restore previously saved taskset result."""
         if backend is None:
-            backend = default_app.backend
+            backend = self.app.backend
         return backend.restore_taskset(taskset_id)
 
     @property

@@ -3,9 +3,8 @@ import unittest2 as unittest
 
 from celery.utils.timer2 import Timer
 
-from celery import conf
+from celery.app import default_app
 from celery.decorators import task
-from celery.defaults import default_app
 from celery.registry import tasks
 from celery.task.builtins import PingTask
 from celery.utils import gen_unique_id
@@ -101,13 +100,13 @@ class test_ControlPanel(unittest.TestCase):
         self.assertFalse(panel.execute("dump_reserved"))
 
     def test_rate_limit_when_disabled(self):
-        conf.DISABLE_RATE_LIMITS = True
+        default_app.conf.CELERY_DISABLE_RATE_LIMITS = True
         try:
             e = self.panel.execute("rate_limit", kwargs=dict(
                  task_name=mytask.name, rate_limit="100/m"))
             self.assertIn("rate limits disabled", e.get("error"))
         finally:
-            conf.DISABLE_RATE_LIMITS = False
+            default_app.conf.CELERY_DISABLE_RATE_LIMITS = False
 
     def test_rate_limit_invalid_rate_limit_string(self):
         e = self.panel.execute("rate_limit", kwargs=dict(

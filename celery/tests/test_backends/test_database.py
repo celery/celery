@@ -5,8 +5,8 @@ from datetime import datetime
 from celery.exceptions import ImproperlyConfigured
 
 from celery import states
+from celery.app import default_app
 from celery.db.models import Task, TaskSet
-from celery.defaults import default_app
 from celery.utils import gen_unique_id
 from celery.backends.database import DatabaseBackend
 

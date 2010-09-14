@@ -5,10 +5,9 @@ from datetime import datetime, timedelta
 from pyparsing import ParseException
 
 
-from celery import conf
 from celery import task
 from celery import messaging
-from celery.defaults import default_app
+from celery.app import default_app
 from celery.task.schedules import crontab, crontab_parser
 from celery.utils import timeutils
 from celery.utils import gen_unique_id, parse_iso8601

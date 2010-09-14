@@ -1,6 +1,6 @@
 import math
 
-from celery.messaging import establish_connection
+from celery.app import app_or_default
 
 QUEUE_FORMAT = """
 . %(name)s -> exchange:%(exchange)s (%(exchange_type)s) \
@@ -38,8 +38,9 @@ def format_queues(queues, indent=0):
     return textindent(info, indent=indent)
 
 
-def get_broker_info():
-    broker_connection = establish_connection()
+def get_broker_info(app=None):
+    app = app_or_default(app)
+    broker_connection = app.broker_connection()
 
     carrot_backend = broker_connection.backend_cls
     if carrot_backend and not isinstance(carrot_backend, str):
@@ -61,6 +62,6 @@ def get_broker_info():
             "vhost": vhost}
 
 
-def format_broker_info(info=None):
+def format_broker_info(info=None, app=None):
     """Get message broker connection info string for log dumps."""
-    return BROKER_FORMAT % get_broker_info()
+    return BROKER_FORMAT % get_broker_info(app=app)

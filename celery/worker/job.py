@@ -8,8 +8,8 @@ from datetime import datetime
 
 from celery import log
 from celery import platform
+from celery.app import app_or_default, default_app
 from celery.datastructures import ExceptionInfo
-from celery.defaults import app_or_default, default_app
 from celery.execute.trace import TaskTrace
 from celery.registry import tasks
 from celery.utils import noop, kwdict, fun_takes_kwargs

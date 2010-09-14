@@ -1,5 +1,6 @@
 from celery import log
-from celery.messaging import ControlReplyPublisher, with_connection
+from celery.app import app_or_default
+from celery.pidbox import ControlReplyPublisher
 from celery.utils import kwdict
 from celery.worker.control.registry import Panel
 from celery.worker.control import builtins
@@ -10,20 +11,23 @@ class ControlDispatch(object):
     Panel = Panel
     ReplyPublisher = ControlReplyPublisher
 
-    def __init__(self, logger=None, hostname=None, listener=None):
+    def __init__(self, logger=None, hostname=None, listener=None, app=None):
+        self.app = app_or_default(app)
         self.logger = logger or log.get_default_logger()
         self.hostname = hostname
         self.listener = listener
         self.panel = self.Panel(self.logger, self.listener, self.hostname)
 
-    @with_connection
-    def reply(self, data, exchange, routing_key, connection=None,
-            connect_timeout=None):
-        crq = self.ReplyPublisher(connection, exchange=exchange)
-        try:
-            crq.send(data, routing_key=routing_key)
-        finally:
-            crq.close()
+    def reply(self, data, exchange, routing_key, **kwargs):
+
+        def _do_reply(connection=None, connect_timeout=None):
+            crq = self.ReplyPublisher(connection, exchange=exchange)
+            try:
+                crq.send(data, routing_key=routing_key)
+            finally:
+                crq.close()
+
+        self.app.with_default_connection(_do_reply)(**kwargs)
 
     def dispatch_from_message(self, message):
         """Dispatch by using message data received by the broker.

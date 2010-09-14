@@ -9,8 +9,8 @@ from StringIO import StringIO
 from carrot.backends.base import BaseMessage
 
 from celery import states
+from celery.app import default_app
 from celery.datastructures import ExceptionInfo
-from celery.defaults import default_app
 from celery.decorators import task as task_dec
 from celery.exceptions import RetryTaskError, NotRegistered
 from celery.log import setup_logger
@@ -125,7 +125,6 @@ class test_TaskRequest(unittest.TestCase):
         self.assertIn("task-frobulated", tw.eventer.sent)
 
     def test_send_email(self):
-        from celery import conf
         from celery.worker import job
         old_mail_admins = default_app.mail_admins
         old_enable_mails = mytask.send_error_emails
@@ -458,8 +457,7 @@ class test_TaskRequest(unittest.TestCase):
         tw.logger = setup_logger(logfile=logfh, loglevel=logging.INFO,
                                  root=False)
 
-        from celery import conf
-        conf.CELERY_SEND_TASK_ERROR_EMAILS = True
+        default_app.conf.CELERY_SEND_TASK_ERROR_EMAILS = True
 
         tw.on_failure(exc_info)
         logvalue = logfh.getvalue()
@@ -467,7 +465,7 @@ class test_TaskRequest(unittest.TestCase):
         self.assertIn(tid, logvalue)
         self.assertIn("ERROR", logvalue)
 
-        conf.CELERY_SEND_TASK_ERROR_EMAILS = False
+        default_app.conf.CELERY_SEND_TASK_ERROR_EMAILS = False
 
     def test_on_failure(self):
         self._test_on_failure(Exception("Inside unit tests"))

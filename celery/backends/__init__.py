@@ -1,4 +1,4 @@
-from celery.defaults import default_app
+from celery.app import default_app
 from celery.utils import get_cls_by_name
 from celery.utils.functional import curry
 

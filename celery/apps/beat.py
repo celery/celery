@@ -5,7 +5,7 @@ import traceback
 from celery import __version__
 from celery import beat
 from celery import platform
-from celery.defaults import app_or_default
+from celery.app import app_or_default
 from celery.log import emergency_error
 from celery.utils import info, LOG_LEVELS
 
@@ -76,7 +76,7 @@ class Beat(object):
 
     def startup_info(self):
         return STARTUP_INFO_FMT % {
-            "conninfo": info.format_broker_info(),
+            "conninfo": info.format_broker_info(app=self.app),
             "logfile": self.logfile or "@stderr",
             "loglevel": LOG_LEVELS[self.loglevel],
             "schedule": self.schedule,

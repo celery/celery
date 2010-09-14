@@ -12,7 +12,7 @@ from UserDict import UserDict
 
 from celery import log
 from celery import platform
-from celery.defaults import app_or_default
+from celery.app import app_or_default
 from celery.execute import send_task
 from celery.schedules import maybe_schedule
 from celery.messaging import establish_connection

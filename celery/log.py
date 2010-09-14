@@ -10,7 +10,7 @@ from multiprocessing import current_process
 from multiprocessing import util as mputil
 
 from celery import signals
-from celery.defaults import app_or_default
+from celery.app import app_or_default
 from celery.utils import noop
 from celery.utils.compat import LoggerAdapter
 from celery.utils.patch import ensure_process_aware_logger

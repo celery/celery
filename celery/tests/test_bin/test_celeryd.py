@@ -8,7 +8,7 @@ from StringIO import StringIO
 
 from celery import platform
 from celery import signals
-from celery.defaults import default_app
+from celery.app import default_app
 from celery.apps import worker as cd
 from celery.bin.celeryd import WorkerCommand, main as celeryd_main
 from celery.exceptions import ImproperlyConfigured
