@@ -64,11 +64,14 @@ class TaskPublisher(messaging.Publisher):
             message_data["taskset"] = taskset_id
 
         # FIXME (carrot Publisher.send needs to accept exchange argument)
-        if exchange:
-            self.exchange = exchange
-        if exchange_type:
-            self.exchange_type = exchange_type
-        self.send(message_data, **extract_msg_options(kwargs))
+        if exchange and exchange not in _exchanges_declared:
+            exchange_type = exchange_type or self.exchange_type
+            self.backend.exchange_declare(exchange=exchange,
+                                          exchange_type=exchange_type,
+                                          durable=self.durable,
+                                          auto_delete=self.auto_delete)
+        self.send(message_data, exchange=exchange,
+                  **extract_msg_options(kwargs))
         signals.task_sent.send(sender=task_name, **message_data)
 
         return task_id
