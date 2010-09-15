@@ -1,5 +1,6 @@
 from celery.utils import timer2
 
+from celery.app import app_or_default
 from celery.datastructures import TokenBucket
 from celery.events import EventReceiver
 from celery.events.state import State
@@ -20,7 +21,8 @@ class Polaroid(object):
         self.state = state
         self.freq = freq
         self.cleanup_freq = cleanup_freq
-        self.logger = logger or app.log.get_default_logger(name="celery.cam")
+        self.logger = logger or \
+                self.app.log.get_default_logger(name="celery.cam")
         self.maxrate = maxrate and TokenBucket(rate(maxrate))
 
     def install(self):

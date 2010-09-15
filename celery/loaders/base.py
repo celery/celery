@@ -47,7 +47,7 @@ class BaseLoader(object):
         return import_module(module)
 
     def import_default_modules(self):
-        imports = getattr(self.conf, "CELERY_IMPORTS", None) or []
+        imports = self.conf.get("CELERY_IMPORTS") or []
         imports = set(list(imports) + BUILTIN_MODULES)
         return map(self.import_task_module, imports)
 

@@ -11,8 +11,6 @@ DEFAULT_CONFIG_MODULE = "celeryconfig"
 DEFAULT_SETTINGS = {
     "DEBUG": False,
     "ADMINS": (),
-    "DATABASE_ENGINE": "sqlite3",
-    "DATABASE_NAME": "celery.sqlite",
     "INSTALLED_APPS": ("celery", ),
     "CELERY_IMPORTS": (),
     "CELERY_TASK_ERROR_WHITELIST": (),

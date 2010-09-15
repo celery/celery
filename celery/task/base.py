@@ -427,7 +427,7 @@ class BaseTask(object):
         router = self.app.amqp.Router(queues)
 
         if self.app.conf.CELERY_ALWAYS_EAGER:
-            return apply(self, args, kwargs, task_id=task_id)
+            return self.apply(args, kwargs, task_id=task_id)
 
         options = dict(extract_exec_options(self), **options)
         options = router.route(options, self.name, args, kwargs)
