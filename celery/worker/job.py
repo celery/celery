@@ -441,7 +441,7 @@ class TaskRequest(object):
 
         task_obj = tasks.get(self.task_name, object)
         self.send_error_email(task_obj, context, exc_info.exception,
-                              enabled=task_obj.send_error_emails
+                              enabled=task_obj.send_error_emails,
                               whitelist=task_obj.error_whitelist)
 
     def send_error_email(self, task, context, exc,
