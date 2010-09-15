@@ -13,4 +13,5 @@
     protocol
     events
     moduleindex
+    app-overview
     reference/index

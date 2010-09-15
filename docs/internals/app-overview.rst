@@ -53,7 +53,7 @@ Starting a worker:
 
     worker = celery.Worker(loglevel="INFO")
 
-Getting access to the configuration::
+Getting access to the configuration:
 
 .. code-block:: python
 
@@ -61,7 +61,7 @@ Getting access to the configuration::
     celery.conf["CELERY_ALWAYS_EAGER"] = True
 
 
-Controlling workerse
+Controlling workers::
 
     >>> celery.control.inspect().active()
     >>> celery.control.rate_limit(add.name, "100/m")
