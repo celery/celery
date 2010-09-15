@@ -197,10 +197,10 @@ class TaskSet(UserList):
         """Applies the taskset locally."""
         taskset_id = gen_unique_id()
 
-        # This will be filled with EagerResults.
-        return TaskSetResult(taskset_id, [task.apply(taskset_id=taskset_id)
-                                            for task in self.tasks],
-                             app=self.app)
+        # this will be filled with EagerResults.
+        results = [task.apply(taskset_id=taskset_id)
+                        for task in self.tasks]
+        return self.app.TaskSetResult(taskset_id, results)
 
     @property
     def tasks(self):

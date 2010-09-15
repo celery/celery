@@ -247,8 +247,9 @@ class status(Command):
     option_list = inspect.option_list
 
     def run(self, *args, **kwargs):
-        replies = inspect(no_color=kwargs.get("no_color", False)) \
-                            .run("ping", **dict(kwargs, quiet=True))
+        replies = inspect(app=self.app,
+                          no_color=kwargs.get("no_color", False)) \
+                    .run("ping", **dict(kwargs, quiet=True))
         if not replies:
             raise Error("No nodes replied within time constraint")
         nodecount = len(replies)

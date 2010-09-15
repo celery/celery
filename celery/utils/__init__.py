@@ -15,7 +15,6 @@ from inspect import getargspec
 from itertools import islice
 
 from carrot.utils import rpartition
-from dateutil.parser import parse as parse_iso8601
 
 from celery.utils.compat import all, any, defaultdict
 from celery.utils.timeutils import timedelta_seconds # was here before
@@ -105,15 +104,6 @@ def noop(*args, **kwargs):
 
     """
     pass
-
-
-def maybe_iso8601(dt):
-    """``Either datetime | str -> datetime or None -> None``"""
-    if not dt:
-        return
-    if isinstance(dt, datetime):
-        return dt
-    return parse_iso8601(dt)
 
 
 def kwdict(kwargs):

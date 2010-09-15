@@ -12,7 +12,8 @@ from celery.datastructures import ExceptionInfo
 from celery.execute.trace import TaskTrace
 from celery.registry import tasks
 from celery.utils import noop, kwdict, fun_takes_kwargs
-from celery.utils import truncate_text, maybe_iso8601
+from celery.utils import truncate_text
+from celery.utils.timeutils import maybe_iso8601
 from celery.worker import state
 
 # pep8.py borks on a inline signature separator and

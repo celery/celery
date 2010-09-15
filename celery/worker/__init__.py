@@ -137,8 +137,9 @@ class WorkController(object):
 
         self.beat = None
         if self.embed_clockservice:
-            self.beat = beat.EmbeddedService(logger=self.logger,
-                                    schedule_filename=self.schedule_filename)
+            self.beat = beat.EmbeddedService(app=self.app,
+                                logger=self.logger,
+                                schedule_filename=self.schedule_filename)
 
         prefetch_count = self.concurrency * self.prefetch_multiplier
         self.listener = instantiate(self.listener_cls,

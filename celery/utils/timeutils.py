@@ -1,6 +1,7 @@
 import math
 
 from datetime import datetime, timedelta
+from dateutil.parser import parse as parse_iso8601
 
 from carrot.utils import partition
 
@@ -114,5 +115,14 @@ def humanize_seconds(secs, prefix=""):
             punit = w > 1 and unit+"s" or unit
             return "%s%s %s" % (prefix, formatter(w), punit)
     return "now"
+
+
+def maybe_iso8601(dt):
+    """``Either datetime | str -> datetime or None -> None``"""
+    if not dt:
+        return
+    if isinstance(dt, datetime):
+        return dt
+    return parse_iso8601(dt)
 
 
