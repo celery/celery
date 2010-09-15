@@ -4,6 +4,7 @@ import unittest2 as unittest
 
 from celery import beat
 from celery import platform
+from celery.apps import beat as beatapp
 from celery.bin import celerybeat as celerybeat
 
 
@@ -18,14 +19,14 @@ class MockService(beat.Service):
         self.__class__.in_sync = True
 
 
-class MockBeat(celerybeat.Beat):
+class MockBeat(beatapp.Beat):
     running = False
 
     def run(self):
         self.__class__.running = True
 
 
-class MockBeat2(celerybeat.Beat):
+class MockBeat2(beatapp.Beat):
     Service = MockService
 
     def install_sync_handler(self, b):
@@ -35,22 +36,22 @@ class MockBeat2(celerybeat.Beat):
 class test_Beat(unittest.TestCase):
 
     def test_loglevel_string(self):
-        b = celerybeat.Beat(loglevel="DEBUG")
+        b = beatapp.Beat(loglevel="DEBUG")
         self.assertEqual(b.loglevel, logging.DEBUG)
 
-        b2 = celerybeat.Beat(loglevel=logging.DEBUG)
+        b2 = beatapp.Beat(loglevel=logging.DEBUG)
         self.assertEqual(b2.loglevel, logging.DEBUG)
 
     def test_init_loader(self):
-        b = celerybeat.Beat()
+        b = beatapp.Beat()
         b.init_loader()
 
     def test_startup_info(self):
-        b = celerybeat.Beat()
+        b = beatapp.Beat()
         self.assertIn("@stderr", b.startup_info())
 
     def test_process_title(self):
-        b = celerybeat.Beat()
+        b = beatapp.Beat()
         b.set_process_title()
 
     def test_run(self):
@@ -73,7 +74,7 @@ class test_Beat(unittest.TestCase):
             platform.install_signal_handler = p
 
     def test_install_sync_handler(self):
-        b = celerybeat.Beat()
+        b = beatapp.Beat()
         clock = MockService()
         MockService.in_sync = False
         handlers = self.psig(b.install_sync_handler, clock)
@@ -86,10 +87,10 @@ class test_Beat(unittest.TestCase):
 class test_div(unittest.TestCase):
 
     def setUp(self):
-        self.prev, celerybeat.Beat = celerybeat.Beat, MockBeat
+        self.prev, beatapp.Beat = beatapp.Beat, MockBeat
 
     def tearDown(self):
-        celerybeat.Beat = self.prev
+        beatapp.Beat = self.prev
 
     def test_main(self):
         sys.argv = [sys.argv[0], "-s", "foo"]
@@ -101,11 +102,12 @@ class test_div(unittest.TestCase):
 
     def test_run_celerybeat(self):
         try:
-            celerybeat.run_celerybeat()
+            beatapp.run_celerybeat()
             self.assertTrue(MockBeat.running)
         finally:
             MockBeat.running = False
 
     def test_parse_options(self):
-        options = celerybeat.parse_options(["-s", "foo"])
+        options,args = celerybeat.BeatCommand().parse_options(
+                "celerybeat", ["-s", "foo"])
         self.assertEqual(options.schedule, "foo")

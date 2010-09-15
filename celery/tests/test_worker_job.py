@@ -128,14 +128,14 @@ class test_TaskRequest(unittest.TestCase):
         from celery import conf
         from celery.worker import job
         old_mail_admins = job.mail_admins
-        old_enable_mails = conf.CELERY_SEND_TASK_ERROR_EMAILS
+        old_enable_mails = mytask.send_error_emails
         mail_sent = [False]
 
         def mock_mail_admins(*args, **kwargs):
             mail_sent[0] = True
 
         job.mail_admins = mock_mail_admins
-        conf.CELERY_SEND_TASK_ERROR_EMAILS = True
+        mytask.send_error_emails = True
         try:
             tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
             try:
@@ -147,13 +147,13 @@ class test_TaskRequest(unittest.TestCase):
             self.assertTrue(mail_sent[0])
 
             mail_sent[0] = False
-            conf.CELERY_SEND_TASK_ERROR_EMAILS = False
+            mytask.send_error_emails = False
             tw.on_failure(einfo)
             self.assertFalse(mail_sent[0])
 
         finally:
             job.mail_admins = old_mail_admins
-            conf.CELERY_SEND_TASK_ERROR_EMAILS = old_enable_mails
+            mytask.send_error_emails = old_enable_mails
 
     def test_already_revoked(self):
         tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})

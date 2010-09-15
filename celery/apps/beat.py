@@ -23,10 +23,9 @@ class Beat(object):
             max_interval=None, scheduler_cls=None, defaults=None, **kwargs):
         """Starts the celerybeat task scheduler."""
 
+        if defaults is None:
+            from celery import conf as defaults
         self.defaults = defaults
-        if self.defaults is None:
-            from celery import conf
-            self.defaults = conf
 
         self.loglevel = loglevel or defaults.CELERYBEAT_LOG_LEVEL
         self.logfile = logfile or defaults.CELERYBEAT_LOG_FILE
