@@ -1,3 +1,5 @@
+import math
+
 from datetime import datetime, timedelta
 
 from carrot.utils import partition
@@ -10,6 +12,11 @@ RATE_MODIFIER_MAP = {"s": lambda n: n,
                      "h": lambda n: n / 60.0 / 60.0}
 
 HAVE_TIMEDELTA_TOTAL_SECONDS = hasattr(timedelta, "total_seconds")
+
+TIME_UNITS = (("day", 60 * 60 * 24, lambda n: int(math.ceil(n))),
+              ("hour", 60 * 60, lambda n: int(math.ceil(n))),
+              ("minute", 60, lambda n: int(math.ceil(n))),
+              ("second", 1, lambda n: "%.2f" % n))
 
 
 def timedelta_seconds(delta):
@@ -96,3 +103,16 @@ def weekday(name):
     except KeyError:
         # Show original day name in exception, instead of abbr.
         raise KeyError(name)
+
+
+def humanize_seconds(secs, prefix=""):
+    """Show seconds in human form, e.g. 60 is "1 minute", 7200 is "2
+    hours"."""
+    for unit, divider, formatter in TIME_UNITS:
+        if secs >= divider:
+            w = secs / divider
+            punit = w > 1 and unit+"s" or unit
+            return "%s%s %s" % (prefix, formatter(w), punit)
+    return "now"
+
+

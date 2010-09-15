@@ -153,8 +153,8 @@ class Worker(object):
             tasklist = self.tasklist(include_builtins=include_builtins)
 
         return STARTUP_INFO_FMT % {
-            "conninfo": info.format_broker_info(app=self.app),
-            "queues": info.format_queues(self.queues, indent=8),
+            "conninfo": self.app.amqp.format_broker_info(),
+            "queues": self.app.amqp.format_queues(self.queues, indent=8),
             "concurrency": self.concurrency,
             "loglevel": LOG_LEVELS[self.loglevel],
             "logfile": self.logfile or "[stderr]",

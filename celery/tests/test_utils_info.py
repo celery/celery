@@ -1,6 +1,8 @@
 import unittest2 as unittest
 
-from celery.utils import info
+from celery.app import default_app
+from celery.utils import textindent
+from celery.utils.timeutils import humanize_seconds
 
 RANDTEXT = """\
 The quick brown
@@ -47,16 +49,16 @@ class TestInfo(unittest.TestCase):
              (0, "now"))
 
         for seconds, human in t:
-            self.assertEqual(info.humanize_seconds(seconds), human)
+            self.assertEqual(humanize_seconds(seconds), human)
 
-        self.assertEqual(info.humanize_seconds(4, prefix="about "),
+        self.assertEqual(humanize_seconds(4, prefix="about "),
                           "about 4.00 seconds")
 
     def test_textindent(self):
-        self.assertEqual(info.textindent(RANDTEXT, 4), RANDTEXT_RES)
+        self.assertEqual(textindent(RANDTEXT, 4), RANDTEXT_RES)
 
     def test_format_queues(self):
-        self.assertEqual(info.format_queues(QUEUES), QUEUE_FORMAT)
+        self.assertEqual(default_app.amqp.format_queues(QUEUES), QUEUE_FORMAT)
 
     def test_broker_info(self):
-        info.format_broker_info()
+        default_app.amqp.format_broker_info()

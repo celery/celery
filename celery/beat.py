@@ -15,7 +15,7 @@ from celery.app import app_or_default
 from celery.log import SilenceRepeated
 from celery.schedules import maybe_schedule
 from celery.utils import instantiate
-from celery.utils.info import humanize_seconds
+from celery.utils.timeutils import humanize_seconds
 
 
 class SchedulingError(Exception):

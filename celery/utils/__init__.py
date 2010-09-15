@@ -391,3 +391,8 @@ def isatty(fh):
     # Fixes bug with mod_wsgi:
     #   mod_wsgi.Log object has no attribute isatty.
     return getattr(fh, "isatty", None) and fh.isatty()
+
+
+def textindent(t, indent=0):
+        """Indent text."""
+        return "\n".join(" " * indent + p for p in t.split("\n"))

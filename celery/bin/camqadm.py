@@ -342,7 +342,7 @@ class AMQPAdmin(object):
         if conn:
             conn.close()
         self.say("-> connecting to %s." % (
-                    info.format_broker_info(app=self.app)))
+                    self.app.amqp.format_broker_info(), ))
         conn = self.app.broker_connection()
         conn.connect()
         self.say("-> connected.")

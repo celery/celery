@@ -74,7 +74,7 @@ class Beat(object):
 
     def startup_info(self):
         return STARTUP_INFO_FMT % {
-            "conninfo": info.format_broker_info(app=self.app),
+            "conninfo": self.app.amqp.format_broker_info(),
             "logfile": self.logfile or "@stderr",
             "loglevel": LOG_LEVELS[self.loglevel],
             "schedule": self.schedule,

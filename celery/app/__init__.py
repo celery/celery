@@ -87,8 +87,8 @@ default_app = App()
 
 
 if os.environ.get("CELERY_TRACE_APP"):
-    from multiprocessing import current_process
     def app_or_default(app=None):
+        from multiprocessing import current_process
         if app is None:
             if current_process()._name == "MainProcess":
                 raise Exception("DEFAULT APP")
