@@ -290,9 +290,30 @@ except ImportError:
     collections.defaultdict = defaultdict # Pickle needs this.
 
 ############## logging.LoggerAdapter ########################################
+import inspect
 import logging
 import multiprocessing
 import sys
+
+from logging import LogRecord
+
+# The func argument to LogRecord was added in 2.5
+if "func" not in inspect.getargspec(LogRecord.__init__)[0]:
+    def LogRecord(name, level, fn, lno, msg, args, exc_info, func):
+        return logging.LogRecord(name, level, fn, lno, msg, args, exc_info)
+
+
+def _checkLevel(level):
+    if isinstance(level, int):
+        rv = level
+    elif str(level) == level:
+        if level not in logging._levelNames:
+            raise ValueError("Unknown level: %r" % level)
+        rv = logging._levelNames[level]
+    else:
+        raise TypeError("Level not an integer or a valid string: %r" % level)
+    return rv
+
 
 class _CompatLoggerAdapter(object):
 
@@ -301,42 +322,41 @@ class _CompatLoggerAdapter(object):
         self.extra = extra
 
     def setLevel(self, level):
-        self.logger.level = logging._checkLevel(level)
+        self.logger.level = _checkLevel(level)
 
     def process(self, msg, kwargs):
         kwargs["extra"] = self.extra
         return msg, kwargs
 
     def debug(self, msg, *args, **kwargs):
-        self.log(logging.DEBUG, msg, args, **kwargs)
+        self.log(logging.DEBUG, msg, *args, **kwargs)
 
     def info(self, msg, *args, **kwargs):
-        self.log(logging.INFO, msg, args, **kwargs)
+        self.log(logging.INFO, msg, *args, **kwargs)
 
     def warning(self, msg, *args, **kwargs):
-        self.log(logging.WARNING, msg, args, **kwargs)
+        self.log(logging.WARNING, msg, *args, **kwargs)
     warn = warning
 
     def error(self, msg, *args, **kwargs):
-        self.log(logging.ERROR, msg, args, **kwargs)
+        self.log(logging.ERROR, msg, *args, **kwargs)
 
     def exception(self, msg, *args, **kwargs):
         kwargs.setdefault("exc_info", 1)
         self.error(msg, *args, **kwargs)
 
     def critical(self, msg, *args, **kwargs):
-        self.log(logging.CRITICAL, msg, args, **kwargs)
+        self.log(logging.CRITICAL, msg, *args, **kwargs)
     fatal = critical
 
-    def log(self, level, msg, args, **kwargs):
+    def log(self, level, msg, *args, **kwargs):
         if self.logger.isEnabledFor(level):
             msg, kwargs = self.process(msg, kwargs)
             self._log(level, msg, args, **kwargs)
 
     def makeRecord(self, name, level, fn, lno, msg, args, exc_info,
             func=None, extra=None):
-        rv = logging.LogRecord(name, level, fn, lno,
-                               msg, args, exc_info, func)
+        rv = LogRecord(name, level, fn, lno, msg, args, exc_info, func)
         if extra is not None:
             for key, value in extra.items():
                 if key in ("message", "asctime") or key in rv.__dict__:
@@ -362,7 +382,7 @@ class _CompatLoggerAdapter(object):
             if not isinstance(exc_info, tuple):
                 exc_info = sys.exc_info()
         record = self.makeRecord(self.logger.name, level, fn, lno, msg,
-                                    args, exc_info, func, extra)
+                                 args, exc_info, func, extra)
         self.logger.handle(record)
 
     def isEnabledFor(self, level):
@@ -373,6 +393,10 @@ class _CompatLoggerAdapter(object):
 
     def removeHandler(self, hdlr):
         self.logger.removeHandler(hdlr)
+
+    @property
+    def level(self):
+        return self.logger.level
 
 
 try:
