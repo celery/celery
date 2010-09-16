@@ -24,14 +24,8 @@ class TestLoaders(unittest.TestCase):
 
 class DummyLoader(base.BaseLoader):
 
-    class Config(object):
-
-        def __init__(self, **kwargs):
-            for attr, val in kwargs.items():
-                setattr(self, attr, val)
-
     def read_configuration(self):
-        return self.Config(foo="bar", CELERY_IMPORTS=("os", "sys"))
+        return {"foo": "bar", "CELERY_IMPORTS": ("os", "sys")}
 
 
 class TestLoaderBase(unittest.TestCase):
@@ -47,9 +41,9 @@ class TestLoaderBase(unittest.TestCase):
         self.assertEqual(sys, self.loader.import_task_module("sys"))
 
     def test_conf_property(self):
-        self.assertEqual(self.loader.conf.foo, "bar")
-        self.assertEqual(self.loader._conf_cache.foo, "bar")
-        self.assertEqual(self.loader.conf.foo, "bar")
+        self.assertEqual(self.loader.conf["foo"], "bar")
+        self.assertEqual(self.loader._conf_cache["foo"], "bar")
+        self.assertEqual(self.loader.conf["foo"], "bar")
 
     def test_import_default_modules(self):
         self.assertItemsEqual(self.loader.import_default_modules(),

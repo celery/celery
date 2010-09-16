@@ -7,7 +7,7 @@ from celery import beat
 from celery import platform
 from celery.app import app_or_default
 from celery.log import emergency_error
-from celery.utils import info, LOG_LEVELS
+from celery.utils import LOG_LEVELS
 
 STARTUP_INFO_FMT = """
 Configuration ->

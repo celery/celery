@@ -70,7 +70,7 @@
 import multiprocessing
 
 from celery import __version__
-from celery import Celery
+from celery import CompatCelery
 from celery.bin.base import Command, Option
 
 
@@ -151,7 +151,7 @@ class WorkerCommand(Command):
 
 def main():
     multiprocessing.freeze_support()
-    app = Celery()
+    app = CompatCelery()
     worker = WorkerCommand(app=app)
     worker.execute_from_commandline()
 

@@ -22,7 +22,7 @@
     ``ERROR``, ``CRITICAL``, or ``FATAL``.
 
 """
-from celery import Celery
+from celery import CompatCelery
 from celery.bin.base import Command, Option
 
 
@@ -62,7 +62,7 @@ class BeatCommand(Command):
 
 
 def main():
-    app = Celery()
+    app = CompatCelery()
     beat = BeatCommand(app=app)
     beat.execute_from_commandline()
 

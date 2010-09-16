@@ -14,7 +14,7 @@ from itertools import count
 from amqplib import client_0_8 as amqp
 from carrot.utils import partition
 
-from celery import Celery
+from celery import CompatCelery
 from celery.app import app_or_default
 from celery.utils import info
 from celery.utils import padlist
@@ -367,7 +367,7 @@ def parse_options(arguments):
 
 
 def camqadm(*args, **options):
-    options["app"] = Celery()
+    options["app"] = CompatCelery()
     return AMQPAdmin(*args, **options).run()
 
 

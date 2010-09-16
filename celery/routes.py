@@ -18,21 +18,17 @@ class MapRoute(object):
 
 class Router(object):
 
-    def __init__(self, routes=None, queues=None, create_missing=False):
+    def __init__(self, routes=None, queues=None, create_missing=False,
+            app=None):
+        from celery.app import app_or_default
         if queues is None:
             queues = {}
         if routes is None:
             routes = []
+        self.app = app_or_default(app)
         self.queues = queues
         self.routes = routes
         self.create_missing = create_missing
-
-    def add_queue(self, queue):
-        q = self.queues[queue] = {"binding_key": queue,
-                                  "routing_key": queue,
-                                  "exchange": queue,
-                                  "exchange_type": "direct"}
-        return q
 
     def route(self, options, task, args=(), kwargs={}):
         # Expand "queue" keys in options.
@@ -59,7 +55,7 @@ class Router(object):
                 dest = dict(self.queues[queue])
             except KeyError:
                 if self.create_missing:
-                    dest = self.add_queue(queue)
+                    dest = self.app.amqp.queues.add(queue, queue, queue)
                 else:
                     raise QueueNotFound(
                         "Queue '%s' is not defined in CELERY_QUEUES" % queue)

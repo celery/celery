@@ -8,7 +8,7 @@ from textwrap import wrap
 from anyjson import deserialize
 
 from celery import __version__
-from celery import Celery
+from celery import CompatCelery
 from celery.app import app_or_default
 from celery.utils import term
 
@@ -311,7 +311,7 @@ class celeryctl(object):
 
 def main():
     try:
-        app = Celery()
+        app = CompatCelery()
         celeryctl(app).execute_from_commandline()
     except KeyboardInterrupt:
         pass

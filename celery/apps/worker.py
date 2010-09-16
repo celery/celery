@@ -11,7 +11,7 @@ from celery import platform
 from celery import signals
 from celery.app import app_or_default
 from celery.exceptions import ImproperlyConfigured
-from celery.utils import info, get_full_cls_name, LOG_LEVELS
+from celery.utils import get_full_cls_name, LOG_LEVELS
 from celery.worker import WorkController
 
 
@@ -99,20 +99,19 @@ class Worker(object):
         print("celery@%s has started." % self.hostname)
 
     def init_queues(self):
-        amqp = self.app.amqp
-        queues = amqp.get_queues()
         if self.use_queues:
-            queues = dict((queue, options)
-                                for queue, options in queues.items()
-                                    if queue in self.use_queues)
-            for queue in self.use_queues:
-                if queue not in queues:
-                    if self.app.conf.CELERY_CREATE_MISSING_QUEUES:
-                        amqp.Router(queues=queues).add_queue(queue)
-                    else:
-                        raise ImproperlyConfigured(
-                            "Queue '%s' not defined in CELERY_QUEUES" % queue)
-        self.queues = queues
+            create_missing = self.app.conf.CELERY_CREATE_MISSING_QUEUES
+            try:
+                self.app.amqp.queues.select_subset(self.use_queues,
+                                                   create_missing)
+            except KeyError, exc:
+                raise ImproperlyConfigured(
+                    "Trying to select queue subset of %r, but queue %s"
+                    "is not defined in CELERY_QUEUES. If you want to "
+                    "automatically declare unknown queues you have to "
+                    "enable CELERY_CREATE_MISSING_QUEUES" % (
+                        self.use_queues, exc))
+        self.queues = self.app.amqp.queues
 
     def init_loader(self):
         self.loader = self.app.loader
@@ -154,7 +153,7 @@ class Worker(object):
 
         return STARTUP_INFO_FMT % {
             "conninfo": self.app.amqp.format_broker_info(),
-            "queues": self.app.amqp.format_queues(self.queues, indent=8),
+            "queues": self.queues.format(indent=8),
             "concurrency": self.concurrency,
             "loglevel": LOG_LEVELS[self.loglevel],
             "logfile": self.logfile or "[stderr]",

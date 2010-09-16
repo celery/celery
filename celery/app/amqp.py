@@ -1,5 +1,6 @@
 
 from datetime import datetime, timedelta
+from UserDict import UserDict
 
 from carrot.connection import BrokerConnection
 from carrot import messaging
@@ -7,6 +8,7 @@ from carrot import messaging
 from celery import routes
 from celery import signals
 from celery.utils import gen_unique_id, mitemgetter, textindent
+
 
 
 MSG_OPTIONS = ("mandatory", "priority", "immediate",
@@ -24,6 +26,59 @@ extract_msg_options = lambda d: dict(zip(MSG_OPTIONS, get_msg_options(d)))
 _queues_declared = False
 _exchanges_declared = set()
 
+
+class Queues(UserDict):
+
+    def __init__(self, queues):
+        self.data = {}
+        for queue_name, options in (queues or {}).items():
+            self.add(queue_name, **options)
+
+    def add(self, queue, exchange=None, routing_key=None,
+            exchange_type="direct", **options):
+        q = self[queue] = self.options(exchange, routing_key,
+                                       exchange_type, **options)
+        return q
+
+    def options(self, exchange, routing_key,
+            exchange_type="direct", **options):
+        return dict(options, routing_key=routing_key,
+                             binding_key=routing_key,
+                             exchange=exchange,
+                             exchange_type=exchange_type)
+
+    def format(self, indent=0):
+        """Format routing table into string for log dumps."""
+        format = lambda **queue: QUEUE_FORMAT.strip() % queue
+        info = "\n".join(format(name=name, **config)
+                                for name, config in self.items())
+        return textindent(info, indent=indent)
+
+    def select_subset(self, wanted, create_missing=True):
+        acc = {}
+        for queue in wanted:
+            try:
+                options = self[queue]
+            except KeyError:
+                if not create_missing:
+                    raise
+                options = self.options(queue, queue)
+            acc[queue] = options
+        self.data.clear()
+        self.data.update(acc)
+
+    @classmethod
+    def with_defaults(cls, queues, default_exchange, default_exchange_type):
+
+        def _defaults(opts):
+            opts.setdefault("exchange", default_exchange),
+            opts.setdefault("exchange_type", default_exchange_type)
+            opts.setdefault("binding_key", default_exchange)
+            opts.setdefault("routing_key", opts.get("binding_key"))
+            return opts
+
+        map(_defaults, queues.values())
+        return cls(queues)
 
 
 
@@ -118,33 +173,22 @@ class AMQP(object):
     Publisher = messaging.Publisher
     Consumer = messaging.Consumer
     ConsumerSet = ConsumerSet
+    _queues = None
 
     def __init__(self, app):
         self.app = app
 
-    def get_queues(self):
-        c = self.app.conf
-        queues = c.CELERY_QUEUES
-
-        def _defaults(opts):
-            opts.setdefault("exchange", c.CELERY_DEFAULT_EXCHANGE),
-            opts.setdefault("exchange_type", c.CELERY_DEFAULT_EXCHANGE_TYPE)
-            opts.setdefault("binding_key", c.CELERY_DEFAULT_EXCHANGE)
-            opts.setdefault("routing_key", opts.get("binding_key"))
-            return opts
-
-        return dict((queue, _defaults(opts))
-                    for queue, opts in queues.items())
-
-    def get_default_queue(self):
-        q = self.app.conf.CELERY_DEFAULT_QUEUE
-        return q, self.get_queues()[q]
+    def Queues(self, queues):
+        return Queues.with_defaults(queues,
+                                    self.app.conf.CELERY_DEFAULT_EXCHANGE,
+                                    self.app.conf.CELERY_DEFAULT_EXCHANGE_TYPE)
 
     def Router(self, queues=None, create_missing=None):
         return routes.Router(self.app.conf.CELERY_ROUTES,
                              queues or self.app.conf.CELERY_QUEUES,
                              self.app.either("CELERY_CREATE_MISSING_QUEUES",
-                                             create_missing))
+                                             create_missing),
+                             app=self.app)
 
     def TaskConsumer(self, *args, **kwargs):
         default_queue_name, default_queue = self.get_default_queue()
@@ -173,7 +217,7 @@ class AMQP(object):
         return publisher
 
     def get_consumer_set(self, connection, queues=None, **options):
-        queues = queues or self.get_queues()
+        queues = queues or self.queues
 
         cset = self.ConsumerSet(connection)
         for queue_name, queue_options in queues.items():
@@ -185,12 +229,9 @@ class AMQP(object):
             cset.consumers.append(consumer)
         return cset
 
-    def format_queues(self, queues, indent=0):
-        """Format routing table into string for log dumps."""
-        format = lambda **queue: QUEUE_FORMAT.strip() % queue
-        info = "\n".join(format(name=name, **config)
-                                for name, config in queues.items())
-        return textindent(info, indent=indent)
+    def get_default_queue(self):
+        q = self.app.conf.CELERY_DEFAULT_QUEUE
+        return q, self.queues[q]
 
     def get_broker_info(self):
         broker_connection = self.app.broker_connection()
@@ -216,3 +257,14 @@ class AMQP(object):
     def format_broker_info(self, info=None):
         """Get message broker connection info string for log dumps."""
         return BROKER_FORMAT % self.get_broker_info()
+
+    def _get_queues(self):
+        if self._queues is None:
+            c = self.app.conf
+            self._queues = self.Queues(c.CELERY_QUEUES)
+        return self._queues
+
+    def _set_queues(self, queues):
+        self._queues = self.Queues(queues)
+
+    queues = property(_get_queues, _set_queues)

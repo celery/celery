@@ -3,7 +3,7 @@ import sys
 
 from optparse import OptionParser, make_option as Option
 
-from celery import Celery
+from celery import CompatCelery
 from celery.app import app_or_default
 from celery.events.cursesmon import evtop
 from celery.events.dumper import evdump
@@ -52,7 +52,7 @@ def parse_options(arguments):
 
 def main():
     options = parse_options(sys.argv[1:])
-    app = Celery()
+    app = CompatCelery()
     return run_celeryev(app=app, **vars(options))
 
 if __name__ == "__main__":

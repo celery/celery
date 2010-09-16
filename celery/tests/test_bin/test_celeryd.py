@@ -6,6 +6,7 @@ import unittest2 as unittest
 from multiprocessing import get_logger, current_process
 from StringIO import StringIO
 
+from celery import Celery
 from celery import platform
 from celery import signals
 from celery.app import default_app
@@ -25,7 +26,7 @@ def disable_stdouts(fun):
 
     @wraps(fun)
     def disable(*args, **kwargs):
-        sys.stdout, sys.stderr = StringIO(), StringIO()
+        #sys.stdout, sys.stderr = StringIO(), StringIO()
         try:
             return fun(*args, **kwargs)
         finally:
@@ -53,9 +54,11 @@ class test_Worker(unittest.TestCase):
 
     @disable_stdouts
     def test_queues_string(self):
-        worker = self.Worker(queues="foo,bar,baz")
+        celery = Celery()
+        worker = celery.Worker(queues="foo,bar,baz")
         worker.init_queues()
         self.assertEqual(worker.use_queues, ["foo", "bar", "baz"])
+        self.assertTrue("foo" in celery.amqp.queues)
 
     @disable_stdouts
     def test_loglevel_string(self):
@@ -121,7 +124,7 @@ class test_Worker(unittest.TestCase):
     @disable_stdouts
     def test_init_queues(self):
         c = default_app.conf
-        p, c.CELERY_QUEUES = c.CELERY_QUEUES, {
+        p, default_app.amqp.queues = default_app.amqp.queues, {
                 "celery": {"exchange": "celery",
                            "binding_key": "celery"},
                 "video": {"exchange": "video",
@@ -139,8 +142,13 @@ class test_Worker(unittest.TestCase):
             worker = self.Worker(queues=["image"])
             worker.init_queues()
             self.assertIn("image", worker.queues)
+            self.assertDictContainsSubset({"exchange": "image",
+                                           "routing_key": "image",
+                                           "binding_key": "image",
+                                           "exchange_type": "direct"},
+                                            worker.queues["image"])
         finally:
-            c.CELERY_QUEUES = p
+            default_app.amqp.queues = p
 
     @disable_stdouts
     def test_on_listener_ready(self):

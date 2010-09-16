@@ -1,4 +1,5 @@
 """Distributed Task Queue"""
+import os
 
 VERSION = (2, 1, 0, "a5")
 
@@ -12,3 +13,7 @@ __docformat__ = "restructuredtext"
 def Celery(*args, **kwargs):
     from celery import app
     return app.App(*args, **kwargs)
+
+
+def CompatCelery(*args, **kwargs):
+    return Celery(loader=os.environ.get("CELERY_LOADER", "default"))

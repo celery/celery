@@ -1,4 +1,7 @@
-from importlib import import_module
+import os
+import sys
+
+from importlib import import_module as _import_module
 
 BUILTIN_MODULES = ["celery.task"]
 
@@ -41,10 +44,10 @@ class BaseLoader(object):
         pass
 
     def import_task_module(self, module):
-        return self.import_module(module)
+        return self.import_from_cwd(module)
 
     def import_module(self, module):
-        return import_module(module)
+        return _import_module(module)
 
     def import_default_modules(self):
         imports = self.conf.get("CELERY_IMPORTS") or []
@@ -62,3 +65,24 @@ class BaseLoader(object):
         if not self._conf_cache:
             self._conf_cache = self.read_configuration()
         return self._conf_cache
+
+    def import_from_cwd(self, module, imp=None):
+        """Import module, but make sure it finds modules
+        located in the current directory.
+
+        Modules located in the current directory has
+        precedence over modules located in ``sys.path``.
+        """
+        if imp is None:
+            imp = self.import_module
+        cwd = os.getcwd()
+        if cwd in sys.path:
+            return imp(module)
+        sys.path.insert(0, cwd)
+        try:
+            return imp(module)
+        finally:
+            try:
+                sys.path.remove(cwd)
+            except ValueError:
+                pass

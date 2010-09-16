@@ -45,25 +45,6 @@ class AppLoader(BaseLoader):
     def on_worker_init(self):
         self.import_default_modules()
 
-    def import_from_cwd(self, module, imp=import_module):
-        """Import module, but make sure it finds modules
-        located in the current directory.
-
-        Modules located in the current directory has
-        precedence over modules located in ``sys.path``.
-        """
-        cwd = os.getcwd()
-        if cwd in sys.path:
-            return imp(module)
-        sys.path.insert(0, cwd)
-        try:
-            return imp(module)
-        finally:
-            try:
-                sys.path.remove(cwd)
-            except ValueError:
-                pass
-
     @property
     def conf(self):
         return self._conf

@@ -1,5 +1,6 @@
 import unittest2 as unittest
 
+from celery import Celery
 from celery.app import default_app
 from celery.utils import textindent
 from celery.utils.timeutils import humanize_seconds
@@ -58,7 +59,9 @@ class TestInfo(unittest.TestCase):
         self.assertEqual(textindent(RANDTEXT, 4), RANDTEXT_RES)
 
     def test_format_queues(self):
-        self.assertEqual(default_app.amqp.format_queues(QUEUES), QUEUE_FORMAT)
+        celery = Celery()
+        celery.amqp.queues = QUEUES
+        self.assertEqual(celery.amqp.queues.format(), QUEUE_FORMAT)
 
     def test_broker_info(self):
         default_app.amqp.format_broker_info()
