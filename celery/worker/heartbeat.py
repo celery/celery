@@ -38,7 +38,13 @@ class Heart(threading.Thread):
 
         last_beat = None
         while 1:
-            now = time()
+            try:
+                now = time()
+            except TypeError:
+                # we lost the race at interpreter shutdown,
+                # so time has been collected by gc.
+                return
+
             if not last_beat or now > last_beat + (60.0 / bpm):
                 last_beat = now
                 dispatch("worker-heartbeat")
