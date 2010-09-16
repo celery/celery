@@ -290,9 +290,30 @@ except ImportError:
     collections.defaultdict = defaultdict # Pickle needs this.
 
 ############## logging.LoggerAdapter ########################################
+import inspect
 import logging
 import multiprocessing
 import sys
+
+from logging import LogRecord
+
+# The func argument to LogRecord was added in 2.5
+if "func" not in inspect.getargspec(LogRecord.__init__)[0]:
+    def LogRecord(name, level, fn, lno, msg, args, exc_info, func):
+        return logging.LogRecord(name, level, fn, lno, msg, args, exc_info)
+
+
+def _checkLevel(level):
+    if isinstance(level, int):
+        rv = level
+    elif str(level) == level:
+        if level not in logging._levelNames:
+            raise ValueError("Unknown level: %r" % level)
+        rv = logging._levelNames[level]
+    else:
+        raise TypeError("Level not an integer or a valid string: %r" % level)
+    return rv
+
 
 class _CompatLoggerAdapter(object):
 
@@ -301,7 +322,7 @@ class _CompatLoggerAdapter(object):
         self.extra = extra
 
     def setLevel(self, level):
-        self.logger.level = logging._checkLevel(level)
+        self.logger.level = _checkLevel(level)
 
     def process(self, msg, kwargs):
         kwargs["extra"] = self.extra
@@ -335,8 +356,7 @@ class _CompatLoggerAdapter(object):
 
     def makeRecord(self, name, level, fn, lno, msg, args, exc_info,
             func=None, extra=None):
-        rv = logging.LogRecord(name, level, fn, lno,
-                               msg, args, exc_info, func)
+        rv = LogRecord(name, level, fn, lno, msg, args, exc_info, func)
         if extra is not None:
             for key, value in extra.items():
                 if key in ("message", "asctime") or key in rv.__dict__:
