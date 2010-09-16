@@ -151,7 +151,12 @@ class Timer(Thread):
             if sleep is None:
                 break
             sleep(delay)
-        self._stopped.set()
+        try:
+            self._stopped.set()
+        except TypeError:
+            # we lost the race at interpreter shutdown,
+            # so gc collected built-in modules.
+            pass
 
     def stop(self):
         if self.running:
