@@ -83,8 +83,9 @@ class App(base.BaseApp):
             return inner_create_task_cls()(*args)
         return inner_create_task_cls(**options)
 
-default_app = App()
-
+# The "default" loader is the default loader used by old applications.
+default_loader = os.environ.get("CELERY_LOADER") or "default"
+default_app = App(loader=default_loader)
 
 if os.environ.get("CELERY_TRACE_APP"):
     def app_or_default(app=None):

@@ -23,6 +23,40 @@ class AttributeDict(dict):
         self[key] = value
 
 
+class DictAttribute(object):
+
+    def __init__(self, obj):
+        self.obj = obj
+
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
+    def setdefault(self, key, default):
+        try:
+            return self[key]
+        except KeyError:
+            self[key] = default
+            return default
+
+    def __getitem__(self, key):
+        try:
+            return getattr(self.obj, key)
+        except AttributeError:
+            raise KeyError(key)
+
+    def __setitem__(self, key, value):
+        setattr(self.obj, key, value)
+
+    def __contains__(self, key):
+        return hasattr(self.obj, key)
+
+    def iteritems(self):
+        return vars(self.obj).iteritems()
+
+
 class PositionQueue(UserList):
     """A positional queue of a specific length, with slots that are either
     filled or unfilled. When all of the positions are filled, the queue

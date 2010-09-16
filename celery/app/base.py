@@ -69,8 +69,16 @@ class BaseApp(object):
     _log = None
 
     def __init__(self, loader=None, backend_cls=None):
-        self.loader_cls = loader or os.environ.get("CELERY_LOADER", "default")
+        self.loader_cls = loader or "app"
         self.backend_cls = backend_cls
+
+    def config_from_object(self, obj, silent=False):
+        self._conf = None
+        return self.loader.config_from_object(obj, silent=silent)
+
+    def config_from_envvar(self, variable_name, silent=False):
+        self._conf = None
+        return self.loader.config_from_envvar(variable_name, silent=silent)
 
     def either(self, default_key, *values):
         for value in values:
