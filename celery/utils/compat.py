@@ -349,7 +349,7 @@ class _CompatLoggerAdapter(object):
         self.log(logging.CRITICAL, msg, args, **kwargs)
     fatal = critical
 
-    def log(self, level, msg, args, **kwargs):
+    def log(self, level, msg, *args, **kwargs):
         if self.logger.isEnabledFor(level):
             msg, kwargs = self.process(msg, kwargs)
             self._log(level, msg, args, **kwargs)
@@ -393,6 +393,10 @@ class _CompatLoggerAdapter(object):
 
     def removeHandler(self, hdlr):
         self.logger.removeHandler(hdlr)
+
+    @property
+    def level(self):
+        return self.logger.level
 
 
 try:
