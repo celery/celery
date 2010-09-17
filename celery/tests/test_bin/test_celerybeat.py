@@ -4,6 +4,7 @@ import unittest2 as unittest
 
 from celery import beat
 from celery import platform
+from celery.app import default_app
 from celery.bin import celerybeat as celerybeat_bin
 from celery.apps import beat as beatapp
 
@@ -109,5 +110,6 @@ class test_div(unittest.TestCase):
 
     def test_parse_options(self):
         cmd = celerybeat_bin.BeatCommand()
+        cmd.app = default_app
         options, args = cmd.parse_options("celerybeat", ["-s", "foo"])
         self.assertEqual(options.schedule, "foo")

@@ -186,6 +186,7 @@ class test_funs(unittest.TestCase):
     @disable_stdouts
     def test_parse_options(self):
         cmd = WorkerCommand()
+        cmd.app = default_app
         opts, args = cmd.parse_options("celeryd", ["--concurrency=512"])
         self.assertEqual(opts.concurrency, 512)
 
