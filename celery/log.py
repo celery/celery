@@ -185,26 +185,6 @@ get_task_logger = _default_logging.get_task_logger
 redirect_stdouts_to_logger = _default_logging.redirect_stdouts_to_logger
 
 
-def emergency_error(logfile, message):
-    """Emergency error logging, for when there's no standard file
-    descriptors open because the process has been daemonized or for
-    some other reason."""
-    closefh = noop
-    logfile = logfile or sys.__stderr__
-    if hasattr(logfile, "write"):
-        logfh = logfile
-    else:
-        logfh = open(logfile, "a")
-        closefh = logfh.close
-    try:
-        logfh.write("[%(asctime)s: CRITICAL/%(pid)d]: %(message)s\n" % {
-                        "asctime": time.asctime(),
-                        "pid": os.getpid(),
-                        "message": message})
-    finally:
-        closefh()
-
-
 
 class LoggingProxy(object):
     """Forward file object to :class:`logging.Logger` instance.

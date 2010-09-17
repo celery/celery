@@ -15,7 +15,7 @@ except ImportError:
 from carrot.utils import rpartition
 
 from celery import log
-from celery.log import (setup_logger, setup_task_logger, emergency_error,
+from celery.log import (setup_logger, setup_task_logger,
                         get_default_logger, get_task_logger,
                         redirect_stdouts_to_logger, LoggingProxy)
 from celery.tests.utils import override_stdouts, execute_context
@@ -84,12 +84,6 @@ class test_default_logger(unittest.TestCase):
                 "Logger doesn't info when loglevel is ERROR",
                 loglevel=logging.INFO)
 
-    def test_emergency_error(self):
-        sio = StringIO()
-        emergency_error(sio, "Testing emergency error facility")
-        self.assertEqual(rpartition(sio.getvalue(), ":")[2].strip(),
-                             "Testing emergency error facility")
-
     def test_setup_logger_no_handlers_stream(self):
         l = self.get_logger()
         set_handlers(l, [])
@@ -111,26 +105,6 @@ class test_default_logger(unittest.TestCase):
         l = self.setup_logger(logfile=tempfile, loglevel=0, root=False)
         self.assertIsInstance(get_handlers(l)[0],
                               logging.FileHandler)
-
-    def test_emergency_error_stderr(self):
-        def with_override_stdouts(outs):
-            stdout, stderr = outs
-            emergency_error(None, "The lazy dog crawls under the fast fox")
-            self.assertIn("The lazy dog crawls under the fast fox",
-                          stderr.getvalue())
-
-        context = override_stdouts()
-        execute_context(context, with_override_stdouts)
-
-    def test_emergency_error_file(self):
-        tempfile = mktemp(suffix="unittest", prefix="celery")
-        emergency_error(tempfile, "Vandelay Industries")
-        tempfilefh = open(tempfile, "r")
-        try:
-            self.assertIn("Vandelay Industries", "".join(tempfilefh))
-        finally:
-            tempfilefh.close()
-            os.unlink(tempfile)
 
     def test_redirect_stdouts(self):
         logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,

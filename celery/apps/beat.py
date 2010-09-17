@@ -6,7 +6,6 @@ from celery import __version__
 from celery import beat
 from celery import platform
 from celery.app import app_or_default
-from celery.log import emergency_error
 from celery.utils import LOG_LEVELS
 
 STARTUP_INFO_FMT = """
@@ -63,8 +62,7 @@ class Beat(object):
             self.install_sync_handler(beat)
             beat.start()
         except Exception, exc:
-            emergency_error(self.logfile,
-                    "celerybeat raised exception %s: %s\n%s" % (
+            logger.critical("celerybeat raised exception %s: %r\n%s" % (
                             exc.__class__, exc, traceback.format_exc()))
 
     def init_loader(self):
