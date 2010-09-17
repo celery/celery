@@ -54,9 +54,9 @@ class Loader(BaseLoader):
         try:
             celeryconfig = self.import_from_cwd(configname)
         except ImportError:
-            warnings.warn("No celeryconfig.py module found! Please make "
-                          "sure it exists and is available to Python.",
-                          NotConfigured)
+            warnings.warn(NotConfigured(
+                "No %r module found! Please make sure it exists and "
+                "is available to Python." % (configname, )))
             return self.setup_settings(DEFAULT_UNCONFIGURED_SETTINGS)
         else:
             usercfg = dict((key, getattr(celeryconfig, key))

@@ -70,16 +70,17 @@
 import multiprocessing
 
 from celery import __version__
-from celery import CompatCelery
 from celery.bin.base import Command, Option
 
 
 class WorkerCommand(Command):
+    namespace = "celeryd"
+    enable_config_from_cmdline = True
 
     def run(self, *args, **kwargs):
         from celery.apps.worker import Worker
         kwargs["app"] = self.app
-        return Worker(*args, **kwargs).run()
+        return Worker(**kwargs).run()
 
     def get_options(self):
         conf = self.app.conf
@@ -151,8 +152,7 @@ class WorkerCommand(Command):
 
 def main():
     multiprocessing.freeze_support()
-    app = CompatCelery()
-    worker = WorkerCommand(app=app)
+    worker = WorkerCommand()
     worker.execute_from_commandline()
 
 if __name__ == "__main__":

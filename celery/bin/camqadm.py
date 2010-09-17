@@ -14,9 +14,8 @@ from itertools import count
 from amqplib import client_0_8 as amqp
 from carrot.utils import partition
 
-from celery import CompatCelery
 from celery.app import app_or_default
-from celery.utils import info
+from celery.bin.base import Command
 from celery.utils import padlist
 
 # Valid string -> bool coercions.
@@ -27,8 +26,6 @@ BOOLS = {"1": True, "0": False,
 
 # Map to coerce strings to other types.
 COERCE = {bool: lambda value: BOOLS[value.lower()]}
-
-OPTION_LIST = ()
 
 HELP_HEADER = """
 Commands
@@ -359,21 +356,18 @@ class AMQPAdmin(object):
             say(m)
 
 
-def parse_options(arguments):
-    """Parse the available options to ``celeryd``."""
-    parser = optparse.OptionParser(option_list=OPTION_LIST)
-    options, values = parser.parse_args(arguments)
-    return options, values
+class AMQPAdminCommand(Command):
 
+    def run(self, *args, **options):
+        options["app"] = self.app
+        return AMQPAdmin(*args, **options).run()
 
 def camqadm(*args, **options):
-    options["app"] = CompatCelery()
-    return AMQPAdmin(*args, **options).run()
+    AMQPAdmin(*args, **options).run()
 
 
 def main():
-    options, values = parse_options(sys.argv[1:])
-    return camqadm(*values, **vars(options))
+    AMQPAdminCommand().execute_from_commandline()
 
 if __name__ == "__main__":
     main()

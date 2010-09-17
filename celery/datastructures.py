@@ -9,8 +9,7 @@ from Queue import Queue, Empty as QueueEmpty
 from celery.utils.compat import OrderedDict
 
 
-class AttributeDict(dict):
-    """Dict subclass with attribute access."""
+class AttributeDictMixin(object):
 
     def __getattr__(self, key):
         try:
@@ -21,6 +20,11 @@ class AttributeDict(dict):
 
     def __setattr__(self, key, value):
         self[key] = value
+
+
+class AttributeDict(dict, AttributeDictMixin):
+    """Dict subclass with attribute access."""
+    pass
 
 
 class DictAttribute(object):

@@ -10,6 +10,7 @@ from anyjson import deserialize
 from celery import __version__
 from celery import CompatCelery
 from celery.app import app_or_default
+from celery.bin.base import Command as CeleryCommand
 from celery.utils import term
 
 
@@ -30,13 +31,9 @@ class Command(object):
     args = ""
     version = __version__
 
-    option_list = (
+    option_list = CeleryCommand.preload_options + (
         Option("--quiet", "-q", action="store_true", dest="quiet",
                 default=False),
-        Option("--conf", dest="conf",
-            help="Celery config module name (default: celeryconfig)"),
-        Option("--loader", dest="loader",
-            help="Celery loaders module name (default: default)"),
         Option("--no-color", "-C", dest="no_color", action="store_true",
             help="Don't colorize output."),
     )
@@ -66,16 +63,12 @@ class Command(object):
                             version=self.version,
                             option_list=self.option_list)
 
-    def run_from_argv(self, argv):
-        self.prog_name = os.path.basename(argv[0])
-        self.command = argv[1]
-        self.arglist = argv[2:]
+    def run_from_argv(self, prog_name, argv):
+        self.prog_name = prog_name
+        self.command = argv[0]
+        self.arglist = argv[1:]
         self.parser = self.create_parser(self.prog_name, self.command)
         options, args = self.parser.parse_args(self.arglist)
-        if options.loader:
-            os.environ["CELERY_LOADER"] = options.loader
-        if options.conf:
-            os.environ["CELERY_CONFIG_MODULE"] = options.conf
         self.colored = term.colored(enabled=not options.no_color)
         self(*args, **options.__dict__)
 
@@ -277,42 +270,32 @@ class help(Command):
 help = command(help)
 
 
-class celeryctl(object):
+class celeryctl(CeleryCommand):
     commands = commands
 
-    def __init__(self, app=None):
-        self.app = app_or_default(app)
-
     def execute(self, command, argv=None):
-        if argv is None:
-            argv = sys.arg
-        argv = list(argv)
         try:
             cls = self.commands[command]
         except KeyError:
-            cls = self.commands["help"]
-            argv.insert(1, "help")
+            cls, argv = self.commands["help"], ["help"]
         cls = self.commands.get(command) or self.commands["help"]
         try:
-            cls(app=self.app).run_from_argv(argv)
+            cls(app=self.app).run_from_argv(self.prog_name, argv)
         except Error:
             return self.execute("help", argv)
 
-    def execute_from_commandline(self, argv=None):
-        if argv is None:
-            argv = sys.argv
+    def handle_argv(self, prog_name, argv):
+        self.prog_name = prog_name
         try:
-            command = argv[1]
+            command = argv[0]
         except IndexError:
-            command = "help"
-            argv.insert(1, "help")
+            command, argv = "help", ["help"]
         return self.execute(command, argv)
 
 
 def main():
     try:
-        app = CompatCelery()
-        celeryctl(app).execute_from_commandline()
+        celeryctl().execute_from_commandline()
     except KeyboardInterrupt:
         pass
 

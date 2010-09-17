@@ -342,6 +342,8 @@ def get_cls_by_name(name, aliases={}):
     module = importlib.import_module(module_name)
     return getattr(module, cls_name)
 
+get_symbol_by_name = get_cls_by_name
+
 
 def instantiate(name, *args, **kwargs):
     """Instantiate class by name.

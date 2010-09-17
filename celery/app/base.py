@@ -6,12 +6,12 @@ from itertools import chain
 
 from celery import routes
 from celery.app.defaults import DEFAULTS
-from celery.datastructures import AttributeDict
+from celery.datastructures import AttributeDictMixin
 from celery.utils import noop, isatty
 from celery.utils.functional import wraps
 
 
-class MultiDictView(AttributeDict):
+class MultiDictView(AttributeDictMixin):
     """View for one more more dicts.
 
     * When getting a key, the dicts are searched in order.
@@ -47,6 +47,9 @@ class MultiDictView(AttributeDict):
             self[key] = default
             return default
 
+    def update(self, *args, **kwargs):
+        return self.__dict__["dicts"][0].update(*args, **kwargs)
+
     def __contains__(self, key):
         for d in self.__dict__["dicts"]:
             if key in d:
@@ -79,6 +82,9 @@ class BaseApp(object):
     def config_from_envvar(self, variable_name, silent=False):
         self._conf = None
         return self.loader.config_from_envvar(variable_name, silent=silent)
+
+    def config_from_cmdline(self, argv, namespace="celery"):
+        return self.loader.config_from_cmdline(argv, namespace)
 
     def either(self, default_key, *values):
         for value in values:

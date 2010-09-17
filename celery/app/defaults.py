@@ -10,87 +10,138 @@ DEFAULT_TASK_LOG_FMT = " ".join("""
 """.strip().split())
 
 
-DEFAULTS = {
-    "BROKER_BACKEND": None,
-    "BROKER_CONNECTION_TIMEOUT": 4,
-    "BROKER_CONNECTION_RETRY": True,
-    "BROKER_CONNECTION_MAX_RETRIES": 100,
-    "BROKER_HOST": "localhost",
-    "BROKER_PORT": None,
-    "BROKER_USER": "guest",
-    "BROKER_PASSWORD": "guest",
-    "BROKER_INSIST": False,
-    "BROKER_USE_SSL": False,
-    "BROKER_VHOST": "/",
-    "CELERY_RESULT_BACKEND": "database",
-    "CELERY_ALWAYS_EAGER": False,
-    "CELERY_EAGER_PROPAGATES_EXCEPTIONS": False,
-    "CELERY_TASK_RESULT_EXPIRES": timedelta(days=1),
-    "CELERY_TASK_ERROR_WHITELIST": (),
-    "CELERY_IMPORTS": (),
-    "CELERY_SEND_EVENTS": False,
-    "CELERY_IGNORE_RESULT": False,
-    "CELERY_STORE_ERRORS_EVEN_IF_IGNORED": False,
-    "CELERY_TASK_SERIALIZER": "pickle",
-    "CELERY_DEFAULT_RATE_LIMIT": None,
-    "CELERY_DISABLE_RATE_LIMITS": False,
-    "CELERYD_TASK_TIME_LIMIT": None,
-    "CELERYD_TASK_SOFT_TIME_LIMIT": None,
-    "CELERYD_MAX_TASKS_PER_CHILD": None,
-    "CELERY_CREATE_MISSING_QUEUES": True,
-    "CELERY_DEFAULT_ROUTING_KEY": "celery",
-    "CELERY_DEFAULT_QUEUE": "celery",
-    "CELERY_DEFAULT_EXCHANGE": "celery",
-    "CELERY_DEFAULT_EXCHANGE_TYPE": "direct",
-    "CELERY_DEFAULT_DELIVERY_MODE": 2, # persistent
-    "CELERY_SEND_TASK_ERROR_EMAILS": False,
-    "CELERY_ACKS_LATE": False,
-    "CELERY_CACHE_BACKEND": None,
-    "CELERY_CACHE_BACKEND_OPTIONS": {},
-    "CELERYD_POOL_PUTLOCKS": True,
-    "CELERYD_POOL": "celery.concurrency.processes.TaskPool",
-    "CELERYD_MEDIATOR": "celery.worker.controllers.Mediator",
-    "CELERYD_ETA_SCHEDULER": "celery.utils.timer2.Timer",
-    "CELERYD_LISTENER": "celery.worker.listener.CarrotListener",
-    "CELERYD_CONCURRENCY": 0, # defaults to cpu count
-    "CELERYD_PREFETCH_MULTIPLIER": 4,
-    "CELERYD_LOG_FORMAT": DEFAULT_PROCESS_LOG_FMT,
-    "CELERYD_TASK_LOG_FORMAT": DEFAULT_TASK_LOG_FMT,
-    "CELERYD_LOG_COLOR": None,
-    "CELERYD_LOG_LEVEL": "WARN",
-    "CELERYD_LOG_FILE": None, # stderr
-    "CELERYBEAT_SCHEDULE": {},
-    "CELERYD_STATE_DB": None,
-    "CELERYD_ETA_SCHEDULER_PRECISION": 1,
-    "CELERYBEAT_SCHEDULE_FILENAME": "celerybeat-schedule",
-    "CELERYBEAT_MAX_LOOP_INTERVAL": 5 * 60, # five minutes.
-    "CELERYBEAT_LOG_LEVEL": "INFO",
-    "CELERYBEAT_LOG_FILE": None, # stderr
-    "CELERYMON_LOG_LEVEL": "INFO",
-    "CELERYMON_LOG_FILE": None, # stderr
-    "CELERYMON_LOG_FORMAT": DEFAULT_LOG_FMT,
-    "CELERY_BROADCAST_QUEUE": "celeryctl",
-    "CELERY_BROADCAST_EXCHANGE": "celeryctl",
-    "CELERY_BROADCAST_EXCHANGE_TYPE": "fanout",
-    "CELERY_EVENT_QUEUE": "celeryevent",
-    "CELERY_EVENT_EXCHANGE": "celeryevent",
-    "CELERY_EVENT_EXCHANGE_TYPE": "direct",
-    "CELERY_EVENT_ROUTING_KEY": "celeryevent",
-    "CELERY_EVENT_SERIALIZER": "json",
-    "CELERY_RESULT_DBURI": None,
-    "CELERY_RESULT_ENGINE_OPTIONS": None,
-    "CELERY_RESULT_EXCHANGE": "celeryresults",
-    "CELERY_RESULT_EXCHANGE_TYPE": "direct",
-    "CELERY_RESULT_SERIALIZER": "pickle",
-    "CELERY_RESULT_PERSISTENT": False,
-    "CELERY_MAX_CACHED_RESULTS": 5000,
-    "CELERY_TRACK_STARTED": False,
+def str_to_bool(s):
+    s = s.lower()
+    if s in ("false", "no", "0"):
+        return False
+    if s in ("true", "yes", "1"):
+        return True
+    raise TypeError("%r can not be converted to type bool" % (s, ))
 
-    # Default e-mail settings.
-    "SERVER_EMAIL": "celery@localhost",
-    "EMAIL_HOST": "localhost",
-    "EMAIL_PORT": 25,
-    "EMAIL_HOST_USER": None,
-    "EMAIL_HOST_PASSWORD": None,
-    "ADMINS": (),
+
+class Option(object):
+    typemap = {"string": str,
+               "int": int,
+               "float": float,
+               "bool": str_to_bool,
+               "dict": dict,
+               "tuple": tuple}
+
+    def __init__(self, default=None, *args, **kwargs):
+        self.default = default
+        kwargs.setdefault("type", "string")
+        self.type = kwargs["type"]
+        self.args = args
+        self.kwargs = kwargs
+
+    def to_python(self, value):
+        return self.typemap[self.type](value)
+
+
+NAMESPACES = {
+    "BROKER": {
+        "HOST": Option("localhost"),
+        "PORT": Option(type="int"),
+        "USER": Option("guest"),
+        "PASSWORD": Option("guest"),
+        "VHOST": Option("/"),
+        "BACKEND": Option(),
+        "CONNECTION_TIMEOUT": Option(4, type="int"),
+        "CONNECTION_RETRY": Option(True, type="bool"),
+        "CONNECTION_MAX_RETRIES": Option(100, type="int"),
+        "INSIST": Option(False, type="bool"),
+        "USE_SSL": Option(False, type="bool"),
+    },
+    "CELERY": {
+        "ACKS_LATE": Option(False, type="bool"),
+        "ALWAYS_EAGER": Option(False, type="bool"),
+        "BROADCAST_QUEUE": Option("celeryctl"),
+        "BROADCAST_EXCHANGE": Option("celeryctl"),
+        "BROADCAST_EXCHANGE_TYPE": Option("fanout"),
+        "CACHE_BACKEND": Option(),
+        "CACHE_BACKEND_OPTIONS": Option({}, type="dict"),
+        "CREATE_MISSING_QUEUES": Option(True, type="bool"),
+        "DEFAULT_RATE_LIMIT": Option(type="string"),
+        "DISABLE_RATE_LIMITS": Option(False, type="bool"),
+        "DEFAULT_ROUTING_KEY": Option("celery"),
+        "DEFAULT_QUEUE": Option("celery"),
+        "DEFAULT_EXCHANGE": Option("celery"),
+        "DEFAULT_EXCHANGE_TYPE": Option("direct"),
+        "DEFAULT_DELIVERY_MODE": Option(2, type="string"),
+        "EAGER_PROPAGATES_EXCEPTIONS": Option(False, type="bool"),
+        "EVENT_QUEUE": Option("celeryevent"),
+        "EVENT_EXCHANGE": Option("celeryevent"),
+        "EVENT_EXCHANGE_TYPE": Option("direct"),
+        "EVENT_ROUTING_KEY": Option("celeryevent"),
+        "EVENT_SERIALIZER": Option("json"),
+        "IMPORTS": Option((), type="tuple"),
+        "IGNORE_RESULT": Option(False, type="bool"),
+        "MAX_CACHED_RESULTS": Option(5000, type="int"),
+        "RESULT_BACKEND": Option("database"),
+        "RESULT_DBURI": Option(),
+        "RESULT_ENGINE_OPTIONS": Option(None, type="dict"),
+        "RESULT_EXCHANGE": Option("celeryresults"),
+        "RESULT_EXCHANGE_TYPE": Option("direct"),
+        "RESULT_SERIALIZER": Option("pickle"),
+        "RESULT_PERSISTENT": Option(False, type="bool"),
+        "SEND_EVENTS": Option(False, type="bool"),
+        "SEND_TASK_ERROR_EMAILS": Option(False, type="bool"),
+        "STORE_ERRORS_EVEN_IF_IGNORED": Option(False, type="bool"),
+        "TASK_RESULT_EXPIRES": Option(timedelta(days=1), type="int"),
+        "TASK_ERROR_WHITELIST": Option((), type="tuple"),
+        "TASK_SERIALIZER": Option("pickle"),
+        "TRACK_STARTED": Option(False, type="bool"),
+    },
+    "CELERYD": {
+        "CONCURRENCY": Option(0, type="int"),
+        "ETA_SCHEDULER": Option("celery.utils.timer2.Timer"),
+        "ETA_SCHEDULER_PRECISION": Option(1.0, type="float"),
+        "LISTENER": Option("celery.worker.listener.CarrotListener"),
+        "LOG_FORMAT": Option(DEFAULT_PROCESS_LOG_FMT),
+        "LOG_COLOR": Option(type="bool"),
+        "LOG_LEVEL": Option("WARN"),
+        "LOG_FILE": Option(),
+        "MEDIATOR": Option("celery.worker.controllers.Mediator"),
+        "MAX_TASKS_PER_CHILD": Option(type="int"),
+        "POOL": Option("celery.concurrency.processes.TaskPool"),
+        "POOL_PUTLOCKS": Option(True, type="bool"),
+        "PREFETCH_MULTIPLIER": Option(4, type="int"),
+        "STATE_DB": Option(),
+        "TASK_LOG_FORMAT": Option(DEFAULT_TASK_LOG_FMT),
+        "TASK_SOFT_TIME_LIMIT": Option(type="int"),
+        "TASK_TIME_LIMIT": Option(type="int"),
+    },
+    "CELERYBEAT": {
+        "SCHEDULE": Option({}, type="dict"),
+        "SCHEDULE_FILENAME": Option("celerybeat-schedule"),
+        "MAX_LOOP_INTERVAL": Option(5 * 60, type="int"),
+        "LOG_LEVEL": Option("INFO"),
+        "LOG_FILE": Option(),
+    },
+    "CELERYMON": {
+        "LOG_LEVEL": Option("INFO"),
+        "LOG_FILE": Option(),
+        "LOG_FORMAT": Option(DEFAULT_LOG_FMT),
+    },
+
+    "EMAIL": {
+        "HOST": Option("localhost"),
+        "PORT": Option(25, type="int"),
+        "HOST_USER": Option(None),
+        "HOST_PASSWORD": Option(None),
+    },
+    "SERVER_EMAIL": Option("celery@localhost"),
+    "ADMINS": Option((), type="tuple"),
 }
+
+
+def _flatten(d, ns=""):
+    acc = []
+    for key, value in d.iteritems():
+        if isinstance(value, dict):
+            acc.extend(_flatten(value, ns=key + '_'))
+        else:
+            acc.append((ns + key, value.default))
+    return acc
+
+DEFAULTS = dict(_flatten(NAMESPACES))

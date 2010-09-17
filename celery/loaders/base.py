@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 
 from importlib import import_module as _import_module
@@ -58,6 +59,50 @@ class BaseLoader(object):
         if not self.worker_initialized:
             self.worker_initialized = True
             self.on_worker_init()
+
+    def config_from_cmdline(self, args, namespace="celery"):
+        for key, value in self.cmdline_config_parser(args, namespace).items():
+            print("KEY %r=%r" % (key, value))
+            self.conf[key] = value
+
+    def cmdline_config_parser(self, args, namespace="celery",
+                re_type=re.compile(r"\((\w+)\)")):
+        from celery.app.defaults import Option, NAMESPACES
+        namespace = namespace.upper()
+
+        def getarg(arg):
+            """Parse a single configuration definition from
+            the command line."""
+
+            ## find key/value
+            # ns.key=value|ns_key=value (case insensitive)
+            key, value = arg.replace('.', '_').split('=', 1)
+            key = key.upper()
+
+            ## find namespace.
+            # .key=value|_key=value expands to default namespace.
+            if key[0] == '_':
+                ns, key = namespace, key[1:]
+            else:
+                # find namespace part of key
+                ns, key = key.split('_', 1)
+
+            ns_key = (ns and ns + "_" or "") + key
+
+            # (type)value makes cast to custom type.
+            cast = re_type.match(value)
+            if cast:
+                value = Option.typemap[cast.groups()[0]](
+                            value[len(cast.group()):])
+            else:
+                try:
+                    value = NAMESPACES[ns][key].to_python(value)
+                except ValueError, exc:
+                    # display key name in error message.
+                    raise ValueError("%r: %s" % (ns_key, exc))
+            return ns_key, value
+
+        return dict(map(getarg, args))
 
     @property
     def conf(self):

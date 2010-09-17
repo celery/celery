@@ -5,5 +5,4 @@ if '' not in sys.path:
 from celery.bin import camqadm
 
 if __name__ == "__main__":
-    options, values = camqadm.parse_options(sys.argv[1:])
-    sys.exit(not camqadm.camqadm(*values, **vars(options)))
+    sys.exit(not camqadm.main())
