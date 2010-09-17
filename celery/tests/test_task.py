@@ -335,7 +335,6 @@ class TestCeleryTasks(unittest.TestCase):
         self.assertTrue(presult.successful())
 
         publisher = t1.get_publisher()
-        print("EXCHANGE IS: %r" % (task.Task.exchange, ))
         self.assertTrue(publisher.exchange)
 
     def test_get_publisher(self):

@@ -62,7 +62,6 @@ class BaseLoader(object):
 
     def config_from_cmdline(self, args, namespace="celery"):
         for key, value in self.cmdline_config_parser(args, namespace).items():
-            print("KEY %r=%r" % (key, value))
             self.conf[key] = value
 
     def cmdline_config_parser(self, args, namespace="celery",
