@@ -689,13 +689,13 @@ class test_crontab_is_due(unittest.TestCase):
         last_ran = self.now - timedelta(seconds=61)
         due, remaining = EveryMinutePeriodic().is_due(last_ran)
         self.assertTrue(due)
-        self.assertAlmostEquals(remaining, self.next_minute)
+        self.assertAlmostEquals(remaining, self.next_minute, 2)
 
     def test_every_minute_execution_is_not_due(self):
         last_ran = self.now - timedelta(seconds=self.now.second)
         due, remaining = EveryMinutePeriodic().is_due(last_ran)
         self.assertFalse(due)
-        self.assertAlmostEquals(remaining, self.next_minute)
+        self.assertAlmostEquals(remaining, self.next_minute, 2)
 
     # 29th of May 2010 is a saturday
     @patch_crontab_nowfun(HourlyPeriodic, datetime(2010, 5, 29, 10, 30))
@@ -703,7 +703,7 @@ class test_crontab_is_due(unittest.TestCase):
         last_ran = self.now - timedelta(seconds=61)
         due, remaining = EveryMinutePeriodic().is_due(last_ran)
         self.assertTrue(due)
-        self.assertAlmostEquals(remaining, self.next_minute)
+        self.assertAlmostEquals(remaining, self.next_minute, 2)
 
     # 30th of May 2010 is a sunday
     @patch_crontab_nowfun(HourlyPeriodic, datetime(2010, 5, 30, 10, 30))
@@ -711,7 +711,7 @@ class test_crontab_is_due(unittest.TestCase):
         last_ran = self.now - timedelta(seconds=61)
         due, remaining = EveryMinutePeriodic().is_due(last_ran)
         self.assertTrue(due)
-        self.assertAlmostEquals(remaining, self.next_minute)
+        self.assertAlmostEquals(remaining, self.next_minute, 2)
 
     # 31st of May 2010 is a monday
     @patch_crontab_nowfun(HourlyPeriodic, datetime(2010, 5, 31, 10, 30))
@@ -719,7 +719,7 @@ class test_crontab_is_due(unittest.TestCase):
         last_ran = self.now - timedelta(seconds=61)
         due, remaining = EveryMinutePeriodic().is_due(last_ran)
         self.assertTrue(due)
-        self.assertAlmostEquals(remaining, self.next_minute)
+        self.assertAlmostEquals(remaining, self.next_minute, 2)
 
     @patch_crontab_nowfun(HourlyPeriodic, datetime(2010, 5, 10, 10, 30))
     def test_every_hour_execution_is_due(self):
