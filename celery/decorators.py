@@ -5,11 +5,12 @@ Decorators
 """
 from inspect import getargspec
 
-from celery.app import default_app
+from celery.app import app_or_default
 from celery.task.base import PeriodicTask
 
 
-task = default_app.task
+def task(*args, **kwargs):
+    return app_or_default().task(*args, **kwargs)
 
 
 def periodic_task(**options):

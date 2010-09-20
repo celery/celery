@@ -1,7 +1,7 @@
 import sys
 import warnings
 
-from celery.app import default_app
+from celery.app import app_or_default
 from celery.datastructures import ExceptionInfo
 from celery.exceptions import MaxRetriesExceededError, RetryTaskError
 from celery.execute.trace import TaskTrace
@@ -704,7 +704,7 @@ def create_task_cls(app):
     return Task
 
 
-Task = create_task_cls(default_app)
+Task = create_task_cls(app_or_default())
 
 
 class PeriodicTask(Task):
@@ -770,6 +770,7 @@ class PeriodicTask(Task):
     relative = False
 
     def __init__(self):
+        app = app_or_default()
         if not hasattr(self, "run_every"):
             raise NotImplementedError(
                     "Periodic tasks must have a run_every attribute")
@@ -780,7 +781,7 @@ class PeriodicTask(Task):
 
         # For backward compatibility, add the periodic task to the
         # configuration schedule instead.
-        default_app.conf.CELERYBEAT_SCHEDULE[self.name] = {
+        app.conf.CELERYBEAT_SCHEDULE[self.name] = {
                 "task": self.name,
                 "schedule": self.run_every,
                 "args": (),
