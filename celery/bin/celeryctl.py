@@ -1,14 +1,12 @@
-import os
 import sys
 
 from optparse import OptionParser, make_option as Option
-from pprint import pprint, pformat
+from pprint import pformat
 from textwrap import wrap
 
 from anyjson import deserialize
 
 from celery import __version__
-from celery import CompatCelery
 from celery.app import app_or_default
 from celery.bin.base import Command as CeleryCommand
 from celery.utils import term

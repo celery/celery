@@ -1,12 +1,3 @@
-import logging
-import sys
-
-from celery import CompatCelery
-from celery.app import app_or_default
-from celery.events.cursesmon import evtop
-from celery.events.dumper import evdump
-from celery.events.snapshot import evcam
-
 from celery.bin.base import Command, Option
 
 
@@ -35,7 +26,6 @@ class EvCommand(Command):
         return evcam(*args, **kwargs)
 
     def get_options(self):
-        conf = self.app.conf
         return (
             Option('-d', '--dump',
                    action="store_true", dest="dump",

@@ -125,7 +125,6 @@ class test_TaskRequest(unittest.TestCase):
         self.assertIn("task-frobulated", tw.eventer.sent)
 
     def test_send_email(self):
-        from celery.worker import job
         app = app_or_default()
         old_mail_admins = app.mail_admins
         old_enable_mails = mytask.send_error_emails

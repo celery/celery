@@ -69,7 +69,6 @@
 """
 import multiprocessing
 
-from celery import __version__
 from celery.bin.base import Command, Option
 
 

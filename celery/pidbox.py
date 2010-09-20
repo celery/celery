@@ -71,7 +71,7 @@ class BroadcastPublisher(Publisher):
         reply_to = self.ReplyTo(self.connection, None, app=self.app,
                                 auto_declare=False)
         if reply_ticket:
-            arguments["reply_to"] = {"exchange": self.ReplyTo.exchange,
+            arguments["reply_to"] = {"exchange": reply_to.exchange,
                                      "routing_key": reply_ticket}
         super(BroadcastPublisher, self).send({"control": arguments})
 

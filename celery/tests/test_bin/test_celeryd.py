@@ -27,7 +27,7 @@ def disable_stdouts(fun):
 
     @wraps(fun)
     def disable(*args, **kwargs):
-        #sys.stdout, sys.stderr = StringIO(), StringIO()
+        sys.stdout, sys.stderr = StringIO(), StringIO()
         try:
             return fun(*args, **kwargs)
         finally:

@@ -3,8 +3,6 @@
 Decorators
 
 """
-from inspect import getargspec
-
 from celery.app import app_or_default
 from celery.task.base import PeriodicTask
 

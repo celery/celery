@@ -1,6 +1,5 @@
 from __future__ import generators
 
-import os
 import sys
 import logging
 import unittest2 as unittest
@@ -11,8 +10,6 @@ try:
     from contextlib import contextmanager
 except ImportError:
     from celery.tests.utils import fallback_contextmanager as contextmanager
-
-from carrot.utils import rpartition
 
 from celery import log
 from celery.log import (setup_logger, setup_task_logger,

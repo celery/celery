@@ -15,7 +15,7 @@ from anyjson import serialize
 from celery.task import http
 from celery.utils.functional import wraps
 
-from celery.tests.utils import eager_tasks, execute_context
+from celery.tests.utils import execute_context
 
 
 @contextmanager

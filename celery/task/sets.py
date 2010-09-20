@@ -5,8 +5,6 @@ from UserList import UserList
 from celery import registry
 from celery.app import app_or_default
 from celery.datastructures import AttributeDict
-from celery.messaging import TaskPublisher
-from celery.result import TaskSetResult
 from celery.utils import gen_unique_id
 
 TASKSET_DEPRECATION_TEXT = """\

@@ -4,7 +4,6 @@ import platform as _platform
 import os
 import socket
 import sys
-import warnings
 
 from celery import __version__
 from celery import platform

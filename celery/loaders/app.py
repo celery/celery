@@ -1,7 +1,4 @@
 import os
-import sys
-
-from importlib import import_module
 
 from celery.datastructures import DictAttribute
 from celery.exceptions import ImproperlyConfigured

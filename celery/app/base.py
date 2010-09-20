@@ -1,4 +1,3 @@
-import os
 import sys
 
 from datetime import timedelta
@@ -240,7 +239,7 @@ class BaseApp(object):
         if not c.get("CELERY_RESULT_BACKEND"):
             rbackend = c.get("CELERY_BACKEND")
             if rbackend:
-                c["CELERY_RESULT_BACKEND"] = backend
+                c["CELERY_RESULT_BACKEND"] = rbackend
         if not c.get("BROKER_BACKEND"):
             cbackend = c.get("BROKER_TRANSPORT") or c.get("CARROT_BACKEND")
             if cbackend:

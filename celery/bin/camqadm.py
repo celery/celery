@@ -8,7 +8,7 @@ import cmd
 import sys
 import shlex
 import pprint
-import optparse
+
 from itertools import count
 
 from amqplib import client_0_8 as amqp
