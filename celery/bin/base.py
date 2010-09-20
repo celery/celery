@@ -3,17 +3,12 @@ import sys
 
 from optparse import OptionParser, make_option as Option
 
-from carrot.utils import partition
-
-from celery import __version__
-from celery import Celery
-from celery.app import app_or_default
-from celery.utils import get_symbol_by_name
+import celery
 
 
 class Command(object):
     args = ''
-    version = __version__
+    version = celery.__version__
     option_list = ()
     preload_options = (
             Option("--app",
@@ -86,6 +81,10 @@ class Command(object):
             argv = self.process_cmdline_config(argv)
         return argv
 
+    def get_symbol_by_name(self, name):
+        from celery.utils import get_symbol_by_name
+        return get_symbol_by_name(name)
+
     def process_cmdline_config(self, argv):
         try:
             cargs_start = argv.index('--')
@@ -101,11 +100,11 @@ class Command(object):
                                 for opt in self.preload_options)
         for arg in args:
             if arg.startswith('--') and '=' in arg:
-                key, _, value = partition(arg, '=')
+                key, value = arg.split('=', 1)
                 dest = preload_options.get(key)
                 if dest:
                     acc[dest] = value
         return acc
 
     def _get_default_app(self, *args, **kwargs):
-        return Celery(*args, **kwargs)
+        return celery.Celery(*args, **kwargs)
