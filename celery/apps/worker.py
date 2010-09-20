@@ -80,10 +80,6 @@ class Worker(object):
         self.redirect_stdouts_to_logger()
         print("celery@%s v%s is starting." % (self.hostname, __version__))
 
-        if getattr(self.settings, "DEBUG", False): # XXX
-            warnings.warn("Using settings.DEBUG leads to a memory leak, "
-                    "never use this setting in a production environment!")
-
         if self.discard:
             self.purge_messages()
 
