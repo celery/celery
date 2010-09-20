@@ -62,10 +62,6 @@ class BaseLoader(object):
             self.worker_initialized = True
             self.on_worker_init()
 
-    def config_from_cmdline(self, args, namespace="celery"):
-        for key, value in self.cmdline_config_parser(args, namespace).items():
-            self.conf[key] = value
-
     def cmdline_config_parser(self, args, namespace="celery",
                 re_type=re.compile(r"\((\w+)\)"),
                 extra_types={"json": anyjson.deserialize},
