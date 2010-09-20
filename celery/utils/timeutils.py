@@ -112,7 +112,7 @@ def humanize_seconds(secs, prefix=""):
     for unit, divider, formatter in TIME_UNITS:
         if secs >= divider:
             w = secs / divider
-            punit = w > 1 and unit+"s" or unit
+            punit = w > 1 and (unit + "s") or unit
             return "%s%s %s" % (prefix, formatter(w), punit)
     return "now"
 
@@ -124,5 +124,3 @@ def maybe_iso8601(dt):
     if isinstance(dt, datetime):
         return dt
     return parse_iso8601(dt)
-
-

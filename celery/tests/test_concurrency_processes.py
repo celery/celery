@@ -61,8 +61,8 @@ class test_TaskPool(unittest.TestCase):
         self.assertTrue(_pool.terminated)
 
     def test_on_ready_exception(self):
-
         scratch = [None]
+
         def errback(retval):
             scratch[0] = retval
 
@@ -72,8 +72,8 @@ class test_TaskPool(unittest.TestCase):
         self.assertEqual(exc, scratch[0])
 
     def test_on_ready_value(self):
-
         scratch = [None]
+
         def callback(retval):
             scratch[0] = retval
 

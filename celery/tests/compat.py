@@ -69,8 +69,10 @@ class catch_warnings(object):
         self._showwarning = self._module.showwarning
         if self._record:
             log = []
+
             def showwarning(*args, **kwargs):
                 log.append(WarningMessage(*args, **kwargs))
+
             self._module.showwarning = showwarning
             return log
         else:

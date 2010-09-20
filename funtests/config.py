@@ -21,6 +21,7 @@ CELERYD_LOG_COLOR = False
 
 CELERY_IMPORTS = ("celery.tests.functional.tasks", )
 
+
 @atexit.register
 def teardown_testdb():
     import os

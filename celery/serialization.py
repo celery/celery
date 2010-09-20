@@ -71,7 +71,6 @@ def find_nearest_pickleable_exception(exc):
         # Use inspect.getmro() to traverse bases instead.
         getmro_ = lambda: inspect.getmro(cls)
 
-
     for supercls in getmro_():
         if supercls in unwanted_base_classes:
             # only BaseException and object, from here on down,

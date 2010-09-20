@@ -9,7 +9,7 @@ from StringIO import StringIO
 from carrot.backends.base import BaseMessage
 
 from celery import states
-from celery.app import default_app
+from celery.app import app_or_default
 from celery.datastructures import ExceptionInfo
 from celery.decorators import task as task_dec
 from celery.exceptions import RetryTaskError, NotRegistered
@@ -42,7 +42,7 @@ def mytask(i, **kwargs):
     return i ** i
 
 
-@task_dec # traverses coverage for decorator without parens
+@task_dec               # traverses coverage for decorator without parens
 def mytask_no_kwargs(i):
     return i ** i
 
@@ -126,14 +126,15 @@ class test_TaskRequest(unittest.TestCase):
 
     def test_send_email(self):
         from celery.worker import job
-        old_mail_admins = default_app.mail_admins
+        app = app_or_default()
+        old_mail_admins = app.mail_admins
         old_enable_mails = mytask.send_error_emails
         mail_sent = [False]
 
         def mock_mail_admins(*args, **kwargs):
             mail_sent[0] = True
 
-        default_app.mail_admins = mock_mail_admins
+        app.mail_admins = mock_mail_admins
         mytask.send_error_emails = True
         try:
             tw = TaskRequest(mytask.name, gen_unique_id(), [1], {"f": "x"})
@@ -151,7 +152,7 @@ class test_TaskRequest(unittest.TestCase):
             self.assertFalse(mail_sent[0])
 
         finally:
-            default_app.mail_admins = old_mail_admins
+            app.mail_admins = old_mail_admins
             mytask.send_error_emails = old_enable_mails
 
     def test_already_revoked(self):
@@ -445,6 +446,7 @@ class test_TaskRequest(unittest.TestCase):
                     "task_name": tw.task_name})
 
     def _test_on_failure(self, exception):
+        app = app_or_default()
         tid = gen_unique_id()
         tw = TaskRequest(mytask.name, tid, [4], {"f": "x"})
         try:
@@ -457,7 +459,7 @@ class test_TaskRequest(unittest.TestCase):
         tw.logger = setup_logger(logfile=logfh, loglevel=logging.INFO,
                                  root=False)
 
-        default_app.conf.CELERY_SEND_TASK_ERROR_EMAILS = True
+        app.conf.CELERY_SEND_TASK_ERROR_EMAILS = True
 
         tw.on_failure(exc_info)
         logvalue = logfh.getvalue()
@@ -465,7 +467,7 @@ class test_TaskRequest(unittest.TestCase):
         self.assertIn(tid, logvalue)
         self.assertIn("ERROR", logvalue)
 
-        default_app.conf.CELERY_SEND_TASK_ERROR_EMAILS = False
+        app.conf.CELERY_SEND_TASK_ERROR_EMAILS = False
 
     def test_on_failure(self):
         self._test_on_failure(Exception("Inside unit tests"))

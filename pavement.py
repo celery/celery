@@ -6,6 +6,7 @@ options(
         sphinx=Bunch(builddir=".build"),
 )
 
+
 def sphinx_builddir(options):
     return path("docs") / options.sphinx.builddir / "html"
 

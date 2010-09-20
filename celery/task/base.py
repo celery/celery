@@ -30,6 +30,7 @@ extract_exec_options = mattrgetter("queue", "routing_key",
                                    "mandatory", "priority",
                                    "serializer", "delivery_mode")
 
+
 def _unpickle_task(name):
     return tasks[name]
 
@@ -238,7 +239,7 @@ class BaseTask(object):
     store_errors_even_if_ignored = False
     send_error_emails = False
     error_whitelist = ()
-    disable_error_emails = False # FIXME
+    disable_error_emails = False                            # FIXME
     max_retries = 3
     default_retry_delay = 3 * 60
     serializer = "pickle"
@@ -518,7 +519,7 @@ class BaseTask(object):
         if kwargs.get("task_is_eager", False):
             result = self.apply(args=args, kwargs=kwargs, **options)
             if isinstance(result, EagerResult):
-                return result.get() # propogates exceptions.
+                return result.get()             # propogates exceptions.
             return result
 
         self.apply_async(args=args, kwargs=kwargs, **options)
@@ -549,7 +550,8 @@ class BaseTask(object):
         throw = self.app.either("CELERY_EAGER_PROPAGATES_EXCEPTIONS",
                                 options.pop("throw", None))
 
-        task = tasks[self.name] # Make sure we get the instance, not class.
+        # Make sure we get the task instance, not class.
+        task = tasks[self.name]
 
         default_kwargs = {"task_name": task.name,
                           "task_id": task_id,

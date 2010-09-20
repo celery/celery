@@ -8,7 +8,7 @@ REVOKES_MAX = 10000
 
 # How many seconds a revoke will be active before
 # being expired when the max limit has been exceeded.
-REVOKE_EXPIRES = 3600 # One hour.
+REVOKE_EXPIRES = 3600                       # One hour.
 
 """
 .. data:: active_requests

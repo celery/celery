@@ -48,7 +48,7 @@ TO_RST_MAP = {RE_CODE_BLOCK: replace_code_block,
 
 
 def _process(lines):
-    lines = list(lines) # non-destructive
+    lines = list(lines)                                 # non-destructive
     for i, line in enumerate(lines):
         for regex, alt in TO_RST_MAP.items():
             if callable(alt):

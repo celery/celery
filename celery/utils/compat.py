@@ -287,7 +287,7 @@ except ImportError:
             return "defaultdict(%s, %s)" % (self.default_factory,
                                             dict.__repr__(self))
     import collections
-    collections.defaultdict = defaultdict # Pickle needs this.
+    collections.defaultdict = defaultdict           # Pickle needs this.
 
 ############## logging.LoggerAdapter ########################################
 import inspect
@@ -410,11 +410,12 @@ try:
     from itertools import izip_longest
 except ImportError:
     import itertools
+
     def izip_longest(*args, **kwds):
         fillvalue = kwds.get("fillvalue")
 
         def sentinel(counter=([fillvalue] * (len(args) - 1)).pop):
-            yield counter() # yields the fillvalue, or raises IndexError
+            yield counter()     # yields the fillvalue, or raises IndexError
 
         fillers = itertools.repeat(fillvalue)
         iters = [itertools.chain(it, sentinel(), fillers)

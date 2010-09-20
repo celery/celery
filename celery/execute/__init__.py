@@ -1,4 +1,4 @@
-from celery.app import default_app
+from celery.app import app_or_default
 from celery.registry import tasks
 
 
@@ -17,7 +17,7 @@ def apply(task, *args, **kwargs):
 def send_task(*args, **kwargs):
     """Deprecated. See :meth:`celery.app.App.send_task`."""
     # FIXME Deprecate!
-    return default_app.send_task(*args, **kwargs)
+    return app_or_default().send_task(*args, **kwargs)
 
 
 def delay_task(task_name, *args, **kwargs):

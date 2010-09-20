@@ -45,7 +45,6 @@ class Loader(BaseLoader):
 
         return settings
 
-
     def read_configuration(self):
         """Read configuration from ``celeryconfig.py`` and configure
         celery and Django so it can be used by regular Python."""

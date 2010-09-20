@@ -16,6 +16,7 @@ RESET_SEQ = "\033[0m"
 COLOR_SEQ = "\033[1;%dm"
 fg = lambda s: COLOR_SEQ % s
 
+
 class colored(object):
 
     def __init__(self, *s, **kwargs):

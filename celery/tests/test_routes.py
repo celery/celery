@@ -1,7 +1,7 @@
 import unittest2 as unittest
 
 from celery import routes
-from celery.app import default_app
+from celery.app import app_or_default
 from celery.utils import maybe_promise
 from celery.utils.functional import wraps
 from celery.exceptions import QueueNotFound
@@ -18,12 +18,13 @@ def with_queues(**queues):
     def patch_fun(fun):
         @wraps(fun)
         def __inner(*args, **kwargs):
-            prev_queues = default_app.conf.CELERY_QUEUES
-            default_app.conf.CELERY_QUEUES = queues
+            app = app_or_default()
+            prev_queues = app.conf.CELERY_QUEUES
+            app.conf.CELERY_QUEUES = queues
             try:
                 return fun(*args, **kwargs)
             finally:
-                default_app.conf.CELERY_QUEUES = prev_queues
+                app.conf.CELERY_QUEUES = prev_queues
         return __inner
     return patch_fun
 
@@ -40,7 +41,7 @@ class test_MapRoute(unittest.TestCase):
 
     @with_queues(foo=a_queue, bar=b_queue)
     def test_route_for_task_expanded_route(self):
-        expand = E(default_app.conf.CELERY_QUEUES)
+        expand = E(app_or_default().conf.CELERY_QUEUES)
         route = routes.MapRoute({"celery.ping": {"queue": "foo"}})
         self.assertDictContainsSubset(a_queue,
                              expand(route.route_for_task("celery.ping")))
@@ -48,14 +49,14 @@ class test_MapRoute(unittest.TestCase):
 
     @with_queues(foo=a_queue, bar=b_queue)
     def test_route_for_task(self):
-        expand = E(default_app.conf.CELERY_QUEUES)
+        expand = E(app_or_default().conf.CELERY_QUEUES)
         route = routes.MapRoute({"celery.ping": b_queue})
         self.assertDictContainsSubset(b_queue,
                              expand(route.route_for_task("celery.ping")))
         self.assertIsNone(route.route_for_task("celery.awesome"))
 
     def test_expand_route_not_found(self):
-        expand = E(default_app.conf.CELERY_QUEUES)
+        expand = E(app_or_default().conf.CELERY_QUEUES)
         route = routes.MapRoute({"a": {"queue": "x"}})
         self.assertRaises(QueueNotFound, expand, route.route_for_task("a"))
 
@@ -70,7 +71,7 @@ class test_lookup_route(unittest.TestCase):
     def test_lookup_takes_first(self):
         R = routes.prepare(({"celery.ping": {"queue": "bar"}},
                             {"celery.ping": {"queue": "foo"}}))
-        router = routes.Router(R, default_app.conf.CELERY_QUEUES)
+        router = routes.Router(R, app_or_default().conf.CELERY_QUEUES)
         self.assertDictContainsSubset(b_queue,
                 router.route({}, "celery.ping",
                     args=[1, 2], kwargs={}))
@@ -79,7 +80,7 @@ class test_lookup_route(unittest.TestCase):
     def test_lookup_paths_traversed(self):
         R = routes.prepare(({"celery.xaza": {"queue": "bar"}},
                             {"celery.ping": {"queue": "foo"}}))
-        router = routes.Router(R, default_app.conf.CELERY_QUEUES)
+        router = routes.Router(R, app_or_default().conf.CELERY_QUEUES)
         self.assertDictContainsSubset(a_queue,
                 router.route({}, "celery.ping",
                     args=[1, 2], kwargs={}))

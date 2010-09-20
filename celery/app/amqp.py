@@ -9,8 +9,6 @@ from celery import routes
 from celery import signals
 from celery.utils import gen_unique_id, mitemgetter, textindent
 
-
-
 MSG_OPTIONS = ("mandatory", "priority", "immediate",
                "routing_key", "serializer", "delivery_mode")
 QUEUE_FORMAT = """
@@ -81,7 +79,6 @@ class Queues(UserDict):
         return cls(queues)
 
 
-
 class TaskPublisher(messaging.Publisher):
     auto_declare = False
 
@@ -99,7 +96,7 @@ class TaskPublisher(messaging.Publisher):
         task_args = task_args or []
         task_kwargs = task_kwargs or {}
         now = None
-        if countdown: # Convert countdown to ETA.
+        if countdown:                           # Convert countdown to ETA.
             now = datetime.now()
             eta = now + timedelta(seconds=countdown)
 

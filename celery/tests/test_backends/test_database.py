@@ -5,7 +5,7 @@ from datetime import datetime
 from celery.exceptions import ImproperlyConfigured
 
 from celery import states
-from celery.app import default_app
+from celery.app import app_or_default
 from celery.db.models import Task, TaskSet
 from celery.utils import gen_unique_id
 from celery.backends.database import DatabaseBackend
@@ -20,7 +20,7 @@ class SomeClass(object):
 class test_DatabaseBackend(unittest.TestCase):
 
     def test_missing_dburi_raises_ImproperlyConfigured(self):
-        conf = default_app.conf
+        conf = app_or_default().conf
         prev, conf.CELERY_RESULT_DBURI = conf.CELERY_RESULT_DBURI, None
         try:
             self.assertRaises(ImproperlyConfigured, DatabaseBackend)

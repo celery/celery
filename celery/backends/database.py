@@ -13,7 +13,6 @@ except ImportError:
         "See http://pypi.python.org/pypi/SQLAlchemy")
 
 
-
 class DatabaseBackend(BaseDictBackend):
     """The database result backend."""
 
@@ -29,7 +28,6 @@ class DatabaseBackend(BaseDictBackend):
             raise ImproperlyConfigured(
                     "Missing connection string! Do you have "
                     "CELERY_RESULT_DBURI set to a real value?")
-
 
     def ResultSession(self):
         return ResultSession(dburi=self.dburi, **self.engine_options)

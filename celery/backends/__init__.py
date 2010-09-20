@@ -1,4 +1,4 @@
-from celery.app import default_app
+from celery.app import app_or_default
 from celery.utils import get_cls_by_name
 from celery.utils.functional import curry
 
@@ -17,7 +17,7 @@ _backend_cache = {}
 
 def get_backend_cls(backend, loader=None):
     """Get backend class by name/alias"""
-    loader = loader or default_app.loader
+    loader = loader or app_or_default().loader
     if backend not in _backend_cache:
         aliases = dict(BACKEND_ALIASES, **loader.override_backends)
         _backend_cache[backend] = get_cls_by_name(backend, aliases)

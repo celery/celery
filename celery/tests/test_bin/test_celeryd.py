@@ -9,7 +9,7 @@ from StringIO import StringIO
 from celery import Celery
 from celery import platform
 from celery import signals
-from celery.app import default_app
+from celery.app import app_or_default
 from celery.apps import worker as cd
 from celery.bin.celeryd import WorkerCommand, main as celeryd_main
 from celery.exceptions import ImproperlyConfigured
@@ -21,6 +21,7 @@ from celery.tests.utils import execute_context
 
 
 patch.ensure_process_aware_logger()
+
 
 def disable_stdouts(fun):
 
@@ -54,7 +55,7 @@ class test_Worker(unittest.TestCase):
 
     @disable_stdouts
     def test_queues_string(self):
-        celery = Celery()
+        celery = Celery(set_as_current=False)
         worker = celery.Worker(queues="foo,bar,baz")
         worker.init_queues()
         self.assertEqual(worker.use_queues, ["foo", "bar", "baz"])
@@ -123,8 +124,9 @@ class test_Worker(unittest.TestCase):
 
     @disable_stdouts
     def test_init_queues(self):
-        c = default_app.conf
-        p, default_app.amqp.queues = default_app.amqp.queues, {
+        app = app_or_default()
+        c = app.conf
+        p, app.amqp.queues = app.amqp.queues, {
                 "celery": {"exchange": "celery",
                            "binding_key": "celery"},
                 "video": {"exchange": "video",
@@ -148,12 +150,12 @@ class test_Worker(unittest.TestCase):
                                            "exchange_type": "direct"},
                                             worker.queues["image"])
         finally:
-            default_app.amqp.queues = p
+            app.amqp.queues = p
 
     @disable_stdouts
     def test_on_listener_ready(self):
-
         worker_ready_sent = [False]
+
         def on_worker_ready(**kwargs):
             worker_ready_sent[0] = True
 
@@ -186,7 +188,7 @@ class test_funs(unittest.TestCase):
     @disable_stdouts
     def test_parse_options(self):
         cmd = WorkerCommand()
-        cmd.app = default_app
+        cmd.app = app_or_default()
         opts, args = cmd.parse_options("celeryd", ["--concurrency=512"])
         self.assertEqual(opts.concurrency, 512)
 
@@ -239,10 +241,11 @@ class test_signal_handlers(unittest.TestCase):
     def test_worker_int_handler(self):
         worker = self._Worker()
         handlers = self.psig(cd.install_worker_int_handler, worker)
-
         next_handlers = {}
+
         def i(sig, handler):
             next_handlers[sig] = handler
+
         p = platform.install_signal_handler
         platform.install_signal_handler = i
         try:

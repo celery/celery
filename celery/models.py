@@ -9,6 +9,7 @@ import atexit
 
 from django.core.exceptions import ImproperlyConfigured
 
+
 @atexit.register
 def _display_help():
     import sys

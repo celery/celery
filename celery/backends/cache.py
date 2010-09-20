@@ -43,6 +43,7 @@ backends = {"memcache": get_best_memcache,
             "pylibmc": get_best_memcache,
             "memory": DummyClient}
 
+
 class CacheBackend(KeyValueStoreBackend):
     _client = None
 

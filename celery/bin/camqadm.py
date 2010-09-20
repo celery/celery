@@ -37,6 +37,7 @@ Example:
     -> queue.delete myqueue yes no
 """
 
+
 def say(m):
     sys.stderr.write("%s\n" % (m, ))
 
@@ -361,6 +362,7 @@ class AMQPAdminCommand(Command):
     def run(self, *args, **options):
         options["app"] = self.app
         return AMQPAdmin(*args, **options).run()
+
 
 def camqadm(*args, **options):
     AMQPAdmin(*args, **options).run()

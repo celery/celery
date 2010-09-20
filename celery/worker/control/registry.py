@@ -4,7 +4,7 @@ from celery.app import app_or_default
 
 
 class Panel(UserDict):
-    data = dict() # Global registry.
+    data = dict()                               # Global registry.
 
     def __init__(self, logger, listener, hostname=None, app=None):
         self.app = app_or_default(app)

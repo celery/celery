@@ -245,7 +245,6 @@ class test_State(unittest.TestCase):
         s.freeze_while(work)
         self.assertState(s)
 
-
     def test_freeze_thaw__not_buffering(self):
         s = State()
         r = ev_snapshot(s)
@@ -322,4 +321,3 @@ class test_State(unittest.TestCase):
         s = State(callback=callback)
         s.event({"type": "worker-online"})
         self.assertTrue(scratch.get("recv"))
-

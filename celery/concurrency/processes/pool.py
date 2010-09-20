@@ -48,6 +48,7 @@ SIG_SOFT_TIMEOUT = getattr(signal, "SIGUSR1", None)
 # Exceptions
 #
 
+
 class WorkerLostError(Exception):
     """The worker processing a job has exited prematurely."""
     pass
@@ -57,6 +58,7 @@ class WorkerLostError(Exception):
 #
 
 job_counter = itertools.count()
+
 
 def mapstar(args):
     return map(*args)
@@ -191,7 +193,7 @@ class TaskHandler(PoolThread):
             else:
                 if set_length:
                     debug('doing set_length()')
-                    set_length(i+1)
+                    set_length(i + 1)
                 continue
             break
         else:
@@ -295,7 +297,7 @@ class TimeoutHandler(PoolThread):
                 elif i not in dirty and _timed_out(ack_time, t_soft):
                     _on_soft_timeout(job, i)
 
-            time.sleep(0.5) # Don't waste CPU cycles.
+            time.sleep(0.5)                     # Don't waste CPU cycles.
 
         debug('timeout handler exiting')
 
@@ -367,7 +369,6 @@ class ResultHandler(PoolThread):
                         pass
 
                 on_state_change(task)
-
 
         if putlock is not None:
             try:
@@ -765,6 +766,7 @@ DynamicPool = Pool
 # Class whose instances are returned by `Pool.apply_async()`
 #
 
+
 class ApplyResult(object):
 
     def __init__(self, cache, callback, accept_callback=None,
@@ -841,6 +843,7 @@ class ApplyResult(object):
 # Class whose instances are returned by `Pool.map_async()`
 #
 
+
 class MapResult(ApplyResult):
 
     def __init__(self, cache, chunksize, length, callback):
@@ -856,12 +859,12 @@ class MapResult(ApplyResult):
             self._number_left = 0
             self._ready = True
         else:
-            self._number_left = length//chunksize + bool(length % chunksize)
+            self._number_left = length // chunksize + bool(length % chunksize)
 
     def _set(self, i, success_result):
         success, result = success_result
         if success:
-            self._value[i*self._chunksize:(i+1)*self._chunksize] = result
+            self._value[i * self._chunksize:(i + 1) * self._chunksize] = result
             self._number_left -= 1
             if self._number_left == 0:
                 if self._callback:
@@ -906,6 +909,7 @@ class MapResult(ApplyResult):
 #
 # Class whose instances are returned by `Pool.imap()`
 #
+
 
 class IMapIterator(object):
 
@@ -980,6 +984,7 @@ class IMapIterator(object):
 # Class whose instances are returned by `Pool.imap_unordered()`
 #
 
+
 class IMapUnorderedIterator(IMapIterator):
 
     def _set(self, i, obj):
@@ -996,6 +1001,7 @@ class IMapUnorderedIterator(IMapIterator):
 #
 #
 #
+
 
 class ThreadPool(Pool):
 

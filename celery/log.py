@@ -10,7 +10,7 @@ from multiprocessing import current_process
 from multiprocessing import util as mputil
 
 from celery import signals
-from celery.app import default_app
+from celery.app import app_or_default
 from celery.utils import noop
 from celery.utils.compat import LoggerAdapter
 from celery.utils.patch import ensure_process_aware_logger
@@ -167,7 +167,7 @@ class Logging(object):
     def _setup_logger(self, logger, logfile, format, colorize,
             formatter=ColorFormatter, **kwargs):
 
-        if logger.handlers: # Logger already configured
+        if logger.handlers:                 # Logger already configured
             return logger
 
         handler = self._detect_handler(logfile)
@@ -176,14 +176,13 @@ class Logging(object):
         return logger
 
 
-_default_logging = Logging(default_app)
+_default_logging = Logging(app_or_default())
 setup_logging_subsystem = _default_logging.setup_logging_subsystem
 get_default_logger = _default_logging.get_default_logger
 setup_logger = _default_logging.setup_logger
 setup_task_logger = _default_logging.setup_task_logger
 get_task_logger = _default_logging.get_task_logger
 redirect_stdouts_to_logger = _default_logging.redirect_stdouts_to_logger
-
 
 
 class LoggingProxy(object):
@@ -209,7 +208,7 @@ class LoggingProxy(object):
         ``sys.__stderr__`` instead of ``sys.stderr`` to circumvent
         infinite loops."""
 
-        def wrap_handler(handler): # pragma: no cover
+        def wrap_handler(handler):                  # pragma: no cover
 
             class WithSafeHandleError(logging.Handler):
 

@@ -2,7 +2,7 @@ import unittest2 as unittest
 
 import simplejson
 
-from celery.app import default_app
+from celery.app import app_or_default
 from celery.task import Task
 from celery.task.sets import subtask, TaskSet
 
@@ -81,8 +81,8 @@ class test_subtask(unittest.TestCase):
     def test_is_JSON_serializable(self):
         s = MockTask.subtask((2, ), {"cache": True},
                 {"routing_key": "CPU-bound"})
-        s.args = list(s.args) # tuples are not preserved
-                              # but this doesn't matter.
+        s.args = list(s.args)                   # tuples are not preserved
+                                                # but this doesn't matter.
         self.assertEqual(s,
                          subtask(simplejson.loads(simplejson.dumps(s))))
 
@@ -130,6 +130,7 @@ class test_TaskSet(unittest.TestCase):
         self.assertEqual(len(ts), 3)
 
     def test_respects_ALWAYS_EAGER(self):
+        app = app_or_default()
 
         class MockTaskSet(TaskSet):
             applied = 0
@@ -139,11 +140,11 @@ class test_TaskSet(unittest.TestCase):
 
         ts = MockTaskSet([MockTask.subtask((i, i))
                         for i in (2, 4, 8)])
-        default_app.conf.CELERY_ALWAYS_EAGER = True
+        app.conf.CELERY_ALWAYS_EAGER = True
         try:
             ts.apply_async()
         finally:
-            default_app.conf.CELERY_ALWAYS_EAGER = False
+            app.conf.CELERY_ALWAYS_EAGER = False
         self.assertEqual(ts.applied, 1)
 
     def test_apply_async(self):

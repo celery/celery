@@ -6,10 +6,10 @@ Use :mod:`celery.defaults` instead.
 
 
 """
-from celery.app import default_app
+from celery.app import app_or_default
 from celery.app.defaults import DEFAULTS as _DEFAULTS
 
-conf = default_app.conf
+conf = app_or_default().conf
 
 ALWAYS_EAGER = conf.CELERY_ALWAYS_EAGER
 EAGER_PROPAGATES_EXCEPTIONS = conf.CELERY_EAGER_PROPAGATES_EXCEPTIONS

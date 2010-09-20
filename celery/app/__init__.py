@@ -123,7 +123,7 @@ class App(base.BaseApp):
                                 __module__=fun.__module__,
                                 __doc__=fun.__doc__)
                 T = type(fun.__name__, (base, ), cls_dict)()
-                return registry.tasks[T.name] # global instance.
+                return registry.tasks[T.name]             # global instance.
 
             return _create_task_cls
 

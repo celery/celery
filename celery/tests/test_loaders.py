@@ -54,9 +54,10 @@ class TestDefaultLoader(unittest.TestCase):
 
     def test_wanted_module_item(self):
         self.assertTrue(default.wanted_module_item("FOO"))
-        self.assertTrue(default.wanted_module_item("foo"))
-        self.assertFalse(default.wanted_module_item("_foo"))
-        self.assertFalse(default.wanted_module_item("__foo"))
+        self.assertTrue(default.wanted_module_item("Foo"))
+        self.assertFalse(default.wanted_module_item("_FOO"))
+        self.assertFalse(default.wanted_module_item("__FOO"))
+        self.assertFalse(default.wanted_module_item("foo"))
 
     def test_read_configuration(self):
         from types import ModuleType

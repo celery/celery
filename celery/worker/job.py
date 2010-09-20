@@ -7,7 +7,7 @@ import warnings
 from datetime import datetime
 
 from celery import platform
-from celery.app import app_or_default, default_app
+from celery.app import app_or_default
 from celery.datastructures import ExceptionInfo
 from celery.execute.trace import TaskTrace
 from celery.registry import tasks
@@ -73,7 +73,7 @@ class WorkerTaskTrace(TaskTrace):
     """
 
     def __init__(self, *args, **kwargs):
-        self.loader = kwargs.get("loader") or default_app.loader
+        self.loader = kwargs.get("loader") or app_or_default().loader
         self.hostname = kwargs.get("hostname") or socket.gethostname()
         super(WorkerTaskTrace, self).__init__(*args, **kwargs)
 
@@ -273,7 +273,6 @@ class TaskRequest(object):
         _delivery_info = getattr(message, "delivery_info", {})
         delivery_info = dict((key, _delivery_info.get(key))
                                 for key in WANTED_DELIVERY_INFO)
-
 
         if not hasattr(kwargs, "items"):
             raise InvalidTaskError("Task kwargs must be a dictionary.")

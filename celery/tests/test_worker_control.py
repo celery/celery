@@ -3,7 +3,7 @@ import unittest2 as unittest
 
 from celery.utils.timer2 import Timer
 
-from celery.app import default_app
+from celery.app import app_or_default
 from celery.decorators import task
 from celery.registry import tasks
 from celery.task.builtins import PingTask
@@ -16,7 +16,7 @@ from celery.worker.state import revoked
 hostname = socket.gethostname()
 
 
-@task(rate_limit=200) # for extra info in dump_tasks
+@task(rate_limit=200)                   # for extra info in dump_tasks
 def mytask():
     pass
 
@@ -46,7 +46,7 @@ class Listener(object):
                                          args=(2, 2),
                                          kwargs={}))
         self.eta_schedule = Timer()
-        self.app = default_app
+        self.app = app_or_default()
         self.event_dispatcher = Dispatcher()
 
 
@@ -100,13 +100,14 @@ class test_ControlPanel(unittest.TestCase):
         self.assertFalse(panel.execute("dump_reserved"))
 
     def test_rate_limit_when_disabled(self):
-        default_app.conf.CELERY_DISABLE_RATE_LIMITS = True
+        app = app_or_default()
+        app.conf.CELERY_DISABLE_RATE_LIMITS = True
         try:
             e = self.panel.execute("rate_limit", kwargs=dict(
                  task_name=mytask.name, rate_limit="100/m"))
             self.assertIn("rate limits disabled", e.get("error"))
         finally:
-            default_app.conf.CELERY_DISABLE_RATE_LIMITS = False
+            app.conf.CELERY_DISABLE_RATE_LIMITS = False
 
     def test_rate_limit_invalid_rate_limit_string(self):
         e = self.panel.execute("rate_limit", kwargs=dict(

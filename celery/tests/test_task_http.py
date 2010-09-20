@@ -167,7 +167,8 @@ class TestHttpDispatch(unittest.TestCase):
 class TestURL(unittest.TestCase):
 
     def test_URL_get_async(self):
-        def with_eager_tasks(_val):
+        http.HttpDispatchTask.app.conf.CELERY_ALWAYS_EAGER = True
+        try:
 
             def with_mock_urlopen(_val):
                 d = http.URL("http://example.com/mul").get_async(x=10, y=10)
@@ -175,11 +176,12 @@ class TestURL(unittest.TestCase):
 
             context = mock_urlopen(success_response(100))
             execute_context(context, with_mock_urlopen)
-
-        execute_context(eager_tasks(), with_eager_tasks)
+        finally:
+            http.HttpDispatchTask.app.conf.CELERY_ALWAYS_EAGER = False
 
     def test_URL_post_async(self):
-        def with_eager_tasks(_val):
+        http.HttpDispatchTask.app.conf.CELERY_ALWAYS_EAGER = True
+        try:
 
             def with_mock_urlopen(_val):
                 d = http.URL("http://example.com/mul").post_async(x=10, y=10)
@@ -187,5 +189,5 @@ class TestURL(unittest.TestCase):
 
             context = mock_urlopen(success_response(100))
             execute_context(context, with_mock_urlopen)
-
-        execute_context(eager_tasks(), with_eager_tasks)
+        finally:
+            http.HttpDispatchTask.app.conf.CELERY_ALWAYS_EAGER = False

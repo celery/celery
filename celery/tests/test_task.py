@@ -6,7 +6,7 @@ from pyparsing import ParseException
 
 
 from celery import task
-from celery.app import default_app
+from celery.app import app_or_default
 from celery.task.schedules import crontab, crontab_parser
 from celery.utils import timeutils
 from celery.utils import gen_unique_id
@@ -204,7 +204,7 @@ class MockPublisher(object):
 
     def __init__(self, *args, **kwargs):
         self.kwargs = kwargs
-        self.connection = default_app.broker_connection()
+        self.connection = app_or_default().broker_connection()
 
     def declare(self):
         self._declared = True
@@ -381,7 +381,6 @@ class TestTaskSet(unittest.TestCase):
         ])
         self.assertEqual(ts.total, 9)
 
-
         consumer = IncrementCounterTask().get_consumer()
         consumer.discard_all()
         taskset_res = ts.apply_async()
@@ -403,11 +402,11 @@ class TestTaskApply(unittest.TestCase):
         self.assertRaises(KeyError, RaisingTask.apply, throw=True)
 
     def test_apply_with_CELERY_EAGER_PROPAGATES_EXCEPTIONS(self):
-        default_app.conf.CELERY_EAGER_PROPAGATES_EXCEPTIONS = True
+        RaisingTask.app.conf.CELERY_EAGER_PROPAGATES_EXCEPTIONS = True
         try:
             self.assertRaises(KeyError, RaisingTask.apply)
         finally:
-            default_app.conf.CELERY_EAGER_PROPAGATES_EXCEPTIONS = False
+            RaisingTask.app.conf.CELERY_EAGER_PROPAGATES_EXCEPTIONS = False
 
     def test_apply(self):
         IncrementCounterTask.count = 0

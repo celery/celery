@@ -1,4 +1,4 @@
-from celery.app import default_app
+from celery.app import app_or_default
 from celery.pidbox import BroadcastPublisher, ControlReplyConsumer
 from celery.utils import gen_unique_id
 
@@ -59,7 +59,7 @@ class Inspect(object):
         return self._request("disable_events")
 
     def diagnose(self):
-        diagnose_timeout = self.timeout * 0.85 # 15% of timeout
+        diagnose_timeout = self.timeout * 0.85              # 15% of timeout
         return self._request("diagnose", timeout=diagnose_timeout)
 
     def ping(self):
@@ -95,7 +95,6 @@ class Control(object):
         return self.app.with_default_connection(_do_discard)(
                 connection=connection, connect_timeout=connect_timeout)
 
-
     def revoke(self, task_id, destination=None, **kwargs):
         """Revoke a task by id.
 
@@ -117,7 +116,6 @@ class Control(object):
         return self.broadcast("revoke", destination=destination,
                               arguments={"task_id": task_id}, **kwargs)
 
-
     def ping(self, destination=None, timeout=1, **kwargs):
         """Ping workers.
 
@@ -136,7 +134,6 @@ class Control(object):
         """
         return self.broadcast("ping", reply=True, destination=destination,
                               timeout=timeout, **kwargs)
-
 
     def rate_limit(self, task_name, rate_limit, destination=None, **kwargs):
         """Set rate limit for task by type.
@@ -215,7 +212,7 @@ class Control(object):
                 connection=connection, connect_timeout=connect_timeout)
 
 
-_default_control = Control(default_app)
+_default_control = Control(app_or_default())
 broadcast = _default_control.broadcast
 rate_limit = _default_control.rate_limit
 ping = _default_control.ping

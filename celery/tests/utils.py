@@ -7,7 +7,7 @@ from StringIO import StringIO
 
 from nose import SkipTest
 
-from celery.app import default_app
+from celery.app import app_or_default
 from celery.utils.functional import wraps
 
 
@@ -70,25 +70,27 @@ from celery.utils import noop
 
 @contextmanager
 def eager_tasks():
+    app = app_or_default()
 
-    prev = default_app.conf.CELERY_ALWAYS_EAGER
-    default_app.conf.CELERY_ALWAYS_EAGER = True
+    prev = app.conf.CELERY_ALWAYS_EAGER
+    app.conf.CELERY_ALWAYS_EAGER = True
 
     yield True
 
-    default_app.conf.CELERY_ALWAYS_EAGER = prev
+    app.conf.CELERY_ALWAYS_EAGER = prev
 
 
 def with_eager_tasks(fun):
 
     @wraps(fun)
     def _inner(*args, **kwargs):
-        prev = default_app.conf.CELERY_ALWAYS_EAGER
-        default_app.conf.CELERY_ALWAYS_EAGER = True
+        app = app_or_default()
+        prev = app.conf.CELERY_ALWAYS_EAGER
+        app.conf.CELERY_ALWAYS_EAGER = True
         try:
             return fun(*args, **kwargs)
         finally:
-            default_app.conf.CELERY_ALWAYS_EAGER = prev
+            app.conf.CELERY_ALWAYS_EAGER = prev
 
 
 def with_environ(env_name, env_value):

@@ -3,7 +3,7 @@ from __future__ import generators
 import unittest2 as unittest
 
 from celery import states
-from celery.app import default_app
+from celery.app import app_or_default
 from celery.utils import gen_unique_id
 from celery.utils.compat import all
 from celery.result import AsyncResult, TaskSetResult
@@ -18,14 +18,15 @@ def mock_task(name, status, result):
 
 
 def save_result(task):
+    app = app_or_default()
     traceback = "Some traceback"
     if task["status"] == states.SUCCESS:
-        default_app.backend.mark_as_done(task["id"], task["result"])
+        app.backend.mark_as_done(task["id"], task["result"])
     elif task["status"] == states.RETRY:
-        default_app.backend.mark_as_retry(task["id"], task["result"],
+        app.backend.mark_as_retry(task["id"], task["result"],
                 traceback=traceback)
     else:
-        default_app.backend.mark_as_failure(task["id"], task["result"],
+        app.backend.mark_as_failure(task["id"], task["result"],
                 traceback=traceback)
 
 
@@ -109,7 +110,7 @@ class TestAsyncResult(unittest.TestCase):
         self.assertIsInstance(nok2_res.result, KeyError)
 
     def test_get_timeout(self):
-        res = AsyncResult(self.task4["id"]) # has RETRY status
+        res = AsyncResult(self.task4["id"])             # has RETRY status
         self.assertRaises(TimeoutError, res.get, timeout=0.1)
 
         pending_res = AsyncResult(gen_unique_id())
@@ -117,7 +118,7 @@ class TestAsyncResult(unittest.TestCase):
 
     @skip_if_quick
     def test_get_timeout_longer(self):
-        res = AsyncResult(self.task4["id"]) # has RETRY status
+        res = AsyncResult(self.task4["id"])             # has RETRY status
         self.assertRaises(TimeoutError, res.get, timeout=1)
 
     def test_ready(self):
