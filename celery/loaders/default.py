@@ -23,7 +23,7 @@ DEFAULT_UNCONFIGURED_SETTINGS = {
 
 
 def wanted_module_item(item):
-    return not item.startswith("_")
+    return item[0].isupper() and not item.startswith("_")
 
 
 class Loader(BaseLoader):
