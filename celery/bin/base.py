@@ -75,15 +75,15 @@ class Command(object):
         config_module = preload_options.pop("config_module", None)
         if config_module:
             os.environ["CELERY_CONFIG_MODULE"] = config_module
-        self.app = (app and get_symbol_by_name(app) or
+        self.app = (app and self.get_cls_by_name(app) or
                             self.get_app(loader=loader))
         if self.enable_config_from_cmdline:
             argv = self.process_cmdline_config(argv)
         return argv
 
-    def get_symbol_by_name(self, name):
-        from celery.utils import get_symbol_by_name
-        return get_symbol_by_name(name)
+    def get_cls_by_name(self, name):
+        from celery.utils import get_cls_by_name
+        return get_cls_by_name(name)
 
     def process_cmdline_config(self, argv):
         try:

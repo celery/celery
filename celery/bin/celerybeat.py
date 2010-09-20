@@ -28,9 +28,8 @@ from celery.bin.base import Command, Option
 class BeatCommand(Command):
 
     def run(self, *args, **kwargs):
-        from celery.apps.beat import Beat
-        kwargs["app"] = self.app
-        return Beat(*args, **kwargs).run()
+        kwargs.pop("app", None)
+        return self.app.Beat(*args, **kwargs).run()
 
     def get_options(self):
         conf = self.app.conf

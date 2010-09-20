@@ -78,9 +78,8 @@ class WorkerCommand(Command):
     enable_config_from_cmdline = True
 
     def run(self, *args, **kwargs):
-        from celery.apps.worker import Worker
-        kwargs["app"] = self.app
-        return Worker(**kwargs).run()
+        kwargs.pop("app", None)
+        return self.app.Worker(**kwargs).run()
 
     def get_options(self):
         conf = self.app.conf
