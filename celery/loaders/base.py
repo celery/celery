@@ -2,6 +2,8 @@ import os
 import re
 import sys
 
+import anyjson
+
 from importlib import import_module as _import_module
 
 BUILTIN_MODULES = ["celery.task"]
@@ -65,9 +67,14 @@ class BaseLoader(object):
             self.conf[key] = value
 
     def cmdline_config_parser(self, args, namespace="celery",
-                re_type=re.compile(r"\((\w+)\)")):
+                re_type=re.compile(r"\((\w+)\)"),
+                extra_types={"json": anyjson.deserialize},
+                override_types={"tuple": "json",
+                                "list": "json",
+                                "dict": "json"}):
         from celery.app.defaults import Option, NAMESPACES
         namespace = namespace.upper()
+        typemap = dict(Option.typemap, **extra_types)
 
         def getarg(arg):
             """Parse a single configuration definition from
@@ -91,8 +98,10 @@ class BaseLoader(object):
             # (type)value makes cast to custom type.
             cast = re_type.match(value)
             if cast:
-                value = Option.typemap[cast.groups()[0]](
-                            value[len(cast.group()):])
+                type_ = cast.groups()[0]
+                type_ = override_types.get(type_, type_)
+                value = value[len(cast.group()):]
+                value = typemap[type_](value)
             else:
                 try:
                     value = NAMESPACES[ns][key].to_python(value)
