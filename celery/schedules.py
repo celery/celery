@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from dateutil import relativedelta as rd
+from dateutil.relativedelta import relativedelta
 from pyparsing import (Word, Literal, ZeroOrMore, Optional,
                        Group, StringEnd, alphas)
 
@@ -38,9 +38,10 @@ class schedule(object):
 
 
 class crontab_parser(object):
-    """Parser for crontab expressions. Any expression of the form 'groups' (see
-    BNF grammar below) is accepted and expanded to a set of numbers.  These
-    numbers represent the units of time that the crontab needs to run on::
+    """Parser for crontab expressions. Any expression of the form 'groups'
+    (see BNF grammar below) is accepted and expanded to a set of numbers. 
+    These numbers represent the units of time that the crontab needs to
+    run on::
 
         digit   :: '0'..'9'
         dow     :: 'a'..'z'
@@ -54,9 +55,12 @@ class crontab_parser(object):
     The parser is a general purpose one, useful for parsing hours, minutes and
     day_of_week expressions.  Example usage::
 
-        minutes = crontab_parser(60).parse("*/15")  # yields [0,15,30,45]
-        hours = crontab_parser(24).parse("*/4")     # yields [0,4,8,12,16,20]
-        day_of_week = crontab_parser(7).parse("*")  # yields [0,1,2,3,4,5,6]
+        >>> minutes = crontab_parser(60).parse("*/15")
+        [0, 15, 30, 45]
+        >>> hours = crontab_parser(24).parse("*/4")
+        [0, 4, 8, 12, 16, 20]
+        >>> day_of_week = crontab_parser(7).parse("*")
+        [0, 1, 2, 3, 4, 5, 6]
 
     """
 
@@ -232,43 +236,44 @@ class crontab(schedule):
     def remaining_estimate(self, last_run_at):
         """Returns when the periodic task should run next as a timedelta."""
         weekday = last_run_at.isoweekday()
-        execute_this_hour = weekday in self.day_of_week \
-                            and last_run_at.hour in self.hour \
-                            and last_run_at.minute < max(self.minute)
+        execute_this_hour = (weekday in self.day_of_week and
+                                last_run_at.hour in self.hour and
+                                last_run_at.minute < max(self.minute))
 
         if execute_this_hour:
-            next_minute = min([minute for minute in self.minute
-                               if minute > last_run_at.minute])
-            delta = rd.relativedelta(minute=next_minute,
-                                     second=0,
-                                     microsecond=0)
+            next_minute = min(minute for minute in self.minute
+                                        if minute > last_run_at.minute)
+            delta = relativedelta(minute=next_minute,
+                                  second=0,
+                                  microsecond=0)
         else:
             next_minute = min(self.minute)
 
-            execute_today = weekday in self.day_of_week \
-                            and (last_run_at.hour < max(self.hour) or \
-                                 execute_this_hour)
+            execute_today = (weekday in self.day_of_week and
+                                (last_run_at.hour < max(self.hour) or
+                                    execute_this_hour))
 
             if execute_today:
-                next_hour = min([hour for hour in self.hour if \
-                                 hour > last_run_at.hour])
-                delta = rd.relativedelta(hour=next_hour,
-                                         minute=next_minute,
-                                         second=0,
-                                         microsecond=0)
+                next_hour = min(hour for hour in self.hour
+                                        if hour > last_run_at.hour)
+                delta = relativedelta(hour=next_hour,
+                                      minute=next_minute,
+                                      second=0,
+                                      microsecond=0)
             else:
                 next_hour = min(self.hour)
-                iso_next_day = min([day for day in self.day_of_week if \
-                                    day > weekday] or self.day_of_week)
+                iso_next_day = min([day for day in self.day_of_week
+                                        if day > weekday] or
+                                   self.day_of_week)
                 add_week = iso_next_day == weekday
-                
-                delta = rd.relativedelta(weeks=1 if add_week else 0,
-                                         weekday=(iso_next_day - 1) % 7,
-                                         hour=next_hour,
-                                         minute=next_minute,
-                                         second=0,
-                                         microsecond=0)
-                
+
+                delta = relativedelta(weeks=add_week and 1 or 0,
+                                      weekday=(iso_next_day - 1) % 7,
+                                      hour=next_hour,
+                                      minute=next_minute,
+                                      second=0,
+                                      microsecond=0)
+
         return remaining(last_run_at, delta, now=self.nowfun())
 
     def is_due(self, last_run_at):
@@ -284,9 +289,7 @@ class crontab(schedule):
         if due:
             rem_delta = self.remaining_estimate(last_run_at=self.nowfun())
             rem = timedelta_seconds(rem_delta)
-            
         return due, rem
-
 
     def __eq__(self, other):
         if isinstance(other, crontab):
@@ -302,4 +305,3 @@ def maybe_schedule(s, relative=False):
     if isinstance(s, timedelta):
         return schedule(s, relative)
     return s
-
