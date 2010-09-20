@@ -36,10 +36,11 @@ class TaskPool(object):
 
     def __init__(self, limit, logger=None, initializer=None,
             maxtasksperchild=None, timeout=None, soft_timeout=None,
-            putlocks=True):
+            putlocks=True, initargs=None):
         self.limit = limit
         self.logger = logger or log.get_default_logger()
         self.initializer = initializer
+        self.initargs = initargs
         self.maxtasksperchild = maxtasksperchild
         self.timeout = timeout
         self.soft_timeout = soft_timeout
@@ -54,6 +55,7 @@ class TaskPool(object):
         """
         self._pool = self.Pool(processes=self.limit,
                                initializer=self.initializer,
+                               initargs=self.initargs,
                                timeout=self.timeout,
                                soft_timeout=self.soft_timeout,
                                maxtasksperchild=self.maxtasksperchild)
