@@ -88,6 +88,7 @@ NAMESPACES = {
         "SEND_TASK_ERROR_EMAILS": Option(False, type="bool"),
         "STORE_ERRORS_EVEN_IF_IGNORED": Option(False, type="bool"),
         "TASK_RESULT_EXPIRES": Option(timedelta(days=1), type="int"),
+        "AMQP_TASK_RESULT_EXPIRES": Option(type="int"),
         "TASK_ERROR_WHITELIST": Option((), type="tuple"),
         "TASK_SERIALIZER": Option("pickle"),
         "TRACK_STARTED": Option(False, type="bool"),
