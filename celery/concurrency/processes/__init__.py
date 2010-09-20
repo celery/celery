@@ -7,7 +7,7 @@ from time import sleep, time
 
 from celery import log
 from celery.datastructures import ExceptionInfo
-from celery.utils.functional import curry
+from celery.utils.functional import partial
 
 from celery.concurrency.processes.pool import Pool, RUN
 
@@ -111,8 +111,8 @@ class TaskPool(object):
         callbacks = callbacks or []
         errbacks = errbacks or []
 
-        on_ready = curry(self.on_ready, callbacks, errbacks)
-        on_worker_error = curry(self.on_worker_error, errbacks)
+        on_ready = partial(self.on_ready, callbacks, errbacks)
+        on_worker_error = partial(self.on_worker_error, errbacks)
 
         self.logger.debug("TaskPool: Apply %s (args:%s kwargs:%s)" % (
             target, args, kwargs))

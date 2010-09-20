@@ -18,7 +18,7 @@ from carrot.utils import rpartition
 
 from celery.utils.compat import all, any, defaultdict
 from celery.utils.timeutils import timedelta_seconds        # was here before
-from celery.utils.functional import curry
+from celery.utils.functional import partial
 
 
 LOG_LEVELS = dict(logging._levelNames)
@@ -300,7 +300,7 @@ def fun_takes_kwargs(fun, kwlist=[]):
     args, _varargs, keywords, _defaults = argspec
     if keywords != None:
         return kwlist
-    return filter(curry(operator.contains, args), kwlist)
+    return filter(partial(operator.contains, args), kwlist)
 
 
 def get_cls_by_name(name, aliases={}):

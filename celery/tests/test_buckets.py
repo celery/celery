@@ -10,12 +10,12 @@ from celery.registry import TaskRegistry
 from celery.task.base import Task
 from celery.utils import timeutils
 from celery.utils import gen_unique_id
-from celery.utils.functional import curry
+from celery.utils.functional import partial
 from celery.worker import buckets
 
 from celery.tests.utils import skip_if_environ
 
-skip_if_disabled = curry(skip_if_environ("SKIP_RLIMITS"))
+skip_if_disabled = partial(skip_if_environ("SKIP_RLIMITS"))
 
 
 class MockJob(object):

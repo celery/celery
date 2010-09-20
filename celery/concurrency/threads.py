@@ -3,7 +3,7 @@ import threading
 from threadpool import ThreadPool, WorkRequest
 
 from celery import log
-from celery.utils.functional import curry
+from celery.utils.functional import partial
 from celery.datastructures import ExceptionInfo
 
 
@@ -40,7 +40,7 @@ class TaskPool(object):
         callbacks = callbacks or []
         errbacks = errbacks or []
 
-        on_ready = curry(self.on_ready, callbacks, errbacks)
+        on_ready = partial(self.on_ready, callbacks, errbacks)
 
         self.logger.debug("ThreadPool: Apply %s (args:%s kwargs:%s)" % (
             target, args, kwargs))

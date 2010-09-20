@@ -1,6 +1,5 @@
 from celery.app import app_or_default
 from celery.utils import get_cls_by_name
-from celery.utils.functional import curry
 
 BACKEND_ALIASES = {
     "amqp": "celery.backends.amqp.AMQPBackend",

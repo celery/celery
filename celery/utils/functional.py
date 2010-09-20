@@ -53,8 +53,6 @@
 ### Begin from Python 2.5 functools.py ########################################
 
 # Summary of changes made to the Python 2.5 code below:
-#   * swapped ``partial`` for ``curry`` to maintain backwards-compatibility
-#     in Django.
 #   * Wrapped the ``setattr`` call in ``update_wrapper`` with a try-except
 #     block to make it compatible with Python 2.3, which doesn't allow
 #     assigning to ``__name__``.
@@ -68,7 +66,7 @@
 # wrapper functions that can handle naive introspection
 
 
-def _compat_curry(fun, *args, **kwargs):
+def _compat_partial(fun, *args, **kwargs):
     """New function with partial application of the given arguments
     and keywords."""
 
@@ -78,9 +76,9 @@ def _compat_curry(fun, *args, **kwargs):
 
 
 try:
-    from functools import partial as curry
+    from functools import partial
 except ImportError:
-    curry = _compat_curry
+    partial = _compat_partial
 
 WRAPPER_ASSIGNMENTS = ('__module__', '__name__', '__doc__')
 WRAPPER_UPDATES = ('__dict__',)
@@ -107,7 +105,7 @@ def _compat_update_wrapper(wrapper, wrapped, assigned=WRAPPER_ASSIGNMENTS,
             pass
     for attr in updated:
         getattr(wrapper, attr).update(getattr(wrapped, attr))
-    # Return the wrapper so this can be used as a decorator via curry()
+    # Return the wrapper so this can be used as a decorator via partial()
     return wrapper
 
 try:
@@ -123,12 +121,12 @@ def _compat_wraps(wrapped, assigned=WRAPPER_ASSIGNMENTS,
     Returns a decorator that invokes update_wrapper() with the decorated
     function as the wrapper argument and the arguments to wraps() as the
     remaining arguments. Default arguments are as for update_wrapper().
-    This is a convenience function to simplify applying curry() to
+    This is a convenience function to simplify applying partial() to
     update_wrapper().
 
     """
-    return curry(update_wrapper, wrapped=wrapped,
-                 assigned=assigned, updated=updated)
+    return partial(update_wrapper, wrapped=wrapped,
+                   assigned=assigned, updated=updated)
 
 try:
     from functools import wraps
