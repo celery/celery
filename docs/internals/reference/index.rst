@@ -42,6 +42,7 @@
     celery.db.models
     celery.db.session
     celery.utils
+    celery.utils.term
     celery.utils.timeutils
     celery.utils.info
     celery.utils.compat
