@@ -37,7 +37,7 @@ except ImportError:
 install_requires.extend([
     "python-dateutil",
     "anyjson",
-    "carrot>=0.10.5",
+    "carrot>=0.10.6",
     "pyparsing",
 ])
 
