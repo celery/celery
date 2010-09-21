@@ -209,7 +209,7 @@ class crontab(schedule):
             if number >= max_:
                 raise ValueError(
                         "Invalid crontab pattern. Valid "
-                        "range is 0-%d. '%d' was found." % (max_, number))
+                        "range is 0-%d. '%d' was found." % (max_ - 1, number))
 
         return result
 
