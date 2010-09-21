@@ -106,3 +106,6 @@ class RedisBackend(KeyValueStoreBackend):
 
     def set(self, key, value):
         self.open().set(key, value)
+
+    def delete(self, key):
+        self.open().delete(key)

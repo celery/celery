@@ -37,6 +37,9 @@ class DummyClient(object):
     def set(self, key, value, *args, **kwargs):
         self.cache[key] = value
 
+    def delete(self, key, *args, **kwargs):
+        self.cache.pop(key, None)
+
 
 backends = {"memcache": get_best_memcache,
             "memcached": get_best_memcache,
@@ -72,6 +75,9 @@ class CacheBackend(KeyValueStoreBackend):
 
     def set(self, key, value):
         return self.client.set(key, value, self.expires)
+
+    def delete(self, key):
+        return self.client.delete(key)
 
     @property
     def client(self):

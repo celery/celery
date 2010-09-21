@@ -6,9 +6,10 @@ from celery.exceptions import ImproperlyConfigured
 
 from celery import states
 from celery.app import app_or_default
-from celery.db.models import Task, TaskSet
-from celery.utils import gen_unique_id
 from celery.backends.database import DatabaseBackend
+from celery.db.models import Task, TaskSet
+from celery.result import AsyncResult
+from celery.utils import gen_unique_id
 
 
 class SomeClass(object):
@@ -92,6 +93,14 @@ class test_DatabaseBackend(unittest.TestCase):
         self.assertEqual(tb.get_status(tid3), states.FAILURE)
         self.assertIsInstance(tb.get_result(tid3), KeyError)
         self.assertEqual(tb.get_traceback(tid3), trace)
+
+    def test_forget(self):
+        tb = DatabaseBackend(backend="memory://")
+        tid = gen_unique_id()
+        tb.mark_as_done(tid, {"foo": "bar"})
+        x = AsyncResult(tid)
+        x.forget()
+        self.assertIsNone(x.result)
 
     def test_process_cleanup(self):
         tb = DatabaseBackend()

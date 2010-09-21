@@ -79,3 +79,6 @@ class TyrantBackend(KeyValueStoreBackend):
 
     def set(self, key, value):
         self.open()[key] = value
+
+    def delete(self, key):
+        self.open().pop(key, None)
