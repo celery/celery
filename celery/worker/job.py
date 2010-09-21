@@ -9,6 +9,7 @@ from datetime import datetime
 from celery import log
 from celery import platform
 from celery.datastructures import ExceptionInfo
+from celery.exceptions import SoftTimeLimitExceeded, TimeLimitExceeded
 from celery.execute.trace import TaskTrace
 from celery.loaders import current_loader
 from celery.registry import tasks
@@ -386,9 +387,13 @@ class TaskRequest(object):
         if soft:
             self.logger.warning("Soft time limit exceeded for %s[%s]" % (
                 self.task_name, self.task_id))
+            exc = SoftTimeLimitExceeded()
         else:
             self.logger.error("Hard time limit exceeded for %s[%s]" % (
                 self.task_name, self.task_id))
+            exc = TimeLimitExceeded()
+
+        self.task.backend.mark_as_failure(self.task_id, exc)
 
     def acknowledge(self):
         if not self.acknowledged:
