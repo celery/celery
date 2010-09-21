@@ -235,14 +235,6 @@ class TimeoutHandler(PoolThread):
                     return process, index
             return None, None
 
-        def _pop_by_pid(pid):
-            process, index = _process_by_pid(pid)
-            if not process:
-                return
-            p = processes.pop(index)
-            assert p is process
-            return process
-
         def _timed_out(start, timeout):
             if not start or not timeout:
                 return False
@@ -272,7 +264,7 @@ class TimeoutHandler(PoolThread):
         def _on_hard_timeout(job, i):
             debug('hard time limit exceeded for %i', i)
             # Remove from _pool
-            process = _pop_by_pid(job._worker_pid)
+            process, _index = _process_by_pid(job._worker_pid)
             # Remove from cache and set return value to an exception
             job._set(i, (False, TimeLimitExceeded()))
             # Run timeout callback
