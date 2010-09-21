@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Celery - Distributed Task Queue &mdash; Celery v2.1.0a2 documentation</title>
+    <title>Celery - Distributed Task Queue &mdash; Celery v2.1.0a6 documentation</title>
     <link rel="stylesheet" href="static/celery.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '2.1.0a2',
+        VERSION:     '2.1.0a6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.0a2 documentation" href="#" />
+    <link rel="top" title="Celery v2.1.0a6 documentation" href="#" />
     <link rel="next" title="Getting Started" href="getting-started/index.html" /> 
   </head>
   <body>
@@ -37,7 +37,7 @@
         <li class="right" >
           <a href="getting-started/index.html" title="Getting Started"
              accesskey="N">next</a> |</li>
-        <li><a href="#">Celery v2.1.0a2 documentation</a> &raquo;</li> 
+        <li><a href="#">Celery v2.1.0a6 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -122,7 +122,7 @@
 <li class="toctree-l2"><a class="reference internal" href="reference/celery.conf.html">Configuration - celery.conf</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference/celery.task.control.html">Remote Management of Workers - celery.task.control</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference/celery.task.http.html">HTTP Callback Tasks - celery.task.http</a></li>
-<li class="toctree-l2"><a class="reference internal" href="reference/celery.task.schedules.html">Periodic Task Schedule Behaviors - celery.task.schedules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/celery.schedules.html">Periodic Task Schedule Behaviors - celery.schedules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference/celery.signals.html">Signals - celery.signals</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference/celery.exceptions.html">Exceptions - celery.exceptions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference/celery.task.builtins.html">Built-in Task Classes - celery.task.builtins</a></li>
@@ -135,9 +135,13 @@
 <li class="toctree-l2"><a class="reference internal" href="reference/celery.contrib.abortable.html">Contrib: Abortable tasks - celery.contrib.abortable</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference/celery.events.html">Events - celery.events</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference/celery.events.state.html">In-memory Representation of Cluster State - celery.events.state</a></li>
-<li class="toctree-l2"><a class="reference internal" href="reference/celery.bin.celeryd.html">Celery Worker Daemon - celery.bin.celeryd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/celery.apps.worker.html">App: Worker Node - celery.apps.worker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/celery.apps.beat.html">App: Periodic Task Scheduler - celery.apps.beat</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/celery.bin.base.html">Base Command - celery.bin.base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/celery.bin.celeryd.html">celeryd - celery.bin.celeryd</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference/celery.bin.celerybeat.html">Celery Periodic Task Server - celery.bin.celerybeat</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference/celery.bin.celeryev.html">celeryev: Curses Event Viewer - celery.bin.celeryev</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/celery.bin.celeryctl.html">celeryctl - celery.bin.celeryctl</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference/celery.bin.camqadm.html">caqmadm: AMQP API Command-line Shell - celery.bin.camqadm</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference/celery.bin.celeryd_multi.html">Celeryd Multi Tool - celery.bin.celeryd_multi</a></li>
 </ul>
@@ -153,44 +157,45 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Change history</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="changelog.html#id1">2.1.0</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id2">2.0.2</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id3">2.0.1</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id4">2.0.0</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id7">1.0.6</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id8">1.0.5</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id9">1.0.4</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id10">1.0.3</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id14">1.0.2</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id15">1.0.1</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id16">1.0.0</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id21">0.8.4</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id22">0.8.3</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id23">0.8.2</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id24">0.8.1</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id26">0.8.0</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id30">0.6.0</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id33">0.4.1</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id34">0.4.0</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id35">0.3.20</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id36">0.3.7</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id37">0.3.3</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id38">0.3.2</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id39">0.3.1</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id40">0.3.0</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id41">0.2.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id2">2.0.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id5">2.0.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id6">2.0.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id7">2.0.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id10">1.0.6</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id11">1.0.5</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id12">1.0.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id13">1.0.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id17">1.0.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id18">1.0.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id19">1.0.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id24">0.8.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id25">0.8.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id26">0.8.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id27">0.8.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id29">0.8.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id33">0.6.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id36">0.4.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id37">0.4.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id38">0.3.20</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id39">0.3.7</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id40">0.3.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id41">0.3.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id42">0.3.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id43">0.3.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id44">0.2.0</a></li>
 <li class="toctree-l2"><a class="reference internal" href="changelog.html#pre3">0.2.0-pre3</a></li>
 <li class="toctree-l2"><a class="reference internal" href="changelog.html#pre2">0.2.0-pre2</a></li>
 <li class="toctree-l2"><a class="reference internal" href="changelog.html#pre1">0.2.0-pre1</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id42">0.1.15</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id43">0.1.14</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id44">0.1.13</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id45">0.1.12</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id46">0.1.11</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id47">0.1.10</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id48">0.1.8</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id49">0.1.7</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id50">0.1.6</a></li>
-<li class="toctree-l2"><a class="reference internal" href="changelog.html#id51">0.1.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id45">0.1.15</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id46">0.1.14</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id47">0.1.13</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id48">0.1.12</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id49">0.1.11</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id50">0.1.10</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id51">0.1.8</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id52">0.1.7</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id53">0.1.6</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id54">0.1.0</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="links.html">Interesting Links</a><ul>
@@ -254,7 +259,7 @@
         <li class="right" >
           <a href="getting-started/index.html" title="Getting Started"
              >next</a> |</li>
-        <li><a href="#">Celery v2.1.0a2 documentation</a> &raquo;</li> 
+        <li><a href="#">Celery v2.1.0a6 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

@@ -66,18 +66,17 @@ specified date and time has passed, but not necessarily at that exact time.
 
 While ``countdown`` is an integer, ``eta`` must be a :class:`~datetime.datetime` object,
 specifying an exact date and time in the future. This is good if you already
-have a :class:`~datetime.datetime`` object and need to modify it with a
+have a :class:`~datetime.datetime` object and need to modify it with a
 :class:`~datetime.timedelta`, or when using time in seconds is not very readable.
 
 .. code-block:: python
 
     from datetime import datetime, timedelta
 
-    def quickban(username):
-        """Ban user for 24 hours."""
-        ban(username)
+    def add_tomorrow(username):
+        """Add this tomorrow."""
         tomorrow = datetime.now() + timedelta(days=1)
-        UnbanTask.apply_async(args=[username], eta=tomorrow)
+        add.apply_async(args=[10, 10], eta=tomorrow)
 
 
 Serializers
@@ -198,15 +197,15 @@ listen to different queues:
 
 .. code-block:: python
 
-    >>> CompressVideoTask.apply_async(args=[filename],
+    >>> add.apply_async(args=[filename],
     ...                               routing_key="video.compress")
 
-    >>> ImageRotateTask.apply_async(args=[filename, 360],
+    >>> add.apply_async(args=[filename, 360],
     ...                             routing_key="image.rotate")
 
-    >>> ImageCropTask.apply_async(args=[filename, selection],
+    >>> add.apply_async(args=[filename, selection],
     ...                           routing_key="image.crop")
-    >>> UpdateReccomendationsTask.apply_async(routing_key="misc.recommend")
+    >>> add.apply_async(routing_key="misc.recommend")
 
 
 Later, if the crop task is consuming a lot of resources,

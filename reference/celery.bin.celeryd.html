@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Celery Worker Daemon - celery.bin.celeryd &mdash; Celery v2.1.0a2 documentation</title>
+    <title>celeryd - celery.bin.celeryd &mdash; Celery v2.1.0a6 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.1.0a2',
+        VERSION:     '2.1.0a6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,10 +21,10 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.0a2 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.1.0a6 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="Celery Periodic Task Server - celery.bin.celerybeat" href="celery.bin.celerybeat.html" />
-    <link rel="prev" title="In-memory Representation of Cluster State - celery.events.state" href="celery.events.state.html" /> 
+    <link rel="prev" title="Base Command - celery.bin.base" href="celery.bin.base.html" /> 
   </head>
   <body>
     <div class="related">
@@ -40,9 +40,9 @@
           <a href="celery.bin.celerybeat.html" title="Celery Periodic Task Server - celery.bin.celerybeat"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="celery.events.state.html" title="In-memory Representation of Cluster State - celery.events.state"
+          <a href="celery.bin.base.html" title="Base Command - celery.bin.base"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.0a2 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.0a6 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -52,8 +52,8 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="celery-worker-daemon-celery-bin-celeryd">
-<h1>Celery Worker Daemon - celery.bin.celeryd<a class="headerlink" href="#celery-worker-daemon-celery-bin-celeryd" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="celeryd-celery-bin-celeryd">
+<h1>celeryd - celery.bin.celeryd<a class="headerlink" href="#celeryd-celery-bin-celeryd" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="module-celery.bin.celeryd"></span><p>celeryd</p>
 <dl class="cmdoption">
 <dt id="cmdoption-celeryd-c">
@@ -90,10 +90,17 @@ there must only be one instance of this service.</p>
 
 <dl class="cmdoption">
 <dt id="cmdoption-celeryd-Q">
-<tt class="descname">-Q</tt><tt class="descclassname">, queues</tt><a class="headerlink" href="#cmdoption-celeryd-Q" title="Permalink to this definition">¶</a></dt>
-<dd><p>List of queues to enable for this worker separated by comma.
+<tt class="descname">-Q</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">--queues</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd-Q" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of queues to enable for this worker, separated by comma.
 By default all configured queues are enabled.
 Example: <tt class="docutils literal"><span class="pre">-Q</span> <span class="pre">video,image</span></tt></p>
+</dd></dl>
+
+<dl class="cmdoption">
+<dt id="cmdoption-celeryd-I">
+<tt class="descname">-I</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">--include</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-celeryd-I" title="Permalink to this definition">¶</a></dt>
+<dd><p>Comma separated list of additional modules to import.
+Example: -I foo.tasks,bar.tasks</p>
 </dd></dl>
 
 <dl class="cmdoption">
@@ -138,230 +145,23 @@ terminated and replaced by a new worker.</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="celery.bin.celeryd.Worker">
-<em class="property">class </em><tt class="descclassname">celery.bin.celeryd.</tt><tt class="descname">Worker</tt><big>(</big><em>concurrency=0</em>, <em>loglevel=30</em>, <em>logfile=None</em>, <em>hostname=None</em>, <em>discard=False</em>, <em>run_clockservice=False</em>, <em>schedule='celerybeat-schedule'</em>, <em>task_time_limit=None</em>, <em>task_soft_time_limit=None</em>, <em>max_tasks_per_child=None</em>, <em>queues=None</em>, <em>events=False</em>, <em>db=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.Worker" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="class">
-<dt id="celery.bin.celeryd.Worker.WorkController">
-<em class="property">class </em><tt class="descname">WorkController</tt><big>(</big><em>concurrency=None</em>, <em>logfile=None</em>, <em>loglevel=None</em>, <em>send_events=False</em>, <em>hostname=None</em>, <em>ready_callback=&lt;function noop at 0x103a281b8&gt;</em>, <em>embed_clockservice=False</em>, <em>pool_cls='celery.concurrency.processes.TaskPool'</em>, <em>listener_cls='celery.worker.listener.CarrotListener'</em>, <em>mediator_cls='celery.worker.controllers.Mediator'</em>, <em>eta_scheduler_cls='celery.utils.timer2.Timer'</em>, <em>schedule_filename='celerybeat-schedule'</em>, <em>task_time_limit=None</em>, <em>task_soft_time_limit=None</em>, <em>max_tasks_per_child=None</em>, <em>pool_putlocks=True</em>, <em>db=None</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.Worker.WorkController" title="Permalink to this definition">¶</a></dt>
-<dd><p>Executes tasks waiting in the task queue.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>concurrency</strong> &#8211; see <a class="reference internal" href="#celery.bin.celeryd.Worker.WorkController.concurrency" title="celery.bin.celeryd.Worker.WorkController.concurrency"><tt class="xref py py-attr docutils literal"><span class="pre">concurrency</span></tt></a>.</li>
-<li><strong>logfile</strong> &#8211; see <a class="reference internal" href="#celery.bin.celeryd.Worker.WorkController.logfile" title="celery.bin.celeryd.Worker.WorkController.logfile"><tt class="xref py py-attr docutils literal"><span class="pre">logfile</span></tt></a>.</li>
-<li><strong>loglevel</strong> &#8211; see <a class="reference internal" href="#celery.bin.celeryd.Worker.WorkController.loglevel" title="celery.bin.celeryd.Worker.WorkController.loglevel"><tt class="xref py py-attr docutils literal"><span class="pre">loglevel</span></tt></a>.</li>
-<li><strong>embed_clockservice</strong> &#8211; see <a class="reference internal" href="#celery.bin.celeryd.Worker.WorkController.embed_clockservice" title="celery.bin.celeryd.Worker.WorkController.embed_clockservice"><tt class="xref py py-attr docutils literal"><span class="pre">embed_clockservice</span></tt></a>.</li>
-<li><strong>send_events</strong> &#8211; see <a class="reference internal" href="#celery.bin.celeryd.Worker.WorkController.send_events" title="celery.bin.celeryd.Worker.WorkController.send_events"><tt class="xref py py-attr docutils literal"><span class="pre">send_events</span></tt></a>.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-<dl class="attribute">
-<dt id="celery.bin.celeryd.Worker.WorkController.concurrency">
-<tt class="descname">concurrency</tt><a class="headerlink" href="#celery.bin.celeryd.Worker.WorkController.concurrency" title="Permalink to this definition">¶</a></dt>
-<dd><p>The number of simultaneous processes doing work (default:
-<tt class="docutils literal"><span class="pre">conf.CELERYD_CONCURRENCY</span></tt>)</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.bin.celeryd.Worker.WorkController.loglevel">
-<tt class="descname">loglevel</tt><a class="headerlink" href="#celery.bin.celeryd.Worker.WorkController.loglevel" title="Permalink to this definition">¶</a></dt>
-<dd><p>The loglevel used (default: <tt class="xref py py-const docutils literal"><span class="pre">logging.INFO</span></tt>)</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.bin.celeryd.Worker.WorkController.logfile">
-<tt class="descname">logfile</tt><a class="headerlink" href="#celery.bin.celeryd.Worker.WorkController.logfile" title="Permalink to this definition">¶</a></dt>
-<dd><p>The logfile used, if no logfile is specified it uses <tt class="docutils literal"><span class="pre">stderr</span></tt>
-(default: <cite>celery.conf.CELERYD_LOG_FILE</cite>).</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.bin.celeryd.Worker.WorkController.embed_clockservice">
-<tt class="descname">embed_clockservice</tt><a class="headerlink" href="#celery.bin.celeryd.Worker.WorkController.embed_clockservice" title="Permalink to this definition">¶</a></dt>
-<dd><p>If <tt class="xref docutils literal"><span class="pre">True</span></tt>, celerybeat is embedded, running in the main worker
-process as a thread.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.bin.celeryd.Worker.WorkController.send_events">
-<tt class="descname">send_events</tt><a class="headerlink" href="#celery.bin.celeryd.Worker.WorkController.send_events" title="Permalink to this definition">¶</a></dt>
-<dd><p>Enable the sending of monitoring events, these events can be captured
-by monitors (celerymon).</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.bin.celeryd.Worker.WorkController.logger">
-<tt class="descname">logger</tt><a class="headerlink" href="#celery.bin.celeryd.Worker.WorkController.logger" title="Permalink to this definition">¶</a></dt>
-<dd><p>The <tt class="xref py py-class docutils literal"><span class="pre">logging.Logger</span></tt> instance used for logging.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.bin.celeryd.Worker.WorkController.pool">
-<tt class="descname">pool</tt><a class="headerlink" href="#celery.bin.celeryd.Worker.WorkController.pool" title="Permalink to this definition">¶</a></dt>
-<dd><p>The <tt class="xref py py-class docutils literal"><span class="pre">multiprocessing.Pool</span></tt> instance used.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.bin.celeryd.Worker.WorkController.ready_queue">
-<tt class="descname">ready_queue</tt><a class="headerlink" href="#celery.bin.celeryd.Worker.WorkController.ready_queue" title="Permalink to this definition">¶</a></dt>
-<dd><p>The <tt class="xref py py-class docutils literal"><span class="pre">Queue.Queue</span></tt> that holds tasks ready for immediate
-processing.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.bin.celeryd.Worker.WorkController.schedule_controller">
-<tt class="descname">schedule_controller</tt><a class="headerlink" href="#celery.bin.celeryd.Worker.WorkController.schedule_controller" title="Permalink to this definition">¶</a></dt>
-<dd><p>Instance of <tt class="xref py py-class docutils literal"><span class="pre">celery.worker.controllers.ScheduleController</span></tt>.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.bin.celeryd.Worker.WorkController.mediator">
-<tt class="descname">mediator</tt><a class="headerlink" href="#celery.bin.celeryd.Worker.WorkController.mediator" title="Permalink to this definition">¶</a></dt>
-<dd><p>Instance of <a class="reference internal" href="../internals/reference/celery.worker.controllers.html#celery.worker.controllers.Mediator" title="celery.worker.controllers.Mediator"><tt class="xref py py-class docutils literal"><span class="pre">celery.worker.controllers.Mediator</span></tt></a>.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="celery.bin.celeryd.Worker.WorkController.listener">
-<tt class="descname">listener</tt><a class="headerlink" href="#celery.bin.celeryd.Worker.WorkController.listener" title="Permalink to this definition">¶</a></dt>
-<dd><p>Instance of <tt class="xref py py-class docutils literal"><span class="pre">CarrotListener</span></tt>.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.bin.celeryd.Worker.WorkController.on_timer_error">
-<tt class="descname">on_timer_error</tt><big>(</big><em>exc_info</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.Worker.WorkController.on_timer_error" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.bin.celeryd.WorkerCommand">
+<em class="property">class </em><tt class="descclassname">celery.bin.celeryd.</tt><tt class="descname">WorkerCommand</tt><big>(</big><em>defaults=None</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.WorkerCommand" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.bin.celeryd.WorkerCommand.get_options">
+<tt class="descname">get_options</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryd.WorkerCommand.get_options" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="celery.bin.celeryd.Worker.WorkController.on_timer_tick">
-<tt class="descname">on_timer_tick</tt><big>(</big><em>delay</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.Worker.WorkController.on_timer_tick" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.bin.celeryd.Worker.WorkController.process_task">
-<tt class="descname">process_task</tt><big>(</big><em>wrapper</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.Worker.WorkController.process_task" title="Permalink to this definition">¶</a></dt>
-<dd><p>Process task by sending it to the pool of workers.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.bin.celeryd.Worker.WorkController.start">
-<tt class="descname">start</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryd.Worker.WorkController.start" title="Permalink to this definition">¶</a></dt>
-<dd><p>Starts the workers main loop.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.bin.celeryd.Worker.WorkController.stop">
-<tt class="descname">stop</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryd.Worker.WorkController.stop" title="Permalink to this definition">¶</a></dt>
-<dd><p>Graceful shutdown of the worker server.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.bin.celeryd.Worker.WorkController.terminate">
-<tt class="descname">terminate</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryd.Worker.WorkController.terminate" title="Permalink to this definition">¶</a></dt>
-<dd><p>Not so graceful shutdown of the worker server.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.bin.celeryd.Worker.init_loader">
-<tt class="descclassname">Worker.</tt><tt class="descname">init_loader</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryd.Worker.init_loader" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.bin.celeryd.Worker.init_queues">
-<tt class="descclassname">Worker.</tt><tt class="descname">init_queues</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryd.Worker.init_queues" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.bin.celeryd.Worker.on_listener_ready">
-<tt class="descclassname">Worker.</tt><tt class="descname">on_listener_ready</tt><big>(</big><em>listener</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.Worker.on_listener_ready" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.bin.celeryd.Worker.purge_messages">
-<tt class="descclassname">Worker.</tt><tt class="descname">purge_messages</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryd.Worker.purge_messages" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.bin.celeryd.Worker.redirect_stdouts_to_logger">
-<tt class="descclassname">Worker.</tt><tt class="descname">redirect_stdouts_to_logger</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryd.Worker.redirect_stdouts_to_logger" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.bin.celeryd.Worker.run">
-<tt class="descclassname">Worker.</tt><tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryd.Worker.run" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.bin.celeryd.Worker.run_worker">
-<tt class="descclassname">Worker.</tt><tt class="descname">run_worker</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryd.Worker.run_worker" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.bin.celeryd.Worker.startup_info">
-<tt class="descclassname">Worker.</tt><tt class="descname">startup_info</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryd.Worker.startup_info" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.bin.celeryd.Worker.tasklist">
-<tt class="descclassname">Worker.</tt><tt class="descname">tasklist</tt><big>(</big><em>include_builtins=True</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.Worker.tasklist" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="celery.bin.celeryd.Worker.worker_init">
-<tt class="descclassname">Worker.</tt><tt class="descname">worker_init</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryd.Worker.worker_init" title="Permalink to this definition">¶</a></dt>
+<dt id="celery.bin.celeryd.WorkerCommand.run">
+<tt class="descname">run</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.WorkerCommand.run" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
-
-<dl class="function">
-<dt id="celery.bin.celeryd.dump_version">
-<tt class="descclassname">celery.bin.celeryd.</tt><tt class="descname">dump_version</tt><big>(</big><em>*args</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.dump_version" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="celery.bin.celeryd.install_worker_int_again_handler">
-<tt class="descclassname">celery.bin.celeryd.</tt><tt class="descname">install_worker_int_again_handler</tt><big>(</big><em>worker</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.install_worker_int_again_handler" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="celery.bin.celeryd.install_worker_int_handler">
-<tt class="descclassname">celery.bin.celeryd.</tt><tt class="descname">install_worker_int_handler</tt><big>(</big><em>worker</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.install_worker_int_handler" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="celery.bin.celeryd.install_worker_restart_handler">
-<tt class="descclassname">celery.bin.celeryd.</tt><tt class="descname">install_worker_restart_handler</tt><big>(</big><em>worker</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.install_worker_restart_handler" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="celery.bin.celeryd.install_worker_term_handler">
-<tt class="descclassname">celery.bin.celeryd.</tt><tt class="descname">install_worker_term_handler</tt><big>(</big><em>worker</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.install_worker_term_handler" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 <dl class="function">
 <dt id="celery.bin.celeryd.main">
 <tt class="descclassname">celery.bin.celeryd.</tt><tt class="descname">main</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryd.main" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="celery.bin.celeryd.parse_options">
-<tt class="descclassname">celery.bin.celeryd.</tt><tt class="descname">parse_options</tt><big>(</big><em>arguments</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.parse_options" title="Permalink to this definition">¶</a></dt>
-<dd><p>Parse the available options to <tt class="docutils literal"><span class="pre">celeryd</span></tt>.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="celery.bin.celeryd.run_worker">
-<tt class="descclassname">celery.bin.celeryd.</tt><tt class="descname">run_worker</tt><big>(</big><em>**options</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.run_worker" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="celery.bin.celeryd.set_process_status">
-<tt class="descclassname">celery.bin.celeryd.</tt><tt class="descname">set_process_status</tt><big>(</big><em>info</em><big>)</big><a class="headerlink" href="#celery.bin.celeryd.set_process_status" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </div>
@@ -375,8 +175,8 @@ processing.</p>
   <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
 </a></p>
   <h4>Previous topic</h4>
-  <p class="topless"><a href="celery.events.state.html"
-                        title="previous chapter">In-memory Representation of Cluster State - celery.events.state</a></p>
+  <p class="topless"><a href="celery.bin.base.html"
+                        title="previous chapter">Base Command - celery.bin.base</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="celery.bin.celerybeat.html"
                         title="next chapter">Celery Periodic Task Server - celery.bin.celerybeat</a></p>
@@ -415,9 +215,9 @@ processing.</p>
           <a href="celery.bin.celerybeat.html" title="Celery Periodic Task Server - celery.bin.celerybeat"
              >next</a> |</li>
         <li class="right" >
-          <a href="celery.events.state.html" title="In-memory Representation of Cluster State - celery.events.state"
+          <a href="celery.bin.base.html" title="Base Command - celery.bin.base"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.0a2 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.0a6 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>

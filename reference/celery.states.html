@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Task States - celery.states &mdash; Celery v2.1.0a2 documentation</title>
+    <title>Task States - celery.states &mdash; Celery v2.1.0a6 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.1.0a2',
+        VERSION:     '2.1.0a6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.0a2 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.1.0a6 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="Messaging - celery.messaging" href="celery.messaging.html" />
     <link rel="prev" title="Task Registry - celery.registry" href="celery.registry.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.registry.html" title="Task Registry - celery.registry"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.0a2 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.0a6 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -131,6 +131,25 @@
 <dd><p>Set of all possible states.</p>
 </dd></dl>
 
+<dl class="function">
+<dt id="celery.states.precedence">
+<tt class="descclassname">celery.states.</tt><tt class="descname">precedence</tt><big>(</big><em>state</em><big>)</big><a class="headerlink" href="#celery.states.precedence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the precedence index for state.</p>
+<p>Lower index means higher precedence.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.states.state">
+<em class="property">class </em><tt class="descclassname">celery.states.</tt><tt class="descname">state</tt><a class="headerlink" href="#celery.states.state" title="Permalink to this definition">¶</a></dt>
+<dd><p>State is a subclass of <tt class="xref py py-class docutils literal"><span class="pre">str</span></tt>, implementing comparison
+methods adhering to state precedence rules.</p>
+<dl class="method">
+<dt id="celery.states.state.compare">
+<tt class="descname">compare</tt><big>(</big><em>other</em>, <em>fun</em>, <em>default=False</em><big>)</big><a class="headerlink" href="#celery.states.state.compare" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </div>
 </div>
 
@@ -194,7 +213,7 @@
         <li class="right" >
           <a href="celery.registry.html" title="Task Registry - celery.registry"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.0a2 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.0a6 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>

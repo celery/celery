@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Task Result - celery.result &mdash; Celery v2.1.0a2 documentation</title>
+    <title>Task Result - celery.result &mdash; Celery v2.1.0a6 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.1.0a2',
+        VERSION:     '2.1.0a6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.0a2 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.1.0a6 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="Task Information and Utilities - celery.task" href="celery.task.html" />
     <link rel="prev" title="Executing Tasks - celery.execute" href="celery.execute.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.execute.html" title="Executing Tasks - celery.execute"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.0a2 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.0a6 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -121,6 +121,12 @@
 <dt id="celery.result.BaseAsyncResult.failed">
 <tt class="descclassname">BaseAsyncResult.</tt><tt class="descname">failed</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult.failed" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task failed by exception.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.result.BaseAsyncResult.forget">
+<tt class="descclassname">BaseAsyncResult.</tt><tt class="descname">forget</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult.forget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Forget about (and possibly remove the result of) this task.</p>
 </dd></dl>
 
 <dl class="method">
@@ -332,6 +338,13 @@ inspection of the subtasks status and return values as a single entity.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="celery.result.TaskSetResult.forget">
+<tt class="descname">forget</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult.forget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Forget about (and possible remove the result of) all the tasks
+in this taskset.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="celery.result.TaskSetResult.iterate">
 <tt class="descname">iterate</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult.iterate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Iterate over the return values of the tasks as they finish
@@ -413,7 +426,7 @@ executed.</td>
 
 <dl class="classmethod">
 <dt id="celery.result.TaskSetResult.restore">
-<em class="property">classmethod </em><tt class="descname">restore</tt><big>(</big><em>taskset_id</em>, <em>backend=&lt;celery.backends.amqp.AMQPBackend object at 0x103a24f50&gt;</em><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult.restore" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><tt class="descname">restore</tt><big>(</big><em>taskset_id</em>, <em>backend=&lt;celery.backends.amqp.AMQPBackend object at 0x103857dd0&gt;</em><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult.restore" title="Permalink to this definition">¶</a></dt>
 <dd><p>Restore previously saved taskset result.</p>
 </dd></dl>
 
@@ -424,7 +437,7 @@ executed.</td>
 
 <dl class="method">
 <dt id="celery.result.TaskSetResult.save">
-<tt class="descname">save</tt><big>(</big><em>backend=&lt;celery.backends.amqp.AMQPBackend object at 0x103a24f50&gt;</em><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult.save" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">save</tt><big>(</big><em>backend=&lt;celery.backends.amqp.AMQPBackend object at 0x103857dd0&gt;</em><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult.save" title="Permalink to this definition">¶</a></dt>
 <dd><p>Save taskset result for later retrieval using <a class="reference internal" href="#celery.result.TaskSetResult.restore" title="celery.result.TaskSetResult.restore"><tt class="xref py py-meth docutils literal"><span class="pre">restore()</span></tt></a>.</p>
 <p>Example:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
@@ -524,7 +537,7 @@ waiting for execution.</td>
         <li class="right" >
           <a href="celery.execute.html" title="Executing Tasks - celery.execute"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.0a2 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.0a6 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>

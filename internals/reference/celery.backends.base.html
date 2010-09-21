@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Backend: Base - celery.backends.base &mdash; Celery v2.1.0a2 documentation</title>
+    <title>Backend: Base - celery.backends.base &mdash; Celery v2.1.0a6 documentation</title>
     <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.1.0a2',
+        VERSION:     '2.1.0a6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.0a2 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.1.0a6 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="Backend: SQLAlchemy Database - celery.backends.database" href="celery.backends.database.html" />
     <link rel="prev" title="Backends - celery.backends" href="celery.backends.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.backends.html" title="Backends - celery.backends"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.1.0a2 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.1.0a6 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -83,6 +83,11 @@
 <tt class="descclassname">BaseBackend.</tt><tt class="descname">exception_to_python</tt><big>(</big><em>exc</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.exception_to_python" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert serialized exception to Python exception.</p>
 </dd></dl>
+
+<dl class="method">
+<dt id="celery.backends.base.BaseBackend.forget">
+<tt class="descclassname">BaseBackend.</tt><tt class="descname">forget</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.forget" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="celery.backends.base.BaseBackend.get_result">
@@ -128,7 +133,7 @@ exception (if any).</p>
 
 <dl class="method">
 <dt id="celery.backends.base.BaseBackend.mark_as_started">
-<tt class="descclassname">BaseBackend.</tt><tt class="descname">mark_as_started</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.mark_as_started" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">BaseBackend.</tt><tt class="descname">mark_as_started</tt><big>(</big><em>task_id</em>, <em>**meta</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseBackend.mark_as_started" title="Permalink to this definition">¶</a></dt>
 <dd><p>Mark a task as started</p>
 </dd></dl>
 
@@ -197,6 +202,11 @@ takes longer than <tt class="docutils literal"><span class="pre">timeout</span><
 <dt id="celery.backends.base.BaseDictBackend">
 <em class="property">class </em><tt class="descclassname">celery.backends.base.</tt><tt class="descname">BaseDictBackend</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseDictBackend" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="method">
+<dt id="celery.backends.base.BaseDictBackend.forget">
+<tt class="descname">forget</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseDictBackend.forget" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="celery.backends.base.BaseDictBackend.get_result">
 <tt class="descname">get_result</tt><big>(</big><em>task_id</em><big>)</big><a class="headerlink" href="#celery.backends.base.BaseDictBackend.get_result" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the result of a task.</p>
@@ -258,6 +268,11 @@ takes longer than <tt class="docutils literal"><span class="pre">timeout</span><
 <dt id="celery.backends.base.KeyValueStoreBackend">
 <em class="property">class </em><tt class="descclassname">celery.backends.base.</tt><tt class="descname">KeyValueStoreBackend</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.backends.base.KeyValueStoreBackend" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="method">
+<dt id="celery.backends.base.KeyValueStoreBackend.delete">
+<tt class="descname">delete</tt><big>(</big><em>key</em><big>)</big><a class="headerlink" href="#celery.backends.base.KeyValueStoreBackend.delete" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="celery.backends.base.KeyValueStoreBackend.get">
 <tt class="descname">get</tt><big>(</big><em>key</em><big>)</big><a class="headerlink" href="#celery.backends.base.KeyValueStoreBackend.get" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -334,7 +349,7 @@ takes longer than <tt class="docutils literal"><span class="pre">timeout</span><
         <li class="right" >
           <a href="celery.backends.html" title="Backends - celery.backends"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.1.0a2 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.1.0a6 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>

@@ -189,32 +189,145 @@ News
 Fixes
 -----
 
-* Redis result backend: Redis doesn't have database names,
-  database numbers. The default database is now 0.
-
-* :class:`~celery.task.control.inspect`:
-  Was requesting an invalid command because of a typo.
-
-    See http://github.com/ask/celery/issues/issue/170
-
-* Worker crashed if the value of CELERY_TASK_ERROR_WHITELIST was
-  not iterable
-
 * Compat ``LoggerAdapter`` implementation: Now works for Python 2.4.
 
     Also added support for several new methods:
     ``fatal``, ``makeRecord``, ``_log``, ``log``, ``isEnabledFor``,
     ``addHandler``, ``removeHandler``.
 
+Documentation
+-------------
+
+* tutorials/external moved to new section: "community"
+
+2.0.3
+=====
+:release-date: 2010-08-27 12:00 P.M CEST
+
+Fixes
+-----
+
+* celeryd: Properly handle connection errors happening while
+  closing consumers.
+
+* celeryd: Events are now buffered if the connection is down,
+  then sent when the connection is re-established.
+
+* No longer depends on the ``mailer`` package.
+
+    This package had a namespace collision with ``django-mailer``,
+    so its functionality was replaced.
+
+* Redis result backend: Documentation typos: Redis doesn't have
+  database names, but database numbers. The default database is now 0.
+
+* :class:`~celery.task.control.inspect`:
+  ``registered_tasks`` was requesting an invalid command because of a typo.
+
+    See http://github.com/ask/celery/issues/issue/170
+
+* ``CELERY_ROUTES``: Values defined in the route should now have precedence
+  over values defined in ``CELERY_QUEUES`` when merging the two.
+
+    With the follow settings::
+
+        CELERY_QUEUES = {"cpubound": {"exchange": "cpubound",
+                                      "routing_key": "cpubound"}}
+
+        CELERY_ROUTES = {"tasks.add": {"queue": "cpubound",
+                                       "routing_key": "tasks.add",
+                                       "serializer": "json"}}
+
+    The final routing options for ``tasks.add`` will become::
+
+        {"exchange": "cpubound",
+         "routing_key": "tasks.add",
+         "serializer": "json"}
+
+    This was not the case before: the values
+    in ``CELERY_QUEUES`` would take precedence.
+
+* Worker crashed if the value of ``CELERY_TASK_ERROR_WHITELIST`` was
+  not an iterable
+
 * :func:`~celery.execute.apply`: Make sure ``kwargs["task_id"]`` is
   always set.
+
+* ``AsyncResult.traceback``: Now returns ``None``, instead of raising
+  :exc:`KeyError` if traceback is missing.
+
+* :class:`~celery.task.control.inspect`: Replies did not work correctly
+  if no destination was specified.
+
+* Can now store result/metadata for custom states.
+
+* celeryd: A warning is now emitted if the sending of task error
+  e-mails fails.
+
+* celeryev: Curses monitor no longer crashes if the terminal window
+  is resized.
+
+    See http://github.com/ask/celery/issues/issue/160
+
+* celeryd: On OS X it is not possible to run ``os.exec*`` in a process
+  that is threaded.
+
+      This breaks the SIGHUP restart handler,
+      and is now disabled on OS X, emitting a warning instead.
+
+    See http://github.com/ask/celery/issues/issue/152
+
+* :mod:`celery.execute.trace`: Properly handle ``raise(str)``,
+  which is still allowed in Python 2.4.
+
+    See http://github.com/ask/celery/issues/issue/175
+
+* Using urllib2 in a periodic task on OS X crashed because
+  of the proxy autodetection used in OS X.
+
+    This is now fixed by using a workaround.
+    See http://github.com/ask/celery/issues/issue/143
+
+* Debian init scripts: Commands should not run in a subshell
+
+    See http://github.com/ask/celery/issues/issue/163
+
+* Debian init scripts: Use abspath for celeryd to allow stat
+
+    See http://github.com/ask/celery/issues/issue/162
 
 Documentation
 -------------
 
+* getting-started/broker-installation: Fixed typo
+
+    ``set_permissions ""`` -> ``set_permissions ".*"``.
+
 * Tasks Userguide: Added section on database transactions.
 
-* tutorials/external moved to new section: "community"
+    See http://github.com/ask/celery/issues/issue/169
+
+* Routing Userguide: Fixed typo ``"feed": -> {"queue": "feeds"}``.
+
+    See http://github.com/ask/celery/issues/issue/169
+
+* Documented the default values for the ``CELERYD_CONCURRENCY``
+  and ``CELERYD_PREFETCH_MULTIPLIER`` settings.
+
+* Tasks Userguide: Fixed typos in the subtask example
+
+* celery.signals: Documented worker_process_init.
+
+* Daemonization cookbook: Need to export DJANGO_SETTINGS_MODULE in
+  ``/etc/default/celeryd``.
+
+* Added some more FAQs from stack overflow
+
+* Daemonization cookbook: Fixed typo ``CELERYD_LOGFILE/CELERYD_PIDFILE``
+
+    to ``CELERYD_LOG_FILE`` / ``CELERYD_PID_FILE``
+
+    Also added troubleshooting section for the init scripts.
 
 
 2.0.2

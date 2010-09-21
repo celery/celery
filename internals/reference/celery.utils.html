@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Utilities - celery.utils &mdash; Celery v2.1.0a2 documentation</title>
+    <title>Utilities - celery.utils &mdash; Celery v2.1.0a6 documentation</title>
     <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.1.0a2',
+        VERSION:     '2.1.0a6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,9 +21,9 @@
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.0a2 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.1.0a6 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
-    <link rel="next" title="Time and Date Utilities - celery.utils.timeutils" href="celery.utils.timeutils.html" />
+    <link rel="next" title="Terminal Utilities - celery.utils.term" href="celery.utils.term.html" />
     <link rel="prev" title="SQLAlchemy Session - celery.db.session" href="celery.db.session.html" /> 
   </head>
   <body>
@@ -37,12 +37,12 @@
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="celery.utils.timeutils.html" title="Time and Date Utilities - celery.utils.timeutils"
+          <a href="celery.utils.term.html" title="Terminal Utilities - celery.utils.term"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="celery.db.session.html" title="SQLAlchemy Session - celery.db.session"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.1.0a2 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.1.0a6 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -293,7 +293,7 @@ yield the last value infinitely.</p>
 
 <dl class="function">
 <dt id="celery.utils.retry_over_time">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">retry_over_time</tt><big>(</big><em>fun</em>, <em>catch</em>, <em>args=</em><span class="optional">[</span><span class="optional">]</span>, <em>kwargs={}</em>, <em>errback=&lt;function noop at 0x103a281b8&gt;</em>, <em>max_retries=None</em>, <em>interval_start=2</em>, <em>interval_step=2</em>, <em>interval_max=30</em><big>)</big><a class="headerlink" href="#celery.utils.retry_over_time" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.utils.</tt><tt class="descname">retry_over_time</tt><big>(</big><em>fun</em>, <em>catch</em>, <em>args=</em><span class="optional">[</span><span class="optional">]</span>, <em>kwargs={}</em>, <em>errback=&lt;function noop at 0x10385a140&gt;</em>, <em>max_retries=None</em>, <em>interval_start=2</em>, <em>interval_step=2</em>, <em>interval_max=30</em><big>)</big><a class="headerlink" href="#celery.utils.retry_over_time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retry the function over and over until max retries is exceeded.</p>
 <p>For each retry we sleep a for a while before we try again, this interval
 is increased for every retry until the max seconds is reached.</p>
@@ -345,8 +345,8 @@ retry.</li>
   <p class="topless"><a href="celery.db.session.html"
                         title="previous chapter">SQLAlchemy Session - celery.db.session</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="celery.utils.timeutils.html"
-                        title="next chapter">Time and Date Utilities - celery.utils.timeutils</a></p>
+  <p class="topless"><a href="celery.utils.term.html"
+                        title="next chapter">Terminal Utilities - celery.utils.term</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../../sources/internals/reference/celery.utils.txt"
@@ -379,12 +379,12 @@ retry.</li>
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="celery.utils.timeutils.html" title="Time and Date Utilities - celery.utils.timeutils"
+          <a href="celery.utils.term.html" title="Terminal Utilities - celery.utils.term"
              >next</a> |</li>
         <li class="right" >
           <a href="celery.db.session.html" title="SQLAlchemy Session - celery.db.session"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.1.0a2 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.1.0a6 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>

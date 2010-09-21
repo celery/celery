@@ -17,7 +17,7 @@
     celery.conf
     celery.task.control
     celery.task.http
-    celery.task.schedules
+    celery.schedules
     celery.signals
     celery.exceptions
     celery.task.builtins
@@ -30,8 +30,12 @@
     celery.contrib.abortable
     celery.events
     celery.events.state
+    celery.apps.worker
+    celery.apps.beat
+    celery.bin.base
     celery.bin.celeryd
     celery.bin.celerybeat
     celery.bin.celeryev
+    celery.bin.celeryctl
     celery.bin.camqadm
     celery.bin.celeryd_multi

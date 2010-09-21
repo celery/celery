@@ -1,0 +1,269 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>celeryctl - celery.bin.celeryctl &mdash; Celery v2.1.0a6 documentation</title>
+    <link rel="stylesheet" href="../static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2.1.0a6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Celery v2.1.0a6 documentation" href="../index.html" />
+    <link rel="up" title="API Reference" href="index.html" />
+    <link rel="next" title="caqmadm: AMQP API Command-line Shell - celery.bin.camqadm" href="celery.bin.camqadm.html" />
+    <link rel="prev" title="celeryev: Curses Event Viewer - celery.bin.celeryev" href="celery.bin.celeryev.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.bin.camqadm.html" title="caqmadm: AMQP API Command-line Shell - celery.bin.camqadm"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.bin.celeryev.html" title="celeryev: Curses Event Viewer - celery.bin.celeryev"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">Celery v2.1.0a6 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="celeryctl-celery-bin-celeryctl">
+<h1>celeryctl - celery.bin.celeryctl<a class="headerlink" href="#celeryctl-celery-bin-celeryctl" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-celery.bin.celeryctl"></span><dl class="class">
+<dt id="celery.bin.celeryctl.Command">
+<em class="property">class </em><tt class="descclassname">celery.bin.celeryctl.</tt><tt class="descname">Command</tt><big>(</big><em>no_color=False</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.Command" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.bin.celeryctl.Command.create_parser">
+<tt class="descname">create_parser</tt><big>(</big><em>prog_name</em>, <em>command</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.Command.create_parser" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.bin.celeryctl.Command.error">
+<tt class="descname">error</tt><big>(</big><em>s</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.Command.error" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.bin.celeryctl.Command.out">
+<tt class="descname">out</tt><big>(</big><em>s</em>, <em>fh=&lt;open file '&lt;stdout&gt;'</em>, <em>mode 'w' at 0x10027e1e0&gt;</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.Command.out" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.bin.celeryctl.Command.prettify">
+<tt class="descname">prettify</tt><big>(</big><em>n</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.Command.prettify" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.bin.celeryctl.Command.prettify_dict_ok_error">
+<tt class="descname">prettify_dict_ok_error</tt><big>(</big><em>n</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.Command.prettify_dict_ok_error" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.bin.celeryctl.Command.prettify_list">
+<tt class="descname">prettify_list</tt><big>(</big><em>n</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.Command.prettify_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.bin.celeryctl.Command.run">
+<tt class="descname">run</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.Command.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.bin.celeryctl.Command.run_from_argv">
+<tt class="descname">run_from_argv</tt><big>(</big><em>argv</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.Command.run_from_argv" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.bin.celeryctl.Command.usage">
+<tt class="descname">usage</tt><big>(</big><em>command</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.Command.usage" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="celery.bin.celeryctl.Error">
+<em class="property">exception </em><tt class="descclassname">celery.bin.celeryctl.</tt><tt class="descname">Error</tt><a class="headerlink" href="#celery.bin.celeryctl.Error" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="celery.bin.celeryctl.apply">
+<em class="property">class </em><tt class="descclassname">celery.bin.celeryctl.</tt><tt class="descname">apply</tt><big>(</big><em>no_color=False</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.apply" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.bin.celeryctl.apply.run">
+<tt class="descname">run</tt><big>(</big><em>name</em>, <em>*_</em>, <em>**kw</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.apply.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.bin.celeryctl.celeryctl">
+<em class="property">class </em><tt class="descclassname">celery.bin.celeryctl.</tt><tt class="descname">celeryctl</tt><a class="headerlink" href="#celery.bin.celeryctl.celeryctl" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.bin.celeryctl.celeryctl.execute">
+<tt class="descname">execute</tt><big>(</big><em>command</em>, <em>argv=None</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.celeryctl.execute" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.bin.celeryctl.celeryctl.execute_from_commandline">
+<tt class="descname">execute_from_commandline</tt><big>(</big><em>argv=None</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.celeryctl.execute_from_commandline" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.bin.celeryctl.command">
+<tt class="descclassname">celery.bin.celeryctl.</tt><tt class="descname">command</tt><big>(</big><em>fun</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.command" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="celery.bin.celeryctl.help">
+<em class="property">class </em><tt class="descclassname">celery.bin.celeryctl.</tt><tt class="descname">help</tt><big>(</big><em>no_color=False</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.help" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.bin.celeryctl.help.run">
+<tt class="descname">run</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.help.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.bin.celeryctl.help.usage">
+<tt class="descname">usage</tt><big>(</big><em>command</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.help.usage" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.bin.celeryctl.indent">
+<tt class="descclassname">celery.bin.celeryctl.</tt><tt class="descname">indent</tt><big>(</big><em>s</em>, <em>n=4</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.indent" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="celery.bin.celeryctl.inspect">
+<em class="property">class </em><tt class="descclassname">celery.bin.celeryctl.</tt><tt class="descname">inspect</tt><big>(</big><em>no_color=False</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.inspect" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.bin.celeryctl.inspect.run">
+<tt class="descname">run</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.inspect.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.bin.celeryctl.inspect.say">
+<tt class="descname">say</tt><big>(</big><em>direction</em>, <em>title</em>, <em>body=''</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.inspect.say" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.bin.celeryctl.inspect.usage">
+<tt class="descname">usage</tt><big>(</big><em>command</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.inspect.usage" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.bin.celeryctl.main">
+<tt class="descclassname">celery.bin.celeryctl.</tt><tt class="descname">main</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="celery.bin.celeryctl.result">
+<em class="property">class </em><tt class="descclassname">celery.bin.celeryctl.</tt><tt class="descname">result</tt><big>(</big><em>no_color=False</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.result" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.bin.celeryctl.result.run">
+<tt class="descname">run</tt><big>(</big><em>task_id</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.result.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.bin.celeryctl.status">
+<em class="property">class </em><tt class="descclassname">celery.bin.celeryctl.</tt><tt class="descname">status</tt><big>(</big><em>no_color=False</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.status" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.bin.celeryctl.status.run">
+<tt class="descname">run</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.bin.celeryctl.status.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="celery.bin.celeryev.html"
+                        title="previous chapter">celeryev: Curses Event Viewer - celery.bin.celeryev</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="celery.bin.camqadm.html"
+                        title="next chapter">caqmadm: AMQP API Command-line Shell - celery.bin.camqadm</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../sources/reference/celery.bin.celeryctl.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.bin.camqadm.html" title="caqmadm: AMQP API Command-line Shell - celery.bin.camqadm"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.bin.celeryev.html" title="celeryev: Curses Event Viewer - celery.bin.celeryev"
+             >previous</a> |</li>
+        <li><a href="../index.html">Celery v2.1.0a6 documentation</a> &raquo;</li>
+          <li><a href="index.html" >API Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+    </div>
+  </body>
+</html>

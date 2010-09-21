@@ -1,0 +1,241 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Curses Monitor - celery.events.cursesmon &mdash; Celery v2.1.0a6 documentation</title>
+    <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.1.0a6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../static/jquery.js"></script>
+    <script type="text/javascript" src="../../static/underscore.js"></script>
+    <script type="text/javascript" src="../../static/doctools.js"></script>
+    <link rel="top" title="Celery v2.1.0a6 documentation" href="../../index.html" />
+    <link rel="up" title="Internal Module Reference" href="index.html" />
+    <link rel="next" title="Event Dumper Tool - celery.events.dumper" href="celery.events.dumper.html" />
+    <link rel="prev" title="Event Snapshots - celery.event.snapshot" href="celery.events.snapshot.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.events.dumper.html" title="Event Dumper Tool - celery.events.dumper"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.events.snapshot.html" title="Event Snapshots - celery.event.snapshot"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">Celery v2.1.0a6 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Internals</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="curses-monitor-celery-events-cursesmon">
+<h1>Curses Monitor - celery.events.cursesmon<a class="headerlink" href="#curses-monitor-celery-events-cursesmon" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-celery.events.cursesmon"></span><dl class="class">
+<dt id="celery.events.cursesmon.CursesMonitor">
+<em class="property">class </em><tt class="descclassname">celery.events.cursesmon.</tt><tt class="descname">CursesMonitor</tt><big>(</big><em>state</em>, <em>keymap=None</em><big>)</big><a class="headerlink" href="#celery.events.cursesmon.CursesMonitor" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.events.cursesmon.CursesMonitor.alert">
+<tt class="descname">alert</tt><big>(</big><em>callback</em>, <em>title=None</em><big>)</big><a class="headerlink" href="#celery.events.cursesmon.CursesMonitor.alert" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.events.cursesmon.CursesMonitor.alert_remote_control_reply">
+<tt class="descname">alert_remote_control_reply</tt><big>(</big><em>reply</em><big>)</big><a class="headerlink" href="#celery.events.cursesmon.CursesMonitor.alert_remote_control_reply" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.events.cursesmon.CursesMonitor.draw">
+<tt class="descname">draw</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.events.cursesmon.CursesMonitor.draw" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.events.cursesmon.CursesMonitor.find_position">
+<tt class="descname">find_position</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.events.cursesmon.CursesMonitor.find_position" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.events.cursesmon.CursesMonitor.format_row">
+<tt class="descname">format_row</tt><big>(</big><em>uuid</em>, <em>worker</em>, <em>task</em>, <em>timestamp</em>, <em>state</em><big>)</big><a class="headerlink" href="#celery.events.cursesmon.CursesMonitor.format_row" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.events.cursesmon.CursesMonitor.handle_keypress">
+<tt class="descname">handle_keypress</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.events.cursesmon.CursesMonitor.handle_keypress" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.events.cursesmon.CursesMonitor.init_screen">
+<tt class="descname">init_screen</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.events.cursesmon.CursesMonitor.init_screen" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.events.cursesmon.CursesMonitor.move_selection">
+<tt class="descname">move_selection</tt><big>(</big><em>direction=1</em><big>)</big><a class="headerlink" href="#celery.events.cursesmon.CursesMonitor.move_selection" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.events.cursesmon.CursesMonitor.move_selection_down">
+<tt class="descname">move_selection_down</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.events.cursesmon.CursesMonitor.move_selection_down" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.events.cursesmon.CursesMonitor.move_selection_up">
+<tt class="descname">move_selection_up</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.events.cursesmon.CursesMonitor.move_selection_up" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.events.cursesmon.CursesMonitor.nap">
+<tt class="descname">nap</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.events.cursesmon.CursesMonitor.nap" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.events.cursesmon.CursesMonitor.readline">
+<tt class="descname">readline</tt><big>(</big><em>x</em>, <em>y</em><big>)</big><a class="headerlink" href="#celery.events.cursesmon.CursesMonitor.readline" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.events.cursesmon.CursesMonitor.resetscreen">
+<tt class="descname">resetscreen</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.events.cursesmon.CursesMonitor.resetscreen" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.events.cursesmon.CursesMonitor.revoke_selection">
+<tt class="descname">revoke_selection</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.events.cursesmon.CursesMonitor.revoke_selection" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.events.cursesmon.CursesMonitor.selection_info">
+<tt class="descname">selection_info</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.events.cursesmon.CursesMonitor.selection_info" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.events.cursesmon.CursesMonitor.selection_rate_limit">
+<tt class="descname">selection_rate_limit</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.events.cursesmon.CursesMonitor.selection_rate_limit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.events.cursesmon.CursesMonitor.selection_result">
+<tt class="descname">selection_result</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.events.cursesmon.CursesMonitor.selection_result" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.events.cursesmon.CursesMonitor.selection_traceback">
+<tt class="descname">selection_traceback</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.events.cursesmon.CursesMonitor.selection_traceback" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.events.cursesmon.CursesMonitor.tasks">
+<tt class="descname">tasks</tt><a class="headerlink" href="#celery.events.cursesmon.CursesMonitor.tasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="celery.events.cursesmon.CursesMonitor.workers">
+<tt class="descname">workers</tt><a class="headerlink" href="#celery.events.cursesmon.CursesMonitor.workers" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="celery.events.cursesmon.DisplayThread">
+<em class="property">class </em><tt class="descclassname">celery.events.cursesmon.</tt><tt class="descname">DisplayThread</tt><big>(</big><em>display</em><big>)</big><a class="headerlink" href="#celery.events.cursesmon.DisplayThread" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.events.cursesmon.DisplayThread.run">
+<tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.events.cursesmon.DisplayThread.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.events.cursesmon.evtop">
+<tt class="descclassname">celery.events.cursesmon.</tt><tt class="descname">evtop</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.events.cursesmon.evtop" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="celery.events.snapshot.html"
+                        title="previous chapter">Event Snapshots - celery.event.snapshot</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="celery.events.dumper.html"
+                        title="next chapter">Event Dumper Tool - celery.events.dumper</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../sources/internals/reference/celery.events.cursesmon.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="celery.events.dumper.html" title="Event Dumper Tool - celery.events.dumper"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.events.snapshot.html" title="Event Snapshots - celery.event.snapshot"
+             >previous</a> |</li>
+        <li><a href="../../index.html">Celery v2.1.0a6 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Internals</a> &raquo;</li>
+          <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+    </div>
+  </body>
+</html>

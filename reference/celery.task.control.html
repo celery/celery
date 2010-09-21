@@ -6,13 +6,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Remote Management of Workers - celery.task.control &mdash; Celery v2.1.0a2 documentation</title>
+    <title>Remote Management of Workers - celery.task.control &mdash; Celery v2.1.0a6 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.1.0a2',
+        VERSION:     '2.1.0a6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -21,7 +21,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.0a2 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.1.0a6 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="HTTP Callback Tasks - celery.task.http" href="celery.task.http.html" />
     <link rel="prev" title="Configuration - celery.conf" href="celery.conf.html" /> 
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="celery.conf.html" title="Configuration - celery.conf"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.0a2 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.0a6 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -74,6 +74,8 @@ connection is not provided.</li>
 <li><strong>reply</strong> &#8211; Wait for and return the reply.</li>
 <li><strong>timeout</strong> &#8211; Timeout in seconds to wait for the reply.</li>
 <li><strong>limit</strong> &#8211; Limit number of replies.</li>
+<li><strong>callback</strong> &#8211; Callback called immediately for each reply
+received.</li>
 </ul>
 </td>
 </tr>
@@ -104,10 +106,15 @@ be deleted from the messaging server.</p>
 
 <dl class="class">
 <dt id="celery.task.control.inspect">
-<em class="property">class </em><tt class="descclassname">celery.task.control.</tt><tt class="descname">inspect</tt><big>(</big><em>destination=None</em>, <em>timeout=1</em><big>)</big><a class="headerlink" href="#celery.task.control.inspect" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.task.control.</tt><tt class="descname">inspect</tt><big>(</big><em>destination=None</em>, <em>timeout=1</em>, <em>callback=None</em><big>)</big><a class="headerlink" href="#celery.task.control.inspect" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="method">
 <dt id="celery.task.control.inspect.active">
 <tt class="descname">active</tt><big>(</big><em>safe=False</em><big>)</big><a class="headerlink" href="#celery.task.control.inspect.active" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.task.control.inspect.diagnose">
+<tt class="descname">diagnose</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.control.inspect.diagnose" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -118,6 +125,11 @@ be deleted from the messaging server.</p>
 <dl class="method">
 <dt id="celery.task.control.inspect.enable_events">
 <tt class="descname">enable_events</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.control.inspect.enable_events" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.task.control.inspect.ping">
+<tt class="descname">ping</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.task.control.inspect.ping" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -283,7 +295,7 @@ connection is not provided.</li>
         <li class="right" >
           <a href="celery.conf.html" title="Configuration - celery.conf"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.0a2 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.0a6 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>
