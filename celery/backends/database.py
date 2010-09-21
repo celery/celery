@@ -86,7 +86,7 @@ class DatabaseBackend(BaseDictBackend):
         finally:
             session.close()
 
-    def forget(self, task_id):
+    def _forget(self, task_id):
         """Forget about result."""
         session = self.ResultSession()
         expires = self.result_expires

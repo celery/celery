@@ -155,6 +155,10 @@ class BaseDictBackend(BaseBackend):
         result = self.encode_result(result, status)
         return self._store_result(task_id, result, status, traceback)
 
+    def forget(self, task_id):
+        self._cache.pop(task_id, None)
+        self._forget(task_id)
+
     def get_status(self, task_id):
         """Get the status of a task."""
         return self.get_task_meta(task_id)["status"]
@@ -226,7 +230,7 @@ class KeyValueStoreBackend(BaseDictBackend):
         """Get the cache key for a task by id."""
         return "celery-taskset-meta-%s" % task_id
 
-    def forget(self, task_id):
+    def _forget(self, task_id):
         self.delete(task_id)
 
     def _store_result(self, task_id, result, status, traceback=None):
