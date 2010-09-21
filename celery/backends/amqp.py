@@ -40,11 +40,8 @@ class ResultConsumer(Consumer):
     no_ack = True
     auto_delete = False
 
-    def __init__(self, connection, task_id, expires=None, **kwargs):
+    def __init__(self, connection, task_id, **kwargs):
         routing_key = task_id.replace("-", "")
-        if expires is not None:
-            pass
-            #self.queue_arguments = {"x-expires": expires}
         super(ResultConsumer, self).__init__(connection,
                 queue=routing_key, routing_key=routing_key, **kwargs)
 
@@ -65,6 +62,7 @@ class AMQPBackend(BaseDictBackend):
             persistent=None, serializer=None, auto_delete=None,
             expires=None, **kwargs):
         self._connection = connection
+        self.queue_arguments = {}
         self.exchange = exchange
         self.exchange_type = exchange_type
         self.persistent = persistent
@@ -72,11 +70,13 @@ class AMQPBackend(BaseDictBackend):
         self.auto_delete = auto_delete
         self.expires = expires
         if self.expires is None:
-            self.expires = conf.TASK_RESULT_EXPIRES
+            self.expires = conf.AMQP_TASK_RESULT_EXPIRES
         if isinstance(self.expires, timedelta):
             self.expires = timeutils.timedelta_seconds(self.expires)
         if self.expires is not None:
             self.expires = int(self.expires)
+            # WARNING: Requries RabbitMQ 2.1.0 or higher.
+            self.queue_arguments["x-expires"] = self.expires
         super(AMQPBackend, self).__init__(**kwargs)
 
     def _create_publisher(self, task_id, connection):
@@ -98,7 +98,7 @@ class AMQPBackend(BaseDictBackend):
                               exchange_type=self.exchange_type,
                               durable=self.persistent,
                               auto_delete=self.auto_delete,
-                              expires=self.expires)
+                              queue_arguments=self.queue_arguments)
 
     def store_result(self, task_id, result, status, traceback=None,
             max_retries=20, retry_delay=0.2):
