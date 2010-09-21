@@ -1,25 +1,26 @@
 from datetime import timedelta
 
+from celery import conf
+from celery.schedules import crontab
 from celery.serialization import pickle
 from celery.task.base import Task, PeriodicTask
 from celery.task.sets import TaskSet
 
 
-class DeleteExpiredTaskMetaTask(PeriodicTask):
-    """A periodic task that deletes expired task metadata every day.
+class backend_cleanup(Task):
+    name = "celery.backend_cleanup"
 
-    This runs the current backend's
-    :meth:`celery.backends.base.BaseBackend.cleanup` method.
-
-    """
-    name = "celery.delete_expired_task_meta"
-    run_every = timedelta(days=1)
-
-    def run(self, **kwargs):
-        """:returns: None"""
-        logger = self.get_logger(**kwargs)
-        logger.info("Deleting expired task results...")
+    def run(self):
         self.backend.cleanup()
+
+if conf.TASK_RESULT_EXPIRES and \
+        backend_cleanup.name not in conf.CELERYBEAT_SCHEDULE:
+    conf.CELERYBEAT_SCHEDULE[backend_cleanup.name] = dict(
+            task=backend_cleanup.name,
+            schedule=crontab(minute="00", hour="04", day_of_week="*"))
+
+
+DeleteExpiredTaskMetaTask = backend_cleanup         # FIXME remove in 3.0
 
 
 class PingTask(Task):
