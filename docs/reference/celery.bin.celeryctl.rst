@@ -1,11 +1,11 @@
 ==========================================
- celeryd - celery.bin.celeryd
+ celeryctl - celery.bin.celeryctl
 ==========================================
 
 .. contents::
     :local:
-.. currentmodule:: celery.bin.celeryd
+.. currentmodule:: celery.bin.celeryctl
 
-.. automodule:: celery.bin.celeryd
+.. automodule:: celery.bin.celeryctl
     :members:
     :undoc-members:
