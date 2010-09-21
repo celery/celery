@@ -1,5 +1,4 @@
 import sys
-import logging
 import warnings
 from datetime import timedelta
 
@@ -125,7 +124,7 @@ def prepare(m, source=settings, defaults=_DEFAULTS):
     m.ALWAYS_EAGER = _get("CELERY_ALWAYS_EAGER")
     m.EAGER_PROPAGATES_EXCEPTIONS = _get("CELERY_EAGER_PROPAGATES_EXCEPTIONS")
     m.RESULT_BACKEND = _get("CELERY_RESULT_BACKEND", compat=["CELERY_BACKEND"])
-    m.CELERY_BACKEND = RESULT_BACKEND                   # FIXME Remove in 1.4
+    m.CELERY_BACKEND = m.RESULT_BACKEND              # FIXME Remove in 1.4
     m.CACHE_BACKEND = _get("CELERY_CACHE_BACKEND") or _get("CACHE_BACKEND")
     m.CACHE_BACKEND_OPTIONS = _get("CELERY_CACHE_BACKEND_OPTIONS") or {}
     m.TASK_SERIALIZER = _get("CELERY_TASK_SERIALIZER")
@@ -166,7 +165,7 @@ def prepare(m, source=settings, defaults=_DEFAULTS):
     m.CELERYD_TASK_LOG_FORMAT = _get("CELERYD_TASK_LOG_FORMAT")
     m.CELERYD_LOG_FILE = _get("CELERYD_LOG_FILE")
     m.CELERYD_LOG_COLOR = _get("CELERYD_LOG_COLOR",
-                       CELERYD_LOG_FILE is None and isatty(sys.stderr))
+                       m.CELERYD_LOG_FILE is None and isatty(sys.stderr))
     m.CELERYD_LOG_LEVEL = _get("CELERYD_LOG_LEVEL",
                             compat=["CELERYD_DAEMON_LOG_LEVEL"])
     if not isinstance(m.CELERYD_LOG_LEVEL, int):
@@ -214,10 +213,13 @@ def prepare(m, source=settings, defaults=_DEFAULTS):
     m.DEFAULT_EXCHANGE = _get("CELERY_DEFAULT_EXCHANGE")
     m.DEFAULT_EXCHANGE_TYPE = _get("CELERY_DEFAULT_EXCHANGE_TYPE")
     m.DEFAULT_DELIVERY_MODE = _get("CELERY_DEFAULT_DELIVERY_MODE")
-    m.QUEUES = _get("CELERY_QUEUES") or {DEFAULT_QUEUE: {
-                                       "exchange": DEFAULT_EXCHANGE,
-                                       "exchange_type": DEFAULT_EXCHANGE_TYPE,
-                                       "binding_key": DEFAULT_ROUTING_KEY}}
+    m.QUEUES = _get("CELERY_QUEUES") or {
+                    m.DEFAULT_QUEUE: {
+                        "exchange": m.DEFAULT_EXCHANGE,
+                        "exchange_type": m.DEFAULT_EXCHANGE_TYPE,
+                        "binding_key": m.DEFAULT_ROUTING_KEY,
+                    },
+    }
     m.CREATE_MISSING_QUEUES = _get("CELERY_CREATE_MISSING_QUEUES")
     m.ROUTES = routes.prepare(_get("CELERY_ROUTES") or [])
     # :--- Broadcast queue settings                 <-   --   --- - ----- -- #

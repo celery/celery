@@ -3,7 +3,6 @@
 Worker Controller Threads
 
 """
-import time
 import threading
 from Queue import Empty as QueueEmpty
 
