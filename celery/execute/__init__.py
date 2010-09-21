@@ -90,7 +90,7 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
     if conf.ALWAYS_EAGER:
         return apply(task, args, kwargs, task_id=task_id)
 
-    task = tasks[task.name] # get instance from registry
+    task = tasks[task.name]                 # get instance from registry
 
     options = dict(extract_exec_options(task), **options)
     options = router.route(options, task.name, args, kwargs)
@@ -178,7 +178,7 @@ def apply(task, args, kwargs, **options):
     retries = options.get("retries", 0)
     throw = options.pop("throw", conf.EAGER_PROPAGATES_EXCEPTIONS)
 
-    task = tasks[task.name] # Make sure we get the instance, not class.
+    task = tasks[task.name]     # make sure we get the instance, not class.
 
     default_kwargs = {"task_name": task.name,
                       "task_id": task_id,

@@ -108,6 +108,6 @@ class test_div(unittest.TestCase):
             MockBeat.running = False
 
     def test_parse_options(self):
-        options,args = celerybeat.BeatCommand().parse_options(
-                "celerybeat", ["-s", "foo"])
+        options, args = celerybeat.BeatCommand().parse_options(
+                            "celerybeat", ["-s", "foo"])
         self.assertEqual(options.schedule, "foo")

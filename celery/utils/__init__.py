@@ -18,14 +18,13 @@ from carrot.utils import rpartition
 from dateutil.parser import parse as parse_iso8601
 
 from celery.utils.compat import all, any, defaultdict
-from celery.utils.timeutils import timedelta_seconds # was here before
+from celery.utils.timeutils import timedelta_seconds        # was here before
 from celery.utils.functional import curry
 
 
 LOG_LEVELS = dict(logging._levelNames)
 LOG_LEVELS["FATAL"] = logging.FATAL
 LOG_LEVELS[logging.FATAL] = "FATAL"
-
 
 
 class promise(object):
@@ -238,7 +237,7 @@ def repeatlast(it):
     yield the last value infinitely."""
     for item in it:
         yield item
-    while 1: # pragma: no cover
+    while 1:                                            # pragma: no cover
         yield item
 
 
@@ -346,7 +345,7 @@ def get_cls_by_name(name, aliases={}):
     """
 
     if not isinstance(name, basestring):
-        return name # already a class
+        return name                                     # already a class
 
     name = aliases.get(name) or name
     module_name, _, cls_name = rpartition(name, ".")
@@ -374,7 +373,7 @@ def abbr(S, max, ellipsis="..."):
     if S is None:
         return "???"
     if len(S) > max:
-        return ellipsis and (S[:max-len(ellipsis)] + ellipsis) or S[:max]
+        return ellipsis and (S[:max - len(ellipsis)] + ellipsis) or S[:max]
     return S
 
 

@@ -61,7 +61,7 @@ class TaskPool(object):
 
         if isinstance(ret_value, ExceptionInfo):
             if isinstance(ret_value.exception, (
-                    SystemExit, KeyboardInterrupt)): # pragma: no cover
+                    SystemExit, KeyboardInterrupt)):        # pragma: no cover
                 raise ret_value.exception
             [errback(ret_value) for errback in errbacks]
         else:

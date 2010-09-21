@@ -142,7 +142,7 @@ class inspect(object):
         return self._request("disable_events")
 
     def diagnose(self):
-        diagnose_timeout = self.timeout * 0.85 # 15% of timeout
+        diagnose_timeout = self.timeout * 0.85              # 15% of timeout
         return self._request("diagnose", timeout=diagnose_timeout)
 
     def ping(self):

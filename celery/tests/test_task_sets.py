@@ -81,8 +81,8 @@ class test_subtask(unittest.TestCase):
     def test_is_JSON_serializable(self):
         s = MockTask.subtask((2, ), {"cache": True},
                 {"routing_key": "CPU-bound"})
-        s.args = list(s.args) # tuples are not preserved
-                              # but this doesn't matter.
+        s.args = list(s.args)               # tuples are not preserved
+                                            # but this doesn't matter.
         self.assertEqual(s,
                          subtask(simplejson.loads(simplejson.dumps(s))))
 

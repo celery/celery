@@ -21,6 +21,7 @@ from celery.tests.utils import execute_context
 
 patch.ensure_process_aware_logger()
 
+
 def disable_stdouts(fun):
 
     @wraps(fun)
@@ -140,8 +141,8 @@ class test_Worker(unittest.TestCase):
 
     @disable_stdouts
     def test_on_listener_ready(self):
-
         worker_ready_sent = [False]
+
         def on_worker_ready(**kwargs):
             worker_ready_sent[0] = True
 
@@ -226,10 +227,11 @@ class test_signal_handlers(unittest.TestCase):
     def test_worker_int_handler(self):
         worker = self._Worker()
         handlers = self.psig(cd.install_worker_int_handler, worker)
-
         next_handlers = {}
+
         def i(sig, handler):
             next_handlers[sig] = handler
+
         p = platform.install_signal_handler
         platform.install_signal_handler = i
         try:

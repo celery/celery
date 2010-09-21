@@ -46,15 +46,15 @@ class Mediator(threading.Thread):
         self.logger.debug(
             "Mediator: Running callback for task: %s[%s]" % (
                 task.task_name, task.task_id))
-        self.callback(task) # execute
+        self.callback(task)                 # execute
 
     def run(self):
         while not self._shutdown.isSet():
             self.move()
-        self._stopped.set() # indicate that we are stopped
+        self._stopped.set()                 # indicate that we are stopped
 
     def stop(self):
         """Gracefully shutdown the thread."""
         self._shutdown.set()
-        self._stopped.wait() # block until this thread is done
+        self._stopped.wait()                # block until this thread is done
         self.join(1e100)

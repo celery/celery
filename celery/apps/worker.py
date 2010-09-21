@@ -12,7 +12,7 @@ from celery import signals
 from celery.exceptions import ImproperlyConfigured
 from celery.routes import Router
 from celery.task import discard_all
-from celery.utils import info,get_full_cls_name, LOG_LEVELS
+from celery.utils import info, get_full_cls_name, LOG_LEVELS
 from celery.worker import WorkController
 
 

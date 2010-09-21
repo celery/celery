@@ -167,7 +167,7 @@ class CursesMonitor(object):
             while True:
                 ch = self.win.getch(x, y + i)
                 if ch != -1:
-                    if ch in (10, curses.KEY_ENTER): # enter
+                    if ch in (10, curses.KEY_ENTER):                # enter
                         break
                     if ch in (27, ):
                         buffer = str()
@@ -301,7 +301,6 @@ class CursesMonitor(object):
             win.addstr(my - 5, x + len(self.selected_str), info)
         else:
             win.addstr(my - 5, x, "No task selected", curses.A_NORMAL)
-
 
         # Workers
         if self.workers:

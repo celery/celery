@@ -215,7 +215,7 @@ class LimitedSet(object):
                 if not self.expires or time.time() > when + self.expires:
                     try:
                         self.pop_value(value)
-                    except TypeError: # pragma: no cover
+                    except TypeError:                   # pragma: no cover
                         continue
             break
 

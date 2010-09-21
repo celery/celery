@@ -22,6 +22,7 @@ __docformat__ = "restructuredtext"
 
 DEFAULT_MAX_INTERVAL = 2
 
+
 class TimedFunctionFailed(UserWarning):
     pass
 
@@ -119,7 +120,7 @@ class Schedule(object):
     @property
     def queue(self):
         events = list(self._queue)
-        return map(heapq.heappop, [events]*len(events))
+        return map(heapq.heappop, [events] * len(events))
 
 
 class Timer(Thread):

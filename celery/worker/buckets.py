@@ -66,7 +66,7 @@ class TaskBucket(object):
     def _get_immediate(self):
         try:
             return self.immediate.popleft()
-        except IndexError: # Empty
+        except IndexError:                                      # Empty
             raise QueueEmpty()
 
     def _get(self):

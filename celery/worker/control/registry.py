@@ -2,7 +2,7 @@ from UserDict import UserDict
 
 
 class Panel(UserDict):
-    data = dict() # Global registry.
+    data = dict()                       # global registry.
 
     def __init__(self, logger, listener, hostname=None):
         self.logger = logger

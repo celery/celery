@@ -232,8 +232,8 @@ class Task(object):
     store_errors_even_if_ignored = conf.STORE_ERRORS_EVEN_IF_IGNORED
     send_error_emails = conf.CELERY_SEND_TASK_ERROR_EMAILS
     error_whitelist = conf.CELERY_TASK_ERROR_WHITELIST
-    disable_error_emails = False # FIXME
-    max_retries = 3
+    disable_error_emails = False                                    # FIXME
+    max_retries = 5
     default_retry_delay = 3 * 60
     serializer = conf.TASK_SERIALIZER
     rate_limit = conf.DEFAULT_RATE_LIMIT
@@ -426,7 +426,7 @@ class Task(object):
         if kwargs.get("task_is_eager", False):
             result = self.apply(args=args, kwargs=kwargs, **options)
             if isinstance(result, EagerResult):
-                return result.get() # propogates exceptions.
+                return result.get()                 # propogates exceptions.
             return result
 
         self.apply_async(args=args, kwargs=kwargs, **options)

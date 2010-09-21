@@ -46,29 +46,29 @@ _DEFAULTS = {
     "CELERY_DEFAULT_QUEUE": "celery",
     "CELERY_DEFAULT_EXCHANGE": "celery",
     "CELERY_DEFAULT_EXCHANGE_TYPE": "direct",
-    "CELERY_DEFAULT_DELIVERY_MODE": 2, # persistent
+    "CELERY_DEFAULT_DELIVERY_MODE": 2,              # persistent
     "CELERY_ACKS_LATE": False,
     "CELERYD_POOL_PUTLOCKS": True,
     "CELERYD_POOL": "celery.concurrency.processes.TaskPool",
     "CELERYD_MEDIATOR": "celery.worker.controllers.Mediator",
     "CELERYD_ETA_SCHEDULER": "celery.utils.timer2.Timer",
     "CELERYD_LISTENER": "celery.worker.listener.CarrotListener",
-    "CELERYD_CONCURRENCY": 0, # defaults to cpu count
+    "CELERYD_CONCURRENCY": 0,                       # defaults to cpu count
     "CELERYD_PREFETCH_MULTIPLIER": 4,
     "CELERYD_LOG_FORMAT": DEFAULT_PROCESS_LOG_FMT,
     "CELERYD_TASK_LOG_FORMAT": DEFAULT_TASK_LOG_FMT,
     "CELERYD_LOG_COLOR": False,
     "CELERYD_LOG_LEVEL": "WARN",
-    "CELERYD_LOG_FILE": None, # stderr
+    "CELERYD_LOG_FILE": None,                       # stderr
     "CELERYBEAT_SCHEDULE": {},
     "CELERYD_STATE_DB": None,
     "CELERYD_ETA_SCHEDULER_PRECISION": 1,
     "CELERYBEAT_SCHEDULE_FILENAME": "celerybeat-schedule",
-    "CELERYBEAT_MAX_LOOP_INTERVAL": 5 * 60, # five minutes.
+    "CELERYBEAT_MAX_LOOP_INTERVAL": 5 * 60,         # five minutes.
     "CELERYBEAT_LOG_LEVEL": "INFO",
-    "CELERYBEAT_LOG_FILE": None, # stderr
+    "CELERYBEAT_LOG_FILE": None,                    # stderr
     "CELERYMON_LOG_LEVEL": "INFO",
-    "CELERYMON_LOG_FILE": None, # stderr
+    "CELERYMON_LOG_FILE": None,                     # stderr
     "CELERYMON_LOG_FORMAT": DEFAULT_LOG_FMT,
     "CELERY_BROADCAST_QUEUE": "celeryctl",
     "CELERY_BROADCAST_EXCHANGE": "celeryctl",
@@ -103,6 +103,7 @@ _DEPRECATION_FMT = """
 %s is deprecated in favor of %s and is scheduled for removal in celery v1.4.
 """.strip()
 
+
 def prepare(m, source=settings, defaults=_DEFAULTS):
 
     def _get(name, default=None, compat=None):
@@ -120,11 +121,11 @@ def prepare(m, source=settings, defaults=_DEFAULTS):
                 pass
         return default
 
-    # <--- Task                                        <-   --   --- - ----- -- #
+    # <--- Task                                    <-   --   --- - ----- -- #
     m.ALWAYS_EAGER = _get("CELERY_ALWAYS_EAGER")
     m.EAGER_PROPAGATES_EXCEPTIONS = _get("CELERY_EAGER_PROPAGATES_EXCEPTIONS")
     m.RESULT_BACKEND = _get("CELERY_RESULT_BACKEND", compat=["CELERY_BACKEND"])
-    m.CELERY_BACKEND = RESULT_BACKEND # FIXME Remove in 1.4
+    m.CELERY_BACKEND = RESULT_BACKEND                   # FIXME Remove in 1.4
     m.CACHE_BACKEND = _get("CELERY_CACHE_BACKEND") or _get("CACHE_BACKEND")
     m.CACHE_BACKEND_OPTIONS = _get("CELERY_CACHE_BACKEND_OPTIONS") or {}
     m.TASK_SERIALIZER = _get("CELERY_TASK_SERIALIZER")
@@ -138,15 +139,15 @@ def prepare(m, source=settings, defaults=_DEFAULTS):
     if isinstance(m.TASK_RESULT_EXPIRES, int):
         m.TASK_RESULT_EXPIRES = timedelta(seconds=m.TASK_RESULT_EXPIRES)
 
-    # <--- SQLAlchemy                                  <-   --   --- - ----- -- #
+    # <--- SQLAlchemy                              <-   --   --- - ----- -- #
     m.RESULT_DBURI = _get("CELERY_RESULT_DBURI")
     m.RESULT_ENGINE_OPTIONS = _get("CELERY_RESULT_ENGINE_OPTIONS")
 
-    # <--- Client                                      <-   --   --- - ----- -- #
+    # <--- Client                                  <-   --   --- - ----- -- #
 
     m.MAX_CACHED_RESULTS = _get("CELERY_MAX_CACHED_RESULTS")
 
-    # <--- Worker                                      <-   --   --- - ----- -- #
+    # <--- Worker                                  <-   --   --- - ----- -- #
 
     m.SEND_EVENTS = _get("CELERY_SEND_EVENTS")
     m.DEFAULT_RATE_LIMIT = _get("CELERY_DEFAULT_RATE_LIMIT")
@@ -154,7 +155,8 @@ def prepare(m, source=settings, defaults=_DEFAULTS):
     m.CELERYD_TASK_TIME_LIMIT = _get("CELERYD_TASK_TIME_LIMIT")
     m.CELERYD_TASK_SOFT_TIME_LIMIT = _get("CELERYD_TASK_SOFT_TIME_LIMIT")
     m.CELERYD_MAX_TASKS_PER_CHILD = _get("CELERYD_MAX_TASKS_PER_CHILD")
-    m.STORE_ERRORS_EVEN_IF_IGNORED = _get("CELERY_STORE_ERRORS_EVEN_IF_IGNORED")
+    m.STORE_ERRORS_EVEN_IF_IGNORED = \
+            _get("CELERY_STORE_ERRORS_EVEN_IF_IGNORED")
     m.CELERY_SEND_TASK_ERROR_EMAILS = _get("CELERY_SEND_TASK_ERROR_EMAILS",
                                            False,
                                     compat=["SEND_CELERY_TASK_ERROR_EMAILS"])
@@ -180,7 +182,7 @@ def prepare(m, source=settings, defaults=_DEFAULTS):
     m.CELERYD_ETA_SCHEDULER = _get("CELERYD_ETA_SCHEDULER")
     m.CELERYD_ETA_SCHEDULER_PRECISION = _get("CELERYD_ETA_SCHEDULER_PRECISION")
 
-    # :--- Email settings                               <-   --   --- - ----- -- #
+    # :--- Email settings                           <-   --   --- - ----- -- #
     m.ADMINS = _get("ADMINS")
     m.SERVER_EMAIL = _get("SERVER_EMAIL")
     m.EMAIL_HOST = _get("EMAIL_HOST")
@@ -188,7 +190,7 @@ def prepare(m, source=settings, defaults=_DEFAULTS):
     m.EMAIL_HOST_PASSWORD = _get("EMAIL_HOST_PASSWORD")
     m.EMAIL_PORT = _get("EMAIL_PORT")
 
-    # :--- Broker connections                           <-   --   --- - ----- -- #
+    # :--- Broker connections                       <-   --   --- - ----- -- #
     m.BROKER_HOST = _get("BROKER_HOST")
     m.BROKER_PORT = _get("BROKER_PORT")
     m.BROKER_USER = _get("BROKER_USER")
@@ -206,7 +208,7 @@ def prepare(m, source=settings, defaults=_DEFAULTS):
                             _get("BROKER_BACKEND") or \
                                 _get("CARROT_BACKEND")
 
-    # <--- Message routing                             <-   --   --- - ----- -- #
+    # <--- Message routing                         <-   --   --- - ----- -- #
     m.DEFAULT_QUEUE = _get("CELERY_DEFAULT_QUEUE")
     m.DEFAULT_ROUTING_KEY = _get("CELERY_DEFAULT_ROUTING_KEY")
     m.DEFAULT_EXCHANGE = _get("CELERY_DEFAULT_EXCHANGE")
@@ -218,13 +220,13 @@ def prepare(m, source=settings, defaults=_DEFAULTS):
                                        "binding_key": DEFAULT_ROUTING_KEY}}
     m.CREATE_MISSING_QUEUES = _get("CELERY_CREATE_MISSING_QUEUES")
     m.ROUTES = routes.prepare(_get("CELERY_ROUTES") or [])
-    # :--- Broadcast queue settings                     <-   --   --- - ----- -- #
+    # :--- Broadcast queue settings                 <-   --   --- - ----- -- #
 
     m.BROADCAST_QUEUE = _get("CELERY_BROADCAST_QUEUE")
     m.BROADCAST_EXCHANGE = _get("CELERY_BROADCAST_EXCHANGE")
     m.BROADCAST_EXCHANGE_TYPE = _get("CELERY_BROADCAST_EXCHANGE_TYPE")
 
-# :--- Event queue settings                         <-   --   --- - ----- -- #
+    # :--- Event queue settings                     <-   --   --- - ----- -- #
 
     m.EVENT_QUEUE = _get("CELERY_EVENT_QUEUE")
     m.EVENT_EXCHANGE = _get("CELERY_EVENT_EXCHANGE")
@@ -232,25 +234,26 @@ def prepare(m, source=settings, defaults=_DEFAULTS):
     m.EVENT_ROUTING_KEY = _get("CELERY_EVENT_ROUTING_KEY")
     m.EVENT_SERIALIZER = _get("CELERY_EVENT_SERIALIZER")
 
-# :--- AMQP Backend settings                        <-   --   --- - ----- -- #
+    # :--- AMQP Backend settings                    <-   --   --- - ----- -- #
 
     m.RESULT_EXCHANGE = _get("CELERY_RESULT_EXCHANGE")
     m.RESULT_EXCHANGE_TYPE = _get("CELERY_RESULT_EXCHANGE_TYPE")
     m.RESULT_SERIALIZER = _get("CELERY_RESULT_SERIALIZER")
     m.RESULT_PERSISTENT = _get("CELERY_RESULT_PERSISTENT")
 
-# :--- Celery Beat                                  <-   --   --- - ----- -- #
+    # :--- Celery Beat                              <-   --   --- - ----- -- #
     m.CELERYBEAT_LOG_LEVEL = _get("CELERYBEAT_LOG_LEVEL")
     m.CELERYBEAT_LOG_FILE = _get("CELERYBEAT_LOG_FILE")
     m.CELERYBEAT_SCHEDULE = _get("CELERYBEAT_SCHEDULE")
     m.CELERYBEAT_SCHEDULE_FILENAME = _get("CELERYBEAT_SCHEDULE_FILENAME")
     m.CELERYBEAT_MAX_LOOP_INTERVAL = _get("CELERYBEAT_MAX_LOOP_INTERVAL")
 
-# :--- Celery Monitor                               <-   --   --- - ----- -- #
+    # :--- Celery Monitor                           <-   --   --- - ----- -- #
     m.CELERYMON_LOG_LEVEL = _get("CELERYMON_LOG_LEVEL")
     m.CELERYMON_LOG_FILE = _get("CELERYMON_LOG_FILE")
 
 prepare(sys.modules[__name__])
+
 
 def _init_queues(queues):
     """Convert configuration mapping to a table of queues digestible

@@ -138,7 +138,7 @@ def setup_task_logger(loglevel=conf.CELERYD_LOG_LEVEL, logfile=None,
 def _setup_logger(logger, logfile, format, colorize,
         formatter=ColorFormatter, **kwargs):
 
-    if logger.handlers: # Logger already configured
+    if logger.handlers:                 # already configured
         return logger
 
     handler = _detect_handler(logfile)
@@ -203,7 +203,7 @@ class LoggingProxy(object):
         ``sys.__stderr__`` instead of ``sys.stderr`` to circumvent
         infinite loops."""
 
-        def wrap_handler(handler): # pragma: no cover
+        def wrap_handler(handler):                  # pragma: no cover
 
             class WithSafeHandleError(logging.Handler):
 
@@ -226,7 +226,7 @@ class LoggingProxy(object):
 
     def write(self, data):
         if getattr(self._thread, "recurse_protection", False):
-            # Logger is logging back to this file, so stop recursing.
+            # logger is logging back to this file, so stop recursing.
             return
         """Write message to logging object."""
         data = data.strip()

@@ -68,7 +68,7 @@ setup(
     zip_safe=False,
     install_requires=install_requires,
     tests_require=['nose', 'nose-cover3', 'unittest2', 'simplejson'],
-    cmdclass = {"quicktest": QuickRunTests},
+    cmdclass={"quicktest": QuickRunTests},
     test_suite="nose.collector",
     classifiers=[
         "Development Status :: 5 - Production/Stable",

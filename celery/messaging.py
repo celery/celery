@@ -62,7 +62,7 @@ class TaskPublisher(Publisher):
         task_args = task_args or []
         task_kwargs = task_kwargs or {}
         now = None
-        if countdown: # Convert countdown to ETA.
+        if countdown:                       # convert countdown to ETA.
             now = datetime.now()
             eta = now + timedelta(seconds=countdown)
 

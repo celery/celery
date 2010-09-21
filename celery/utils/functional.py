@@ -67,12 +67,13 @@
 # update_wrapper() and wraps() are tools to help write
 # wrapper functions that can handle naive introspection
 
+
 def _compat_curry(fun, *args, **kwargs):
     """New function with partial application of the given arguments
     and keywords."""
 
     def _curried(*addargs, **addkwargs):
-        return fun(*(args+addargs), **dict(kwargs, **addkwargs))
+        return fun(*(args + addargs), **dict(kwargs, **addkwargs))
     return _curried
 
 
@@ -83,6 +84,8 @@ except ImportError:
 
 WRAPPER_ASSIGNMENTS = ('__module__', '__name__', '__doc__')
 WRAPPER_UPDATES = ('__dict__',)
+
+
 def _compat_update_wrapper(wrapper, wrapped, assigned=WRAPPER_ASSIGNMENTS,
         updated=WRAPPER_UPDATES):
     """Update a wrapper function to look like the wrapped function
@@ -100,7 +103,7 @@ def _compat_update_wrapper(wrapper, wrapped, assigned=WRAPPER_ASSIGNMENTS,
     for attr in assigned:
         try:
             setattr(wrapper, attr, getattr(wrapped, attr))
-        except TypeError: # Python 2.3 doesn't allow assigning to __name__.
+        except TypeError:   # Python 2.3 doesn't allow assigning to __name__.
             pass
     for attr in updated:
         getattr(wrapper, attr).update(getattr(wrapped, attr))

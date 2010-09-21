@@ -39,6 +39,7 @@ Example:
     -> queue.delete myqueue yes no
 """
 
+
 def say(m):
     sys.stderr.write("%s\n" % (m, ))
 

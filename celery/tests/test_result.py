@@ -109,7 +109,7 @@ class TestAsyncResult(unittest.TestCase):
         self.assertIsInstance(nok2_res.result, KeyError)
 
     def test_get_timeout(self):
-        res = AsyncResult(self.task4["id"]) # has RETRY status
+        res = AsyncResult(self.task4["id"])             # has RETRY status
         self.assertRaises(TimeoutError, res.get, timeout=0.1)
 
         pending_res = AsyncResult(gen_unique_id())
@@ -117,7 +117,7 @@ class TestAsyncResult(unittest.TestCase):
 
     @skip_if_quick
     def test_get_timeout_longer(self):
-        res = AsyncResult(self.task4["id"]) # has RETRY status
+        res = AsyncResult(self.task4["id"])             # has RETRY status
         self.assertRaises(TimeoutError, res.get, timeout=1)
 
     def test_ready(self):

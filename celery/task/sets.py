@@ -33,6 +33,7 @@ Thank you for your patience!
 
 """
 
+
 class subtask(AttributeDict):
     """Class that wraps the arguments and execution options
     for a single task invocation.
@@ -124,8 +125,8 @@ class TaskSet(UserList):
         >>> list_of_return_values = taskset_result.join()
 
     """
-    _task = None # compat
-    _task_name = None # compat
+    _task = None                                                # compat
+    _task_name = None                                           # compat
 
     def __init__(self, task=None, tasks=None):
         if task is not None:

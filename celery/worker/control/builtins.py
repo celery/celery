@@ -29,7 +29,7 @@ def revoke(panel, task_id, task_name=None, **kwargs):
     """Revoke task by task id."""
     revoked.add(task_id)
     backend = default_backend
-    if task_name: # Use custom task backend (if any)
+    if task_name:                       # use custom task backend (if any)
         try:
             backend = tasks[task_name].backend
         except KeyError:

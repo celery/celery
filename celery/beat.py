@@ -194,7 +194,7 @@ class Scheduler(UserDict):
                     entry.name, exc))
         return result
 
-    def send_task(self, *args, **kwargs): # pragma: no cover
+    def send_task(self, *args, **kwargs):               # pragma: no cover
         return send_task(*args, **kwargs)
 
     def setup_schedule(self):
@@ -313,7 +313,7 @@ class Service(object):
     def stop(self, wait=False):
         self.logger.info("Celerybeat: Shutting down...")
         self._shutdown.set()
-        wait and self._stopped.wait() # block until shutdown done.
+        wait and self._stopped.wait()           # block until shutdown done.
 
     @property
     def scheduler(self):

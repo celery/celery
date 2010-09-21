@@ -315,7 +315,7 @@ class CarrotListener(object):
     def maybe_conn_error(self, fun):
         try:
             fun()
-        except Exception: # TODO kombu.connection_errors
+        except Exception:                   # TODO kombu.connection_errors
             pass
 
     def close_connection(self):
@@ -380,7 +380,7 @@ class CarrotListener(object):
         # QoS: Reset prefetch window.
         self.qos = QoS(self.task_consumer,
                        self.initial_prefetch_count, self.logger)
-        self.qos.update() # enable prefetch_count QoS.
+        self.qos.update()                       # enable prefetch_count QoS.
 
         self.task_consumer.on_decode_error = self.on_decode_error
         self.broadcast_consumer = BroadcastConsumer(self.connection,
@@ -427,7 +427,7 @@ class CarrotListener(object):
         def _establish_connection():
             """Establish a connection to the broker."""
             conn = establish_connection()
-            conn.connect() # Connection is established lazily, so connect.
+            conn.connect()                              # evaluate connection
             return conn
 
         if not conf.BROKER_CONNECTION_RETRY:

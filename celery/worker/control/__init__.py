@@ -36,7 +36,7 @@ class ControlDispatch(object):
             ...         ControlDispatch().dispatch_from_message(control)
 
         """
-        message = dict(message) # don't modify callers message.
+        message = dict(message)             # don't modify callers message.
         command = message.pop("command")
         destination = message.pop("destination", None)
         reply_to = message.pop("reply_to", None)

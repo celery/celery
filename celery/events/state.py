@@ -10,7 +10,7 @@ from celery import states
 from celery.datastructures import AttributeDict, LocalCache
 from celery.utils import kwdict
 
-HEARTBEAT_EXPIRE = 150 # 2 minutes, 30 seconds
+HEARTBEAT_EXPIRE = 150                  # 2 minutes, 30 seconds
 
 
 class Element(AttributeDict):

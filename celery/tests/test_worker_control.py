@@ -16,7 +16,7 @@ from celery.worker.state import revoked
 hostname = socket.gethostname()
 
 
-@task(rate_limit=200) # for extra info in dump_tasks
+@task(rate_limit=200)                   # for extra info in dump_tasks
 def mytask():
     pass
 

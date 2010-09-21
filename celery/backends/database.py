@@ -14,7 +14,6 @@ except ImportError:
         "See http://pypi.python.org/pypi/SQLAlchemy")
 
 
-
 class DatabaseBackend(BaseDictBackend):
     """The database result backend."""
 

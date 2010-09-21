@@ -261,7 +261,7 @@ class test_TaskBucket(unittest.TestCase):
             for i, job in enumerate(jobs):
                 sys.stderr.write("0")
                 self.assertTrue(b.get(), job)
-            self.assertEqual(i+1, len(jobs))
+            self.assertEqual(i + 1, len(jobs))
         finally:
             self.registry.unregister(TaskD)
 

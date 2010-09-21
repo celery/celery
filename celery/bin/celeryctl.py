@@ -175,6 +175,7 @@ class result(Command):
         self.out(self.prettify(result.get())[1])
 result = command(result)
 
+
 class inspect(Command):
     choices = {"active": 10,
                "scheduled": 1.0,

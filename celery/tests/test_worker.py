@@ -178,8 +178,8 @@ class test_CarrotListener(unittest.TestCase):
 
         it = l._mainloop()
         self.assertTrue(it.next(), "draining")
-
         records = {}
+
         def create_recorder(key):
             def _recorder(*args, **kwargs):
                 records[key] = True
@@ -417,9 +417,9 @@ class test_CarrotListener(unittest.TestCase):
                 return self.wait_method
 
         called_back = [False]
+
         def init_callback(listener):
             called_back[0] = True
-
 
         l = _Listener(self.ready_queue, self.eta_schedule, self.logger,
                       send_events=False, init_callback=init_callback)
@@ -439,6 +439,7 @@ class test_CarrotListener(unittest.TestCase):
         l = _Listener(self.ready_queue, self.eta_schedule, self.logger,
                       send_events=False, init_callback=init_callback)
         l.qos = _QoS()
+
         def raises_socket_error(limit=None):
             yield True
             l.iterations = 1
