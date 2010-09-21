@@ -1,8 +1,9 @@
 import warnings
-
+from datetime import timedelta
 
 from celery.backends.base import KeyValueStoreBackend
 from celery.exceptions import ImproperlyConfigured
+from celery.utils import timeutils
 
 try:
     import redis
@@ -33,6 +34,7 @@ class RedisBackend(KeyValueStoreBackend):
     redis_password = None
     redis_timeout = None
     redis_connect_retry = None
+    expires = None
 
     deprecated_settings = frozenset(["REDIS_TIMEOUT",
                                      "REDIS_CONNECT_RETRY"])
@@ -41,7 +43,8 @@ class RedisBackend(KeyValueStoreBackend):
             redis_timeout=None,
             redis_password=None,
             redis_connect_retry=None,
-            redis_connect_timeout=None, **kwargs):
+            redis_connect_timeout=None,
+            expires=None, **kwargs):
         super(RedisBackend, self).__init__(**kwargs)
         if redis is None:
             raise ImproperlyConfigured(
@@ -60,6 +63,13 @@ class RedisBackend(KeyValueStoreBackend):
         self.redis_password = (redis_password or
                                self.app.conf.get("REDIS_PASSWORD") or
                                self.redis_password)
+        self.expires = expires
+        if self.expires is None:
+            self.expires = self.app.conf.CELERY_TASK_RESULT_EXPIRES
+        if isinstance(self.expires, timedelta):
+            self.expires = timeutils.timedelta_seconds(self.expires)
+        if self.expires is not None:
+            self.expires = int(self.expires)
 
         for setting_name in self.deprecated_settings:
             if self.app.conf.get(setting_name) is not None:
@@ -105,7 +115,10 @@ class RedisBackend(KeyValueStoreBackend):
         return self.open().get(key)
 
     def set(self, key, value):
-        self.open().set(key, value)
+        r = self.open()
+        r.set(key, value)
+        if self.expires is not None:
+            r.expire(key, self.expires)
 
     def delete(self, key):
         self.open().delete(key)
