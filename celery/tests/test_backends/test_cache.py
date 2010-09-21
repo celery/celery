@@ -5,6 +5,7 @@ import unittest2 as unittest
 from celery import states
 from celery.backends.cache import CacheBackend, DummyClient
 from celery.exceptions import ImproperlyConfigured
+from celery.result import AsyncResult
 from celery.utils import gen_unique_id
 
 from celery.tests.utils import mask_modules
@@ -52,6 +53,14 @@ class test_CacheBackend(unittest.TestCase):
         tb.mark_as_failure(tid3, exception)
         self.assertEqual(tb.get_status(tid3), states.FAILURE)
         self.assertIsInstance(tb.get_result(tid3), KeyError)
+
+    def test_forget(self):
+        tb = CacheBackend(backend="memory://")
+        tid = gen_unique_id()
+        tb.mark_as_done(tid, {"foo": "bar"})
+        x = AsyncResult(tid)
+        x.forget()
+        self.assertIsNone(x.result)
 
     def test_process_cleanup(self):
         tb = CacheBackend(backend="memory://")

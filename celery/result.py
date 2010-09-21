@@ -35,6 +35,10 @@ class BaseAsyncResult(object):
         self.task_id = task_id
         self.backend = backend
 
+    def forget(self):
+        """Forget about (and possibly remove the result of) this task."""
+        self.backend.forget(self.task_id)
+
     def revoke(self, connection=None, connect_timeout=None):
         """Send revoke signal to all workers.
 
@@ -249,6 +253,12 @@ class TaskSetResult(object):
         """
         return sum(imap(int, (subtask.successful()
                                 for subtask in self.itersubtasks())))
+
+    def forget(self):
+        """Forget about (and possible remove the result of) all the tasks
+        in this taskset."""
+        for subtask in self.subtasks:
+            subtask.forget()
 
     @with_connection
     def revoke(self, connection=None, connect_timeout=None):
