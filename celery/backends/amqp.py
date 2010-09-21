@@ -70,7 +70,9 @@ class AMQPBackend(BaseDictBackend):
         if self.expires is not None:
             self.expires = int(self.expires)
             # WARNING: Requires RabbitMQ 2.1.0 or higher.
-            self.queue_arguments["x-expires"] = self.expires
+            # x-expires must be a signed-int, or long describing
+            # the expiry time in milliseconds.
+            self.queue_arguments["x-expires"] = int(self.expires * 1000.0)
 
     def _create_publisher(self, task_id, connection):
         delivery_mode = self.persistent and 2 or 1
