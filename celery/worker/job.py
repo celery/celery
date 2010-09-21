@@ -8,6 +8,7 @@ from datetime import datetime
 
 from celery import log
 from celery import platform
+from celery.concurrency.processes.pool import WorkerLostError
 from celery.datastructures import ExceptionInfo
 from celery.exceptions import SoftTimeLimitExceeded, TimeLimitExceeded
 from celery.execute.trace import TaskTrace
@@ -433,6 +434,12 @@ class TaskRequest(object):
         self.send_event("task-failed", uuid=self.task_id,
                                        exception=repr(exc_info.exception),
                                        traceback=exc_info.traceback)
+
+        # This is a special case as the process would not have had
+        # time to write the result.
+        if isinstance(exc_info.exception, WorkerLostError):
+            self.task.backend.mark_as_failure(self.task_id,
+                                              exc_info.exception)
 
         context = {"hostname": self.hostname,
                    "id": self.task_id,
