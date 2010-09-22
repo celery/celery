@@ -7,8 +7,8 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>Change history &mdash; Celery v2.1.0a6 documentation</title>
-    <link rel="stylesheet" href="static/celery.css" type="text/css" />
-    <link rel="stylesheet" href="static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
@@ -18,12 +18,12 @@
         HAS_SOURCE:  true
       };
     </script>
-    <script type="text/javascript" src="static/jquery.js"></script>
-    <script type="text/javascript" src="static/underscore.js"></script>
-    <script type="text/javascript" src="static/doctools.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="Celery v2.1.0a6 documentation" href="index.html" />
     <link rel="next" title="Interesting Links" href="links.html" />
-    <link rel="prev" title="Platform Specific - celery.platform" href="internals/reference/celery.platform.html" /> 
+    <link rel="prev" title="Platform Specific - celery.platforms" href="internals/reference/celery.platforms.html" /> 
   </head>
   <body>
     <div class="related">
@@ -39,7 +39,7 @@
           <a href="links.html" title="Interesting Links"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="internals/reference/celery.platform.html" title="Platform Specific - celery.platform"
+          <a href="internals/reference/celery.platforms.html" title="Platform Specific - celery.platforms"
              accesskey="P">previous</a> |</li>
         <li><a href="index.html">Celery v2.1.0a6 documentation</a> &raquo;</li> 
       </ul>
@@ -157,7 +157,9 @@
 <tbody valign="top">
 <tr class="field"><th class="field-name">release-date:</th><td class="field-body">TBA</td>
 </tr>
-<tr class="field"><th class="field-name">status:</th><td class="field-body">In development.</td>
+<tr class="field"><th class="field-name">status:</th><td class="field-body">FREEZE</td>
+</tr>
+<tr class="field"><th class="field-name">branch:</th><td class="field-body">master</td>
 </tr>
 <tr class="field"><th class="field-name">roadmap:</th><td class="field-body"><a class="reference external" href="http://wiki.github.com/ask/celery/roadmap">http://wiki.github.com/ask/celery/roadmap</a></td>
 </tr>
@@ -1150,7 +1152,7 @@ example, you can now use:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">crontab</span><span class="p">(</span><span class="n">minute</span><span class="o">=</span><span class="s">&quot;*/30&quot;</span><span class="p">,</span> <span class="n">hour</span><span class="o">=</span><span class="s">&quot;8-17,1-2&quot;</span><span class="p">,</span> <span class="n">day_of_week</span><span class="o">=</span><span class="s">&quot;thu-fri&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>See <a class="reference internal" href="getting-started/periodic-tasks.html"><em>Periodic Tasks</em></a>.</p>
+<p>See <tt class="xref doc docutils literal"><span class="pre">getting-started/periodic-tasks</span></tt>.</p>
 </li>
 <li><p class="first">celeryd: Now waits for available pool processes before applying new
 tasks to the pool.</p>
@@ -3678,8 +3680,8 @@ the name change request is in <tt class="docutils literal"><span class="pre">doc
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="internals/reference/celery.platform.html"
-                        title="previous chapter">Platform Specific - celery.platform</a></p>
+  <p class="topless"><a href="internals/reference/celery.platforms.html"
+                        title="previous chapter">Platform Specific - celery.platforms</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="links.html"
                         title="next chapter">Interesting Links</a></p>
@@ -3718,7 +3720,7 @@ the name change request is in <tt class="docutils literal"><span class="pre">doc
           <a href="links.html" title="Interesting Links"
              >next</a> |</li>
         <li class="right" >
-          <a href="internals/reference/celery.platform.html" title="Platform Specific - celery.platform"
+          <a href="internals/reference/celery.platforms.html" title="Platform Specific - celery.platforms"
              >previous</a> |</li>
         <li><a href="index.html">Celery v2.1.0a6 documentation</a> &raquo;</li> 
       </ul>
