@@ -402,10 +402,13 @@ class CarrotListener(object):
                                                 app=self.app,
                                                 hostname=self.hostname,
                                                 enabled=self.send_events)
-        self.heart = Heart(self.event_dispatcher)
-        self.heart.start()
+        self.restart_heartbeat()
 
         self._state = RUN
+
+    def restart_heartbeat(self):
+        self.heart = Heart(self.event_dispatcher)
+        self.heart.start()
 
     def _mainloop(self, **kwargs):
         while 1:

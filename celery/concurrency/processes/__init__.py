@@ -151,8 +151,6 @@ class TaskPool(object):
             self.logger.error("Pool callback raised exception: %s" % (
                 traceback.format_exc(), ))
 
-
-
     @property
     def info(self):
         return {"max-concurrency": self.limit,

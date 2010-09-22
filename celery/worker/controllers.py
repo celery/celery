@@ -56,8 +56,6 @@ class Mediator(threading.Thread):
             self.logger.error("Mediator callback raised exception %r\n%s" % (
                 exc, traceback.format_exc()))
 
-
-
     def run(self):
         while not self._shutdown.isSet():
             self.move()
