@@ -857,7 +857,7 @@ News
 
     >>> crontab(minute="*/30", hour="8-17,1-2", day_of_week="thu-fri")
 
-  See :doc:`getting-started/periodic-tasks`.
+  See :doc:`userguide/periodic-tasks`.
 
 * celeryd: Now waits for available pool processes before applying new
   tasks to the pool.

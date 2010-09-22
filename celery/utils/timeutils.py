@@ -51,11 +51,10 @@ def delta_resolution(dt, delta):
 def remaining(start, ends_in, now=None, relative=True):
     """Calculate the remaining time for a start date and a timedelta.
 
-    E.g. "how many seconds left for 30 seconds after ``start``?"
+    e.g. "how many seconds left for 30 seconds after start?"
 
-    :param start: Start :class:`datetime.datetime`.
-    :param ends_in: The end delta as a :class:`datetime.timedelta`.
-
+    :param start: Start :class:`~datetime.datetime`.
+    :param ends_in: The end delta as a :class:`~datetime.timedelta`.
     :keyword relative: If set to ``False``, the end time will be calculated
         using :func:`delta_resolution` (i.e. rounded to the resolution
           of ``ends_in``).
