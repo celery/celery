@@ -65,7 +65,7 @@ class RedisBackend(KeyValueStoreBackend):
                                     self.redis_password)
         self.expires = expires
         if self.expires is None:
-            self.expires = conf.AMQP_TASK_RESULT_EXPIRES
+            self.expires = conf.TASK_RESULT_EXPIRES
         if isinstance(self.expires, timedelta):
             self.expires = timeutils.timedelta_seconds(self.expires)
         if self.expires is not None:
