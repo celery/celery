@@ -7,7 +7,7 @@ from multiprocessing import get_logger, current_process
 from StringIO import StringIO
 
 from celery import Celery
-from celery import platform
+from celery import platforms
 from celery import signals
 from celery.app import app_or_default
 from celery.apps import worker as cd
@@ -72,8 +72,8 @@ class test_Worker(unittest.TestCase):
         def i(sig, handler):
             handlers[sig] = handler
 
-        p = platform.install_signal_handler
-        platform.install_signal_handler = i
+        p = platforms.install_signal_handler
+        platforms.install_signal_handler = i
         try:
             w = self.Worker()
             w._isatty = False
@@ -89,7 +89,7 @@ class test_Worker(unittest.TestCase):
                 self.assertIn(sig, handlers)
             self.assertNotIn("SIGHUP", handlers)
         finally:
-            platform.install_signal_handler = p
+            platforms.install_signal_handler = p
 
     @disable_stdouts
     def test_startup_info(self):
@@ -230,12 +230,13 @@ class test_signal_handlers(unittest.TestCase):
         def i(sig, handler):
             handlers[sig] = handler
 
-        p, platform.install_signal_handler = platform.install_signal_handler, i
+        p, platforms.install_signal_handler = \
+                platforms.install_signal_handler, i
         try:
             fun(*args, **kwargs)
             return handlers
         finally:
-            platform.install_signal_handler = p
+            platforms.install_signal_handler = p
 
     @disable_stdouts
     def test_worker_int_handler(self):
@@ -246,14 +247,14 @@ class test_signal_handlers(unittest.TestCase):
         def i(sig, handler):
             next_handlers[sig] = handler
 
-        p = platform.install_signal_handler
-        platform.install_signal_handler = i
+        p = platforms.install_signal_handler
+        platforms.install_signal_handler = i
         try:
             self.assertRaises(SystemExit, handlers["SIGINT"],
                               "SIGINT", object())
             self.assertTrue(worker.stopped)
         finally:
-            platform.install_signal_handler = p
+            platforms.install_signal_handler = p
 
         self.assertRaises(SystemExit, next_handlers["SIGINT"],
                           "SIGINT", object())

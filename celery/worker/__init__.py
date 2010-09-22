@@ -10,7 +10,7 @@ from multiprocessing.util import Finalize
 
 from celery import beat
 from celery import registry
-from celery import platform
+from celery import platforms
 from celery import signals
 from celery.app import app_or_default
 from celery.log import SilenceRepeated
@@ -37,9 +37,9 @@ def process_initializer(app):
 
     """
     app = app_or_default(app)
-    map(platform.reset_signal, WORKER_SIGRESET)
-    map(platform.ignore_signal, WORKER_SIGIGNORE)
-    platform.set_mp_process_title("celeryd")
+    map(platforms.reset_signal, WORKER_SIGRESET)
+    map(platforms.ignore_signal, WORKER_SIGIGNORE)
+    platforms.set_mp_process_title("celeryd")
 
     # This is for windows and other platforms not supporting
     # fork(). Note that init_worker makes sure it's only

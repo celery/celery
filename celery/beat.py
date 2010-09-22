@@ -10,7 +10,7 @@ import multiprocessing
 from datetime import datetime
 from UserDict import UserDict
 
-from celery import platform
+from celery import platforms
 from celery.app import app_or_default
 from celery.log import SilenceRepeated
 from celery.schedules import maybe_schedule
@@ -295,7 +295,7 @@ class Service(object):
                     humanize_seconds(self.scheduler.max_interval)))
 
         if embedded_process:
-            platform.set_process_title("celerybeat")
+            platforms.set_process_title("celerybeat")
 
         try:
             try:
@@ -356,7 +356,7 @@ class _Process(multiprocessing.Process):
         self.name = "Beat"
 
     def run(self):
-        platform.reset_signal("SIGTERM")
+        platforms.reset_signal("SIGTERM")
         self.service.start(embedded_process=True)
 
     def stop(self):

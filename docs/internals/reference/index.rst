@@ -53,4 +53,4 @@
     celery.utils.dispatch
     celery.utils.dispatch.signal
     celery.utils.dispatch.saferef
-    celery.platform
+    celery.platforms

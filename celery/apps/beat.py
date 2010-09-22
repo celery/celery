@@ -4,7 +4,7 @@ import traceback
 
 from celery import __version__
 from celery import beat
-from celery import platform
+from celery import platforms
 from celery.app import app_or_default
 from celery.utils import LOG_LEVELS
 
@@ -80,7 +80,7 @@ class Beat(object):
 
     def set_process_title(self):
         arg_start = "manage" in sys.argv[0] and 2 or 1
-        platform.set_process_title("celerybeat",
+        platforms.set_process_title("celerybeat",
                                info=" ".join(sys.argv[arg_start:]))
 
     def install_sync_handler(self, beat):
@@ -91,8 +91,8 @@ class Beat(object):
             beat.sync()
             raise SystemExit()
 
-        platform.install_signal_handler("SIGTERM", _sync)
-        platform.install_signal_handler("SIGINT", _sync)
+        platforms.install_signal_handler("SIGTERM", _sync)
+        platforms.install_signal_handler("SIGINT", _sync)
 
 
 def run_celerybeat(*args, **kwargs):

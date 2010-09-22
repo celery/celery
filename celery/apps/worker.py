@@ -6,7 +6,7 @@ import socket
 import sys
 
 from celery import __version__
-from celery import platform
+from celery import platforms
 from celery import signals
 from celery.app import app_or_default
 from celery.exceptions import ImproperlyConfigured
@@ -215,7 +215,7 @@ def install_worker_int_handler(worker):
             worker.stop()
         raise SystemExit()
 
-    platform.install_signal_handler("SIGINT", _stop)
+    platforms.install_signal_handler("SIGINT", _stop)
 
 
 def install_worker_int_again_handler(worker):
@@ -228,7 +228,7 @@ def install_worker_int_again_handler(worker):
             worker.terminate()
         raise SystemExit()
 
-    platform.install_signal_handler("SIGINT", _stop)
+    platforms.install_signal_handler("SIGINT", _stop)
 
 
 def install_worker_term_handler(worker):
@@ -241,7 +241,7 @@ def install_worker_term_handler(worker):
             worker.stop()
         raise SystemExit()
 
-    platform.install_signal_handler("SIGTERM", _stop)
+    platforms.install_signal_handler("SIGTERM", _stop)
 
 
 def install_worker_restart_handler(worker):
@@ -253,7 +253,7 @@ def install_worker_restart_handler(worker):
         worker.stop()
         os.execv(sys.executable, [sys.executable] + sys.argv)
 
-    platform.install_signal_handler("SIGHUP", restart_worker_sig_handler)
+    platforms.install_signal_handler("SIGHUP", restart_worker_sig_handler)
 
 
 def install_HUP_not_supported_handler(worker):
@@ -262,14 +262,14 @@ def install_HUP_not_supported_handler(worker):
         worker.logger.error("SIGHUP not supported: "
             "Restarting with HUP is unstable on this platform!")
 
-    platform.install_signal_handler("SIGHUP", warn_on_HUP_handler)
+    platforms.install_signal_handler("SIGHUP", warn_on_HUP_handler)
 
 
 def set_process_status(info):
     arg_start = "manage" in sys.argv[0] and 2 or 1
     if sys.argv[arg_start:]:
         info = "%s (%s)" % (info, " ".join(sys.argv[arg_start:]))
-    return platform.set_mp_process_title("celeryd", info=info)
+    return platforms.set_mp_process_title("celeryd", info=info)
 
 
 def run_worker(*args, **kwargs):
