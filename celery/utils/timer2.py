@@ -167,6 +167,7 @@ class Timer(Thread):
             self._shutdown.set()
             self._stopped.wait()
             self.join(1e100)
+            self.running = False
 
     def enter(self, entry, eta, priority=None):
         if not self.running:
