@@ -7,23 +7,90 @@ import platform
 
 try:
     from setuptools import setup, find_packages, Command
-    from setuptools.command.test import test as TestCommand
+    from setuptools.command.test import test
+    from setuptools.command.install import install
 except ImportError:
     from ez_setup import use_setuptools
     use_setuptools()
     from setuptools import setup, find_packages, Command
-    from setuptools.command.test import test as TestCommand
+    from setuptools.command.test import test
+    from setuptools.command.install import install
 
 import celery as distmeta
 
 
-class QuickRunTests(TestCommand):
+def with_dist_not_in_path(fun):
+
+    def _inner(*args, **kwargs):
+        cwd = os.getcwd()
+        removed = []
+        for path in (cwd, cwd + "/", "."):
+            try:
+                i = sys.path.index(path)
+            except ValueError:
+                pass
+            else:
+                removed.append((i, path))
+                sys.path.remove(path)
+
+        try:
+            dist_module = sys.modules.pop("celery", None)
+            try:
+                import celery as existing_module
+            except ImportError, exc:
+                pass
+            else:
+                return fun(*args, celery=existing_module, **kwargs)
+        finally:
+            for i, path in removed:
+                sys.path.insert(i, path)
+            if dist_module:
+                sys.modules["celery"] = dist_module
+
+    return _inner
+
+
+class Upgrade(object):
+    old_modules = ("platform", )
+
+    def run(self):
+        path = self.detect_existing_installation()
+        if path:
+            self.remove_modules(path)
+
+    @with_dist_not_in_path
+    def detect_existing_installation(self, celery=None):
+        path = os.path.dirname(celery.__file__)
+        sys.stderr.write("* Upgrading old Celery from: \n\t%r\n" % path)
+        return path
+
+    def try_remove(self, file):
+        try:
+            os.remove(file)
+        except OSError:
+            pass
+
+    def remove_modules(self, path):
+        for module_name in self.old_modules:
+            sys.stderr.write("* Removing old %s.py...\n" % module_name)
+            self.try_remove(os.path.join(path, "%s.py" % module_name))
+            self.try_remove(os.path.join(path, "%s.pyc" % module_name))
+
+
+class quicktest(test):
     extra_env = dict(SKIP_RLIMITS=1, QUICKTEST=1)
 
     def run(self, *args, **kwargs):
         for env_name, env_value in self.extra_env.items():
             os.environ[env_name] = str(env_value)
-        TestCommand.run(self, *args, **kwargs)
+        test.run(self, *args, **kwargs)
+
+
+class upgrade(install):
+
+    def run(self, *args, **kwargs):
+        Upgrade().run()
+        install.run(self, *args, **kwargs)
 
 
 install_requires = []
@@ -68,7 +135,7 @@ setup(
     zip_safe=False,
     install_requires=install_requires,
     tests_require=['nose', 'nose-cover3', 'unittest2', 'simplejson'],
-    cmdclass={"quicktest": QuickRunTests},
+    cmdclass={"install": upgrade, "quicktest": quicktest},
     test_suite="nose.collector",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
