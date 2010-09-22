@@ -171,7 +171,7 @@ def prepare(m, source=settings, defaults=_DEFAULTS):
     m.CELERYD_LOG_FILE = _get("CELERYD_LOG_FILE")
     m.CELERYD_LOG_COLOR = _get("CELERYD_LOG_COLOR",
                        m.CELERYD_LOG_FILE is None and isatty(sys.stderr))
-    if IS_WINDOWS: # Windows console does not support ANSI colors.
+    if IS_WINDOWS:          # windows console does not support ANSI colors.
         m.CELERYD_LOG_COLOR = False
 
     m.CELERYD_LOG_LEVEL = _get("CELERYD_LOG_LEVEL",
