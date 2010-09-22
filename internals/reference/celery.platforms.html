@@ -1,0 +1,159 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Platform Specific - celery.platforms &mdash; Celery v2.1.0a6 documentation</title>
+    <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.1.0a6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../static/jquery.js"></script>
+    <script type="text/javascript" src="../../static/underscore.js"></script>
+    <script type="text/javascript" src="../../static/doctools.js"></script>
+    <link rel="top" title="Celery v2.1.0a6 documentation" href="../../index.html" />
+    <link rel="up" title="Internal Module Reference" href="index.html" />
+    <link rel="next" title="Change history" href="../../changelog.html" />
+    <link rel="prev" title="Signals: Safe References - celery.utils.dispatch.saferef" href="celery.utils.dispatch.saferef.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../../changelog.html" title="Change history"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="celery.utils.dispatch.saferef.html" title="Signals: Safe References - celery.utils.dispatch.saferef"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">Celery v2.1.0a6 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Internals</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="platform-specific-celery-platforms">
+<h1>Platform Specific - celery.platforms<a class="headerlink" href="#platform-specific-celery-platforms" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-celery.platforms"></span><dl class="function">
+<dt id="celery.platforms.ignore_signal">
+<tt class="descclassname">celery.platforms.</tt><tt class="descname">ignore_signal</tt><big>(</big><em>signal_name</em><big>)</big><a class="headerlink" href="#celery.platforms.ignore_signal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ignore signal using <tt class="xref py py-const docutils literal"><span class="pre">SIG_IGN</span></tt>.</p>
+<p>Does nothing if the platform doesn&#8217;t support signals,
+or the specified signal in particular.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.platforms.install_signal_handler">
+<tt class="descclassname">celery.platforms.</tt><tt class="descname">install_signal_handler</tt><big>(</big><em>signal_name</em>, <em>handler</em><big>)</big><a class="headerlink" href="#celery.platforms.install_signal_handler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Install a handler.</p>
+<p>Does nothing if the current platform doesn&#8217;t support signals,
+or the specified signal in particular.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.platforms.reset_signal">
+<tt class="descclassname">celery.platforms.</tt><tt class="descname">reset_signal</tt><big>(</big><em>signal_name</em><big>)</big><a class="headerlink" href="#celery.platforms.reset_signal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset signal to the default signal handler.</p>
+<p>Does nothing if the platform doesn&#8217;t support signals,
+or the specified signal in particular.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.platforms.set_mp_process_title">
+<tt class="descclassname">celery.platforms.</tt><tt class="descname">set_mp_process_title</tt><big>(</big><em>progname</em>, <em>info=None</em><big>)</big><a class="headerlink" href="#celery.platforms.set_mp_process_title" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the ps name using the multiprocessing process name.</p>
+<p>Only works if <tt class="xref py py-mod docutils literal"><span class="pre">setproctitle</span></tt> is installed.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.platforms.set_process_title">
+<tt class="descclassname">celery.platforms.</tt><tt class="descname">set_process_title</tt><big>(</big><em>progname</em>, <em>info=None</em><big>)</big><a class="headerlink" href="#celery.platforms.set_process_title" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the ps name for the currently running process.</p>
+<p>Only works if <tt class="xref py py-mod docutils literal"><span class="pre">setproctitle</span></tt> is installed.</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="celery.utils.dispatch.saferef.html"
+                        title="previous chapter">Signals: Safe References - celery.utils.dispatch.saferef</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../../changelog.html"
+                        title="next chapter">Change history</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../../sources/internals/reference/celery.platforms.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../../changelog.html" title="Change history"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="celery.utils.dispatch.saferef.html" title="Signals: Safe References - celery.utils.dispatch.saferef"
+             >previous</a> |</li>
+        <li><a href="../../index.html">Celery v2.1.0a6 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Internals</a> &raquo;</li>
+          <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009-2010, Ask Solem &amp; contributors.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+    </div>
+  </body>
+</html>
