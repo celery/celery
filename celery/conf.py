@@ -1,10 +1,15 @@
 import sys
 import warnings
+import platform as _platform
+
 from datetime import timedelta
 
 from celery import routes
 from celery.loaders import load_settings
 from celery.utils import LOG_LEVELS
+
+SYSTEM = _platform.system()
+IS_WINDOWS = SYSTEM == "Windows"
 
 DEFAULT_PROCESS_LOG_FMT = """
     [%(asctime)s: %(levelname)s/%(processName)s] %(message)s
@@ -166,6 +171,9 @@ def prepare(m, source=settings, defaults=_DEFAULTS):
     m.CELERYD_LOG_FILE = _get("CELERYD_LOG_FILE")
     m.CELERYD_LOG_COLOR = _get("CELERYD_LOG_COLOR",
                        m.CELERYD_LOG_FILE is None and isatty(sys.stderr))
+    if IS_WINDOWS: # Windows console does not support ANSI colors.
+        m.CELERYD_LOG_COLOR = False
+
     m.CELERYD_LOG_LEVEL = _get("CELERYD_LOG_LEVEL",
                             compat=["CELERYD_DAEMON_LOG_LEVEL"])
     if not isinstance(m.CELERYD_LOG_LEVEL, int):
