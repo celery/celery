@@ -8,6 +8,7 @@ import sys
 import traceback
 import warnings
 
+from itertools import count
 from threading import Thread, Event
 from time import time, sleep, mktime
 
@@ -129,6 +130,7 @@ class Timer(Thread):
     precision = 0.3
     running = False
     on_tick = None
+    _timer_count = count(1).next
 
     def __init__(self, schedule=None, precision=None, on_error=None,
             on_tick=None):
@@ -141,6 +143,7 @@ class Timer(Thread):
         self._shutdown = Event()
         self._stopped = Event()
         self.setDaemon(True)
+        self.setName("Timer-%s" % (self._timer_count(), ))
 
     def run(self):
         self.running = True
