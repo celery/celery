@@ -12,7 +12,7 @@ from UserDict import UserDict
 
 from celery import log
 from celery import conf
-from celery import platform
+from celery import platforms
 from celery.execute import send_task
 from celery.schedules import maybe_schedule
 from celery.messaging import establish_connection
@@ -292,7 +292,7 @@ class Service(object):
                     humanize_seconds(self.scheduler.max_interval)))
 
         if embedded_process:
-            platform.set_process_title("celerybeat")
+            platforms.set_process_title("celerybeat")
 
         try:
             try:
@@ -352,7 +352,7 @@ class _Process(multiprocessing.Process):
         self.name = "Beat"
 
     def run(self):
-        platform.reset_signal("SIGTERM")
+        platforms.reset_signal("SIGTERM")
         self.service.start(embedded_process=True)
 
     def stop(self):

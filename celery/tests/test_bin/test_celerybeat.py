@@ -3,7 +3,7 @@ import sys
 import unittest2 as unittest
 
 from celery import beat
-from celery import platform
+from celery import platforms
 from celery.apps import beat as beatapp
 from celery.bin import celerybeat as celerybeat
 
@@ -66,12 +66,13 @@ class test_Beat(unittest.TestCase):
         def i(sig, handler):
             handlers[sig] = handler
 
-        p, platform.install_signal_handler = platform.install_signal_handler, i
+        p, platforms.install_signal_handler = \
+                platforms.install_signal_handler, i
         try:
             fun(*args, **kwargs)
             return handlers
         finally:
-            platform.install_signal_handler = p
+            platforms.install_signal_handler = p
 
     def test_install_sync_handler(self):
         b = beatapp.Beat()

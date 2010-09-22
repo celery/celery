@@ -7,7 +7,7 @@ import warnings
 from datetime import datetime
 
 from celery import log
-from celery import platform
+from celery import platforms
 from celery.concurrency.processes.pool import WorkerLostError
 from celery.datastructures import ExceptionInfo
 from celery.exceptions import SoftTimeLimitExceeded, TimeLimitExceeded
@@ -140,11 +140,11 @@ def execute_and_trace(task_name, *args, **kwargs):
         >>> WorkerTaskTrace(task_name, *args, **kwargs).execute_safe()
 
     """
-    platform.set_mp_process_title("celeryd", info=task_name)
+    platforms.set_mp_process_title("celeryd", info=task_name)
     try:
         return WorkerTaskTrace(task_name, *args, **kwargs).execute_safe()
     finally:
-        platform.set_mp_process_title("celeryd")
+        platforms.set_mp_process_title("celeryd")
 
 
 class TaskRequest(object):

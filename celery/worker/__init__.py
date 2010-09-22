@@ -12,7 +12,7 @@ from celery import beat
 from celery import conf
 from celery import log
 from celery import registry
-from celery import platform
+from celery import platforms
 from celery import signals
 from celery.utils import noop, instantiate
 
@@ -36,9 +36,9 @@ def process_initializer():
     Used for multiprocessing environments.
 
     """
-    map(platform.reset_signal, WORKER_SIGRESET)
-    map(platform.ignore_signal, WORKER_SIGIGNORE)
-    platform.set_mp_process_title("celeryd")
+    map(platforms.reset_signal, WORKER_SIGRESET)
+    map(platforms.ignore_signal, WORKER_SIGIGNORE)
+    platforms.set_mp_process_title("celeryd")
 
     # This is for windows and other platforms not supporting
     # fork(). Note that init_worker makes sure it's only
