@@ -11,5 +11,4 @@
     introduction
     broker-installation
     first-steps-with-celery
-    periodic-tasks
     resources
