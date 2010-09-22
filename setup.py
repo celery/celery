@@ -98,7 +98,20 @@ class quicktest(mytest):
         mytest.run(self, *args, **kwargs)
 
 
-class upgrade(install):
+class upgrade(Command):
+    user_options = []
+
+    def run(self, *args, **kwargs):
+        Upgrade().run()
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+
+def upgrade_and_install(install):
 
     def run(self, *args, **kwargs):
         Upgrade().run()
@@ -147,7 +160,10 @@ setup(
     zip_safe=False,
     install_requires=install_requires,
     tests_require=['nose', 'nose-cover3', 'unittest2', 'simplejson'],
-    cmdclass={"install": upgrade, "test": mytest, "quicktest": quicktest},
+    cmdclass={"install": upgrade_and_install,
+              "upgrade": upgrade,
+              "test": mytest,
+              "quicktest": quicktest},
     test_suite="nose.collector",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
