@@ -1,11 +1,11 @@
-=========================================
- Event Snapshots - celery.event.snapshot
-=========================================
+==========================================
+ Event Snapshots - celery.events.snapshot
+==========================================
 
 .. contents::
     :local:
-.. currentmodule:: celery.event.snapshot
+.. currentmodule:: celery.events.snapshot
 
-.. automodule:: celery.event.snapshot
+.. automodule:: celery.events.snapshot
     :members:
     :undoc-members:

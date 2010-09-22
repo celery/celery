@@ -24,7 +24,7 @@ Scheduling Tasks
 ================
 
 To schedule a task periodically you have to add an entry to the
-``CELERYBEAT_SCHEDULE`` setting::
+``CELERYBEAT_SCHEDULE`` setting:
 
 .. code-block:: python
 
