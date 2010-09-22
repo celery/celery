@@ -1,6 +1,5 @@
 import logging
 import multiprocessing
-import platform as _platform
 import os
 import socket
 import sys
@@ -13,9 +12,6 @@ from celery.exceptions import ImproperlyConfigured
 from celery.utils import get_full_cls_name, LOG_LEVELS
 from celery.worker import WorkController
 
-
-SYSTEM = _platform.system()
-IS_OSX = SYSTEM == "Darwin"
 
 STARTUP_INFO_FMT = """
 Configuration ->
@@ -178,7 +174,7 @@ class Worker(object):
 
     def install_platform_tweaks(self, worker):
         """Install platform specific tweaks and workarounds."""
-        if IS_OSX:
+        if self.app.IS_OSX:
             self.osx_proxy_detection_workaround()
 
         # Install signal handler so SIGHUP restarts the worker.
@@ -186,7 +182,7 @@ class Worker(object):
             # only install HUP handler if detached from terminal,
             # so closing the terminal window doesn't restart celeryd
             # into the background.
-            if IS_OSX:
+            if self.app.IS_OSX:
                 # OS X can't exec from a process using threads.
                 # See http://github.com/ask/celery/issues#issue/152
                 install_HUP_not_supported_handler(worker)

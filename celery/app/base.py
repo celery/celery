@@ -1,4 +1,5 @@
 import sys
+import platform as _platform
 
 from datetime import timedelta
 from itertools import chain
@@ -74,6 +75,9 @@ class MultiDictView(AttributeDictMixin):
 
 class BaseApp(object):
     """Base class for apps."""
+    SYSTEM = _platform.system()
+    IS_OSX = SYSTEM == "Darwin"
+    IS_WINDOWS = SYSTEM == "Windows"
 
     def __init__(self, loader=None, backend=None, set_as_current=True):
         self.loader_cls = loader or "app"
@@ -259,6 +263,8 @@ class BaseApp(object):
         if c.get("CELERYD_LOG_COLOR") is None:
             c["CELERYD_LOG_COLOR"] = not c.CELERYD_LOG_FILE and \
                                         isatty(sys.stderr)
+            if self.IS_WINDOWS:  # windows console doesn't support ANSI colors
+                c["CELERYD_LOG_COLOR"] = False
         if isinstance(c.CELERY_TASK_RESULT_EXPIRES, int):
             c["CELERY_TASK_RESULT_EXPIRES"] = timedelta(
                     seconds=c.CELERY_TASK_RESULT_EXPIRES)
