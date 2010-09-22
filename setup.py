@@ -111,7 +111,7 @@ class upgrade(Command):
         pass
 
 
-def upgrade_and_install(install):
+class upgrade_and_install(install):
 
     def run(self, *args, **kwargs):
         Upgrade().run()
