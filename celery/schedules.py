@@ -224,7 +224,7 @@ class crontab(schedule):
         self.nowfun = nowfun
 
     def __repr__(self):
-        return "<crontab: %s %s %s (m/d/h)>" % (self._orig_minute or "*",
+        return "<crontab: %s %s %s (m/h/d)>" % (self._orig_minute or "*",
                                                 self._orig_hour or "*",
                                                 self._orig_day_of_week or "*")
 
