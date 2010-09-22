@@ -9,26 +9,26 @@ Introduction
 ============
 
 Celerybeat is a scheduler.  It kicks off tasks at regular intervals,
-which are then executed by the worker nodes available in the cluster.
+which are then executed by worker nodes available in the cluster.
 
 By default the entries are taken from the ``CELERYBEAT_SCHEDULE`` setting,
 but custom stores can also be used, like storing the entries
-in an SQL database with realtime updates.
+in an SQL database.
 
 You have to ensure only a single scheduler is running for a schedule
 at a time, otherwise you would end up with duplicate tasks. Using
 a centralized approach means the schedule does not have to be synchronized,
 and the service can operate without using locks.
 
-Scheduling Tasks
-================
+Entries
+=======
 
 To schedule a task periodically you have to add an entry to the
 ``CELERYBEAT_SCHEDULE`` setting:
 
 .. code-block:: python
 
-    from datetime import timdelta
+    from datetime import timedelta
 
     CELERYBEAT_SCHEDULE = {
         "runs-every-30-seconds": {
@@ -43,12 +43,11 @@ Here we run the ``tasks.add`` task every 30 seconds.
 
 Using a :class:`~datetime.timedelta` means the task will be executed
 30 seconds after ``celerybeat`` starts, and then every 30 seconds
-after the last run.
+after the last run. A crontab like schedule also exists, see the section
+on `Crontab schedules`_.
 
-Fields
-------
-
-The avaible entry fields are as follows:
+Available Fields
+----------------
 
 * ``task``
 
@@ -87,8 +86,8 @@ The avaible entry fields are as follows:
     If ``relative`` is true the frequency is not rounded and will be
     relative to the time ``celerybeat`` was started.
 
-Crontab-like schedules
-======================
+Crontab schedules
+=================
 
 If you want more control over when the task is executed, for
 example, a particular time of day or day of the week, you can use
@@ -152,10 +151,6 @@ The syntax of these crontab expressions are very flexible.  Some examples:
 Starting celerybeat
 ===================
 
-If you want to use periodic tasks you need to start the ``celerybeat``
-service. You have to make sure only one instance of this server is running at
-any time, or else you will end up with multiple executions of the same task.
-
 To start the ``celerybeat`` service::
 
     $ celerybeat
@@ -166,9 +161,9 @@ this is convenient if you only intend to use one worker node::
     $ celeryd -B
 
 Celerybeat needs to store the last run times of the tasks in a local database
-file, so you need access to write in the current directory, or specify
-a custom location for this file.  The default filename is
-``"celerybeat-schedule"``.
+file (named ``celerybeat-schedule`` by default), so you need access to
+write to the current directory, or alternatively you can specify a custom
+location for this file::
 
     $ celerybeat -s /home/celery/var/run/celerybeat-schedule
 
@@ -176,9 +171,11 @@ Using custom scheduler classes
 ------------------------------
 
 Custom scheduler classes can be specified on the command line (the ``-S``
-argument).  The default scheduler is :class:`celery.beat.PersistentScheduler`.
+argument).  The default scheduler is :class:`celery.beat.PersistentScheduler`,
+which is simply keeping track of the last run times in a local database file
+(a :mod:`shelve`).
 
-``django-celery`` ships with a scheduler that stores the schedule in a
+``django-celery`` also ships with a scheduler that stores the schedule in a
 database::
 
     $ celerybeat -S djcelery.schedulers.DatabaseScheduler
