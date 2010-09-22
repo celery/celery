@@ -4,6 +4,7 @@ Worker Controller Threads
 
 """
 import threading
+import traceback
 from Queue import Empty as QueueEmpty
 
 from celery import log
@@ -31,6 +32,7 @@ class Mediator(threading.Thread):
         self._shutdown = threading.Event()
         self._stopped = threading.Event()
         self.setDaemon(True)
+        self.setName(self.__class__.__name__)
 
     def move(self):
         try:
@@ -45,7 +47,14 @@ class Mediator(threading.Thread):
         self.logger.debug(
             "Mediator: Running callback for task: %s[%s]" % (
                 task.task_name, task.task_id))
-        self.callback(task)                 # execute
+
+        try:
+            self.callback(task)
+        except Exception, exc:
+            self.logger.error("Mediator callback raised exception %r\n%s" % (
+                exc, traceback.format_exc()))
+
+
 
     def run(self):
         while not self._shutdown.isSet():

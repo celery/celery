@@ -3,6 +3,8 @@
 Process Pools.
 
 """
+import traceback
+
 from time import sleep, time
 
 from celery import log
@@ -134,9 +136,20 @@ class TaskPool(object):
             if isinstance(ret_value.exception, (
                     SystemExit, KeyboardInterrupt)):
                 raise ret_value.exception
-            [errback(ret_value) for errback in errbacks]
+            [self.safe_apply_callback(errback, ret_value)
+                    for errback in errbacks]
         else:
-            [callback(ret_value) for callback in callbacks]
+            [self.safe_apply_callback(callback, ret_value)
+                    for callback in callbacks]
+
+    def safe_apply_callback(self, fun, *args):
+        try:
+            fun(*args)
+        except:
+            self.logger.error("Pool callback raised exception: %s" % (
+                traceback.format_exc(), ))
+
+
 
     @property
     def info(self):
