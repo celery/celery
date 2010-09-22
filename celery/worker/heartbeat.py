@@ -23,6 +23,7 @@ class Heart(threading.Thread):
         self._shutdown = threading.Event()
         self._stopped = threading.Event()
         self.setDaemon(True)
+        self.setName(self.__class__.__name__)
         self._state = None
 
     def run(self):

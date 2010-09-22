@@ -334,6 +334,7 @@ class _Threaded(threading.Thread):
         super(_Threaded, self).__init__()
         self.service = Service(*args, **kwargs)
         self.setDaemon(True)
+        self.setName("Beat")
 
     def run(self):
         self.service.start()
@@ -348,6 +349,7 @@ class _Process(multiprocessing.Process):
     def __init__(self, *args, **kwargs):
         super(_Process, self).__init__()
         self.service = Service(*args, **kwargs)
+        self.name = "Beat"
 
     def run(self):
         platform.reset_signal("SIGTERM")
