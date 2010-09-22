@@ -54,12 +54,16 @@ def with_dist_not_in_path(fun):
 class Upgrade(object):
     old_modules = ("platform", )
 
-    def run(self):
-        path = self.detect_existing_installation()
+    def run(self, dist=False):
+        detect_ = self.detect_existing_installation
+        if not dist:
+            detect = with_dist_not_in_path(detect_)
+        else:
+            detect = lambda: detect_(distmeta)
+        path = detect()
         if path:
             self.remove_modules(path)
 
-    @with_dist_not_in_path
     def detect_existing_installation(self, celery=None):
         path = os.path.dirname(celery.__file__)
         sys.stderr.write("* Upgrading old Celery from: \n\t%r\n" % path)
@@ -78,13 +82,20 @@ class Upgrade(object):
             self.try_remove(os.path.join(path, "%s.pyc" % module_name))
 
 
-class quicktest(test):
+class mytest(test):
+
+    def run(self, *args, **kwargs):
+        Upgrade().run(dist=True)
+        test.run(self, *args, **kwargs)
+
+
+class quicktest(mytest):
     extra_env = dict(SKIP_RLIMITS=1, QUICKTEST=1)
 
     def run(self, *args, **kwargs):
         for env_name, env_value in self.extra_env.items():
             os.environ[env_name] = str(env_value)
-        test.run(self, *args, **kwargs)
+        mytest.run(self, *args, **kwargs)
 
 
 class upgrade(install):
@@ -136,7 +147,7 @@ setup(
     zip_safe=False,
     install_requires=install_requires,
     tests_require=['nose', 'nose-cover3', 'unittest2', 'simplejson'],
-    cmdclass={"install": upgrade, "quicktest": quicktest},
+    cmdclass={"install": upgrade, "test": mytest, "quicktest": quicktest},
     test_suite="nose.collector",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
