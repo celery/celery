@@ -8,7 +8,8 @@
 2.1.0
 =====
 :release-date: TBA
-:status: In development.
+:status: FREEZE
+:branch: master
 :roadmap: http://wiki.github.com/ask/celery/roadmap
 
 Important notes
