@@ -198,7 +198,7 @@ Task options
 * max_retries
 
     The maximum number of attempted retries before giving up.
-    If this is exceeded the :exc`~celery.exceptions.MaxRetriesExceeded`
+    If this is exceeded the :exc:`~celery.exceptions.MaxRetriesExceeded`
     exception will be raised. Note that you have to retry manually, it's
     not something that happens automatically.
 
@@ -206,7 +206,7 @@ Task options
 
     Default time in seconds before a retry of the task should be
     executed. Can be either an ``int`` or a ``float``.
-    Default is a 1 minute delay (``60 seconds``).
+    Default is a 3 minute delay (``180 seconds``).
 
 * rate_limit
 
