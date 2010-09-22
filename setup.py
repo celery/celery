@@ -40,7 +40,8 @@ def with_dist_not_in_path(fun):
             except ImportError, exc:
                 pass
             else:
-                return fun(*args, celery=existing_module, **kwargs)
+                kwargs["celery"] = existing_module
+                return fun(*args, **kwargs)
         finally:
             for i, path in removed:
                 sys.path.insert(i, path)
