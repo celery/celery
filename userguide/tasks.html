@@ -262,7 +262,7 @@ when making new task types by subclassing.</p>
 <li><p class="first">max_retries</p>
 <blockquote>
 <p>The maximum number of attempted retries before giving up.
-If this is exceeded the :exc`~celery.exceptions.MaxRetriesExceeded`
+If this is exceeded the <tt class="xref py py-exc docutils literal"><span class="pre">MaxRetriesExceeded</span></tt>
 exception will be raised. Note that you have to retry manually, it&#8217;s
 not something that happens automatically.</p>
 </blockquote>
@@ -271,7 +271,7 @@ not something that happens automatically.</p>
 <blockquote>
 <p>Default time in seconds before a retry of the task should be
 executed. Can be either an <tt class="docutils literal"><span class="pre">int</span></tt> or a <tt class="docutils literal"><span class="pre">float</span></tt>.
-Default is a 1 minute delay (<tt class="docutils literal"><span class="pre">60</span> <span class="pre">seconds</span></tt>).</p>
+Default is a 3 minute delay (<tt class="docutils literal"><span class="pre">180</span> <span class="pre">seconds</span></tt>).</p>
 </blockquote>
 </li>
 <li><p class="first">rate_limit</p>

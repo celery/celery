@@ -7,8 +7,8 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>Change history &mdash; Celery v2.1.0a6 documentation</title>
-    <link rel="stylesheet" href="_static/celery.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
@@ -18,9 +18,9 @@
         HAS_SOURCE:  true
       };
     </script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="static/jquery.js"></script>
+    <script type="text/javascript" src="static/underscore.js"></script>
+    <script type="text/javascript" src="static/doctools.js"></script>
     <link rel="top" title="Celery v2.1.0a6 documentation" href="index.html" />
     <link rel="next" title="Interesting Links" href="links.html" />
     <link rel="prev" title="Platform Specific - celery.platforms" href="internals/reference/celery.platforms.html" /> 
@@ -228,7 +228,7 @@ see <a class="reference internal" href="cookbook/daemonizing.html"><em>Running c
 </blockquote>
 <p>The <tt class="docutils literal"><span class="pre">--camera</span></tt> argument is the name of a class used to take
 snapshots with. It must support the interface defined by
-<tt class="xref py py-class docutils literal"><span class="pre">celery.events.snapshot.Polaroid</span></tt>.</p>
+<a class="reference internal" href="internals/reference/celery.events.snapshot.html#celery.events.snapshot.Polaroid" title="celery.events.snapshot.Polaroid"><tt class="xref py py-class docutils literal"><span class="pre">celery.events.snapshot.Polaroid</span></tt></a>.</p>
 <p>Shutter frequency controls how often the camera thread wakes up,
 while the rate limit controls how often it will actually take
 a snapshot.
@@ -1152,7 +1152,7 @@ example, you can now use:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">crontab</span><span class="p">(</span><span class="n">minute</span><span class="o">=</span><span class="s">&quot;*/30&quot;</span><span class="p">,</span> <span class="n">hour</span><span class="o">=</span><span class="s">&quot;8-17,1-2&quot;</span><span class="p">,</span> <span class="n">day_of_week</span><span class="o">=</span><span class="s">&quot;thu-fri&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>See <tt class="xref doc docutils literal"><span class="pre">getting-started/periodic-tasks</span></tt>.</p>
+<p>See <a class="reference internal" href="userguide/periodic-tasks.html"><em>Periodic Tasks</em></a>.</p>
 </li>
 <li><p class="first">celeryd: Now waits for available pool processes before applying new
 tasks to the pool.</p>

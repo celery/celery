@@ -11,6 +11,7 @@
     tasks
     executing
     workers
+    periodic-tasks
     tasksets
     remote-tasks
     routing
