@@ -56,29 +56,249 @@
 <h1>Monitoring Guide<a class="headerlink" href="#monitoring-guide" title="Permalink to this headline">¶</a></h1>
 <div class="contents local topic" id="contents">
 <ul class="simple">
-<li><a class="reference external" href="#events" id="id1">Events</a><ul>
-<li><a class="reference external" href="#snapshots" id="id2">Snapshots</a><ul>
-<li><a class="reference external" href="#custom-camera" id="id3">Custom Camera</a></li>
+<li><a class="reference external" href="#introduction" id="id1">Introduction</a></li>
+<li><a class="reference external" href="#monitoring-and-inspecting-workers" id="id2">Monitoring and Inspecting Workers</a><ul>
+<li><a class="reference external" href="#celeryctl" id="id3">celeryctl</a></li>
+<li><a class="reference external" href="#django-admin" id="id4">Django Admin</a></li>
+<li><a class="reference external" href="#celeryev" id="id5">celeryev</a></li>
+<li><a class="reference external" href="#celerymon" id="id6">celerymon</a></li>
 </ul>
 </li>
+<li><a class="reference external" href="#monitoring-and-inspecting-rabbitmq" id="id7">Monitoring and inspecting RabbitMQ</a><ul>
+<li><a class="reference external" href="#inspecting-queues" id="id8">Inspecting queues</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#tools" id="id4">Tools</a></li>
-<li><a class="reference external" href="#celerymon" id="id5">celerymon</a></li>
-<li><a class="reference external" href="#celeryev" id="id6">celeryev</a></li>
-<li><a class="reference external" href="#rabbitmq" id="id7">RabbitMQ</a></li>
-<li><a class="reference external" href="#django-admin" id="id8">Django Admin</a></li>
 <li><a class="reference external" href="#munin" id="id9">Munin</a></li>
+<li><a class="reference external" href="#events" id="id10">Events</a><ul>
+<li><a class="reference external" href="#snapshots" id="id11">Snapshots</a><ul>
+<li><a class="reference external" href="#custom-camera" id="id12">Custom Camera</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#event-reference" id="id13">Event Reference</a><ul>
+<li><a class="reference external" href="#task-events" id="id14">Task Events</a></li>
+<li><a class="reference external" href="#worker-events" id="id15">Worker Events</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="introduction">
+<h2><a class="toc-backref" href="#id1">Introduction</a><a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>There are several tools available to monitor and inspect Celery clusters.
+This document describes some of these, as as well as
+features related to monitoring, like events and broadcast commands.</p>
+</div>
+<div class="section" id="monitoring-and-inspecting-workers">
+<h2><a class="toc-backref" href="#id2">Monitoring and Inspecting Workers</a><a class="headerlink" href="#monitoring-and-inspecting-workers" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="celeryctl">
+<h3><a class="toc-backref" href="#id3">celeryctl</a><a class="headerlink" href="#celeryctl" title="Permalink to this headline">¶</a></h3>
+<ul>
+<li><dl class="first docutils">
+<dt>Listing active nodes in the cluster</dt>
+<dd><div class="first last highlight-python"><pre>$ celeryctl status</pre>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Show the result of a task</dt>
+<dd><div class="first highlight-python"><pre>$ celeryctl -t tasks.add 4e196aa4-0141-4601-8138-7aa33db0f577</pre>
+</div>
+<p class="last">Note that you can omit the name of the task as long as the
+task doesn&#8217;t use a custom result backend.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Listing all tasks that are currently being executed</dt>
+<dd><div class="first last highlight-python"><pre>$ celeryctl inspect active</pre>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Listing scheduled ETA tasks</dt>
+<dd><div class="first highlight-python"><pre>$ celeryctl inspect scheduled</pre>
+</div>
+<p class="last">These are tasks reserved by the worker because they have the
+<tt class="docutils literal"><span class="pre">eta</span></tt> or <tt class="docutils literal"><span class="pre">countdown</span></tt> argument set.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Listing reserved tasks</dt>
+<dd><div class="first highlight-python"><pre>$ celeryctl inspect reserved</pre>
+</div>
+<p class="last">This will list all tasks that have been prefetched by the worker,
+and is currently waiting to be executed (does not include tasks
+with an eta).</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Listing the history of revoked tasks</dt>
+<dd><div class="first last highlight-python"><pre>$ celeryctl inspect revoked</pre>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Show registered tasks</dt>
+<dd><div class="first last highlight-python"><pre>$ celeryctl inspect registered_tasks</pre>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Showing statistics</dt>
+<dd><div class="first last highlight-python"><pre>$ celeryctl inspect stats</pre>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Diagnosing the worker pools</dt>
+<dd><div class="first highlight-python"><pre>$ celeryctl inspect diagnose</pre>
+</div>
+<p class="last">This will verify that the workers pool processes are available
+to do work, note that this will not work if the worker is busy.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Enabling/disabling events</dt>
+<dd><div class="first last highlight-python"><pre>$ celeryctl inspect enable_events
+$ celeryctl inspect disable_events</pre>
+</div>
+</dd>
+</dl>
+</li>
+</ul>
+<p>By default the inspect commands operates on all workers.
+You can specify a single, or a list of workers by using the
+<tt class="docutils literal"><span class="pre">--destination</span></tt> argument:</p>
+<div class="highlight-python"><pre>$ celeryctl inspect -d w1,w2 reserved</pre>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Note:</th><td class="field-body">All <tt class="docutils literal"><span class="pre">inspect</span></tt> commands supports the <tt class="docutils literal"><span class="pre">--timeout</span></tt> argument,
+which is the number of seconds to wait for responses.
+You may have to increase this timeout If you&#8217;re getting empty responses
+due to latency.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="django-admin">
+<h3><a class="toc-backref" href="#id4">Django Admin</a><a class="headerlink" href="#django-admin" title="Permalink to this headline">¶</a></h3>
+<p>TODO</p>
+</div>
+<div class="section" id="celeryev">
+<h3><a class="toc-backref" href="#id5">celeryev</a><a class="headerlink" href="#celeryev" title="Permalink to this headline">¶</a></h3>
+<p>TODO</p>
+</div>
+<div class="section" id="celerymon">
+<h3><a class="toc-backref" href="#id6">celerymon</a><a class="headerlink" href="#celerymon" title="Permalink to this headline">¶</a></h3>
+<p>TODO</p>
+</div>
+</div>
+<div class="section" id="monitoring-and-inspecting-rabbitmq">
+<h2><a class="toc-backref" href="#id7">Monitoring and inspecting RabbitMQ</a><a class="headerlink" href="#monitoring-and-inspecting-rabbitmq" title="Permalink to this headline">¶</a></h2>
+<p>To manage a Celery cluster it is important to know how
+RabbitMQ can be monitored.</p>
+<p>RabbitMQ ships with the <a class="reference external" href="http://www.rabbitmq.com/man/rabbitmqctl.1.man.html">rabbitmqctl(1)</a> command,
+with this you can list queues, exchanges, bindings,
+queue lenghts, the memory usage of each queue, as well
+as manage users, virtual hosts and their permissions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Note:</th><td class="field-body">The default virtual host (<tt class="docutils literal"><span class="pre">&quot;/&quot;</span></tt>) is used in these
+examples, if you use a custom virtual host you have to add
+the <tt class="docutils literal"><span class="pre">-p</span></tt> argument to the command, e.g:
+<tt class="docutils literal"><span class="pre">rabbitmqctl</span> <span class="pre">list_queues</span> <span class="pre">-p</span> <span class="pre">my_vhost</span> <span class="pre">....</span></tt></td>
+</tr>
+</tbody>
+</table>
+<div class="section" id="inspecting-queues">
+<h3><a class="toc-backref" href="#id8">Inspecting queues</a><a class="headerlink" href="#inspecting-queues" title="Permalink to this headline">¶</a></h3>
+<p>Finding the number of tasks in a queue:</p>
+<div class="highlight-python"><pre>$ rabbitmqctl list_queues name messages messages_ready \
+                          messages_unacknowlged</pre>
+</div>
+<p>Here <tt class="docutils literal"><span class="pre">messages_ready</span></tt> is the number of messages ready
+for delivery (sent but not received), <tt class="docutils literal"><span class="pre">messages_unacknowledged</span></tt>
+is the number of messages that has been received by a worker but
+not acknowledged yet (meaning it is in progress, or has been reserved).
+<tt class="docutils literal"><span class="pre">messages</span></tt> is the sum of ready and unacknowledged messages combined.</p>
+<p>Finding the number of workers currently consuming from a queue:</p>
+<div class="highlight-python"><pre>$ rabbitmqctl list_queues name consumers</pre>
+</div>
+<p>Finding the amount of memory allocated to a queue:</p>
+<div class="highlight-python"><pre>$ rabbitmqctl list_queues name memory</pre>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Tip:</th><td class="field-body">Adding the <tt class="docutils literal"><span class="pre">-q</span></tt> option to <a class="reference external" href="http://www.rabbitmq.com/man/rabbitmqctl.1.man.html">rabbitmqctl(1)</a> makes the output
+easier to parse.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="section" id="munin">
+<h2><a class="toc-backref" href="#id9">Munin</a><a class="headerlink" href="#munin" title="Permalink to this headline">¶</a></h2>
+<p>This is a list of known Munin plugins that can be useful when
+maintaining a Celery cluster.</p>
+<ul>
+<li><p class="first">rabbitmq-munin: Munin-plugins for RabbitMQ.</p>
+<blockquote>
+<p><a class="reference external" href="http://github.com/ask/rabbitmq-munin">http://github.com/ask/rabbitmq-munin</a></p>
+</blockquote>
+</li>
+<li><p class="first">celery_tasks: Monitors the number of times each task type has
+been executed (requires <tt class="docutils literal"><span class="pre">celerymon</span></tt>).</p>
+<blockquote>
+<p><a class="reference external" href="http://exchange.munin-monitoring.org/plugins/celery_tasks-2/details">http://exchange.munin-monitoring.org/plugins/celery_tasks-2/details</a></p>
+</blockquote>
+</li>
+<li><p class="first">celery_task_states: Monitors the number of tasks in each state
+(requires <tt class="docutils literal"><span class="pre">celerymon</span></tt>).</p>
+<blockquote>
+<p><a class="reference external" href="http://exchange.munin-monitoring.org/plugins/celery_tasks/details">http://exchange.munin-monitoring.org/plugins/celery_tasks/details</a></p>
+</blockquote>
+</li>
 </ul>
 </div>
 <div class="section" id="events">
-<h2><a class="toc-backref" href="#id1">Events</a><a class="headerlink" href="#events" title="Permalink to this headline">¶</a></h2>
-<p>Describe events</p>
+<h2><a class="toc-backref" href="#id10">Events</a><a class="headerlink" href="#events" title="Permalink to this headline">¶</a></h2>
+<p>The worker has the ability to send a message whenever some event
+happens. These events are then captured by tools like <tt class="docutils literal"><span class="pre">celerymon</span></tt> and
+<tt class="docutils literal"><span class="pre">celeryev</span></tt> to monitor the cluster.</p>
 <div class="section" id="snapshots">
-<h3><a class="toc-backref" href="#id2">Snapshots</a><a class="headerlink" href="#snapshots" title="Permalink to this headline">¶</a></h3>
-<p>Describe snapshots</p>
+<h3><a class="toc-backref" href="#id11">Snapshots</a><a class="headerlink" href="#snapshots" title="Permalink to this headline">¶</a></h3>
+<p>Even a single worker can produce a huge amount of events, so storing
+the history of these events on disk may be hard.</p>
+<p>A sequence of events describes the cluster state in that time period,
+by taking periodic snapshots of this state we can capture all interesting
+information, but only periodically write it to disk.</p>
+<p>To take snapshots you need a Camera class, with this you can define
+what should happen every time the state is captured. You can
+write it to a database, send it by e-mail or something else entirely).</p>
+<p><tt class="docutils literal"><span class="pre">celeryev</span></tt> is then used to take snapshots with the camera,
+for example if you want to capture state every 2 seconds using the
+camera <tt class="docutils literal"><span class="pre">myapp.Camera</span></tt> you run <tt class="docutils literal"><span class="pre">celeryev</span></tt> with the following arguments:</p>
+<div class="highlight-python"><pre>$ celeryev -c myapp.Camera --frequency=2.0</pre>
+</div>
 <div class="section" id="custom-camera">
-<h4><a class="toc-backref" href="#id3">Custom Camera</a><a class="headerlink" href="#custom-camera" title="Permalink to this headline">¶</a></h4>
+<h4><a class="toc-backref" href="#id12">Custom Camera</a><a class="headerlink" href="#custom-camera" title="Permalink to this headline">¶</a></h4>
+<p>Here is an example camera that is simply dumping the snapshot to the screen:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pformat</span>
 
 <span class="kn">from</span> <span class="nn">celery.events.snapshot</span> <span class="kn">import</span> <span class="n">Polaroid</span>
@@ -118,29 +338,72 @@ it with the <tt class="docutils literal"><span class="pre">-c</span></tt> option
 </div>
 </div>
 </div>
+<div class="section" id="event-reference">
+<h3><a class="toc-backref" href="#id13">Event Reference</a><a class="headerlink" href="#event-reference" title="Permalink to this headline">¶</a></h3>
+<p>This list contains the events sent by the worker, and their arguments.</p>
+<div class="section" id="task-events">
+<h4><a class="toc-backref" href="#id14">Task Events</a><a class="headerlink" href="#task-events" title="Permalink to this headline">¶</a></h4>
+<ul>
+<li><p class="first"><tt class="docutils literal"><span class="pre">task-received(uuid,</span> <span class="pre">name,</span> <span class="pre">args,</span> <span class="pre">kwargs,</span> <span class="pre">retries,</span> <span class="pre">eta,</span> <span class="pre">hostname,</span>
+<span class="pre">timestamp)</span></tt></p>
+<blockquote>
+<p>Sent when the worker receives a task.</p>
+</blockquote>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">task-started(uuid,</span> <span class="pre">hostname,</span> <span class="pre">timestamp)</span></tt></p>
+<blockquote>
+<p>Sent just before the worker executes the task.</p>
+</blockquote>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">task-succeeded(uuid,</span> <span class="pre">result,</span> <span class="pre">runtime,</span> <span class="pre">hostname,</span> <span class="pre">timestamp)</span></tt></p>
+<blockquote>
+<p>Sent if the task executed successfully.
+Runtime is the time it took to execute the task using the pool.
+(Time starting from the task is sent to the pool, and ending when the
+pool result handlers callback is called).</p>
+</blockquote>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">task-failed(uuid,</span> <span class="pre">exception,</span> <span class="pre">traceback,</span> <span class="pre">hostname,</span> <span class="pre">timestamp)</span></tt></p>
+<blockquote>
+<p>Sent if the execution of the task failed.</p>
+</blockquote>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">task-revoked(uuid)</span></tt></p>
+<blockquote>
+<p>Sent if the task has been revoked (Note that this is likely
+to be sent by more than one worker)</p>
+</blockquote>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">task-retried(uuid,</span> <span class="pre">exception,</span> <span class="pre">traceback,</span> <span class="pre">hostname,</span> <span class="pre">delay,</span> <span class="pre">timestamp)</span></tt></p>
+<blockquote>
+<p>Sent if the task failed, but will be retried in the future.
+(<strong>NOT IMPLEMENTED</strong>)</p>
+</blockquote>
+</li>
+</ul>
 </div>
-<div class="section" id="tools">
-<h2><a class="toc-backref" href="#id4">Tools</a><a class="headerlink" href="#tools" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="worker-events">
+<h4><a class="toc-backref" href="#id15">Worker Events</a><a class="headerlink" href="#worker-events" title="Permalink to this headline">¶</a></h4>
+<ul>
+<li><p class="first"><tt class="docutils literal"><span class="pre">worker-online(hostname,</span> <span class="pre">timestamp)</span></tt></p>
+<blockquote>
+<p>The worker has connected to the broker and is online.</p>
+</blockquote>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">worker-heartbeat(hostname,</span> <span class="pre">timestamp)</span></tt></p>
+<blockquote>
+<p>Sent every minute, if the worker has not sent a heartbeat in 2 minutes,
+it is considered to be offline.</p>
+</blockquote>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">worker-offline(hostname,</span> <span class="pre">timestamp)</span></tt></p>
+<blockquote>
+<p>The worker has disconnected from the broker.</p>
+</blockquote>
+</li>
+</ul>
 </div>
-<div class="section" id="celerymon">
-<h2><a class="toc-backref" href="#id5">celerymon</a><a class="headerlink" href="#celerymon" title="Permalink to this headline">¶</a></h2>
-<p>Describe celerymon</p>
 </div>
-<div class="section" id="celeryev">
-<h2><a class="toc-backref" href="#id6">celeryev</a><a class="headerlink" href="#celeryev" title="Permalink to this headline">¶</a></h2>
-<p>Describe celeryev</p>
-</div>
-<div class="section" id="rabbitmq">
-<h2><a class="toc-backref" href="#id7">RabbitMQ</a><a class="headerlink" href="#rabbitmq" title="Permalink to this headline">¶</a></h2>
-<p>Describe rabbitmq tools. rabbitmqctl, Alice, etc...</p>
-</div>
-<div class="section" id="django-admin">
-<h2><a class="toc-backref" href="#id8">Django Admin</a><a class="headerlink" href="#django-admin" title="Permalink to this headline">¶</a></h2>
-<p>Describe the snapshot camera django-celery ships with.</p>
-</div>
-<div class="section" id="munin">
-<h2><a class="toc-backref" href="#id9">Munin</a><a class="headerlink" href="#munin" title="Permalink to this headline">¶</a></h2>
-<p>Maintain a list of related munin plugins</p>
 </div>
 </div>
 
@@ -155,19 +418,31 @@ it with the <tt class="docutils literal"><span class="pre">-c</span></tt> option
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Monitoring Guide</a><ul>
+<li><a class="reference internal" href="#introduction">Introduction</a></li>
+<li><a class="reference internal" href="#monitoring-and-inspecting-workers">Monitoring and Inspecting Workers</a><ul>
+<li><a class="reference internal" href="#celeryctl">celeryctl</a></li>
+<li><a class="reference internal" href="#django-admin">Django Admin</a></li>
+<li><a class="reference internal" href="#celeryev">celeryev</a></li>
+<li><a class="reference internal" href="#celerymon">celerymon</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#monitoring-and-inspecting-rabbitmq">Monitoring and inspecting RabbitMQ</a><ul>
+<li><a class="reference internal" href="#inspecting-queues">Inspecting queues</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#munin">Munin</a></li>
 <li><a class="reference internal" href="#events">Events</a><ul>
 <li><a class="reference internal" href="#snapshots">Snapshots</a><ul>
 <li><a class="reference internal" href="#custom-camera">Custom Camera</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#event-reference">Event Reference</a><ul>
+<li><a class="reference internal" href="#task-events">Task Events</a></li>
+<li><a class="reference internal" href="#worker-events">Worker Events</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#tools">Tools</a></li>
-<li><a class="reference internal" href="#celerymon">celerymon</a></li>
-<li><a class="reference internal" href="#celeryev">celeryev</a></li>
-<li><a class="reference internal" href="#rabbitmq">RabbitMQ</a></li>
-<li><a class="reference internal" href="#django-admin">Django Admin</a></li>
-<li><a class="reference internal" href="#munin">Munin</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
