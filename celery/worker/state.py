@@ -41,6 +41,7 @@ def task_ready(request):
 
 
 class Persistent(object):
+    storage = shelve
     _open = None
 
     def __init__(self, filename):
@@ -66,7 +67,7 @@ class Persistent(object):
         return d
 
     def open(self):
-        return shelve.open(self.filename)
+        return self.storage.open(self.filename)
 
     def close(self):
         if self._open:

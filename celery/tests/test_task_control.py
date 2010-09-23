@@ -48,6 +48,71 @@ def with_mock_broadcast(fun):
     return _mocked
 
 
+class test_inspect(unittest.TestCase):
+
+    def setUp(self):
+        self.i = control.inspect()
+
+    def test_prepare_reply(self):
+        self.assertDictEqual(self.i._prepare([{"w1": {"ok": 1}},
+                                              {"w2": {"ok": 1}}]),
+                             {"w1": {"ok": 1}, "w2": {"ok": 1}})
+
+        i = control.inspect(destination="w1")
+        self.assertEqual(i._prepare([{"w1": {"ok": 1}}]),
+                         {"ok": 1})
+
+    @with_mock_broadcast
+    def test_active(self):
+        self.i.active()
+        self.assertIn("dump_active", MockBroadcastPublisher.sent)
+
+    @with_mock_broadcast
+    def test_scheduled(self):
+        self.i.scheduled()
+        self.assertIn("dump_schedule", MockBroadcastPublisher.sent)
+
+    @with_mock_broadcast
+    def test_reserved(self):
+        self.i.reserved()
+        self.assertIn("dump_reserved", MockBroadcastPublisher.sent)
+
+    @with_mock_broadcast
+    def test_stats(self):
+        self.i.stats()
+        self.assertIn("stats", MockBroadcastPublisher.sent)
+
+    @with_mock_broadcast
+    def test_revoked(self):
+        self.i.revoked()
+        self.assertIn("dump_revoked", MockBroadcastPublisher.sent)
+
+    @with_mock_broadcast
+    def test_registered_tasks(self):
+        self.i.registered_tasks()
+        self.assertIn("dump_tasks", MockBroadcastPublisher.sent)
+
+    @with_mock_broadcast
+    def test_enable_events(self):
+        self.i.enable_events()
+        self.assertIn("enable_events", MockBroadcastPublisher.sent)
+
+    @with_mock_broadcast
+    def test_disable_events(self):
+        self.i.disable_events()
+        self.assertIn("disable_events", MockBroadcastPublisher.sent)
+
+    @with_mock_broadcast
+    def test_diagnose(self):
+        self.i.diagnose()
+        self.assertIn("diagnose", MockBroadcastPublisher.sent)
+
+    @with_mock_broadcast
+    def test_ping(self):
+        self.i.ping()
+        self.assertIn("ping", MockBroadcastPublisher.sent)
+
+
 class test_Broadcast(unittest.TestCase):
 
     def test_discard_all(self):

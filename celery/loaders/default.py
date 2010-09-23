@@ -4,6 +4,7 @@ from importlib import import_module
 
 from celery.datastructures import AttributeDict
 from celery.loaders.base import BaseLoader
+from celery.datastructures import AttributeDict
 from celery.exceptions import NotConfigured
 
 DEFAULT_CONFIG_MODULE = "celeryconfig"
@@ -22,7 +23,11 @@ DEFAULT_UNCONFIGURED_SETTINGS = {
 
 
 def wanted_module_item(item):
+<<<<<<< HEAD
     return item[0].isupper() and not item.startswith("_")
+=======
+    return not item.startswith("_")
+>>>>>>> 6a78496... 90% coverage
 
 
 class Loader(BaseLoader):

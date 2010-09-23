@@ -241,6 +241,10 @@ class LimitedSet(object):
         self._expire_item()
         self._data[value] = time.time()
 
+    def clear(self):
+        """Remove all members"""
+        self._data.clear()
+
     def pop_value(self, value):
         """Remove membership by finding value."""
         self._data.pop(value, None)
