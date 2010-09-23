@@ -5,11 +5,16 @@
 .. contents::
     :local:
 
+.. _version-2.2.0:
+
 2.2.0
 =====
 :release-date: TBA
 :status: in-progress
 :branch: app
+=======
+
+.. _version-2.1.0:
 
 2.1.0
 =====
@@ -17,6 +22,8 @@
 :status: FREEZE
 :branch: master
 :roadmap: http://wiki.github.com/ask/celery/roadmap
+
+.. _v210-important:
 
 Important notes
 ---------------
@@ -33,6 +40,8 @@ Important notes
 
 .. _`semver`: http://semver.org
 .. _`Wiki: Release Cycle`: http://wiki.github.com/ask/celery/release-cycle.
+
+.. _v210-news:
 
 News
 ----
@@ -193,6 +202,8 @@ News
 * :meth:`EventReceiver.capture <celery.events.EventReceiver.capture>`
   Now supports a timeout keyword argument.
 
+.. _v210-fixes:
+
 Fixes
 -----
 
@@ -207,14 +218,21 @@ Fixes
     ``fatal``, ``makeRecord``, ``_log``, ``log``, ``isEnabledFor``,
     ``addHandler``, ``removeHandler``.
 
+
+.. _v210-documentation:
+
 Documentation
 -------------
 
 * tutorials/external moved to new section: "community"
 
+.. _version-2.0.3:
+
 2.0.3
 =====
 :release-date: 2010-08-27 12:00 P.M CEST
+
+.. _v203-fixes:
 
 Fixes
 -----
@@ -308,6 +326,8 @@ Fixes
 
     See http://github.com/ask/celery/issues/issue/162
 
+.. _v203-documentation:
+
 Documentation
 -------------
 
@@ -341,6 +361,7 @@ Documentation
 
     Also added troubleshooting section for the init scripts.
 
+.. _version-2.0.2:
 
 2.0.2
 =====
@@ -455,6 +476,8 @@ Documentation
 
     :mod:`celery.tests.functional.case` contains utilities to start
     and stop an embedded celeryd process, for use in functional testing.
+
+.. _version-2.0.1:
 
 2.0.1
 =====
@@ -579,6 +602,7 @@ Documentation
     This will use the file: ``/var/run/celeryd.db``,
     as the ``shelve`` module automatically adds the ``.db`` suffix.
 
+.. _version-2.0.0:
 
 2.0.0
 =====
@@ -594,13 +618,15 @@ called `django-celery`_.
 
 We're very sorry for breaking backwards compatibility, but there's
 also many new and exciting features to make up for the time you lose
-upgrading, so be sure to read the :ref:`News <120news>` section.
+upgrading, so be sure to read the :ref:`News <v200-news>` section.
 
 Quite a lot of potential users have been upset about the Django dependency,
 so maybe this is a chance to get wider adoption by the Python community as
 well.
 
 Big thanks to all contributors, testers and users!
+
+.. _v200-django-upgrade:
 
 Upgrading for Django-users
 --------------------------
@@ -646,8 +672,12 @@ and configuration will be read from the Django settings.
 
 .. _`django-celery`: http://pypi.python.org/pypi/django-celery
 
+.. _v200-upgrade:
+
 Upgrading for others
 --------------------
+
+.. _v200-upgrade-database:
 
 Database result backend
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -691,6 +721,8 @@ the ``CELERY_RESULT_ENGINE_OPTIONS`` setting::
 .. _`SQLAlchemy Connection Strings`:
     http://www.sqlalchemy.org/docs/dbengine.html#create-engine-url-arguments
 
+.. _v200-upgrade-cache:
+
 Cache result backend
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -709,6 +741,8 @@ as the best choice.
 The support backend types are ``memcached://`` and ``memory://``,
 we haven't felt the need to support any of the other backends
 provided by Django.
+
+.. _v200-incompatible:
 
 Backward incompatible changes
 -----------------------------
@@ -794,7 +828,7 @@ Backward incompatible changes
     as while the pure pickle version has worse performance,
     it is the only safe option for older Python versions.
 
-.. _120news:
+.. _v200-news:
 
 News
 ----
@@ -1164,6 +1198,8 @@ News
 
 * AMQP result backend now supports Pika.
 
+.. _version-1.0.6:
+
 1.0.6
 =====
 :release-date: 2010-06-30 09:57 A.M CEST
@@ -1180,10 +1216,13 @@ News
 
       $ python manage.py camqadm exchange.delete celeryresults
 
+.. _version-1.0.5:
 
 1.0.5
 =====
 :release-date: 2010-06-01 02:36 P.M CEST
+
+.. _v105-critical:
 
 Critical
 --------
@@ -1204,6 +1243,8 @@ Critical
 
 * celeryd: Prefetch counts was set too late. QoS is now set as early as possible,
   so celeryd can't slurp in all the messages at start-up.
+
+.. _v105-changes:
 
 Changes
 -------
@@ -1235,15 +1276,21 @@ Changes
     * Should I use retry or acks_late?
     * Can I execute a task by name?
 
+.. _version-1.0.4:
+
 1.0.4
 =====
 :release-date: 2010-05-31 09:54 A.M CEST
 
 * Changlog merged with 1.0.5 as the release was never announced.
 
+.. _version-1.0.3:
+
 1.0.3
 =====
 :release-date: 2010-05-15 03:00 P.M CEST
+
+.. _v103-important:
 
 Important notes
 ---------------
@@ -1282,6 +1329,8 @@ Important notes
 * Now depends on carrot >= 0.10.4
 
 * Now depends on billiard >= 0.3.0
+
+.. _v103-news:
 
 News
 ----
@@ -1362,6 +1411,8 @@ News
 * User Guide: New section ``Tips and Best Practices``.
 
     Contributions welcome!
+
+.. _v103-remote-control:
 
 Remote control commands
 -----------------------
@@ -1470,6 +1521,8 @@ Remote control commands
                                    start:3276.0 stop:4365>,)",
                      kwargs:"{\'page\': 3}"}>']}]
 
+.. _v103-fixes:
+
 Fixes
 -----
 
@@ -1487,6 +1540,8 @@ Fixes
 
 * Database backend: ``TaskMeta.result``: default value should be ``None``
   not empty string.
+
+.. _version-1.0.2:
 
 1.0.2
 =====
@@ -1572,6 +1627,8 @@ Fixes
 
 * celeryd: Now handles messages with encoding problems by acking them and
   emitting an error message.
+
+.. _version-1.0.1:
 
 1.0.1
 =====
@@ -1726,9 +1783,13 @@ Fixes
   not executeable. Does not modify ``CELERYD`` when using django with
   virtualenv.
 
+.. _version-1.0.0:
+
 1.0.0
 =====
 :release-date: 2010-02-10 04:00 P.M CET
+
+.. _v100-incompatible:
 
 Backward incompatible changes
 -----------------------------
@@ -1870,6 +1931,8 @@ Backward incompatible changes
 
         loader = current_loader()
 
+.. _v100-deprecations:
+
 Deprecations
 ------------
 
@@ -1898,6 +1961,8 @@ Deprecations
 
     ``TaskSet.run`` has now been deprecated, and is scheduled for
     removal in v2.0.
+
+.. v100-news:
 
 News
 ----
@@ -1958,6 +2023,8 @@ News
 
 * The results of tasksets are now cached by storing it in the result
   backend.
+
+.. _v100-changes:
 
 Changes
 -------
@@ -2027,17 +2094,23 @@ Changes
 * celeryd now correctly handles malformed messages by throwing away and
   acknowledging the message, instead of crashing.
 
+.. _v100-bugs:
+
 Bugs
 ----
 
 * Fixed a race condition that could happen while storing task results in the
   database.
 
+.. _v100-documentation:
+
 Documentation
 -------------
 
 * Reference now split into two sections; API reference and internal module
   reference.
+
+.. _version-0.8.4:
 
 0.8.4
 =====
@@ -2054,6 +2127,7 @@ Documentation
 
 * Error e-mails are not sent anymore when the task is retried.
 
+.. _version-0.8.3:
 
 0.8.3
 =====
@@ -2065,17 +2139,23 @@ Documentation
 * Now has console script entry points in the setup.py file, so tools like
   buildout will correctly install the programs celerybin and celeryinit.
 
+.. _version-0.8.2:
+
 0.8.2
 =====
 :release-date: 2009-11-20 03:40 P.M CEST
 
 * QOS Prefetch count was not applied properly, as it was set for every message
   received (which apparently behaves like, "receive one more"), instead of only 
-  set when our wanted value cahnged.
+  set when our wanted value changed.
+
+.. _version-0.8.1:
 
 0.8.1
 =================================
 :release-date: 2009-11-16 05:21 P.M CEST
+
+.. _v081-very-important:
 
 Very important note
 -------------------
@@ -2084,6 +2164,8 @@ This release (with carrot 0.8.0) enables AMQP QoS (quality of service), which
 means the workers will only receive as many messages as it can handle at a
 time. As with any release, you should test this version upgrade on your
 development servers before rolling it out to production!
+
+.. _v081-important:
 
 Important changes
 -----------------
@@ -2094,33 +2176,35 @@ Important changes
 * All AMQP_* settings has been renamed to BROKER_*, and in addition
   AMQP_SERVER has been renamed to BROKER_HOST, so before where you had::
 
-		AMQP_SERVER = "localhost"
-		AMQP_PORT = 5678
-		AMQP_USER = "myuser"
-		AMQP_PASSWORD = "mypassword"
-		AMQP_VHOST = "celery"
+        AMQP_SERVER = "localhost"
+        AMQP_PORT = 5678
+        AMQP_USER = "myuser"
+        AMQP_PASSWORD = "mypassword"
+        AMQP_VHOST = "celery"
 
   You need to change that to::
 
-		BROKER_HOST = "localhost"
-		BROKER_PORT = 5678
-		BROKER_USER = "myuser"
-		BROKER_PASSWORD = "mypassword"
-		BROKER_VHOST = "celery"
+        BROKER_HOST = "localhost"
+        BROKER_PORT = 5678
+        BROKER_USER = "myuser"
+        BROKER_PASSWORD = "mypassword"
+        BROKER_VHOST = "celery"
 
 * Custom carrot backends now need to include the backend class name, so before
   where you had::
 
-		CARROT_BACKEND = "mycustom.backend.module"
+        CARROT_BACKEND = "mycustom.backend.module"
 
   you need to change it to::
 
-		CARROT_BACKEND = "mycustom.backend.module.Backend"
+        CARROT_BACKEND = "mycustom.backend.module.Backend"
 
   where ``Backend`` is the class name. This is probably ``"Backend"``, as
   that was the previously implied name.
 
 * New version requirement for carrot: 0.8.0
+
+.. _v081-changes:
 
 Changes
 -------
@@ -2141,9 +2225,11 @@ Changes
 
 * Now tried to handle broken PID files.
 
-* Added a Django test runner to contrib that sets CELERY_ALWAYS_EAGER = True for testing with the database backend
+* Added a Django test runner to contrib that sets
+  ``CELERY_ALWAYS_EAGER = True`` for testing with the database backend.
 
-* Added a CELERY_CACHE_BACKEND setting for using something other than the django-global cache backend.
+* Added a CELERY_CACHE_BACKEND setting for using something other than
+  the django-global cache backend.
 
 * Use custom implementation of functools.partial (curry) for Python 2.4 support
   (Probably still problems with running on 2.4, but it will eventually be
@@ -2151,11 +2237,17 @@ Changes
 
 * Prepare exception to pickle when saving RETRY status for all backends.
 
-* SQLite no concurrency limit should only be effective if the db backend is used.
+* SQLite no concurrency limit should only be effective if the db backend
+  is used.
+
+
+.. _version-0.8.0:
 
 0.8.0
 =====
 :release-date: 2009-09-22 03:06 P.M CEST
+
+.. _v080-incompatible:
 
 Backward incompatible changes
 -----------------------------
@@ -2176,56 +2268,60 @@ Backward incompatible changes
 
 * Now depends on python-daemon 1.4.8
 
+.. _v080-important:
+
 Important changes
 -----------------
 
 * Celery can now be used in pure Python (outside of a Django project).
-	This means celery is no longer Django specific.
-	
-	For more information see the FAQ entry
-	`Can I use celery without Django?`_.
 
-.. _`Can I use celery without Django?`:
-	http://ask.github.com/celery/faq.html#can-i-use-celery-without-django
+    This means celery is no longer Django specific.
+
+    For more information see the FAQ entry
+    `Can I use celery without Django?`_.
+
+    . _`Can I use celery without Django?`:
+        http://ask.github.com/celery/faq.html#can-i-use-celery-without-django
 
 * Celery now supports task retries.
 
-	See `Cookbook: Retrying Tasks`_ for more information.
+    See `Cookbook: Retrying Tasks`_ for more information.
 
 .. _`Cookbook: Retrying Tasks`:
-	http://ask.github.com/celery/cookbook/task-retries.html
+    http://ask.github.com/celery/cookbook/task-retries.html
 
 * We now have an AMQP result store backend.
 
-	It uses messages to publish task return value and status. And it's
-	incredibly fast!
+    It uses messages to publish task return value and status. And it's
+    incredibly fast!
 
-	See http://github.com/ask/celery/issues/closed#issue/6 for more info!
+    See http://github.com/ask/celery/issues/closed#issue/6 for more info!
 
 * AMQP QoS (prefetch count) implemented:
-	This to not receive more messages than we can handle.
+
+    This to not receive more messages than we can handle.
 
 * Now redirects stdout/stderr to the celeryd logfile when detached 
 
 * Now uses ``inspect.getargspec`` to only pass default arguments
-	the task supports.
+    the task supports.
 
 * Add Task.on_success, .on_retry, .on_failure handlers
-	See :meth:`celery.task.base.Task.on_success`,
-	    :meth:`celery.task.base.Task.on_retry`,
-	    	:meth:`celery.task.base.Task.on_failure`,
+    See :meth:`celery.task.base.Task.on_success`,
+        :meth:`celery.task.base.Task.on_retry`,
+        :meth:`celery.task.base.Task.on_failure`,
 
 * ``celery.utils.gen_unique_id``: Workaround for
-	http://bugs.python.org/issue4607
+    http://bugs.python.org/issue4607
 
 * You can now customize what happens at worker start, at process init, etc
-	by creating your own loaders. (see :mod:`celery.loaders.default`,
-	:mod:`celery.loaders.djangoapp`, :mod:`celery.loaders`.)
+    by creating your own loaders. (see :mod:`celery.loaders.default`,
+    :mod:`celery.loaders.djangoapp`, :mod:`celery.loaders`.)
 
 * Support for multiple AMQP exchanges and queues.
 
-	This feature misses documentation and tests, so anyone interested 
-	is encouraged to improve this situation.
+    This feature misses documentation and tests, so anyone interested 
+    is encouraged to improve this situation.
 
 * celeryd now survives a restart of the AMQP server!
 
@@ -2239,38 +2335,40 @@ Important changes
     * AMQP_CONNECTION_MAX_RETRIES.
         Maximum number of restarts before we give up. Default: ``100``.
 
+.. _v080-news:
+
 News
 ----
 
 *  Fix an incompatibility between python-daemon and multiprocessing,
-	which resulted in the ``[Errno 10] No child processes`` problem when
-	detaching.
+    which resulted in the ``[Errno 10] No child processes`` problem when
+    detaching.
 
 * Fixed a possible DjangoUnicodeDecodeError being raised when saving pickled
-	data to Django's memcached cache backend.
+    data to Django's memcached cache backend.
 
 * Better Windows compatibility.
 
 * New version of the pickled field (taken from
-	http://www.djangosnippets.org/snippets/513/)
+    http://www.djangosnippets.org/snippets/513/)
 
 * New signals introduced: ``task_sent``, ``task_prerun`` and
-	``task_postrun``, see :mod:`celery.signals` for more information.
+    ``task_postrun``, see :mod:`celery.signals` for more information.
 
 * ``TaskSetResult.join`` caused ``TypeError`` when ``timeout=None``.
-	Thanks Jerzy Kozera.  Closes #31
+    Thanks Jerzy Kozera.  Closes #31
 
 * ``views.apply`` should return ``HttpResponse`` instance.
-	Thanks to Jerzy Kozera. Closes #32
+    Thanks to Jerzy Kozera. Closes #32
 
 * ``PeriodicTask``: Save conversion of ``run_every`` from ``int``
-	to ``timedelta`` to the class attribute instead of on the instance.
+    to ``timedelta`` to the class attribute instead of on the instance.
 
 * Exceptions has been moved to ``celery.exceptions``, but are still
-	available in the previous module.
+    available in the previous module.
 
 * Try to rollback transaction and retry saving result if an error happens
-	while setting task status with the database backend.
+    while setting task status with the database backend.
 
 * jail() refactored into :class:`celery.execute.ExecuteWrapper`.
 
@@ -2279,37 +2377,43 @@ News
 * ``views.task_status`` now returns exception if status is RETRY
 
 * ``views.task_status`` now returns traceback if status is "FAILURE"
-	or "RETRY"
+    or "RETRY"
 
 * Documented default task arguments.
 
 * Add a sensible __repr__ to ExceptionInfo for easier debugging
 
 * Fix documentation typo ``.. import map`` -> ``.. import dmap``.
-	Thanks mikedizon
+    Thanks mikedizon
+
+.. _version-0.6.0:
 
 0.6.0
 =====
 :release-date: 2009-08-07 06:54 A.M CET
 
+.. _v060-important:
+
 Important changes
 -----------------
 
 * Fixed a bug where tasks raising unpickleable exceptions crashed pool
-	workers. So if you've had pool workers mysteriously dissapearing, or
-	problems with celeryd stopping working, this has been fixed in this
-	version.
+    workers. So if you've had pool workers mysteriously dissapearing, or
+    problems with celeryd stopping working, this has been fixed in this
+    version.
 
 * Fixed a race condition with periodic tasks.
 
 * The task pool is now supervised, so if a pool worker crashes,
-	goes away or stops responding, it is automatically replaced with
-	a new one.
+    goes away or stops responding, it is automatically replaced with
+    a new one.
 
 * Task.name is now automatically generated out of class module+name, e.g.
-	``"djangotwitter.tasks.UpdateStatusesTask"``. Very convenient. No idea why
-	we didn't do this before. Some documentation is updated to not manually
-	specify a task name.
+    ``"djangotwitter.tasks.UpdateStatusesTask"``. Very convenient. No idea why
+    we didn't do this before. Some documentation is updated to not manually
+    specify a task name.
+
+.. _v060-news:
 
 News
 ----
@@ -2319,38 +2423,38 @@ News
 * New Tutorial: Creating a click counter using carrot and celery
 
 * Database entries for periodic tasks are now created at ``celeryd``
-	startup instead of for each check (which has been a forgotten TODO/XXX
-	in the code for a long time)
+    startup instead of for each check (which has been a forgotten TODO/XXX
+    in the code for a long time)
 
 * New settings variable: ``CELERY_TASK_RESULT_EXPIRES``
-	Time (in seconds, or a `datetime.timedelta` object) for when after
-	stored task results are deleted. For the moment this only works for the
-	database backend.
+    Time (in seconds, or a `datetime.timedelta` object) for when after
+    stored task results are deleted. For the moment this only works for the
+    database backend.
 
 * ``celeryd`` now emits a debug log message for which periodic tasks
-	has been launched.
+    has been launched.
 
 * The periodic task table is now locked for reading while getting
-	periodic task status. (MySQL only so far, seeking patches for other
-	engines)
+    periodic task status. (MySQL only so far, seeking patches for other
+    engines)
 
 * A lot more debugging information is now available by turning on the
-	``DEBUG`` loglevel (``--loglevel=DEBUG``).
+    ``DEBUG`` loglevel (``--loglevel=DEBUG``).
 
 * Functions/methods with a timeout argument now works correctly.
 
 * New: ``celery.strategy.even_time_distribution``: 
-	With an iterator yielding task args, kwargs tuples, evenly distribute
-	the processing of its tasks throughout the time window available.
+    With an iterator yielding task args, kwargs tuples, evenly distribute
+    the processing of its tasks throughout the time window available.
 
 * Log message ``Unknown task ignored...`` now has loglevel ``ERROR``
 
 * Log message ``"Got task from broker"`` is now emitted for all tasks, even if
-	the task has an ETA (estimated time of arrival). Also the message now
-	includes the ETA for the task (if any).
+    the task has an ETA (estimated time of arrival). Also the message now
+    includes the ETA for the task (if any).
 
 * Acknowledgement now happens in the pool callback. Can't do ack in the job
-	target, as it's not pickleable (can't share AMQP connection, etc)).
+    target, as it's not pickleable (can't share AMQP connection, etc)).
 
 * Added note about .delay hanging in README
 
@@ -2359,9 +2463,11 @@ News
 * Fixed discovery to make sure app is in INSTALLED_APPS
 
 * Previously overrided pool behaviour (process reap, wait until pool worker
-	available, etc.) is now handled by ``multiprocessing.Pool`` itself.
+    available, etc.) is now handled by ``multiprocessing.Pool`` itself.
 
 * Convert statistics data to unicode for use as kwargs. Thanks Lucy!
+
+.. _version-0.4.1:
 
 0.4.1
 =====
@@ -2369,6 +2475,8 @@ News
 
 * Fixed a bug with parsing the message options (``mandatory``,
   ``routing_key``, ``priority``, ``immediate``)
+
+.. _version-0.4.0:
 
 0.4.0
 =====
@@ -2384,6 +2492,8 @@ News
 
 * 99% coverage using python ``coverage`` 3.0.
 
+.. _version-0.3.20:
+
 0.3.20
 ======
 :release-date: 2009-06-25 08:42 P.M CET
@@ -2391,12 +2501,12 @@ News
 * New arguments to ``apply_async`` (the advanced version of
   ``delay_task``), ``countdown`` and ``eta``;
 
-	>>> # Run 10 seconds into the future.
-	>>> res = apply_async(MyTask, countdown=10);
+    >>> # Run 10 seconds into the future.
+    >>> res = apply_async(MyTask, countdown=10);
 
-	>>> # Run 1 day from now
-	>>> res = apply_async(MyTask, eta=datetime.now() + 
-	...									timedelta(days=1)
+    >>> # Run 1 day from now
+    >>> res = apply_async(MyTask,
+    ...                   eta=datetime.now() + timedelta(days=1))
 
 * Now unlinks the pidfile if it's stale.
 
@@ -2407,9 +2517,9 @@ News
 * **IMPORTANT** The ``subtask_ids`` attribute on the ``TaskSetResult``
   instance has been removed. To get this information instead use:
 
-		>>> subtask_ids = [subtask.task_id for subtask in ts_res.subtasks]
+        >>> subtask_ids = [subtask.task_id for subtask in ts_res.subtasks]
 
-*	``Taskset.run()`` now respects extra message options from the task class.
+* ``Taskset.run()`` now respects extra message options from the task class.
 
 * Task: Add attribute ``ignore_result``: Don't store the status and
   return value. This means you can't use the
@@ -2437,28 +2547,29 @@ News
 
 * views.apply: View applying a task. Example::
 
-	http://e.com/celery/apply/task_name/arg1/arg2//?kwarg1=a&kwarg2=b
+    http://e.com/celery/apply/task_name/arg1/arg2//?kwarg1=a&kwarg2=b
 
   **NOTE** Use with caution, preferably not make this publicly
   accessible without ensuring your code is safe!
 
 * Refactored ``celery.task``. It's now split into three modules:
 
-	* celery.task
+    * celery.task
 
-		Contains ``apply_async``, ``delay_task``, ``discard_all``, and task
-		shortcuts, plus imports objects from ``celery.task.base`` and
-		``celery.task.builtins``
+        Contains ``apply_async``, ``delay_task``, ``discard_all``, and task
+        shortcuts, plus imports objects from ``celery.task.base`` and
+        ``celery.task.builtins``
 
-	* celery.task.base
+    * celery.task.base
 
-		Contains task base classes: ``Task``, ``PeriodicTask``,
-		``TaskSet``, ``AsynchronousMapTask``, ``ExecuteRemoteTask``.
+        Contains task base classes: ``Task``, ``PeriodicTask``,
+        ``TaskSet``, ``AsynchronousMapTask``, ``ExecuteRemoteTask``.
 
-	* celery.task.builtins
+    * celery.task.builtins
 
-		Built-in tasks: ``PingTask``, ``DeleteExpiredTaskMetaTask``.
+        Built-in tasks: ``PingTask``, ``DeleteExpiredTaskMetaTask``.
 
+.. _version-0.3.7:
 
 0.3.7
 =====
@@ -2474,11 +2585,11 @@ News
 * **IMPORTANT** ``tasks.register``: Renamed ``task_name`` argument to
   ``name``, so
 
-		>>> tasks.register(func, task_name="mytask")
+        >>> tasks.register(func, task_name="mytask")
 
   has to be replaced with:
 
-		>>> tasks.register(func, name="mytask")
+        >>> tasks.register(func, name="mytask")
 
 * The daemon now correctly runs if the pidlock is stale.
 
@@ -2524,12 +2635,16 @@ News
 * Tyrant Backend: Now re-establishes the connection for every task
   executed.
 
+.. _version-0.3.3:
+
 0.3.3
 =====
 :release-date: 2009-06-08 01:07 P.M CET
 
 * The ``PeriodicWorkController`` now sleeps for 1 second between checking
   for periodic tasks to execute.
+
+.. _version-0.3.2:
 
 0.3.2
 =====
@@ -2540,6 +2655,8 @@ News
 
 * celeryd: The ``--wakeup-after`` option was not handled as a float.
 
+.. _version-0.3.1:
+
 0.3.1
 =====
 :release-date: 2009-06-08 01:07 P.M CET
@@ -2548,6 +2665,8 @@ News
   of blocking the ``TaskController`` loop.
 
 * Default ``QUEUE_WAKEUP_AFTER`` has been lowered to ``0.1`` (was ``0.3``)
+
+.. _version-0.3.0:
 
 0.3.0
 =====
@@ -2571,7 +2690,7 @@ arguments, so be sure to flush your task queue before you upgrade.
 
 * You can now run the celery daemon by using ``manage.py``::
 
-		$ python manage.py celeryd
+        $ python manage.py celeryd
 
   Thanks to Grégoire Cachet.
 
@@ -2586,17 +2705,17 @@ arguments, so be sure to flush your task queue before you upgrade.
   This also means the AMQP configuration has changed. Some settings has
   been renamed, while others are new::
 
-		CELERY_AMQP_EXCHANGE
-		CELERY_AMQP_PUBLISHER_ROUTING_KEY
-		CELERY_AMQP_CONSUMER_ROUTING_KEY
-		CELERY_AMQP_CONSUMER_QUEUE
-		CELERY_AMQP_EXCHANGE_TYPE
+        CELERY_AMQP_EXCHANGE
+        CELERY_AMQP_PUBLISHER_ROUTING_KEY
+        CELERY_AMQP_CONSUMER_ROUTING_KEY
+        CELERY_AMQP_CONSUMER_QUEUE
+        CELERY_AMQP_EXCHANGE_TYPE
 
   See the entry `Can I send some tasks to only some servers?`_ in the
   `FAQ`_ for more information.
 
 .. _`Can I send some tasks to only some servers?`:
-		http://bit.ly/celery_AMQP_routing
+        http://bit.ly/celery_AMQP_routing
 .. _`FAQ`: http://ask.github.com/celery/faq.html
 
 * Task errors are now logged using loglevel ``ERROR`` instead of ``INFO``,
@@ -2624,6 +2743,8 @@ arguments, so be sure to flush your task queue before you upgrade.
 * The pool algorithm has been refactored for greater performance and
   stability.
 
+.. _version-0.2.0:
+
 0.2.0
 =====
 :release-date: 2009-05-20 05:14 P.M CET
@@ -2635,6 +2756,8 @@ arguments, so be sure to flush your task queue before you upgrade.
 * Fixes some syntax errors related to fetching results
   from the database backend.
 
+.. _version-0.2.0-pre3:
+
 0.2.0-pre3
 ==========
 :release-date: 2009-05-20 05:14 P.M CET
@@ -2643,12 +2766,16 @@ arguments, so be sure to flush your task queue before you upgrade.
   ``get_result`` now tries to recreate something looking like the
   original exception.
 
+.. _version-0.2.0-pre2:
+
 0.2.0-pre2
 ==========
 :release-date: 2009-05-20 01:56 P.M CET
 
 * Now handles unpickleable exceptions (like the dynimically generated
   subclasses of ``django.core.exception.MultipleObjectsReturned``).
+
+.. _version-0.2.0-pre1:
 
 0.2.0-pre1
 ==========
@@ -2661,6 +2788,8 @@ arguments, so be sure to flush your task queue before you upgrade.
   been removed. Use ``celery.backends.default_backend.mark_as_read()``, 
   and ``celery.backends.default_backend.mark_as_failure()`` instead.
 
+.. _version-0.1.15:
+
 0.1.15
 ======
 :release-date: 2009-05-19 04:13 P.M CET
@@ -2669,12 +2798,16 @@ arguments, so be sure to flush your task queue before you upgrade.
   if you have any problems with too many files open (like ``emfile``
   errors in ``rabbit.log``, please contact us!
 
+.. _version-0.1.14:
+
 0.1.14
 ======
 :release-date: 2009-05-19 01:08 P.M CET
 
 * Fixed a syntax error in the ``TaskSet`` class.  (No such variable
   ``TimeOutError``).
+
+.. _version-0.1.13:
 
 0.1.13
 ======
@@ -2693,10 +2826,12 @@ arguments, so be sure to flush your task queue before you upgrade.
 * Now using the Sphinx documentation system, you can build
   the html documentation by doing ::
 
-		$ cd docs
-		$ make html
+        $ cd docs
+        $ make html
 
   and the result will be in ``docs/.build/html``.
+
+.. _version-0.1.12:
 
 0.1.12
 ======
@@ -2711,31 +2846,33 @@ arguments, so be sure to flush your task queue before you upgrade.
   ``multiprocessing.Pool`` versions except they are tasks
   distributed to the celery server. Example:
 
-		>>> from celery.task import dmap
-		>>> import operator
-		>>> dmap(operator.add, [[2, 2], [4, 4], [8, 8]])
-		>>> [4, 8, 16]
-        
-		>>> from celery.task import dmap_async
-		>>> import operator
-		>>> result = dmap_async(operator.add, [[2, 2], [4, 4], [8, 8]])
-		>>> result.ready()
-		False
-		>>> time.sleep(1)
-		>>> result.ready()
-		True
-		>>> result.result
-		[4, 8, 16]
+        >>> from celery.task import dmap
+        >>> import operator
+        >>> dmap(operator.add, [[2, 2], [4, 4], [8, 8]])
+        >>> [4, 8, 16]
+
+        >>> from celery.task import dmap_async
+        >>> import operator
+        >>> result = dmap_async(operator.add, [[2, 2], [4, 4], [8, 8]])
+        >>> result.ready()
+        False
+        >>> time.sleep(1)
+        >>> result.ready()
+        True
+        >>> result.result
+        [4, 8, 16]
 
 * Refactored the task metadata cache and database backends, and added
   a new backend for Tokyo Tyrant. You can set the backend in your django
   settings file. e.g::
 
-		CELERY_RESULT_BACKEND = "database"; # Uses the database
-		CELERY_RESULT_BACKEND = "cache"; # Uses the django cache framework
-		CELERY_RESULT_BACKEND = "tyrant"; # Uses Tokyo Tyrant
-		TT_HOST = "localhost"; # Hostname for the Tokyo Tyrant server.
-		TT_PORT = 6657; # Port of the Tokyo Tyrant server.
+        CELERY_RESULT_BACKEND = "database"; # Uses the database
+        CELERY_RESULT_BACKEND = "cache"; # Uses the django cache framework
+        CELERY_RESULT_BACKEND = "tyrant"; # Uses Tokyo Tyrant
+        TT_HOST = "localhost"; # Hostname for the Tokyo Tyrant server.
+        TT_PORT = 6657; # Port of the Tokyo Tyrant server.
+
+.. _version-0.1.11:
 
 0.1.11
 ======
@@ -2743,6 +2880,8 @@ arguments, so be sure to flush your task queue before you upgrade.
 
 * The logging system was leaking file descriptors, resulting in
   servers stopping with the EMFILES (too many open files) error. (fixed)
+
+.. _version-0.1.10:
 
 0.1.10
 ======
@@ -2754,6 +2893,8 @@ arguments, so be sure to flush your task queue before you upgrade.
 
 * The daemon now tries to reconnect if the connection is lost.
 
+.. _version-0.1.8:
+
 0.1.8
 =====
 :release-date: 2009-05-07 12:27 P.M CET
@@ -2762,6 +2903,8 @@ arguments, so be sure to flush your task queue before you upgrade.
 * More documentation
 * celeryd doesn't emit ``Queue is empty`` message if
   ``settings.CELERYD_EMPTY_MSG_EMIT_EVERY`` is 0.
+
+.. _version-0.1.7:
 
 0.1.7
 =====
@@ -2778,6 +2921,8 @@ arguments, so be sure to flush your task queue before you upgrade.
 * Can set the AMQP exchange/routing key/queue using
   ``settings.CELERY_AMQP_EXCHANGE``, ``settings.CELERY_AMQP_ROUTING_KEY``,
   and ``settings.CELERY_AMQP_CONSUMER_QUEUE``.
+
+.. _version-0.1.6:
 
 0.1.6
 =====
@@ -2806,15 +2951,15 @@ arguments, so be sure to flush your task queue before you upgrade.
 
 * You can do this by including the celery ``urls.py`` into your project,
 
-		>>> url(r'^celery/$', include("celery.urls"))
+        >>> url(r'^celery/$', include("celery.urls"))
 
   then visiting the following url,::
 
-		http://mysite/celery/$task_id/done/
+        http://mysite/celery/$task_id/done/
 
   this will return a JSON dictionary like e.g:
 
-		>>> {"task": {"id": $task_id, "executed": true}}
+        >>> {"task": {"id": $task_id, "executed": true}}
 
 * ``delay_task`` now returns string id, not ``uuid.UUID`` instance.
 
@@ -2822,6 +2967,8 @@ arguments, so be sure to flush your task queue before you upgrade.
 
 * Project changed name from ``crunchy`` to ``celery``. The details of
   the name change request is in ``docs/name_change_request.txt``.
+
+.. _version-0.1.0:
 
 0.1.0
 =====

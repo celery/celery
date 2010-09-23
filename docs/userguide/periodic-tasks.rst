@@ -1,3 +1,5 @@
+.. _guide-beat:
+
 ================
  Periodic Tasks
 ================
@@ -19,6 +21,8 @@ You have to ensure only a single scheduler is running for a schedule
 at a time, otherwise you would end up with duplicate tasks. Using
 a centralized approach means the schedule does not have to be synchronized,
 and the service can operate without using locks.
+
+.. _beat-entries:
 
 Entries
 =======
@@ -45,6 +49,8 @@ Using a :class:`~datetime.timedelta` means the task will be executed
 30 seconds after ``celerybeat`` starts, and then every 30 seconds
 after the last run. A crontab like schedule also exists, see the section
 on `Crontab schedules`_.
+
+.. _beat-entry-fields:
 
 Available Fields
 ----------------
@@ -85,6 +91,8 @@ Available Fields
 
     If ``relative`` is true the frequency is not rounded and will be
     relative to the time ``celerybeat`` was started.
+
+.. _beat-crontab:
 
 Crontab schedules
 =================
@@ -148,6 +156,8 @@ The syntax of these crontab expressions are very flexible.  Some examples:
 |                                     | every hour during office hours (8am-5pm).  |
 +-------------------------------------+--------------------------------------------+
 
+.. _beat-starting:
+
 Starting celerybeat
 ===================
 
@@ -166,6 +176,8 @@ write to the current directory, or alternatively you can specify a custom
 location for this file::
 
     $ celerybeat -s /home/celery/var/run/celerybeat-schedule
+
+.. _beat-custom-schedulers:
 
 Using custom scheduler classes
 ------------------------------

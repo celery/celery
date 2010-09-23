@@ -1,3 +1,5 @@
+.. _guide-monitoring:
+
 ==================
  Monitoring Guide
 ==================
@@ -12,9 +14,12 @@ There are several tools available to monitor and inspect Celery clusters.
 This document describes some of these, as as well as
 features related to monitoring, like events and broadcast commands.
 
+.. _monitoring-workers:
 
 Monitoring and Inspecting Workers
 =================================
+
+.. _monitoring-celeryctl:
 
 celeryctl
 ---------
@@ -96,20 +101,29 @@ You can specify a single, or a list of workers by using the
        You may have to increase this timeout If you're getting empty responses
        due to latency.
 
+
+.. _monitoring-django-admin:
+
 Django Admin
 ------------
 
 TODO
+
+.. _monitoring-celeryev:
 
 celeryev
 --------
 
 TODO
 
+.. _monitoring-celerymon:
+
 celerymon
 ---------
 
 TODO
+
+.. _monitoring-rabbitmq:
 
 Monitoring and inspecting RabbitMQ
 ==================================
@@ -129,6 +143,8 @@ as manage users, virtual hosts and their permissions.
 
 
 .. _`rabbitmqctl(1)`: http://www.rabbitmq.com/man/rabbitmqctl.1.man.html
+
+.. _monitoring-rmq-queues:
 
 Inspecting queues
 -----------------
@@ -158,6 +174,9 @@ Finding the amount of memory allocated to a queue::
 :Tip: Adding the ``-q`` option to `rabbitmqctl(1)`_ makes the output
       easier to parse.
 
+
+.. _monitoring-munin:
+
 Munin
 =====
 
@@ -178,6 +197,9 @@ maintaining a Celery cluster.
 
     http://exchange.munin-monitoring.org/plugins/celery_tasks/details
 
+
+.. _monitoring-events:
+
 Events
 ======
 
@@ -185,15 +207,17 @@ The worker has the ability to send a message whenever some event
 happens. These events are then captured by tools like ``celerymon`` and 
 ``celeryev`` to monitor the cluster.
 
+.. _monitoring-snapshots:
+
 Snapshots
 ---------
 
 Even a single worker can produce a huge amount of events, so storing
-the history of these events on disk may be hard.
+history of events on disk may be very expensive.
 
 A sequence of events describes the cluster state in that time period,
-by taking periodic snapshots of this state we can capture all interesting
-information, but only periodically write it to disk.
+by taking periodic snapshots of this state we can keep all history, but
+still only periodically write it to disk.
 
 To take snapshots you need a Camera class, with this you can define
 what should happen every time the state is captured. You can
@@ -205,10 +229,13 @@ camera ``myapp.Camera`` you run ``celeryev`` with the following arguments::
 
     $ celeryev -c myapp.Camera --frequency=2.0
 
+
+.. _monitoring-camera:
+
 Custom Camera
 ~~~~~~~~~~~~~
 
-Here is an example camera that is simply dumping the snapshot to the screen:
+Here is an example camera, dumping the snapshot to the screen:
 
 .. code-block:: python
 
@@ -249,10 +276,15 @@ Or you can use it programatically like this::
     if __name__ == "__main__":
         main()
 
+
+.. _event-reference:
+
 Event Reference
 ---------------
 
 This list contains the events sent by the worker, and their arguments.
+
+.. _event-reference-task:
 
 Task Events
 ~~~~~~~~~~~
@@ -286,6 +318,8 @@ Task Events
 
     Sent if the task failed, but will be retried in the future.
     (**NOT IMPLEMENTED**)
+
+.. _event-reference-worker:
 
 Worker Events
 ~~~~~~~~~~~~~

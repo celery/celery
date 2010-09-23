@@ -1,3 +1,5 @@
+.. _cookbook-tasks:
+
 ================
  Creating Tasks
 ================
@@ -5,6 +7,7 @@
 .. contents::
     :local:
 
+.. _cookbook-task-serial:
 
 Ensuring a task is only executed one at a time
 ==============================================

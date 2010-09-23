@@ -1,9 +1,13 @@
+.. _guide-sets:
+
 =======================================
  Sets of tasks, Subtasks and Callbacks
 =======================================
 
 .. contents::
     :local:
+
+.. _sets-subtasks:
 
 Subtasks
 ========
@@ -28,6 +32,8 @@ Also it can be regarded as a type, as the following usage works::
     >>> subtask(dict(s))  # coerce dict into subtask
 
 This makes it excellent as a means to pass callbacks around to tasks.
+
+.. _sets-callbacks:
 
 Callbacks
 ---------
@@ -67,6 +73,8 @@ Now let's execute our new ``add`` task with a callback::
 As expected this will first launch one task calculating ``2 + 2``, then 
 another task calculating ``4 + 8``.
 
+.. _sets-taskset:
+
 Task Sets
 =========
 
@@ -95,6 +103,7 @@ A task set takes a list of :class:`~celery.task.sets.subtask`'s::
     >>> result.join()
     [4, 8, 16, 32, 64]
 
+.. _sets-results:
 
 Results
 -------

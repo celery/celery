@@ -1,9 +1,13 @@
+.. _broker-installation:
+
 =====================
  Broker Installation
 =====================
 
 .. contents::
     :local:
+
+.. _installing-rabbitmq:
 
 Installing RabbitMQ
 ===================
@@ -12,6 +16,8 @@ See `Installing RabbitMQ`_ over at RabbitMQ's website. For Mac OS X
 see `Installing RabbitMQ on OS X`_.
 
 .. _`Installing RabbitMQ`: http://www.rabbitmq.com/install.html
+
+.. _rabbitmq-configuration:
 
 Setting up RabbitMQ
 ===================
@@ -31,6 +37,7 @@ See the RabbitMQ `Admin Guide`_ for more information about `access control`_.
 
 .. _`access control`: http://www.rabbitmq.com/admin-guide.html#access-control
 
+.. _rabbitmq-osx-installation:
 
 Installing RabbitMQ on OS X
 ===========================
@@ -71,6 +78,8 @@ Finally, we can install rabbitmq using ``brew``::
 .. _`Homebrew`: http://github.com/mxcl/homebrew/
 .. _`git`: http://git-scm.org
 
+.. _rabbitmq-osx-system-hostname:
+
 Configuring the system hostname
 -------------------------------
 
@@ -105,6 +114,8 @@ as verified by ``rabbitmqctl``::
 This is especially important if your DHCP server gives you a hostname
 starting with an IP address, (e.g. ``23.10.112.31.comcast.net``), because
 then RabbitMQ will try to use ``rabbit@23``, which is an illegal hostname.
+
+.. _rabbitmq-osx-start-stop:
 
 Starting/Stopping the RabbitMQ server
 -------------------------------------

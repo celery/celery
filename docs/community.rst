@@ -1,3 +1,5 @@
+.. _community:
+
 =======================
   Community Resources
 =======================
@@ -9,33 +11,47 @@ contact the mailing-list or submit a patch.
 .. contents::
     :local:
 
+.. _community-resources:
+
 Resources
 =========
+
+.. _res-using-celery:
 
 Who's using Celery
 ------------------
 
 http://wiki.github.com/ask/celery/using
 
+.. _res-wiki:
+
 Wiki
 ----
 
 http://wiki.github.com/ask/celery/
+
+.. _res-stackoverflow:
 
 Celery questions on Stack Overflow
 ----------------------------------
 
 http://stackoverflow.com/search?q=celery&tab=newest
 
+.. _res-mailing-list-archive:
+
 Mailing-list Archive: celery-users
 ----------------------------------
 
 http://blog.gmane.org/gmane.comp.python.amqp.celery.user
 
+.. _res-irc-logs:
+
 IRC Logs
 --------
 
 http://botland.oebfare.com/logger/celery/
+
+.. _community-news:
 
 News
 ====

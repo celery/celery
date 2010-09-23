@@ -1,3 +1,5 @@
+.. _internals:
+
 ===========
  Internals
 ===========

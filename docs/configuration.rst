@@ -1,3 +1,5 @@
+.. _configuration:
+
 ============================
  Configuration and defaults
 ============================
@@ -9,6 +11,8 @@ module and make sure it is available on the Python path.
 
 .. contents::
     :local:
+
+.. _conf-example:
 
 Example configuration file
 ==========================
@@ -41,6 +45,8 @@ It should contain all you need to run a basic celery set-up.
     # CELERYD_LOG_FILE = "celeryd.log"
     # CELERYD_LOG_LEVEL = "INFO"
 
+.. _conf-concurrency:
+
 Concurrency settings
 ====================
 
@@ -60,6 +66,7 @@ Concurrency settings
     number of messages initially. Thus the tasks may not be fairly balanced among the
     workers.
 
+.. _conf-result-backend:
 
 Task result backend settings
 ============================
@@ -95,6 +102,8 @@ Task result backend settings
 .. _`MongoDB`: http://mongodb.org
 .. _`Redis`: http://code.google.com/p/redis/
 .. _`Tokyo Tyrant`: http://1978th.net/tokyotyrant/
+
+.. _conf-database-result-backend:
 
 Database backend settings
 =========================
@@ -140,6 +149,8 @@ Example configuration
     CELERY_RESULT_BACKEND = "database"
     CELERY_RESULT_DBURI = "mysql://user:password@host/dbname"
 
+.. _conf-amqp-result-backend:
+
 AMQP backend settings
 =====================
 
@@ -166,6 +177,8 @@ Example configuration
 ---------------------
 
     CELERY_RESULT_BACKEND = "amqp"
+
+.. _conf-cache-result-backend:
 
 Cache backend settings
 ======================
@@ -199,6 +212,7 @@ setting:
 
 .. _`pylibmc`: http://sendapatch.se/projects/pylibmc/
 
+.. _conf-tyrant-result-backend:
 
 Tokyo Tyrant backend settings
 =============================
@@ -223,6 +237,8 @@ Example configuration
     CELERY_RESULT_BACKEND = "tyrant"
     TT_HOST = "localhost"
     TT_PORT = 1978
+
+.. _conf-redis-result-backend:
 
 Redis backend settings
 ======================
@@ -264,6 +280,8 @@ Example configuration
     REDIS_PORT = 6379
     REDIS_DB = "celery_results"
     REDIS_CONNECT_RETRY=True
+
+.. _conf-mongodb-result-backend:
 
 MongoDB backend settings
 ========================
@@ -308,9 +326,12 @@ Example configuration
         "taskmeta_collection": "my_taskmeta_collection",
     }
 
+.. _conf-messaging:
 
 Messaging settings
 ==================
+
+.. _conf-messaging-routing:
 
 Routing
 -------
@@ -347,6 +368,8 @@ Routing
     Can be ``transient`` or ``persistent``. Default is to send
     persistent messages.
 
+.. _conf-broker-connection:
+
 Connection
 ----------
 
@@ -370,6 +393,8 @@ Connection
     If this is set to ``0`` or ``None``, we will retry forever.
 
     Default is 100 retries.
+
+.. _conf-task-execution:
 
 Task execution settings
 =======================
@@ -451,6 +476,8 @@ Task execution settings
 
     See http://ask.github.com/celery/faq.html#should-i-use-retry-or-acks-late
 
+.. _conf-celeryd:
+
 Worker: celeryd
 ===============
 
@@ -495,6 +522,8 @@ Worker: celeryd
     If set, the worker stores all task errors in the result store even if
     ``Task.ignore_result`` is on.
 
+.. _conf-error-mails:
+
 Error E-Mails
 -------------
 
@@ -528,6 +557,8 @@ Error E-Mails
 
     The port the mail server is listening on. Default is ``25``.
 
+.. _conf-example-error-mail-config:
+
 Example E-Mail configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -553,6 +584,8 @@ This configuration enables the sending of error e-mails to
     EMAIL_PORT = 25
     # EMAIL_HOST_USER = "servers"
     # EMAIL_HOST_PASSWORD = "s3cr3t"
+
+.. _conf-events:
 
 Events
 ------
@@ -581,6 +614,8 @@ Events
     Message serialization format used when sending event messages. Default is
     ``"json"``.
 
+.. _conf-broadcast:
+
 Broadcast Commands
 ------------------
 
@@ -601,6 +636,8 @@ Broadcast Commands
 * CELERY_BROADCAST_EXCHANGE_TYPE
 
     Exchange type used for broadcast messages. Default is ``"fanout"``.
+
+.. _conf-logging:
 
 Logging
 -------
@@ -643,6 +680,8 @@ Logging
     See the Python :mod:`logging` module for more information about log
     formats.
 
+.. _conf-custom-components:
+
 Custom Component Classes (advanced)
 -----------------------------------
 
@@ -665,6 +704,8 @@ Custom Component Classes (advanced)
 
     Name of the ETA scheduler class used by the worker.
     Default is ``"celery.worker.controllers.ScheduleController"``.
+
+.. _conf-celerybeat:
 
 Periodic Task Server: celerybeat
 ================================
@@ -696,6 +737,8 @@ Periodic Task Server: celerybeat
     Can also be set via the ``--loglevel`` argument.
 
     See the :mod:`logging` module for more information.
+
+.. _conf-celerymon:
 
 Monitor Server: celerymon
 =========================

@@ -1,9 +1,14 @@
+.. _guide-executing:
+
 =================
  Executing Tasks
 =================
 
 .. contents::
     :local:
+
+
+.. _executing-basics:
 
 Basics
 ======
@@ -48,6 +53,8 @@ task, which adds together two numbers:
         return x + y
 
 
+.. _executing-eta:
+
 ETA and countdown
 =================
 
@@ -78,6 +85,7 @@ have a :class:`~datetime.datetime` object and need to modify it with a
         tomorrow = datetime.now() + timedelta(days=1)
         add.apply_async(args=[10, 10], eta=tomorrow)
 
+.. _executing-serializers:
 
 Serializers
 ===========
@@ -107,6 +115,8 @@ configuration directive.
 .. code-block:: python
 
     >>> add.apply_async(args=[10, 10], serializer="json")
+
+.. _executing-connections:
 
 Connections and connection timeouts.
 ====================================
@@ -150,6 +160,7 @@ Or if you handle the connection manually:
 
     publisher = add.get_publisher(connect_timeout=3)
 
+.. _executing-routing:
 
 Routing options
 ===============
@@ -212,6 +223,7 @@ Later, if the crop task is consuming a lot of resources,
 we can bind some new workers to handle just the ``"image.crop"`` task,
 by creating a new queue that binds to ``"image.crop``".
 
+.. _executing-amq-opts:
 
 AMQP options
 ============

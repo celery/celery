@@ -1,3 +1,5 @@
+.. _guide-tasks:
+
 =======
  Tasks
 =======
@@ -6,6 +8,8 @@
 
 .. contents::
     :local:
+
+.. _task-basics:
 
 Basics
 ======
@@ -43,6 +47,7 @@ The task decorator takes the same execution options as the
     def create_user(username, password):
         User.objects.create(username=username, password=password)
 
+.. _task-keyword-arguments:
 
 Default keyword arguments
 =========================
@@ -91,6 +96,7 @@ The current default keyword arguments are:
   **NOTE** As some messaging backends doesn't have advanced routing
   capabilities, you can't trust the availability of keys in this mapping.
 
+.. _task-logging:
 
 Logging
 =======
@@ -123,6 +129,7 @@ setting decides whether or not they will be written to the log file.
 Of course, you can also simply use ``print`` as anything written to standard
 out/-err will be written to the logfile as well.
 
+.. _task-retry:
 
 Retrying a task if something fails
 ==================================
@@ -155,6 +162,8 @@ passed on to the task. In addition, it also uses the ``task_id`` keyword
 argument to use the same task id, and ``delivery_info`` to route the
 retried task to the same destination.
 
+.. _task-retry-custom-delay:
+
 Using a custom retry delay
 --------------------------
 
@@ -180,6 +189,7 @@ You can also provide the ``countdown`` argument to
                                          # - retry in 1 minute
 
 
+.. _task-options:
 
 Task options
 ============
@@ -246,6 +256,8 @@ Task options
 
     Please see :doc:`executing` for more information.
 
+.. _task-message-options:
+
 Message and routing options
 ---------------------------
 
@@ -281,6 +293,8 @@ Message and routing options
 
 See :doc:`executing` for more information about the messaging options
 available, also :doc:`routing`.
+
+.. _task-example:
 
 Example
 =======
@@ -322,6 +336,8 @@ The comment model looks like this:
 
 In the view where the comment is posted, we first write the comment
 to the database, then we launch the spam filter task in the background.
+
+.. _task-example-blog-views:
 
 blog/views.py
 -------------
@@ -370,6 +386,8 @@ need to pay. You have to sign up to their service to get an API key.
 To make API calls to `Akismet`_ we use the `akismet.py`_ library written by
 Michael Foord.
 
+.. _task-example-blog-tasks:
+
 blog/tasks.py
 -------------
 
@@ -408,6 +426,8 @@ blog/tasks.py
 
 .. _`Akismet`: http://akismet.com/faq/
 .. _`akismet.py`: http://www.voidspace.org.uk/downloads/akismet.py
+
+.. _task-how-they-work:
 
 How it works
 ============
@@ -463,8 +483,12 @@ This means that your workers should always be updated with the same software
 as the client. This is a drawback, but the alternative is a technical
 challenge that has yet to be solved.
 
+.. _task-best-practices:
+
 Tips and Best Practices
 =======================
+
+.. _task-ignore_results:
 
 Ignore results you don't want
 -----------------------------
@@ -482,6 +506,8 @@ wastes time and resources.
 Results can even be disabled globally using the ``CELERY_IGNORE_RESULT``
 setting.
 
+.. _task-disable-rate-limits:
+
 Disable rate limits if they're not used
 ---------------------------------------
 
@@ -495,6 +521,8 @@ rate limits:
 .. code-block:: python
 
     CELERY_DISABLE_RATE_LIMITS = True
+
+.. _task-synchronous-subtasks:
 
 Avoid launching synchronous subtasks
 ------------------------------------
@@ -564,9 +592,12 @@ subclass of dict used to wrap the arguments and execution options
 for a single task invocation. See :doc:`tasksets` for more information about
 subtasks.
 
+.. _task-performance-and-strategies:
 
 Performance and Strategies
 ==========================
+
+.. _task-granularity:
 
 Granularity
 -----------
@@ -587,6 +618,8 @@ granularity.
 
 .. _`Art of Concurrency`: http://oreilly.com/catalog/9780596521547
 
+.. _task-data-locality:
+
 Data locality
 -------------
 
@@ -606,6 +639,7 @@ http://research.microsoft.com/pubs/70001/tr-2003-24.pdf
 
 .. _`memcached`: http://memcached.org/
 
+.. _task-state:
 
 State
 -----
@@ -658,6 +692,8 @@ re-fetch the article in the task body:
 
 There might even be performance benefits to this approach, as sending large
 messages may be expensive.
+
+.. _task-database-transactions:
 
 Database transactions
 ---------------------

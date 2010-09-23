@@ -1,3 +1,5 @@
+.. _guide-routing:
+
 ===============
  Routing Tasks
 ===============
@@ -11,8 +13,13 @@ respective documenation for more information, or contact the `mailinglist`_.
 .. contents::
     :local:
 
+
+.. _routing-basics:
+
 Basics
 ======
+
+.. _routing-automatic:
 
 Automatic routing
 -----------------
@@ -43,6 +50,8 @@ process the default queue as well::
 
     (z)$ celeryd -Q feeds,celery
 
+.. _routing-changing-default-queue:
+
 Changing the name of the default queue
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -54,6 +63,8 @@ configuration:
     CELERY_QUEUES = {"default": {"exchange": "default",
                                  "binding_key": "default"}}
     CELERY_DEFAULT_QUEUE = "default"
+
+.. _routing-autoqueue-details:
 
 How the queues are defined
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -73,6 +84,8 @@ A queue named ``"video"`` will be created with the following settings:
 The non-AMQP backends like ``ghettoq`` does not support exchanges, so they
 require the exchange to have the same name as the queue. Using this design
 ensures it will work for them as well.
+
+.. _routing-manual:
 
 Manual routing
 --------------
@@ -158,7 +171,7 @@ just specify a custom exchange and exchange type:
 
 If you're confused about these terms, you should read up on AMQP concepts.
 
-In addition to the :ref:`AMQP Primer` below, there's
+In addition to the :ref:`amqp-primer` below, there's
 `Rabbits and Warrens`_, an excellent blog post describing queues and
 exchanges. There's also AMQP in 10 minutes*: `Flexible Routing Model`_,
 and `Standard Exchange Types`_. For users of RabbitMQ the `RabbitMQ FAQ`_
@@ -169,7 +182,7 @@ could be useful as a source of information.
 .. _`Standard Exchange Types`: http://bit.ly/EEWca
 .. _`RabbitMQ FAQ`: http://www.rabbitmq.com/faq.html
 
-.. _`AMQP Primer`:
+.. _amqp-primer:
 
 AMQP Primer
 ===========
@@ -193,6 +206,8 @@ This is an example task message represented as a Python dictionary:
      "args": [4, 4],
      "kwargs": {}}
 
+.. _amqp-producers-consumers-brokers:
+
 Producers, consumers and brokers
 --------------------------------
 
@@ -204,6 +219,8 @@ The *broker* is the message server, routing messages from producers
 to consumers.
 
 You are likely to see these terms used a lot in AMQP related material.
+
+.. _amqp-exchanges-queues-keys:
 
 Exchanges, queues and routing keys.
 -----------------------------------
@@ -251,6 +268,8 @@ One for video, one for images and finally, one default queue for everything else
 while ``binding_key`` is the key the queue is bound with. In the AMQP API
 they are both referred to as the routing key.
 
+.. _amqp-exchange-types:
+
 Exchange types
 --------------
 
@@ -263,11 +282,15 @@ Bridgen.
 .. _`last-value-cache plug-in`:
     http://github.com/squaremo/rabbitmq-lvc-plugin
 
+.. _amqp-exchange-type-direct:
+
 Direct exchanges
 ~~~~~~~~~~~~~~~~
 
 Direct exchanges match by exact routing keys, so a queue bound with
 the routing key ``video`` only receives messages with the same routing key.
+
+.. _amqp-exchange-type-topic:
 
 Topic exchanges
 ~~~~~~~~~~~~~~~
@@ -280,9 +303,12 @@ With routing keys like ``usa.news``, ``usa.weather``, ``norway.news`` and
 ``norway.weather``, bindings could be ``*.news`` (all news), ``usa.#`` (all
 items in the USA) or ``usa.weather`` (all USA weather items).
 
+.. _amqp-api:
 
 Related API commands
 --------------------
+
+.. _amqp-api-exchange-declare:
 
 exchange.declare(exchange_name, type, passive, durable, auto_delete, internal)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -297,6 +323,8 @@ Declares an exchange by name.
 * ``auto_delete`` means the queue will be deleted by the broker when there
   are no more queues using it.
 
+.. _amqp-api-queue-declare:
+
 queue.declare(queue_name, passive, durable, exclusive, auto_delete)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -305,16 +333,22 @@ Declares a queue by name.
 * exclusive queues can only be consumed from by the current connection.
   implies ``auto_delete``.
 
+.. _amqp-api-queue-bind:
+
 queue.bind(queue_name, exchange_name, routing_key)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Binds a queue to an exchange with a routing key.
 Unbound queues will not receive messages, so this is necessary.
 
+.. _amqp-api-queue-delete:
+
 queue.delete(name, if_unused, if_empty)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Deletes a queue and its binding.
+
+.. _amqp-api-exchange-delete:
 
 exchange.delete(name, if_unused)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -325,6 +359,8 @@ Deletes an exchange.
 *assert* that the entity exists and that it's operable. There is no rule as to
 whom should initially create the exchange/queue/binding, whether consumer
 or producer. Usually the first one to need it will be the one to create it.
+
+.. _amqp-api-hands-on:
 
 Hands-on with the API
 ---------------------
@@ -367,7 +403,6 @@ using the ``basic.publish`` command::
     4> basic.publish "This is a message!" testexchange testkey
     ok.
 
-
 Now that the message is sent we can retrieve it again. We use the
 ``basic.get`` command here, which pops a single message off the queue,
 this command is not recommended for production as it implies polling, any
@@ -408,8 +443,12 @@ To clean up after our test session we should delete the entities we created::
     ok.
 
 
+.. _routing-tasks:
+
 Routing Tasks
 =============
+
+.. _routing-defining-queues:
 
 Defining queues
 ---------------
@@ -447,6 +486,8 @@ have an explicit route.
 The default exchange, exchange type and routing key will be used as the
 default routing values for tasks, and as the default values for entries
 in ``CELERY_QUEUES``.
+
+.. _routing-task-destination:
 
 Specifying task destination
 ---------------------------
