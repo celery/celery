@@ -16,33 +16,49 @@ features related to monitoring, like events and broadcast commands.
 
 .. _monitoring-workers:
 
-Monitoring and Inspecting Workers
-=================================
+Workers
+=======
 
 .. _monitoring-celeryctl:
 
-celeryctl
----------
+celeryctl: Management Utility
+-----------------------------
 
-* Listing active nodes in the cluster
+:mod:`~celery.bin.celeryctl` is a command line utility to inspect
+and manage worker nodes (and to some degree tasks).
+
+To list all the commands from the command line do::
+
+    $ celeryctl help
+
+or to get help for a specific command do::
+
+    $ celeryctl <command> --help
+
+Commands
+~~~~~~~~
+
+* **status**: List active nodes in this cluster
     ::
 
     $ celeryctl status
 
-* Show the result of a task
+* **result**: Show the result of a task
     ::
 
-        $ celeryctl -t tasks.add 4e196aa4-0141-4601-8138-7aa33db0f577
+        $ celeryctl result -t tasks.add 4e196aa4-0141-4601-8138-7aa33db0f577
 
     Note that you can omit the name of the task as long as the
     task doesn't use a custom result backend.
 
-* Listing all tasks that are currently being executed
+* **inspect active**: List active tasks
     ::
 
         $ celeryctl inspect active
 
-* Listing scheduled ETA tasks
+    These are all the tasks that are currently being executed.
+
+* **inspect scheduled**: List scheduled ETA tasks
     ::
 
         $ celeryctl inspect scheduled
@@ -50,7 +66,7 @@ celeryctl
     These are tasks reserved by the worker because they have the
     ``eta`` or ``countdown`` argument set.
 
-* Listing reserved tasks
+* **inspect reserved**: List reserved tasks
     ::
 
         $ celeryctl inspect reserved
@@ -59,41 +75,38 @@ celeryctl
     and is currently waiting to be executed (does not include tasks
     with an eta).
 
-* Listing the history of revoked tasks
+* **inspect revoked**: List history of revoked tasks
     ::
 
         $ celeryctl inspect revoked
 
-* Show registered tasks
+* **inspect registered_tasks**: List registered tasks
     ::
 
         $ celeryctl inspect registered_tasks
 
-* Showing statistics
+* **inspect states**: Show worker statistics
     ::
 
         $ celeryctl inspect stats
 
-* Diagnosing the worker pools
+* **inspect diagnose**: Diagnose the pool processes.
     ::
 
         $ celeryctl inspect diagnose
 
     This will verify that the workers pool processes are available
-    to do work, note that this will not work if the worker is busy.
+    to do work.  Note that this will not work if the worker is busy.
 
-* Enabling/disabling events
+* **inspect enable_events**: Enable events
     ::
 
         $ celeryctl inspect enable_events
+
+* **inspect disable_events**: Disable events
+    ::
+
         $ celeryctl inspect disable_events
-
-
-By default the inspect commands operates on all workers.
-You can specify a single, or a list of workers by using the
-``--destination`` argument::
-
-    $ celeryctl inspect -d w1,w2 reserved
 
 
 :Note: All ``inspect`` commands supports the ``--timeout`` argument,
@@ -102,31 +115,143 @@ You can specify a single, or a list of workers by using the
        due to latency.
 
 
+.. _celeryctl-inspect-destination:
+
+Specifying destination nodes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+By default the inspect commands operates on all workers.
+You can specify a single, or a list of workers by using the
+``--destination`` argument::
+
+    $ celeryctl inspect -d w1,w2 reserved
+
+
 .. _monitoring-django-admin:
 
-Django Admin
-------------
+Django Admin Monitor
+--------------------
+
+When you add `django-celery`_ to your Django project you will
+automatically get a monitor section as part of the Django admin interface.
+
+This can also be used if you're not using Celery with a Django project.
+
+*Screenshot*
+
+.. image:: http://celeryproject.org/beta/djangoceleryadmin2.jpg
+
+.. _`django-celery`: http://pypi.python.org/pypi/django-celery
+
+
+.. _monitoring-django-starting:
+
+Starting the monitor
+~~~~~~~~~~~~~~~~~~~~
+
+The Celery section will already be present in your admin interface,
+but you won't see any data appearing until you start the snapshot camera.
+
+The camera takes snapshots of the events your workers sends at regular
+intervals, storing them in your database (See :ref:`monitoring-snapshots`).
+
+To start the camera run::
+
+    $ python manage.py celerycam
+
+
+If you haven't already enabled the sending of events you need to do so::
+
+    $ python manage.py celeryctl inspect enable_events
+
+:Tip: You can enable events when the worker starts using the ``-E`` argument
+      to :mod:`~celery.bin.celeryd`.
+
+Now that the camera has been started, and events have been enabled
+you should be able to see your workers and the tasks in the admin interface
+(it may take some time for workers to show up).
+
+.. _monitoring-django-frequency:
+
+Shutter frequency
+~~~~~~~~~~~~~~~~~
+
+By default the camera takes a snapshot every second, if this is too frequent
+or you want higher precision then you can change this using the
+``--frequency`` argument.  This is a float describing how often, in seconds,
+it should wake up to check if there are any new events::
+
+    $ python manage.py celerycam --frequency=3.0
+
+The camera also supports rate limiting using the ``--maxrate`` argument.
+While the frequency controls how often the camera thread wakes up,
+the rate limit controls how often it will actually take a snapshot.
+
+The rate limits can be specified in seconds, minutes or hours
+by appending ``/s``, ``/m`` or ``/h`` to the value.
+Example: ``--maxrate=100/m``, means "hundred writes a minute".
+
+The rate limit is off by default, which means it will take a snapshot
+for every ``--frequency`` seconds. 
+
+The events also expire after some time, so the database doesn't fill up.
+Successful tasks are deleted after 1 day, failed tasks after 3 days,
+and tasks in other states after 5 days.
+
+.. _monitoring-nodjango:
+
+Using outside of Django
+~~~~~~~~~~~~~~~~~~~~~~~
 
 TODO
 
 .. _monitoring-celeryev:
 
-celeryev
---------
+celeryev: Curses Monitor
+------------------------
 
-TODO
+:mod:`~celery.bin.celeryev` is a simple curses monitor displaying
+task and worker history. You can inspect the result and traceback of tasks,
+and it also supports some management commands like rate limiting and shutdown
+of workers.
+
+.. image:: http://celeryproject.org/img/celeryevshotsm.jpg
+
+
+:mod:`~celery.bin.celeryev` is also used to start snapshot cameras (see
+:ref:`monitoring-snapshots`::
+
+    $ celeryev --camera=<camera-class> --frequency=1.0
+
+and it includes a tool to dump events to stdout::
+
+    $ celeryev --dump
+
+For a complete list of options use ``--help``::
+
+    $ celeryev --help
+
 
 .. _monitoring-celerymon:
 
-celerymon
----------
+celerymon: Web monitor
+----------------------
 
-TODO
+`celerymon`_ is the ongoing work to create a web monitor.
+It's far from complete yet, and does currently only support
+a JSON API. Help is desperately needed for this project, so if you,
+or someone you knowi, would like to contribute templates, design, code
+or help this project in any way, please get in touch!
+
+:Tip: The Django admin monitor can be used even though you're not using
+      Celery with a Django project. See :ref:`monitoring-nodjango`.
+
+.. _`celerymon`: http://github.com/ask/celerymon/
 
 .. _monitoring-rabbitmq:
 
-Monitoring and inspecting RabbitMQ
-==================================
+RabbitMQ
+========
 
 To manage a Celery cluster it is important to know how
 RabbitMQ can be monitored.
