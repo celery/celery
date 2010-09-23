@@ -469,8 +469,6 @@ class Task(object):
         :param meta: State metadata (:class:`dict`).
 
         """
-        if meta is None:
-            meta = {}
         self.backend.store_result(task_id, meta, state)
 
     def on_retry(self, exc, task_id, args, kwargs, einfo=None):
@@ -556,7 +554,7 @@ class Task(object):
         """repr(task)"""
         try:
             kind = self.__class__.mro()[1].__name__
-        except (AttributeError, IndexError):
+        except (AttributeError, IndexError):            # pragma: no cover
             kind = "%s(Task)" % self.__class__.__name__
         return "<%s: %s (%s)>" % (kind, self.name, self.type)
 
