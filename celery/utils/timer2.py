@@ -31,7 +31,7 @@ class TimedFunctionFailed(UserWarning):
 class Entry(object):
     cancelled = False
 
-    def __init__(self, fun, args, kwargs):
+    def __init__(self, fun, args=None, kwargs=None):
         self.fun = fun
         self.args = args or []
         self.kwargs = kwargs or {}
@@ -157,7 +157,7 @@ class Timer(Thread):
             sleep(delay)
         try:
             self._stopped.set()
-        except TypeError:
+        except TypeError:           # pragma: no cover
             # we lost the race at interpreter shutdown,
             # so gc collected built-in modules.
             pass

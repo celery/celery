@@ -7,6 +7,12 @@ from pyparsing import ParseException
 
 from celery import task
 from celery.app import app_or_default
+from celery import messaging
+from celery.backends import default_backend
+from celery.decorators import task as task_dec
+from celery.exceptions import RetryTaskError
+from celery.execute import send_task
+from celery.result import EagerResult
 from celery.task.schedules import crontab, crontab_parser
 from celery.utils import timeutils
 from celery.utils import gen_unique_id
@@ -212,6 +218,15 @@ class MockPublisher(object):
 
 class TestCeleryTasks(unittest.TestCase):
 
+    def test_unpickle_task(self):
+        import pickle
+
+        @task_dec
+        def xxx():
+            pass
+
+        self.assertIs(pickle.loads(pickle.dumps(xxx)), xxx)
+
     def createTaskCls(self, cls_name, task_name=None):
         attrs = {"__module__": self.__module__}
         if task_name:
@@ -345,9 +360,34 @@ class TestCeleryTasks(unittest.TestCase):
             p = IncrementCounterTask.get_publisher(exchange="foo",
                                                    connection="bar")
             self.assertEqual(p.kwargs["exchange"], "foo")
+<<<<<<< HEAD
             self.assertTrue(p._declared)
+=======
+            p = IncrementCounterTask.get_publisher(exchange_type="fanout",
+                                                   connection="bar")
+            self.assertEqual(p.kwargs["exchange_type"], "fanout")
+>>>>>>> 503136a... 91% coverage
         finally:
             amqp.TaskPublisher = old_pub
+
+    def test_update_state(self):
+
+        @task_dec
+        def yyy():
+            pass
+
+        tid = gen_unique_id()
+        yyy.update_state(tid, "FROBULATING", {"fooz": "baaz"})
+        self.assertEqual(yyy.AsyncResult(tid).status, "FROBULATING")
+        self.assertDictEqual(yyy.AsyncResult(tid).result, {"fooz": "baaz"})
+
+    def test_has___name__(self):
+
+        @task_dec
+        def yyy2():
+            pass
+
+        self.assertTrue(yyy2.__name__)
 
     def test_get_logger(self):
         T1 = self.createTaskCls("T1", "c.unittest.t.t1")
