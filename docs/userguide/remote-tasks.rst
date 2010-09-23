@@ -1,3 +1,5 @@
+.. _guide-webhooks:
+
 ================================
  HTTP Callback Tasks (Webhooks)
 ================================
@@ -6,6 +8,8 @@
 
 .. contents::
     :local:
+
+.. _webhook-basics:
 
 Basics
 ======
@@ -34,6 +38,9 @@ or if there was an error::
 
     {"status": "failure": "reason": "Invalid moon alignment."}
 
+
+.. _webhook-django-example:
+
 Django webhook example
 ======================
 
@@ -51,6 +58,8 @@ With this information you could define a simple task in Django:
         result = x * y
         response = {"status": "success", "retval": result}
         return HttpResponse(serialize(response), mimetype="application/json")
+
+.. _webhook-rails-example:
 
 Ruby on Rails webhook example
 =============================
@@ -70,6 +79,8 @@ or in Ruby on Rails:
 
 You can easily port this scheme to any language/framework;
 new examples and libraries are very welcome.
+
+.. _webhook-executing:
 
 Executing webhook tasks
 =======================

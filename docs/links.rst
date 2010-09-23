@@ -1,13 +1,18 @@
+.. _links:
+
 ===================
  Interesting Links
 ===================
 
+.. _links-celery:
 
 celery
 ------
 
 * IRC logs from ``#celery`` (Freenode):
     http://botland.oebfare.com/logger/celery/
+
+.. _links-amqp:
 
 AMQP
 ----
@@ -19,6 +24,8 @@ AMQP
 .. _`RabbitMQ-shovel`: http://bit.ly/b1hVW2
 
 .. _`Shovel`: http://bit.ly/xFEde
+
+.. _links-rabbitmq:
 
 RabbitMQ
 --------

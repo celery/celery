@@ -1,9 +1,13 @@
+.. _tut-celery:
+
 ========================
  First steps with Celery
 ========================
 
 .. contents::
     :local:
+
+.. _celerytut-simple-tasks:
 
 Creating a simple task
 ======================
@@ -32,6 +36,7 @@ function in an appropriate class for us automatically. The full
 documentation on how to create tasks and task classes is in the
 :doc:`../userguide/tasks` part of the user guide.
 
+.. _celerytut-conf:
 
 Configuration
 =============
@@ -84,6 +89,8 @@ could use a persistent result store backend, but for now, this should
 do. For all of the options available, see the 
 :doc:`configuration directive reference<../configuration>`.
 
+.. _celerytut-running-celeryd:
+
 Running the celery worker server
 ================================
 
@@ -105,6 +112,8 @@ For info on how to run celery as standalone daemon, see
 :doc:`daemon mode reference<../cookbook/daemonizing>`
 
 .. _`supervisord`: http://supervisord.org
+
+.. _celerytut-executing-task:
 
 Executing the task
 ==================

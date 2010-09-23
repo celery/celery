@@ -1,3 +1,5 @@
+.. _internals-module-overview:
+
 ==============
  Module Index
 ==============

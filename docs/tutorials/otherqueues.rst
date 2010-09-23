@@ -1,3 +1,5 @@
+.. _tut-otherqueues:
+
 ==========================================================
  Using Celery with Redis/Database as the messaging queue.
 ==========================================================
@@ -12,6 +14,8 @@ an extension to `carrot`_.
 .. contents::
     :local:
 
+.. _otherqueues-installation:
+
 Installation
 ============
 
@@ -19,12 +23,16 @@ You need to install the `ghettoq`_ library::
 
     $ pip install -U ghettoq
 
+.. _otherqueues-redis:
+
 Redis
 =====
 
 For the Redis support you have to install the Python redis client::
 
     $ pip install -U redis
+
+.. _otherqueues-redis-conf:
 
 Configuration
 -------------
@@ -38,8 +46,12 @@ your Redis database::
     BROKER_PORT = 6379         # Maps to redis port.
     BROKER_VHOST = "celery"    # Maps to database name.
 
+.. _otherqueues-database:
+
 Database
 ========
+
+.. _otherqueues-database-conf:
 
 Configuration
 -------------
@@ -74,6 +86,8 @@ configuration values.
     When using Django::
 
         $ python manage.py syncdb
+
+.. _otherqueues-notes:
 
 Important notes
 ---------------

@@ -1,3 +1,5 @@
+.. _internals-task-message-protocol:
+
 =======================
  Task Message Protocol
 =======================

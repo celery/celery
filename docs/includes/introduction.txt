@@ -7,6 +7,8 @@
 
 --
 
+.. _celery-synopsis:
+
 Celery is an open source asynchronous task queue/job queue based on
 distributed message passing. It is focused on real-time operation,
 but supports scheduling as well.
@@ -36,6 +38,8 @@ delivered by the `django-celery`_ package.
 .. contents::
     :local:
 
+.. _celery-overview:
+
 Overview
 ========
 
@@ -49,6 +53,8 @@ more machines depending on the workload.
 
 The result of the task can be stored for later retrieval (called its
 "tombstone").
+
+.. _celery-example:
 
 Example
 =======
@@ -71,6 +77,8 @@ You can execute the task in the background, or wait for it to finish::
     8
 
 Simple!
+
+.. _celery-features:
 
 Features
 ========
@@ -161,6 +169,8 @@ Features
 .. _`MongoDB`: http://www.mongodb.org/
 .. _`Tokyo Tyrant`: http://tokyocabinet.sourceforge.net/
 
+.. _celery-documentation:
+
 Documentation
 =============
 
@@ -169,8 +179,10 @@ is hosted at Github.
 
 .. _`latest documentation`: http://ask.github.com/celery/
 
+.. _celery-installation:
+
 Installation
-=============
+============
 
 You can install ``celery`` either via the Python Package Index (PyPI)
 or from source.
@@ -182,6 +194,8 @@ To install using ``pip``,::
 To install using ``easy_install``,::
 
     $ easy_install celery
+
+.. _celery-installing-from-source:
 
 Downloading and installing from source
 --------------------------------------
@@ -196,8 +210,10 @@ You can install it by doing the following,::
     $ python setup.py build
     # python setup.py install # as root
 
+.. _celery-installing-from-git:
+
 Using the development version
-------------------------------
+-----------------------------
 
 You can clone the repository by doing the following::
 
