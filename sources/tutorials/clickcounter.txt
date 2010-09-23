@@ -1,3 +1,5 @@
+.. _tut-clickcounter:
+
 ============================================================
  Tutorial: Creating a click counter using carrot and celery
 ============================================================

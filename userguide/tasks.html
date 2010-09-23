@@ -52,45 +52,46 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="module-celery.task.base">
-<span id="tasks"></span><h1>Tasks<a class="headerlink" href="#module-celery.task.base" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="tasks">
+<span id="guide-tasks"></span><h1>Tasks<a class="headerlink" href="#tasks" title="Permalink to this headline">¶</a></h1>
 <div class="contents local topic" id="contents">
 <ul class="simple">
-<li><a class="reference external" href="#basics" id="id1">Basics</a></li>
-<li><a class="reference external" href="#default-keyword-arguments" id="id2">Default keyword arguments</a></li>
-<li><a class="reference external" href="#logging" id="id3">Logging</a></li>
-<li><a class="reference external" href="#retrying-a-task-if-something-fails" id="id4">Retrying a task if something fails</a><ul>
-<li><a class="reference external" href="#using-a-custom-retry-delay" id="id5">Using a custom retry delay</a></li>
+<li><a class="reference external" href="#basics" id="id2">Basics</a></li>
+<li><a class="reference external" href="#default-keyword-arguments" id="id3">Default keyword arguments</a></li>
+<li><a class="reference external" href="#logging" id="id4">Logging</a></li>
+<li><a class="reference external" href="#retrying-a-task-if-something-fails" id="id5">Retrying a task if something fails</a><ul>
+<li><a class="reference external" href="#using-a-custom-retry-delay" id="id6">Using a custom retry delay</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#task-options" id="id6">Task options</a><ul>
-<li><a class="reference external" href="#message-and-routing-options" id="id7">Message and routing options</a></li>
+<li><a class="reference external" href="#task-options" id="id7">Task options</a><ul>
+<li><a class="reference external" href="#general" id="id8">General</a></li>
+<li><a class="reference external" href="#message-and-routing-options" id="id9">Message and routing options</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#example" id="id8">Example</a><ul>
-<li><a class="reference external" href="#blog-models-py" id="id9">blog/models.py</a></li>
-<li><a class="reference external" href="#blog-views-py" id="id10">blog/views.py</a></li>
-<li><a class="reference external" href="#blog-tasks-py" id="id11">blog/tasks.py</a></li>
+<li><a class="reference external" href="#example" id="id10">Example</a><ul>
+<li><a class="reference external" href="#blog-models-py" id="id11">blog/models.py</a></li>
+<li><a class="reference external" href="#blog-views-py" id="id12">blog/views.py</a></li>
+<li><a class="reference external" href="#blog-tasks-py" id="id13">blog/tasks.py</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#how-it-works" id="id12">How it works</a></li>
-<li><a class="reference external" href="#tips-and-best-practices" id="id13">Tips and Best Practices</a><ul>
-<li><a class="reference external" href="#ignore-results-you-don-t-want" id="id14">Ignore results you don&#8217;t want</a></li>
-<li><a class="reference external" href="#disable-rate-limits-if-they-re-not-used" id="id15">Disable rate limits if they&#8217;re not used</a></li>
-<li><a class="reference external" href="#avoid-launching-synchronous-subtasks" id="id16">Avoid launching synchronous subtasks</a></li>
+<li><a class="reference external" href="#how-it-works" id="id14">How it works</a></li>
+<li><a class="reference external" href="#tips-and-best-practices" id="id15">Tips and Best Practices</a><ul>
+<li><a class="reference external" href="#ignore-results-you-don-t-want" id="id16">Ignore results you don&#8217;t want</a></li>
+<li><a class="reference external" href="#disable-rate-limits-if-they-re-not-used" id="id17">Disable rate limits if they&#8217;re not used</a></li>
+<li><a class="reference external" href="#avoid-launching-synchronous-subtasks" id="id18">Avoid launching synchronous subtasks</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#performance-and-strategies" id="id17">Performance and Strategies</a><ul>
-<li><a class="reference external" href="#granularity" id="id18">Granularity</a></li>
-<li><a class="reference external" href="#data-locality" id="id19">Data locality</a></li>
-<li><a class="reference external" href="#state" id="id20">State</a></li>
-<li><a class="reference external" href="#database-transactions" id="id21">Database transactions</a></li>
+<li><a class="reference external" href="#performance-and-strategies" id="id19">Performance and Strategies</a><ul>
+<li><a class="reference external" href="#granularity" id="id20">Granularity</a></li>
+<li><a class="reference external" href="#data-locality" id="id21">Data locality</a></li>
+<li><a class="reference external" href="#state" id="id22">State</a></li>
+<li><a class="reference external" href="#database-transactions" id="id23">Database transactions</a></li>
 </ul>
 </li>
 </ul>
 </div>
 <div class="section" id="basics">
-<h2><a class="toc-backref" href="#id1">Basics</a><a class="headerlink" href="#basics" title="Permalink to this headline">¶</a></h2>
+<span id="task-basics"></span><h2><a class="toc-backref" href="#id2">Basics</a><a class="headerlink" href="#basics" title="Permalink to this headline">¶</a></h2>
 <p>A task is a class that encapsulates a function and its execution options.
 Given a function <tt class="docutils literal"><span class="pre">create_user</span></tt>, that takes two arguments: <tt class="docutils literal"><span class="pre">username</span></tt> and
 <tt class="docutils literal"><span class="pre">password</span></tt>, you can create a task like this:</p>
@@ -120,58 +121,53 @@ a task, <a class="reference internal" href="../reference/celery.decorators.html#
 </div>
 </div>
 <div class="section" id="default-keyword-arguments">
-<h2><a class="toc-backref" href="#id2">Default keyword arguments</a><a class="headerlink" href="#default-keyword-arguments" title="Permalink to this headline">¶</a></h2>
+<span id="task-keyword-arguments"></span><h2><a class="toc-backref" href="#id3">Default keyword arguments</a><a class="headerlink" href="#default-keyword-arguments" title="Permalink to this headline">¶</a></h2>
 <p>Celery supports a set of default arguments that can be forwarded to any task.
 Tasks can choose not to take these, or list the ones they want.
 The worker will do the right thing.</p>
 <p>The current default keyword arguments are:</p>
-<ul>
-<li><p class="first">logfile</p>
-<blockquote>
-<p>The log file, can be passed on to
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">task_id:</th><td class="field-body"><p class="first">The unique id of the executing task.</p>
+</td>
+</tr>
+<tr class="field"><th class="field-name">task_name:</th><td class="field-body"><p class="first">Name of the currently executing task.</p>
+</td>
+</tr>
+<tr class="field"><th class="field-name">task_retries:</th><td class="field-body"><p class="first">How many times the current task has been retried.
+An integer starting at <tt class="docutils literal"><span class="pre">0</span></tt>.</p>
+</td>
+</tr>
+<tr class="field"><th class="field-name">task_is_eager:</th><td class="field-body"><p class="first">Set to <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> if the task is executed locally in
+the client, kand not by a worker.</p>
+</td>
+</tr>
+<tr class="field"><th class="field-name">logfile:</th><td class="field-body"><p class="first">The log file, can be passed on to
 <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.Task.get_logger" title="celery.task.base.Task.get_logger"><tt class="xref py py-meth docutils literal"><span class="pre">get_logger()</span></tt></a> to gain access to
 the workers log file. See <a class="reference external" href="#logging">Logging</a>.</p>
-</blockquote>
-</li>
-<li><p class="first">loglevel</p>
-<blockquote>
-<p>The loglevel used.</p>
-</blockquote>
-</li>
-<li><p class="first">task_id</p>
-<blockquote>
-<p>The unique id of the executing task.</p>
-</blockquote>
-</li>
-<li><p class="first">task_name</p>
-<blockquote>
-<p>Name of the executing task.</p>
-</blockquote>
-</li>
-<li><p class="first">task_retries</p>
-<blockquote>
-<p>How many times the current task has been retried.
-An integer starting at <tt class="docutils literal"><span class="pre">0</span></tt>.</p>
-</blockquote>
-</li>
-<li><p class="first">task_is_eager</p>
-<blockquote>
-<p>Set to <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> if the task is executed locally in the client,
-and not by a worker.</p>
-</blockquote>
-</li>
-<li><p class="first">delivery_info</p>
-<p>Additional message delivery information. This is a mapping containing
-the exchange and routing key used to deliver this task. It&#8217;s used
-by e.g. <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.Task.retry" title="celery.task.base.Task.retry"><tt class="xref py py-meth docutils literal"><span class="pre">retry()</span></tt></a> to resend the task to the
-same destination queue.</p>
-<p><strong>NOTE</strong> As some messaging backends doesn&#8217;t have advanced routing
+</td>
+</tr>
+<tr class="field"><th class="field-name">loglevel:</th><td class="field-body"><p class="first">The current loglevel used.</p>
+</td>
+</tr>
+<tr class="field"><th class="field-name">delivery_info:</th><td class="field-body"><dl class="first docutils">
+<dt>Additional message delivery information. This is a mapping</dt>
+<dd><p class="first last">containing the exchange and routing key used to deliver this
+task. It&#8217;s used by e.g. <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.Task.retry" title="celery.task.base.Task.retry"><tt class="xref py py-meth docutils literal"><span class="pre">retry()</span></tt></a>
+to resend the task to the same destination queue.</p>
+</dd>
+</dl>
+<p class="last"><strong>NOTE</strong> As some messaging backends doesn&#8217;t have advanced routing
 capabilities, you can&#8217;t trust the availability of keys in this mapping.</p>
-</li>
-</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="section" id="logging">
-<h2><a class="toc-backref" href="#id3">Logging</a><a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h2>
+<span id="task-logging"></span><h2><a class="toc-backref" href="#id4">Logging</a><a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h2>
 <p>You can use the workers logger to add diagnostic output to
 the worker log:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">AddTask</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
@@ -196,7 +192,7 @@ setting decides whether or not they will be written to the log file.</p>
 out/-err will be written to the logfile as well.</p>
 </div>
 <div class="section" id="retrying-a-task-if-something-fails">
-<h2><a class="toc-backref" href="#id4">Retrying a task if something fails</a><a class="headerlink" href="#retrying-a-task-if-something-fails" title="Permalink to this headline">¶</a></h2>
+<span id="task-retry"></span><h2><a class="toc-backref" href="#id5">Retrying a task if something fails</a><a class="headerlink" href="#retrying-a-task-if-something-fails" title="Permalink to this headline">¶</a></h2>
 <p>Simply use <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.Task.retry" title="celery.task.base.Task.retry"><tt class="xref py py-meth docutils literal"><span class="pre">retry()</span></tt></a> to re-send the task.
 It will do the right thing, and respect the
 <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.Task.max_retries" title="celery.task.base.Task.max_retries"><tt class="xref py py-attr docutils literal"><span class="pre">max_retries</span></tt></a> attribute:</p>
@@ -210,11 +206,11 @@ It will do the right thing, and respect the
 </pre></div>
 </div>
 <p>Here we used the <tt class="docutils literal"><span class="pre">exc</span></tt> argument to pass the current exception to
-<a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.Task.retry" title="celery.task.base.Task.retry"><tt class="xref py py-meth docutils literal"><span class="pre">Task.retry()</span></tt></a>. At each step of the retry this exception
+<a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.Task.retry" title="celery.task.base.Task.retry"><tt class="xref py py-meth docutils literal"><span class="pre">retry()</span></tt></a>. At each step of the retry this exception
 is available as the tombstone (result) of the task. When
-<a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.Task.max_retries" title="celery.task.base.Task.max_retries"><tt class="xref py py-attr docutils literal"><span class="pre">Task.max_retries</span></tt></a> has been exceeded this is the exception
-raised. However, if an <tt class="docutils literal"><span class="pre">exc</span></tt> argument is not provided the
-<tt class="xref py py-exc docutils literal"><span class="pre">RetryTaskError</span></tt> exception is raised instead.</p>
+<a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.Task.max_retries" title="celery.task.base.Task.max_retries"><tt class="xref py py-attr docutils literal"><span class="pre">max_retries</span></tt></a> has been exceeded this is the
+exception raised. However, if an <tt class="docutils literal"><span class="pre">exc</span></tt> argument is not provided the
+<a class="reference internal" href="../reference/celery.exceptions.html#celery.exceptions.RetryTaskError" title="celery.exceptions.RetryTaskError"><tt class="xref py py-exc docutils literal"><span class="pre">RetryTaskError</span></tt></a> exception is raised instead.</p>
 <p><strong>Important note:</strong> The task has to take the magic keyword arguments
 in order for max retries to work properly, this is because it keeps track
 of the current number of retries using the <tt class="docutils literal"><span class="pre">task_retries</span></tt> keyword argument
@@ -222,9 +218,10 @@ passed on to the task. In addition, it also uses the <tt class="docutils literal
 argument to use the same task id, and <tt class="docutils literal"><span class="pre">delivery_info</span></tt> to route the
 retried task to the same destination.</p>
 <div class="section" id="using-a-custom-retry-delay">
-<h3><a class="toc-backref" href="#id5">Using a custom retry delay</a><a class="headerlink" href="#using-a-custom-retry-delay" title="Permalink to this headline">¶</a></h3>
+<span id="task-retry-custom-delay"></span><h3><a class="toc-backref" href="#id6">Using a custom retry delay</a><a class="headerlink" href="#using-a-custom-retry-delay" title="Permalink to this headline">¶</a></h3>
 <p>When a task is to be retried, it will wait for a given amount of time
-before doing so. The default delay is in the <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.Task.default_retry_delay" title="celery.task.base.Task.default_retry_delay"><tt class="xref py py-attr docutils literal"><span class="pre">Task.default_retry_delay</span></tt></a>
+before doing so. The default delay is in the
+<a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.Task.default_retry_delay" title="celery.task.base.Task.default_retry_delay"><tt class="xref py py-attr docutils literal"><span class="pre">default_retry_delay</span></tt></a>
 attribute on the task. By default this is set to 3 minutes. Note that the
 unit for setting the delay is in seconds (int or float).</p>
 <p>You can also provide the <tt class="docutils literal"><span class="pre">countdown</span></tt> argument to
@@ -244,127 +241,137 @@ unit for setting the delay is in seconds (int or float).</p>
 </div>
 </div>
 <div class="section" id="task-options">
-<h2><a class="toc-backref" href="#id6">Task options</a><a class="headerlink" href="#task-options" title="Permalink to this headline">¶</a></h2>
-<ul>
-<li><p class="first">name</p>
-<blockquote>
-<p>The name the task is registered as.
-You can set this name manually, or just use the default which is
+<span id="id1"></span><h2><a class="toc-backref" href="#id7">Task options</a><a class="headerlink" href="#task-options" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="general">
+<h3><a class="toc-backref" href="#id8">General</a><a class="headerlink" href="#general" title="Permalink to this headline">¶</a></h3>
+<span class="target" id="task-general-options"></span><dl class="attribute">
+<dt id="Task.name">
+<tt class="descclassname">Task.</tt><tt class="descname">name</tt><a class="headerlink" href="#Task.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name the task is registered as.</p>
+<p>You can set this name manually, or just use the default which is
 automatically generated using the module and class name.</p>
-</blockquote>
-</li>
-<li><p class="first">abstract</p>
-<blockquote>
-<p>Abstract classes are not registered, but are used as the superclass
-when making new task types by subclassing.</p>
-</blockquote>
-</li>
-<li><p class="first">max_retries</p>
-<blockquote>
-<p>The maximum number of attempted retries before giving up.
-If this is exceeded the <tt class="xref py py-exc docutils literal"><span class="pre">MaxRetriesExceeded</span></tt>
-exception will be raised. Note that you have to retry manually, it&#8217;s
-not something that happens automatically.</p>
-</blockquote>
-</li>
-<li><p class="first">default_retry_delay</p>
-<blockquote>
-<p>Default time in seconds before a retry of the task should be
-executed. Can be either an <tt class="docutils literal"><span class="pre">int</span></tt> or a <tt class="docutils literal"><span class="pre">float</span></tt>.
-Default is a 3 minute delay (<tt class="docutils literal"><span class="pre">180</span> <span class="pre">seconds</span></tt>).</p>
-</blockquote>
-</li>
-<li><p class="first">rate_limit</p>
-<p>Set the rate limit for this task type, that is, how many times in a given
-period of time is the task allowed to run.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Task.abstract">
+<tt class="descclassname">Task.</tt><tt class="descname">abstract</tt><a class="headerlink" href="#Task.abstract" title="Permalink to this definition">¶</a></dt>
+<dd><p>Abstract classes are not registered, but are used as the
+superclass when making new task types by subclassing.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Task.max_retries">
+<tt class="descclassname">Task.</tt><tt class="descname">max_retries</tt><a class="headerlink" href="#Task.max_retries" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum number of attempted retries before giving up.
+If this exceeds the <tt class="xref py py-exc docutils literal"><span class="pre">MaxRetriesExceeded</span></tt>
+an exception will be raised. <em>NOTE:</em> You have to <tt class="xref py py-meth docutils literal"><span class="pre">retry()</span></tt>
+manually, it&#8217;s not something that happens automatically.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Task.default_retry_delay">
+<tt class="descclassname">Task.</tt><tt class="descname">default_retry_delay</tt><a class="headerlink" href="#Task.default_retry_delay" title="Permalink to this definition">¶</a></dt>
+<dd><p>Default time in seconds before a retry of the task
+should be executed. Can be either an <tt class="docutils literal"><span class="pre">int</span></tt> or a <tt class="docutils literal"><span class="pre">float</span></tt>.
+Default is a 3 minute delay.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Task.rate_limit">
+<tt class="descclassname">Task.</tt><tt class="descname">rate_limit</tt><a class="headerlink" href="#Task.rate_limit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the rate limit for this task type, i.e. how many times in
+a given period of time is the task allowed to run.</p>
 <p>If this is <tt class="xref docutils literal"><span class="pre">None</span></tt> no rate limit is in effect.
 If it is an integer, it is interpreted as &#8220;tasks per second&#8221;.</p>
 <p>The rate limits can be specified in seconds, minutes or hours
-by appending <tt class="docutils literal"><span class="pre">&quot;/s&quot;</span></tt>, <tt class="docutils literal"><span class="pre">&quot;/m&quot;</span></tt> or &#8220;<tt class="docutils literal"><span class="pre">/h&quot;</span></tt>&#8221; to the value.
-Example: <tt class="docutils literal"><span class="pre">&quot;100/m&quot;</span> <span class="pre">(hundred</span> <span class="pre">tasks</span> <span class="pre">a</span>
-<span class="pre">minute).</span> <span class="pre">Default</span> <span class="pre">is</span> <span class="pre">the</span> <span class="pre">``CELERY_DEFAULT_RATE_LIMIT</span></tt> setting, which if not
-specified means rate limiting for tasks is turned off by default.</p>
-</li>
-<li><p class="first">ignore_result</p>
-<dl class="docutils">
-<dt>Don&#8217;t store the status and return value. This means you can&#8217;t</dt>
-<dd><p class="first last">use the <a class="reference internal" href="../reference/celery.result.html#celery.result.AsyncResult" title="celery.result.AsyncResult"><tt class="xref py py-class docutils literal"><span class="pre">celery.result.AsyncResult</span></tt></a> to check if the task is
-done, or get its return value. Only use if you need the performance
-and is able live without these features. Any exceptions raised will
-store the return value/status as usual.</p>
-</dd>
-</dl>
-</li>
-<li><p class="first">disable_error_emails</p>
-<blockquote>
-<p>Disable error e-mails for this task. Default is <tt class="xref docutils literal"><span class="pre">False</span></tt>.
-<em>Note:</em> You can also turn off error e-mails globally using the
-<tt class="docutils literal"><span class="pre">CELERY_SEND_TASK_ERROR_EMAILS</span></tt> setting.</p>
-</blockquote>
-</li>
-<li><p class="first">serializer</p>
-<blockquote>
-<p>A string identifying the default serialization
-method to use. Defaults to the <tt class="docutils literal"><span class="pre">CELERY_TASK_SERIALIZER</span></tt> setting.
-Can be <tt class="docutils literal"><span class="pre">pickle</span></tt> <tt class="docutils literal"><span class="pre">json</span></tt>, <tt class="docutils literal"><span class="pre">yaml</span></tt>, or any custom serialization
-methods that have been registered with
+by appending <tt class="docutils literal"><span class="pre">&quot;/s&quot;</span></tt>, <tt class="docutils literal"><span class="pre">&quot;/m&quot;</span></tt> or <tt class="docutils literal"><span class="pre">&quot;/h&quot;</span></tt> to the value.
+Example: <tt class="docutils literal"><span class="pre">&quot;100/m&quot;</span></tt> (hundred tasks a minute). Default is the
+<tt class="docutils literal"><span class="pre">CELERY_DEFAULT_RATE_LIMIT</span></tt> setting, which if not specified means
+rate limiting for tasks is turned off by default.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Task.ignore_result">
+<tt class="descclassname">Task.</tt><tt class="descname">ignore_result</tt><a class="headerlink" href="#Task.ignore_result" title="Permalink to this definition">¶</a></dt>
+<dd><p>Don&#8217;t store task state. This means you can&#8217;t use the
+<a class="reference internal" href="../reference/celery.result.html#celery.result.AsyncResult" title="celery.result.AsyncResult"><tt class="xref py py-class docutils literal"><span class="pre">AsyncResult</span></tt></a> to check if the task is ready,
+or get its return value.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Task.send_error_emails">
+<tt class="descclassname">Task.</tt><tt class="descname">send_error_emails</tt><a class="headerlink" href="#Task.send_error_emails" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send an e-mail whenever a task of this type fails.
+Defaults to the <tt class="docutils literal"><span class="pre">CELERY_SEND_TASK_ERROR_EMAILS</span></tt> setting.
+See <a class="reference internal" href="../configuration.html#conf-error-mails"><em>Error E-Mails</em></a> for more information.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Task.serializer">
+<tt class="descclassname">Task.</tt><tt class="descname">serializer</tt><a class="headerlink" href="#Task.serializer" title="Permalink to this definition">¶</a></dt>
+<dd><p>A string identifying the default serialization
+method to use. Defaults to the <tt class="docutils literal"><span class="pre">CELERY_TASK_SERIALIZER</span></tt>
+setting.  Can be <tt class="docutils literal"><span class="pre">pickle</span></tt> <tt class="docutils literal"><span class="pre">json</span></tt>, <tt class="docutils literal"><span class="pre">yaml</span></tt>, or any custom
+serialization methods that have been registered with
 <tt class="xref py py-mod docutils literal"><span class="pre">carrot.serialization.registry</span></tt>.</p>
-<p>Please see <a class="reference internal" href="executing.html"><em>Executing Tasks</em></a> for more information.</p>
-</blockquote>
-</li>
-</ul>
+<p>Please see <a class="reference internal" href="executing.html#executing-serializers"><em>Serializers</em></a> for more information.</p>
+</dd></dl>
+
+</div>
 <div class="section" id="message-and-routing-options">
-<h3><a class="toc-backref" href="#id7">Message and routing options</a><a class="headerlink" href="#message-and-routing-options" title="Permalink to this headline">¶</a></h3>
-<ul>
-<li><p class="first">queue</p>
-<blockquote>
-<p>Use the routing settings from a queue defined in <tt class="docutils literal"><span class="pre">CELERY_QUEUES</span></tt>.
-If defined the <tt class="docutils literal"><span class="pre">exchange</span></tt> and <tt class="docutils literal"><span class="pre">routing_key</span></tt> options will be ignored.</p>
-</blockquote>
-</li>
-<li><p class="first">exchange</p>
-<blockquote>
-<p>Override the global default <tt class="docutils literal"><span class="pre">exchange</span></tt> for this task.</p>
-</blockquote>
-</li>
-<li><p class="first">routing_key</p>
-<blockquote>
-<p>Override the global default <tt class="docutils literal"><span class="pre">routing_key</span></tt> for this task.</p>
-</blockquote>
-</li>
-<li><dl class="first docutils">
-<dt>mandatory</dt>
-<dd><p class="first last">If set, the task message has mandatory routing. By default the task
+<span id="task-message-options"></span><h3><a class="toc-backref" href="#id9">Message and routing options</a><a class="headerlink" href="#message-and-routing-options" title="Permalink to this headline">¶</a></h3>
+<dl class="attribute">
+<dt id="Task.queue">
+<tt class="descclassname">Task.</tt><tt class="descname">queue</tt><a class="headerlink" href="#Task.queue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use the routing settings from a queue defined in <tt class="docutils literal"><span class="pre">CELERY_QUEUES</span></tt>.
+If defined the <a class="reference internal" href="#Task.exchange" title="Task.exchange"><tt class="xref py py-attr docutils literal"><span class="pre">exchange</span></tt></a> and <a class="reference internal" href="#Task.routing_key" title="Task.routing_key"><tt class="xref py py-attr docutils literal"><span class="pre">routing_key</span></tt></a> options will be
+ignored.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Task.exchange">
+<tt class="descclassname">Task.</tt><tt class="descname">exchange</tt><a class="headerlink" href="#Task.exchange" title="Permalink to this definition">¶</a></dt>
+<dd><p>Override the global default <tt class="docutils literal"><span class="pre">exchange</span></tt> for this task.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Task.routing_key">
+<tt class="descclassname">Task.</tt><tt class="descname">routing_key</tt><a class="headerlink" href="#Task.routing_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Override the global default <tt class="docutils literal"><span class="pre">routing_key</span></tt> for this task.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Task.mandatory">
+<tt class="descclassname">Task.</tt><tt class="descname">mandatory</tt><a class="headerlink" href="#Task.mandatory" title="Permalink to this definition">¶</a></dt>
+<dd><p>If set, the task message has mandatory routing.  By default the task
 is silently dropped by the broker if it can&#8217;t be routed to a queue.
-However - If the task is mandatory, an exception will be raised
+However &#8211; If the task is mandatory, an exception will be raised
 instead.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt>immediate</dt>
-<dd><p class="first last">Request immediate delivery. If the task cannot be routed to a
-task worker immediately, an exception will be raised. This is
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Task.immediate">
+<tt class="descclassname">Task.</tt><tt class="descname">immediate</tt><a class="headerlink" href="#Task.immediate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Request immediate delivery.  If the task cannot be routed to a
+task worker immediately, an exception will be raised.  This is
 instead of the default behavior, where the broker will accept and
 queue the task, but with no guarantee that the task will ever
 be executed.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt>priority</dt>
-<dd><p class="first last">The message priority. A number from <tt class="docutils literal"><span class="pre">0</span></tt> to <tt class="docutils literal"><span class="pre">9</span></tt>, where <tt class="docutils literal"><span class="pre">0</span></tt> is the
-highest. <strong>Note:</strong> RabbitMQ does not support priorities yet.</p>
-</dd>
-</dl>
-</li>
-</ul>
-<p>See <a class="reference internal" href="executing.html"><em>Executing Tasks</em></a> for more information about the messaging options
-available, also <a class="reference internal" href="routing.html"><em>Routing Tasks</em></a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Task.priority">
+<tt class="descclassname">Task.</tt><tt class="descname">priority</tt><a class="headerlink" href="#Task.priority" title="Permalink to this definition">¶</a></dt>
+<dd><p>The message priority. A number from 0 to 9, where 0 is the
+highest priority. <strong>Note:</strong> RabbitMQ does not support priorities yet.</p>
+</dd></dl>
+
+<p>Also see <a class="reference internal" href="executing.html#executing-routing"><em>Routing options</em></a> for more information about message options,
+and <a class="reference internal" href="routing.html#guide-routing"><em>Routing Tasks</em></a>.</p>
 </div>
 </div>
 <div class="section" id="example">
-<h2><a class="toc-backref" href="#id8">Example</a><a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<span id="task-example"></span><h2><a class="toc-backref" href="#id10">Example</a><a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
 <p>Let&#8217;s take a real wold example; A blog where comments posted needs to be
 filtered for spam. When the comment is created, the spam filter runs in the
 background, so the user doesn&#8217;t have to wait for it to finish.</p>
@@ -372,7 +379,7 @@ background, so the user doesn&#8217;t have to wait for it to finish.</p>
 on blog posts. We&#8217;ll describe parts of the models/views and tasks for this
 application.</p>
 <div class="section" id="blog-models-py">
-<h3><a class="toc-backref" href="#id9">blog/models.py</a><a class="headerlink" href="#blog-models-py" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id11">blog/models.py</a><a class="headerlink" href="#blog-models-py" title="Permalink to this headline">¶</a></h3>
 <p>The comment model looks like this:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">models</span>
 <span class="kn">from</span> <span class="nn">django.utils.translation</span> <span class="kn">import</span> <span class="n">ugettext_lazy</span> <span class="k">as</span> <span class="n">_</span>
@@ -398,7 +405,7 @@ application.</p>
 to the database, then we launch the spam filter task in the background.</p>
 </div>
 <div class="section" id="blog-views-py">
-<h3><a class="toc-backref" href="#id10">blog/views.py</a><a class="headerlink" href="#blog-views-py" title="Permalink to this headline">¶</a></h3>
+<span id="task-example-blog-views"></span><h3><a class="toc-backref" href="#id12">blog/views.py</a><a class="headerlink" href="#blog-views-py" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">django</span> <span class="kn">import</span> <span class="n">forms</span>
 <span class="kn">from</span> <span class="nn">django.http</span> <span class="kn">import</span> <span class="n">HttpResponseRedirect</span>
 <span class="kn">from</span> <span class="nn">django.template.context</span> <span class="kn">import</span> <span class="n">RequestContext</span>
@@ -441,7 +448,7 @@ need to pay. You have to sign up to their service to get an API key.</p>
 Michael Foord.</p>
 </div>
 <div class="section" id="blog-tasks-py">
-<h3><a class="toc-backref" href="#id11">blog/tasks.py</a><a class="headerlink" href="#blog-tasks-py" title="Permalink to this headline">¶</a></h3>
+<span id="task-example-blog-tasks"></span><h3><a class="toc-backref" href="#id13">blog/tasks.py</a><a class="headerlink" href="#blog-tasks-py" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">akismet</span> <span class="kn">import</span> <span class="n">Akismet</span>
 <span class="kn">from</span> <span class="nn">celery.decorators</span> <span class="kn">import</span> <span class="n">task</span>
 
@@ -477,7 +484,7 @@ Michael Foord.</p>
 </div>
 </div>
 <div class="section" id="how-it-works">
-<h2><a class="toc-backref" href="#id12">How it works</a><a class="headerlink" href="#how-it-works" title="Permalink to this headline">¶</a></h2>
+<span id="task-how-they-work"></span><h2><a class="toc-backref" href="#id14">How it works</a><a class="headerlink" href="#how-it-works" title="Permalink to this headline">¶</a></h2>
 <p>Here comes the technical details, this part isn&#8217;t something you need to know,
 but you may be interested.</p>
 <p>All defined tasks are listed in a registry. The registry contains
@@ -521,9 +528,9 @@ as the client. This is a drawback, but the alternative is a technical
 challenge that has yet to be solved.</p>
 </div>
 <div class="section" id="tips-and-best-practices">
-<h2><a class="toc-backref" href="#id13">Tips and Best Practices</a><a class="headerlink" href="#tips-and-best-practices" title="Permalink to this headline">¶</a></h2>
+<span id="task-best-practices"></span><h2><a class="toc-backref" href="#id15">Tips and Best Practices</a><a class="headerlink" href="#tips-and-best-practices" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="ignore-results-you-don-t-want">
-<h3><a class="toc-backref" href="#id14">Ignore results you don&#8217;t want</a><a class="headerlink" href="#ignore-results-you-don-t-want" title="Permalink to this headline">¶</a></h3>
+<span id="task-ignore-results"></span><h3><a class="toc-backref" href="#id16">Ignore results you don&#8217;t want</a><a class="headerlink" href="#ignore-results-you-don-t-want" title="Permalink to this headline">¶</a></h3>
 <p>If you don&#8217;t care about the results of a task, be sure to set the
 <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.Task.ignore_result" title="celery.task.base.Task.ignore_result"><tt class="xref py py-attr docutils literal"><span class="pre">ignore_result</span></tt></a> option, as storing results
 wastes time and resources.</p>
@@ -535,7 +542,7 @@ def mytask(...)
 setting.</p>
 </div>
 <div class="section" id="disable-rate-limits-if-they-re-not-used">
-<h3><a class="toc-backref" href="#id15">Disable rate limits if they&#8217;re not used</a><a class="headerlink" href="#disable-rate-limits-if-they-re-not-used" title="Permalink to this headline">¶</a></h3>
+<span id="task-disable-rate-limits"></span><h3><a class="toc-backref" href="#id17">Disable rate limits if they&#8217;re not used</a><a class="headerlink" href="#disable-rate-limits-if-they-re-not-used" title="Permalink to this headline">¶</a></h3>
 <p>Disabling rate limits altogether is recommended if you don&#8217;t have
 any tasks using them. This is because the rate limit subsystem introduces
 quite a lot of complexity.</p>
@@ -546,7 +553,7 @@ rate limits:</p>
 </div>
 </div>
 <div class="section" id="avoid-launching-synchronous-subtasks">
-<h3><a class="toc-backref" href="#id16">Avoid launching synchronous subtasks</a><a class="headerlink" href="#avoid-launching-synchronous-subtasks" title="Permalink to this headline">¶</a></h3>
+<span id="task-synchronous-subtasks"></span><h3><a class="toc-backref" href="#id18">Avoid launching synchronous subtasks</a><a class="headerlink" href="#avoid-launching-synchronous-subtasks" title="Permalink to this headline">¶</a></h3>
 <p>Having a task wait for the result of another task is really inefficient,
 and may even cause a deadlock if the worker pool is exhausted.</p>
 <p>Make your design asynchronous instead, for example by using <em>callbacks</em>.</p>
@@ -605,9 +612,9 @@ subtasks.</p>
 </div>
 </div>
 <div class="section" id="performance-and-strategies">
-<h2><a class="toc-backref" href="#id17">Performance and Strategies</a><a class="headerlink" href="#performance-and-strategies" title="Permalink to this headline">¶</a></h2>
+<span id="task-performance-and-strategies"></span><h2><a class="toc-backref" href="#id19">Performance and Strategies</a><a class="headerlink" href="#performance-and-strategies" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="granularity">
-<h3><a class="toc-backref" href="#id18">Granularity</a><a class="headerlink" href="#granularity" title="Permalink to this headline">¶</a></h3>
+<span id="task-granularity"></span><h3><a class="toc-backref" href="#id20">Granularity</a><a class="headerlink" href="#granularity" title="Permalink to this headline">¶</a></h3>
 <p>The task granularity is the amount of computation needed by each subtask.
 It&#8217;s generally better to split your problem up in many small tasks, than
 having a few long running ones.</p>
@@ -620,7 +627,7 @@ overhead may not be worth it in the end.</p>
 granularity.</p>
 </div>
 <div class="section" id="data-locality">
-<h3><a class="toc-backref" href="#id19">Data locality</a><a class="headerlink" href="#data-locality" title="Permalink to this headline">¶</a></h3>
+<span id="task-data-locality"></span><h3><a class="toc-backref" href="#id21">Data locality</a><a class="headerlink" href="#data-locality" title="Permalink to this headline">¶</a></h3>
 <p>The worker processing the task should be as close to the data as
 possible. The best would be to have a copy in memory, the worst being a
 full transfer from another continent.</p>
@@ -633,7 +640,7 @@ system, like <a class="reference external" href="http://memcached.org/">memcache
 <a class="reference external" href="http://research.microsoft.com/pubs/70001/tr-2003-24.pdf">http://research.microsoft.com/pubs/70001/tr-2003-24.pdf</a></p>
 </div>
 <div class="section" id="state">
-<h3><a class="toc-backref" href="#id20">State</a><a class="headerlink" href="#state" title="Permalink to this headline">¶</a></h3>
+<span id="task-state"></span><h3><a class="toc-backref" href="#id22">State</a><a class="headerlink" href="#state" title="Permalink to this headline">¶</a></h3>
 <p>Since celery is a distributed system, you can&#8217;t know in which process, or even
 on what machine the task will run. Indeed you can&#8217;t even know if the task will
 run in a timely manner, so please be wary of the state you pass on to tasks.</p>
@@ -676,7 +683,7 @@ def expand_abbreviations(article_id):
 messages may be expensive.</p>
 </div>
 <div class="section" id="database-transactions">
-<h3><a class="toc-backref" href="#id21">Database transactions</a><a class="headerlink" href="#database-transactions" title="Permalink to this headline">¶</a></h3>
+<span id="task-database-transactions"></span><h3><a class="toc-backref" href="#id23">Database transactions</a><a class="headerlink" href="#database-transactions" title="Permalink to this headline">¶</a></h3>
 <p>Let&#8217;s look at another example:</p>
 <div class="highlight-python"><pre>from django.db import transaction
 
@@ -729,6 +736,7 @@ that depends on state from the current transaction</strong>:</p>
 </ul>
 </li>
 <li><a class="reference internal" href="#task-options">Task options</a><ul>
+<li><a class="reference internal" href="#general">General</a></li>
 <li><a class="reference internal" href="#message-and-routing-options">Message and routing options</a></li>
 </ul>
 </li>

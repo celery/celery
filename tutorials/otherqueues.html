@@ -53,7 +53,7 @@
           <div class="body">
             
   <div class="section" id="using-celery-with-redis-database-as-the-messaging-queue">
-<h1>Using Celery with Redis/Database as the messaging queue.<a class="headerlink" href="#using-celery-with-redis-database-as-the-messaging-queue" title="Permalink to this headline">¶</a></h1>
+<span id="tut-otherqueues"></span><h1>Using Celery with Redis/Database as the messaging queue.<a class="headerlink" href="#using-celery-with-redis-database-as-the-messaging-queue" title="Permalink to this headline">¶</a></h1>
 <p>There&#8217;s a plug-in for celery that enables the use of Redis or an SQL database
 as the messaging queue. This is not part of celery itself, but exists as
 an extension to <a class="reference external" href="http://pypi.python.org/pypi/carrot">carrot</a>.</p>
@@ -65,25 +65,25 @@ an extension to <a class="reference external" href="http://pypi.python.org/pypi/
 </ul>
 </li>
 <li><a class="reference external" href="#database" id="id5">Database</a><ul>
-<li><a class="reference external" href="#id1" id="id6">Configuration</a></li>
+<li><a class="reference external" href="#otherqueues-database-conf" id="id6">Configuration</a></li>
 <li><a class="reference external" href="#important-notes" id="id7">Important notes</a></li>
 </ul>
 </li>
 </ul>
 </div>
 <div class="section" id="installation">
-<h2><a class="toc-backref" href="#id2">Installation</a><a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<span id="otherqueues-installation"></span><h2><a class="toc-backref" href="#id2">Installation</a><a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
 <p>You need to install the <a class="reference external" href="http://pypi.python.org/pypi/ghettoq">ghettoq</a> library:</p>
 <div class="highlight-python"><pre>$ pip install -U ghettoq</pre>
 </div>
 </div>
 <div class="section" id="redis">
-<h2><a class="toc-backref" href="#id3">Redis</a><a class="headerlink" href="#redis" title="Permalink to this headline">¶</a></h2>
+<span id="otherqueues-redis"></span><h2><a class="toc-backref" href="#id3">Redis</a><a class="headerlink" href="#redis" title="Permalink to this headline">¶</a></h2>
 <p>For the Redis support you have to install the Python redis client:</p>
 <div class="highlight-python"><pre>$ pip install -U redis</pre>
 </div>
 <div class="section" id="configuration">
-<h3><a class="toc-backref" href="#id4">Configuration</a><a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h3>
+<span id="otherqueues-redis-conf"></span><h3><a class="toc-backref" href="#id4">Configuration</a><a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h3>
 <p>Configuration is easy, set the carrot backend, and configure the location of
 your Redis database:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">CARROT_BACKEND</span> <span class="o">=</span> <span class="s">&quot;ghettoq.taproot.Redis&quot;</span>
@@ -96,9 +96,9 @@ your Redis database:</p>
 </div>
 </div>
 <div class="section" id="database">
-<h2><a class="toc-backref" href="#id5">Database</a><a class="headerlink" href="#database" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="id1">
-<h3><a class="toc-backref" href="#id6">Configuration</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<span id="otherqueues-database"></span><h2><a class="toc-backref" href="#id5">Database</a><a class="headerlink" href="#database" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="otherqueues-database-conf">
+<span id="id1"></span><h3><a class="toc-backref" href="#id6">Configuration</a><a class="headerlink" href="#otherqueues-database-conf" title="Permalink to this headline">¶</a></h3>
 <p>The database backend uses the Django <tt class="docutils literal"><span class="pre">DATABASE_*</span></tt> settings for database
 configuration values.</p>
 <ol class="arabic">
@@ -136,7 +136,7 @@ you should read the Django database settings reference:
 </ol>
 </div>
 <div class="section" id="important-notes">
-<h3><a class="toc-backref" href="#id7">Important notes</a><a class="headerlink" href="#important-notes" title="Permalink to this headline">¶</a></h3>
+<span id="otherqueues-notes"></span><h3><a class="toc-backref" href="#id7">Important notes</a><a class="headerlink" href="#important-notes" title="Permalink to this headline">¶</a></h3>
 <p>These message queues does not have the concept of exchanges and routing keys,
 there&#8217;s only the queue entity. As a result of this you need to set the
 name of the exchange to be the same as the queue:</p>
@@ -173,7 +173,7 @@ already using the same name for queue/exchange.</p>
 </ul>
 </li>
 <li><a class="reference internal" href="#database">Database</a><ul>
-<li><a class="reference internal" href="#id1">Configuration</a></li>
+<li><a class="reference internal" href="#otherqueues-database-conf">Configuration</a></li>
 <li><a class="reference internal" href="#important-notes">Important notes</a></li>
 </ul>
 </li>

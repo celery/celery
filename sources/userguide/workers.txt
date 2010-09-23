@@ -1,9 +1,13 @@
+.. _guide-worker:
+
 ===============
  Workers Guide
 ===============
 
 .. contents::
     :local:
+
+.. _worker-starting:
 
 Starting the worker
 ===================
@@ -29,6 +33,8 @@ hostname with the ``--hostname|-n`` argument::
     $ celeryd --loglevel=INFO --concurrency=10 -n worker2.example.com
     $ celeryd --loglevel=INFO --concurrency=10 -n worker3.example.com
 
+.. _worker-stopping:
+
 Stopping the worker
 ===================
 
@@ -51,6 +57,8 @@ command usually does the trick::
 
     $ ps auxww | grep celeryd | awk '{print $2}' | xargs kill -9
 
+.. _worker-restarting:
+
 Restarting the worker
 =====================
 
@@ -61,6 +69,8 @@ restart the worker using the ``HUP`` signal::
 
 The worker will then replace itself with a new instance using the same
 arguments as it was started with.
+
+.. _worker-concurrency:
 
 Concurrency
 ===========
@@ -76,6 +86,8 @@ may perform better than having a single worker. For example 3 celeryd's with
 10 worker processes each, but you need to experiment to find the values that
 works best for you as this varies based on application, work load, task
 run times and other factors.
+
+.. _worker-time-limits:
 
 Time limits
 ===========
@@ -108,6 +120,7 @@ Time limits can also be set using the ``CELERYD_TASK_TIME_LIMIT`` /
 
 **NOTE** Time limits does not currently work on Windows.
 
+.. _worker-maxtasksperchild:
 
 Max tasks per child setting
 ===========================
@@ -120,6 +133,8 @@ for example from closed source C extensions.
 
 The option can be set using the ``--maxtasksperchild`` argument
 to ``celeryd`` or using the ``CELERYD_MAX_TASKS_PER_CHILD`` setting.
+
+.. _worker-remote-control:
 
 Remote control
 ==============
@@ -141,6 +156,8 @@ commands, so adjust the timeout accordingly.
 In addition to timeouts, the client can specify the maximum number
 of replies to wait for. If a destination is specified this limit is set
 to the number of destination hosts.
+
+.. _worker-broadcast-fun:
 
 The :func:`~celery.task.control.broadcast` function.
 ----------------------------------------------------
@@ -179,6 +196,8 @@ Of course, using the higher-level interface to set rate limits is much
 more convenient, but there are commands that can only be requested
 using :func:`~celery.task.control.broadcast`.
 
+.. _worker-rate-limits:
+
 Rate limits
 -----------
 
@@ -197,6 +216,7 @@ destination hostname::
 **NOTE** This won't affect workers with the ``CELERY_DISABLE_RATE_LIMITS``
 setting on. To re-enable rate limits then you have to restart the worker.
 
+.. _worker-remote-shutdown:
 
 Remote shutdown
 ---------------
@@ -205,6 +225,8 @@ This command will gracefully shut down the worker remotely::
 
     >>> broadcast("shutdown") # shutdown all workers
     >>> broadcast("shutdown, destination="worker1.example.com")
+
+.. _worker-ping:
 
 Ping
 ----
@@ -227,6 +249,8 @@ so you can specify which workers to ping::
     [{'worker2.example.com': 'pong'},
      {'worker3.example.com': 'pong'}]
 
+.. _worker-enable-events:
+
 Enable/disable events
 ---------------------
 
@@ -236,6 +260,8 @@ a worker using celeryev/celerymon.
 
     >>> broadcast("enable_events")
     >>> broadcast("disable_events")
+
+.. _worker-custom-control-commands:
 
 Writing your own remote control commands
 ----------------------------------------
@@ -264,6 +290,8 @@ then import them using the ``CELERY_IMPORTS`` setting::
 
     CELERY_IMPORTS = ("myapp.worker.control", )
 
+.. _worker-inspect:
+
 Inspecting workers
 ==================
 
@@ -284,6 +312,8 @@ remote control commands under the hood.
     >>> i = inspect("worker1.example.com")
 
 
+.. _worker-inspect-registered-tasks:
+
 Dump of registered tasks
 ------------------------
 
@@ -299,6 +329,8 @@ You can get a list of tasks registered in the worker using the
                               'tasks.add',
                               'tasks.sleeptask']}]
 
+.. _worker-inspect-active-tasks:
+
 Dump of currently executing tasks
 ---------------------------------
 
@@ -312,6 +344,7 @@ You can get a list of active tasks using
           "args": "(8,)",
           "kwargs": "{}"}]}]
 
+.. _worker-inspect-eta-schedule:
 
 Dump of scheduled (ETA) tasks
 -----------------------------
@@ -335,6 +368,8 @@ You can get a list of tasks waiting to be scheduled by using
             "kwargs": "{}"}}]}]
 
 Note that these are tasks with an eta/countdown argument, not periodic tasks.
+
+.. _worker-inspect-reserved:
 
 Dump of reserved tasks
 ----------------------

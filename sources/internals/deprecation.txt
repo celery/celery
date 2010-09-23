@@ -1,9 +1,13 @@
+.. _deprecation-timeline:
+
 =============================
  Celery Deprecation Timeline
 =============================
 
 .. contents::
     :local:
+
+.. _deprecations-v2.0:
 
 Removals for version 2.0
 ========================

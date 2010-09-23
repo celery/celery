@@ -1,3 +1,5 @@
+.. _daemonizing:
+
 =============================
  Running celeryd as a daemon
 =============================
@@ -7,6 +9,9 @@ daemonization tools.
 
 .. contents::
     :local:
+
+
+.. _daemon-start-stop-daemon:
 
 
 start-stop-daemon (Debian/Ubuntu/++)
@@ -20,6 +25,8 @@ These scripts are configured in ``/etc/default/celeryd``.
 .. _`contrib/debian/init.d/`:
     http://github.com/ask/celery/tree/master/contrib/debian/
 
+.. _debian-initd-celeryd:
+
 Init script: celeryd
 --------------------
 
@@ -28,6 +35,8 @@ Init script: celeryd
 
 To configure celeryd you probably need to at least tell it where to chdir
 when it starts (to find your celeryconfig).
+
+.. _debian-initd-celeryd-example:
 
 Example configuration
 ~~~~~~~~~~~~~~~~~~~~~
@@ -45,6 +54,8 @@ This is an example configuration for a Python project.
     # Name of the celery config module.#
     CELERY_CONFIG_MODULE="celeryconfig"
 
+.. _debian-initd-celeryd-django-example:
+
 Example Django configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -58,6 +69,8 @@ This is an example configuration for those using ``django-celery``::
 
     # Name of the projects settings module.
     export DJANGO_SETTINGS_MODULE="settings"
+
+.. _debian-initd-celeryd-options:
 
 Available options
 ~~~~~~~~~~~~~~~~~~
@@ -87,11 +100,14 @@ Available options
 * CELERYD_GROUP
     Group to run celeryd as. Default is current user.
 
+.. _debian-initd-celerybeat:
+
 Init script: celerybeat
 -----------------------
 :Usage: ``/etc/init.d/celerybeat {start|stop|force-reload|restart|try-restart|status}``
 :Configuration file: /etc/default/celerybeat or /etc/default/celeryd
 
+.. _debian-initd-celerybeat-example:
 
 Example configuration
 ~~~~~~~~~~~~~~~~~~~~~
@@ -112,6 +128,8 @@ This is an example configuration for a Python project:
     # Name of the celery config module.#
     CELERY_CONFIG_MODULE="celeryconfig"
 
+.. _debian-initd-celerybeat-django-example:
+
 Example Django configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -131,6 +149,8 @@ This is an example configuration for those using ``django-celery``::
 
     # Extra arguments to celerybeat
     CELERYBEAT_OPTS="--schedule=/var/run/celerybeat-schedule"
+
+.. _debian-initd-celerybeat-options:
 
 Available options
 ~~~~~~~~~~~~~~~~~
@@ -158,6 +178,8 @@ Available options
 * CELERYBEAT_GROUP
     Group to run celeryd as. Default is current user.
 
+.. _debian-initd-troubleshooting:
+
 Troubleshooting
 ---------------
 
@@ -184,6 +206,7 @@ actual resulting output::
     $ /opt/Opal/release/opal/manage.py celeryd --time-limit=300 \
         -f /var/log/celeryd.log -l INFO
 
+.. _daemon-supervisord:
 
 `supervisord`_
 ==============
@@ -193,6 +216,8 @@ actual resulting output::
 .. _`contrib/supervisord/`:
     http://github.com/ask/celery/tree/master/contrib/supervisord/
 .. _`supervisord`: http://supervisord.org/
+
+.. _daemon-launchd:
 
 launchd (OS X)
 ==============

@@ -133,6 +133,7 @@
     <dt><a href="reference/celery.contrib.abortable.html#celery.contrib.abortable.AbortableTask">AbortableTask (class in celery.contrib.abortable)</a></dt>
     <dt><a href="reference/celery.task.base.html#celery.task.base.Task.abstract">abstract (celery.task.base.Task attribute)</a></dt>
     <dd><dl>
+      <dt><a href="userguide/tasks.html#Task.abstract">(Task attribute)</a></dt>
       <dt><a href="reference/celery.task.html#celery.task.Task.abstract">(celery.task.Task attribute)</a></dt>
   </dl></dd>
     <dt><a href="internals/reference/celery.worker.job.html#celery.worker.job.TaskRequest.acknowledge">acknowledge() (celery.worker.job.TaskRequest method)</a></dt>
@@ -242,12 +243,13 @@
     <dt><a href="reference/celery.apps.beat.html#celery.apps.beat.Beat">Beat (class in celery.apps.beat)</a></dt>
     <dt><a href="reference/celery.apps.beat.html#celery.apps.beat.Beat.Service">Beat.Service (class in celery.apps.beat)</a></dt>
     <dt><a href="reference/celery.bin.celerybeat.html#celery.bin.celerybeat.BeatCommand">BeatCommand (class in celery.bin.celerybeat)</a></dt>
+    <dt><a href="userguide/routing.html#queue.bind">bind() (queue method)</a></dt>
     <dt><a href="internals/reference/celery.utils.term.html#celery.utils.term.colored.black">black() (celery.utils.term.colored method)</a></dt>
     <dt><a href="internals/reference/celery.utils.term.html#celery.utils.term.colored.blink">blink() (celery.utils.term.colored method)</a></dt>
     <dt><a href="internals/reference/celery.utils.term.html#celery.utils.term.colored.blue">blue() (celery.utils.term.colored method)</a></dt>
-    <dt><a href="internals/reference/celery.utils.term.html#celery.utils.term.colored.bold">bold() (celery.utils.term.colored method)</a></dt>
 </dl></td>
   <td width="33%" valign="top"><dl>
+    <dt><a href="internals/reference/celery.utils.term.html#celery.utils.term.colored.bold">bold() (celery.utils.term.colored method)</a></dt>
     <dt><a href="internals/reference/celery.utils.dispatch.saferef.html#celery.utils.dispatch.saferef.BoundMethodWeakref">BoundMethodWeakref (class in celery.utils.dispatch.saferef)</a></dt>
     <dt><a href="internals/reference/celery.utils.dispatch.saferef.html#celery.utils.dispatch.saferef.BoundNonDescriptorMethodWeakref">BoundNonDescriptorMethodWeakref (class in celery.utils.dispatch.saferef)</a></dt>
     <dt><a href="internals/reference/celery.worker.heartbeat.html#celery.worker.heartbeat.Heart.bpm">bpm (celery.worker.heartbeat.Heart attribute)</a></dt>
@@ -334,7 +336,7 @@
     <dt><a href="internals/reference/celery.serialization.html#module-celery.serialization">celery.serialization (module)</a></dt>
     <dt><a href="reference/celery.states.html#module-celery.states">celery.states (module)</a></dt>
     <dt><a href="reference/celery.task.html#module-celery.task">celery.task (module)</a></dt>
-    <dt><a href="userguide/tasks.html#module-celery.task.base">celery.task.base (module)</a>, <a href="faq.html#module-celery.task.base">[1]</a>, <a href="reference/celery.task.base.html#module-celery.task.base">[2]</a></dt>
+    <dt><a href="faq.html#module-celery.task.base">celery.task.base (module)</a>, <a href="reference/celery.task.base.html#module-celery.task.base">[1]</a></dt>
     <dt><a href="reference/celery.task.builtins.html#module-celery.task.builtins">celery.task.builtins (module)</a></dt>
     <dt><a href="reference/celery.task.control.html#module-celery.task.control">celery.task.control (module)</a></dt>
     <dt><a href="reference/celery.task.http.html#module-celery.task.http">celery.task.http (module)</a>, <a href="userguide/remote-tasks.html#module-celery.task.http">[1]</a></dt>
@@ -510,6 +512,9 @@
     <dt><a href="internals/reference/celery.worker.state.html#celery.worker.state.Persistent.db">db (celery.worker.state.Persistent attribute)</a></dt>
     <dt><a href="internals/reference/celery.events.snapshot.html#celery.events.snapshot.Polaroid.debug">debug() (celery.events.snapshot.Polaroid method)</a></dt>
     <dt><a href="reference/celery.messaging.html#celery.messaging.TaskPublisher.declare">declare() (celery.messaging.TaskPublisher method)</a></dt>
+    <dd><dl>
+      <dt><a href="userguide/routing.html#queue.declare">(queue method)</a></dt>
+  </dl></dd>
     <dt><a href="internals/reference/celery.datastructures.html#celery.datastructures.SharedCounter.decrement">decrement() (celery.datastructures.SharedCounter method)</a></dt>
     <dd><dl>
       <dt><a href="internals/reference/celery.worker.listener.html#celery.worker.listener.QoS.decrement">(celery.worker.listener.QoS method)</a></dt>
@@ -524,6 +529,7 @@
     <dt><a href="reference/celery.conf.html#celery.conf.DEFAULT_RATE_LIMIT">DEFAULT_RATE_LIMIT (in module celery.conf)</a></dt>
     <dt><a href="reference/celery.task.base.html#celery.task.base.Task.default_retry_delay">default_retry_delay (celery.task.base.Task attribute)</a></dt>
     <dd><dl>
+      <dt><a href="userguide/tasks.html#Task.default_retry_delay">(Task attribute)</a></dt>
       <dt><a href="reference/celery.task.html#celery.task.Task.default_retry_delay">(celery.task.Task attribute)</a></dt>
   </dl></dd>
     <dt><a href="reference/celery.conf.html#celery.conf.DEFAULT_ROUTING_KEY">DEFAULT_ROUTING_KEY (in module celery.conf)</a></dt>
@@ -546,6 +552,8 @@
       <dt><a href="internals/reference/celery.backends.cache.html#celery.backends.cache.DummyClient.delete">(celery.backends.cache.DummyClient method)</a></dt>
       <dt><a href="internals/reference/celery.backends.pyredis.html#celery.backends.pyredis.RedisBackend.delete">(celery.backends.pyredis.RedisBackend method)</a></dt>
       <dt><a href="internals/reference/celery.backends.tyrant.html#celery.backends.tyrant.TyrantBackend.delete">(celery.backends.tyrant.TyrantBackend method)</a></dt>
+      <dt><a href="userguide/routing.html#exchange.delete">(exchange method)</a></dt>
+      <dt><a href="userguide/routing.html#queue.delete">(queue method)</a></dt>
   </dl></dd>
     <dt><a href="reference/celery.task.builtins.html#celery.task.builtins.DeleteExpiredTaskMetaTask">DeleteExpiredTaskMetaTask (in module celery.task.builtins)</a></dt>
     <dt><a href="internals/reference/celery.utils.dispatch.saferef.html#celery.utils.dispatch.saferef.BoundMethodWeakref.deletion_methods">deletion_methods (celery.utils.dispatch.saferef.BoundMethodWeakref attribute)</a></dt>
@@ -681,6 +689,7 @@
     <dt><a href="internals/reference/celery.datastructures.html#celery.datastructures.ExceptionInfo">ExceptionInfo (class in celery.datastructures)</a></dt>
     <dt><a href="reference/celery.task.base.html#celery.task.base.Task.exchange">exchange (celery.task.base.Task attribute)</a></dt>
     <dd><dl>
+      <dt><a href="userguide/tasks.html#Task.exchange">(Task attribute)</a></dt>
       <dt><a href="reference/celery.task.html#celery.task.Task.exchange">(celery.task.Task attribute)</a></dt>
   </dl></dd>
     <dt><a href="reference/celery.task.base.html#celery.task.base.Task.exchange_type">exchange_type (celery.task.base.Task attribute)</a></dt>
@@ -914,6 +923,7 @@
       <dt><a href="reference/celery.task.html#celery.task.Task.ignore_result">(celery.task.Task attribute)</a></dt>
   </dl></dd>
     <dt><a href="reference/celery.conf.html#celery.conf.IGNORE_RESULT">IGNORE_RESULT (in module celery.conf)</a></dt>
+    <dt><a href="userguide/tasks.html#Task.ignore_result">ignore_result (Task attribute)</a></dt>
     <dt><a href="internals/reference/celery.platforms.html#celery.platforms.ignore_signal">ignore_signal() (in module celery.platforms)</a></dt>
     <dt><a href="internals/reference/celery.utils.term.html#celery.utils.term.colored.igreen">igreen() (celery.utils.term.colored method)</a></dt>
     <dt><a href="internals/reference/celery.utils.term.html#celery.utils.term.colored.imagenta">imagenta() (celery.utils.term.colored method)</a></dt>
@@ -925,6 +935,7 @@
     <dd><dl>
       <dt><a href="internals/reference/celery.concurrency.processes.html#celery.concurrency.processes.TaskPool.Pool.imap_unordered">(celery.concurrency.processes.TaskPool.Pool method)</a></dt>
   </dl></dd>
+    <dt><a href="userguide/tasks.html#Task.immediate">immediate (Task attribute)</a></dt>
     <dt><a href="reference/celery.loaders.base.html#celery.loaders.base.BaseLoader.import_default_modules">import_default_modules() (celery.loaders.base.BaseLoader method)</a></dt>
     <dt><a href="reference/celery.loaders.default.html#celery.loaders.default.Loader.import_from_cwd">import_from_cwd() (celery.loaders.default.Loader method)</a></dt>
     <dt><a href="reference/celery.loaders.base.html#celery.loaders.base.BaseLoader.import_module">import_module() (celery.loaders.base.BaseLoader method)</a></dt>
@@ -951,12 +962,12 @@
     <dt><a href="internals/reference/celery.worker.buckets.html#celery.worker.buckets.TaskBucket.init_with_registry">init_with_registry() (celery.worker.buckets.TaskBucket method)</a></dt>
     <dt><a href="reference/celery.loaders.base.html#celery.loaders.base.BaseLoader.init_worker">init_worker() (celery.loaders.base.BaseLoader method)</a></dt>
     <dt><a href="internals/reference/celery.worker.listener.html#celery.worker.listener.CarrotListener.initial_prefetch_count">initial_prefetch_count (celery.worker.listener.CarrotListener attribute)</a></dt>
+</dl></td>
+  <td width="33%" valign="top"><dl>
     <dt><a href="reference/celery.bin.celeryctl.html#celery.bin.celeryctl.inspect">inspect (class in celery.bin.celeryctl)</a></dt>
     <dd><dl>
       <dt><a href="reference/celery.task.control.html#celery.task.control.inspect">(class in celery.task.control)</a></dt>
   </dl></dd>
-</dl></td>
-  <td width="33%" valign="top"><dl>
     <dt><a href="internals/reference/celery.events.snapshot.html#celery.events.snapshot.Polaroid.install">install() (celery.events.snapshot.Polaroid method)</a></dt>
     <dt><a href="reference/celery.apps.worker.html#celery.apps.worker.install_HUP_not_supported_handler">install_HUP_not_supported_handler() (in module celery.apps.worker)</a></dt>
     <dt><a href="reference/celery.apps.worker.html#celery.apps.worker.Worker.install_platform_tweaks">install_platform_tweaks() (celery.apps.worker.Worker method)</a></dt>
@@ -1090,6 +1101,7 @@
     <dt><a href="reference/celery.task.http.html#celery.task.http.HttpDispatch.make_request">make_request() (celery.task.http.HttpDispatch method)</a></dt>
     <dt><a href="reference/celery.task.base.html#celery.task.base.Task.mandatory">mandatory (celery.task.base.Task attribute)</a></dt>
     <dd><dl>
+      <dt><a href="userguide/tasks.html#Task.mandatory">(Task attribute)</a></dt>
       <dt><a href="reference/celery.task.html#celery.task.Task.mandatory">(celery.task.Task attribute)</a></dt>
   </dl></dd>
     <dt><a href="internals/reference/celery.concurrency.processes.pool.html#celery.concurrency.processes.pool.Pool.map">map() (celery.concurrency.processes.pool.Pool method)</a></dt>
@@ -1111,6 +1123,7 @@
     <dt><a href="internals/reference/celery.beat.html#celery.beat.Scheduler.max_interval">max_interval (celery.beat.Scheduler attribute)</a></dt>
     <dt><a href="reference/celery.task.base.html#celery.task.base.Task.max_retries">max_retries (celery.task.base.Task attribute)</a></dt>
     <dd><dl>
+      <dt><a href="userguide/tasks.html#Task.max_retries">(Task attribute)</a></dt>
       <dt><a href="reference/celery.task.html#celery.task.Task.max_retries">(celery.task.Task attribute)</a></dt>
   </dl></dd>
     <dt><a href="reference/celery.exceptions.html#celery.exceptions.MaxRetriesExceededError">MaxRetriesExceededError</a></dt>
@@ -1158,6 +1171,7 @@
   <td width="33%" valign="top"><dl>
     <dt><a href="internals/reference/celery.beat.html#celery.beat.ScheduleEntry.name">name (celery.beat.ScheduleEntry attribute)</a></dt>
     <dd><dl>
+      <dt><a href="userguide/tasks.html#Task.name">(Task attribute)</a></dt>
       <dt><a href="internals/reference/celery.concurrency.processes.html#celery.concurrency.processes.TaskPool.Pool.Process.name">(celery.concurrency.processes.TaskPool.Pool.Process attribute)</a></dt>
       <dt><a href="internals/reference/celery.concurrency.processes.pool.html#celery.concurrency.processes.pool.Pool.Process.name">(celery.concurrency.processes.pool.Pool.Process attribute)</a></dt>
       <dt><a href="reference/celery.task.html#celery.task.Task.name">(celery.task.Task attribute)</a></dt>
@@ -1300,9 +1314,9 @@
     <dt><a href="internals/reference/celery.concurrency.processes.pool.html#celery.concurrency.processes.pool.Pool.SoftTimeLimitExceeded">Pool.SoftTimeLimitExceeded</a></dt>
     <dt><a href="internals/reference/celery.concurrency.processes.pool.html#celery.concurrency.processes.pool.Pool.Supervisor">Pool.Supervisor (class in celery.concurrency.processes.pool)</a></dt>
     <dt><a href="internals/reference/celery.concurrency.processes.pool.html#celery.concurrency.processes.pool.Pool.TaskHandler">Pool.TaskHandler (class in celery.concurrency.processes.pool)</a></dt>
+    <dt><a href="internals/reference/celery.concurrency.processes.pool.html#celery.concurrency.processes.pool.Pool.TimeoutHandler">Pool.TimeoutHandler (class in celery.concurrency.processes.pool)</a></dt>
 </dl></td>
   <td width="33%" valign="top"><dl>
-    <dt><a href="internals/reference/celery.concurrency.processes.pool.html#celery.concurrency.processes.pool.Pool.TimeoutHandler">Pool.TimeoutHandler (class in celery.concurrency.processes.pool)</a></dt>
     <dt><a href="reference/celery.registry.html#celery.registry.TaskRegistry.pop">pop() (celery.registry.TaskRegistry method)</a></dt>
     <dd><dl>
       <dt><a href="internals/reference/celery.utils.compat.html#celery.utils.compat.OrderedDict.pop">(celery.utils.compat.OrderedDict method)</a></dt>
@@ -1319,6 +1333,7 @@
     <dt><a href="reference/celery.bin.celeryctl.html#celery.bin.celeryctl.Command.prettify">prettify() (celery.bin.celeryctl.Command method)</a></dt>
     <dt><a href="reference/celery.bin.celeryctl.html#celery.bin.celeryctl.Command.prettify_dict_ok_error">prettify_dict_ok_error() (celery.bin.celeryctl.Command method)</a></dt>
     <dt><a href="reference/celery.bin.celeryctl.html#celery.bin.celeryctl.Command.prettify_list">prettify_list() (celery.bin.celeryctl.Command method)</a></dt>
+    <dt><a href="userguide/tasks.html#Task.priority">priority (Task attribute)</a></dt>
     <dt><a href="reference/celery.events.html#celery.events.EventReceiver.process">process() (celery.events.EventReceiver method)</a></dt>
     <dt><a href="internals/reference/celery.backends.base.html#celery.backends.base.BaseBackend.process_cleanup">process_cleanup() (celery.backends.base.BaseBackend method)</a></dt>
     <dd><dl>
@@ -1360,6 +1375,7 @@
     <dt><a href="reference/celery.task.http.html#celery.task.http.MutableURL.query">query (celery.task.http.MutableURL attribute)</a></dt>
     <dt><a href="reference/celery.task.base.html#celery.task.base.Task.queue">queue (celery.task.base.Task attribute)</a></dt>
     <dd><dl>
+      <dt><a href="userguide/tasks.html#Task.queue">(Task attribute)</a></dt>
       <dt><a href="reference/celery.task.html#celery.task.Task.queue">(celery.task.Task attribute)</a></dt>
       <dt><a href="internals/reference/celery.utils.timer2.html#celery.utils.timer2.Schedule.queue">(celery.utils.timer2.Schedule attribute)</a></dt>
       <dt><a href="internals/reference/celery.utils.timer2.html#celery.utils.timer2.Timer.queue">(celery.utils.timer2.Timer attribute)</a></dt>
@@ -1378,6 +1394,7 @@
     <dt><a href="internals/reference/celery.utils.timeutils.html#celery.utils.timeutils.rate">rate() (in module celery.utils.timeutils)</a></dt>
     <dt><a href="reference/celery.task.base.html#celery.task.base.Task.rate_limit">rate_limit (celery.task.base.Task attribute)</a></dt>
     <dd><dl>
+      <dt><a href="userguide/tasks.html#Task.rate_limit">(Task attribute)</a></dt>
       <dt><a href="reference/celery.task.html#celery.task.Task.rate_limit">(celery.task.Task attribute)</a></dt>
   </dl></dd>
     <dt><a href="reference/celery.task.control.html#celery.task.control.rate_limit">rate_limit() (in module celery.task.control)</a></dt>
@@ -1506,6 +1523,7 @@
     <dt><a href="internals/reference/celery.routes.html#celery.routes.Router">Router (class in celery.routes)</a></dt>
     <dt><a href="reference/celery.task.base.html#celery.task.base.Task.routing_key">routing_key (celery.task.base.Task attribute)</a></dt>
     <dd><dl>
+      <dt><a href="userguide/tasks.html#Task.routing_key">(Task attribute)</a></dt>
       <dt><a href="reference/celery.task.html#celery.task.Task.routing_key">(celery.task.Task attribute)</a></dt>
   </dl></dd>
     <dt><a href="reference/celery.apps.beat.html#celery.apps.beat.Beat.run">run() (celery.apps.beat.Beat method)</a></dt>
@@ -1614,6 +1632,7 @@
     <dt><a href="internals/reference/celery.worker.job.html#celery.worker.job.TaskRequest.send_error_email">send_error_email() (celery.worker.job.TaskRequest method)</a></dt>
     <dt><a href="reference/celery.task.base.html#celery.task.base.Task.send_error_emails">send_error_emails (celery.task.base.Task attribute)</a></dt>
     <dd><dl>
+      <dt><a href="userguide/tasks.html#Task.send_error_emails">(Task attribute)</a></dt>
       <dt><a href="reference/celery.task.html#celery.task.Task.send_error_emails">(celery.task.Task attribute)</a></dt>
   </dl></dd>
     <dt><a href="internals/reference/celery.worker.job.html#celery.worker.job.TaskRequest.send_event">send_event() (celery.worker.job.TaskRequest method)</a></dt>
@@ -1631,6 +1650,7 @@
     <dt><a href="internals/reference/celery.utils.mail.html#celery.utils.mail.SendmailWarning">SendmailWarning</a></dt>
     <dt><a href="reference/celery.task.base.html#celery.task.base.Task.serializer">serializer (celery.task.base.Task attribute)</a></dt>
     <dd><dl>
+      <dt><a href="userguide/tasks.html#Task.serializer">(Task attribute)</a></dt>
       <dt><a href="reference/celery.task.html#celery.task.Task.serializer">(celery.task.Task attribute)</a></dt>
   </dl></dd>
     <dt><a href="reference/celery.conf.html#celery.conf.SERVER_EMAIL">SERVER_EMAIL (in module celery.conf)</a></dt>

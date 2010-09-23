@@ -53,7 +53,7 @@
           <div class="body">
             
   <div class="section" id="executing-tasks">
-<h1>Executing Tasks<a class="headerlink" href="#executing-tasks" title="Permalink to this headline">¶</a></h1>
+<span id="guide-executing"></span><h1>Executing Tasks<a class="headerlink" href="#executing-tasks" title="Permalink to this headline">¶</a></h1>
 <div class="contents local topic" id="contents">
 <ul class="simple">
 <li><a class="reference external" href="#basics" id="id1">Basics</a></li>
@@ -65,7 +65,7 @@
 </ul>
 </div>
 <div class="section" id="basics">
-<h2><a class="toc-backref" href="#id1">Basics</a><a class="headerlink" href="#basics" title="Permalink to this headline">¶</a></h2>
+<span id="executing-basics"></span><h2><a class="toc-backref" href="#id1">Basics</a><a class="headerlink" href="#basics" title="Permalink to this headline">¶</a></h2>
 <p>Executing tasks is done with <tt class="xref py py-meth docutils literal"><span class="pre">apply_async()</span></tt>,
 and its shortcut: <tt class="xref py py-meth docutils literal"><span class="pre">delay()</span></tt>.</p>
 <p><tt class="docutils literal"><span class="pre">delay</span></tt> is simple and convenient, as it looks like calling a regular
@@ -99,7 +99,7 @@ task, which adds together two numbers:</p>
 </div>
 </div>
 <div class="section" id="eta-and-countdown">
-<h2><a class="toc-backref" href="#id2">ETA and countdown</a><a class="headerlink" href="#eta-and-countdown" title="Permalink to this headline">¶</a></h2>
+<span id="executing-eta"></span><h2><a class="toc-backref" href="#id2">ETA and countdown</a><a class="headerlink" href="#eta-and-countdown" title="Permalink to this headline">¶</a></h2>
 <p>The ETA (estimated time of arrival) lets you set a specific date and time that
 is the earliest time at which your task will execute. <tt class="docutils literal"><span class="pre">countdown</span></tt> is
 a shortcut to set this by seconds in the future.</p>
@@ -124,7 +124,7 @@ have a <tt class="xref py py-class docutils literal"><span class="pre">datetime<
 </div>
 </div>
 <div class="section" id="serializers">
-<h2><a class="toc-backref" href="#id3">Serializers</a><a class="headerlink" href="#serializers" title="Permalink to this headline">¶</a></h2>
+<span id="executing-serializers"></span><h2><a class="toc-backref" href="#id3">Serializers</a><a class="headerlink" href="#serializers" title="Permalink to this headline">¶</a></h2>
 <p>Data passed between celery and workers has to be serialized to be
 transferred. The default serializer is <tt class="xref py py-mod docutils literal"><span class="pre">pickle</span></tt>, but you can
 change this for each
@@ -148,7 +148,7 @@ configuration directive.</p>
 </div>
 </div>
 <div class="section" id="connections-and-connection-timeouts">
-<h2><a class="toc-backref" href="#id4">Connections and connection timeouts.</a><a class="headerlink" href="#connections-and-connection-timeouts" title="Permalink to this headline">¶</a></h2>
+<span id="executing-connections"></span><h2><a class="toc-backref" href="#id4">Connections and connection timeouts.</a><a class="headerlink" href="#connections-and-connection-timeouts" title="Permalink to this headline">¶</a></h2>
 <p>Currently there is no support for broker connection pools in celery,
 so this is something you need to be aware of when sending more than
 one task at a time, as <tt class="docutils literal"><span class="pre">apply_async</span></tt>/<tt class="docutils literal"><span class="pre">delay</span></tt> establishes and
@@ -182,7 +182,7 @@ argument to <tt class="docutils literal"><span class="pre">apply_async</span></t
 </div>
 </div>
 <div class="section" id="routing-options">
-<h2><a class="toc-backref" href="#id5">Routing options</a><a class="headerlink" href="#routing-options" title="Permalink to this headline">¶</a></h2>
+<span id="executing-routing"></span><h2><a class="toc-backref" href="#id5">Routing options</a><a class="headerlink" href="#routing-options" title="Permalink to this headline">¶</a></h2>
 <p>Celery uses the AMQP routing mechanisms to route tasks to different workers.
 You can route tasks using the following entities: exchange, queue and routing key.</p>
 <p>Messages (tasks) are sent to exchanges, a queue binds to an exchange with a
@@ -234,9 +234,10 @@ listen to different queues:</p>
 <p>Later, if the crop task is consuming a lot of resources,
 we can bind some new workers to handle just the <tt class="docutils literal"><span class="pre">&quot;image.crop&quot;</span></tt> task,
 by creating a new queue that binds to <tt class="docutils literal"><span class="pre">&quot;image.crop</span></tt>&#8220;.</p>
+<p>To find out more about routing, please see <a class="reference internal" href="routing.html#guide-routing"><em>Routing Tasks</em></a>.</p>
 </div>
 <div class="section" id="amqp-options">
-<h2><a class="toc-backref" href="#id6">AMQP options</a><a class="headerlink" href="#amqp-options" title="Permalink to this headline">¶</a></h2>
+<span id="executing-amq-opts"></span><h2><a class="toc-backref" href="#id6">AMQP options</a><a class="headerlink" href="#amqp-options" title="Permalink to this headline">¶</a></h2>
 <p><strong>NOTE</strong> The <tt class="docutils literal"><span class="pre">mandatory</span></tt> and <tt class="docutils literal"><span class="pre">immediate</span></tt> flags are not supported by
 <tt class="docutils literal"><span class="pre">amqplib</span></tt> at this point.</p>
 <ul class="simple">

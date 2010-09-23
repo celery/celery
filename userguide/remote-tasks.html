@@ -53,7 +53,7 @@
           <div class="body">
             
   <div class="section" id="module-celery.task.http">
-<span id="http-callback-tasks-webhooks"></span><h1>HTTP Callback Tasks (Webhooks)<a class="headerlink" href="#module-celery.task.http" title="Permalink to this headline">¶</a></h1>
+<span id="http-callback-tasks-webhooks"></span><span id="guide-webhooks"></span><h1>HTTP Callback Tasks (Webhooks)<a class="headerlink" href="#module-celery.task.http" title="Permalink to this headline">¶</a></h1>
 <div class="contents local topic" id="contents">
 <ul class="simple">
 <li><a class="reference external" href="#basics" id="id1">Basics</a></li>
@@ -63,7 +63,7 @@
 </ul>
 </div>
 <div class="section" id="basics">
-<h2><a class="toc-backref" href="#id1">Basics</a><a class="headerlink" href="#basics" title="Permalink to this headline">¶</a></h2>
+<span id="webhook-basics"></span><h2><a class="toc-backref" href="#id1">Basics</a><a class="headerlink" href="#basics" title="Permalink to this headline">¶</a></h2>
 <p>If you need to call into another language, framework or similar, you can
 do so by using HTTP callback tasks.</p>
 <p>The HTTP callback tasks use GET/POST arguments and a simple JSON response
@@ -84,7 +84,7 @@ if the execution was successful:</p>
 </div>
 </div>
 <div class="section" id="django-webhook-example">
-<h2><a class="toc-backref" href="#id2">Django webhook example</a><a class="headerlink" href="#django-webhook-example" title="Permalink to this headline">¶</a></h2>
+<span id="webhook-django-example"></span><h2><a class="toc-backref" href="#id2">Django webhook example</a><a class="headerlink" href="#django-webhook-example" title="Permalink to this headline">¶</a></h2>
 <p>With this information you could define a simple task in Django:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">django.http</span> <span class="kn">import</span> <span class="n">HttpResponse</span>
 <span class="kn">from</span> <span class="nn">anyjson</span> <span class="kn">import</span> <span class="n">serialize</span>
@@ -100,7 +100,7 @@ if the execution was successful:</p>
 </div>
 </div>
 <div class="section" id="ruby-on-rails-webhook-example">
-<h2><a class="toc-backref" href="#id3">Ruby on Rails webhook example</a><a class="headerlink" href="#ruby-on-rails-webhook-example" title="Permalink to this headline">¶</a></h2>
+<span id="webhook-rails-example"></span><h2><a class="toc-backref" href="#id3">Ruby on Rails webhook example</a><a class="headerlink" href="#ruby-on-rails-webhook-example" title="Permalink to this headline">¶</a></h2>
 <p>or in Ruby on Rails:</p>
 <div class="highlight-ruby"><div class="highlight"><pre><span class="k">def</span> <span class="nf">multiply</span>
     <span class="vi">@x</span> <span class="o">=</span> <span class="n">params</span><span class="o">[</span><span class="ss">:x</span><span class="o">].</span><span class="n">to_i</span>
@@ -116,7 +116,7 @@ if the execution was successful:</p>
 new examples and libraries are very welcome.</p>
 </div>
 <div class="section" id="executing-webhook-tasks">
-<h2><a class="toc-backref" href="#id4">Executing webhook tasks</a><a class="headerlink" href="#executing-webhook-tasks" title="Permalink to this headline">¶</a></h2>
+<span id="webhook-executing"></span><h2><a class="toc-backref" href="#id4">Executing webhook tasks</a><a class="headerlink" href="#executing-webhook-tasks" title="Permalink to this headline">¶</a></h2>
 <p>To execute the task you use the <a class="reference internal" href="../reference/celery.task.http.html#celery.task.http.URL" title="celery.task.http.URL"><tt class="xref py py-class docutils literal"><span class="pre">URL</span></tt></a> class:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task.http</span> <span class="kn">import</span> <span class="n">URL</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">res</span> <span class="o">=</span> <span class="n">URL</span><span class="p">(</span><span class="s">&quot;http://example.com/multiply&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">get_async</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>

@@ -53,7 +53,7 @@
           <div class="body">
             
   <div class="section" id="sets-of-tasks-subtasks-and-callbacks">
-<h1>Sets of tasks, Subtasks and Callbacks<a class="headerlink" href="#sets-of-tasks-subtasks-and-callbacks" title="Permalink to this headline">¶</a></h1>
+<span id="guide-sets"></span><h1>Sets of tasks, Subtasks and Callbacks<a class="headerlink" href="#sets-of-tasks-subtasks-and-callbacks" title="Permalink to this headline">¶</a></h1>
 <div class="contents local topic" id="contents">
 <ul class="simple">
 <li><a class="reference external" href="#subtasks" id="id1">Subtasks</a><ul>
@@ -67,7 +67,7 @@
 </ul>
 </div>
 <div class="section" id="subtasks">
-<h2><a class="toc-backref" href="#id1">Subtasks</a><a class="headerlink" href="#subtasks" title="Permalink to this headline">¶</a></h2>
+<span id="sets-subtasks"></span><h2><a class="toc-backref" href="#id1">Subtasks</a><a class="headerlink" href="#subtasks" title="Permalink to this headline">¶</a></h2>
 <p>The <a class="reference internal" href="../reference/celery.task.sets.html#celery.task.sets.subtask" title="celery.task.sets.subtask"><tt class="xref py py-class docutils literal"><span class="pre">subtask</span></tt></a> class is used to wrap the arguments and
 execution options for a single task invocation:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">subtask</span><span class="p">(</span><span class="n">task_name_or_cls</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="n">options</span><span class="p">)</span>
@@ -88,7 +88,7 @@ support complex Python objects.</p>
 </div>
 <p>This makes it excellent as a means to pass callbacks around to tasks.</p>
 <div class="section" id="callbacks">
-<h3><a class="toc-backref" href="#id2">Callbacks</a><a class="headerlink" href="#callbacks" title="Permalink to this headline">¶</a></h3>
+<span id="sets-callbacks"></span><h3><a class="toc-backref" href="#id2">Callbacks</a><a class="headerlink" href="#callbacks" title="Permalink to this headline">¶</a></h3>
 <p>Let&#8217;s improve our <tt class="docutils literal"><span class="pre">add</span></tt> task so it can accept a callback that
 takes the result as an argument:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.decorators</span> <span class="kn">import</span> <span class="n">task</span>
@@ -124,7 +124,7 @@ another task calculating <tt class="docutils literal"><span class="pre">4</span>
 </div>
 </div>
 <div class="section" id="task-sets">
-<h2><a class="toc-backref" href="#id3">Task Sets</a><a class="headerlink" href="#task-sets" title="Permalink to this headline">¶</a></h2>
+<span id="sets-taskset"></span><h2><a class="toc-backref" href="#id3">Task Sets</a><a class="headerlink" href="#task-sets" title="Permalink to this headline">¶</a></h2>
 <p>The <a class="reference internal" href="../reference/celery.task.sets.html#celery.task.sets.TaskSet" title="celery.task.sets.TaskSet"><tt class="xref py py-class docutils literal"><span class="pre">TaskSet</span></tt></a> enables easy invocation of several
 tasks at once, and is then able to join the results in the same order as the
 tasks were invoked.</p>
@@ -150,7 +150,7 @@ tasks were invoked.</p>
 </pre></div>
 </div>
 <div class="section" id="results">
-<h3><a class="toc-backref" href="#id4">Results</a><a class="headerlink" href="#results" title="Permalink to this headline">¶</a></h3>
+<span id="sets-results"></span><h3><a class="toc-backref" href="#id4">Results</a><a class="headerlink" href="#results" title="Permalink to this headline">¶</a></h3>
 <p>When a  <a class="reference internal" href="../reference/celery.task.sets.html#celery.task.sets.TaskSet" title="celery.task.sets.TaskSet"><tt class="xref py py-class docutils literal"><span class="pre">TaskSet</span></tt></a> is applied it returns a
 <a class="reference internal" href="../reference/celery.result.html#celery.result.TaskSetResult" title="celery.result.TaskSetResult"><tt class="xref py py-class docutils literal"><span class="pre">TaskSetResult</span></tt></a> object.</p>
 <p><a class="reference internal" href="../reference/celery.result.html#celery.result.TaskSetResult" title="celery.result.TaskSetResult"><tt class="xref py py-class docutils literal"><span class="pre">TaskSetResult</span></tt></a> takes a list of
