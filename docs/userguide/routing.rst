@@ -308,57 +308,46 @@ items in the USA) or ``usa.weather`` (all USA weather items).
 Related API commands
 --------------------
 
-.. _amqp-api-exchange-declare:
+.. method:: exchange.declare(exchange_name, type, passive,
+                             durable, auto_delete, internal)
 
-exchange.declare(exchange_name, type, passive, durable, auto_delete, internal)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Declares an exchange by name.
 
-Declares an exchange by name.
+    :keyword passive: Passive means the exchange won't be created, but you
+        can use this to check if the exchange already exists.
 
-* ``passive`` means the exchange won't be created, but you can use this to
-  check if the exchange already exists.
+    :keyword durable: Durable exchanges are persistent. That is - they survive
+        a broker restart.
 
-* Durable exchanges are persistent. That is - they survive a broker restart.
+    :keyword auto_delete: This means the queue will be deleted by the broker
+        when there are no more queues using it.
 
-* ``auto_delete`` means the queue will be deleted by the broker when there
-  are no more queues using it.
 
-.. _amqp-api-queue-declare:
+.. method:: queue.declare(queue_name, passive, durable, exclusive, auto_delete)
 
-queue.declare(queue_name, passive, durable, exclusive, auto_delete)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Declares a queue by name.
 
-Declares a queue by name.
+    Exclusive queues can only be consumed from by the current connection.
+    Exclusive also implies ``auto_delete``.
 
-* exclusive queues can only be consumed from by the current connection.
-  implies ``auto_delete``.
+.. method:: queue.bind(queue_name, exchange_name, routing_key)
 
-.. _amqp-api-queue-bind:
+    Binds a queue to an exchange with a routing key.
+    Unbound queues will not receive messages, so this is necessary.
 
-queue.bind(queue_name, exchange_name, routing_key)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. method:: queue.delete(name, if_unused=False, if_empty=False)
 
-Binds a queue to an exchange with a routing key.
-Unbound queues will not receive messages, so this is necessary.
+    Deletes a queue and its binding.
 
-.. _amqp-api-queue-delete:
+.. method:: exchange.delete(name, if_unused=False)
 
-queue.delete(name, if_unused, if_empty)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Deletes an exchange.
 
-Deletes a queue and its binding.
-
-.. _amqp-api-exchange-delete:
-
-exchange.delete(name, if_unused)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Deletes an exchange.
-
-**NOTE**: Declaring does not necessarily mean "create". When you declare you
-*assert* that the entity exists and that it's operable. There is no rule as to
-whom should initially create the exchange/queue/binding, whether consumer
-or producer. Usually the first one to need it will be the one to create it.
+:Note: Declaring does not necessarily mean "create". When you declare you
+       *assert* that the entity exists and that it's operable. There is no
+       rule as to whom should initially create the exchange/queue/binding,
+       whether consumer or producer. Usually the first one to need it will
+       be the one to create it.
 
 .. _amqp-api-hands-on:
 

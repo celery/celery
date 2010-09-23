@@ -4,8 +4,6 @@
  Tasks
 =======
 
-.. module:: celery.task.base
-
 .. contents::
     :local:
 
@@ -58,40 +56,27 @@ The worker will do the right thing.
 
 The current default keyword arguments are:
 
-* logfile
+:task_id: The unique id of the executing task.
 
-    The log file, can be passed on to
-    :meth:`~celery.task.base.Task.get_logger` to gain access to
-    the workers log file. See `Logging`_.
+:task_name: Name of the currently executing task.
 
-* loglevel
+:task_retries: How many times the current task has been retried.
+               An integer starting at ``0``.
 
-    The loglevel used.
+:task_is_eager: Set to :const:`True` if the task is executed locally in
+                the client, kand not by a worker.
 
-* task_id
+:logfile: The log file, can be passed on to
+          :meth:`~celery.task.base.Task.get_logger` to gain access to
+          the workers log file. See `Logging`_.
 
-    The unique id of the executing task.
+:loglevel: The current loglevel used.
 
-* task_name
 
-    Name of the executing task.
-
-* task_retries
-
-    How many times the current task has been retried.
-    An integer starting at ``0``.
-
-* task_is_eager
-
-    Set to :const:`True` if the task is executed locally in the client,
-    and not by a worker.
-
-* delivery_info
-
-  Additional message delivery information. This is a mapping containing
-  the exchange and routing key used to deliver this task. It's used
-  by e.g. :meth:`~celery.task.base.Task.retry` to resend the task to the
-  same destination queue.
+:delivery_info: Additional message delivery information. This is a mapping
+                containing the exchange and routing key used to deliver this
+                task. It's used by e.g. :meth:`~celery.task.base.Task.retry`
+                to resend the task to the same destination queue.
 
   **NOTE** As some messaging backends doesn't have advanced routing
   capabilities, you can't trust the availability of keys in this mapping.
@@ -149,11 +134,11 @@ It will do the right thing, and respect the
             send_twitter_status.retry(args=[oauth, tweet], kwargs=kwargs, exc=exc)
 
 Here we used the ``exc`` argument to pass the current exception to
-:meth:`Task.retry`. At each step of the retry this exception
+:meth:`~celery.task.base.Task.retry`. At each step of the retry this exception
 is available as the tombstone (result) of the task. When
-:attr:`Task.max_retries` has been exceeded this is the exception
-raised. However, if an ``exc`` argument is not provided the
-:exc:`RetryTaskError` exception is raised instead.
+:attr:`~celery.task.base.Task.max_retries` has been exceeded this is the
+exception raised. However, if an ``exc`` argument is not provided the
+:exc:`~celery.exceptions.RetryTaskError` exception is raised instead.
 
 **Important note:** The task has to take the magic keyword arguments
 in order for max retries to work properly, this is because it keeps track
@@ -168,7 +153,8 @@ Using a custom retry delay
 --------------------------
 
 When a task is to be retried, it will wait for a given amount of time
-before doing so. The default delay is in the :attr:`Task.default_retry_delay` 
+before doing so. The default delay is in the
+:attr:`~celery.task.base.Task.default_retry_delay` 
 attribute on the task. By default this is set to 3 minutes. Note that the
 unit for setting the delay is in seconds (int or float).
 
@@ -194,105 +180,113 @@ You can also provide the ``countdown`` argument to
 Task options
 ============
 
-* name
+General
+-------
+
+.. _task-general-options:
+
+.. attribute:: Task.name
 
     The name the task is registered as.
+
     You can set this name manually, or just use the default which is
     automatically generated using the module and class name.
 
-* abstract
+.. attribute:: Task.abstract
 
-    Abstract classes are not registered, but are used as the superclass
-    when making new task types by subclassing.
+    Abstract classes are not registered, but are used as the
+    superclass when making new task types by subclassing.
 
-* max_retries
+.. attribute:: Task.max_retries
 
     The maximum number of attempted retries before giving up.
-    If this is exceeded the :exc:`~celery.exceptions.MaxRetriesExceeded`
-    exception will be raised. Note that you have to retry manually, it's
-    not something that happens automatically.
+    If this exceeds the :exc:`~celery.exceptions.MaxRetriesExceeded`
+    an exception will be raised. *NOTE:* You have to :meth:`retry`
+    manually, it's not something that happens automatically.
 
-* default_retry_delay
+.. attribute:: Task.default_retry_delay
 
-    Default time in seconds before a retry of the task should be
-    executed. Can be either an ``int`` or a ``float``.
-    Default is a 3 minute delay (``180 seconds``).
+    Default time in seconds before a retry of the task
+    should be executed. Can be either an ``int`` or a ``float``.
+    Default is a 3 minute delay.
 
-* rate_limit
+.. attribute:: Task.rate_limit
 
-  Set the rate limit for this task type, that is, how many times in a given
-  period of time is the task allowed to run.
+    Set the rate limit for this task type, i.e. how many times in
+    a given period of time is the task allowed to run.
 
-  If this is ``None`` no rate limit is in effect.
-  If it is an integer, it is interpreted as "tasks per second". 
+    If this is ``None`` no rate limit is in effect.
+    If it is an integer, it is interpreted as "tasks per second". 
 
-  The rate limits can be specified in seconds, minutes or hours
-  by appending ``"/s"``, ``"/m"`` or "``/h"``" to the value.
-  Example: ``"100/m" (hundred tasks a
-  minute). Default is the ``CELERY_DEFAULT_RATE_LIMIT`` setting, which if not
-  specified means rate limiting for tasks is turned off by default.
+    The rate limits can be specified in seconds, minutes or hours
+    by appending ``"/s"``, ``"/m"`` or "``/h"``" to the value.
+    Example: ``"100/m" (hundred tasks a minute). Default is the
+    ``CELERY_DEFAULT_RATE_LIMIT`` setting, which if not specified means
+    rate limiting for tasks is turned off by default.
 
-* ignore_result
+.. attribute:: Task.ignore_result
 
-  Don't store the status and return value. This means you can't
-        use the :class:`celery.result.AsyncResult` to check if the task is
-        done, or get its return value. Only use if you need the performance
-        and is able live without these features. Any exceptions raised will
-        store the return value/status as usual.
+    Don't store task state. This means you can't use the
+    :class:`~celery.result.AsyncResult` to check if the task is ready,
+    or get its return value.
 
-* disable_error_emails
+.. attribute:: Task.send_error_emails
 
-    Disable error e-mails for this task. Default is ``False``.
-    *Note:* You can also turn off error e-mails globally using the
-    ``CELERY_SEND_TASK_ERROR_EMAILS`` setting.
+    Send an e-mail whenever a task of this type fails.
+    Defaults to the ``CELERY_SEND_TASK_ERROR_EMAILS`` setting.
+    See :ref:`conf-error-mails` for more information.
 
-* serializer
+.. attribute:: Task.serializer
 
     A string identifying the default serialization
-    method to use. Defaults to the ``CELERY_TASK_SERIALIZER`` setting.
-    Can be ``pickle`` ``json``, ``yaml``, or any custom serialization
-    methods that have been registered with
+    method to use. Defaults to the ``CELERY_TASK_SERIALIZER``
+    setting.  Can be ``pickle`` ``json``, ``yaml``, or any custom
+    serialization methods that have been registered with
     :mod:`carrot.serialization.registry`.
 
-    Please see :doc:`executing` for more information.
+    Please see :ref:`executing-serializers` for more information.
 
 .. _task-message-options:
 
 Message and routing options
 ---------------------------
 
-* queue
+.. attribute:: Task.queue
 
     Use the routing settings from a queue defined in ``CELERY_QUEUES``.
-    If defined the ``exchange`` and ``routing_key`` options will be ignored.
+    If defined the :attr:`exchange` and :attr:`routing_key` options will be
+    ignored.
 
-* exchange
+.. attribute:: Task.exchange
 
     Override the global default ``exchange`` for this task.
 
-* routing_key
+.. attribute:: Task.routing_key
 
     Override the global default ``routing_key`` for this task.
 
-* mandatory
-    If set, the task message has mandatory routing. By default the task
+.. attribute:: Task.mandatory
+
+    If set, the task message has mandatory routing.  By default the task
     is silently dropped by the broker if it can't be routed to a queue.
-    However - If the task is mandatory, an exception will be raised
+    However -- If the task is mandatory, an exception will be raised
     instead.
 
-* immediate
-    Request immediate delivery. If the task cannot be routed to a
-    task worker immediately, an exception will be raised. This is
+.. attribute:: Task.immediate
+
+    Request immediate delivery.  If the task cannot be routed to a
+    task worker immediately, an exception will be raised.  This is
     instead of the default behavior, where the broker will accept and
     queue the task, but with no guarantee that the task will ever
     be executed.
 
-* priority
-    The message priority. A number from ``0`` to ``9``, where ``0`` is the
-    highest. **Note:** RabbitMQ does not support priorities yet.
+.. attribute:: Task.priority
 
-See :doc:`executing` for more information about the messaging options
-available, also :doc:`routing`.
+    The message priority. A number from 0 to 9, where 0 is the
+    highest priority. **Note:** RabbitMQ does not support priorities yet.
+
+Also see :ref:`executing-routing` for more information about message options,
+and :ref:`guide-routing`.
 
 .. _task-example:
 
