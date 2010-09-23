@@ -223,6 +223,8 @@ Later, if the crop task is consuming a lot of resources,
 we can bind some new workers to handle just the ``"image.crop"`` task,
 by creating a new queue that binds to ``"image.crop``".
 
+To find out more about routing, please see :ref:`guide-routing`.
+
 .. _executing-amq-opts:
 
 AMQP options
