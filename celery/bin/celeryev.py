@@ -51,5 +51,5 @@ def main():
     options = parse_options(sys.argv[1:])
     return run_celeryev(**vars(options))
 
-if __name__ == "__main__":
+if __name__ == "__main__":              # pragma: no cover
     main()

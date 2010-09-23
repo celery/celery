@@ -152,5 +152,5 @@ def main():
     worker = WorkerCommand()
     worker.execute_from_commandline()
 
-if __name__ == "__main__":
+if __name__ == "__main__":          # pragma: no cover
     main()

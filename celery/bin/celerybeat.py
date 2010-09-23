@@ -64,5 +64,5 @@ def main():
     beat = BeatCommand()
     beat.execute_from_commandline()
 
-if __name__ == "__main__":
+if __name__ == "__main__":      # pragma: no cover
     main()

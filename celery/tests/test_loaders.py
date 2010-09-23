@@ -85,3 +85,30 @@ class TestDefaultLoader(unittest.TestCase):
             l.on_worker_init()
         finally:
             sys.modules[configname] = prevconfig
+
+    def test_import_from_cwd(self):
+        l = default.Loader()
+        old_path = list(sys.path)
+        try:
+            sys.path.remove(os.getcwd())
+        except ValueError:
+            pass
+        celery = sys.modules.pop("celery", None)
+        try:
+            self.assertTrue(l.import_from_cwd("celery"))
+            sys.modules.pop("celery", None)
+            sys.path.insert(0, os.getcwd())
+            self.assertTrue(l.import_from_cwd("celery"))
+        finally:
+            sys.path = old_path
+            sys.modules["celery"] = celery
+
+    def test_unconfigured_settings(self):
+
+        class _Loader(default.Loader):
+
+            def import_from_cwd(self, name):
+                raise ImportError(name)
+
+        l = _Loader()
+        self.assertEqual(l.conf.CELERY_RESULT_BACKEND, "amqp")

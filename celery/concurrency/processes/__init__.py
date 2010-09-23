@@ -85,9 +85,11 @@ class TaskPool(object):
 
         i = 0
         while pids ^ seen:
-            if time() - time_start > timeout:
+            print("%r > %r" % (time() - time_start, timeout))
+            if timeout and time() - time_start > timeout:
+                print("TIMED OUT i==%r" % (i, ))
                 break
-            results[i] = self._pool.apply_async(pingback,
+            x = results[i] = self._pool.apply_async(pingback,
                                                 args=(i, ),
                                                 callback=callback)
             sleep(0.1)

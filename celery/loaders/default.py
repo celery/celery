@@ -4,6 +4,7 @@ import warnings
 from importlib import import_module
 
 from celery.loaders.base import BaseLoader
+from celery.datastructures import AttributeDict
 from celery.exceptions import NotConfigured
 
 DEFAULT_CONFIG_MODULE = "celeryconfig"
@@ -27,18 +28,6 @@ def wanted_module_item(item):
     return not item.startswith("_")
 
 
-class Settings(dict):
-
-    def __getattr__(self, key):
-        try:
-            return self[key]
-        except KeyError:
-            raise AttributeError(key)
-
-    def __setattr_(self, key, value):
-        self[key] = value
-
-
 class Loader(BaseLoader):
     """The default loader.
 
@@ -47,7 +36,7 @@ class Loader(BaseLoader):
     """
 
     def setup_settings(self, settingsdict):
-        settings = Settings(DEFAULT_SETTINGS, **settingsdict)
+        settings = AttributeDict(DEFAULT_SETTINGS, **settingsdict)
         installed_apps = set(list(DEFAULT_SETTINGS["INSTALLED_APPS"]) + \
                              list(settings.INSTALLED_APPS))
         settings.INSTALLED_APPS = tuple(installed_apps)
@@ -74,7 +63,7 @@ class Loader(BaseLoader):
         finally:
             try:
                 sys.path.remove(cwd)
-            except ValueError:
+            except ValueError:          # pragma: no cover
                 pass
 
     def read_configuration(self):

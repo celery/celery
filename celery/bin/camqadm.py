@@ -372,5 +372,5 @@ def main():
     options, values = parse_options(sys.argv[1:])
     return camqadm(*values, **vars(options))
 
-if __name__ == "__main__":
+if __name__ == "__main__":              # pragma: no cover
     main()
