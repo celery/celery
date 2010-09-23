@@ -102,7 +102,7 @@ News
 
     For the Django camera case, this rate limit can be used to control
     how often the snapshots are written to the database, and the frequency
-    used to control how often the thread wakes up too check if there's
+    used to control how often the thread wakes up to check if there's
     anything new.
 
     The rate limit is off by default, which means it will take a snapshot
