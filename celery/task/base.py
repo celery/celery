@@ -583,6 +583,18 @@ class BaseTask(object):
         """
         return self.app.AsyncResult(task_id, backend=self.backend)
 
+    def update_state(self, task_id, state, meta=None):
+        """Update task state.
+
+        :param task_id: Id of the task to update.
+        :param state: New state (:class:`str`).
+        :param meta: State metadata (:class:`dict`).
+
+        """
+        if meta is None:
+            meta = {}
+        self.backend.store_result(task_id, meta, state)
+
     def on_retry(self, exc, task_id, args, kwargs, einfo=None):
         """Retry handler.
 
