@@ -24,6 +24,8 @@ Workers
 celeryctl: Management Utility
 -----------------------------
 
+.. versionadded:: 2.1
+
 :mod:`~celery.bin.celeryctl` is a command line utility to inspect
 and manage worker nodes (and to some degree tasks).
 
@@ -109,11 +111,12 @@ Commands
         $ celeryctl inspect disable_events
 
 
-:Note: All ``inspect`` commands supports the ``--timeout`` argument,
-       which is the number of seconds to wait for responses.
-       You may have to increase this timeout If you're getting empty responses
-       due to latency.
+.. note::
 
+    All ``inspect`` commands supports a ``--timeout`` argument,
+    This is the number of seconds to wait for responses.
+    You may have to increase this timeout if you're getting empty responses
+    due to latency.
 
 .. _celeryctl-inspect-destination:
 
@@ -131,6 +134,8 @@ You can specify a single, or a list of workers by using the
 
 Django Admin Monitor
 --------------------
+
+.. versionadded:: 2.1
 
 When you add `django-celery`_ to your Django project you will
 automatically get a monitor section as part of the Django admin interface.
@@ -158,7 +163,6 @@ intervals, storing them in your database (See :ref:`monitoring-snapshots`).
 To start the camera run::
 
     $ python manage.py celerycam
-
 
 If you haven't already enabled the sending of events you need to do so::
 
@@ -209,6 +213,8 @@ TODO
 
 celeryev: Curses Monitor
 ------------------------
+
+.. versionadded:: 2.0
 
 :mod:`~celery.bin.celeryev` is a simple curses monitor displaying
 task and worker history. You can inspect the result and traceback of tasks,
@@ -261,11 +267,12 @@ with this you can list queues, exchanges, bindings,
 queue lenghts, the memory usage of each queue, as well
 as manage users, virtual hosts and their permissions.
 
-:Note: The default virtual host (``"/"``) is used in these
-       examples, if you use a custom virtual host you have to add
-       the ``-p`` argument to the command, e.g:
-       ``rabbitmqctl list_queues -p my_vhost ....``
+.. note::
 
+    The default virtual host (``"/"``) is used in these
+    examples, if you use a custom virtual host you have to add
+    the ``-p`` argument to the command, e.g:
+    ``rabbitmqctl list_queues -p my_vhost ....``
 
 .. _`rabbitmqctl(1)`: http://www.rabbitmq.com/man/rabbitmqctl.1.man.html
 
@@ -336,6 +343,8 @@ happens. These events are then captured by tools like ``celerymon`` and
 
 Snapshots
 ---------
+
+.. versionadded: 2.1
 
 Even a single worker can produce a huge amount of events, so storing
 history of events on disk may be very expensive.

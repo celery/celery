@@ -29,13 +29,6 @@ The same thing using ``apply_async`` is written like this:
 
     Task.apply_async(args=[arg1, arg2], kwargs={"kwarg1": "x", "kwarg2": "y"})
 
-You can also execute a task by name using :func:`~celery.execute.send_task`, 
-if you don't have access to the task's class::
-
-    >>> from celery.execute import send_task
-    >>> result = send_task("tasks.add", [2, 2])
-    >>> result.get()
-    4
 
 While ``delay`` is convenient, it doesn't give you as much control as using ``apply_async``.
 With ``apply_async`` you can override the execution options available as attributes on
@@ -52,6 +45,17 @@ task, which adds together two numbers:
     def add(x, y):
         return x + y
 
+
+.. note::
+
+    You can also execute a task by name using
+    :func:`~celery.execute.send_task`, if you don't have access to the
+    task class::
+
+        >>> from celery.execute import send_task
+        >>> result = send_task("tasks.add", [2, 2])
+        >>> result.get()
+        4
 
 .. _executing-eta:
 
@@ -223,15 +227,18 @@ Later, if the crop task is consuming a lot of resources,
 we can bind some new workers to handle just the ``"image.crop"`` task,
 by creating a new queue that binds to ``"image.crop``".
 
-To find out more about routing, please see :ref:`guide-routing`.
+.. seealso::
+
+    To find out more about routing, please see :ref:`guide-routing`.
 
 .. _executing-amq-opts:
 
 AMQP options
 ============
 
-**NOTE** The ``mandatory`` and ``immediate`` flags are not supported by
-``amqplib`` at this point.
+.. warning::
+    The ``mandatory`` and ``immediate`` flags are not supported by
+    :mod:`amqplib` at this point.
 
 * mandatory
 
@@ -246,6 +253,7 @@ if the task cannot be routed to a worker immediately.
 * priority
 
 A number between ``0`` and ``9``, where ``0`` is the highest priority.
-Note that RabbitMQ does not implement AMQP priorities, and maybe your broker
-does not either, consult your broker's documentation for more
-information.
+
+.. note::
+
+    RabbitMQ does not yet support AMQP priorities.
