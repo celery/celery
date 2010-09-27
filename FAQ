@@ -1,3 +1,5 @@
+.. _faq:
+
 ============================
  Frequently Asked Questions
 ============================
@@ -5,10 +7,14 @@
 .. contents::
     :local:
 
+.. _faq-general:
+
 General
 =======
 
-What kinds of things should I use celery for?
+.. _faq-when-to-use:
+
+What kinds of things should I use Celery for?
 ---------------------------------------------
 
 **Answer:** `Queue everything and delight everyone`_ is a good article
@@ -37,11 +43,14 @@ And to some degree:
 
 * Parallel execution.
 
+.. _faq-misconceptions:
 
 Misconceptions
 ==============
 
-Is celery dependent on pickle?
+.. _faq-serializion-is-a-choice:
+
+Is Celery dependent on pickle?
 ------------------------------
 
 **Answer:** No.
@@ -56,7 +65,9 @@ You can set a global default serializer, the default serializer for a
 particular Task, or even what serializer to use when sending a single task
 instance.
 
-Is celery for Django only?
+.. _faq-is-celery-for-django-only:
+
+Is Celery for Django only?
 --------------------------
 
 **Answer:** No.
@@ -65,6 +76,8 @@ Celery does not depend on Django anymore. To use Celery with Django you have
 to use the `django-celery`_ package.
 
 .. _`django-celery`: http://pypi.python.org/pypi/django-celery
+
+.. _faq-is-celery-for-rabbitmq-only:
 
 Do I have to use AMQP/RabbitMQ?
 -------------------------------
@@ -83,19 +96,21 @@ encouraged to use RabbitMQ or another AMQP broker. Redis/database also use
 polling, so they are likely to consume more resources. However, if you for
 some reason are not able to use AMQP, feel free to use these alternatives.
 They will probably work fine for most use cases, and note that the above
-points are not specific to celery; If using Redis/database as a queue worked
+points are not specific to Celery; If using Redis/database as a queue worked
 fine for you before, it probably will now. You can always upgrade later
 if you need to.
 
-Is celery multi-lingual?
+.. _faq-is-celery-multilingual:
+
+Is Celery multilingual?
 ------------------------
 
 **Answer:** Yes.
 
-celeryd is an implementation of celery in python. If the language has an AMQP
-client, there shouldn't be much work to create a worker in your language.
-A celery worker is just a program connecting to the broker to consume
-messages. There's no other communication involved.
+``celeryd`` is an implementation of Celery in python. If the language has
+an AMQP client, there shouldn't be much work to create a worker in your
+language.  A Celery worker is just a program connecting to the broker to
+process messages.
 
 Also, there's another way to be language indepedent, and that is to use REST
 tasks, instead of your tasks being functions, they're URLs. With this
@@ -105,9 +120,12 @@ code. See: `User Guide: Remote Tasks`_.
 .. _`User Guide: Remote Tasks`:
     http://ask.github.com/celery/userguide/remote-tasks.html
 
+.. _faq-troubleshooting:
 
 Troubleshooting
 ===============
+
+.. _faq-mysql-deadlocks:
 
 MySQL is throwing deadlock errors, what can I do?
 -------------------------------------------------
@@ -126,11 +144,15 @@ Transaction Model and Locking`_ in the MySQL user manual.
 
 .. _`MySQL - The InnoDB Transaction Model and Locking`: http://dev.mysql.com/doc/refman/5.1/en/innodb-transaction-model.html
 
+.. _faq-worker-hanging:
+
 celeryd is not doing anything, just hanging
 --------------------------------------------
 
 **Answer:** See `MySQL is throwing deadlock errors, what can I do?`_.
             or `Why is Task.delay/apply\* just hanging?`.
+
+.. _faq-publish-hanging:
 
 Why is Task.delay/apply\*/celeryd just hanging?
 -----------------------------------------------
@@ -140,6 +162,8 @@ it's not able to authenticate the current user, the password doesn't match or
 the user does not have access to the virtual host specified. Be sure to check
 your broker logs (for RabbitMQ that is ``/var/log/rabbitmq/rabbit.log`` on
 most systems), it usually contains a message describing the reason.
+
+.. _faq-celeryd-on-freebsd:
 
 Why won't celeryd run on FreeBSD?
 ---------------------------------
@@ -152,11 +176,15 @@ Luckily, Viktor Petersson has written a tutorial to get you started with
 Celery on FreeBSD here:
 http://www.playingwithwire.com/2009/10/how-to-get-celeryd-to-work-on-freebsd/
 
+.. _faq-duplicate-key-errors:
+
 I'm having ``IntegrityError: Duplicate Key`` errors. Why?
 ---------------------------------------------------------
 
 **Answer:** See `MySQL is throwing deadlock errors, what can I do?`_.
 Thanks to howsthedotcom.
+
+.. _faq-worker-stops-processing:
 
 Why aren't my tasks processed?
 ------------------------------
@@ -172,7 +200,7 @@ This shows that there's 2891 messages waiting to be processed in the task
 queue, and there are two consumers processing them.
 
 One reason that the queue is never emptied could be that you have a stale
-celery process taking the messages hostage. This could happen if celeryd
+worker process taking the messages hostage. This could happen if celeryd
 wasn't properly shut down.
 
 When a message is recieved by a worker the broker waits for it to be
@@ -191,12 +219,14 @@ with::
 
     ps auxww | grep celeryd | awk '{print $2}' | xargs kill -9
 
+.. _faq-task-does-not-run:
+
 Why won't my Task run?
 ----------------------
 
 **Answer:** There might be syntax errors preventing the tasks module being imported.
 
-You can find out if celery is able to run the task by executing the
+You can find out if Celery is able to run the task by executing the
 task manually:
 
     >>> from myapp.tasks import MyPeriodicTask
@@ -205,10 +235,14 @@ task manually:
 Watch celeryds logfile to see if it's able to find the task, or if some
 other error is happening.
 
+.. _faq-periodic-task-does-not-run:
+
 Why won't my Periodic Task run?
 -------------------------------
 
 **Answer:** See `Why won't my Task run?`_.
+
+.. _faq-purge-the-queue:
 
 How do I discard all waiting tasks?
 ------------------------------------
@@ -224,6 +258,8 @@ The number ``1753`` is the number of messages deleted.
 You can also start celeryd with the ``--discard`` argument which will
 accomplish the same thing.
 
+.. _faq-messages-left-after-purge:
+
 I've discarded messages, but there are still messages left in the queue?
 ------------------------------------------------------------------------
 
@@ -238,9 +274,12 @@ same worker when it has been restarted), so to properly purge the queue of
 waiting tasks you have to stop all the workers, and then discard the tasks
 using ``discard_all``.
 
+.. _faq-results:
 
 Results
 =======
+
+.. _faq-get-result-by-task-id:
 
 How do I get the result of a task if I have the ID that points there?
 ----------------------------------------------------------------------
@@ -260,6 +299,8 @@ If you need to specify a custom result backend you should use
     >>> result = BaseAsyncResult(task_id, backend=...)
     >>> result.get()
 
+.. _faq-brokers:
+
 Brokers
 =======
 
@@ -270,15 +311,27 @@ RabbitMQ will crash if it runs out of memory. This will be fixed in a
 future release of RabbitMQ. please refer to the RabbitMQ FAQ:
 http://www.rabbitmq.com/faq.html#node-runs-out-of-memory
 
-Some common Celery misconfigurations can crash RabbitMQ:
+.. note::
+
+    This is no longer the case, RabbitMQ versions 2.0 and above
+    includes a new persister, that is tolerant to out of memory
+    errors. RabbitMQ 2.1 or higher is recommended for Celery.
+
+    If you're still running an older version of RabbitMQ and experience
+    crashes, then please upgrade!
+
+Some common Celery misconfigurations can eventually lead to a crash
+on older version of RabbitMQ. Even if it doesn't crash, these
+misconfigurations can still consume a lot of resources, so it is very
+important that you are aware of them.
 
 * Events.
 
 Running ``celeryd`` with the ``-E``/``--events`` option will send messages
-for events happening inside of the worker. If these event messages
-are not consumed, you will eventually run out of memory.
+for events happening inside of the worker.
 
-Events should only be enabled if you have an active monitor consuming them.
+Events should only be enabled if you have an active monitor consuming them,
+or if you purge the event queue periodically.
 
 * AMQP backend results.
 
@@ -301,13 +354,23 @@ If you don't use the results for a task, make sure you set the
 Results can also be disabled globally using the ``CELERY_IGNORE_RESULT``
 setting.
 
-Can I use celery with ActiveMQ/STOMP?
+.. note::
+
+    Celery version 2.1 added support for automatic expiration of
+    AMQP result backend results.
+
+    To use this you need to run RabbitMQ 2.1 or higher and enable
+    the ``CELERY_AMQP_TASK_RESULT_EXPIRES`` setting.
+
+.. _faq-use-celery-with-stomp:
+
+Can I use Celery with ActiveMQ/STOMP?
 -------------------------------------
 
 **Answer**: Yes, but this is somewhat experimental for now.
 It is working ok in a test configuration, but it has not
 been tested in production. If you have any problems
-using STOMP with celery, please report an issue here::
+using STOMP with Celery, please report an issue here::
 
     http://github.com/ask/celery/issues/
 
@@ -351,6 +414,8 @@ Use the following settings in your ``celeryconfig.py``/django ``settings.py``:
         "/queue/celery": {"exchange": "/queue/celery"}
     }
 
+.. _faq-stomp-missing-features:
+
 What features are not supported when using ghettoq/STOMP?
 ---------------------------------------------------------
 
@@ -365,13 +430,19 @@ using the STOMP backend:
 
     * mandatory
 
+.. _faq-tasks:
+
 Tasks
 =====
+
+.. _faq-tasks-connection-reuse:
 
 How can I reuse the same connection when applying tasks?
 --------------------------------------------------------
 
-**Answer**: See :doc:`userguide/executing`.
+**Answer**: See :ref:`executing-connections`.
+
+.. _faq-execute-task-by-name:
 
 Can I execute a task by name?
 -----------------------------
@@ -384,6 +455,7 @@ that has an AMQP client.
     >>> send_task("tasks.add", args=[2, 2], kwargs={})
     <AsyncResult: 373550e8-b9a0-4666-bc61-ace01fa4f91d>
 
+.. _faq-get-current-task-id:
 
 How can I get the task id of the current task?
 ----------------------------------------------
@@ -399,6 +471,8 @@ specifically)::
 The default keyword arguments are documented here:
 http://celeryq.org/docs/userguide/tasks.html#default-keyword-arguments
 
+.. _faq-custom-task-ids:
+
 Can I specify a custom task_id?
 -------------------------------
 
@@ -406,6 +480,8 @@ Can I specify a custom task_id?
 :meth:`~celery.execute.apply_async`::
 
     >>> task.apply_async(args, kwargs, task_id="...")
+
+.. _faq-natural-task-ids:
 
 Can I use natural task ids?
 ---------------------------
@@ -415,6 +491,8 @@ for two tasks existing with the same id is undefined.
 
 The world will probably not explode, but at the worst
 they can overwrite each others results.
+
+.. _faq-task-callbacks:
 
 How can I run a task once another task has finished?
 ----------------------------------------------------
@@ -443,6 +521,8 @@ Invocation::
 
 See :doc:`userguide/tasksets` for more information.
 
+.. _faq-cancel-task:
+
 Can I cancel the execution of a task?
 -------------------------------------
 **Answer**: Yes. Use ``result.revoke``::
@@ -454,6 +534,8 @@ or if you only have the task id::
 
     >>> from celery.task.control import revoke
     >>> revoke(task_id)
+
+.. _faq-node-not-receiving-broadcast-commands:
 
 Why aren't my remote control commands received by all workers?
 --------------------------------------------------------------
@@ -471,6 +553,8 @@ using the ``--hostname`` argument to ``celeryd``::
 
 etc, etc.
 
+.. _faq-task-routing:
+
 Can I send some tasks to only some servers?
 --------------------------------------------
 
@@ -478,6 +562,8 @@ Can I send some tasks to only some servers?
 and a worker can bind to as many queues as it wants.
 
 See :doc:`userguide/routing` for more information.
+
+.. _faq-change-periodic-task-interval-at-runtime:
 
 Can I change the interval of a periodic task at runtime?
 --------------------------------------------------------
@@ -496,6 +582,7 @@ Can I change the interval of a periodic task at runtime?
         def run_every(self):
             return get_interval_from_database(...)
 
+.. _faq-task-priorities:
 
 Does celery support task priorities?
 ------------------------------------
@@ -503,10 +590,12 @@ Does celery support task priorities?
 **Answer**: No. In theory, yes, as AMQP supports priorities. However
 RabbitMQ doesn't implement them yet.
 
-The usual way to prioritize work in celery, is to route high priority tasks
+The usual way to prioritize work in Celery, is to route high priority tasks
 to different servers. In the real world this may actually work better than per message
 priorities. You can use this in combination with rate limiting to achieve a
 highly performant system.
+
+.. _faq-acks_late-vs-retry:
 
 Should I use retry or acks_late?
 --------------------------------
@@ -551,6 +640,7 @@ So use retry for Python errors, and if your task is reentrant
 combine that with ``acks_late`` if that level of reliability
 is required.
 
+.. _faq-schedule-at-specific-time:
 
 Can I schedule tasks to execute at a specific time?
 ---------------------------------------------------
@@ -572,10 +662,12 @@ Or to schedule a periodic task at a specific time, use the
     def every_monday_morning():
         print("This is run every monday morning at 7:30")
 
+.. _faq-safe-worker-shutdown:
+
 How do I shut down ``celeryd`` safely?
 --------------------------------------
 
-**Answer**: Use the ``TERM`` signal, and celery will finish all currently
+**Answer**: Use the ``TERM`` signal, and the worker will finish all currently
 executing jobs and shut down as soon as possible. No tasks should be lost.
 
 You should never stop ``celeryd`` with the ``KILL`` signal (``-9``),
@@ -584,12 +676,18 @@ get a chance to shut down. As if you do tasks may be terminated mid-execution,
 and they will not be re-run unless you have the ``acks_late`` option set.
 (``Task.acks_late`` / ``CELERY_ACKS_LATE``).
 
+.. _faq-daemonizing:
+
 How do I run celeryd in the background on [platform]?
 -----------------------------------------------------
-**Answer**: Please see :doc:`cookbook/daemonizing`.
+**Answer**: Please see :ref:`daemonizing`.
+
+.. _faq-windows:
 
 Windows
 =======
+
+.. _faq-windows-worker-spawn-loop:
 
 celeryd keeps spawning processes at startup
 -------------------------------------------
@@ -603,10 +701,14 @@ Any additional arguments can be appended to this command.
 
 See http://bit.ly/bo9RSw
 
+.. _faq-windows-worker-embedded-beat:
+
 The ``-B`` / ``--beat`` option to celeryd doesn't work?
 ----------------------------------------------------------------
 **Answer**: That's right. Run ``celerybeat`` and ``celeryd`` as separate
 services instead.
+
+.. _faq-windows-django-settings:
 
 ``django-celery`` can’t find settings?
 --------------------------------------
