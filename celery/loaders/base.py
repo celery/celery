@@ -108,13 +108,6 @@ class BaseLoader(object):
 
         return dict(map(getarg, args))
 
-    @property
-    def conf(self):
-        """Loader configuration."""
-        if not self._conf_cache:
-            self._conf_cache = self.read_configuration()
-        return self._conf_cache
-
     def import_from_cwd(self, module, imp=None):
         """Import module, but make sure it finds modules
         located in the current directory.
@@ -135,3 +128,10 @@ class BaseLoader(object):
                 sys.path.remove(cwd)
             except ValueError:
                 pass
+
+    @property
+    def conf(self):
+        """Loader configuration."""
+        if not self._conf_cache:
+            self._conf_cache = self.read_configuration()
+        return self._conf_cache
