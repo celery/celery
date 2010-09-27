@@ -4,11 +4,11 @@
  Routing Tasks
 ===============
 
-**NOTE** This document refers to functionality only available in brokers
-using AMQP. Other brokers may implement some functionality, see their
-respective documenation for more information, or contact the `mailinglist`_.
+.. warning::
 
-.. _`mailinglist`: http://groups.google.com/group/celery-users
+    This document refers to functionality only available in brokers
+    using AMQP. Other brokers may implement some functionality, see their
+    respective documenation for more information, or contact the :ref:`mailing-list`.
 
 .. contents::
     :local:
@@ -24,12 +24,12 @@ Basics
 Automatic routing
 -----------------
 
-The simplest way to do routing is to use the ``CELERY_CREATE_MISSING_QUEUES``
-setting (on by default).
+The simplest way to do routing is to use the
+:setting:`CELERY_CREATE_MISSING_QUEUES` setting (on by default).
 
 With this setting on, a named queue that is not already defined in
-``CELERY_QUEUES`` will be created automatically. This makes it easy to perform
-simple routing tasks.
+:setting:`CELERY_QUEUES` will be created automatically. This makes it easy to
+perform simple routing tasks.
 
 Say you have two servers, ``x``, and ``y`` that handles regular tasks,
 and one server ``z``, that only handles feed related tasks. You can use this
@@ -109,12 +109,13 @@ configuration:
     CELERY_DEFAULT_EXCHANGE_TYPE = "topic"
     CELERY_DEFAULT_ROUTING_KEY = "task.default"
 
-``CELERY_QUEUES`` is a map of queue names and their exchange/type/binding_key,
-if you don't set exchange or exchange type, they will be taken from the
-``CELERY_DEFAULT_EXCHANGE``/``CELERY_DEFAULT_EXCHANGE_TYPE`` settings.
+:setting:`CELERY_QUEUES` is a map of queue names and their
+exchange/type/binding_key, if you don't set exchange or exchange type, they
+will be taken from the :setting:`CELERY_DEFAULT_EXCHANGE` and
+:setting:`CELERY_DEFAULT_EXCHANGE_TYPE` settings.
 
 To route a task to the ``feed_tasks`` queue, you can add an entry in the
-``CELERY_ROUTES`` setting:
+:setting:`CELERY_ROUTES` setting:
 
 .. code-block:: python
 
@@ -171,11 +172,13 @@ just specify a custom exchange and exchange type:
 
 If you're confused about these terms, you should read up on AMQP concepts.
 
-In addition to the :ref:`amqp-primer` below, there's
-`Rabbits and Warrens`_, an excellent blog post describing queues and
-exchanges. There's also AMQP in 10 minutes*: `Flexible Routing Model`_,
-and `Standard Exchange Types`_. For users of RabbitMQ the `RabbitMQ FAQ`_
-could be useful as a source of information.
+.. seealso::
+
+    In addition to the :ref:`amqp-primer` below, there's
+    `Rabbits and Warrens`_, an excellent blog post describing queues and
+    exchanges. There's also AMQP in 10 minutes*: `Flexible Routing Model`_,
+    and `Standard Exchange Types`_. For users of RabbitMQ the `RabbitMQ FAQ`_
+    could be useful as a source of information.
 
 .. _`Rabbits and Warrens`: http://blogs.digitar.com/jjww/2009/01/rabbits-and-warrens/
 .. _`Flexible Routing Model`: http://bit.ly/95XFO1
@@ -238,8 +241,8 @@ The steps required to send and receive messages are:
 3. Bind the queue to the exchange.
 
 Celery automatically creates the entities necessary for the queues in
-``CELERY_QUEUES`` to work (except if the queue's ``auto_declare`` setting
-is set to :const:`False`).
+:setting:`CELERY_QUEUES` to work (except if the queue's ``auto_declare``
+setting is set to :const:`False`).
 
 Here's an example queue configuration with three queues;
 One for video, one for images and finally, one default queue for everything else:
@@ -263,10 +266,11 @@ One for video, one for images and finally, one default queue for everything else
     CELERY_DEFAULT_EXCHANGE_TYPE = "direct"
     CELERY_DEFAULT_ROUTING_KEY = "default"
 
+.. note::
 
-**NOTE**: In Celery the ``routing_key`` is the key used to send the message,
-while ``binding_key`` is the key the queue is bound with. In the AMQP API
-they are both referred to as the routing key.
+    In Celery the ``routing_key`` is the key used to send the message,
+    while ``binding_key`` is the key the queue is bound with. In the AMQP API
+    they are both referred to as the routing key.
 
 .. _amqp-exchange-types:
 
@@ -343,11 +347,13 @@ Related API commands
 
     Deletes an exchange.
 
-:Note: Declaring does not necessarily mean "create". When you declare you
-       *assert* that the entity exists and that it's operable. There is no
-       rule as to whom should initially create the exchange/queue/binding,
-       whether consumer or producer. Usually the first one to need it will
-       be the one to create it.
+.. note::
+
+    Declaring does not necessarily mean "create". When you declare you
+    *assert* that the entity exists and that it's operable. There is no
+    rule as to whom should initially create the exchange/queue/binding,
+    whether consumer or producer. Usually the first one to need it will
+    be the one to create it.
 
 .. _amqp-api-hands-on:
 
@@ -415,7 +421,7 @@ if it has not been acknowledged before the client connection is closed.
 
 Note the delivery tag listed in the structure above; Within a connection channel,
 every received message has a unique delivery tag,
-This tag is used to acknowledge the message. Note that
+This tag is used to acknowledge the message. Also note that
 delivery tags are not unique across connections, so in another client
 the delivery tag ``1`` might point to a different message than in this channel.
 
@@ -442,7 +448,7 @@ Routing Tasks
 Defining queues
 ---------------
 
-In Celery the queues are defined by the ``CELERY_QUEUES`` setting.
+In Celery the queues are defined by the :setting:`CELERY_QUEUES` setting.
 
 Here's an example queue configuration with three queues;
 One for video, one for images and finally, one default queue for everything else:
@@ -469,12 +475,12 @@ One for video, one for images and finally, one default queue for everything else
     CELERY_DEFAULT_EXCHANGE_TYPE = "direct"
     CELERY_DEFAULT_ROUTING_KEY = "default"
 
-Here, the ``CELERY_DEFAULT_QUEUE`` will be used to route tasks that doesn't
-have an explicit route.
+Here, the :setting:`CELERY_DEFAULT_QUEUE` will be used to route tasks that
+doesn't have an explicit route.
 
 The default exchange, exchange type and routing key will be used as the
 default routing values for tasks, and as the default values for entries
-in ``CELERY_QUEUES``.
+in :setting:`CELERY_QUEUES`.
 
 .. _routing-task-destination:
 
@@ -483,9 +489,10 @@ Specifying task destination
 
 The destination for a task is decided by the following (in order):
 
-1. The :ref:`routers` defined in ``CELERY_ROUTES``.
+1. The :ref:`routers` defined in :setting:`CELERY_ROUTES`.
 2. The routing arguments to :func:`~celery.execute.apply_async`.
-3. Routing related attributes defined on the :class:`~celery.task.base.Task` itself.
+3. Routing related attributes defined on the :class:`~celery.task.base.Task`
+   itself.
 
 It is considered best practice to not hard-code these settings, but rather
 leave that as configuration options by using :ref:`routers`;
@@ -514,7 +521,7 @@ All you need to define a new router is to create a class with a
             return None
 
 If you return the ``queue`` key, it will expand with the defined settings of
-that queue in ``CELERY_QUEUES``::
+that queue in :setting:`CELERY_QUEUES`::
 
     {"queue": "video", "routing_key": "video.compress"}
 
@@ -526,7 +533,7 @@ that queue in ``CELERY_QUEUES``::
          "routing_key": "video.compress"}
 
 
-You install router classes by adding it to the ``CELERY_ROUTES`` setting::
+You install router classes by adding it to the :setting:`CELERY_ROUTES` setting::
 
     CELERY_ROUTES = (MyRouter, )
 
@@ -536,7 +543,7 @@ Router classes can also be added by name::
 
 
 For simple task name -> route mappings like the router example above, you can simply
-drop a dict into ``CELERY_ROUTES`` to get the same result::
+drop a dict into :setting:`CELERY_ROUTES` to get the same result::
 
     CELERY_ROUTES = ({"myapp.tasks.compress_video": {
                         "queue": "video",

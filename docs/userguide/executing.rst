@@ -113,8 +113,8 @@ also be registered in the worker.
 
 When sending a task the serialization method is taken from the following
 places in order: The ``serializer`` argument to ``apply_async``, the
-Task's ``serializer`` attribute, and finally the global default ``CELERY_SERIALIZER``
-configuration directive.
+Task's ``serializer`` attribute, and finally the global default
+:setting:`CELERY_TASK_SERIALIZER` configuration directive.
 
 .. code-block:: python
 

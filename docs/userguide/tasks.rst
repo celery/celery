@@ -25,7 +25,7 @@ Given a function ``create_user``, that takes two arguments: ``username`` and
             create_user(username, password)
 
 For convenience there is a shortcut decorator that turns any function into
-a task, :func:`celery.decorators.task`:
+a task:
 
 .. code-block:: python
 
@@ -283,10 +283,13 @@ Message and routing options
 .. attribute:: Task.priority
 
     The message priority. A number from 0 to 9, where 0 is the
-    highest priority. **Note:** RabbitMQ does not support priorities yet.
+    highest priority. **Note:** At the time writing this, RabbitMQ did not yet support
+    priorities
 
-Also see :ref:`executing-routing` for more information about message options,
-and :ref:`guide-routing`.
+.. seealso::
+
+    :ref:`executing-routing` for more information about message options,
+    and :ref:`guide-routing`.
 
 .. _task-example:
 
@@ -583,8 +586,12 @@ Good:
 We use :class:`~celery.task.sets.subtask` here to safely pass
 around the callback task. :class:`~celery.task.sets.subtask` is a 
 subclass of dict used to wrap the arguments and execution options
-for a single task invocation. See :doc:`tasksets` for more information about
-subtasks.
+for a single task invocation.
+
+
+.. seealso::
+
+    :ref:`sets-subtasks` for more information about subtasks.
 
 .. _task-performance-and-strategies:
 
@@ -607,8 +614,10 @@ However, executing a task does have overhead. A message needs to be sent, data
 may not be local, etc. So if the tasks are too fine-grained the additional
 overhead may not be worth it in the end.
 
-See the book `Art of Concurrency`_ for more information about task
-granularity.
+.. seealso::
+
+    The book `Art of Concurrency`_ has a whole section dedicated to the topic
+    of task granularity.
 
 .. _`Art of Concurrency`: http://oreilly.com/catalog/9780596521547
 
@@ -628,8 +637,13 @@ is going to be used.
 The easiest way to share data between workers is to use a distributed caching
 system, like `memcached`_.
 
-For more information about data-locality, please read
-http://research.microsoft.com/pubs/70001/tr-2003-24.pdf
+.. seealso::
+
+    The paper `Distributed Computing Economics`_ by Jim Gray is an excellent
+    introduction to the topic of data locality.
+
+.. _`Distributed Computing Economics`:
+    http://research.microsoft.com/pubs/70001/tr-2003-24.pdf
 
 .. _`memcached`: http://memcached.org/
 

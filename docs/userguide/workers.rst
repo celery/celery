@@ -17,8 +17,8 @@ You can start celeryd to run in the foreground by executing the command::
     $ celeryd --loglevel=INFO
 
 You probably want to use a daemonization tool to start
-``celeryd`` in the background. See :doc:`../cookbook/daemonizing` for help
-starting celeryd with some of the most popular daemonization tools.
+``celeryd`` in the background. See :ref:`daemonizing` for help
+using ``celeryd`` with popular daemonization tools.
 
 For a full list of available command line options see
 :mod:`~celery.bin.celeryd`, or simply execute the command::
@@ -92,6 +92,8 @@ run times and other factors.
 Time limits
 ===========
 
+.. versionadded:: 2.0
+
 A single task can potentially run forever, if you have lots of tasks
 waiting for some event that will never happen you will block the worker
 from processing new tasks indefinitely. The best way to defend against
@@ -115,15 +117,19 @@ time limit kills it:
         except SoftTimeLimitExceeded:
             clean_up_in_a_hurry()
 
-Time limits can also be set using the ``CELERYD_TASK_TIME_LIMIT`` /
-``CELERYD_SOFT_TASK_TIME_LIMIT`` settings.
+Time limits can also be set using the :setting:`CELERYD_TASK_TIME_LIMIT` /
+:setting:`CELERYD_SOFT_TASK_TIME_LIMIT` settings.
 
-**NOTE** Time limits does not currently work on Windows.
+.. note::
+
+    Time limits does not currently work on Windows.
 
 .. _worker-maxtasksperchild:
 
 Max tasks per child setting
 ===========================
+
+.. versionadded: 2.0
 
 With this option you can configure the maximum number of tasks
 a worker can execute before it's replaced by a new process.
@@ -132,12 +138,14 @@ This is useful if you have memory leaks you have no control over
 for example from closed source C extensions.
 
 The option can be set using the ``--maxtasksperchild`` argument
-to ``celeryd`` or using the ``CELERYD_MAX_TASKS_PER_CHILD`` setting.
+to ``celeryd`` or using the :setting:`CELERYD_MAX_TASKS_PER_CHILD` setting.
 
 .. _worker-remote-control:
 
 Remote control
 ==============
+
+.. versionadded:: 2.0
 
 Workers have the ability to be remote controlled using a high-priority
 broadcast message queue. The commands can be directed to all, or a specific
@@ -213,8 +221,11 @@ destination hostname::
     >>> rate_limit("myapp.mytask", "200/m",
     ...            destination=["worker1.example.com"])
 
-**NOTE** This won't affect workers with the ``CELERY_DISABLE_RATE_LIMITS``
-setting on. To re-enable rate limits then you have to restart the worker.
+.. warning::
+
+    This won't affect workers with the
+    :setting:`CELERY_DISABLE_RATE_LIMITS` setting on. To re-enable rate limits
+    then you have to restart the worker.
 
 .. _worker-remote-shutdown:
 
@@ -286,7 +297,7 @@ Here's an example control command that restarts the broker connection:
 
 
 These can be added to task modules, or you can keep them in their own module
-then import them using the ``CELERY_IMPORTS`` setting::
+then import them using the :setting:`CELERY_IMPORTS` setting::
 
     CELERY_IMPORTS = ("myapp.worker.control", )
 

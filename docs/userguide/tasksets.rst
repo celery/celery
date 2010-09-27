@@ -12,6 +12,8 @@
 Subtasks
 ========
 
+.. versionadded:: 2.0
+
 The :class:`~celery.task.sets.subtask` class is used to wrap the arguments and
 execution options for a single task invocation::
 
