@@ -1,3 +1,6 @@
+import os
+import sys
+
 from importlib import import_module
 
 BUILTIN_MODULES = ["celery.task"]
@@ -37,7 +40,7 @@ class BaseLoader(object):
         pass
 
     def import_task_module(self, module):
-        return self.import_module(module)
+        return self.import_from_cwd(module)
 
     def import_module(self, module):
         return import_module(module)
@@ -51,6 +54,25 @@ class BaseLoader(object):
         if not self.worker_initialized:
             self.worker_initialized = True
             self.on_worker_init()
+
+    def import_from_cwd(self, module, imp=import_module):
+        """Import module, but make sure it finds modules
+        located in the current directory.
+
+        Modules located in the current directory has
+        precedence over modules located in ``sys.path``.
+        """
+        cwd = os.getcwd()
+        if cwd in sys.path:
+            return imp(module)
+        sys.path.insert(0, cwd)
+        try:
+            return imp(module)
+        finally:
+            try:
+                sys.path.remove(cwd)
+            except ValueError:          # pragma: no cover
+                pass
 
     @property
     def conf(self):

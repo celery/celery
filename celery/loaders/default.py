@@ -1,5 +1,4 @@
 import os
-import sys
 import warnings
 from importlib import import_module
 
@@ -46,25 +45,6 @@ class Loader(BaseLoader):
                         for mod, cls in (fqn.rsplit('.', 1), ))
 
         return settings
-
-    def import_from_cwd(self, module, imp=import_module):
-        """Import module, but make sure it finds modules
-        located in the current directory.
-
-        Modules located in the current directory has
-        precedence over modules located in ``sys.path``.
-        """
-        cwd = os.getcwd()
-        if cwd in sys.path:
-            return imp(module)
-        sys.path.insert(0, cwd)
-        try:
-            return imp(module)
-        finally:
-            try:
-                sys.path.remove(cwd)
-            except ValueError:          # pragma: no cover
-                pass
 
     def read_configuration(self):
         """Read configuration from ``celeryconfig.py`` and configure
