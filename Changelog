@@ -16,7 +16,7 @@
 
 .. _v210-important:
 
-Important notes
+Important Notes
 ---------------
 
 * Celery is now following the versioning semantics defined by `semver`_.
@@ -32,10 +32,26 @@ Important notes
 .. _`semver`: http://semver.org
 .. _`Wiki: Release Cycle`: http://wiki.github.com/ask/celery/release-cycle.
 
+* Now depends on Carrot 0.10.6.
+
+* No longer depends on SQLAlchemy, this needs to be installed separately
+  if the database backend is used (does not apply to users of
+  ``django-celery``).
+
 .. _v210-news:
 
 News
 ----
+
+* Added support for expiration of AMQP results (requires RabbitMQ 2.1.0)
+
+    The new configuration option ``CELERY_AMQP_TASK_RESULT_EXPIRES`` sets
+    the expiry time in seconds (can be int or float):
+
+    .. code-block:: python
+
+        CELERY_AMQP_TASK_RESULT_EXPIRES = 30 * 60  # 30 mins
+        CELERY_AMQP_TASK_RESULT_EXPIRES = 0.80     # 800 ms
 
 * celeryev: Event Snapshots
 
@@ -103,6 +119,41 @@ News
     It deletes successful tasks after 1 day, failed tasks after 3 days,
     and tasks in other states after 5 days.
 
+.. seealso::
+
+    :ref:`monitoring-django-admin` and :ref:`monitoring-snapshots`.
+
+
+* celeryd: Now emits a warning if there is already a worker node using the same
+  name running on the current virtual host.
+
+* :func:`celery.task.control.broadcast`: Added callback argument, this can be
+  used to process replies immediately as they arrive.
+
+* New remote control command: ``diagnose``.
+
+    Verifies that the pool workers are able to accept and perform tasks.
+
+    .. warning::
+        This is only reliable as long as the worker node is not
+        processing tasks.
+
+* celeryctl: New command-line utility to manage and inspect worker nodes,
+  and also apply tasks and inspect the results of tasks.
+
+    .. seealso::
+        The :ref:`monitoring-celeryctl` section in the :ref:`guide`.
+
+    Some examples::
+
+        $ celeryctl apply tasks.add -a '[2, 2]' --countdown=10
+
+        $ celeryctl inspect active
+        $ celeryctl inspect registered_tasks
+        $ celeryctl inspect scheduled
+        $ celeryctl inspect --help
+        $ celeryctl apply --help
+
 * Added the ability to set an expiry date and time for tasks.
 
     Example::
@@ -159,6 +210,112 @@ News
             stdouts = logging.getLogger("mystdoutslogger")
             log.redirect_stdouts_to_logger(stdouts, loglevel=logging.WARNING)
 
+* celeryd: Added command-line option ``-I|--include``:
+  Additional (task) modules to be imported
+
+* :func:`celery.messaging.establish_connection`: Ability to override defaults
+  used using kwarg "defaults".
+
+* celeryd: Now uses ``multiprocessing.freeze_support()`` so it should work
+  with py2exe and similar tools.
+
+* celeryd: Now includes more metadata for the STARTED state: pid and
+  hostname of the worker that started the task.
+
+    See issue #181
+
+* subtask: Merge addititional keyword args to ``subtask()`` into task kwargs.
+
+    e.g:
+
+        >>> s = subtask((1, 2), {"foo": "bar"}, baz=1)
+        >>> s.args
+        (1, 2)
+        >>> s.kwargs
+        {"foo": "bar", "baz": 1}
+
+    See issue #182.
+
+* AMQP result backend: Sending of results are now retried if the connection
+  is down.
+
+* AMQP result backend: ``result.get()``: Wait for next state if state is not
+  in :data:`~celery.states.READY_STATES`.
+
+* TaskSetResult now supports ``__getitem__``
+
+    ::
+
+        >>> res = TaskSet(tasks).apply_async()
+        >>> res[0].get()
+
+
+
+* Added ``Task.send_error_emails`` + ``Task.error_whitelist``, so these can
+  be configured per task instead of just globally
+
+* Added ``Task.store_errors_even_if_ignored``, so it can be changed per Task,
+  not just globally.
+
+* The crontab schedule no longer wakes up every second, but implements
+  ``remaining_estimate``.
+
+* celeryd:  Store FAILURE result if the ``WorkerLostError`` exception occurs
+  (worker process disappeared).
+
+* celeryd: Store FAILURE result if one of the ``*TimeLimitExceeded``
+  exceptions occurs.
+
+* Refactored the periodic task responsible for cleaning up results.
+
+    * The backend cleanup task is now only added to the schedule if
+        ``CELERY_TASK_RESULT_EXPIRES`` is set.
+
+    * If the schedule already contains a periodic task named
+      "celery.backend_cleanup" it won't change it, so the behavior of the
+      backend cleanup task can be easily changed.
+
+    * The task is now run by every day at 4:00 AM, instead of every day since
+      fist run (using crontab schedule instead of run_every)
+
+    * Renamed ``celery.task.builtins.DeleteExpiredTaskMetaTask``
+        -> :class:`celery.task.builtins.backend_cleanup`
+
+    * The task itself has been renamed from "celery.delete_expired_task_meta"
+      to "celery.backend_cleanup"
+
+    See issue #134.
+
+* Implemented ``AsyncResult.forget`` for sqla/cache/redis/tyrant backends.
+  (Forget and remove task result).
+
+    See issue #184.
+
+*    Added ``Task.update_state(task_id, state, meta)``.
+
+    as a shortcut to ``task.backend.store_result(task_id, meta, state)``.
+
+    The backend interface is "private" and the terminology outdated,
+    so better to move this to :class:`~celery.task.base.Task` so it can be
+    used.
+
+* timer2: Set ``self.running=False`` in
+  :meth:`~celery.utils.timer2.Timer.stop` so it won't try to join again on
+  subsequent calls to ``stop()``.
+
+* Log colors are now disabled by default on Windows.
+
+* ``celery.platform`` renamed to :mod:`celery.platforms`, so it doesn't
+  collide with the built-in :mod:`platform` module.
+
+* Exceptions occuring in Mediator+Pool callbacks are now catched and logged
+  instead of taking down the worker.
+
+* Redis result backend: Now supports result expiration using the Redis
+  ``EXPIRE`` command.
+
+* unittests: Don't leave threads running at teardown.
+
 * celeryd: Task results shown in logs are now truncated to 46 chars.
 
 * ``Task.__name__`` is now an alias to ``self.__class__.__name__``.
@@ -166,7 +323,7 @@ News
 
 * ``Task.retry``: Now raises :exc:`TypeError` if kwargs argument is empty.
 
-    See http://github.com/ask/celery/issues/issue/164
+    See issue #164.
 
 * timedelta_seconds: Use ``timedelta.total_seconds`` if running on Python 2.7
 
@@ -198,6 +355,16 @@ News
 Fixes
 -----
 
+* Pool: Process timed out by TimeoutHandler must be joined by the Supervisor,
+  so don't remove it from self._pool
+
+    See issue #192.
+
+* TaskPublisher.delay_task now supports exchange argument, so exchange can be
+  overriden when sending tasks in bulk using the same publisher
+
+    See issue #187.
+
 * Compat ``LoggerAdapter`` implementation: Now works for Python 2.4.
 
     Also added support for several new methods:
@@ -210,7 +377,17 @@ Fixes
 Documentation
 -------------
 
-* tutorials/external moved to new section: "community"
+* Added User guide section: Monitoring
+
+* Added user guide section: Periodic Tasks
+
+    Moved from `getting-started/periodic-tasks` and updated.
+
+* tutorials/external moved to new section: "community".
+
+* References has been added to all sections in the documentation.
+
+    This makes it easier to link between documents.
 
 .. _version-2.0.3:
 
@@ -240,7 +417,7 @@ Fixes
 * :class:`~celery.task.control.inspect`:
   ``registered_tasks`` was requesting an invalid command because of a typo.
 
-    See http://github.com/ask/celery/issues/issue/170
+    See issue #170.
 
 * ``CELERY_ROUTES``: Values defined in the route should now have precedence
   over values defined in ``CELERY_QUEUES`` when merging the two.
@@ -283,7 +460,7 @@ Fixes
 * celeryev: Curses monitor no longer crashes if the terminal window
   is resized.
 
-    See http://github.com/ask/celery/issues/issue/160
+    See issue #160.
 
 * celeryd: On OS X it is not possible to run ``os.exec*`` in a process
   that is threaded.
@@ -291,26 +468,26 @@ Fixes
       This breaks the SIGHUP restart handler,
       and is now disabled on OS X, emitting a warning instead.
 
-    See http://github.com/ask/celery/issues/issue/152
+    See issue #152.
 
 * :mod:`celery.execute.trace`: Properly handle ``raise(str)``,
   which is still allowed in Python 2.4.
 
-    See http://github.com/ask/celery/issues/issue/175
+    See issue #175.
 
 * Using urllib2 in a periodic task on OS X crashed because
   of the proxy autodetection used in OS X.
 
     This is now fixed by using a workaround.
-    See http://github.com/ask/celery/issues/issue/143
+    See issue #143.
 
 * Debian init scripts: Commands should not run in a subshell
 
-    See http://github.com/ask/celery/issues/issue/163
+    See issue #163.
 
 * Debian init scripts: Use abspath for celeryd to allow stat
 
-    See http://github.com/ask/celery/issues/issue/162
+    See issue #162.
 
 .. _v203-documentation:
 
@@ -323,11 +500,11 @@ Documentation
 
 * Tasks Userguide: Added section on database transactions.
 
-    See http://github.com/ask/celery/issues/issue/169
+    See issue #169.
 
 * Routing Userguide: Fixed typo ``"feed": -> {"queue": "feeds"}``.
 
-    See http://github.com/ask/celery/issues/issue/169
+    See issue #169.
 
 * Documented the default values for the ``CELERYD_CONCURRENCY``
   and ``CELERYD_PREFETCH_MULTIPLIER`` settings.
@@ -356,7 +533,7 @@ Documentation
 * Routes: When using the dict route syntax, the exchange for a task
   could dissapear making the task unroutable.
 
-    See http://github.com/ask/celery/issues/issue/158
+    See issue #158.
 
 * Test suite now passing on Python 2.4
 
@@ -389,12 +566,12 @@ Documentation
 
 * celeryd: Now joins threads at shutdown.
 
-    See http://github.com/ask/celery/issues/issue/152
+    See issue #152.
 
 * Test teardown: Don't use atexit but nose's ``teardown()`` functionality
   instead.
 
-    See http://github.com/ask/celery/issues/issue/154
+    See issue #154.
 
 * Debian init script for celeryd: Stop now works correctly.
 
@@ -406,7 +583,7 @@ Documentation
 
         CELERY_TASK_ERROR_WHITELIST = ('myapp.MalformedInputError')
 
-    See http://github.com/ask/celery/issues/issue/153
+    See issue #153.
 
 * celeryd: Now handles overflow exceptions in ``time.mktime`` while parsing
   the ETA field.
@@ -897,7 +1074,7 @@ News
     because it has applied prefetched tasks without having any pool
     processes available to immediately accept them.
 
-    See http://github.com/ask/celery/issues/closed#issue/122
+    See issue #122.
 
 * New built-in way to do task callbacks using
   :class:`~celery.task.sets.subtask`.
@@ -914,11 +1091,11 @@ News
 
 * TaskSet failed() result was incorrect.
 
-    See http://github.com/ask/celery/issues/closed#issue/132
+    See issue #132.
 
 * Now creates different loggers per task class.
 
-    See http://github.com/ask/celery/issues/closed#issue/129
+    See issue #129.
 
 * Missing queue definitions are now created automatically.
 
@@ -1218,9 +1395,10 @@ Critical
 
     Fixed by making the pool worker processes ignore :const:`SIGINT`.
 
-* Should not close the consumers before the pool is terminated, just cancel the consumers.
+* Should not close the consumers before the pool is terminated, just cancel
+  the consumers.
 
-    Issue #122. http://github.com/ask/celery/issues/issue/122
+    See issue #122.
 
 * Now depends on :mod:`billiard` >= 0.3.1
 
@@ -1250,12 +1428,12 @@ Changes
 
 * :func:`celery.execute.apply`: Pass logfile/loglevel arguments as task kwargs.
 
-    Issue #110 http://github.com/ask/celery/issues/issue/110
+    See issue #110.
 
 * celery.execute.apply: Should return exception, not :class:`~celery.datastructures.ExceptionInfo`
   on error.
 
-    Issue #111 http://github.com/ask/celery/issues/issue/111
+    See issue #111.
 
 * Added new entries to the :doc:`FAQs <faq>`:
 
@@ -1329,9 +1507,11 @@ News
     Late ack means the task messages will be acknowledged **after** the task
     has been executed, not *just before*, which is the default behavior.
 
-    Note that this means the tasks may be executed twice if the worker
-    crashes in the middle of their execution. Not acceptable for most
-    applications, but desirable for others.
+    .. note::
+
+        This means the tasks may be executed twice if the worker
+        crashes in mid-execution. Not acceptable for most
+        applications, but desirable for others.
 
 * Added crontab-like scheduling to periodic tasks.
 
@@ -1363,14 +1543,15 @@ News
         def every_hour():
             print("Runs every hour on the clock. e.g. 1:30, 2:30, 3:30 etc.")
 
-    Note that this a late addition. While we have unittests, due to the
-    nature of this feature we haven't been able to completely test this
-    in practice, so consider this experimental.
+    .. note::
+        This a late addition. While we have unittests, due to the
+        nature of this feature we haven't been able to completely test this
+        in practice, so consider this experimental.
 
 * ``TaskPool.apply_async``: Now supports the ``accept_callback`` argument.
 
 * ``apply_async``: Now raises :exc:`ValueError` if task args is not a list,
-  or kwargs is not a tuple (http://github.com/ask/celery/issues/issue/95).
+  or kwargs is not a tuple (Issue #95).
 
 * ``Task.max_retries`` can now be ``None``, which means it will retry forever.
 
@@ -1518,8 +1699,7 @@ Fixes
     the mediator thread could block shutdown (and potentially block other
     jobs from coming in).
 
-* Remote rate limits was not properly applied
-  (http://github.com/ask/celery/issues/issue/98)
+* Remote rate limits was not properly applied (Issue #98).
 
 * Now handles exceptions with unicode messages correctly in
   ``TaskRequest.on_failure``.
@@ -1555,7 +1735,7 @@ Fixes
 
 * Unittests: Don't disable the django test database teardown,
   instead fixed the underlying issue which was caused by modifications
-  to the ``DATABASE_NAME`` setting (http://github.com/ask/celery/issues/82).
+  to the ``DATABASE_NAME`` setting (Issue #82).
 
 * Django Loader: New config ``CELERY_DB_REUSE_MAX`` (max number of tasks
   to reuse the same database connection)
@@ -1585,8 +1765,7 @@ Fixes
     Consider the competition for the first pool plug-in started!
 
 
-* Debian init scripts: Use ``-a`` not ``&&``
-  (http://github.com/ask/celery/issues/82).
+* Debian init scripts: Use ``-a`` not ``&&`` (Issue #82).
 
 * Debian init scripts: Now always preserves ``$CELERYD_OPTS`` from the
   ``/etc/default/celeryd`` and ``/etc/default/celerybeat``.
@@ -1603,7 +1782,7 @@ Fixes
   when trying to log that a task had been revoked.
 
 * management.commands.camqadm: Fixed typo ``camqpadm`` -> ``camqadm``
-  (http://github.com/ask/celery/issues/83).
+  (Issue #83).
 
 * PeriodicTask.delta_resolution: Was not working for days and hours, now fixed
   by rounding to the nearest day/hour.
@@ -1637,9 +1816,11 @@ Fixes
     apply to your use case, you should be able to set the prefetch multiplier
     to zero, without sacrificing performance.
 
-    Please note that a patch to :mod:`multiprocessing` is currently being
-    worked on, this patch would enable us to use a better solution, and is
-    scheduled for inclusion in the ``2.0.0`` release.
+    .. note::
+
+        A patch to :mod:`multiprocessing` is currently being
+        worked on, this patch would enable us to use a better solution, and is
+        scheduled for inclusion in the ``2.0.0`` release.
 
 * celeryd now shutdowns cleanly when receving the ``TERM`` signal.
 
@@ -1661,9 +1842,10 @@ Fixes
 
 * ``celeryd`` now works on Windows again.
 
-    Note that if running with Django,
-    you can't use ``project.settings`` as the settings module name, but the
-    following should work::
+    .. warning::
+
+        If you're using Celery with Django, you can't use ``project.settings``
+        as the settings module name, but the following should work::
 
         $ python manage.py celeryd --settings=settings
 
@@ -1852,7 +2034,9 @@ Backward incompatible changes
         def add(x, y):
             return x + y
 
-    See the User Guide: :doc:`userguide/tasks` for more information.
+    .. seealso::
+
+        :ref:`guide-tasks` for more information about the task decorators.
 
 * The periodic task system has been rewritten to a centralized solution.
 
@@ -2239,16 +2423,22 @@ Backward incompatible changes
 -----------------------------
 
 * Add traceback to result value on failure.
-	**NOTE** If you use the database backend you have to re-create the
-	database table ``celery_taskmeta``.
-	
-	Contact the mailinglist or IRC channel listed in README for help
-	doing this.
+
+    .. note::
+
+        If you use the database backend you have to re-create the
+        database table ``celery_taskmeta``.
+
+        Contact the :ref:`mailing-list` or :ref:`irc-channel` channel
+        for help doing this.
 
 * Database tables are now only created if the database backend is used,
-	so if you change back to the database backend at some point,
-	be sure to initialize tables (django: ``syncdb``, python: ``celeryinit``).
-	(Note: This is only the case when using Django 1.1 or higher)
+  so if you change back to the database backend at some point,
+  be sure to initialize tables (django: ``syncdb``, python: ``celeryinit``).
+
+  .. note::
+
+     This is only applies if using Django version 1.1 or higher.
 
 * Now depends on ``carrot`` version 0.6.0.
 
@@ -2264,10 +2454,7 @@ Important changes
     This means celery is no longer Django specific.
 
     For more information see the FAQ entry
-    `Can I use celery without Django?`_.
-
-    . _`Can I use celery without Django?`:
-        http://ask.github.com/celery/faq.html#can-i-use-celery-without-django
+    :ref:`faq-is-celery-for-django-only`.
 
 * Celery now supports task retries.
 
@@ -2281,7 +2468,7 @@ Important changes
     It uses messages to publish task return value and status. And it's
     incredibly fast!
 
-    See http://github.com/ask/celery/issues/closed#issue/6 for more info!
+    See issue #6 for more info!
 
 * AMQP QoS (prefetch count) implemented:
 
@@ -2531,12 +2718,17 @@ News
   restarted if it crashes). To use this start celeryd with the
   ``--supervised`` option (or alternatively ``-S``).
 
-* views.apply: View applying a task. Example::
+* views.apply: View applying a task. Example
 
-    http://e.com/celery/apply/task_name/arg1/arg2//?kwarg1=a&kwarg2=b
+    ::
 
-  **NOTE** Use with caution, preferably not make this publicly
-  accessible without ensuring your code is safe!
+        http://e.com/celery/apply/task_name/arg1/arg2//?kwarg1=a&kwarg2=b
+
+
+    .. warning::
+
+        Use with caution! Do not expose this URL to the public
+        without first ensuring that your code is safe!
 
 * Refactored ``celery.task``. It's now split into three modules:
 
@@ -2658,8 +2850,10 @@ News
 =====
 :release-date: 2009-06-08 12:41 P.M CET
 
-**NOTE** This is a development version, for the stable release, please
-see versions 0.2.x.
+.. warning::
+
+    This is a development version, for the stable release, please
+    see versions 0.2.x.
 
 **VERY IMPORTANT:** Pickle is now the encoder used for serializing task
 arguments, so be sure to flush your task queue before you upgrade.
