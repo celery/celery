@@ -55,13 +55,15 @@ class BaseLoader(object):
             self.worker_initialized = True
             self.on_worker_init()
 
-    def import_from_cwd(self, module, imp=import_module):
+    def import_from_cwd(self, module, imp=None):
         """Import module, but make sure it finds modules
         located in the current directory.
 
         Modules located in the current directory has
         precedence over modules located in ``sys.path``.
         """
+        if imp is None:
+            imp = self.import_module
         cwd = os.getcwd()
         if cwd in sys.path:
             return imp(module)
