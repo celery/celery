@@ -130,7 +130,7 @@ See `Connection String`_ for more information about connection
 strings.
 
 To specify additional SQLAlchemy database engine options you can use
-the ``CELERY_RESULT_ENGINE_OPTIONS`` setting::
+the :setting:`CELERY_RESULT_ENGINE_OPTIONS` setting::
 
     # echo enables verbose logging from SQLAlchemy.
     CELERY_RESULT_ENGINE_OPTIONS = {"echo": True}
@@ -202,7 +202,7 @@ Using multiple memcached servers:
     CELERY_RESULT_BACKEND = "cache"
     CELERY_CACHE_BACKEND = 'memcached://172.19.26.240:11211;172.19.26.242:11211/'
 
-You can set pylibmc options using the ``CELERY_CACHE_BACKEND_OPTIONS``
+You can set pylibmc options using the :setting:`ELERY_CACHE_BACKEND_OPTIONS`
 setting:
 
 .. code-block:: python
@@ -347,7 +347,7 @@ Routing
 
 * CELERY_DEFAULT_QUEUE
     The queue used by default, if no custom queue is specified.
-    This queue must be listed in ``CELERY_QUEUES``.
+    This queue must be listed in :setting:`CELERY_QUEUES`.
     The default is: ``celery``.
 
 * CELERY_DEFAULT_EXCHANGE
@@ -382,7 +382,8 @@ Connection
     it's lost.
 
     The time between retries is increased for each retry, and is
-    not exhausted before ``CELERY_BROKER_CONNECTION_MAX_RETRIES`` is exceeded.
+    not exhausted before :setting:`CELERY_BROKER_CONNECTION_MAX_RETRIES` is
+    exceeded.
 
     This behavior is on by default.
 
@@ -412,7 +413,7 @@ Task execution settings
 * CELERY_EAGER_PROPAGATES_EXCEPTIONS
 
     If this is ``True``, eagerly executed tasks (using ``.apply``, or with
-    ``CELERY_ALWAYS_EAGER`` on), will raise exceptions.
+    :setting:`CELERY_ALWAYS_EAGER` on), will raise exceptions.
 
     It's the same as always running ``apply`` with ``throw=True``.
 
@@ -420,7 +421,7 @@ Task execution settings
 
     Whether to store the task return values or not (tombstones).
     If you still want to store errors, just not successful return values,
-    you can set ``CELERY_STORE_ERRORS_EVEN_IF_IGNORED``.
+    you can set :setting:`CELERY_STORE_ERRORS_EVEN_IF_IGNORED`.
 
 * CELERY_TASK_RESULT_EXPIRES
     Time (in seconds, or a :class:`datetime.timedelta` object) for when after

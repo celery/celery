@@ -45,8 +45,8 @@ News
 
 * Added support for expiration of AMQP results (requires RabbitMQ 2.1.0)
 
-    The new configuration option ``CELERY_AMQP_TASK_RESULT_EXPIRES`` sets
-    the expiry time in seconds (can be int or float):
+    The new configuration option :setting:`CELERY_AMQP_TASK_RESULT_EXPIRES`
+    sets the expiry time in seconds (can be int or float):
 
     .. code-block:: python
 
@@ -269,7 +269,7 @@ News
 * Refactored the periodic task responsible for cleaning up results.
 
     * The backend cleanup task is now only added to the schedule if
-        ``CELERY_TASK_RESULT_EXPIRES`` is set.
+        :setting:`CELERY_TASK_RESULT_EXPIRES` is set.
 
     * If the schedule already contains a periodic task named
       "celery.backend_cleanup" it won't change it, so the behavior of the
@@ -419,8 +419,9 @@ Fixes
 
     See issue #170.
 
-* ``CELERY_ROUTES``: Values defined in the route should now have precedence
-  over values defined in ``CELERY_QUEUES`` when merging the two.
+* :setting:`CELERY_ROUTES`: Values defined in the route should now have
+  precedence over values defined in :setting:`CELERY_QUEUES` when merging
+  the two.
 
     With the follow settings::
 
@@ -438,9 +439,9 @@ Fixes
          "serializer": "json"}
 
     This was not the case before: the values
-    in ``CELERY_QUEUES`` would take precedence.
+    in :setting:`CELERY_QUEUES` would take precedence.
 
-* Worker crashed if the value of ``CELERY_TASK_ERROR_WHITELIST`` was
+* Worker crashed if the value of :setting:`CELERY_TASK_ERROR_WHITELIST` was
   not an iterable
 
 * :func:`~celery.execute.apply`: Make sure ``kwargs["task_id"]`` is
@@ -506,8 +507,8 @@ Documentation
 
     See issue #169.
 
-* Documented the default values for the ``CELERYD_CONCURRENCY``
-  and ``CELERYD_PREFETCH_MULTIPLIER`` settings.
+* Documented the default values for the :setting:`CELERYD_CONCURRENCY`
+  and :setting:`CELERYD_PREFETCH_MULTIPLIER` settings.
 
 * Tasks Userguide: Fixed typos in the subtask example
 
@@ -675,7 +676,7 @@ Documentation
     tasks like hot knife through butter.
 
     In addition a new setting has been added to control the minimum sleep
-    interval; ``CELERYD_ETA_SCHEDULER_PRECISION``. A good
+    interval; :setting:`CELERYD_ETA_SCHEDULER_PRECISION`. A good
     value for this would be a float between 0 and 1, depending
     on the needed precision. A value of 0.8 means that when the ETA of a task
     is met, it will take at most 0.8 seconds for the task to be moved to the
@@ -702,13 +703,13 @@ Documentation
 * Fixed "pending_xref" errors shown in the HTML rendering of the
   documentation. Apparently this was caused by new changes in Sphinx 1.0b2.
 
-* Router classes in ``CELERY_ROUTES`` are now imported lazily.
+* Router classes in :setting:`CELERY_ROUTES` are now imported lazily.
 
     Importing a router class in a module that also loads the Celery
     environment would cause a circular dependency. This is solved
     by importing it when needed after the environment is set up.
 
-* ``CELERY_ROUTES`` was broken if set to a single dict.
+* :setting:`CELERY_ROUTES` was broken if set to a single dict.
 
     This example in the docs should now work again::
 
@@ -849,7 +850,7 @@ The database result backend is now using `SQLAlchemy`_ instead of the
 Django ORM, see `Supported Databases`_ for a table of supported databases.
 
 The ``DATABASE_*`` settings has been replaced by a single setting:
-``CELERY_RESULT_DBURI``. The value here should be an
+:setting:`CELERY_RESULT_DBURI`. The value here should be an
 `SQLAlchemy Connection String`_, some examples include:
 
 .. code-block:: python
@@ -870,7 +871,7 @@ See `SQLAlchemy Connection Strings`_ for more information about connection
 strings.
 
 To specify additional SQLAlchemy database engine options you can use
-the ``CELERY_RESULT_ENGINE_OPTIONS`` setting::
+the :setting:`CELERY_RESULT_ENGINE_OPTIONS` setting::
 
     # echo enables verbose logging from SQLAlchemy.
     CELERY_RESULT_ENGINE_OPTIONS = {"echo": True}
@@ -960,7 +961,7 @@ Backward incompatible changes
 
         CELERY_LOADER = "myapp.loaders.Loader"
 
-* ``CELERY_TASK_RESULT_EXPIRES`` now defaults to 1 day.
+* :setting:`CELERY_TASK_RESULT_EXPIRES` now defaults to 1 day.
 
     Previous default setting was to expire in 5 days.
 
@@ -1099,7 +1100,8 @@ News
 
 * Missing queue definitions are now created automatically.
 
-    You can disable this using the CELERY_CREATE_MISSING_QUEUES setting.
+    You can disable this using the :setting:`CELERY_CREATE_MISSING_QUEUES`
+    setting.
 
     The missing queues are created with the following options::
 
@@ -1118,18 +1120,19 @@ News
 * New Task option: ``Task.queue``
 
     If set, message options will be taken from the corresponding entry
-    in ``CELERY_QUEUES``. ``exchange``, ``exchange_type`` and ``routing_key``
+    in :setting:`CELERY_QUEUES`. ``exchange``, ``exchange_type`` and ``routing_key``
     will be ignored
 
 * Added support for task soft and hard timelimits.
 
     New settings added:
 
-    * CELERYD_TASK_TIME_LIMIT
+    * :setting:`CELERYD_TASK_TIME_LIMIT`
 
         Hard time limit. The worker processing the task will be killed and
         replaced with a new one when this is exceeded.
-    * CELERYD_SOFT_TASK_TIME_LIMIT
+
+    * :setting:`CELERYD_SOFT_TASK_TIME_LIMIT`
 
         Soft time limit. The celery.exceptions.SoftTimeLimitExceeded exception
         will be raised when this is exceeded. The task can catch this to
@@ -1163,11 +1166,11 @@ News
 
     This is only enabled when the log output is a tty.
     You can explicitly enable/disable this feature using the
-    ``CELERYD_LOG_COLOR`` setting.
+    :setting:`CELERYD_LOG_COLOR` setting.
 
 * Added support for task router classes (like the django multidb routers)
 
-    * New setting: CELERY_ROUTES
+    * New setting: :setting:`CELERY_ROUTES`
 
     This is a single, or a list of routers to traverse when
     sending tasks. Dicts in this list converts to a
@@ -1196,7 +1199,7 @@ News
                     return "default"
 
     route_for_task may return a string or a dict. A string then means
-    it's a queue name in ``CELERY_QUEUES``, a dict means it's a custom route.
+    it's a queue name in :setting:`CELERY_QUEUES`, a dict means it's a custom route.
 
     When sending tasks, the routers are consulted in order. The first
     router that doesn't return ``None`` is the route to use. The message options
@@ -1227,7 +1230,7 @@ News
    :meth:`~celery.task.base.Task.on_retry`/
    :meth:`~celery.task.base.Task.on_failure` as einfo keyword argument.
 
-* celeryd: Added ``CELERYD_MAX_TASKS_PER_CHILD`` /
+* celeryd: Added :setting:`CELERYD_MAX_TASKS_PER_CHILD` /
   :option:`--maxtasksperchild`
 
     Defines the maximum number of tasks a pool worker can process before
@@ -1238,8 +1241,8 @@ News
 
 * :func:`celery.task.control.ping` now works as expected.
 
-* ``apply(throw=True)`` / ``CELERY_EAGER_PROPAGATES_EXCEPTIONS``: Makes eager
-  execution re-raise task errors.
+* ``apply(throw=True)`` / :setting:`CELERY_EAGER_PROPAGATES_EXCEPTIONS`:
+  Makes eager execution re-raise task errors.
 
 * New signal: :data:`~celery.signals.worker_process_init`: Sent inside the
   pool worker process at init.
@@ -1247,9 +1250,10 @@ News
 * celeryd :option:`-Q` option: Ability to specifiy list of queues to use,
   disabling other configured queues.
 
-    For example, if ``CELERY_QUEUES`` defines four queues: ``image``, ``video``,
-    ``data`` and ``default``, the following command would make celeryd only
-    consume from the ``image`` and ``video`` queues::
+    For example, if :setting:`CELERY_QUEUES` defines four
+    queues: ``image``, ``video``, ``data`` and ``default``, the following
+    command would make celeryd only consume from the ``image`` and ``video``
+    queues::
 
         $ celeryd -Q image,video
 
@@ -1272,9 +1276,9 @@ News
 * Removed top-level tests directory. Test config now in celery.tests.config
 
     This means running the unittests doesn't require any special setup.
-    ``celery/tests/__init__`` now configures the ``CELERY_CONFIG_MODULE`` and
-    ``CELERY_LOADER``, so when ``nosetests`` imports that, the unit test
-    environment is all set up.
+    ``celery/tests/__init__`` now configures the :envvar:`CELERY_CONFIG_MODULE`
+    and :envvar:`CELERY_LOADER` environment variables, so when ``nosetests``
+    imports that, the unit test environment is all set up.
 
     Before you run the tests you need to install the test requirements::
 
@@ -1502,7 +1506,7 @@ News
 * AMQP backend: Added timeout support for ``result.get()`` /
   ``result.wait()``.
 
-* New task option: ``Task.acks_late`` (default: ``CELERY_ACKS_LATE``)
+* New task option: ``Task.acks_late`` (default: :setting:`CELERY_ACKS_LATE`)
 
     Late ack means the task messages will be acknowledged **after** the task
     has been executed, not *just before*, which is the default behavior.
@@ -1572,7 +1576,7 @@ News
     when there are long running tasks and there is a need to report which
     task is currently running.
 
-    The global default can be overridden by the ``CELERY_TRACK_STARTED``
+    The global default can be overridden by the :setting:`CELERY_TRACK_STARTED`
     setting.
 
 * User Guide: New section ``Tips and Best Practices``.
@@ -1713,15 +1717,15 @@ Fixes
 =====
 :release-date: 2010-03-31 12:50 P.M CET
 
-* Deprecated: ``CELERY_BACKEND``, please use ``CELERY_RESULT_BACKEND``
-  instead.
+* Deprecated: :setting:`CELERY_BACKEND`, please use
+  :setting:`CELERY_RESULT_BACKEND` instead.
 
 * We now use a custom logger in tasks. This logger supports task magic
   keyword arguments in formats.
 
-    The default format for tasks (``CELERYD_TASK_LOG_FORMAT``) now includes
-    the id and the name of tasks so the origin of task log messages can
-    easily be traced.
+    The default format for tasks (:setting:`CELERYD_TASK_LOG_FORMAT`) now
+    includes the id and the name of tasks so the origin of task log messages
+    can easily be traced.
 
     Example output::
         [2010-03-25 13:11:20,317: INFO/PoolWorker-1]
@@ -1737,8 +1741,8 @@ Fixes
   instead fixed the underlying issue which was caused by modifications
   to the ``DATABASE_NAME`` setting (Issue #82).
 
-* Django Loader: New config ``CELERY_DB_REUSE_MAX`` (max number of tasks
-  to reuse the same database connection)
+* Django Loader: New config :setting:`CELERY_DB_REUSE_MAX` (max number of
+  tasks to reuse the same database connection)
 
     The default is to use a new connection for every task.
     We would very much like to reuse the connection, but a safe number of
@@ -1747,8 +1751,9 @@ Fixes
 
     See: http://bit.ly/94fwdd
 
-* celeryd: The worker components are now configurable: ``CELERYD_POOL``,
-  ``CELERYD_LISTENER``, ``CELERYD_MEDIATOR``, and ``CELERYD_ETA_SCHEDULER``.
+* celeryd: The worker components are now configurable: :setting:`CELERYD_POOL`,
+  :setting:`CELERYD_LISTENER`, :setting:`CELERYD_MEDIATOR`, and
+  :setting:`CELERYD_ETA_SCHEDULER`.
 
     The default configuration is as follows:
 
@@ -1759,8 +1764,9 @@ Fixes
         CELERYD_ETA_SCHEDULER = "celery.worker.controllers.ScheduleController"
         CELERYD_LISTENER = "celery.worker.listener.CarrotListener"
 
-    The ``CELERYD_POOL`` setting makes it easy to swap out the multiprocessing
-    pool with a threaded pool, or how about a twisted/eventlet pool?
+    The :setting:`CELERYD_POOL` setting makes it easy to swap out the
+    multiprocessing pool with a threaded pool, or how about a
+    twisted/eventlet pool?
 
     Consider the competition for the first pool plug-in started!
 
@@ -1809,7 +1815,7 @@ Fixes
     really long execution time are affected, as all tasks that has made it
     all the way into the pool needs to be executed before the worker can
     safely terminate (this is at most the number of pool workers, multiplied
-    by the ``CELERYD_PREFETCH_MULTIPLIER`` setting.)
+    by the :setting:`CELERYD_PREFETCH_MULTIPLIER` setting.)
 
     We multiply the prefetch count by default to increase the performance at
     times with bursts of tasks with a short execution time. If this doesn't
@@ -1834,9 +1840,9 @@ Fixes
   out of control.
   
     You can set the maximum number of results the cache
-    can hold using the ``CELERY_MAX_CACHED_RESULTS`` setting (the default
-    is five thousand results). In addition, you can refetch already retrieved
-    results using ``backend.reload_task_result`` +
+    can hold using the :setting:`CELERY_MAX_CACHED_RESULTS` setting (the
+    default is five thousand results). In addition, you can refetch already
+    retrieved results using ``backend.reload_task_result`` +
     ``backend.reload_taskset_result`` (that's for those who want to send
     results incrementally).
 
@@ -1909,7 +1915,7 @@ Fixes
     a week into the future.
 
 * The ``task_id`` argument is now respected even if the task is executed 
-  eagerly (either using apply, or ``CELERY_ALWAYS_EAGER``).
+  eagerly (either using apply, or :setting:`CELERY_ALWAYS_EAGER`).
 
 * The internal queues are now cleared if the connection is reset.
 
@@ -1938,7 +1944,7 @@ Fixes
 
 * TaskPublisher: Declarations are now done once (per process).
 
-* Added ``Task.delivery_mode`` and the ``CELERY_DEFAULT_DELIVERY_MODE``
+* Added ``Task.delivery_mode`` and the :setting:`CELERY_DEFAULT_DELIVERY_MODE`
   setting.
 
     These can be used to mark messages non-persistent (i.e. so they are
@@ -2069,7 +2075,7 @@ Backward incompatible changes
 
 * The worker no longer stores errors if ``Task.ignore_result`` is set, to
   revert to the previous behaviour set
-  ``CELERY_STORE_ERRORS_EVEN_IF_IGNORED`` to ``True``.
+  :setting:`CELERY_STORE_ERRORS_EVEN_IF_IGNORED` to ``True``.
 
 * The staticstics functionality has been removed in favor of events,
   so the ``-S`` and ``--statistics`` switches has been removed.
@@ -2079,7 +2085,8 @@ Backward incompatible changes
 * ``celery.discovery`` has been removed, and it's ``autodiscover`` function is
   now in ``celery.loaders.djangoapp``. Reason: Internal API.
 
-* ``CELERY_LOADER`` now needs loader class name in addition to module name,
+* The :envvar:`CELERY_LOADER` environment variable now needs loader class name
+  in addition to module name,
 
     E.g. where you previously had: ``"celery.loaders.default"``, you now need
     ``"celery.loaders.default.Loader"``, using the previous syntax will result
@@ -2159,7 +2166,7 @@ News
 * You can now set the hostname celeryd identifies as using the ``--hostname``
   argument.
 
-* Cache backend now respects ``CELERY_TASK_RESULT_EXPIRES``.
+* Cache backend now respects the :setting:`CELERY_TASK_RESULT_EXPIRES` setting.
 
 * Message format has been standardized and now uses ISO-8601 format
   for dates instead of datetime.
@@ -2182,7 +2189,7 @@ News
 * Got a 3x performance gain by setting the prefetch count to four times the 
   concurrency, (from an average task round-trip of 0.1s to 0.03s!).
 
-    A new setting has been added: ``CELERYD_PREFETCH_MULTIPLIER``, which
+    A new setting has been added: :setting:`CELERYD_PREFETCH_MULTIPLIER`, which
     is set to ``4`` by default.
 
 * Improved support for webhook tasks.
@@ -2208,7 +2215,7 @@ Changes
 * The ``uuid`` distribution is added as a dependency when running Python 2.4.
 
 * Now remembers the previously detected loader by keeping it in
-  the ``CELERY_LOADER`` environment variable.
+  the :envvar:`CELERY_LOADER` environment variable.
 
     This may help on windows where fork emulation is used.
 
@@ -2219,15 +2226,15 @@ Changes
 
 * Task can now override the backend used to store results.
 
-* Refactored the ExecuteWrapper, ``apply`` and ``CELERY_ALWAYS_EAGER`` now
-  also executes the task callbacks and signals.
+* Refactored the ExecuteWrapper, ``apply`` and :setting:`CELERY_ALWAYS_EAGER`
+  now also executes the task callbacks and signals.
 
 * Now using a proper scheduler for the tasks with an ETA.
 
     This means waiting eta tasks are sorted by time, so we don't have
     to poll the whole list all the time.
 
-* Now also imports modules listed in CELERY_IMPORTS when running
+* Now also imports modules listed in :setting:`CELERY_IMPORTS` when running
   with django (as documented).
 
 * Loglevel for stdout/stderr changed from INFO to ERROR
@@ -2241,7 +2248,7 @@ Changes
   smart moves to not poll too regularly.
 
     If you need faster poll times you can lower the value
-    of ``CELERYBEAT_MAX_LOOP_INTERVAL``.
+    of :setting:`CELERYBEAT_MAX_LOOP_INTERVAL`.
 
 * You can now change periodic task intervals at runtime, by making
   ``run_every`` a property, or subclassing ``PeriodicTask.is_due``.
@@ -2256,10 +2263,10 @@ Changes
 * :exc:`celery.exceptions.NotRegistered` now inherits from :exc:`KeyError`,
   and ``TaskRegistry.__getitem__``+``pop`` raises ``NotRegistered`` instead
 
-* You can set the loader via the ``CELERY_LOADER`` environment variable.
+* You can set the loader via the :envvar:`CELERY_LOADER` environment variable.
 
-* You can now set ``CELERY_IGNORE_RESULT`` to ignore task results by default
-  (if enabled, tasks doesn't save results or errors to the backend used).
+* You can now set :setting:`CELERY_IGNORE_RESULT` to ignore task results by
+  default (if enabled, tasks doesn't save results or errors to the backend used).
 
 * celeryd now correctly handles malformed messages by throwing away and
   acknowledging the message, instead of crashing.
@@ -2398,8 +2405,8 @@ Changes
 * Added a Django test runner to contrib that sets
   ``CELERY_ALWAYS_EAGER = True`` for testing with the database backend.
 
-* Added a CELERY_CACHE_BACKEND setting for using something other than
-  the django-global cache backend.
+* Added a :setting:`CELERY_CACHE_BACKEND` setting for using something other
+  than the django-global cache backend.
 
 * Use custom implementation of functools.partial (curry) for Python 2.4 support
   (Probably still problems with running on 2.4, but it will eventually be
@@ -2599,7 +2606,7 @@ News
     startup instead of for each check (which has been a forgotten TODO/XXX
     in the code for a long time)
 
-* New settings variable: ``CELERY_TASK_RESULT_EXPIRES``
+* New settings variable: :setting:`CELERY_TASK_RESULT_EXPIRES`
     Time (in seconds, or a `datetime.timedelta` object) for when after
     stored task results are deleted. For the moment this only works for the
     database backend.
@@ -2659,7 +2666,7 @@ News
   function blocking until the task is done, for API compatiblity it
   returns an ``celery.result.EagerResult`` instance. You can configure
   celery to always run tasks locally by setting the
-  ``CELERY_ALWAYS_EAGER`` setting to ``True``.
+  :setting:`CELERY_ALWAYS_EAGER` setting to ``True``.
 
 * Now depends on ``anyjson``.
 

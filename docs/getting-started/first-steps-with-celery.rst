@@ -44,12 +44,13 @@ Configuration
 Celery is configured by using a configuration module. By default
 this module is called ``celeryconfig.py``.
 
-:Note: This configuration module must be on the Python path so it
-  can be imported.
+.. note::
 
-You can set a custom name for the configuration module with the
-``CELERY_CONFIG_MODULE`` variable, but in these examples we use the
-default name.
+    The configuration module must be on the Python path so it
+    can be imported.
+
+    You can also set a custom name for the configuration module using
+    the :envvar:`CELERY_CONFIG_MODULE` environment variable.
 
 Let's create our ``celeryconfig.py``.
 
@@ -75,19 +76,27 @@ Let's create our ``celeryconfig.py``.
 
    We only have a single task module, ``tasks.py``, which we added earlier::
 
-        import os
-        import sys
-        sys.path.insert(0, os.getcwd())
-
         CELERY_IMPORTS = ("tasks", )
 
 That's it.
 
+
 There are more options available, like how many processes you want to
-process work in parallel (the ``CELERY_CONCURRENCY`` setting), and we
+process work in parallel (the :setting:`CELERY_CONCURRENCY` setting), and we
 could use a persistent result store backend, but for now, this should
 do. For all of the options available, see the 
 :doc:`configuration directive reference<../configuration>`.
+
+.. note::
+
+    You can also specify modules to import using the ``-I`` option to
+    ``celeryd``::
+
+        $ celeryd -l info -I tasks,handlers
+
+    This can be a single, or a comma separated list of task modules to import when
+    ``celeryd`` starts.
+
 
 .. _celerytut-running-celeryd:
 
@@ -108,8 +117,7 @@ help command::
 
     $  celeryd --help
 
-For info on how to run celery as standalone daemon, see 
-:doc:`daemon mode reference<../cookbook/daemonizing>`
+For info on how to run celery as standalone daemon, see :ref:`daemonizing`.
 
 .. _`supervisord`: http://supervisord.org
 
@@ -135,15 +143,15 @@ broker will hold on to the task until a worker server has successfully
 picked it up.
 
 *Note:* If everything is just hanging when you execute ``delay``, please check
-that RabbitMQ is running, and that the user/password has access to the virtual
-host you configured earlier.
+that RabbitMQ is running, and that the user/password combination does have access to the
+virtual host you configured earlier.
 
 Right now we have to check the worker log files to know what happened
 with the task. This is because we didn't keep the :class:`~celery.result.AsyncResult`
 object returned by :meth:`~celery.task.base.Task.delay`.
 
 The :class:`~celery.result.AsyncResult` lets us find the state of the task, wait for
-the task to finish, get its return value (or exception if the task failed),
+the task to finish, get its return value (or exception + traceback if the task failed),
 and more.
 
 So, let's execute the task again, but this time we'll keep track of the task
@@ -170,5 +178,8 @@ If the task raises an exception, the return value of ``result.successful()``
 will be ``False``, and ``result.result`` will contain the exception instance
 raised by the task.
 
-That's all for now! After this you should probably read the :doc:`User
-Guide<../userguide/index>`.
+Where to go from here
+=====================
+
+After this you should read the :ref:`guide`. Specifically
+:ref:`guide-tasks` and :ref:`guide-executing`.

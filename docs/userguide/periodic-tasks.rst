@@ -13,7 +13,7 @@ Introduction
 Celerybeat is a scheduler.  It kicks off tasks at regular intervals,
 which are then executed by worker nodes available in the cluster.
 
-By default the entries are taken from the ``CELERYBEAT_SCHEDULE`` setting,
+By default the entries are taken from the :setting:`CELERYBEAT_SCHEDULE` setting,
 but custom stores can also be used, like storing the entries
 in an SQL database.
 
@@ -28,7 +28,7 @@ Entries
 =======
 
 To schedule a task periodically you have to add an entry to the
-``CELERYBEAT_SCHEDULE`` setting:
+:setting:`CELERYBEAT_SCHEDULE` setting:
 
 .. code-block:: python
 

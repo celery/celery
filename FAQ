@@ -351,8 +351,8 @@ If you don't use the results for a task, make sure you set the
     class MyTask(Task):
         ignore_result = True
 
-Results can also be disabled globally using the ``CELERY_IGNORE_RESULT``
-setting.
+Results can also be disabled globally using the
+:setting:`CELERY_IGNORE_RESULT` setting.
 
 .. note::
 
@@ -360,7 +360,7 @@ setting.
     AMQP result backend results.
 
     To use this you need to run RabbitMQ 2.1 or higher and enable
-    the ``CELERY_AMQP_TASK_RESULT_EXPIRES`` setting.
+    the :setting:`CELERY_AMQP_TASK_RESULT_EXPIRES` setting.
 
 .. _faq-use-celery-with-stomp:
 
@@ -674,7 +674,7 @@ You should never stop ``celeryd`` with the ``KILL`` signal (``-9``),
 unless you've tried ``TERM`` a few times and waited a few minutes to let it
 get a chance to shut down. As if you do tasks may be terminated mid-execution,
 and they will not be re-run unless you have the ``acks_late`` option set.
-(``Task.acks_late`` / ``CELERY_ACKS_LATE``).
+(``Task.acks_late`` / :setting:`CELERY_ACKS_LATE`).
 
 .. _faq-daemonizing:
 

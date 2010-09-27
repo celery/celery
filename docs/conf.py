@@ -7,6 +7,7 @@ import os
 # is relative to the documentation root, use os.path.abspath to make it
 # absolute, like shown here.
 sys.path.append(os.path.join(os.pardir, "tests"))
+sys.path.append("_ext")
 import celery
 
 # General configuration
@@ -14,7 +15,8 @@ import celery
 
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.coverage',
-              'sphinxcontrib.issuetracker']
+              'sphinxcontrib.issuetracker',
+              'celerydocs']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['.templates']
