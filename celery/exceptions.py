@@ -26,7 +26,7 @@ class SoftTimeLimitExceeded(Exception):
 
 
 class WorkerLostError(Exception):
-    """The worker processing a task has exited prematurely."""
+    """The worker processing a job has exited prematurely."""
     pass
 
 

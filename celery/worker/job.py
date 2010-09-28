@@ -8,9 +8,9 @@ from datetime import datetime
 
 from celery import platforms
 from celery.app import app_or_default
-from celery.concurrency.processes.pool import WorkerLostError
 from celery.datastructures import ExceptionInfo
 from celery.exceptions import SoftTimeLimitExceeded, TimeLimitExceeded
+from celery.exceptions import WorkerLostError
 from celery.execute.trace import TaskTrace
 from celery.registry import tasks
 from celery.utils import noop, kwdict, fun_takes_kwargs
