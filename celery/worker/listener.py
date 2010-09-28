@@ -90,6 +90,11 @@ from celery.utils import noop, retry_over_time
 from celery.worker.job import TaskRequest, InvalidTaskError
 from celery.worker.control import ControlDispatch
 from celery.worker.heartbeat import Heart
+from celery.events import EventDispatcher
+from celery.messaging import establish_connection
+from celery.messaging import get_consumer_set, BroadcastConsumer
+from celery.exceptions import NotRegistered
+from celery.datastructures import SharedCounter
 
 RUN = 0x1
 CLOSE = 0x2
@@ -460,3 +465,11 @@ class CarrotListener(object):
         """
         self.logger.debug("CarrotListener: Stopping consumers...")
         self.stop_consumers(close=False)
+
+    @property
+    def info(self):
+        conninfo = {}
+        if self.connection:
+            conninfo = self.app.amqp.get_broker_info(self.connection)
+        return {"broker": conninfo,
+                "prefetch_count": self.qos.next}

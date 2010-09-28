@@ -230,8 +230,9 @@ class AMQP(object):
         q = self.app.conf.CELERY_DEFAULT_QUEUE
         return q, self.queues[q]
 
-    def get_broker_info(self):
-        broker_connection = self.app.broker_connection()
+    def get_broker_info(self, broker_connection=None):
+        if broker_connection is None:
+            broker_connection = self.app.broker_connection()
         carrot_backend = broker_connection.backend_cls
         if carrot_backend and not isinstance(carrot_backend, str):
             carrot_backend = carrot_backend.__name__
