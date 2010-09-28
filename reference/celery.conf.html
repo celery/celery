@@ -9,6 +9,7 @@
     <title>Configuration - celery.conf &mdash; Celery v2.1.0a6 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
@@ -309,7 +310,7 @@ Default is: <tt class="xref docutils literal"><span class="pre">False</span></tt
 <dt id="celery.conf.DEFAULT_RATE_LIMIT">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">DEFAULT_RATE_LIMIT</tt><a class="headerlink" href="#celery.conf.DEFAULT_RATE_LIMIT" title="Permalink to this definition">¶</a></dt>
 <dd><p>The default rate limit applied to all tasks which doesn&#8217;t have a custom
-rate limit defined. (Default: None)</p>
+rate limit defined. (Default: <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt>)</p>
 </dd></dl>
 
 <dl class="data">
@@ -334,7 +335,7 @@ it&#8217;s lost.</p>
 <tt class="descclassname">celery.conf.</tt><tt class="descname">BROKER_CONNECTION_MAX_RETRIES</tt><a class="headerlink" href="#celery.conf.BROKER_CONNECTION_MAX_RETRIES" title="Permalink to this definition">¶</a></dt>
 <dd><p>Maximum number of retries before we give up re-establishing a connection
 to the broker.</p>
-<p>If this is set to <tt class="docutils literal"><span class="pre">0</span></tt> or <tt class="xref docutils literal"><span class="pre">None</span></tt>, we will retry forever.</p>
+<p>If this is set to <tt class="docutils literal"><span class="pre">0</span></tt> or <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt>, we will retry forever.</p>
 <p>Default is <tt class="docutils literal"><span class="pre">100</span></tt> retries.</p>
 </dd></dl>
 
@@ -352,7 +353,7 @@ Default is: <tt class="docutils literal"><span class="pre">INFO</span></tt>.</p>
 <dt id="celery.conf.CELERYBEAT_LOG_FILE">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">CELERYBEAT_LOG_FILE</tt><a class="headerlink" href="#celery.conf.CELERYBEAT_LOG_FILE" title="Permalink to this definition">¶</a></dt>
 <dd><p>Default log file for celerybeat.
-Default is: <tt class="xref docutils literal"><span class="pre">None</span></tt> (stderr)</p>
+Default is: <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt> (stderr)</p>
 </dd></dl>
 
 <dl class="data">
@@ -388,7 +389,7 @@ Default is: <tt class="docutils literal"><span class="pre">INFO</span></tt>.</p>
 <dt id="celery.conf.CELERYMON_LOG_FILE">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">CELERYMON_LOG_FILE</tt><a class="headerlink" href="#celery.conf.CELERYMON_LOG_FILE" title="Permalink to this definition">¶</a></dt>
 <dd><p>Default log file for celerymon.
-Default is: <tt class="xref docutils literal"><span class="pre">None</span></tt> (stderr)</p>
+Default is: <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt> (stderr)</p>
 </dd></dl>
 
 </div>
@@ -416,13 +417,13 @@ Default is: <tt class="xref docutils literal"><span class="pre">None</span></tt>
 <dt id="celery.conf.CELERYD_LOG_FILE">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">CELERYD_LOG_FILE</tt><a class="headerlink" href="#celery.conf.CELERYD_LOG_FILE" title="Permalink to this definition">¶</a></dt>
 <dd><p>Filename of the daemon log file.
-Default is: <tt class="xref docutils literal"><span class="pre">None</span></tt> (stderr)</p>
+Default is: <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt> (stderr)</p>
 </dd></dl>
 
 <dl class="data">
 <dt id="celery.conf.CELERYD_LOG_LEVEL">
 <tt class="descclassname">celery.conf.</tt><tt class="descname">CELERYD_LOG_LEVEL</tt><a class="headerlink" href="#celery.conf.CELERYD_LOG_LEVEL" title="Permalink to this definition">¶</a></dt>
-<dd><p>Default log level for daemons. (<tt class="docutils literal"><span class="pre">WARN</span></tt>)</p>
+<dd><p>Default log level for daemons. (<tt class="xref py py-const docutils literal"><span class="pre">WARN</span></tt>)</p>
 </dd></dl>
 
 <dl class="data">
@@ -480,20 +481,6 @@ Default is <tt class="docutils literal"><span class="pre">&quot;celery.worker.co
         <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
   <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
 </a></p>
-  <h3><a href="../index.html">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Configuration - celery.conf</a><ul>
-<li><a class="reference internal" href="#queues">Queues</a></li>
-<li><a class="reference internal" href="#sending-e-mails">Sending E-Mails</a></li>
-<li><a class="reference internal" href="#execution">Execution</a></li>
-<li><a class="reference internal" href="#broker">Broker</a></li>
-<li><a class="reference internal" href="#celerybeat">Celerybeat</a></li>
-<li><a class="reference internal" href="#celerymon">Celerymon</a></li>
-<li><a class="reference internal" href="#celeryd">Celeryd</a></li>
-</ul>
-</li>
-</ul>
-
   <h4>Previous topic</h4>
   <p class="topless"><a href="celery.task.html"
                         title="previous chapter">Task Information and Utilities - celery.task</a></p>

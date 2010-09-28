@@ -9,6 +9,7 @@
     <title>Worker Message Listener - celery.worker.listener &mdash; Celery v2.1.0a6 documentation</title>
     <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
@@ -123,7 +124,7 @@ early, <em>then</em> close the connection.</p>
 </ul>
 <dl class="class">
 <dt id="celery.worker.listener.CarrotListener">
-<em class="property">class </em><tt class="descclassname">celery.worker.listener.</tt><tt class="descname">CarrotListener</tt><big>(</big><em>ready_queue</em>, <em>eta_schedule</em>, <em>logger</em>, <em>init_callback=&lt;function noop at 0x103e5a050&gt;</em>, <em>send_events=False</em>, <em>hostname=None</em>, <em>initial_prefetch_count=2</em>, <em>pool=None</em><big>)</big><a class="headerlink" href="#celery.worker.listener.CarrotListener" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.worker.listener.</tt><tt class="descname">CarrotListener</tt><big>(</big><em>ready_queue</em>, <em>eta_schedule</em>, <em>logger</em>, <em>init_callback=&lt;function noop at 0x103bbaaa0&gt;</em>, <em>send_events=False</em>, <em>hostname=None</em>, <em>initial_prefetch_count=2</em>, <em>pool=None</em><big>)</big><a class="headerlink" href="#celery.worker.listener.CarrotListener" title="Permalink to this definition">¶</a></dt>
 <dd><p>Listen for messages received from the broker and
 move them the the ready queue for task processing.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -217,6 +218,11 @@ if events enabled.</p>
 <dd><p>Consume messages forever (or until an exception is raised).</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="celery.worker.listener.CarrotListener.info">
+<tt class="descname">info</tt><a class="headerlink" href="#celery.worker.listener.CarrotListener.info" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="method">
 <dt id="celery.worker.listener.CarrotListener.maybe_conn_error">
 <tt class="descname">maybe_conn_error</tt><big>(</big><em>fun</em><big>)</big><a class="headerlink" href="#celery.worker.listener.CarrotListener.maybe_conn_error" title="Permalink to this definition">¶</a></dt>
@@ -265,6 +271,11 @@ otherwise we move it the ready queue for immediate processing.</p>
 <tt class="descname">reset_connection</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.listener.CarrotListener.reset_connection" title="Permalink to this definition">¶</a></dt>
 <dd><p>Re-establish connection and set up consumers.</p>
 </dd></dl>
+
+<dl class="method">
+<dt id="celery.worker.listener.CarrotListener.restart_heartbeat">
+<tt class="descname">restart_heartbeat</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.worker.listener.CarrotListener.restart_heartbeat" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="celery.worker.listener.CarrotListener.start">

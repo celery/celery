@@ -9,6 +9,7 @@
     <title>Workers Guide &mdash; Celery v2.1.0a6 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
@@ -86,8 +87,8 @@
 <div class="highlight-python"><pre>$ celeryd --loglevel=INFO</pre>
 </div>
 <p>You probably want to use a daemonization tool to start
-<tt class="docutils literal"><span class="pre">celeryd</span></tt> in the background. See <a class="reference internal" href="../cookbook/daemonizing.html"><em>Running celeryd as a daemon</em></a> for help
-starting celeryd with some of the most popular daemonization tools.</p>
+<tt class="docutils literal"><span class="pre">celeryd</span></tt> in the background. See <a class="reference internal" href="../cookbook/daemonizing.html#daemonizing"><em>Running celeryd as a daemon</em></a> for help
+using <tt class="docutils literal"><span class="pre">celeryd</span></tt> with popular daemonization tools.</p>
 <p>For a full list of available command line options see
 <a class="reference internal" href="../reference/celery.bin.celeryd.html#module-celery.bin.celeryd"><tt class="xref py py-mod docutils literal"><span class="pre">celeryd</span></tt></a>, or simply execute the command:</p>
 <div class="highlight-python"><pre>$ celeryd --help</pre>
@@ -102,17 +103,17 @@ $ celeryd --loglevel=INFO --concurrency=10 -n worker3.example.com</pre>
 </div>
 <div class="section" id="stopping-the-worker">
 <span id="worker-stopping"></span><h2><a class="toc-backref" href="#id2">Stopping the worker</a><a class="headerlink" href="#stopping-the-worker" title="Permalink to this headline">¶</a></h2>
-<p>Shutdown should be accomplished using the <tt class="docutils literal"><span class="pre">TERM</span></tt> signal.</p>
+<p>Shutdown should be accomplished using the <tt class="xref std std-sig docutils literal"><span class="pre">TERM</span></tt> signal.</p>
 <p>When shutdown is initiated the worker will finish any tasks it&#8217;s currently
 executing before it terminates, so if these tasks are important you should
-wait for it to finish before doing anything drastic (like sending the <tt class="docutils literal"><span class="pre">KILL</span></tt>
+wait for it to finish before doing anything drastic (like sending the <tt class="xref std std-sig docutils literal"><span class="pre">KILL</span></tt>
 signal).</p>
 <p>If the worker won&#8217;t shutdown after considerate time, for example because
-of tasks stuck in an infinite-loop, you can use the <tt class="docutils literal"><span class="pre">KILL</span></tt> signal to
+of tasks stuck in an infinite-loop, you can use the <tt class="xref std std-sig docutils literal"><span class="pre">KILL</span></tt> signal to
 force terminate the worker, but be aware that currently executing tasks will
 be lost (unless the tasks have the <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.Task.acks_late" title="celery.task.base.Task.acks_late"><tt class="xref py py-attr docutils literal"><span class="pre">acks_late</span></tt></a>
 option set).</p>
-<p>Also, since the <tt class="docutils literal"><span class="pre">KILL</span></tt> signal can&#8217;t be catched by processes the worker will
+<p>Also, since the <tt class="xref std std-sig docutils literal"><span class="pre">KILL</span></tt> signal can&#8217;t be catched by processes the worker will
 not be able to reap its children so make sure you do it manually. This
 command usually does the trick:</p>
 <div class="highlight-python"><pre>$ ps auxww | grep celeryd | awk '{print $2}' | xargs kill -9</pre>
@@ -121,7 +122,7 @@ command usually does the trick:</p>
 <div class="section" id="restarting-the-worker">
 <span id="worker-restarting"></span><h2><a class="toc-backref" href="#id3">Restarting the worker</a><a class="headerlink" href="#restarting-the-worker" title="Permalink to this headline">¶</a></h2>
 <p>Other than stopping then starting the worker to restart, you can also
-restart the worker using the <tt class="docutils literal"><span class="pre">HUP</span></tt> signal:</p>
+restart the worker using the <tt class="xref std std-sig docutils literal"><span class="pre">HUP</span></tt> signal:</p>
 <div class="highlight-python"><pre>$ kill -HUP $pid</pre>
 </div>
 <p>The worker will then replace itself with a new instance using the same
@@ -142,6 +143,8 @@ run times and other factors.</p>
 </div>
 <div class="section" id="time-limits">
 <span id="worker-time-limits"></span><h2><a class="toc-backref" href="#id5">Time limits</a><a class="headerlink" href="#time-limits" title="Permalink to this headline">¶</a></h2>
+<p class="versionadded">
+<span class="versionmodified">New in version 2.0.</span></p>
 <p>A single task can potentially run forever, if you have lots of tasks
 waiting for some event that will never happen you will block the worker
 from processing new tasks indefinitely. The best way to defend against
@@ -162,9 +165,12 @@ time limit kills it:</p>
         <span class="n">clean_up_in_a_hurry</span><span class="p">()</span>
 </pre></div>
 </div>
-<p>Time limits can also be set using the <tt class="docutils literal"><span class="pre">CELERYD_TASK_TIME_LIMIT</span></tt> /
-<tt class="docutils literal"><span class="pre">CELERYD_SOFT_TASK_TIME_LIMIT</span></tt> settings.</p>
-<p><strong>NOTE</strong> Time limits does not currently work on Windows.</p>
+<p>Time limits can also be set using the <a class="reference internal" href="../configuration.html#std:setting-CELERYD_TASK_TIME_LIMIT"><tt class="xref std std-setting docutils literal"><span class="pre">CELERYD_TASK_TIME_LIMIT</span></tt></a> /
+<a class="reference internal" href="../configuration.html#std:setting-CELERYD_SOFT_TASK_TIME_LIMIT"><tt class="xref std std-setting docutils literal"><span class="pre">CELERYD_SOFT_TASK_TIME_LIMIT</span></tt></a> settings.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Time limits does not currently work on Windows.</p>
+</div>
 </div>
 <div class="section" id="max-tasks-per-child-setting">
 <span id="worker-maxtasksperchild"></span><h2><a class="toc-backref" href="#id6">Max tasks per child setting</a><a class="headerlink" href="#max-tasks-per-child-setting" title="Permalink to this headline">¶</a></h2>
@@ -173,10 +179,12 @@ a worker can execute before it&#8217;s replaced by a new process.</p>
 <p>This is useful if you have memory leaks you have no control over
 for example from closed source C extensions.</p>
 <p>The option can be set using the <tt class="docutils literal"><span class="pre">--maxtasksperchild</span></tt> argument
-to <tt class="docutils literal"><span class="pre">celeryd</span></tt> or using the <tt class="docutils literal"><span class="pre">CELERYD_MAX_TASKS_PER_CHILD</span></tt> setting.</p>
+to <tt class="docutils literal"><span class="pre">celeryd</span></tt> or using the <a class="reference internal" href="../configuration.html#std:setting-CELERYD_MAX_TASKS_PER_CHILD"><tt class="xref std std-setting docutils literal"><span class="pre">CELERYD_MAX_TASKS_PER_CHILD</span></tt></a> setting.</p>
 </div>
 <div class="section" id="remote-control">
 <span id="worker-remote-control"></span><h2><a class="toc-backref" href="#id7">Remote control</a><a class="headerlink" href="#remote-control" title="Permalink to this headline">¶</a></h2>
+<p class="versionadded">
+<span class="versionmodified">New in version 2.0.</span></p>
 <p>Workers have the ability to be remote controlled using a high-priority
 broadcast message queue. The commands can be directed to all, or a specific
 list of workers.</p>
@@ -198,7 +206,7 @@ to the number of destination hosts.</p>
 Some remote control commands also have higher-level interfaces using
 <a class="reference internal" href="../reference/celery.task.control.html#celery.task.control.broadcast" title="celery.task.control.broadcast"><tt class="xref py py-func docutils literal"><span class="pre">broadcast()</span></tt></a> in the background, like
 <a class="reference internal" href="../reference/celery.task.control.html#celery.task.control.rate_limit" title="celery.task.control.rate_limit"><tt class="xref py py-func docutils literal"><span class="pre">rate_limit()</span></tt></a> and <a class="reference internal" href="../reference/celery.task.control.html#celery.task.control.ping" title="celery.task.control.ping"><tt class="xref py py-func docutils literal"><span class="pre">ping()</span></tt></a>.</p>
-<p>Sending the <tt class="docutils literal"><span class="pre">rate_limit</span></tt> command and keyword arguments:</p>
+<p>Sending the <a class="reference internal" href="#std:control-rate_limit"><tt class="xref std std-control docutils literal"><span class="pre">rate_limit</span></tt></a> command and keyword arguments:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task.control</span> <span class="kn">import</span> <span class="n">broadcast</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">broadcast</span><span class="p">(</span><span class="s">&quot;rate_limit&quot;</span><span class="p">,</span> <span class="n">arguments</span><span class="o">=</span><span class="p">{</span><span class="s">&quot;task_name&quot;</span><span class="p">:</span> <span class="s">&quot;myapp.mytask&quot;</span><span class="p">,</span>
 <span class="gp">... </span>                                   <span class="s">&quot;rate_limit&quot;</span><span class="p">:</span> <span class="s">&quot;200/m&quot;</span><span class="p">})</span>
@@ -225,9 +233,9 @@ to receive the command:</p>
 <p>Of course, using the higher-level interface to set rate limits is much
 more convenient, but there are commands that can only be requested
 using <a class="reference internal" href="../reference/celery.task.control.html#celery.task.control.broadcast" title="celery.task.control.broadcast"><tt class="xref py py-func docutils literal"><span class="pre">broadcast()</span></tt></a>.</p>
-</div>
+<span class="target" id="worker-rate-limits"></span></div>
 <div class="section" id="rate-limits">
-<span id="worker-rate-limits"></span><h3><a class="toc-backref" href="#id9">Rate limits</a><a class="headerlink" href="#rate-limits" title="Permalink to this headline">¶</a></h3>
+<span id="std:control-rate_limit"></span><h3><a class="toc-backref" href="#id9">Rate limits</a><a class="headerlink" href="#rate-limits" title="Permalink to this headline">¶</a></h3>
 <p>Example changing the rate limit for the <tt class="docutils literal"><span class="pre">myapp.mytask</span></tt> task to accept
 200 tasks a minute on all servers:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task.control</span> <span class="kn">import</span> <span class="n">rate_limit</span>
@@ -240,11 +248,15 @@ destination hostname:</p>
 <span class="gp">... </span>           <span class="n">destination</span><span class="o">=</span><span class="p">[</span><span class="s">&quot;worker1.example.com&quot;</span><span class="p">])</span>
 </pre></div>
 </div>
-<p><strong>NOTE</strong> This won&#8217;t affect workers with the <tt class="docutils literal"><span class="pre">CELERY_DISABLE_RATE_LIMITS</span></tt>
-setting on. To re-enable rate limits then you have to restart the worker.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">This won&#8217;t affect workers with the
+<a class="reference internal" href="../configuration.html#std:setting-CELERY_DISABLE_RATE_LIMITS"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_DISABLE_RATE_LIMITS</span></tt></a> setting on. To re-enable rate limits
+then you have to restart the worker.</p>
+</div>
 </div>
 <div class="section" id="remote-shutdown">
-<span id="worker-remote-shutdown"></span><h3><a class="toc-backref" href="#id10">Remote shutdown</a><a class="headerlink" href="#remote-shutdown" title="Permalink to this headline">¶</a></h3>
+<span id="std:control-shutdown"></span><h3><a class="toc-backref" href="#id10">Remote shutdown</a><a class="headerlink" href="#remote-shutdown" title="Permalink to this headline">¶</a></h3>
 <p>This command will gracefully shut down the worker remotely:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">broadcast</span><span class="p">(</span><span class="s">&quot;shutdown&quot;</span><span class="p">)</span> <span class="c"># shutdown all workers</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">broadcast</span><span class="p">(</span><span class="s">&quot;shutdown, destination=&quot;</span><span class="n">worker1</span><span class="o">.</span><span class="n">example</span><span class="o">.</span><span class="n">com</span><span class="s">&quot;)</span>
@@ -252,7 +264,7 @@ setting on. To re-enable rate limits then you have to restart the worker.</p>
 </div>
 </div>
 <div class="section" id="ping">
-<span id="worker-ping"></span><h3><a class="toc-backref" href="#id11">Ping</a><a class="headerlink" href="#ping" title="Permalink to this headline">¶</a></h3>
+<span id="std:control-ping"></span><h3><a class="toc-backref" href="#id11">Ping</a><a class="headerlink" href="#ping" title="Permalink to this headline">¶</a></h3>
 <p>This command requests a ping from alive workers.
 The workers reply with the string &#8216;pong&#8217;, and that&#8217;s just about it.
 It will use the default one second timeout for replies unless you specify
@@ -271,9 +283,9 @@ so you can specify which workers to ping:</p>
 <span class="go"> {&#39;worker3.example.com&#39;: &#39;pong&#39;}]</span>
 </pre></div>
 </div>
-</div>
+<span class="target" id="worker-enable-events"></span><span class="target" id="std:control-enable_events"></span></div>
 <div class="section" id="enable-disable-events">
-<span id="worker-enable-events"></span><h3><a class="toc-backref" href="#id12">Enable/disable events</a><a class="headerlink" href="#enable-disable-events" title="Permalink to this headline">¶</a></h3>
+<span id="std:control-disable_events"></span><h3><a class="toc-backref" href="#id12">Enable/disable events</a><a class="headerlink" href="#enable-disable-events" title="Permalink to this headline">¶</a></h3>
 <p>You can enable/disable events by using the <tt class="docutils literal"><span class="pre">enable_events</span></tt>,
 <tt class="docutils literal"><span class="pre">disable_events</span></tt> commands. This is useful to temporarily monitor
 a worker using celeryev/celerymon.</p>
@@ -300,7 +312,7 @@ From there you have access to the active
 </pre></div>
 </div>
 <p>These can be added to task modules, or you can keep them in their own module
-then import them using the <tt class="docutils literal"><span class="pre">CELERY_IMPORTS</span></tt> setting:</p>
+then import them using the <a class="reference internal" href="../configuration.html#std:setting-CELERY_IMPORTS"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_IMPORTS</span></tt></a> setting:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_IMPORTS</span> <span class="o">=</span> <span class="p">(</span><span class="s">&quot;myapp.worker.control&quot;</span><span class="p">,</span> <span class="p">)</span>
 </pre></div>
 </div>
@@ -398,35 +410,6 @@ executed.</p>
         <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
   <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
 </a></p>
-  <h3><a href="../index.html">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Workers Guide</a><ul>
-<li><a class="reference internal" href="#starting-the-worker">Starting the worker</a></li>
-<li><a class="reference internal" href="#stopping-the-worker">Stopping the worker</a></li>
-<li><a class="reference internal" href="#restarting-the-worker">Restarting the worker</a></li>
-<li><a class="reference internal" href="#concurrency">Concurrency</a></li>
-<li><a class="reference internal" href="#time-limits">Time limits</a></li>
-<li><a class="reference internal" href="#max-tasks-per-child-setting">Max tasks per child setting</a></li>
-<li><a class="reference internal" href="#remote-control">Remote control</a><ul>
-<li><a class="reference internal" href="#the-broadcast-function">The <tt class="docutils literal"><span class="pre">broadcast()</span></tt> function.</a></li>
-<li><a class="reference internal" href="#rate-limits">Rate limits</a></li>
-<li><a class="reference internal" href="#remote-shutdown">Remote shutdown</a></li>
-<li><a class="reference internal" href="#ping">Ping</a></li>
-<li><a class="reference internal" href="#enable-disable-events">Enable/disable events</a></li>
-<li><a class="reference internal" href="#writing-your-own-remote-control-commands">Writing your own remote control commands</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#inspecting-workers">Inspecting workers</a><ul>
-<li><a class="reference internal" href="#dump-of-registered-tasks">Dump of registered tasks</a></li>
-<li><a class="reference internal" href="#dump-of-currently-executing-tasks">Dump of currently executing tasks</a></li>
-<li><a class="reference internal" href="#dump-of-scheduled-eta-tasks">Dump of scheduled (ETA) tasks</a></li>
-<li><a class="reference internal" href="#dump-of-reserved-tasks">Dump of reserved tasks</a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-
   <h4>Previous topic</h4>
   <p class="topless"><a href="executing.html"
                         title="previous chapter">Executing Tasks</a></p>

@@ -9,6 +9,7 @@
     <title>App: Periodic Task Scheduler - celery.apps.beat &mdash; Celery v2.1.0a6 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
@@ -59,7 +60,7 @@
 <em class="property">class </em><tt class="descclassname">celery.apps.beat.</tt><tt class="descname">Beat</tt><big>(</big><em>loglevel=None</em>, <em>logfile=None</em>, <em>schedule=None</em>, <em>max_interval=None</em>, <em>scheduler_cls=None</em>, <em>defaults=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.apps.beat.Beat" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="class">
 <dt id="celery.apps.beat.Beat.Service">
-<em class="property">class </em><tt class="descname">Service</tt><big>(</big><em>logger=None</em>, <em>max_interval=300</em>, <em>schedule={'celery.backend_cleanup': {'task': 'celery.backend_cleanup'</em>, <em>'schedule': &lt;crontab: 00 04 * (m/d/h)&gt;}}</em>, <em>schedule_filename='celerybeat-schedule'</em>, <em>scheduler_cls=None</em><big>)</big><a class="headerlink" href="#celery.apps.beat.Beat.Service" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descname">Service</tt><big>(</big><em>logger=None</em>, <em>max_interval=300</em>, <em>schedule={'celery.backend_cleanup': {'task': 'celery.backend_cleanup'</em>, <em>'schedule': &lt;crontab: 00 04 * (m/h/d)&gt;}}</em>, <em>schedule_filename='celerybeat-schedule'</em>, <em>scheduler_cls=None</em><big>)</big><a class="headerlink" href="#celery.apps.beat.Beat.Service" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="attribute">
 <dt id="celery.apps.beat.Beat.Service.scheduler">
 <tt class="descname">scheduler</tt><a class="headerlink" href="#celery.apps.beat.Beat.Service.scheduler" title="Permalink to this definition">¶</a></dt>

@@ -183,7 +183,7 @@ Execution
 .. data:: DEFAULT_RATE_LIMIT
 
     The default rate limit applied to all tasks which doesn't have a custom
-    rate limit defined. (Default: None)
+    rate limit defined. (Default: :const:`None`)
 
 .. data:: DISABLE_RATE_LIMITS
 
@@ -203,7 +203,7 @@ Broker
     Maximum number of retries before we give up re-establishing a connection
     to the broker.
 
-    If this is set to ``0`` or ``None``, we will retry forever.
+    If this is set to ``0`` or :const:`None`, we will retry forever.
 
     Default is ``100`` retries.
 
@@ -218,7 +218,7 @@ Celerybeat
 .. data:: CELERYBEAT_LOG_FILE
 
     Default log file for celerybeat.
-    Default is: ``None`` (stderr)
+    Default is: :const:`None` (stderr)
 
 .. data:: CELERYBEAT_SCHEDULE_FILENAME
 
@@ -246,7 +246,7 @@ Celerymon
 .. data:: CELERYMON_LOG_FILE
 
     Default log file for celerymon.
-    Default is: ``None`` (stderr)
+    Default is: :const:`None` (stderr)
 
 Celeryd
 =======
@@ -266,11 +266,11 @@ Celeryd
 .. data:: CELERYD_LOG_FILE
 
     Filename of the daemon log file.
-    Default is: ``None`` (stderr)
+    Default is: :const:`None` (stderr)
 
 .. data:: CELERYD_LOG_LEVEL
 
-    Default log level for daemons. (``WARN``)
+    Default log level for daemons. (:const:`WARN`)
 
 .. data:: CELERYD_CONCURRENCY
 

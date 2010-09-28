@@ -9,6 +9,7 @@
     <title>Default Loader - celery.loaders.default &mdash; Celery v2.1.0a6 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
@@ -60,15 +61,6 @@
 <dd><p>The default loader.</p>
 <p>See the FAQ for example usage.</p>
 <dl class="method">
-<dt id="celery.loaders.default.Loader.import_from_cwd">
-<tt class="descname">import_from_cwd</tt><big>(</big><em>module</em>, <em>imp=&lt;function import_module at 0x103ccc2a8&gt;</em><big>)</big><a class="headerlink" href="#celery.loaders.default.Loader.import_from_cwd" title="Permalink to this definition">¶</a></dt>
-<dd><p>Import module, but make sure it finds modules
-located in the current directory.</p>
-<p>Modules located in the current directory has
-precedence over modules located in <tt class="docutils literal"><span class="pre">sys.path</span></tt>.</p>
-</dd></dl>
-
-<dl class="method">
 <dt id="celery.loaders.default.Loader.on_worker_init">
 <tt class="descname">on_worker_init</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.loaders.default.Loader.on_worker_init" title="Permalink to this definition">¶</a></dt>
 <dd><p>Imports modules at worker init so tasks can be registered
@@ -90,11 +82,6 @@ celery and Django so it can be used by regular Python.</p>
 <dd></dd></dl>
 
 </dd></dl>
-
-<dl class="class">
-<dt id="celery.loaders.default.Settings">
-<em class="property">class </em><tt class="descclassname">celery.loaders.default.</tt><tt class="descname">Settings</tt><a class="headerlink" href="#celery.loaders.default.Settings" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 <dl class="function">
 <dt id="celery.loaders.default.wanted_module_item">

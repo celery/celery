@@ -9,6 +9,7 @@
     <title>Introduction &mdash; Celery v2.1.0a6 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
@@ -75,14 +76,16 @@ python, webhooks, queue, distributed</td>
 <p id="celery-synopsis">Celery is an open source asynchronous task queue/job queue based on
 distributed message passing. It is focused on real-time operation,
 but supports scheduling as well.</p>
-<p>The execution units, called tasks, are executed concurrently on a single or
-more worker servers. Tasks can execute asynchronously (in the background) or synchronously
-(wait until ready).</p>
+<p>The execution units, called tasks, are executed concurrently on one or
+more worker nodes. Tasks can execute asynchronously (in the background) or
+synchronously (wait until ready).</p>
 <p>Celery is already used in production to process millions of tasks a day.</p>
 <p>Celery is written in Python, but the protocol can be implemented in any
 language. It can also <a class="reference external" href="http://ask.github.com/celery/userguide/remote-tasks.html">operate with other languages using webhooks</a>.</p>
 <p>The recommended message broker is <a class="reference external" href="http://www.rabbitmq.com/">RabbitMQ</a>, but support for <a class="reference external" href="http://code.google.com/p/redis/">Redis</a> and
 databases (<a class="reference external" href="http://www.sqlalchemy.org/">SQLAlchemy</a>) is also available.</p>
+<p>Celery can be easily used with Django and Pylons using
+<a class="reference external" href="http://pypi.python.org/pypi/django-celery">django-celery</a> and <a class="reference external" href="http://bitbucket.org/ianschenck/celery-pylons">celery-pylons</a>.</p>
 <p>You may also be pleased to know that full Django integration exists,
 delivered by the <a class="reference external" href="http://pypi.python.org/pypi/django-celery">django-celery</a> package.</p>
 <div class="contents local topic" id="contents">
@@ -281,22 +284,6 @@ $ python setup.py build
         <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
   <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
 </a></p>
-  <h3><a href="../index.html">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Introduction</a><ul>
-<li><a class="reference internal" href="#overview">Overview</a></li>
-<li><a class="reference internal" href="#example">Example</a></li>
-<li><a class="reference internal" href="#features">Features</a></li>
-<li><a class="reference internal" href="#documentation">Documentation</a></li>
-<li><a class="reference internal" href="#installation">Installation</a><ul>
-<li><a class="reference internal" href="#downloading-and-installing-from-source">Downloading and installing from source</a></li>
-<li><a class="reference internal" href="#using-the-development-version">Using the development version</a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-
   <h4>Previous topic</h4>
   <p class="topless"><a href="index.html"
                         title="previous chapter">Getting Started</a></p>

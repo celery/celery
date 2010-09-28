@@ -9,6 +9,7 @@
     <title>Time and Date Utilities - celery.utils.timeutils &mdash; Celery v2.1.0a6 documentation</title>
     <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
@@ -76,14 +77,14 @@ and converts them to seconds.</p>
 <dt id="celery.utils.timeutils.remaining">
 <tt class="descclassname">celery.utils.timeutils.</tt><tt class="descname">remaining</tt><big>(</big><em>start</em>, <em>ends_in</em>, <em>now=None</em>, <em>relative=True</em><big>)</big><a class="headerlink" href="#celery.utils.timeutils.remaining" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculate the remaining time for a start date and a timedelta.</p>
-<p>E.g. &#8220;how many seconds left for 30 seconds after <tt class="docutils literal"><span class="pre">start</span></tt>?&#8221;</p>
+<p>e.g. &#8220;how many seconds left for 30 seconds after start?&#8221;</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>start</strong> &#8211; Start <tt class="xref py py-class docutils literal"><span class="pre">datetime.datetime</span></tt>.</li>
-<li><strong>ends_in</strong> &#8211; The end delta as a <tt class="xref py py-class docutils literal"><span class="pre">datetime.timedelta</span></tt>.</li>
+<li><strong>start</strong> &#8211; Start <tt class="xref py py-class docutils literal"><span class="pre">datetime</span></tt>.</li>
+<li><strong>ends_in</strong> &#8211; The end delta as a <tt class="xref py py-class docutils literal"><span class="pre">timedelta</span></tt>.</li>
 <li><strong>relative</strong> &#8211; <p>If set to <tt class="xref docutils literal"><span class="pre">False</span></tt>, the end time will be calculated
 using <a class="reference internal" href="#celery.utils.timeutils.delta_resolution" title="celery.utils.timeutils.delta_resolution"><tt class="xref py py-func docutils literal"><span class="pre">delta_resolution()</span></tt></a> (i.e. rounded to the resolution</p>
 <blockquote>

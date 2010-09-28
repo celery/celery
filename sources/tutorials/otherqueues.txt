@@ -64,7 +64,7 @@ configuration values.
     CARROT_BACKEND = "ghettoq.taproot.Database"
 
 
-#. Add ``ghettoq`` to ``INSTALLED_APPS``::
+#. Add :mod:`ghettoq` to ``INSTALLED_APPS``::
 
     INSTALLED_APPS = ("ghettoq", )
 

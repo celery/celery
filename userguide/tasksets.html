@@ -9,6 +9,7 @@
     <title>Sets of tasks, Subtasks and Callbacks &mdash; Celery v2.1.0a6 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
@@ -68,6 +69,8 @@
 </div>
 <div class="section" id="subtasks">
 <span id="sets-subtasks"></span><h2><a class="toc-backref" href="#id1">Subtasks</a><a class="headerlink" href="#subtasks" title="Permalink to this headline">¶</a></h2>
+<p class="versionadded">
+<span class="versionmodified">New in version 2.0.</span></p>
 <p>The <a class="reference internal" href="../reference/celery.task.sets.html#celery.task.sets.subtask" title="celery.task.sets.subtask"><tt class="xref py py-class docutils literal"><span class="pre">subtask</span></tt></a> class is used to wrap the arguments and
 execution options for a single task invocation:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">subtask</span><span class="p">(</span><span class="n">task_name_or_cls</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="n">options</span><span class="p">)</span>
@@ -217,21 +220,6 @@ were called.</p>
         <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
   <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
 </a></p>
-  <h3><a href="../index.html">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Sets of tasks, Subtasks and Callbacks</a><ul>
-<li><a class="reference internal" href="#subtasks">Subtasks</a><ul>
-<li><a class="reference internal" href="#callbacks">Callbacks</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#task-sets">Task Sets</a><ul>
-<li><a class="reference internal" href="#results">Results</a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-
   <h4>Previous topic</h4>
   <p class="topless"><a href="periodic-tasks.html"
                         title="previous chapter">Periodic Tasks</a></p>

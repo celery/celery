@@ -9,6 +9,7 @@
     <title>Signals - celery.signals &mdash; Celery v2.1.0a6 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
@@ -53,19 +54,19 @@
           <div class="body">
             
   <div class="section" id="signals-celery-signals">
-<h1>Signals - celery.signals<a class="headerlink" href="#signals-celery-signals" title="Permalink to this headline">¶</a></h1>
+<span id="signals"></span><h1>Signals - celery.signals<a class="headerlink" href="#signals-celery-signals" title="Permalink to this headline">¶</a></h1>
 <div class="contents local topic" id="contents">
 <ul class="simple">
-<li><a class="reference external" href="#basics" id="id1">Basics</a></li>
-<li><a class="reference external" href="#signals" id="id2">Signals</a><ul>
-<li><a class="reference external" href="#task-signals" id="id3">Task Signals</a></li>
-<li><a class="reference external" href="#worker-signals" id="id4">Worker Signals</a></li>
+<li><a class="reference external" href="#basics" id="id2">Basics</a></li>
+<li><a class="reference external" href="#signal-ref" id="id3">Signals</a><ul>
+<li><a class="reference external" href="#task-signals" id="id4">Task Signals</a></li>
+<li><a class="reference external" href="#worker-signals" id="id5">Worker Signals</a></li>
 </ul>
 </li>
 </ul>
 </div>
 <div class="section" id="basics">
-<h2><a class="toc-backref" href="#id1">Basics</a><a class="headerlink" href="#basics" title="Permalink to this headline">¶</a></h2>
+<span id="signal-basics"></span><h2><a class="toc-backref" href="#id2">Basics</a><a class="headerlink" href="#basics" title="Permalink to this headline">¶</a></h2>
 <p>Several kinds of events trigger signals, you can connect to these signals
 to perform actions as they trigger.</p>
 <p>Example connecting to the <a class="reference internal" href="#celery.signals.task_sent" title="celery.signals.task_sent"><tt class="xref py py-data docutils literal"><span class="pre">task_sent</span></tt></a> signal:</p>
@@ -87,10 +88,10 @@ has been sent by providing the <tt class="docutils literal"><span class="pre">se
 </pre></div>
 </div>
 </div>
-<div class="section" id="signals">
-<h2><a class="toc-backref" href="#id2">Signals</a><a class="headerlink" href="#signals" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="signal-ref">
+<span id="id1"></span><h2><a class="toc-backref" href="#id3">Signals</a><a class="headerlink" href="#signal-ref" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="task-signals">
-<h3><a class="toc-backref" href="#id3">Task Signals</a><a class="headerlink" href="#task-signals" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id4">Task Signals</a><a class="headerlink" href="#task-signals" title="Permalink to this headline">¶</a></h3>
 <dl class="data">
 <dt id="celery.signals.task_sent">
 <tt class="descclassname">celery.signals.</tt><tt class="descname">task_sent</tt><a class="headerlink" href="#celery.signals.task_sent" title="Permalink to this definition">¶</a></dt>
@@ -214,7 +215,7 @@ the task, not in the worker.</p>
 
 </div>
 <div class="section" id="worker-signals">
-<h3><a class="toc-backref" href="#id4">Worker Signals</a><a class="headerlink" href="#worker-signals" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id5">Worker Signals</a><a class="headerlink" href="#worker-signals" title="Permalink to this headline">¶</a></h3>
 <dl class="data">
 <dt id="celery.signals.worker_init">
 <tt class="descclassname">celery.signals.</tt><tt class="descname">worker_init</tt><a class="headerlink" href="#celery.signals.worker_init" title="Permalink to this definition">¶</a></dt>
@@ -251,19 +252,6 @@ the task, not in the worker.</p>
         <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
   <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
 </a></p>
-  <h3><a href="../index.html">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Signals - celery.signals</a><ul>
-<li><a class="reference internal" href="#basics">Basics</a></li>
-<li><a class="reference internal" href="#signals">Signals</a><ul>
-<li><a class="reference internal" href="#task-signals">Task Signals</a></li>
-<li><a class="reference internal" href="#worker-signals">Worker Signals</a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-
   <h4>Previous topic</h4>
   <p class="topless"><a href="celery.schedules.html"
                         title="previous chapter">Periodic Task Schedule Behaviors - celery.schedules</a></p>

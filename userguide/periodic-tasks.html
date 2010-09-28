@@ -9,6 +9,7 @@
     <title>Periodic Tasks &mdash; Celery v2.1.0a6 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
@@ -72,7 +73,7 @@
 <h2><a class="toc-backref" href="#id1">Introduction</a><a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
 <p>Celerybeat is a scheduler.  It kicks off tasks at regular intervals,
 which are then executed by worker nodes available in the cluster.</p>
-<p>By default the entries are taken from the <tt class="docutils literal"><span class="pre">CELERYBEAT_SCHEDULE</span></tt> setting,
+<p>By default the entries are taken from the <a class="reference internal" href="../configuration.html#std:setting-CELERYBEAT_SCHEDULE"><tt class="xref std std-setting docutils literal"><span class="pre">CELERYBEAT_SCHEDULE</span></tt></a> setting,
 but custom stores can also be used, like storing the entries
 in an SQL database.</p>
 <p>You have to ensure only a single scheduler is running for a schedule
@@ -83,7 +84,7 @@ and the service can operate without using locks.</p>
 <div class="section" id="entries">
 <span id="beat-entries"></span><h2><a class="toc-backref" href="#id2">Entries</a><a class="headerlink" href="#entries" title="Permalink to this headline">¶</a></h2>
 <p>To schedule a task periodically you have to add an entry to the
-<tt class="docutils literal"><span class="pre">CELERYBEAT_SCHEDULE</span></tt> setting:</p>
+<a class="reference internal" href="../configuration.html#std:setting-CELERYBEAT_SCHEDULE"><tt class="xref std std-setting docutils literal"><span class="pre">CELERYBEAT_SCHEDULE</span></tt></a> setting:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">timedelta</span>
 
 <span class="n">CELERYBEAT_SCHEDULE</span> <span class="o">=</span> <span class="p">{</span>
@@ -273,23 +274,6 @@ tasks from the Django Admin.</p>
         <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
   <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
 </a></p>
-  <h3><a href="../index.html">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Periodic Tasks</a><ul>
-<li><a class="reference internal" href="#introduction">Introduction</a></li>
-<li><a class="reference internal" href="#entries">Entries</a><ul>
-<li><a class="reference internal" href="#available-fields">Available Fields</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#crontab-schedules">Crontab schedules</a></li>
-<li><a class="reference internal" href="#starting-celerybeat">Starting celerybeat</a><ul>
-<li><a class="reference internal" href="#using-custom-scheduler-classes">Using custom scheduler classes</a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-
   <h4>Previous topic</h4>
   <p class="topless"><a href="workers.html"
                         title="previous chapter">Workers Guide</a></p>

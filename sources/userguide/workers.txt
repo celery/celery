@@ -17,8 +17,8 @@ You can start celeryd to run in the foreground by executing the command::
     $ celeryd --loglevel=INFO
 
 You probably want to use a daemonization tool to start
-``celeryd`` in the background. See :doc:`../cookbook/daemonizing` for help
-starting celeryd with some of the most popular daemonization tools.
+``celeryd`` in the background. See :ref:`daemonizing` for help
+using ``celeryd`` with popular daemonization tools.
 
 For a full list of available command line options see
 :mod:`~celery.bin.celeryd`, or simply execute the command::
@@ -38,20 +38,20 @@ hostname with the ``--hostname|-n`` argument::
 Stopping the worker
 ===================
 
-Shutdown should be accomplished using the ``TERM`` signal.
+Shutdown should be accomplished using the :sig:`TERM` signal.
 
 When shutdown is initiated the worker will finish any tasks it's currently
 executing before it terminates, so if these tasks are important you should
-wait for it to finish before doing anything drastic (like sending the ``KILL``
+wait for it to finish before doing anything drastic (like sending the :sig:`KILL`
 signal).
 
 If the worker won't shutdown after considerate time, for example because
-of tasks stuck in an infinite-loop, you can use the ``KILL`` signal to
+of tasks stuck in an infinite-loop, you can use the :sig:`KILL` signal to
 force terminate the worker, but be aware that currently executing tasks will
 be lost (unless the tasks have the :attr:`~celery.task.base.Task.acks_late`
 option set).
 
-Also, since the ``KILL`` signal can't be catched by processes the worker will
+Also, since the :sig:`KILL` signal can't be catched by processes the worker will
 not be able to reap its children so make sure you do it manually. This
 command usually does the trick::
 
@@ -63,7 +63,7 @@ Restarting the worker
 =====================
 
 Other than stopping then starting the worker to restart, you can also
-restart the worker using the ``HUP`` signal::
+restart the worker using the :sig:`HUP` signal::
 
     $ kill -HUP $pid
 
@@ -92,6 +92,8 @@ run times and other factors.
 Time limits
 ===========
 
+.. versionadded:: 2.0
+
 A single task can potentially run forever, if you have lots of tasks
 waiting for some event that will never happen you will block the worker
 from processing new tasks indefinitely. The best way to defend against
@@ -115,15 +117,19 @@ time limit kills it:
         except SoftTimeLimitExceeded:
             clean_up_in_a_hurry()
 
-Time limits can also be set using the ``CELERYD_TASK_TIME_LIMIT`` /
-``CELERYD_SOFT_TASK_TIME_LIMIT`` settings.
+Time limits can also be set using the :setting:`CELERYD_TASK_TIME_LIMIT` /
+:setting:`CELERYD_SOFT_TASK_TIME_LIMIT` settings.
 
-**NOTE** Time limits does not currently work on Windows.
+.. note::
+
+    Time limits does not currently work on Windows.
 
 .. _worker-maxtasksperchild:
 
 Max tasks per child setting
 ===========================
+
+.. versionadded: 2.0
 
 With this option you can configure the maximum number of tasks
 a worker can execute before it's replaced by a new process.
@@ -132,12 +138,14 @@ This is useful if you have memory leaks you have no control over
 for example from closed source C extensions.
 
 The option can be set using the ``--maxtasksperchild`` argument
-to ``celeryd`` or using the ``CELERYD_MAX_TASKS_PER_CHILD`` setting.
+to ``celeryd`` or using the :setting:`CELERYD_MAX_TASKS_PER_CHILD` setting.
 
 .. _worker-remote-control:
 
 Remote control
 ==============
+
+.. versionadded:: 2.0
 
 Workers have the ability to be remote controlled using a high-priority
 broadcast message queue. The commands can be directed to all, or a specific
@@ -167,7 +175,7 @@ Some remote control commands also have higher-level interfaces using
 :func:`~celery.task.control.broadcast` in the background, like
 :func:`~celery.task.control.rate_limit` and :func:`~celery.task.control.ping`.
 
-Sending the ``rate_limit`` command and keyword arguments::
+Sending the :control:`rate_limit` command and keyword arguments::
 
     >>> from celery.task.control import broadcast
     >>> broadcast("rate_limit", arguments={"task_name": "myapp.mytask",
@@ -198,6 +206,8 @@ using :func:`~celery.task.control.broadcast`.
 
 .. _worker-rate-limits:
 
+.. control:: rate_limit
+
 Rate limits
 -----------
 
@@ -213,10 +223,13 @@ destination hostname::
     >>> rate_limit("myapp.mytask", "200/m",
     ...            destination=["worker1.example.com"])
 
-**NOTE** This won't affect workers with the ``CELERY_DISABLE_RATE_LIMITS``
-setting on. To re-enable rate limits then you have to restart the worker.
+.. warning::
 
-.. _worker-remote-shutdown:
+    This won't affect workers with the
+    :setting:`CELERY_DISABLE_RATE_LIMITS` setting on. To re-enable rate limits
+    then you have to restart the worker.
+
+.. control:: shutdown
 
 Remote shutdown
 ---------------
@@ -226,7 +239,7 @@ This command will gracefully shut down the worker remotely::
     >>> broadcast("shutdown") # shutdown all workers
     >>> broadcast("shutdown, destination="worker1.example.com")
 
-.. _worker-ping:
+.. control:: ping
 
 Ping
 ----
@@ -250,6 +263,9 @@ so you can specify which workers to ping::
      {'worker3.example.com': 'pong'}]
 
 .. _worker-enable-events:
+
+.. control:: enable_events
+.. control:: disable_events
 
 Enable/disable events
 ---------------------
@@ -286,7 +302,7 @@ Here's an example control command that restarts the broker connection:
 
 
 These can be added to task modules, or you can keep them in their own module
-then import them using the ``CELERY_IMPORTS`` setting::
+then import them using the :setting:`CELERY_IMPORTS` setting::
 
     CELERY_IMPORTS = ("myapp.worker.control", )
 

@@ -9,6 +9,7 @@
     <title>Broker Installation &mdash; Celery v2.1.0a6 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
@@ -96,15 +97,15 @@ install git. Download and install from the disk image at
 <tt class="docutils literal"><span class="pre">/lol</span></tt> location:</p>
 <div class="highlight-python"><pre>$ git clone git://github.com/mxcl/homebrew /lol</pre>
 </div>
-<p>Brew comes with a simple utility called <tt class="docutils literal"><span class="pre">brew</span></tt>, used to install, remove and
-query packages. To use it you first have to add it to <tt class="docutils literal"><span class="pre">PATH</span></tt>, by
+<p>Brew comes with a simple utility called <strong class="program">brew</strong>, used to install, remove and
+query packages. To use it you first have to add it to <span class="target" id="index-0"></span><tt class="xref std std-envvar docutils literal"><span class="pre">PATH</span></tt>, by
 adding the following line to the end of your <tt class="docutils literal"><span class="pre">~/.profile</span></tt>:</p>
 <div class="highlight-python"><pre>export PATH="/lol/bin:/lol/sbin:$PATH"</pre>
 </div>
 <p>Save your profile and reload it:</p>
 <div class="highlight-python"><pre>$ source ~/.profile</pre>
 </div>
-<p>Finally, we can install rabbitmq using <tt class="docutils literal"><span class="pre">brew</span></tt>:</p>
+<p>Finally, we can install rabbitmq using <strong class="program">brew</strong>:</p>
 <div class="highlight-python"><pre>$ brew install rabbitmq</pre>
 </div>
 <div class="section" id="configuring-the-system-hostname">
@@ -112,7 +113,7 @@ adding the following line to the end of your <tt class="docutils literal"><span 
 <p>If you&#8217;re using a DHCP server that is giving you a random hostname, you need
 to permanently configure the hostname. This is because RabbitMQ uses the hostname
 to communicate with nodes.</p>
-<p>Use the <tt class="docutils literal"><span class="pre">scutil</span></tt> command to permanently set your hostname:</p>
+<p>Use the <strong class="program">scutil</strong> command to permanently set your hostname:</p>
 <div class="highlight-python"><pre>sudo scutil --set HostName myhost.local</pre>
 </div>
 <p>Then add that hostname to <tt class="docutils literal"><span class="pre">/etc/hosts</span></tt> so it&#8217;s possible to resolve it
@@ -120,7 +121,7 @@ back into an IP address:</p>
 <div class="highlight-python"><pre>127.0.0.1       localhost myhost myhost.local</pre>
 </div>
 <p>If you start the rabbitmq server, your rabbit node should now be <tt class="docutils literal"><span class="pre">rabbit&#64;myhost</span></tt>,
-as verified by <tt class="docutils literal"><span class="pre">rabbitmqctl</span></tt>:</p>
+as verified by <strong class="program">rabbitmqctl</strong>:</p>
 <div class="highlight-python"><pre>$ sudo rabbitmqctl status
 Status of node rabbit@myhost ...
 [{running_applications,[{rabbit,"RabbitMQ","1.7.1"},
@@ -142,12 +143,12 @@ then RabbitMQ will try to use <tt class="docutils literal"><span class="pre">rab
 <p>To start the server:</p>
 <div class="highlight-python"><pre>$ sudo rabbitmq-server</pre>
 </div>
-<p>you can also run it in the background by adding the <tt class="docutils literal"><span class="pre">-detached</span></tt> option
+<p>you can also run it in the background by adding the <em class="xref std std-option">-detached</em> option
 (note: only one dash):</p>
 <div class="highlight-python"><pre>$ sudo rabbitmq-server -detached</pre>
 </div>
-<p>Never use <tt class="docutils literal"><span class="pre">kill</span></tt> to stop the RabbitMQ server, but rather use the
-<tt class="docutils literal"><span class="pre">rabbitmqctl</span></tt> command:</p>
+<p>Never use <strong class="program">kill</strong> to stop the RabbitMQ server, but rather use the
+<strong class="program">rabbitmqctl</strong> command:</p>
 <div class="highlight-python"><pre>$ sudo rabbitmqctl stop</pre>
 </div>
 <p>When the server is running, you can continue reading <a class="reference external" href="#setting-up-rabbitmq">Setting up RabbitMQ</a>.</p>
@@ -163,20 +164,6 @@ then RabbitMQ will try to use <tt class="docutils literal"><span class="pre">rab
         <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
   <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
 </a></p>
-  <h3><a href="../index.html">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Broker Installation</a><ul>
-<li><a class="reference internal" href="#installing-rabbitmq">Installing RabbitMQ</a></li>
-<li><a class="reference internal" href="#setting-up-rabbitmq">Setting up RabbitMQ</a></li>
-<li><a class="reference internal" href="#installing-rabbitmq-on-os-x">Installing RabbitMQ on OS X</a><ul>
-<li><a class="reference internal" href="#configuring-the-system-hostname">Configuring the system hostname</a></li>
-<li><a class="reference internal" href="#starting-stopping-the-rabbitmq-server">Starting/Stopping the RabbitMQ server</a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-
   <h4>Previous topic</h4>
   <p class="topless"><a href="introduction.html"
                         title="previous chapter">Introduction</a></p>

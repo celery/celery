@@ -9,6 +9,7 @@
     <title>Defining Tasks - celery.task.base &mdash; Celery v2.1.0a6 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
@@ -559,6 +560,25 @@ arguments (**kwargs).</p>
 <dd><p>Returns a <a class="reference internal" href="celery.task.sets.html#celery.task.sets.subtask" title="celery.task.sets.subtask"><tt class="xref py py-class docutils literal"><span class="pre">subtask</span></tt></a> object for
 this task that wraps arguments and execution options
 for a single task invocation.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="celery.task.base.Task.update_state">
+<tt class="descclassname">Task.</tt><tt class="descname">update_state</tt><big>(</big><em>task_id</em>, <em>state</em>, <em>meta=None</em><big>)</big><a class="headerlink" href="#celery.task.base.Task.update_state" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update task state.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>task_id</strong> &#8211; Id of the task to update.</li>
+<li><strong>state</strong> &#8211; New state (<tt class="xref py py-class docutils literal"><span class="pre">str</span></tt>).</li>
+<li><strong>meta</strong> &#8211; State metadata (<tt class="xref py py-class docutils literal"><span class="pre">dict</span></tt>).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>

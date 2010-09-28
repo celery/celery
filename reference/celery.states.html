@@ -9,6 +9,7 @@
     <title>Task States - celery.states &mdash; Celery v2.1.0a6 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
@@ -56,81 +57,73 @@
 <h1>Task States - celery.states<a class="headerlink" href="#task-states-celery-states" title="Permalink to this headline">¶</a></h1>
 <div class="contents local topic" id="contents">
 <ul class="simple">
-<li><a class="reference external" href="#states" id="id1">States</a></li>
-<li><a class="reference external" href="#sets" id="id2">Sets</a></li>
+<li><a class="reference external" href="#states" id="id2">States</a><ul>
+<li><a class="reference external" href="#pending" id="id3">PENDING</a></li>
+<li><a class="reference external" href="#started" id="id4">STARTED</a></li>
+<li><a class="reference external" href="#success" id="id5">SUCCESS</a></li>
+<li><a class="reference external" href="#failure" id="id6">FAILURE</a></li>
+<li><a class="reference external" href="#retry" id="id7">RETRY</a></li>
+<li><a class="reference external" href="#revoked" id="id8">REVOKED</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#sets" id="id9">Sets</a><ul>
+<li><a class="reference external" href="#ready-states" id="id10">READY_STATES</a></li>
+<li><a class="reference external" href="#unready-states" id="id11">UNREADY_STATES</a></li>
+<li><a class="reference external" href="#exception-states" id="id12">EXCEPTION_STATES</a></li>
+<li><a class="reference external" href="#propagate-states" id="id13">PROPAGATE_STATES</a></li>
+<li><a class="reference external" href="#all-states" id="id14">ALL_STATES</a></li>
+</ul>
+</li>
 </ul>
 </div>
 <span class="target" id="module-celery.states"></span><div class="section" id="states">
-<h2><a class="toc-backref" href="#id1">States</a><a class="headerlink" href="#states" title="Permalink to this headline">¶</a></h2>
-<dl class="data">
-<dt id="celery.states.PENDING">
-<tt class="descclassname">celery.states.</tt><tt class="descname">PENDING</tt><a class="headerlink" href="#celery.states.PENDING" title="Permalink to this definition">¶</a></dt>
-<dd><p>Task is waiting for execution or unknown.</p>
-</dd></dl>
-
-<dl class="data">
-<dt id="celery.states.STARTED">
-<tt class="descclassname">celery.states.</tt><tt class="descname">STARTED</tt><a class="headerlink" href="#celery.states.STARTED" title="Permalink to this definition">¶</a></dt>
-<dd><p>Task has been started.</p>
-</dd></dl>
-
-<dl class="data">
-<dt id="celery.states.SUCCESS">
-<tt class="descclassname">celery.states.</tt><tt class="descname">SUCCESS</tt><a class="headerlink" href="#celery.states.SUCCESS" title="Permalink to this definition">¶</a></dt>
-<dd><p>Task has been successfully executed.</p>
-</dd></dl>
-
-<dl class="data">
-<dt id="celery.states.FAILURE">
-<tt class="descclassname">celery.states.</tt><tt class="descname">FAILURE</tt><a class="headerlink" href="#celery.states.FAILURE" title="Permalink to this definition">¶</a></dt>
-<dd><p>Task execution resulted in failure.</p>
-</dd></dl>
-
-<dl class="data">
-<dt id="celery.states.RETRY">
-<tt class="descclassname">celery.states.</tt><tt class="descname">RETRY</tt><a class="headerlink" href="#celery.states.RETRY" title="Permalink to this definition">¶</a></dt>
-<dd><p>Task is being retried.</p>
-</dd></dl>
-
-<dl class="data">
-<dt id="celery.states.REVOKED">
-<tt class="descclassname">celery.states.</tt><tt class="descname">REVOKED</tt><a class="headerlink" href="#celery.states.REVOKED" title="Permalink to this definition">¶</a></dt>
-<dd><p>Task has been revoked.</p>
-</dd></dl>
-
+<span id="id1"></span><h2><a class="toc-backref" href="#id2">States</a><a class="headerlink" href="#states" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="pending">
+<span id="std:state-PENDING"></span><h3><a class="toc-backref" href="#id3">PENDING</a><a class="headerlink" href="#pending" title="Permalink to this headline">¶</a></h3>
+<p>Task is waiting for execution or unknown.</p>
+</div>
+<div class="section" id="started">
+<span id="std:state-STARTED"></span><h3><a class="toc-backref" href="#id4">STARTED</a><a class="headerlink" href="#started" title="Permalink to this headline">¶</a></h3>
+<p>Task has been started.</p>
+</div>
+<div class="section" id="success">
+<span id="std:state-SUCCESS"></span><h3><a class="toc-backref" href="#id5">SUCCESS</a><a class="headerlink" href="#success" title="Permalink to this headline">¶</a></h3>
+<p>Task has been successfully executed.</p>
+</div>
+<div class="section" id="failure">
+<span id="std:state-FAILURE"></span><h3><a class="toc-backref" href="#id6">FAILURE</a><a class="headerlink" href="#failure" title="Permalink to this headline">¶</a></h3>
+<p>Task execution resulted in failure.</p>
+</div>
+<div class="section" id="retry">
+<span id="std:state-RETRY"></span><h3><a class="toc-backref" href="#id7">RETRY</a><a class="headerlink" href="#retry" title="Permalink to this headline">¶</a></h3>
+<p>Task is being retried.</p>
+</div>
+<div class="section" id="revoked">
+<span id="std:state-REVOKED"></span><h3><a class="toc-backref" href="#id8">REVOKED</a><a class="headerlink" href="#revoked" title="Permalink to this headline">¶</a></h3>
+<p>Task has been revoked.</p>
+</div>
 </div>
 <div class="section" id="sets">
-<h2><a class="toc-backref" href="#id2">Sets</a><a class="headerlink" href="#sets" title="Permalink to this headline">¶</a></h2>
-<dl class="data">
-<dt id="celery.states.READY_STATES">
-<tt class="descclassname">celery.states.</tt><tt class="descname">READY_STATES</tt><a class="headerlink" href="#celery.states.READY_STATES" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set of states meaning the task result is ready (has been executed).</p>
-</dd></dl>
-
-<dl class="data">
-<dt id="celery.states.UNREADY_STATES">
-<tt class="descclassname">celery.states.</tt><tt class="descname">UNREADY_STATES</tt><a class="headerlink" href="#celery.states.UNREADY_STATES" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set of states meaning the task result is not ready (has not been executed).</p>
-</dd></dl>
-
-<dl class="data">
-<dt id="celery.states.EXCEPTION_STATES">
-<tt class="descclassname">celery.states.</tt><tt class="descname">EXCEPTION_STATES</tt><a class="headerlink" href="#celery.states.EXCEPTION_STATES" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set of states meaning the task returned an exception.</p>
-</dd></dl>
-
-<dl class="data">
-<dt id="celery.states.PROPAGATE_STATES">
-<tt class="descclassname">celery.states.</tt><tt class="descname">PROPAGATE_STATES</tt><a class="headerlink" href="#celery.states.PROPAGATE_STATES" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set of exception states that should propagate exceptions to the user.</p>
-</dd></dl>
-
-<dl class="data">
-<dt id="celery.states.ALL_STATES">
-<tt class="descclassname">celery.states.</tt><tt class="descname">ALL_STATES</tt><a class="headerlink" href="#celery.states.ALL_STATES" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set of all possible states.</p>
-</dd></dl>
-
+<h2><a class="toc-backref" href="#id9">Sets</a><a class="headerlink" href="#sets" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="ready-states">
+<span id="std:state-READY_STATES"></span><h3><a class="toc-backref" href="#id10">READY_STATES</a><a class="headerlink" href="#ready-states" title="Permalink to this headline">¶</a></h3>
+<p>Set of states meaning the task result is ready (has been executed).</p>
+</div>
+<div class="section" id="unready-states">
+<span id="std:state-UNREADY_STATES"></span><h3><a class="toc-backref" href="#id11">UNREADY_STATES</a><a class="headerlink" href="#unready-states" title="Permalink to this headline">¶</a></h3>
+<p>Set of states meaning the task result is not ready (has not been executed).</p>
+</div>
+<div class="section" id="exception-states">
+<span id="std:state-EXCEPTION_STATES"></span><h3><a class="toc-backref" href="#id12">EXCEPTION_STATES</a><a class="headerlink" href="#exception-states" title="Permalink to this headline">¶</a></h3>
+<p>Set of states meaning the task returned an exception.</p>
+</div>
+<div class="section" id="propagate-states">
+<span id="std:state-PROPAGATE_STATES"></span><h3><a class="toc-backref" href="#id13">PROPAGATE_STATES</a><a class="headerlink" href="#propagate-states" title="Permalink to this headline">¶</a></h3>
+<p>Set of exception states that should propagate exceptions to the user.</p>
+</div>
+<div class="section" id="all-states">
+<span id="std:state-ALL_STATES"></span><h3><a class="toc-backref" href="#id14">ALL_STATES</a><a class="headerlink" href="#all-states" title="Permalink to this headline">¶</a></h3>
+<p>Set of all possible states.</p>
 <dl class="function">
 <dt id="celery.states.precedence">
 <tt class="descclassname">celery.states.</tt><tt class="descname">precedence</tt><big>(</big><em>state</em><big>)</big><a class="headerlink" href="#celery.states.precedence" title="Permalink to this definition">¶</a></dt>
@@ -152,6 +145,7 @@ methods adhering to state precedence rules.</p>
 
 </div>
 </div>
+</div>
 
 
           </div>
@@ -161,15 +155,6 @@ methods adhering to state precedence rules.</p>
         <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
   <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
 </a></p>
-  <h3><a href="../index.html">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Task States - celery.states</a><ul>
-<li><a class="reference internal" href="#states">States</a></li>
-<li><a class="reference internal" href="#sets">Sets</a></li>
-</ul>
-</li>
-</ul>
-
   <h4>Previous topic</h4>
   <p class="topless"><a href="celery.registry.html"
                         title="previous chapter">Task Registry - celery.registry</a></p>
