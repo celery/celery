@@ -90,6 +90,7 @@ from celery.messaging import establish_connection
 from celery.messaging import get_consumer_set, BroadcastConsumer
 from celery.exceptions import NotRegistered
 from celery.datastructures import SharedCounter
+from celery.utils.info import get_broker_info
 
 RUN = 0x1
 CLOSE = 0x2
@@ -451,3 +452,11 @@ class CarrotListener(object):
         """
         self.logger.debug("CarrotListener: Stopping consumers...")
         self.stop_consumers(close=False)
+
+    @property
+    def info(self):
+        conninfo = {}
+        if self.connection:
+            conninfo = get_broker_info(self.connection)
+        return {"broker": conninfo,
+                "prefetch_count": self.qos.next}

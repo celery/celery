@@ -153,6 +153,7 @@ def dump_active(panel, safe=False, **kwargs):
 @Panel.register
 def stats(panel, **kwargs):
     return {"total": state.total_count,
+            "listener": panel.listener.info,
             "pool": panel.listener.pool.info}
 
 
