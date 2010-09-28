@@ -45,7 +45,7 @@ Important Notes
 
 * No longer depends on SQLAlchemy, this needs to be installed separately
   if the database backend is used (does not apply to users of
-  ``django-celery``).
+  `django-celery`_).
 
 .. _v210-news:
 
@@ -94,18 +94,18 @@ News
     lets you perform some actions, like revoking and rate limiting tasks,
     and shutting down worker nodes.
 
-    There's also a Debian init.d script for ``celeryev`` available,
+    There's also a Debian init.d script for :mod:`~celery.bin.celeryev` available,
     see :doc:`cookbook/daemonizing` for more information.
 
     New command line argments to celeryev:
 
-        * ``-c|--camera``: Snapshot camera class to use.
-        * ``--logfile|-f``: Logfile
-        * ``--loglevel|-l``: Loglevel
-        * ``--maxrate|-r``: Shutter rate limit.
-        * ``--freq|-F``: Shutter frequency
+        * :option:`-c|--camera`: Snapshot camera class to use.
+        * :option:`--logfile|-f`: Logfile
+        * :option:`--loglevel|-l`: Loglevel
+        * :option:`--maxrate|-r`: Shutter rate limit.
+        * :option:`--freq|-F`: Shutter frequency
 
-    The ``--camera`` argument is the name of a class used to take
+    The :option:`--camera` argument is the name of a class used to take
     snapshots with. It must support the interface defined by
     :class:`celery.events.snapshot.Polaroid`.
 
@@ -122,7 +122,7 @@ News
     anything new.
 
     The rate limit is off by default, which means it will take a snapshot
-    for every ``--frequency`` seconds.
+    for every :option:`--frequency` seconds.
 
     The django-celery camera also automatically deletes old events.
     It deletes successful tasks after 1 day, failed tasks after 3 days,
@@ -201,8 +201,8 @@ News
         signals.setup_logging.connect(setup_logging)
 
     If there are no receivers for this signal, the logging subsystem
-    will be configured using the ``--loglevel/--logfile argument``,
-    this will be used for *all defined loggers*.
+    will be configured using the :option:`--loglevel`/:option:`--logfile`
+    argument, this will be used for *all defined loggers*.
 
     Remember that celeryd also redirects stdout and stderr 
     to the celery logger, if you want to manually configure logging
@@ -219,7 +219,7 @@ News
             stdouts = logging.getLogger("mystdoutslogger")
             log.redirect_stdouts_to_logger(stdouts, loglevel=logging.WARNING)
 
-* celeryd: Added command-line option ``-I|--include``:
+* celeryd: Added command-line option :option:`-I`/:option:`--include`:
   Additional (task) modules to be imported
 
 * :func:`celery.messaging.establish_connection`: Ability to override defaults
@@ -269,10 +269,11 @@ News
 * The crontab schedule no longer wakes up every second, but implements
   ``remaining_estimate``.
 
-* celeryd:  Store FAILURE result if the ``WorkerLostError`` exception occurs
-  (worker process disappeared).
+* celeryd:  Store :state:`FAILURE` result if the
+   :exc:`~celery.exceptions.WorkerLostError` exception occurs (worker process
+   disappeared).
 
-* celeryd: Store FAILURE result if one of the ``*TimeLimitExceeded``
+* celeryd: Store :state:`FAILURE` result if one of the ``*TimeLimitExceeded``
   exceptions occurs.
 
 * Refactored the periodic task responsible for cleaning up results.
@@ -300,9 +301,8 @@ News
 
     See issue #184.
 
-*    Added ``Task.update_state(task_id, state, meta)``.
-
-    as a shortcut to ``task.backend.store_result(task_id, meta, state)``.
+* Added ``Task.update_state(task_id, state, meta)``
+  as a shortcut to ``task.backend.store_result(task_id, meta, state)``.
 
     The backend interface is "private" and the terminology outdated,
     so better to move this to :class:`~celery.task.base.Task` so it can be
@@ -420,7 +420,7 @@ Fixes
 * celeryd: Events are now buffered if the connection is down,
   then sent when the connection is re-established.
 
-* No longer depends on the ``mailer`` package.
+* No longer depends on the :mod:`mailer` package.
 
     This package had a namespace collision with ``django-mailer``,
     so its functionality was replaced.
@@ -461,7 +461,7 @@ Fixes
 * :func:`~celery.execute.apply`: Make sure ``kwargs["task_id"]`` is
   always set.
 
-* ``AsyncResult.traceback``: Now returns ``None``, instead of raising
+* ``AsyncResult.traceback``: Now returns :const:`None`, instead of raising
   :exc:`KeyError` if traceback is missing.
 
 * :class:`~celery.task.control.inspect`: Replies did not work correctly
@@ -1250,7 +1250,7 @@ News
     Defines the maximum number of tasks a pool worker can process before
     the process is terminated and replaced by a new one.
 
-* Revoked tasks now marked with state ``REVOKED``, and ``result.get()``
+* Revoked tasks now marked with state :state:`REVOKED`, and ``result.get()``
   will now raise :exc:`~celery.exceptions.TaskRevokedError`.
 
 * :func:`celery.task.control.ping` now works as expected.
@@ -2426,7 +2426,7 @@ Changes
   (Probably still problems with running on 2.4, but it will eventually be
   supported)
 
-* Prepare exception to pickle when saving RETRY status for all backends.
+* Prepare exception to pickle when saving :state:`RETRY` status for all backends.
 
 * SQLite no concurrency limit should only be effective if the db backend
   is used.
@@ -2568,10 +2568,10 @@ News
 
 * ``views.apply`` now correctly sets mimetype to "application/json"
 
-* ``views.task_status`` now returns exception if status is RETRY
+* ``views.task_status`` now returns exception if state is :state:`RETRY`
 
-* ``views.task_status`` now returns traceback if status is "FAILURE"
-    or "RETRY"
+* ``views.task_status`` now returns traceback if state is :state:`FAILURE`
+    or :state:`RETRY`
 
 * Documented default task arguments.
 

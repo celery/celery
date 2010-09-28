@@ -107,10 +107,10 @@ Is Celery multilingual?
 
 **Answer:** Yes.
 
-``celeryd`` is an implementation of Celery in python. If the language has
-an AMQP client, there shouldn't be much work to create a worker in your
-language.  A Celery worker is just a program connecting to the broker to
-process messages.
+:mod:`~celery.bin.celeryd` is an implementation of Celery in python. If the
+language has an AMQP client, there shouldn't be much work to create a worker
+in your language.  A Celery worker is just a program connecting to the broker
+to process messages.
 
 Also, there's another way to be language indepedent, and that is to use REST
 tasks, instead of your tasks being functions, they're URLs. With this
@@ -132,7 +132,7 @@ MySQL is throwing deadlock errors, what can I do?
 
 **Answer:** MySQL has default isolation level set to ``REPEATABLE-READ``,
 if you don't really need that, set it to ``READ-COMMITTED``.
-You can do that by adding the following to your ``my.cnf``::
+You can do that by adding the following to your :file:`my.cnf`::
 
     [mysqld]
     transaction-isolation = READ-COMMITTED
@@ -160,7 +160,7 @@ Why is Task.delay/apply\*/celeryd just hanging?
 **Answer:** There is a bug in some AMQP clients that will make it hang if
 it's not able to authenticate the current user, the password doesn't match or
 the user does not have access to the virtual host specified. Be sure to check
-your broker logs (for RabbitMQ that is ``/var/log/rabbitmq/rabbit.log`` on
+your broker logs (for RabbitMQ that is :file:`/var/log/rabbitmq/rabbit.log` on
 most systems), it usually contains a message describing the reason.
 
 .. _faq-celeryd-on-freebsd:
@@ -247,16 +247,16 @@ Why won't my Periodic Task run?
 How do I discard all waiting tasks?
 ------------------------------------
 
-**Answer:** Use ``celery.task.discard_all()``, like this:
+**Answer:** Use :func:`~celery.task.control.discard_all`, like this:
 
-    >>> from celery.task import discard_all
+    >>> from celery.task.control import discard_all
     >>> discard_all()
     1753
 
-The number ``1753`` is the number of messages deleted.
+The number 1753 is the number of messages deleted.
 
-You can also start celeryd with the ``--discard`` argument which will
-accomplish the same thing.
+You can also start :mod:`~celery.bin.celeryd` with the
+:option:`--discard` argument which will accomplish the same thing.
 
 .. _faq-messages-left-after-purge:
 
@@ -272,7 +272,7 @@ server). When that connection is closed (e.g because the worker was stopped)
 the tasks will be re-sent by the broker to the next available worker (or the
 same worker when it has been restarted), so to properly purge the queue of
 waiting tasks you have to stop all the workers, and then discard the tasks
-using ``discard_all``.
+using :func:`~celery.task.control.discard_all`.
 
 .. _faq-results:
 
@@ -289,7 +289,7 @@ How do I get the result of a task if I have the ID that points there?
     >>> result = MyTask.AsyncResult(task_id)
     >>> result.get()
 
-This will give you a :class:`celery.result.BaseAsyncResult` instance
+This will give you a :class:`~celery.result.BaseAsyncResult` instance
 using the tasks current result backend.
 
 If you need to specify a custom result backend you should use
@@ -327,8 +327,8 @@ important that you are aware of them.
 
 * Events.
 
-Running ``celeryd`` with the ``-E``/``--events`` option will send messages
-for events happening inside of the worker.
+Running :mod:`~celery.bin.celeryd` with the :option:`-E`/:option:`--events`
+option will send messages for events happening inside of the worker.
 
 Events should only be enabled if you have an active monitor consuming them,
 or if you purge the event queue periodically.
@@ -394,7 +394,8 @@ you need to set ``exchange`` name to the same as the queue name. This is
 a minor inconvenience since carrot needs to maintain the same interface
 for both AMQP and STOMP.
 
-Use the following settings in your ``celeryconfig.py``/django ``settings.py``:
+Use the following settings in your :file:`celeryconfig.py`/
+django :file:`settings.py`:
 
 .. code-block:: python
 
@@ -540,13 +541,13 @@ or if you only have the task id::
 Why aren't my remote control commands received by all workers?
 --------------------------------------------------------------
 
-**Answer**: To receive broadcast remote control commands, every ``celeryd``
+**Answer**: To receive broadcast remote control commands, every worker node
 uses its hostname to create a unique queue name to listen to,
 so if you have more than one worker with the same hostname, the
 control commands will be recieved in round-robin between them.
 
 To work around this you can explicitly set the hostname for every worker
-using the ``--hostname`` argument to ``celeryd``::
+using the :option:`--hostname` argument to :mod:`~celery.bin.celeryd`::
 
     $ celeryd --hostname=$(hostname).1
     $ celeryd --hostname=$(hostname).2
@@ -667,14 +668,18 @@ Or to schedule a periodic task at a specific time, use the
 How do I shut down ``celeryd`` safely?
 --------------------------------------
 
-**Answer**: Use the ``TERM`` signal, and the worker will finish all currently
+**Answer**: Use the :sig:`TERM` signal, and the worker will finish all currently
 executing jobs and shut down as soon as possible. No tasks should be lost.
 
-You should never stop ``celeryd`` with the ``KILL`` signal (``-9``),
-unless you've tried ``TERM`` a few times and waited a few minutes to let it
-get a chance to shut down. As if you do tasks may be terminated mid-execution,
-and they will not be re-run unless you have the ``acks_late`` option set.
-(``Task.acks_late`` / :setting:`CELERY_ACKS_LATE`).
+You should never stop :mod:`~celery.bin.celeryd` with the :sig:`KILL` signal
+(:option:`-9`), unless you've tried :sig:`TERM` a few times and waited a few
+minutes to let it get a chance to shut down.  As if you do tasks may be
+terminated mid-execution, and they will not be re-run unless you have the
+``acks_late`` option set (``Task.acks_late`` / :setting:`CELERY_ACKS_LATE`).
+
+.. seealso::
+
+    :ref:`worker-stopping`
 
 .. _faq-daemonizing:
 
@@ -713,7 +718,8 @@ services instead.
 ``django-celery`` can’t find settings?
 --------------------------------------
 
-**Answer**: You need to specify the ``--settings`` argument to ``manage.py``::
+**Answer**: You need to specify the :option:`--settings` argument to
+:program:`manage.py`::
 
     $ python manage.py celeryd start --settings=settings
 

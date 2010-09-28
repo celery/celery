@@ -82,12 +82,17 @@ from celery.task.base import Task
 from celery.result import AsyncResult
 
 
-""" Task States
+"""
+Task States
+-----------
 
-.. data:: ABORTED
+.. state:: ABORTED
 
-    Task is aborted (typically by the producer) and should be
-    aborted as soon as possible.
+ABORTED
+~~~~~~~
+
+Task is aborted (typically by the producer) and should be
+aborted as soon as possible.
 
 """
 ABORTED = "ABORTED"

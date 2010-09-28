@@ -215,13 +215,13 @@ General
     Set the rate limit for this task type, i.e. how many times in
     a given period of time is the task allowed to run.
 
-    If this is ``None`` no rate limit is in effect.
+    If this is :const:`None` no rate limit is in effect.
     If it is an integer, it is interpreted as "tasks per second". 
 
     The rate limits can be specified in seconds, minutes or hours
     by appending ``"/s"``, ``"/m"`` or ``"/h"`` to the value.
     Example: ``"100/m"`` (hundred tasks a minute). Default is the
-    ``CELERY_DEFAULT_RATE_LIMIT`` setting, which if not specified means
+    :setting:`CELERY_DEFAULT_RATE_LIMIT` setting, which if not specified means
     rate limiting for tasks is turned off by default.
 
 .. attribute:: Task.ignore_result
@@ -233,13 +233,13 @@ General
 .. attribute:: Task.send_error_emails
 
     Send an e-mail whenever a task of this type fails.
-    Defaults to the ``CELERY_SEND_TASK_ERROR_EMAILS`` setting.
+    Defaults to the :setting:`CELERY_SEND_TASK_ERROR_EMAILS` setting.
     See :ref:`conf-error-mails` for more information.
 
 .. attribute:: Task.serializer
 
     A string identifying the default serialization
-    method to use. Defaults to the ``CELERY_TASK_SERIALIZER``
+    method to use. Defaults to the :setting:`CELERY_TASK_SERIALIZER`
     setting.  Can be ``pickle`` ``json``, ``yaml``, or any custom
     serialization methods that have been registered with
     :mod:`carrot.serialization.registry`.
@@ -253,7 +253,7 @@ Message and routing options
 
 .. attribute:: Task.queue
 
-    Use the routing settings from a queue defined in ``CELERY_QUEUES``.
+    Use the routing settings from a queue defined in :setting:`CELERY_QUEUES`.
     If defined the :attr:`exchange` and :attr:`routing_key` options will be
     ignored.
 
@@ -457,7 +457,7 @@ This is the list of tasks built-in to celery. Note that we had to import
 only be registered when the module they are defined in is imported.
 
 The default loader imports any modules listed in the
-``CELERY_IMPORTS`` setting. 
+:setting:`CELERY_IMPORTS` setting. 
 
 The entity responsible for registering your task in the registry is a
 meta class, :class:`~celery.task.base.TaskType`. This is the default
@@ -500,8 +500,8 @@ wastes time and resources.
     def mytask(...)
         something()
 
-Results can even be disabled globally using the ``CELERY_IGNORE_RESULT``
-setting.
+Results can even be disabled globally using the
+:setting:`CELERY_IGNORE_RESULT` setting.
 
 .. _task-disable-rate-limits:
 
@@ -512,7 +512,7 @@ Disabling rate limits altogether is recommended if you don't have
 any tasks using them. This is because the rate limit subsystem introduces
 quite a lot of complexity.
 
-Set the ``CELERY_DISABLE_RATE_LIMITS`` setting to globally disable
+Set the :setting:`CELERY_DISABLE_RATE_LIMITS` setting to globally disable
 rate limits:
 
 .. code-block:: python

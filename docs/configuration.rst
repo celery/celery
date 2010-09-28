@@ -55,7 +55,7 @@ Configuration Directives
 Concurrency settings
 --------------------
 
-.. _CELERYD_CONCURRENCY:
+.. setting:: CELERYD_CONCURRENCY
 
 CELERYD_CONCURRENCY
 ~~~~~~~~~~~~~~~~~~~
@@ -64,7 +64,7 @@ The number of concurrent worker processes, executing tasks simultaneously.
 
 Defaults to the number of CPUs/cores available.
 
-.. _CELERYD_PREFETCH_MULTIPLIER:
+.. setting:: CELERYD_PREFETCH_MULTIPLIER
 
 CELERYD_PREFETCH_MULTIPLIER
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -82,7 +82,7 @@ to the workers.
 Task result backend settings
 ----------------------------
 
-.. _CELERY_RESULT_BACKEND:
+.. setting:: CELERY_RESULT_BACKEND
 
 CELERY_RESULT_BACKEND
 ~~~~~~~~~~~~~~~~~~~~~
@@ -130,7 +130,7 @@ Can be one of the following:
 Database backend settings
 -------------------------
 
-.. _CELERY_RESULT_DBURI:
+.. setting:: CELERY_RESULT_DBURI
 
 CELERY_RESULT_DBURI
 ~~~~~~~~~~~~~~~~~~~
@@ -156,7 +156,7 @@ To use this backend you need to configure it with an
 See `Connection String`_ for more information about connection
 strings.
 
-.. _CELERY_RESULT_ENGINE_OPTIONS:
+.. setting:: CELERY_RESULT_ENGINE_OPTIONS
 
 CELERY_RESULT_ENGINE_OPTIONS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -186,7 +186,7 @@ Example configuration
 AMQP backend settings
 ---------------------
 
-.. _CELERY_AMQP_TASK_RESULT_EXPIRES:
+.. setting:: CELERY_AMQP_TASK_RESULT_EXPIRES
 
 CELERY_AMQP_TASK_RESULT_EXPIRES
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -197,14 +197,14 @@ The time in seconds of which the task result queues should expire.
 
     AMQP result expiration requires RabbitMQ versions 2.1.0 and higher.
 
-.. _CELERY_RESULT_EXCHANGE:
+.. setting:: CELERY_RESULT_EXCHANGE
 
 CELERY_RESULT_EXCHANGE
 ~~~~~~~~~~~~~~~~~~~~~~
 
 Name of the exchange to publish results in.  Default is ``"celeryresults"``.
 
-.. _CELERY_RESULT_EXCHANGE_TYPE:
+.. setting:: CELERY_RESULT_EXCHANGE_TYPE
 
 CELERY_RESULT_EXCHANGE_TYPE
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -212,14 +212,15 @@ CELERY_RESULT_EXCHANGE_TYPE
 The exchange type of the result exchange.  Default is to use a ``direct``
 exchange.
 
-.. _CELERY_RESULT_SERIALIZER:
+.. setting:: CELERY_RESULT_SERIALIZER
 
 CELERY_RESULT_SERIALIZER
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Result message serialization format.  Default is ``"pickle"``.
+Result message serialization format.  Default is ``"pickle"``. See
+:ref:`executing-serializers`.
 
-.. _CELERY_RESULT_PERSISTENT:
+.. setting:: CELERY_RESULT_PERSISTENT
 
 CELERY_RESULT_PERSISTENT
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -246,7 +247,7 @@ Cache backend settings
     The cache backend supports the `pylibmc`_ and `python-memcached`
     libraries.  The latter is used only if `pylibmc`_ is not installed.
 
-.. _CELERY_CACHE_BACKEND:
+.. setting:: CELERY_CACHE_BACKEND
 
 CELERY_CACHE_BACKEND
 ~~~~~~~~~~~~~~~~~~~~
@@ -264,7 +265,7 @@ Using multiple memcached servers:
     CELERY_RESULT_BACKEND = "cache"
     CELERY_CACHE_BACKEND = 'memcached://172.19.26.240:11211;172.19.26.242:11211/'
 
-.. _CELERY_CACHE_BACKEND_OPTIONS:
+.. setting:: CELERY_CACHE_BACKEND_OPTIONS
 
 CELERY_CACHE_BACKEND_OPTIONS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -291,14 +292,14 @@ Tokyo Tyrant backend settings
 
 This backend requires the following configuration directives to be set:
 
-.. _TT_HOST:
+.. setting:: TT_HOST
 
 TT_HOST
 ~~~~~~~
 
 Hostname of the Tokyo Tyrant server.
 
-.. _TT_PORT:
+.. setting:: TT_PORT
 
 TT_PORT
 ~~~~~~~
@@ -331,28 +332,28 @@ Redis backend settings
 
 This backend requires the following configuration directives to be set.
 
-.. _REDIS_HOST:
+.. setting:: REDIS_HOST
 
 REDIS_HOST
 ~~~~~~~~~~
 
 Hostname of the Redis database server. e.g. ``"localhost"``.
 
-.. _REDIS_PORT:
+.. setting:: REDIS_PORT
 
 REDIS_PORT
 ~~~~~~~~~~
 
 Port to the Redis database server. e.g. ``6379``.
 
-.. _REDIS_DB:
+.. setting:: REDIS_DB
 
 REDIS_DB
 ~~~~~~~~
 
 Database number to use. Default is 0
 
-.. _REDIS_PASSWORD:
+.. setting:: REDIS_PASSWORD
 
 REDIS_PASSWORD
 ~~~~~~~~~~~~~~
@@ -380,7 +381,7 @@ MongoDB backend settings
     The MongoDB backend requires the :mod:`pymongo` library:
     http://github.com/mongodb/mongo-python-driver/tree/master
 
-.. _CELERY_MONGODB_BACKEND_SETTINGS:
+.. setting:: CELERY_MONGODB_BACKEND_SETTINGS
 
 CELERY_MONGODB_BACKEND_SETTINGS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -428,7 +429,7 @@ Message Routing
 
 .. _conf-messaging-routing:
 
-.. _CELERY_QUEUES:
+.. setting:: CELERY_QUEUES
 
 CELERY_QUEUES
 ~~~~~~~~~~~~~
@@ -441,7 +442,25 @@ exchange type ``direct``.
 
 You don't have to care about this unless you want custom routing facilities.
 
-.. _CELERY_DEFAULT_QUEUE:
+.. setting:: CELERY_ROUTES
+
+CELERY_ROUTES
+~~~~~~~~~~~~~
+
+A list of routers, or a single router used to route tasks to queues.
+When deciding the final destination of a task the routers are consulted
+in order.  See :ref:`routers` for more information.
+
+.. setting:: CELERY_CREATE_MISSING_QUEUES
+
+CELERY_CREATE_MISSING_QUEUES
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If enabled (default), any queues specified that is not defined in
+:setting:`CELERY_QUEUES` will be automatically created. See
+:ref:`routing-automatic`.
+
+.. setting:: CELERY_DEFAULT_QUEUE
 
 CELERY_DEFAULT_QUEUE
 ~~~~~~~~~~~~~~~~~~~~
@@ -449,7 +468,11 @@ CELERY_DEFAULT_QUEUE
 The queue used by default, if no custom queue is specified.  This queue must
 be listed in :setting:`CELERY_QUEUES`.  The default is: ``celery``.
 
-.. _CELERY_DEFAULT_EXCHANGE:
+.. seealso::
+
+    :ref:`routing-changing-default-queue`
+
+.. setting:: CELERY_DEFAULT_EXCHANGE
 
 CELERY_DEFAULT_EXCHANGE
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -457,7 +480,7 @@ CELERY_DEFAULT_EXCHANGE
 Name of the default exchange to use when no custom exchange is
 specified.  The default is: ``celery``.
 
-.. _CELERY_DEFAULT_EXCHANGE_TYPE:
+.. setting:: CELERY_DEFAULT_EXCHANGE_TYPE
 
 CELERY_DEFAULT_EXCHANGE_TYPE
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -465,7 +488,7 @@ CELERY_DEFAULT_EXCHANGE_TYPE
 Default exchange type used when no custom exchange is specified.
 The default is: ``direct``.
 
-.. _CELERY_DEFAULT_ROUTING_KEY:
+.. setting:: CELERY_DEFAULT_ROUTING_KEY
 
 CELERY_DEFAULT_ROUTING_KEY
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -473,7 +496,7 @@ CELERY_DEFAULT_ROUTING_KEY
 The default routing key used when sending tasks.
 The default is: ``celery``.
 
-.. _CELERY_DEFAULT_DELIVERY_MODE:
+.. setting:: CELERY_DEFAULT_DELIVERY_MODE
 
 CELERY_DEFAULT_DELIVERY_MODE
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -486,18 +509,69 @@ persistent messages.
 Broker Settings
 ---------------
 
-.. _CELERY_BROKER_CONNECTION_TIMEOUT:
+.. setting:: BROKER_BACKEND
 
-CELERY_BROKER_CONNECTION_TIMEOUT
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+BROKER_BACKEND
+~~~~~~~~~~~~~~
+
+The messaging backend to use. Default is ``"amqplib"``.
+
+.. setting:: BROKER_HOST
+
+BROKER_HOST
+~~~~~~~~~~~
+
+Hostname of the broker.
+
+.. setting:: BROKER_PORT
+
+BROKER_PORT
+~~~~~~~~~~~
+
+Custom port of the broker.  Default is to use the default port for the
+selected backend.
+
+.. setting:: BROKER_USER
+
+BROKER_USER
+~~~~~~~~~~~
+
+Username to connect as.
+
+.. setting:: BROKER_PASSWORD
+
+BROKER_PASSWORD
+~~~~~~~~~~~~~~~
+
+Password to connect with.
+
+.. setting:: BROKER_VHOST
+
+BROKER_VHOST
+~~~~~~~~~~~~
+
+Virtual host.  Default is ``"/"``.
+
+.. setting:: BROKER_USE_SSL
+
+BROKER_USE_SSL
+~~~~~~~~~~~~~~
+
+Use SSL to conenct to the broker.  Off by defalt.  This may not be supported
+by all transports.
+
+.. setting:: BROKER_CONNECTION_TIMEOUT
+
+BROKER_CONNECTION_TIMEOUT
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The default timeout in seconds before we give up establishing a connection
 to the AMQP server.  Default is 4 seconds.
 
-.. _CELERY_BROKER_CONNECTION_RETRY:
+.. setting:: CELERY_BROKER_CONNECTION_RETRY
 
-CELERY_BROKER_CONNECTION_RETRY
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+BROKER_CONNECTION_RETRY
+~~~~~~~~~~~~~~~~~~~~~~~
 
 Automatically try to re-establish the connection to the AMQP broker if lost.
 
@@ -507,7 +581,7 @@ exceeded.
 
 This behavior is on by default.
 
-.. _CELERY_BROKER_CONNECTION_MAX_RETRIES:
+.. setting:: CELERY_BROKER_CONNECTION_MAX_RETRIES
 
 CELERY_BROKER_CONNECTION_MAX_RETRIES
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -524,7 +598,7 @@ Default is 100 retries.
 Task execution settings
 -----------------------
 
-.. _CELERY_ALWAYS_EAGER:
+.. setting:: CELERY_ALWAYS_EAGER
 
 CELERY_ALWAYS_EAGER
 ~~~~~~~~~~~~~~~~~~~
@@ -538,7 +612,7 @@ been evaluated.
 Tasks will never be sent to the queue, but executed locally
 instead.
 
-.. _CELERY_EAGER_PROPAGATES_EXCEPTIONS:
+.. setting:: CELERY_EAGER_PROPAGATES_EXCEPTIONS
 
 CELERY_EAGER_PROPAGATES_EXCEPTIONS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -548,7 +622,7 @@ If this is :const:`True`, eagerly executed tasks (using ``.apply``, or with
 
 It's the same as always running ``apply`` with ``throw=True``.
 
-.. _CELERY_IGNORE_RESULT:
+.. setting:: CELERY_IGNORE_RESULT
 
 CELERY_IGNORE_RESULT
 ~~~~~~~~~~~~~~~~~~~~
@@ -557,7 +631,7 @@ Whether to store the task return values or not (tombstones).
 If you still want to store errors, just not successful return values,
 you can set :setting:`CELERY_STORE_ERRORS_EVEN_IF_IGNORED`.
 
-.. _CELERY_TASK_RESULT_EXPIRES:
+.. setting:: CELERY_TASK_RESULT_EXPIRES
 
 CELERY_TASK_RESULT_EXPIRES
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -578,7 +652,7 @@ A built-in periodic task will delete the results after this time
     running for the results to be expired.
 
 
-.. _CELERY_MAX_CACHED_RESULTS:
+.. setting:: CELERY_MAX_CACHED_RESULTS
 
 CELERY_MAX_CACHED_RESULTS
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -586,7 +660,7 @@ CELERY_MAX_CACHED_RESULTS
 Total number of results to store before results are evicted from the
 result cache.  The default is 5000.
 
-.. _CELERY_TRACK_STARTED:
+.. setting:: CELERY_TRACK_STARTED
 
 CELERY_TRACK_STARTED
 ~~~~~~~~~~~~~~~~~~~~
@@ -598,7 +672,7 @@ are either pending, finished, or waiting to be retried.  Having a "started"
 state can be useful for when there are long running tasks and there is a
 need to report which task is currently running.
 
-.. _CELERY_TASK_SERIALIZER:
+.. setting:: CELERY_TASK_SERIALIZER
 
 CELERY_TASK_SERIALIZER
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -607,7 +681,11 @@ A string identifying the default serialization method to use.  Can be
 ``pickle`` (default), ``json``, ``yaml``, or any custom serialization
 methods that have been registered with :mod:`carrot.serialization.registry`.
 
-.. _CELERY_DEFAULT_RATE_LIMIT:
+.. seealso::
+
+    :ref:`executing-serializers`.
+
+.. setting:: CELERY_DEFAULT_RATE_LIMIT
 
 CELERY_DEFAULT_RATE_LIMIT
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -617,14 +695,14 @@ The global default rate limit for tasks.
 This value is used for tasks that does not have a custom rate limit
 The default is no rate limit.
 
-.. _CELERY_DISABLE_RATE_LIMITS:
+.. setting:: CELERY_DISABLE_RATE_LIMITS
 
 CELERY_DISABLE_RATE_LIMITS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Disable all rate limits, even if tasks has explicit rate limits set.
 
-.. _CELERY_ACKS_LATE:
+.. setting:: CELERY_ACKS_LATE
 
 CELERY_ACKS_LATE
 ~~~~~~~~~~~~~~~~
@@ -641,7 +719,7 @@ has been executed, not *just before*, which is the default behavior.
 Worker: celeryd
 ---------------
 
-.. _CELERY_IMPORTS:
+.. setting:: CELERY_IMPORTS
 
 CELERY_IMPORTS
 ~~~~~~~~~~~~~~
@@ -651,7 +729,7 @@ A sequence of modules to import when the celery daemon starts.
 This is used to specify the task modules to import, but also
 to import signal handlers and additional remote control commands, etc.
 
-.. _CELERYD_MAX_TASKS_PER_CHILD:
+.. setting:: CELERYD_MAX_TASKS_PER_CHILD
 
 CELERYD_MAX_TASKS_PER_CHILD
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -659,7 +737,7 @@ CELERYD_MAX_TASKS_PER_CHILD
 Maximum number of tasks a pool worker process can execute before
 it's replaced with a new one.  Default is no limit.
 
-.. _CELERYD_TASK_TIME_LIMIT:
+.. setting:: CELERYD_TASK_TIME_LIMIT
 
 CELERYD_TASK_TIME_LIMIT
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -667,7 +745,7 @@ CELERYD_TASK_TIME_LIMIT
 Task hard time limit in seconds.  The worker processing the task will
 be killed and replaced with a new one when this is exceeded.
 
-.. _CELERYD_SOFT_TASK_TIME_LIMIT:
+.. setting:: CELERYD_SOFT_TASK_TIME_LIMIT
 
 CELERYD_SOFT_TASK_TIME_LIMIT
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -692,7 +770,7 @@ Example:
         except SoftTimeLimitExceeded:
             cleanup_in_a_hurry()
 
-.. _CELERY_STORE_ERRORS_EVEN_IF_IGNORED:
+.. setting:: CELERY_STORE_ERRORS_EVEN_IF_IGNORED
 
 CELERY_STORE_ERRORS_EVEN_IF_IGNORED
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -700,19 +778,53 @@ CELERY_STORE_ERRORS_EVEN_IF_IGNORED
 If set, the worker stores all task errors in the result store even if
 :attr:`Task.ignore_result <celery.task.base.Task.ignore_result>` is on.
 
+.. setting:: CELERY_STATE_DB
+
+CELERYD_STATE_DB
+~~~~~~~~~~~~~~~~
+
+Name of the file used to stores persistent worker state (like revoked tasks).
+Can be a relative or absolute path, but be aware that the suffix ``.db``
+may be appended to the file name (depending on Python version).
+
+Can also be set via the :option:`--statedb` argument to
+:mod:`~celery.bin.celeryd`.
+
+Not enabled by default.
+
+.. setting:: CELERYD_ETA_SCHEDULER_PRECISION
+
+CELERYD_ETA_SCHEDULER_PRECISION
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Set the maximum time in seconds that the ETA scheduler can sleep between
+rechecking the schedule.  Default is 1 second.
+
+Setting this value to 1 second means the schedulers precision will
+be 1 second. If you need near millisecond precision you can set this to 0.1.
+
 .. _conf-error-mails:
 
 Error E-Mails
 -------------
 
-.. _CELERYD_SEND_TASK_ERROR_EMAILS:
+.. setting:: CELERYD_SEND_TASK_ERROR_EMAILS
 
 CELERY_SEND_TASK_ERROR_EMAILS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If set to ``True``, errors in tasks will be sent to admins by e-mail.
+The default value for the ``Task.send_error_emails`` attribute, which if
+set to :const:`True` means errors occuring during task execution will be
+sent to :setting:`ADMINS` by e-mail.
 
-.. _ADMINS:
+.. setting:: CELERY_TASK_ERROR_WHITELIST
+
+CELERY_TASK_ERROR_WHITELIST
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A whitelist of exceptions to send error e-mails for.
+
+.. setting:: ADMINS
 
 ADMINS
 ~~~~~~
@@ -720,7 +832,7 @@ ADMINS
 List of ``(name, email_address)`` tuples for the admins that should
 receive error e-mails.
 
-.. _SERVER_EMAIL:
+.. setting:: SERVER_EMAIL
 
 SERVER_EMAIL
 ~~~~~~~~~~~~
@@ -728,28 +840,28 @@ SERVER_EMAIL
 The e-mail address this worker sends e-mails from.
 Default is celery@localhost.
 
-.. _MAIL_HOST:
+.. setting:: MAIL_HOST
 
 MAIL_HOST
 ~~~~~~~~~
 
 The mail server to use.  Default is ``"localhost"``.
 
-.. _MAIL_HOST_USER:
+.. setting:: MAIL_HOST_USER
 
 MAIL_HOST_USER
 ~~~~~~~~~~~~~~
 
 Username (if required) to log on to the mail server with.
 
-.. _MAIL_HOST_PASSWORD:
+.. setting:: MAIL_HOST_PASSWORD
 
 MAIL_HOST_PASSWORD
 ~~~~~~~~~~~~~~~~~~
 
 Password (if required) to log on to the mail server with.
 
-.. _MAIL_PORT:
+.. setting:: MAIL_PORT
 
 MAIL_PORT
 ~~~~~~~~~
@@ -789,21 +901,29 @@ george@vandelay.com and kramer@vandelay.com:
 Events
 ------
 
-.. _CELERY_SEND_EVENTS:
+.. setting:: CELERY_SEND_EVENTS
 
 CELERY_SEND_EVENTS
 ~~~~~~~~~~~~~~~~~~
 
 Send events so the worker can be monitored by tools like ``celerymon``.
 
-.. _CELERY_EVENT_EXCHANGE:
+.. setting:: CELERY_EVENT_QUEUE
+
+CELERY_EVENT_QUEUE
+~~~~~~~~~~~~~~~~~~
+
+Name of the queue to consume event messages from. Default is
+``"celeryevent"``.
+
+.. setting:: CELERY_EVENT_EXCHANGE
 
 CELERY_EVENT_EXCHANGE
 ~~~~~~~~~~~~~~~~~~~~~
 
 Name of the exchange to send event messages to.  Default is ``"celeryevent"``.
 
-.. _CELERY_EVENT_EXCHANGE_TYPE:
+.. setting:: CELERY_EVENT_EXCHANGE_TYPE
 
 CELERY_EVENT_EXCHANGE_TYPE
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -811,27 +931,27 @@ CELERY_EVENT_EXCHANGE_TYPE
 The exchange type of the event exchange.  Default is to use a ``"direct"``
 exchange.
 
-.. _CELERY_EVENT_ROUTING_KEY:
+.. setting:: CELERY_EVENT_ROUTING_KEY
 
 CELERY_EVENT_ROUTING_KEY
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 Routing key used when sending event messages.  Default is ``"celeryevent"``.
 
-.. _CELERY_EVENT_SERIALIZER:
+.. setting:: CELERY_EVENT_SERIALIZER
 
 CELERY_EVENT_SERIALIZER
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Message serialization format used when sending event messages.
-Default is ``"json"``.
+Default is ``"json"``. See :ref:`executing-serializers`.
 
 .. _conf-broadcast:
 
 Broadcast Commands
 ------------------
 
-.. _CELERY_BROADCAST_QUEUE:
+.. setting:: CELERY_BROADCAST_QUEUE
 
 CELERY_BROADCAST_QUEUE
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -842,7 +962,7 @@ queue name.
 
 Default is ``"celeryctl"``.
 
-.. _CELERY_BROADCASTS_EXCHANGE:
+.. setting:: CELERY_BROADCASTS_EXCHANGE
 
 CELERY_BROADCAST_EXCHANGE
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -851,7 +971,7 @@ Name of the exchange used for broadcast messages.
 
 Default is ``"celeryctl"``.
 
-.. _CELERY_BROADCAST_EXCHANGE_TYPE:
+.. setting:: CELERY_BROADCAST_EXCHANGE_TYPE
 
 CELERY_BROADCAST_EXCHANGE_TYPE
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -863,7 +983,7 @@ Exchange type used for broadcast messages.  Default is ``"fanout"``.
 Logging
 -------
 
-.. _CELERYD_LOG_FILE:
+.. setting:: CELERYD_LOG_FILE
 
 CELERYD_LOG_FILE
 ~~~~~~~~~~~~~~~~
@@ -873,7 +993,7 @@ using the :option:`--logfile` option to :mod:`~celery.bin.celeryd`.
 
 The default is :const:`None` (``stderr``)
 
-.. _CELERYD_LOG_LEVEL:
+.. setting:: CELERYD_LOG_LEVEL
 
 CELERYD_LOG_LEVEL
 ~~~~~~~~~~~~~~~~~
@@ -886,7 +1006,7 @@ Can also be set via the :option:`--loglevel` argument to
 
 See the :mod:`logging` module for more information.
 
-.. _CELERYD_LOG_FORMAT:
+.. setting:: CELERYD_LOG_FORMAT
 
 CELERYD_LOG_FORMAT
 ~~~~~~~~~~~~~~~~~~
@@ -898,7 +1018,7 @@ Default is ``[%(asctime)s: %(levelname)s/%(processName)s] %(message)s``
 See the Python :mod:`logging` module for more information about log
 formats.
 
-.. _CELERYD_TASK_LOG_FORMAT:
+.. setting:: CELERYD_TASK_LOG_FORMAT
 
 CELERYD_TASK_LOG_FORMAT
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -919,7 +1039,7 @@ formats.
 Custom Component Classes (advanced)
 -----------------------------------
 
-.. _CELERYD_POOL:
+.. setting:: CELERYD_POOL
 
 CELERYD_POOL
 ~~~~~~~~~~~~
@@ -927,7 +1047,7 @@ CELERYD_POOL
 Name of the task pool class used by the worker.
 Default is :class:`celery.concurrency.processes.TaskPool`.
 
-.. _CELERYD_LISTENER:
+.. setting:: CELERYD_LISTENER
 
 CELERYD_LISTENER
 ~~~~~~~~~~~~~~~~
@@ -935,7 +1055,7 @@ CELERYD_LISTENER
 Name of the listener class used by the worker.
 Default is :class:`celery.worker.listener.CarrotListener`.
 
-.. _CELERYD_MEDIATOR:
+.. setting:: CELERYD_MEDIATOR
 
 CELERYD_MEDIATOR
 ~~~~~~~~~~~~~~~~
@@ -943,7 +1063,7 @@ CELERYD_MEDIATOR
 Name of the mediator class used by the worker.
 Default is :class:`celery.worker.controllers.Mediator`.
 
-.. _CELERYD_ETA_SCHEDULER:
+.. setting:: CELERYD_ETA_SCHEDULER
 
 CELERYD_ETA_SCHEDULER
 ~~~~~~~~~~~~~~~~~~~~~
@@ -956,7 +1076,7 @@ Default is :class:`celery.worker.controllers.ScheduleController`.
 Periodic Task Server: celerybeat
 --------------------------------
 
-.. _CELERYBEAT_SCHEDULE:
+.. setting:: CELERYBEAT_SCHEDULE
 
 CELERYBEAT_SCHEDULE
 ~~~~~~~~~~~~~~~~~~~
@@ -964,7 +1084,7 @@ CELERYBEAT_SCHEDULE
 The periodic task schedule used by :mod:`~celery.bin.celerybeat`.
 See :ref:`beat-entries`.
 
-.. _CELERYBEAT_SCHEDULE_FILENAME:
+.. setting:: CELERYBEAT_SCHEDULE_FILENAME
 
 CELERYBEAT_SCHEDULE_FILENAME
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -976,7 +1096,7 @@ may be appended to the file name (depending on Python version).
 Can also be set via the :option:`--schedule` argument to
 :mod:`~celery.bin.celerybeat`.
 
-.. _CELERYBEAT_MAX_LOOP_INTERVAL:
+.. setting:: CELERYBEAT_MAX_LOOP_INTERVAL
 
 CELERYBEAT_MAX_LOOP_INTERVAL
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -984,7 +1104,7 @@ CELERYBEAT_MAX_LOOP_INTERVAL
 The maximum number of seconds :mod:`~celery.bin.celerybeat` can sleep
 between checking the schedule.  Default is 300 seconds (5 minutes).
 
-.. _CELERYBEAT_LOG_FILE:
+.. setting:: CELERYBEAT_LOG_FILE
 
 CELERYBEAT_LOG_FILE
 ~~~~~~~~~~~~~~~~~~~
@@ -994,7 +1114,7 @@ the `--logfile`` option to :mod:`~celery.bin.celerybeat`.
 
 The default is :const:`None` (``stderr``).
 
-.. _CELERYBEAT_LOG_LEVEL:
+.. setting:: CELERYBEAT_LOG_LEVEL
 
 CELERYBEAT_LOG_LEVEL
 ~~~~~~~~~~~~~~~~~~~~
@@ -1012,7 +1132,7 @@ See the :mod:`logging` module for more information.
 Monitor Server: celerymon
 -------------------------
 
-.. _CELERYMON_LOG_FILE:
+.. setting:: CELERYMON_LOG_FILE
 
 CELERYMON_LOG_FILE
 ~~~~~~~~~~~~~~~~~~
@@ -1022,7 +1142,7 @@ the :option:`--logfile` argument to ``celerymon``.
 
 The default is :const:`None` (``stderr``)
 
-.. _CELERYMON_LOG_LEVEL:
+.. setting:: CELERYMON_LOG_LEVEL
 
 CELERYMON_LOG_LEVEL
 ~~~~~~~~~~~~~~~~~~~

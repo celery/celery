@@ -15,11 +15,11 @@ Creating a simple task
 In this example we are creating a simple task that adds two
 numbers. Tasks are defined in a normal python module. The module can
 be named whatever you like, but the convention is to call it
-``tasks.py``.
+:file:`tasks.py`.
 
 Our addition task looks like this:
 
-``tasks.py``:
+:file:`tasks.py`:
 
 .. code-block:: python
 
@@ -42,7 +42,7 @@ Configuration
 =============
 
 Celery is configured by using a configuration module. By default
-this module is called ``celeryconfig.py``.
+this module is called :file:`celeryconfig.py`.
 
 .. note::
 
@@ -52,7 +52,7 @@ this module is called ``celeryconfig.py``.
     You can also set a custom name for the configuration module using
     the :envvar:`CELERY_CONFIG_MODULE` environment variable.
 
-Let's create our ``celeryconfig.py``.
+Let's create our :file:`celeryconfig.py`.
 
 1. Configure how we communicate with the broker::
 
@@ -74,28 +74,26 @@ Let's create our ``celeryconfig.py``.
    that contain tasks. This is so Celery knows about what tasks it can
    be asked to perform.
 
-   We only have a single task module, ``tasks.py``, which we added earlier::
+   We only have a single task module, :file:`tasks.py`, which we added earlier::
 
         CELERY_IMPORTS = ("tasks", )
 
 That's it.
 
-
 There are more options available, like how many processes you want to
 process work in parallel (the :setting:`CELERY_CONCURRENCY` setting), and we
 could use a persistent result store backend, but for now, this should
-do. For all of the options available, see the 
-:doc:`configuration directive reference<../configuration>`.
+do. For all of the options available, see :ref:`configuration`.
 
 .. note::
 
-    You can also specify modules to import using the ``-I`` option to
-    ``celeryd``::
+    You can also specify modules to import using the :option:`-I` option to
+    :mod:`~celery.bin.celeryd`::
 
         $ celeryd -l info -I tasks,handlers
 
     This can be a single, or a comma separated list of task modules to import when
-    ``celeryd`` starts.
+    :mod:`~celery.bin.celeryd` starts.
 
 
 .. _celerytut-running-celeryd:
@@ -175,7 +173,7 @@ by keeping the :class:`~celery.result.AsyncResult`::
     True
 
 If the task raises an exception, the return value of ``result.successful()``
-will be ``False``, and ``result.result`` will contain the exception instance
+will be :const:`False`, and ``result.result`` will contain the exception instance
 raised by the task.
 
 Where to go from here
