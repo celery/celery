@@ -5,52 +5,85 @@
 States
 ------
 
-.. data:: PENDING
+.. state:: PENDING
 
-    Task is waiting for execution or unknown.
+PENDING
+~~~~~~~
 
-.. data:: STARTED
+Task is waiting for execution or unknown.
 
-    Task has been started.
+.. state:: STARTED
 
-.. data:: SUCCESS
+STARTED
+~~~~~~~
 
-    Task has been successfully executed.
+Task has been started.
 
-.. data:: FAILURE
+.. state:: SUCCESS
 
-    Task execution resulted in failure.
+SUCCESS
+~~~~~~~
 
-.. data:: RETRY
+Task has been successfully executed.
 
-    Task is being retried.
+.. state:: FAILURE
 
-.. data:: REVOKED
+FAILURE
+~~~~~~~
 
-    Task has been revoked.
+Task execution resulted in failure.
+
+.. state:: RETRY
+
+RETRY
+~~~~~
+
+Task is being retried.
+
+.. state:: REVOKED
+
+REVOKED
+~~~~~~~
+
+Task has been revoked.
 
 Sets
 ----
 
-.. data:: READY_STATES
+.. state:: READY_STATES
 
-    Set of states meaning the task result is ready (has been executed).
+READY_STATES
+~~~~~~~~~~~~
 
-.. data:: UNREADY_STATES
+Set of states meaning the task result is ready (has been executed).
 
-    Set of states meaning the task result is not ready (has not been executed).
+.. state:: UNREADY_STATES
 
-.. data:: EXCEPTION_STATES
+UNREADY_STATES
+~~~~~~~~~~~~~~
 
-    Set of states meaning the task returned an exception.
+Set of states meaning the task result is not ready (has not been executed).
 
-.. data:: PROPAGATE_STATES
+.. state:: EXCEPTION_STATES
 
-    Set of exception states that should propagate exceptions to the user.
+EXCEPTION_STATES
+~~~~~~~~~~~~~~~~
 
-.. data:: ALL_STATES
+Set of states meaning the task returned an exception.
 
-    Set of all possible states.
+.. state:: PROPAGATE_STATES
+
+PROPAGATE_STATES
+~~~~~~~~~~~~~~~~
+
+Set of exception states that should propagate exceptions to the user.
+
+.. state:: ALL_STATES
+
+ALL_STATES
+~~~~~~~~~~
+
+Set of all possible states.
 
 """
 

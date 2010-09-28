@@ -59,8 +59,8 @@ When git is installed you can finally clone the repo, storing it at the
     $ git clone git://github.com/mxcl/homebrew /lol
 
 
-Brew comes with a simple utility called ``brew``, used to install, remove and
-query packages. To use it you first have to add it to ``PATH``, by
+Brew comes with a simple utility called :program:`brew`, used to install, remove and
+query packages. To use it you first have to add it to :envvar:`PATH`, by
 adding the following line to the end of your ``~/.profile``::
 
     export PATH="/lol/bin:/lol/sbin:$PATH"
@@ -70,7 +70,7 @@ Save your profile and reload it::
     $ source ~/.profile
 
 
-Finally, we can install rabbitmq using ``brew``::
+Finally, we can install rabbitmq using :program:`brew`::
 
     $ brew install rabbitmq
 
@@ -87,7 +87,7 @@ If you're using a DHCP server that is giving you a random hostname, you need
 to permanently configure the hostname. This is because RabbitMQ uses the hostname
 to communicate with nodes.
 
-Use the ``scutil`` command to permanently set your hostname::
+Use the :program:`scutil` command to permanently set your hostname::
 
     sudo scutil --set HostName myhost.local
 
@@ -97,7 +97,7 @@ back into an IP address::
     127.0.0.1       localhost myhost myhost.local
 
 If you start the rabbitmq server, your rabbit node should now be ``rabbit@myhost``,
-as verified by ``rabbitmqctl``::
+as verified by :program:`rabbitmqctl`::
 
     $ sudo rabbitmqctl status
     Status of node rabbit@myhost ...
@@ -124,13 +124,13 @@ To start the server::
 
     $ sudo rabbitmq-server
 
-you can also run it in the background by adding the ``-detached`` option
+you can also run it in the background by adding the :option:`-detached` option
 (note: only one dash)::
 
     $ sudo rabbitmq-server -detached
 
-Never use ``kill`` to stop the RabbitMQ server, but rather use the
-``rabbitmqctl`` command::
+Never use :program:`kill` to stop the RabbitMQ server, but rather use the
+:program:`rabbitmqctl` command::
 
     $ sudo rabbitmqctl stop
 

@@ -38,20 +38,20 @@ hostname with the ``--hostname|-n`` argument::
 Stopping the worker
 ===================
 
-Shutdown should be accomplished using the ``TERM`` signal.
+Shutdown should be accomplished using the :sig:`TERM` signal.
 
 When shutdown is initiated the worker will finish any tasks it's currently
 executing before it terminates, so if these tasks are important you should
-wait for it to finish before doing anything drastic (like sending the ``KILL``
+wait for it to finish before doing anything drastic (like sending the :sig:`KILL`
 signal).
 
 If the worker won't shutdown after considerate time, for example because
-of tasks stuck in an infinite-loop, you can use the ``KILL`` signal to
+of tasks stuck in an infinite-loop, you can use the :sig:`KILL` signal to
 force terminate the worker, but be aware that currently executing tasks will
 be lost (unless the tasks have the :attr:`~celery.task.base.Task.acks_late`
 option set).
 
-Also, since the ``KILL`` signal can't be catched by processes the worker will
+Also, since the :sig:`KILL` signal can't be catched by processes the worker will
 not be able to reap its children so make sure you do it manually. This
 command usually does the trick::
 
@@ -63,7 +63,7 @@ Restarting the worker
 =====================
 
 Other than stopping then starting the worker to restart, you can also
-restart the worker using the ``HUP`` signal::
+restart the worker using the :sig:`HUP` signal::
 
     $ kill -HUP $pid
 
@@ -175,7 +175,7 @@ Some remote control commands also have higher-level interfaces using
 :func:`~celery.task.control.broadcast` in the background, like
 :func:`~celery.task.control.rate_limit` and :func:`~celery.task.control.ping`.
 
-Sending the ``rate_limit`` command and keyword arguments::
+Sending the :control:`rate_limit` command and keyword arguments::
 
     >>> from celery.task.control import broadcast
     >>> broadcast("rate_limit", arguments={"task_name": "myapp.mytask",
@@ -206,6 +206,8 @@ using :func:`~celery.task.control.broadcast`.
 
 .. _worker-rate-limits:
 
+.. control:: rate_limit
+
 Rate limits
 -----------
 
@@ -227,7 +229,7 @@ destination hostname::
     :setting:`CELERY_DISABLE_RATE_LIMITS` setting on. To re-enable rate limits
     then you have to restart the worker.
 
-.. _worker-remote-shutdown:
+.. control:: shutdown
 
 Remote shutdown
 ---------------
@@ -237,7 +239,7 @@ This command will gracefully shut down the worker remotely::
     >>> broadcast("shutdown") # shutdown all workers
     >>> broadcast("shutdown, destination="worker1.example.com")
 
-.. _worker-ping:
+.. control:: ping
 
 Ping
 ----
@@ -261,6 +263,9 @@ so you can specify which workers to ping::
      {'worker3.example.com': 'pong'}]
 
 .. _worker-enable-events:
+
+.. control:: enable_events
+.. control:: disable_events
 
 Enable/disable events
 ---------------------

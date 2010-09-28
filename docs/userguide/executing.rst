@@ -30,11 +30,11 @@ The same thing using ``apply_async`` is written like this:
     Task.apply_async(args=[arg1, arg2], kwargs={"kwarg1": "x", "kwarg2": "y"})
 
 
-While ``delay`` is convenient, it doesn't give you as much control as using ``apply_async``.
-With ``apply_async`` you can override the execution options available as attributes on
-the ``Task`` class: ``routing_key``, ``exchange``, ``immediate``, ``mandatory``,
-``priority``, and ``serializer``.  In addition you can set a countdown/eta, or provide
-a custom broker connection.
+While ``delay`` is convenient, it doesn't give you as much control as using
+``apply_async``.  With ``apply_async`` you can override the execution options
+available as attributes on the ``Task`` class:  ``routing_key``, ``exchange``,
+``immediate``, ``mandatory``, ``priority``, and ``serializer``.
+In addition you can set a countdown/eta, or provide a custom broker connection.
 
 Let's go over these in more detail. The following examples use this simple
 task, which adds together two numbers:
@@ -97,9 +97,9 @@ Serializers
 Data passed between celery and workers has to be serialized to be
 transferred. The default serializer is :mod:`pickle`, but you can 
 change this for each
-task. There is built-in support for using :mod:`pickle`, ``JSON`` and ``YAML``,
-and you can add your own custom serializers by registering them into the
-carrot serializer registry.
+task. There is built-in support for using :mod:`pickle`, ``JSON``, ``YAML``
+and ``msgpack``. You can also add your own custom serializers by registering
+them into the Carrot serializer registry.
 
 The default serializer (pickle) supports Python objects, like ``datetime`` and
 any custom datatypes you define yourself. But since pickle has poor support
