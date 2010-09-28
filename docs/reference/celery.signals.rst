@@ -1,3 +1,5 @@
+.. _signals:
+
 ========================================
 Signals - celery.signals
 ========================================
@@ -5,6 +7,8 @@ Signals - celery.signals
 .. contents::
     :local:
 .. currentmodule:: celery.signals
+
+.. _signal-basics:
 
 Basics
 ======
@@ -34,6 +38,8 @@ has been sent by providing the ``sender`` argument to
 .. code-block:: python
 
     task_sent.connect(task_sent_handler, sender="tasks.add")
+
+.. _signal-ref:
 
 Signals
 =======
