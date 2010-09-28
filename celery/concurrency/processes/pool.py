@@ -25,6 +25,7 @@ from multiprocessing import Process, cpu_count, TimeoutError
 from multiprocessing.util import Finalize, debug
 
 from celery.exceptions import SoftTimeLimitExceeded, TimeLimitExceeded
+from celery.exceptions import WorkerLostError
 
 #
 # Constants representing the state of a pool
@@ -43,15 +44,6 @@ READY = 1
 
 # Signal used for soft time limits.
 SIG_SOFT_TIMEOUT = getattr(signal, "SIGUSR1", None)
-
-#
-# Exceptions
-#
-
-
-class WorkerLostError(Exception):
-    """The worker processing a job has exited prematurely."""
-    pass
 
 #
 # Miscellaneous
