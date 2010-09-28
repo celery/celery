@@ -383,12 +383,6 @@ class ResultHandler(PoolThread):
                 on_state_change(task)
             join_exited_workers()
 
-            job, i, obj = task
-            try:
-                cache[job]._set(i, obj)
-            except KeyError:
-                pass
-
         if hasattr(outqueue, '_reader'):
             debug('ensuring that outqueue is not full')
             # If we don't make room available in outqueue then
