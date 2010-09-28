@@ -3,11 +3,13 @@
 import sys
 import os
 
+this = os.path.dirname(os.path.abspath(__file__))
+
 # If your extensions are in another directory, add it here. If the directory
 # is relative to the documentation root, use os.path.abspath to make it
 # absolute, like shown here.
 sys.path.append(os.path.join(os.pardir, "tests"))
-sys.path.append("_ext")
+sys.path.append(os.path.join(this, "_ext"))
 import celery
 
 # General configuration
