@@ -7,6 +7,11 @@
 .. contents::
     :local:
 
+
+This guide gives an overview of how tasks are defined. For a complete
+listing of task attributes and methods, please see the
+:class:`API reference <celery.task.base.Task>`.
+
 .. _task-basics:
 
 Basics
