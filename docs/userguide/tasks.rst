@@ -19,10 +19,11 @@ Given a function ``create_user``, that takes two arguments: ``username`` and
 .. code-block:: python
 
     from celery.task import Task
+    from django.contrib.auth import User
 
     class CreateUserTask(Task):
         def run(self, username, password):
-            create_user(username, password)
+            User.objects.create(username=username, password=password)
 
 For convenience there is a shortcut decorator that turns any function into
 a task:
