@@ -368,8 +368,8 @@ Example configuration
     CELERY_RESULT_BACKEND = "redis"
     REDIS_HOST = "localhost"
     REDIS_PORT = 6379
-    REDIS_DB = "celery_results"
-    REDIS_CONNECT_RETRY=True
+    REDIS_DB = 0
+    REDIS_CONNECT_RETRY = True
 
 .. _conf-mongodb-result-backend:
 
