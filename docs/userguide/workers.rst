@@ -87,6 +87,19 @@ may perform better than having a single worker. For example 3 celeryd's with
 works best for you as this varies based on application, work load, task
 run times and other factors.
 
+.. _worker-persistent-revokes:
+
+Persistent revokes
+==================
+
+Revoking tasks works by sending a broadcast message to all the workers,
+the workers then keep a list of revoked tasks in memory.
+
+If you want tasks to remain revoked after worker restart you need to
+specify a file for these to be stored in, either by using the ``--statedb``
+argument to :mod:`~celery.bin.celeryd` or the :setting:`CELERYD_STATE_DB`
+setting. See :setting:`CELERYD_STATE_DB` for more information.
+
 .. _worker-time-limits:
 
 Time limits
