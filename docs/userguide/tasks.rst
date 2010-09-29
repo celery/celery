@@ -460,7 +460,6 @@ aware of this state that the task is currently in progress, and where it is
 in the process by having ``current`` and ``total`` counts as part of the
 state metadata. This can then be used to create progressbars or similar.
 
-
 .. _task-how-they-work:
 
 How it works
@@ -693,7 +692,15 @@ Since celery is a distributed system, you can't know in which process, or even
 on what machine the task will run. Indeed you can't even know if the task will
 run in a timely manner, so please be wary of the state you pass on to tasks.
 
-One gotcha is Django model objects. They shouldn't be passed on as arguments
+The ancient async sayings tells us that “asserting the world is the
+responsibility of the task”.  What this means is that the world view may
+have changed since the task was requested, so the task is responsible for
+making sure the world is how it should be.  For example if you have a task
+that reindexes a search engine, and the search engine should only be reindexed
+at maximum every 5 minutes, then it must be the tasks responsibility to assert
+that, not the callers.
+
+Another gotcha is Django model objects. They shouldn't be passed on as arguments
 to task classes, it's almost always better to re-fetch the object from the
 database instead, as there are possible race conditions involved.
 
