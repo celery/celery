@@ -350,11 +350,12 @@ Message and routing options
 Task States
 ===========
 
-A task can be in several states, and each state can have arbitrary metadata
-attached to it. When a task moves into another state the previous state is
-forgotten about, but some transitions can be deducted, e.g. if a task is now
-in the :state:`FAILED` state, it's implied that it was at some point in the
-:state:`STARTED` state.
+During its lifetime a task will transition through several states,
+and each state may have arbitrary metadata attached to it.  When a task
+moves into another state the previous state is
+forgotten, but some transitions can be deducted, (e.g. a task now
+in the :state:`FAILED` state, is implied to have, been in the
+:state:`STARTED` state at some point).
 
 There are also sets of states, like the set of
 :state:`failure states <FAILURE_STATES>`, and the set of
@@ -362,8 +363,9 @@ There are also sets of states, like the set of
 
 The client uses the membership of these sets to decide whether
 the exception should be re-raised (:state:`PROPAGATE_STATES`), or if the result can
-be cached (which it can if the state is ready).
+be cached (it can if the task is ready).
 
+You can also define :ref:`custom-states`.
 
 .. _task-builtin-states:
 
@@ -432,6 +434,31 @@ REVOKED
 Task has been revoked.
 
 :propagates: Yes
+
+Custom states
+-------------
+
+You can easily define your own states, all you need is a unique name.
+The name of the state is usually an uppercase string.
+As an example you could have a look at
+:mod:`abortable tasks <~celery.contrib.abortable>` wich defines
+the :state:`ABORTED` state.
+
+To set the state of a task you use :meth:`Task.update_state
+<celery.task.base.Task.update_state>`::
+
+    @task
+    def upload_files(filenames, **kwargs):
+
+        for i, file in enumerate(filenames):
+            upload_files.update_state(kwargs["task_id"], "PROGRESS",
+                {"current": i, "total": len(filenames)})
+
+
+Here we created the state ``"PROGRESS"``, which tells any application
+aware of this state that the task is currently in progress, and where it is
+in the process by having ``current`` and ``total`` counts as part of the
+state metadata. This can then be used to create progressbars or similar.
 
 
 .. _task-how-they-work:
