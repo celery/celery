@@ -200,7 +200,7 @@ class Task(object):
 
     .. attribute:: acks_late
 
-        If set to :vonst:`True` messages for this task will be acknowledged
+        If set to :const:`True` messages for this task will be acknowledged
         **after** the task has been executed, not *just before*, which is
         the default behavior.
 
