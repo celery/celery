@@ -778,7 +778,7 @@ CELERY_STORE_ERRORS_EVEN_IF_IGNORED
 If set, the worker stores all task errors in the result store even if
 :attr:`Task.ignore_result <celery.task.base.Task.ignore_result>` is on.
 
-.. setting:: CELERY_STATE_DB
+.. setting:: CELERYD_STATE_DB
 
 CELERYD_STATE_DB
 ~~~~~~~~~~~~~~~~

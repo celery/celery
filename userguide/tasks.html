@@ -57,50 +57,66 @@
 <span id="guide-tasks"></span><h1>Tasks<a class="headerlink" href="#tasks" title="Permalink to this headline">¶</a></h1>
 <div class="contents local topic" id="contents">
 <ul class="simple">
-<li><a class="reference external" href="#basics" id="id2">Basics</a></li>
-<li><a class="reference external" href="#default-keyword-arguments" id="id3">Default keyword arguments</a></li>
-<li><a class="reference external" href="#logging" id="id4">Logging</a></li>
-<li><a class="reference external" href="#retrying-a-task-if-something-fails" id="id5">Retrying a task if something fails</a><ul>
-<li><a class="reference external" href="#using-a-custom-retry-delay" id="id6">Using a custom retry delay</a></li>
+<li><a class="reference external" href="#basics" id="id3">Basics</a></li>
+<li><a class="reference external" href="#default-keyword-arguments" id="id4">Default keyword arguments</a></li>
+<li><a class="reference external" href="#logging" id="id5">Logging</a></li>
+<li><a class="reference external" href="#retrying-a-task-if-something-fails" id="id6">Retrying a task if something fails</a><ul>
+<li><a class="reference external" href="#using-a-custom-retry-delay" id="id7">Using a custom retry delay</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#task-options" id="id7">Task options</a><ul>
-<li><a class="reference external" href="#general" id="id8">General</a></li>
-<li><a class="reference external" href="#message-and-routing-options" id="id9">Message and routing options</a></li>
+<li><a class="reference external" href="#task-options" id="id8">Task options</a><ul>
+<li><a class="reference external" href="#general" id="id9">General</a></li>
+<li><a class="reference external" href="#message-and-routing-options" id="id10">Message and routing options</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#example" id="id10">Example</a><ul>
-<li><a class="reference external" href="#blog-models-py" id="id11">blog/models.py</a></li>
-<li><a class="reference external" href="#blog-views-py" id="id12">blog/views.py</a></li>
-<li><a class="reference external" href="#blog-tasks-py" id="id13">blog/tasks.py</a></li>
+<li><a class="reference external" href="#task-states" id="id11">Task States</a><ul>
+<li><a class="reference external" href="#built-in-states" id="id12">Built-in States</a><ul>
+<li><a class="reference external" href="#pending" id="id13">PENDING</a></li>
+<li><a class="reference external" href="#started" id="id14">STARTED</a></li>
+<li><a class="reference external" href="#success" id="id15">SUCCESS</a></li>
+<li><a class="reference external" href="#failure" id="id16">FAILURE</a></li>
+<li><a class="reference external" href="#retry" id="id17">RETRY</a></li>
+<li><a class="reference external" href="#revoked" id="id18">REVOKED</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#how-it-works" id="id14">How it works</a></li>
-<li><a class="reference external" href="#tips-and-best-practices" id="id15">Tips and Best Practices</a><ul>
-<li><a class="reference external" href="#ignore-results-you-don-t-want" id="id16">Ignore results you don&#8217;t want</a></li>
-<li><a class="reference external" href="#disable-rate-limits-if-they-re-not-used" id="id17">Disable rate limits if they&#8217;re not used</a></li>
-<li><a class="reference external" href="#avoid-launching-synchronous-subtasks" id="id18">Avoid launching synchronous subtasks</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#performance-and-strategies" id="id19">Performance and Strategies</a><ul>
-<li><a class="reference external" href="#granularity" id="id20">Granularity</a></li>
-<li><a class="reference external" href="#data-locality" id="id21">Data locality</a></li>
-<li><a class="reference external" href="#state" id="id22">State</a></li>
-<li><a class="reference external" href="#database-transactions" id="id23">Database transactions</a></li>
+<li><a class="reference external" href="#how-it-works" id="id19">How it works</a></li>
+<li><a class="reference external" href="#tips-and-best-practices" id="id20">Tips and Best Practices</a><ul>
+<li><a class="reference external" href="#ignore-results-you-don-t-want" id="id21">Ignore results you don&#8217;t want</a></li>
+<li><a class="reference external" href="#disable-rate-limits-if-they-re-not-used" id="id22">Disable rate limits if they&#8217;re not used</a></li>
+<li><a class="reference external" href="#avoid-launching-synchronous-subtasks" id="id23">Avoid launching synchronous subtasks</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#performance-and-strategies" id="id24">Performance and Strategies</a><ul>
+<li><a class="reference external" href="#granularity" id="id25">Granularity</a></li>
+<li><a class="reference external" href="#data-locality" id="id26">Data locality</a></li>
+<li><a class="reference external" href="#state" id="id27">State</a></li>
+<li><a class="reference external" href="#database-transactions" id="id28">Database transactions</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#example" id="id29">Example</a><ul>
+<li><a class="reference external" href="#blog-models-py" id="id30">blog/models.py</a></li>
+<li><a class="reference external" href="#blog-views-py" id="id31">blog/views.py</a></li>
+<li><a class="reference external" href="#blog-tasks-py" id="id32">blog/tasks.py</a></li>
 </ul>
 </li>
 </ul>
 </div>
+<p>This guide gives an overview of how tasks are defined. For a complete
+listing of task attributes and methods, please see the
+<a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.Task" title="celery.task.base.Task"><tt class="xref py py-class docutils literal"><span class="pre">API</span> <span class="pre">reference</span></tt></a>.</p>
 <div class="section" id="basics">
-<span id="task-basics"></span><h2><a class="toc-backref" href="#id2">Basics</a><a class="headerlink" href="#basics" title="Permalink to this headline">¶</a></h2>
+<span id="task-basics"></span><h2><a class="toc-backref" href="#id3">Basics</a><a class="headerlink" href="#basics" title="Permalink to this headline">¶</a></h2>
 <p>A task is a class that encapsulates a function and its execution options.
 Given a function <tt class="docutils literal"><span class="pre">create_user</span></tt>, that takes two arguments: <tt class="docutils literal"><span class="pre">username</span></tt> and
 <tt class="docutils literal"><span class="pre">password</span></tt>, you can create a task like this:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.task</span> <span class="kn">import</span> <span class="n">Task</span>
+<span class="kn">from</span> <span class="nn">django.contrib.auth</span> <span class="kn">import</span> <span class="n">User</span>
 
 <span class="k">class</span> <span class="nc">CreateUserTask</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">):</span>
-        <span class="n">create_user</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+        <span class="n">User</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="n">password</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>For convenience there is a shortcut decorator that turns any function into
@@ -122,7 +138,7 @@ a task:</p>
 </div>
 </div>
 <div class="section" id="default-keyword-arguments">
-<span id="task-keyword-arguments"></span><h2><a class="toc-backref" href="#id3">Default keyword arguments</a><a class="headerlink" href="#default-keyword-arguments" title="Permalink to this headline">¶</a></h2>
+<span id="task-keyword-arguments"></span><h2><a class="toc-backref" href="#id4">Default keyword arguments</a><a class="headerlink" href="#default-keyword-arguments" title="Permalink to this headline">¶</a></h2>
 <p>Celery supports a set of default arguments that can be forwarded to any task.
 Tasks can choose not to take these, or list the ones they want.
 The worker will do the right thing.</p>
@@ -168,7 +184,7 @@ capabilities, you can&#8217;t trust the availability of keys in this mapping.</p
 </table>
 </div>
 <div class="section" id="logging">
-<span id="task-logging"></span><h2><a class="toc-backref" href="#id4">Logging</a><a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h2>
+<span id="task-logging"></span><h2><a class="toc-backref" href="#id5">Logging</a><a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h2>
 <p>You can use the workers logger to add diagnostic output to
 the worker log:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">AddTask</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
@@ -193,7 +209,7 @@ setting decides whether or not they will be written to the log file.</p>
 out/-err will be written to the logfile as well.</p>
 </div>
 <div class="section" id="retrying-a-task-if-something-fails">
-<span id="task-retry"></span><h2><a class="toc-backref" href="#id5">Retrying a task if something fails</a><a class="headerlink" href="#retrying-a-task-if-something-fails" title="Permalink to this headline">¶</a></h2>
+<span id="task-retry"></span><h2><a class="toc-backref" href="#id6">Retrying a task if something fails</a><a class="headerlink" href="#retrying-a-task-if-something-fails" title="Permalink to this headline">¶</a></h2>
 <p>Simply use <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.Task.retry" title="celery.task.base.Task.retry"><tt class="xref py py-meth docutils literal"><span class="pre">retry()</span></tt></a> to re-send the task.
 It will do the right thing, and respect the
 <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.Task.max_retries" title="celery.task.base.Task.max_retries"><tt class="xref py py-attr docutils literal"><span class="pre">max_retries</span></tt></a> attribute:</p>
@@ -219,7 +235,7 @@ passed on to the task. In addition, it also uses the <tt class="docutils literal
 argument to use the same task id, and <tt class="docutils literal"><span class="pre">delivery_info</span></tt> to route the
 retried task to the same destination.</p>
 <div class="section" id="using-a-custom-retry-delay">
-<span id="task-retry-custom-delay"></span><h3><a class="toc-backref" href="#id6">Using a custom retry delay</a><a class="headerlink" href="#using-a-custom-retry-delay" title="Permalink to this headline">¶</a></h3>
+<span id="task-retry-custom-delay"></span><h3><a class="toc-backref" href="#id7">Using a custom retry delay</a><a class="headerlink" href="#using-a-custom-retry-delay" title="Permalink to this headline">¶</a></h3>
 <p>When a task is to be retried, it will wait for a given amount of time
 before doing so. The default delay is in the
 <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.Task.default_retry_delay" title="celery.task.base.Task.default_retry_delay"><tt class="xref py py-attr docutils literal"><span class="pre">default_retry_delay</span></tt></a>
@@ -242,9 +258,9 @@ unit for setting the delay is in seconds (int or float).</p>
 </div>
 </div>
 <div class="section" id="task-options">
-<span id="id1"></span><h2><a class="toc-backref" href="#id7">Task options</a><a class="headerlink" href="#task-options" title="Permalink to this headline">¶</a></h2>
+<span id="id1"></span><h2><a class="toc-backref" href="#id8">Task options</a><a class="headerlink" href="#task-options" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="general">
-<h3><a class="toc-backref" href="#id8">General</a><a class="headerlink" href="#general" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id9">General</a><a class="headerlink" href="#general" title="Permalink to this headline">¶</a></h3>
 <span class="target" id="task-general-options"></span><dl class="attribute">
 <dt id="Task.name">
 <tt class="descclassname">Task.</tt><tt class="descname">name</tt><a class="headerlink" href="#Task.name" title="Permalink to this definition">¶</a></dt>
@@ -352,7 +368,7 @@ applications.</p>
 setting.</p>
 </dd></dl>
 
-<dl class="attribute">
+<span class="target" id="task-track-started"></span><dl class="attribute">
 <dt id="Task.track_started">
 <tt class="descclassname">Task.</tt><tt class="descname">track_started</tt><a class="headerlink" href="#Task.track_started" title="Permalink to this definition">¶</a></dt>
 <dd><p>If <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> the task will report its status as &#8220;started&#8221;
@@ -372,7 +388,7 @@ task is currently running.</p>
 </div>
 </div>
 <div class="section" id="message-and-routing-options">
-<span id="task-message-options"></span><h3><a class="toc-backref" href="#id9">Message and routing options</a><a class="headerlink" href="#message-and-routing-options" title="Permalink to this headline">¶</a></h3>
+<span id="task-message-options"></span><h3><a class="toc-backref" href="#id10">Message and routing options</a><a class="headerlink" href="#message-and-routing-options" title="Permalink to this headline">¶</a></h3>
 <dl class="attribute">
 <dt id="Task.queue">
 <tt class="descclassname">Task.</tt><tt class="descname">queue</tt><a class="headerlink" href="#Task.queue" title="Permalink to this definition">¶</a></dt>
@@ -427,121 +443,104 @@ and <a class="reference internal" href="routing.html#guide-routing"><em>Routing 
 </div>
 </div>
 </div>
-<div class="section" id="example">
-<span id="task-example"></span><h2><a class="toc-backref" href="#id10">Example</a><a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
-<p>Let&#8217;s take a real wold example; A blog where comments posted needs to be
-filtered for spam. When the comment is created, the spam filter runs in the
-background, so the user doesn&#8217;t have to wait for it to finish.</p>
-<p>We have a Django blog application allowing comments
-on blog posts. We&#8217;ll describe parts of the models/views and tasks for this
-application.</p>
-<div class="section" id="blog-models-py">
-<h3><a class="toc-backref" href="#id11">blog/models.py</a><a class="headerlink" href="#blog-models-py" title="Permalink to this headline">¶</a></h3>
-<p>The comment model looks like this:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">models</span>
-<span class="kn">from</span> <span class="nn">django.utils.translation</span> <span class="kn">import</span> <span class="n">ugettext_lazy</span> <span class="k">as</span> <span class="n">_</span>
-
-
-<span class="k">class</span> <span class="nc">Comment</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">name</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s">&quot;name&quot;</span><span class="p">),</span> <span class="n">max_length</span><span class="o">=</span><span class="mi">64</span><span class="p">)</span>
-    <span class="n">email_address</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">EmailField</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s">&quot;e-mail address&quot;</span><span class="p">))</span>
-    <span class="n">homepage</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">URLField</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s">&quot;home page&quot;</span><span class="p">),</span>
-                               <span class="n">blank</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">verify_exists</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
-    <span class="n">comment</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s">&quot;comment&quot;</span><span class="p">))</span>
-    <span class="n">pub_date</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s">&quot;Published date&quot;</span><span class="p">),</span>
-                                    <span class="n">editable</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">auto_add_now</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-    <span class="n">is_spam</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s">&quot;spam?&quot;</span><span class="p">),</span>
-                                  <span class="n">default</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">editable</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
-
-    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
-        <span class="n">verbose_name</span> <span class="o">=</span> <span class="n">_</span><span class="p">(</span><span class="s">&quot;comment&quot;</span><span class="p">)</span>
-        <span class="n">verbose_name_plural</span> <span class="o">=</span> <span class="n">_</span><span class="p">(</span><span class="s">&quot;comments&quot;</span><span class="p">)</span>
-</pre></div>
+<div class="section" id="task-states">
+<span id="id2"></span><h2><a class="toc-backref" href="#id11">Task States</a><a class="headerlink" href="#task-states" title="Permalink to this headline">¶</a></h2>
+<p>A task can be in several states, and each state can have arbitrary metadata
+attached to it. When a task moves into another state the previous state is
+forgotten about, but some transitions can be deducted, e.g. if a task is now
+in the <tt class="xref std std-state docutils literal"><span class="pre">FAILED</span></tt> state, it&#8217;s implied that it was at some point in the
+<a class="reference internal" href="#std:state-STARTED"><tt class="xref std std-state docutils literal"><span class="pre">STARTED</span></tt></a> state.</p>
+<p>There are also sets of states, like the set of
+<tt class="xref std std-state docutils literal"><span class="pre">failure</span> <span class="pre">states</span></tt>, and the set of
+<a class="reference internal" href="../reference/celery.states.html#std:state-READY_STATES"><tt class="xref std std-state docutils literal"><span class="pre">ready</span> <span class="pre">states</span></tt></a>.</p>
+<p>The client uses the membership of these sets to decide whether
+the exception should be re-raised (<a class="reference internal" href="../reference/celery.states.html#std:state-PROPAGATE_STATES"><tt class="xref std std-state docutils literal"><span class="pre">PROPAGATE_STATES</span></tt></a>), or if the result can
+be cached (which it can if the state is ready).</p>
+<div class="section" id="built-in-states">
+<span id="task-builtin-states"></span><h3><a class="toc-backref" href="#id12">Built-in States</a><a class="headerlink" href="#built-in-states" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="pending">
+<span id="std:state-PENDING"></span><h4><a class="toc-backref" href="#id13">PENDING</a><a class="headerlink" href="#pending" title="Permalink to this headline">¶</a></h4>
+<p>Task is waiting for execution or unknown.
+Any task id that is not know is implied to be in the pending state.</p>
 </div>
-<p>In the view where the comment is posted, we first write the comment
-to the database, then we launch the spam filter task in the background.</p>
+<div class="section" id="started">
+<span id="std:state-STARTED"></span><h4><a class="toc-backref" href="#id14">STARTED</a><a class="headerlink" href="#started" title="Permalink to this headline">¶</a></h4>
+<p>Task has been started.
+Not reported by default, to enable please see <em class="xref std std-ref">task-track-started</em>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">metadata:</th><td class="field-body"><tt class="docutils literal"><span class="pre">pid</span></tt> and <tt class="docutils literal"><span class="pre">hostname</span></tt> of the worker process executing
+the task.</td>
+</tr>
+</tbody>
+</table>
 </div>
-<div class="section" id="blog-views-py">
-<span id="task-example-blog-views"></span><h3><a class="toc-backref" href="#id12">blog/views.py</a><a class="headerlink" href="#blog-views-py" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">django</span> <span class="kn">import</span> <span class="n">forms</span>
-<span class="kn">from</span> <span class="nn">django.http</span> <span class="kn">import</span> <span class="n">HttpResponseRedirect</span>
-<span class="kn">from</span> <span class="nn">django.template.context</span> <span class="kn">import</span> <span class="n">RequestContext</span>
-<span class="kn">from</span> <span class="nn">django.shortcuts</span> <span class="kn">import</span> <span class="n">get_object_or_404</span><span class="p">,</span> <span class="n">render_to_response</span>
-
-<span class="kn">from</span> <span class="nn">blog</span> <span class="kn">import</span> <span class="n">tasks</span>
-<span class="kn">from</span> <span class="nn">blog.models</span> <span class="kn">import</span> <span class="n">Comment</span>
-
-
-<span class="k">class</span> <span class="nc">CommentForm</span><span class="p">(</span><span class="n">forms</span><span class="o">.</span><span class="n">ModelForm</span><span class="p">):</span>
-
-    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
-        <span class="n">model</span> <span class="o">=</span> <span class="n">Comment</span>
-
-
-<span class="k">def</span> <span class="nf">add_comment</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">slug</span><span class="p">,</span> <span class="n">template_name</span><span class="o">=</span><span class="s">&quot;comments/create.html&quot;</span><span class="p">):</span>
-    <span class="n">post</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">Entry</span><span class="p">,</span> <span class="n">slug</span><span class="o">=</span><span class="n">slug</span><span class="p">)</span>
-    <span class="n">remote_addr</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">META</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;REMOTE_ADDR&quot;</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s">&quot;post&quot;</span><span class="p">:</span>
-        <span class="n">form</span> <span class="o">=</span> <span class="n">CommentForm</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">,</span> <span class="n">request</span><span class="o">.</span><span class="n">FILES</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">form</span><span class="o">.</span><span class="n">is_valid</span><span class="p">():</span>
-            <span class="n">comment</span> <span class="o">=</span> <span class="n">form</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
-            <span class="c"># Check spam asynchronously.</span>
-            <span class="n">tasks</span><span class="o">.</span><span class="n">spam_filter</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">comment_id</span><span class="o">=</span><span class="n">comment</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
-                                    <span class="n">remote_addr</span><span class="o">=</span><span class="n">remote_addr</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">HttpResponseRedirect</span><span class="p">(</span><span class="n">post</span><span class="o">.</span><span class="n">get_absolute_url</span><span class="p">())</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">form</span> <span class="o">=</span> <span class="n">CommentForm</span><span class="p">()</span>
-
-    <span class="n">context</span> <span class="o">=</span> <span class="n">RequestContext</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="p">{</span><span class="s">&quot;form&quot;</span><span class="p">:</span> <span class="n">form</span><span class="p">})</span>
-    <span class="k">return</span> <span class="n">render_to_response</span><span class="p">(</span><span class="n">template_name</span><span class="p">,</span> <span class="n">context_instance</span><span class="o">=</span><span class="n">context</span><span class="p">)</span>
-</pre></div>
+<div class="section" id="success">
+<span id="std:state-SUCCESS"></span><h4><a class="toc-backref" href="#id15">SUCCESS</a><a class="headerlink" href="#success" title="Permalink to this headline">¶</a></h4>
+<p>Task has been successfully executed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">metadata:</th><td class="field-body"><tt class="docutils literal"><span class="pre">result</span></tt> contains the return value of the task.</td>
+</tr>
+<tr class="field"><th class="field-name">propagates:</th><td class="field-body">Yes</td>
+</tr>
+<tr class="field"><th class="field-name">ready:</th><td class="field-body">Yes</td>
+</tr>
+</tbody>
+</table>
 </div>
-<p>To filter spam in comments we use <a class="reference external" href="http://akismet.com/faq/">Akismet</a>, the service
-used to filter spam in comments posted to the free weblog platform
-<cite>Wordpress</cite>. <a class="reference external" href="http://akismet.com/faq/">Akismet</a> is free for personal use, but for commercial use you
-need to pay. You have to sign up to their service to get an API key.</p>
-<p>To make API calls to <a class="reference external" href="http://akismet.com/faq/">Akismet</a> we use the <a class="reference external" href="http://www.voidspace.org.uk/downloads/akismet.py">akismet.py</a> library written by
-Michael Foord.</p>
+<div class="section" id="failure">
+<span id="std:state-FAILURE"></span><h4><a class="toc-backref" href="#id16">FAILURE</a><a class="headerlink" href="#failure" title="Permalink to this headline">¶</a></h4>
+<p>Task execution resulted in failure.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">metadata:</th><td class="field-body"><tt class="docutils literal"><span class="pre">result</span></tt> contains the exception occured, and <tt class="docutils literal"><span class="pre">traceback</span></tt>
+contains the backtrace of the stack at the point when the
+exception was raised.</td>
+</tr>
+<tr class="field"><th class="field-name">propagates:</th><td class="field-body">Yes</td>
+</tr>
+</tbody>
+</table>
 </div>
-<div class="section" id="blog-tasks-py">
-<span id="task-example-blog-tasks"></span><h3><a class="toc-backref" href="#id13">blog/tasks.py</a><a class="headerlink" href="#blog-tasks-py" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">akismet</span> <span class="kn">import</span> <span class="n">Akismet</span>
-<span class="kn">from</span> <span class="nn">celery.decorators</span> <span class="kn">import</span> <span class="n">task</span>
-
-<span class="kn">from</span> <span class="nn">django.core.exceptions</span> <span class="kn">import</span> <span class="n">ImproperlyConfigured</span>
-<span class="kn">from</span> <span class="nn">django.contrib.sites.models</span> <span class="kn">import</span> <span class="n">Site</span>
-
-<span class="kn">from</span> <span class="nn">blog.models</span> <span class="kn">import</span> <span class="n">Comment</span>
-
-
-<span class="nd">@task</span>
-<span class="k">def</span> <span class="nf">spam_filter</span><span class="p">(</span><span class="n">comment_id</span><span class="p">,</span> <span class="n">remote_addr</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="n">logger</span> <span class="o">=</span> <span class="n">spam_filter</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Running spam filter for comment </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">comment_id</span><span class="p">)</span>
-
-        <span class="n">comment</span> <span class="o">=</span> <span class="n">Comment</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">pk</span><span class="o">=</span><span class="n">comment_id</span><span class="p">)</span>
-        <span class="n">current_domain</span> <span class="o">=</span> <span class="n">Site</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_current</span><span class="p">()</span><span class="o">.</span><span class="n">domain</span>
-        <span class="n">akismet</span> <span class="o">=</span> <span class="n">Akismet</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">AKISMET_KEY</span><span class="p">,</span> <span class="s">&quot;http://</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">domain</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">akismet</span><span class="o">.</span><span class="n">verify_key</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="n">ImproperlyConfigured</span><span class="p">(</span><span class="s">&quot;Invalid AKISMET_KEY&quot;</span><span class="p">)</span>
-
-
-        <span class="n">is_spam</span> <span class="o">=</span> <span class="n">akismet</span><span class="o">.</span><span class="n">comment_check</span><span class="p">(</span><span class="n">user_ip</span><span class="o">=</span><span class="n">remote_addr</span><span class="p">,</span>
-                            <span class="n">comment_content</span><span class="o">=</span><span class="n">comment</span><span class="o">.</span><span class="n">comment</span><span class="p">,</span>
-                            <span class="n">comment_author</span><span class="o">=</span><span class="n">comment</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
-                            <span class="n">comment_author_email</span><span class="o">=</span><span class="n">comment</span><span class="o">.</span><span class="n">email_address</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">is_spam</span><span class="p">:</span>
-            <span class="n">comment</span><span class="o">.</span><span class="n">is_spam</span> <span class="o">=</span> <span class="bp">True</span>
-            <span class="n">comment</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
-
-        <span class="k">return</span> <span class="n">is_spam</span>
-</pre></div>
+<div class="section" id="retry">
+<span id="std:state-RETRY"></span><h4><a class="toc-backref" href="#id17">RETRY</a><a class="headerlink" href="#retry" title="Permalink to this headline">¶</a></h4>
+<p>Task is being retried.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">metadata:</th><td class="field-body"><tt class="docutils literal"><span class="pre">result</span></tt> contains the exception that caused the retry,
+and <tt class="docutils literal"><span class="pre">traceback</span></tt> contains the backtrace of the stack at the point
+when the exceptions was raised.</td>
+</tr>
+<tr class="field"><th class="field-name">propagates:</th><td class="field-body">No</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="revoked">
+<span id="std:state-REVOKED"></span><h4><a class="toc-backref" href="#id18">REVOKED</a><a class="headerlink" href="#revoked" title="Permalink to this headline">¶</a></h4>
+<p>Task has been revoked.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">propagates:</th><td class="field-body">Yes</td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 </div>
 <div class="section" id="how-it-works">
-<span id="task-how-they-work"></span><h2><a class="toc-backref" href="#id14">How it works</a><a class="headerlink" href="#how-it-works" title="Permalink to this headline">¶</a></h2>
+<span id="task-how-they-work"></span><h2><a class="toc-backref" href="#id19">How it works</a><a class="headerlink" href="#how-it-works" title="Permalink to this headline">¶</a></h2>
 <p>Here comes the technical details, this part isn&#8217;t something you need to know,
 but you may be interested.</p>
 <p>All defined tasks are listed in a registry. The registry contains
@@ -585,9 +584,9 @@ as the client. This is a drawback, but the alternative is a technical
 challenge that has yet to be solved.</p>
 </div>
 <div class="section" id="tips-and-best-practices">
-<span id="task-best-practices"></span><h2><a class="toc-backref" href="#id15">Tips and Best Practices</a><a class="headerlink" href="#tips-and-best-practices" title="Permalink to this headline">¶</a></h2>
+<span id="task-best-practices"></span><h2><a class="toc-backref" href="#id20">Tips and Best Practices</a><a class="headerlink" href="#tips-and-best-practices" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="ignore-results-you-don-t-want">
-<span id="task-ignore-results"></span><h3><a class="toc-backref" href="#id16">Ignore results you don&#8217;t want</a><a class="headerlink" href="#ignore-results-you-don-t-want" title="Permalink to this headline">¶</a></h3>
+<span id="task-ignore-results"></span><h3><a class="toc-backref" href="#id21">Ignore results you don&#8217;t want</a><a class="headerlink" href="#ignore-results-you-don-t-want" title="Permalink to this headline">¶</a></h3>
 <p>If you don&#8217;t care about the results of a task, be sure to set the
 <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.Task.ignore_result" title="celery.task.base.Task.ignore_result"><tt class="xref py py-attr docutils literal"><span class="pre">ignore_result</span></tt></a> option, as storing results
 wastes time and resources.</p>
@@ -599,7 +598,7 @@ def mytask(...)
 <a class="reference internal" href="../configuration.html#std:setting-CELERY_IGNORE_RESULT"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_IGNORE_RESULT</span></tt></a> setting.</p>
 </div>
 <div class="section" id="disable-rate-limits-if-they-re-not-used">
-<span id="task-disable-rate-limits"></span><h3><a class="toc-backref" href="#id17">Disable rate limits if they&#8217;re not used</a><a class="headerlink" href="#disable-rate-limits-if-they-re-not-used" title="Permalink to this headline">¶</a></h3>
+<span id="task-disable-rate-limits"></span><h3><a class="toc-backref" href="#id22">Disable rate limits if they&#8217;re not used</a><a class="headerlink" href="#disable-rate-limits-if-they-re-not-used" title="Permalink to this headline">¶</a></h3>
 <p>Disabling rate limits altogether is recommended if you don&#8217;t have
 any tasks using them. This is because the rate limit subsystem introduces
 quite a lot of complexity.</p>
@@ -610,7 +609,7 @@ rate limits:</p>
 </div>
 </div>
 <div class="section" id="avoid-launching-synchronous-subtasks">
-<span id="task-synchronous-subtasks"></span><h3><a class="toc-backref" href="#id18">Avoid launching synchronous subtasks</a><a class="headerlink" href="#avoid-launching-synchronous-subtasks" title="Permalink to this headline">¶</a></h3>
+<span id="task-synchronous-subtasks"></span><h3><a class="toc-backref" href="#id23">Avoid launching synchronous subtasks</a><a class="headerlink" href="#avoid-launching-synchronous-subtasks" title="Permalink to this headline">¶</a></h3>
 <p>Having a task wait for the result of another task is really inefficient,
 and may even cause a deadlock if the worker pool is exhausted.</p>
 <p>Make your design asynchronous instead, for example by using <em>callbacks</em>.</p>
@@ -672,9 +671,9 @@ for a single task invocation.</p>
 </div>
 </div>
 <div class="section" id="performance-and-strategies">
-<span id="task-performance-and-strategies"></span><h2><a class="toc-backref" href="#id19">Performance and Strategies</a><a class="headerlink" href="#performance-and-strategies" title="Permalink to this headline">¶</a></h2>
+<span id="task-performance-and-strategies"></span><h2><a class="toc-backref" href="#id24">Performance and Strategies</a><a class="headerlink" href="#performance-and-strategies" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="granularity">
-<span id="task-granularity"></span><h3><a class="toc-backref" href="#id20">Granularity</a><a class="headerlink" href="#granularity" title="Permalink to this headline">¶</a></h3>
+<span id="task-granularity"></span><h3><a class="toc-backref" href="#id25">Granularity</a><a class="headerlink" href="#granularity" title="Permalink to this headline">¶</a></h3>
 <p>The task granularity is the amount of computation needed by each subtask.
 It&#8217;s generally better to split your problem up in many small tasks, than
 having a few long running ones.</p>
@@ -690,7 +689,7 @@ of task granularity.</p>
 </div>
 </div>
 <div class="section" id="data-locality">
-<span id="task-data-locality"></span><h3><a class="toc-backref" href="#id21">Data locality</a><a class="headerlink" href="#data-locality" title="Permalink to this headline">¶</a></h3>
+<span id="task-data-locality"></span><h3><a class="toc-backref" href="#id26">Data locality</a><a class="headerlink" href="#data-locality" title="Permalink to this headline">¶</a></h3>
 <p>The worker processing the task should be as close to the data as
 possible. The best would be to have a copy in memory, the worst being a
 full transfer from another continent.</p>
@@ -706,7 +705,7 @@ introduction to the topic of data locality.</p>
 </div>
 </div>
 <div class="section" id="state">
-<span id="task-state"></span><h3><a class="toc-backref" href="#id22">State</a><a class="headerlink" href="#state" title="Permalink to this headline">¶</a></h3>
+<span id="task-state"></span><h3><a class="toc-backref" href="#id27">State</a><a class="headerlink" href="#state" title="Permalink to this headline">¶</a></h3>
 <p>Since celery is a distributed system, you can&#8217;t know in which process, or even
 on what machine the task will run. Indeed you can&#8217;t even know if the task will
 run in a timely manner, so please be wary of the state you pass on to tasks.</p>
@@ -749,7 +748,7 @@ def expand_abbreviations(article_id):
 messages may be expensive.</p>
 </div>
 <div class="section" id="database-transactions">
-<span id="task-database-transactions"></span><h3><a class="toc-backref" href="#id23">Database transactions</a><a class="headerlink" href="#database-transactions" title="Permalink to this headline">¶</a></h3>
+<span id="task-database-transactions"></span><h3><a class="toc-backref" href="#id28">Database transactions</a><a class="headerlink" href="#database-transactions" title="Permalink to this headline">¶</a></h3>
 <p>Let&#8217;s look at another example:</p>
 <div class="highlight-python"><pre>from django.db import transaction
 
@@ -777,6 +776,119 @@ that depends on state from the current transaction</strong>:</p>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">transaction</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
         <span class="n">expand_abbreviations</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">article</span><span class="o">.</span><span class="n">pk</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="example">
+<span id="task-example"></span><h2><a class="toc-backref" href="#id29">Example</a><a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<p>Let&#8217;s take a real wold example; A blog where comments posted needs to be
+filtered for spam. When the comment is created, the spam filter runs in the
+background, so the user doesn&#8217;t have to wait for it to finish.</p>
+<p>We have a Django blog application allowing comments
+on blog posts. We&#8217;ll describe parts of the models/views and tasks for this
+application.</p>
+<div class="section" id="blog-models-py">
+<h3><a class="toc-backref" href="#id30">blog/models.py</a><a class="headerlink" href="#blog-models-py" title="Permalink to this headline">¶</a></h3>
+<p>The comment model looks like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">models</span>
+<span class="kn">from</span> <span class="nn">django.utils.translation</span> <span class="kn">import</span> <span class="n">ugettext_lazy</span> <span class="k">as</span> <span class="n">_</span>
+
+
+<span class="k">class</span> <span class="nc">Comment</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s">&quot;name&quot;</span><span class="p">),</span> <span class="n">max_length</span><span class="o">=</span><span class="mi">64</span><span class="p">)</span>
+    <span class="n">email_address</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">EmailField</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s">&quot;e-mail address&quot;</span><span class="p">))</span>
+    <span class="n">homepage</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">URLField</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s">&quot;home page&quot;</span><span class="p">),</span>
+                               <span class="n">blank</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">verify_exists</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="n">comment</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s">&quot;comment&quot;</span><span class="p">))</span>
+    <span class="n">pub_date</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s">&quot;Published date&quot;</span><span class="p">),</span>
+                                    <span class="n">editable</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">auto_add_now</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">is_spam</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s">&quot;spam?&quot;</span><span class="p">),</span>
+                                  <span class="n">default</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">editable</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">verbose_name</span> <span class="o">=</span> <span class="n">_</span><span class="p">(</span><span class="s">&quot;comment&quot;</span><span class="p">)</span>
+        <span class="n">verbose_name_plural</span> <span class="o">=</span> <span class="n">_</span><span class="p">(</span><span class="s">&quot;comments&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>In the view where the comment is posted, we first write the comment
+to the database, then we launch the spam filter task in the background.</p>
+</div>
+<div class="section" id="blog-views-py">
+<span id="task-example-blog-views"></span><h3><a class="toc-backref" href="#id31">blog/views.py</a><a class="headerlink" href="#blog-views-py" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">django</span> <span class="kn">import</span> <span class="n">forms</span>
+<span class="kn">from</span> <span class="nn">django.http</span> <span class="kn">import</span> <span class="n">HttpResponseRedirect</span>
+<span class="kn">from</span> <span class="nn">django.template.context</span> <span class="kn">import</span> <span class="n">RequestContext</span>
+<span class="kn">from</span> <span class="nn">django.shortcuts</span> <span class="kn">import</span> <span class="n">get_object_or_404</span><span class="p">,</span> <span class="n">render_to_response</span>
+
+<span class="kn">from</span> <span class="nn">blog</span> <span class="kn">import</span> <span class="n">tasks</span>
+<span class="kn">from</span> <span class="nn">blog.models</span> <span class="kn">import</span> <span class="n">Comment</span>
+
+
+<span class="k">class</span> <span class="nc">CommentForm</span><span class="p">(</span><span class="n">forms</span><span class="o">.</span><span class="n">ModelForm</span><span class="p">):</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">Comment</span>
+
+
+<span class="k">def</span> <span class="nf">add_comment</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">slug</span><span class="p">,</span> <span class="n">template_name</span><span class="o">=</span><span class="s">&quot;comments/create.html&quot;</span><span class="p">):</span>
+    <span class="n">post</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span><span class="n">Entry</span><span class="p">,</span> <span class="n">slug</span><span class="o">=</span><span class="n">slug</span><span class="p">)</span>
+    <span class="n">remote_addr</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">META</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;REMOTE_ADDR&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s">&quot;post&quot;</span><span class="p">:</span>
+        <span class="n">form</span> <span class="o">=</span> <span class="n">CommentForm</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">,</span> <span class="n">request</span><span class="o">.</span><span class="n">FILES</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">form</span><span class="o">.</span><span class="n">is_valid</span><span class="p">():</span>
+            <span class="n">comment</span> <span class="o">=</span> <span class="n">form</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+            <span class="c"># Check spam asynchronously.</span>
+            <span class="n">tasks</span><span class="o">.</span><span class="n">spam_filter</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">comment_id</span><span class="o">=</span><span class="n">comment</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                                    <span class="n">remote_addr</span><span class="o">=</span><span class="n">remote_addr</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">HttpResponseRedirect</span><span class="p">(</span><span class="n">post</span><span class="o">.</span><span class="n">get_absolute_url</span><span class="p">())</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">form</span> <span class="o">=</span> <span class="n">CommentForm</span><span class="p">()</span>
+
+    <span class="n">context</span> <span class="o">=</span> <span class="n">RequestContext</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="p">{</span><span class="s">&quot;form&quot;</span><span class="p">:</span> <span class="n">form</span><span class="p">})</span>
+    <span class="k">return</span> <span class="n">render_to_response</span><span class="p">(</span><span class="n">template_name</span><span class="p">,</span> <span class="n">context_instance</span><span class="o">=</span><span class="n">context</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To filter spam in comments we use <a class="reference external" href="http://akismet.com/faq/">Akismet</a>, the service
+used to filter spam in comments posted to the free weblog platform
+<cite>Wordpress</cite>. <a class="reference external" href="http://akismet.com/faq/">Akismet</a> is free for personal use, but for commercial use you
+need to pay. You have to sign up to their service to get an API key.</p>
+<p>To make API calls to <a class="reference external" href="http://akismet.com/faq/">Akismet</a> we use the <a class="reference external" href="http://www.voidspace.org.uk/downloads/akismet.py">akismet.py</a> library written by
+Michael Foord.</p>
+</div>
+<div class="section" id="blog-tasks-py">
+<span id="task-example-blog-tasks"></span><h3><a class="toc-backref" href="#id32">blog/tasks.py</a><a class="headerlink" href="#blog-tasks-py" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">akismet</span> <span class="kn">import</span> <span class="n">Akismet</span>
+<span class="kn">from</span> <span class="nn">celery.decorators</span> <span class="kn">import</span> <span class="n">task</span>
+
+<span class="kn">from</span> <span class="nn">django.core.exceptions</span> <span class="kn">import</span> <span class="n">ImproperlyConfigured</span>
+<span class="kn">from</span> <span class="nn">django.contrib.sites.models</span> <span class="kn">import</span> <span class="n">Site</span>
+
+<span class="kn">from</span> <span class="nn">blog.models</span> <span class="kn">import</span> <span class="n">Comment</span>
+
+
+<span class="nd">@task</span>
+<span class="k">def</span> <span class="nf">spam_filter</span><span class="p">(</span><span class="n">comment_id</span><span class="p">,</span> <span class="n">remote_addr</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">logger</span> <span class="o">=</span> <span class="n">spam_filter</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Running spam filter for comment </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">comment_id</span><span class="p">)</span>
+
+        <span class="n">comment</span> <span class="o">=</span> <span class="n">Comment</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">pk</span><span class="o">=</span><span class="n">comment_id</span><span class="p">)</span>
+        <span class="n">current_domain</span> <span class="o">=</span> <span class="n">Site</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_current</span><span class="p">()</span><span class="o">.</span><span class="n">domain</span>
+        <span class="n">akismet</span> <span class="o">=</span> <span class="n">Akismet</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">AKISMET_KEY</span><span class="p">,</span> <span class="s">&quot;http://</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">domain</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">akismet</span><span class="o">.</span><span class="n">verify_key</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">ImproperlyConfigured</span><span class="p">(</span><span class="s">&quot;Invalid AKISMET_KEY&quot;</span><span class="p">)</span>
+
+
+        <span class="n">is_spam</span> <span class="o">=</span> <span class="n">akismet</span><span class="o">.</span><span class="n">comment_check</span><span class="p">(</span><span class="n">user_ip</span><span class="o">=</span><span class="n">remote_addr</span><span class="p">,</span>
+                            <span class="n">comment_content</span><span class="o">=</span><span class="n">comment</span><span class="o">.</span><span class="n">comment</span><span class="p">,</span>
+                            <span class="n">comment_author</span><span class="o">=</span><span class="n">comment</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                            <span class="n">comment_author_email</span><span class="o">=</span><span class="n">comment</span><span class="o">.</span><span class="n">email_address</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">is_spam</span><span class="p">:</span>
+            <span class="n">comment</span><span class="o">.</span><span class="n">is_spam</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="n">comment</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">is_spam</span>
 </pre></div>
 </div>
 </div>

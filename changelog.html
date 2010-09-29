@@ -406,13 +406,13 @@ not just globally.</p>
 <tt class="docutils literal"><span class="pre">remaining_estimate</span></tt>.</p>
 </li>
 <li><dl class="first docutils">
-<dt>celeryd:  Store <a class="reference internal" href="reference/celery.states.html#std:state-FAILURE"><tt class="xref std std-state docutils literal"><span class="pre">FAILURE</span></tt></a> result if the</dt>
+<dt>celeryd:  Store <a class="reference internal" href="userguide/tasks.html#std:state-FAILURE"><tt class="xref std std-state docutils literal"><span class="pre">FAILURE</span></tt></a> result if the</dt>
 <dd><p class="first last"><a class="reference internal" href="reference/celery.exceptions.html#celery.exceptions.WorkerLostError" title="celery.exceptions.WorkerLostError"><tt class="xref py py-exc docutils literal"><span class="pre">WorkerLostError</span></tt></a> exception occurs (worker process
 disappeared).</p>
 </dd>
 </dl>
 </li>
-<li><p class="first">celeryd: Store <a class="reference internal" href="reference/celery.states.html#std:state-FAILURE"><tt class="xref std std-state docutils literal"><span class="pre">FAILURE</span></tt></a> result if one of the <tt class="docutils literal"><span class="pre">*TimeLimitExceeded</span></tt>
+<li><p class="first">celeryd: Store <a class="reference internal" href="userguide/tasks.html#std:state-FAILURE"><tt class="xref std std-state docutils literal"><span class="pre">FAILURE</span></tt></a> result if one of the <tt class="docutils literal"><span class="pre">*TimeLimitExceeded</span></tt>
 exceptions occurs.</p>
 </li>
 <li><p class="first">Refactored the periodic task responsible for cleaning up results.</p>
@@ -1556,7 +1556,7 @@ have priority.</p>
 the process is terminated and replaced by a new one.</p>
 </blockquote>
 </li>
-<li><p class="first">Revoked tasks now marked with state <a class="reference internal" href="reference/celery.states.html#std:state-REVOKED"><tt class="xref std std-state docutils literal"><span class="pre">REVOKED</span></tt></a>, and <tt class="docutils literal"><span class="pre">result.get()</span></tt>
+<li><p class="first">Revoked tasks now marked with state <a class="reference internal" href="userguide/tasks.html#std:state-REVOKED"><tt class="xref std std-state docutils literal"><span class="pre">REVOKED</span></tt></a>, and <tt class="docutils literal"><span class="pre">result.get()</span></tt>
 will now raise <a class="reference internal" href="reference/celery.exceptions.html#celery.exceptions.TaskRevokedError" title="celery.exceptions.TaskRevokedError"><tt class="xref py py-exc docutils literal"><span class="pre">TaskRevokedError</span></tt></a>.</p>
 </li>
 <li><p class="first"><a class="reference internal" href="reference/celery.task.control.html#celery.task.control.ping" title="celery.task.control.ping"><tt class="xref py py-func docutils literal"><span class="pre">celery.task.control.ping()</span></tt></a> now works as expected.</p>
@@ -2818,7 +2818,7 @@ than the django-global cache backend.</li>
 <li>Use custom implementation of functools.partial (curry) for Python 2.4 support
 (Probably still problems with running on 2.4, but it will eventually be
 supported)</li>
-<li>Prepare exception to pickle when saving <a class="reference internal" href="reference/celery.states.html#std:state-RETRY"><tt class="xref std std-state docutils literal"><span class="pre">RETRY</span></tt></a> status for all backends.</li>
+<li>Prepare exception to pickle when saving <a class="reference internal" href="userguide/tasks.html#std:state-RETRY"><tt class="xref std std-state docutils literal"><span class="pre">RETRY</span></tt></a> status for all backends.</li>
 <li>SQLite no concurrency limit should only be effective if the db backend
 is used.</li>
 </ul>
@@ -3015,11 +3015,11 @@ detaching.</p>
 </li>
 <li><p class="first"><tt class="docutils literal"><span class="pre">views.apply</span></tt> now correctly sets mimetype to &#8220;application/json&#8221;</p>
 </li>
-<li><p class="first"><tt class="docutils literal"><span class="pre">views.task_status</span></tt> now returns exception if state is <a class="reference internal" href="reference/celery.states.html#std:state-RETRY"><tt class="xref std std-state docutils literal"><span class="pre">RETRY</span></tt></a></p>
+<li><p class="first"><tt class="docutils literal"><span class="pre">views.task_status</span></tt> now returns exception if state is <a class="reference internal" href="userguide/tasks.html#std:state-RETRY"><tt class="xref std std-state docutils literal"><span class="pre">RETRY</span></tt></a></p>
 </li>
 <li><dl class="first docutils">
-<dt><tt class="docutils literal"><span class="pre">views.task_status</span></tt> now returns traceback if state is <a class="reference internal" href="reference/celery.states.html#std:state-FAILURE"><tt class="xref std std-state docutils literal"><span class="pre">FAILURE</span></tt></a></dt>
-<dd><p class="first last">or <a class="reference internal" href="reference/celery.states.html#std:state-RETRY"><tt class="xref std std-state docutils literal"><span class="pre">RETRY</span></tt></a></p>
+<dt><tt class="docutils literal"><span class="pre">views.task_status</span></tt> now returns traceback if state is <a class="reference internal" href="userguide/tasks.html#std:state-FAILURE"><tt class="xref std std-state docutils literal"><span class="pre">FAILURE</span></tt></a></dt>
+<dd><p class="first last">or <a class="reference internal" href="userguide/tasks.html#std:state-RETRY"><tt class="xref std std-state docutils literal"><span class="pre">RETRY</span></tt></a></p>
 </dd>
 </dl>
 </li>

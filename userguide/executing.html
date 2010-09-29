@@ -59,10 +59,11 @@
 <ul class="simple">
 <li><a class="reference external" href="#basics" id="id1">Basics</a></li>
 <li><a class="reference external" href="#eta-and-countdown" id="id2">ETA and countdown</a></li>
-<li><a class="reference external" href="#serializers" id="id3">Serializers</a></li>
-<li><a class="reference external" href="#connections-and-connection-timeouts" id="id4">Connections and connection timeouts.</a></li>
-<li><a class="reference external" href="#routing-options" id="id5">Routing options</a></li>
-<li><a class="reference external" href="#amqp-options" id="id6">AMQP options</a></li>
+<li><a class="reference external" href="#expiration" id="id3">Expiration</a></li>
+<li><a class="reference external" href="#serializers" id="id4">Serializers</a></li>
+<li><a class="reference external" href="#connections-and-connection-timeouts" id="id5">Connections and connection timeouts.</a></li>
+<li><a class="reference external" href="#routing-options" id="id6">Routing options</a></li>
+<li><a class="reference external" href="#amqp-options" id="id7">AMQP options</a></li>
 </ul>
 </div>
 <div class="section" id="basics">
@@ -128,8 +129,26 @@ have a <tt class="xref py py-class docutils literal"><span class="pre">datetime<
 </pre></div>
 </div>
 </div>
+<div class="section" id="expiration">
+<span id="executing-expiration"></span><h2><a class="toc-backref" href="#id3">Expiration</a><a class="headerlink" href="#expiration" title="Permalink to this headline">¶</a></h2>
+<p>The <tt class="docutils literal"><span class="pre">expires</span></tt> argument defines an optional expiry time,
+either as seconds after task publish, or a specific date and time using
+:class:~datetime.datetime`.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="c"># Task expires after one minute from now.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">add</span><span class="o">.</span><span class="n">apply_async</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span> <span class="n">expires</span><span class="o">=</span><span class="mi">60</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="c"># Also supports datetime</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">add</span><span class="o">.</span><span class="n">apply_async</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">,</span>
+<span class="gp">... </span>                <span class="n">expires</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>When a worker receives a task that has been expired it will mark
+the task as <a class="reference internal" href="tasks.html#std:state-REVOKED"><tt class="xref std std-state docutils literal"><span class="pre">REVOKED</span></tt></a> (<a class="reference internal" href="../reference/celery.exceptions.html#celery.exceptions.TaskRevokedError" title="celery.exceptions.TaskRevokedError"><tt class="xref py py-exc docutils literal"><span class="pre">TaskRevokedError</span></tt></a>).</p>
+</div>
 <div class="section" id="serializers">
-<span id="executing-serializers"></span><h2><a class="toc-backref" href="#id3">Serializers</a><a class="headerlink" href="#serializers" title="Permalink to this headline">¶</a></h2>
+<span id="executing-serializers"></span><h2><a class="toc-backref" href="#id4">Serializers</a><a class="headerlink" href="#serializers" title="Permalink to this headline">¶</a></h2>
 <p>Data passed between celery and workers has to be serialized to be
 transferred. The default serializer is <tt class="xref py py-mod docutils literal"><span class="pre">pickle</span></tt>, but you can
 change this for each
@@ -153,7 +172,7 @@ Task&#8217;s <tt class="docutils literal"><span class="pre">serializer</span></t
 </div>
 </div>
 <div class="section" id="connections-and-connection-timeouts">
-<span id="executing-connections"></span><h2><a class="toc-backref" href="#id4">Connections and connection timeouts.</a><a class="headerlink" href="#connections-and-connection-timeouts" title="Permalink to this headline">¶</a></h2>
+<span id="executing-connections"></span><h2><a class="toc-backref" href="#id5">Connections and connection timeouts.</a><a class="headerlink" href="#connections-and-connection-timeouts" title="Permalink to this headline">¶</a></h2>
 <p>Currently there is no support for broker connection pools in celery,
 so this is something you need to be aware of when sending more than
 one task at a time, as <tt class="docutils literal"><span class="pre">apply_async</span></tt>/<tt class="docutils literal"><span class="pre">delay</span></tt> establishes and
@@ -187,7 +206,7 @@ argument to <tt class="docutils literal"><span class="pre">apply_async</span></t
 </div>
 </div>
 <div class="section" id="routing-options">
-<span id="executing-routing"></span><h2><a class="toc-backref" href="#id5">Routing options</a><a class="headerlink" href="#routing-options" title="Permalink to this headline">¶</a></h2>
+<span id="executing-routing"></span><h2><a class="toc-backref" href="#id6">Routing options</a><a class="headerlink" href="#routing-options" title="Permalink to this headline">¶</a></h2>
 <p>Celery uses the AMQP routing mechanisms to route tasks to different workers.
 You can route tasks using the following entities: exchange, queue and routing key.</p>
 <p>Messages (tasks) are sent to exchanges, a queue binds to an exchange with a
@@ -245,7 +264,7 @@ by creating a new queue that binds to <tt class="docutils literal"><span class="
 </div>
 </div>
 <div class="section" id="amqp-options">
-<span id="executing-amq-opts"></span><h2><a class="toc-backref" href="#id6">AMQP options</a><a class="headerlink" href="#amqp-options" title="Permalink to this headline">¶</a></h2>
+<span id="executing-amq-opts"></span><h2><a class="toc-backref" href="#id7">AMQP options</a><a class="headerlink" href="#amqp-options" title="Permalink to this headline">¶</a></h2>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
 <p class="last">The <tt class="docutils literal"><span class="pre">mandatory</span></tt> and <tt class="docutils literal"><span class="pre">immediate</span></tt> flags are not supported by

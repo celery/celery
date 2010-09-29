@@ -57,7 +57,7 @@
 <h1>Periodic Task Schedule Behaviors - celery.schedules<a class="headerlink" href="#periodic-task-schedule-behaviors-celery-schedules" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="module-celery.schedules"></span><dl class="class">
 <dt id="celery.schedules.crontab">
-<em class="property">class </em><tt class="descclassname">celery.schedules.</tt><tt class="descname">crontab</tt><big>(</big><em>minute='*'</em>, <em>hour='*'</em>, <em>day_of_week='*'</em>, <em>nowfun=&lt;built-in method now of type object at 0x1024e7080&gt;</em><big>)</big><a class="headerlink" href="#celery.schedules.crontab" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.schedules.</tt><tt class="descname">crontab</tt><big>(</big><em>minute='*'</em>, <em>hour='*'</em>, <em>day_of_week='*'</em>, <em>nowfun=&lt;built-in method now of type object at 0x102cef080&gt;</em><big>)</big><a class="headerlink" href="#celery.schedules.crontab" title="Permalink to this definition">¶</a></dt>
 <dd><p>A crontab can be used as the <tt class="docutils literal"><span class="pre">run_every</span></tt> value of a
 <tt class="xref py py-class docutils literal"><span class="pre">PeriodicTask</span></tt> to add cron-like scheduling.</p>
 <p>Like a <em class="manpage">cron</em> job, you can specify units of time of when
@@ -110,7 +110,7 @@ advanced, like <cite>day_of_week=&#8221;mon-fri&#8221;</cite> (for weekdays only
 <tt class="descname">is_due</tt><big>(</big><em>last_run_at</em><big>)</big><a class="headerlink" href="#celery.schedules.crontab.is_due" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns tuple of two items <tt class="docutils literal"><span class="pre">(is_due,</span> <span class="pre">next_time_to_run)</span></tt>,
 where next time to run is in seconds.</p>
-<p>See <a class="reference internal" href="celery.task.base.html#celery.task.base.PeriodicTask.is_due" title="celery.task.base.PeriodicTask.is_due"><tt class="xref py py-meth docutils literal"><span class="pre">celery.task.base.PeriodicTask.is_due()</span></tt></a> for more information.</p>
+<p>See <a class="reference internal" href="#celery.schedules.schedule.is_due" title="celery.schedules.schedule.is_due"><tt class="xref py py-meth docutils literal"><span class="pre">celery.schedules.schedule.is_due()</span></tt></a> for more information.</p>
 </dd></dl>
 
 <dl class="method">
@@ -167,7 +167,26 @@ day_of_week expressions.  Example usage:</p>
 <tt class="descname">is_due</tt><big>(</big><em>last_run_at</em><big>)</big><a class="headerlink" href="#celery.schedules.schedule.is_due" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns tuple of two items <tt class="docutils literal"><span class="pre">(is_due,</span> <span class="pre">next_time_to_run)</span></tt>,
 where next time to run is in seconds.</p>
-<p>See <a class="reference internal" href="celery.task.base.html#celery.task.base.PeriodicTask.is_due" title="celery.task.base.PeriodicTask.is_due"><tt class="xref py py-meth docutils literal"><span class="pre">celery.task.base.PeriodicTask.is_due()</span></tt></a> for more information.</p>
+<p>e.g.</p>
+<ul>
+<li><dl class="first docutils">
+<dt><tt class="docutils literal"><span class="pre">(True,</span> <span class="pre">20)</span></tt>, means the task should be run now, and the next</dt>
+<dd><p class="first last">time to run is in 20 seconds.</p>
+</dd>
+</dl>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">(False,</span> <span class="pre">12)</span></tt>, means the task should be run in 12 seconds.</p>
+</li>
+</ul>
+<p>You can override this to decide the interval at runtime,
+but keep in mind the value of <a class="reference internal" href="../configuration.html#std:setting-CELERYBEAT_MAX_LOOP_INTERVAL"><tt class="xref std std-setting docutils literal"><span class="pre">CELERYBEAT_MAX_LOOP_INTERVAL</span></tt></a>,
+which decides the maximum number of seconds celerybeat can sleep
+between re-checking the periodic task intervals.  So if you
+dynamically change the next run at value, and the max interval is
+set to 5 minutes, it will take 5 minutes for the change to take
+effect, so you may consider lowering the value of
+<a class="reference internal" href="../configuration.html#std:setting-CELERYBEAT_MAX_LOOP_INTERVAL"><tt class="xref std std-setting docutils literal"><span class="pre">CELERYBEAT_MAX_LOOP_INTERVAL</span></tt></a> if responsiveness is of
+importance to you.</p>
 </dd></dl>
 
 <dl class="method">

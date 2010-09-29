@@ -89,6 +89,27 @@ have a :class:`~datetime.datetime` object and need to modify it with a
         tomorrow = datetime.now() + timedelta(days=1)
         add.apply_async(args=[10, 10], eta=tomorrow)
 
+.. _executing-expiration:
+
+Expiration
+==========
+
+The ``expires`` argument defines an optional expiry time,
+either as seconds after task publish, or a specific date and time using
+:class:~datetime.datetime`.
+
+    >>> # Task expires after one minute from now.
+    >>> add.apply_async(args=[10, 10], expires=60)
+
+    >>> # Also supports datetime
+    >>> from datetime import datetime, timedelta
+    >>> add.apply_async(args=[10, 10], kwargs,
+    ...                 expires=datetime.now() + timedelta(days=1)
+
+
+When a worker receives a task that has been expired it will mark
+the task as :state:`REVOKED` (:exc:`~celery.exceptions.TaskRevokedError`).
+
 .. _executing-serializers:
 
 Serializers

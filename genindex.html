@@ -563,10 +563,6 @@
       <dt><a href="configuration.html#std:setting-CELERY_SEND_EVENTS">setting</a></dt>
   </dl></dd>
     <dt><a href="reference/celery.conf.html#celery.conf.CELERY_SEND_TASK_ERROR_EMAILS">CELERY_SEND_TASK_ERROR_EMAILS (in module celery.conf)</a></dt>
-    <dt>CELERY_STATE_DB</dt>
-    <dd><dl>
-      <dt><a href="configuration.html#std:setting-CELERY_STATE_DB">setting</a></dt>
-  </dl></dd>
     <dt>CELERY_STORE_ERRORS_EVEN_IF_IGNORED</dt>
     <dd><dl>
       <dt><a href="configuration.html#std:setting-CELERY_STORE_ERRORS_EVEN_IF_IGNORED">setting</a></dt>
@@ -695,6 +691,10 @@
     <dt>CELERYD_SOFT_TASK_TIME_LIMIT</dt>
     <dd><dl>
       <dt><a href="configuration.html#std:setting-CELERYD_SOFT_TASK_TIME_LIMIT">setting</a></dt>
+  </dl></dd>
+    <dt>CELERYD_STATE_DB</dt>
+    <dd><dl>
+      <dt><a href="configuration.html#std:setting-CELERYD_STATE_DB">setting</a></dt>
   </dl></dd>
     <dt>CELERYD_TASK_LOG_FORMAT</dt>
     <dd><dl>
@@ -1072,7 +1072,7 @@
   </dl></dd>
     <dt>FAILURE</dt>
     <dd><dl>
-      <dt><a href="reference/celery.states.html#std:state-FAILURE">state</a></dt>
+      <dt><a href="userguide/tasks.html#std:state-FAILURE">state</a></dt>
   </dl></dd>
     <dt><a href="internals/reference/celery.worker.buckets.html#celery.worker.buckets.FastQueue">FastQueue (class in celery.worker.buckets)</a></dt>
     <dt><a href="internals/reference/celery.utils.term.html#celery.utils.term.fg">fg() (in module celery.utils.term)</a></dt>
@@ -1636,7 +1636,7 @@
     <dt><a href="getting-started/broker-installation.html#index-0">PATH</a></dt>
     <dt>PENDING</dt>
     <dd><dl>
-      <dt><a href="reference/celery.states.html#std:state-PENDING">state</a></dt>
+      <dt><a href="userguide/tasks.html#std:state-PENDING">state</a></dt>
   </dl></dd>
     <dt><a href="reference/celery.registry.html#celery.registry.TaskRegistry.periodic">periodic() (celery.registry.TaskRegistry method)</a></dt>
     <dt><a href="reference/celery.decorators.html#celery.decorators.periodic_task">periodic_task() (in module celery.decorators)</a></dt>
@@ -1884,7 +1884,7 @@
   </dl></dd>
     <dt>RETRY</dt>
     <dd><dl>
-      <dt><a href="reference/celery.states.html#std:state-RETRY">state</a></dt>
+      <dt><a href="userguide/tasks.html#std:state-RETRY">state</a></dt>
   </dl></dd>
     <dt><a href="reference/celery.task.base.html#celery.task.base.Task.retry">retry() (celery.task.base.Task class method)</a></dt>
     <dd><dl>
@@ -1904,7 +1904,7 @@
     <dt><a href="internals/reference/celery.events.cursesmon.html#celery.events.cursesmon.CursesMonitor.revoke_selection">revoke_selection() (celery.events.cursesmon.CursesMonitor method)</a></dt>
     <dt>REVOKED</dt>
     <dd><dl>
-      <dt><a href="reference/celery.states.html#std:state-REVOKED">state</a></dt>
+      <dt><a href="userguide/tasks.html#std:state-REVOKED">state</a></dt>
   </dl></dd>
     <dt><a href="internals/reference/celery.worker.state.html#celery.worker.state.revoked">revoked (in module celery.worker.state)</a></dt>
     <dt><a href="reference/celery.task.control.html#celery.task.control.inspect.revoked">revoked() (celery.task.control.inspect method)</a></dt>
@@ -2098,6 +2098,7 @@
       <dt><a href="configuration.html#std:setting-CELERYD_PREFETCH_MULTIPLIER">CELERYD_PREFETCH_MULTIPLIER</a></dt>
       <dt><a href="configuration.html#std:setting-CELERYD_SEND_TASK_ERROR_EMAILS">CELERYD_SEND_TASK_ERROR_EMAILS</a></dt>
       <dt><a href="configuration.html#std:setting-CELERYD_SOFT_TASK_TIME_LIMIT">CELERYD_SOFT_TASK_TIME_LIMIT</a></dt>
+      <dt><a href="configuration.html#std:setting-CELERYD_STATE_DB">CELERYD_STATE_DB</a></dt>
       <dt><a href="configuration.html#std:setting-CELERYD_TASK_LOG_FORMAT">CELERYD_TASK_LOG_FORMAT</a></dt>
       <dt><a href="configuration.html#std:setting-CELERYD_TASK_TIME_LIMIT">CELERYD_TASK_TIME_LIMIT</a></dt>
       <dt><a href="configuration.html#std:setting-CELERYMON_LOG_FILE">CELERYMON_LOG_FILE</a></dt>
@@ -2140,7 +2141,6 @@
       <dt><a href="configuration.html#std:setting-CELERY_RESULT_SERIALIZER">CELERY_RESULT_SERIALIZER</a></dt>
       <dt><a href="configuration.html#std:setting-CELERY_ROUTES">CELERY_ROUTES</a></dt>
       <dt><a href="configuration.html#std:setting-CELERY_SEND_EVENTS">CELERY_SEND_EVENTS</a></dt>
-      <dt><a href="configuration.html#std:setting-CELERY_STATE_DB">CELERY_STATE_DB</a></dt>
       <dt><a href="configuration.html#std:setting-CELERY_STORE_ERRORS_EVEN_IF_IGNORED">CELERY_STORE_ERRORS_EVEN_IF_IGNORED</a></dt>
       <dt><a href="configuration.html#std:setting-CELERY_TASK_ERROR_WHITELIST">CELERY_TASK_ERROR_WHITELIST</a></dt>
       <dt><a href="configuration.html#std:setting-CELERY_TASK_RESULT_EXPIRES">CELERY_TASK_RESULT_EXPIRES</a></dt>
@@ -2198,7 +2198,7 @@
     <dt><a href="reference/celery.apps.beat.html#celery.apps.beat.Beat.start_scheduler">start_scheduler() (celery.apps.beat.Beat method)</a></dt>
     <dt>STARTED</dt>
     <dd><dl>
-      <dt><a href="reference/celery.states.html#std:state-STARTED">state</a></dt>
+      <dt><a href="userguide/tasks.html#std:state-STARTED">state</a></dt>
   </dl></dd>
     <dt><a href="reference/celery.apps.beat.html#celery.apps.beat.Beat.startup_info">startup_info() (celery.apps.beat.Beat method)</a></dt>
     <dd><dl>
@@ -2208,14 +2208,14 @@
     <dd><dl>
       <dt><a href="reference/celery.states.html#std:state-ALL_STATES">ALL_STATES</a></dt>
       <dt><a href="reference/celery.states.html#std:state-EXCEPTION_STATES">EXCEPTION_STATES</a></dt>
-      <dt><a href="reference/celery.states.html#std:state-FAILURE">FAILURE</a></dt>
-      <dt><a href="reference/celery.states.html#std:state-PENDING">PENDING</a></dt>
+      <dt><a href="userguide/tasks.html#std:state-FAILURE">FAILURE</a></dt>
+      <dt><a href="userguide/tasks.html#std:state-PENDING">PENDING</a></dt>
       <dt><a href="reference/celery.states.html#std:state-PROPAGATE_STATES">PROPAGATE_STATES</a></dt>
       <dt><a href="reference/celery.states.html#std:state-READY_STATES">READY_STATES</a></dt>
-      <dt><a href="reference/celery.states.html#std:state-RETRY">RETRY</a></dt>
-      <dt><a href="reference/celery.states.html#std:state-REVOKED">REVOKED</a></dt>
-      <dt><a href="reference/celery.states.html#std:state-STARTED">STARTED</a></dt>
-      <dt><a href="reference/celery.states.html#std:state-SUCCESS">SUCCESS</a></dt>
+      <dt><a href="userguide/tasks.html#std:state-RETRY">RETRY</a></dt>
+      <dt><a href="userguide/tasks.html#std:state-REVOKED">REVOKED</a></dt>
+      <dt><a href="userguide/tasks.html#std:state-STARTED">STARTED</a></dt>
+      <dt><a href="userguide/tasks.html#std:state-SUCCESS">SUCCESS</a></dt>
       <dt><a href="reference/celery.states.html#std:state-UNREADY_STATES">UNREADY_STATES</a></dt>
   </dl></dd>
     <dt><a href="reference/celery.events.state.html#celery.events.state.State">State (class in celery.events.state)</a></dt>
@@ -2264,7 +2264,7 @@
     <dt><a href="reference/celery.result.html#celery.result.TaskSetResult.subtasks">subtasks (celery.result.TaskSetResult attribute)</a></dt>
     <dt>SUCCESS</dt>
     <dd><dl>
-      <dt><a href="reference/celery.states.html#std:state-SUCCESS">state</a></dt>
+      <dt><a href="userguide/tasks.html#std:state-SUCCESS">state</a></dt>
   </dl></dd>
     <dt><a href="reference/celery.result.html#celery.result.BaseAsyncResult.successful">successful() (celery.result.BaseAsyncResult method)</a></dt>
     <dd><dl>

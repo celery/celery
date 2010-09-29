@@ -226,7 +226,7 @@ task is currently running.</p>
 <dl class="attribute">
 <dt id="celery.task.base.Task.acks_late">
 <tt class="descname">acks_late</tt><a class="headerlink" href="#celery.task.base.Task.acks_late" title="Permalink to this definition">¶</a></dt>
-<dd><p>If set to <a href="#id1"><span class="problematic" id="id2">:vonst:`True`</span></a> messages for this task will be acknowledged
+<dd><p>If set to <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> messages for this task will be acknowledged
 <strong>after</strong> the task has been executed, not <em>just before</em>, which is
 the default behavior.</p>
 <p>Note that this means the task may be executed twice if the worker
@@ -659,26 +659,7 @@ not defined.</td>
 <tt class="descname">is_due</tt><big>(</big><em>last_run_at</em><big>)</big><a class="headerlink" href="#celery.task.base.PeriodicTask.is_due" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns tuple of two items <tt class="docutils literal"><span class="pre">(is_due,</span> <span class="pre">next_time_to_run)</span></tt>,
 where next time to run is in seconds.</p>
-<p>e.g.</p>
-<ul>
-<li><dl class="first docutils">
-<dt><tt class="docutils literal"><span class="pre">(True,</span> <span class="pre">20)</span></tt>, means the task should be run now, and the next</dt>
-<dd><p class="first last">time to run is in 20 seconds.</p>
-</dd>
-</dl>
-</li>
-<li><p class="first"><tt class="docutils literal"><span class="pre">(False,</span> <span class="pre">12)</span></tt>, means the task should be run in 12 seconds.</p>
-</li>
-</ul>
-<p>You can override this to decide the interval at runtime,
-but keep in mind the value of <a class="reference internal" href="../configuration.html#std:setting-CELERYBEAT_MAX_LOOP_INTERVAL"><tt class="xref std std-setting docutils literal"><span class="pre">CELERYBEAT_MAX_LOOP_INTERVAL</span></tt></a>,
-which decides the maximum number of seconds celerybeat can sleep
-between re-checking the periodic task intervals.  So if you
-dynamically change the next run at value, and the max interval is
-set to 5 minutes, it will take 5 minutes for the change to take
-effect, so you may consider lowering the value of
-<a class="reference internal" href="../configuration.html#std:setting-CELERYBEAT_MAX_LOOP_INTERVAL"><tt class="xref std std-setting docutils literal"><span class="pre">CELERYBEAT_MAX_LOOP_INTERVAL</span></tt></a> if responsiveness is of
-importance to you.</p>
+<p>See <a class="reference internal" href="celery.schedules.html#celery.schedules.schedule.is_due" title="celery.schedules.schedule.is_due"><tt class="xref py py-meth docutils literal"><span class="pre">celery.schedules.schedule.is_due()</span></tt></a> for more information.</p>
 </dd></dl>
 
 <dl class="method">
