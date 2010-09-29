@@ -10,6 +10,7 @@
 .. toctree::
     :maxdepth: 2
 
+    overview
     tasks
     executing
     workers
