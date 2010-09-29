@@ -74,13 +74,13 @@ def apply_async(task, args=None, kwargs=None, countdown=None, eta=None,
       Defaults to the tasks :attr:`~celery.task.base.Task.priority` attribute.
 
     :keyword serializer: A string identifying the default serialization
-      method to use. Defaults to the ``CELERY_TASK_SERIALIZER`` setting.
+      method to use. Defaults to the :setting:`CELERY_TASK_SERIALIZER` setting.
       Can be ``pickle`` ``json``, ``yaml``, or any custom serialization
       methods that have been registered with
       :mod:`carrot.serialization.registry`. Defaults to the tasks
       :attr:`~celery.task.base.Task.serializer` attribute.
 
-    **Note**: If the ``CELERY_ALWAYS_EAGER`` setting is set, it will be
+    **Note**: If the :setting:`CELERY_ALWAYS_EAGER` setting is set, it will be
     replaced by a local :func:`apply` call instead.
 
     """
@@ -166,7 +166,7 @@ def apply(task, args, kwargs, **options):
     """Apply the task locally.
 
     :keyword throw: Re-raise task exceptions. Defaults to
-        the ``CELERY_EAGER_PROPAGATES_EXCEPTIONS`` setting.
+        the :setting:`CELERY_EAGER_PROPAGATES_EXCEPTIONS` setting.
 
     This will block until the task completes, and returns a
     :class:`celery.result.EagerResult` instance.

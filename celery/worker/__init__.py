@@ -74,7 +74,7 @@ class WorkController(object):
 
     .. attribute:: embed_clockservice
 
-        If ``True``, celerybeat is embedded, running in the main worker
+        If :const:`True`, celerybeat is embedded, running in the main worker
         process as a thread.
 
     .. attribute:: send_events

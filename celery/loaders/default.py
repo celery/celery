@@ -69,8 +69,8 @@ class Loader(BaseLoader):
         """Imports modules at worker init so tasks can be registered
         and used by the worked.
 
-        The list of modules to import is taken from the ``CELERY_IMPORTS``
-        setting in ``celeryconf.py``.
+        The list of modules to import is taken from the
+        :setting:`CELERY_IMPORTS` setting.
 
         """
         self.import_default_modules()

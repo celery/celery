@@ -47,7 +47,7 @@ class CassandraBackend(BaseDictBackend):
         """Initialize Cassandra backend.
 
         Raises :class:`celery.exceptions.ImproperlyConfigured` if
-        the ``CASSANDRA_SERVERS`` setting is not set.
+        the :setting:`CASSANDRA_SERVERS` setting is not set.
 
         """
         self.logger = setup_logger("celery.backends.cassandra")

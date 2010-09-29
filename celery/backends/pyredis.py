@@ -28,7 +28,7 @@ class RedisBackend(KeyValueStoreBackend):
         The port to the Redis server.
 
         Raises :class:`celery.exceptions.ImproperlyConfigured` if
-        the ``REDIS_HOST`` or ``REDIS_PORT`` settings is not set.
+        the :setting:`REDIS_HOST` or :setting:`REDIS_PORT` settings is not set.
 
     """
     redis_host = "localhost"

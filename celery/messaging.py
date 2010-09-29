@@ -297,7 +297,7 @@ def get_consumer_set(connection, queues=None, **options):
     """Get the :class:`carrot.messaging.ConsumerSet`` for a queue
     configuration.
 
-    Defaults to the queues in ``CELERY_QUEUES``.
+    Defaults to the queues in :const:`CELERY_QUEUES`.
 
     """
     queues = queues or conf.get_queues()

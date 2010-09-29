@@ -55,7 +55,7 @@ def remaining(start, ends_in, now=None, relative=True):
 
     :param start: Start :class:`~datetime.datetime`.
     :param ends_in: The end delta as a :class:`~datetime.timedelta`.
-    :keyword relative: If set to ``False``, the end time will be calculated
+    :keyword relative: If set to :const:`False`, the end time will be calculated
         using :func:`delta_resolution` (i.e. rounded to the resolution
           of ``ends_in``).
     :keyword now: The current time, defaults to :func:`datetime.now`.
