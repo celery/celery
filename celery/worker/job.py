@@ -180,7 +180,7 @@ class TaskRequest(object):
 
     .. attribute:: executed
 
-        Set to ``True`` if the task has been executed.
+        Set to :const:`True` if the task has been executed.
         A task should only be executed once.
 
     .. attribute:: delivery_info
@@ -190,7 +190,7 @@ class TaskRequest(object):
 
     .. attribute:: acknowledged
 
-        Set to ``True`` if the task has been acknowledged.
+        Set to :const:`True` if the task has been acknowledged.
 
     """
     # Logging output

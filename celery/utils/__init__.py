@@ -119,7 +119,7 @@ def kwdict(kwargs):
 
 def first(predicate, iterable):
     """Returns the first element in ``iterable`` that ``predicate`` returns a
-    ``True`` value for."""
+    :const:`True` value for."""
     for item in iterable:
         if predicate(item):
             return item
@@ -204,13 +204,13 @@ def is_iterable(obj):
 
 
 def mitemgetter(*items):
-    """Like :func:`operator.itemgetter` but returns ``None`` on missing items
-    instead of raising :exc:`KeyError`."""
+    """Like :func:`operator.itemgetter` but returns :const:`None`
+    on missing items instead of raising :exc:`KeyError`."""
     return lambda container: map(container.get, items)
 
 
 def mattrgetter(*attrs):
-    """Like :func:`operator.itemgetter` but returns ``None`` on missing
+    """Like :func:`operator.itemgetter` but returns :const:`None` on missing
     attributes instead of raising :exc:`AttributeError`."""
     return lambda obj: dict((attr, getattr(obj, attr, None))
                                 for attr in attrs)

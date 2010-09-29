@@ -50,6 +50,64 @@ def process_initializer(app):
 
 
 class WorkController(object):
+    """Executes tasks waiting in the task queue.
+
+    :param concurrency: see :attr:`concurrency`.
+    :param logfile: see :attr:`logfile`.
+    :param loglevel: see :attr:`loglevel`.
+    :param embed_clockservice: see :attr:`embed_clockservice`.
+    :param send_events: see :attr:`send_events`.
+
+    .. attribute:: concurrency
+
+        The number of simultaneous processes doing work (default:
+        ``conf.CELERYD_CONCURRENCY``)
+
+    .. attribute:: loglevel
+
+        The loglevel used (default: :const:`logging.INFO`)
+
+    .. attribute:: logfile
+
+        The logfile used, if no logfile is specified it uses ``stderr``
+        (default: `celery.conf.CELERYD_LOG_FILE`).
+
+    .. attribute:: embed_clockservice
+
+        If :const:`True`, celerybeat is embedded, running in the main worker
+        process as a thread.
+
+    .. attribute:: send_events
+
+        Enable the sending of monitoring events, these events can be captured
+        by monitors (celerymon).
+
+    .. attribute:: logger
+
+        The :class:`logging.Logger` instance used for logging.
+
+    .. attribute:: pool
+
+        The :class:`multiprocessing.Pool` instance used.
+
+    .. attribute:: ready_queue
+
+        The :class:`Queue.Queue` that holds tasks ready for immediate
+        processing.
+
+    .. attribute:: schedule_controller
+
+        Instance of :class:`celery.worker.controllers.ScheduleController`.
+
+    .. attribute:: mediator
+
+        Instance of :class:`celery.worker.controllers.Mediator`.
+
+    .. attribute:: listener
+
+        Instance of :class:`CarrotListener`.
+
+    """
     loglevel = logging.ERROR
     _state = None
     _running = 0

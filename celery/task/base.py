@@ -95,7 +95,7 @@ class BaseTask(object):
 
     .. attribute:: abstract
 
-        If ``True`` the task is an abstract base class.
+        If :const:`True` the task is an abstract base class.
 
     .. attribute:: type
 
@@ -104,7 +104,7 @@ class BaseTask(object):
     .. attribute:: queue
 
         Select a destination queue for this task. The queue needs to exist
-        in ``CELERY_QUEUES``. The ``routing_key``, ``exchange`` and
+        in :setting:`CELERY_QUEUES`. The ``routing_key``, ``exchange`` and
         ``exchange_type`` attributes will be ignored if this is set.
 
     .. attribute:: routing_key
@@ -144,7 +144,7 @@ class BaseTask(object):
     .. attribute:: max_retries
 
         Maximum number of retries before giving up.
-        If set to ``None``, it will never stop retrying.
+        If set to :const:`None`, it will never stop retrying.
 
     .. attribute:: default_retry_delay
 
@@ -153,9 +153,9 @@ class BaseTask(object):
 
     .. attribute:: rate_limit
 
-        Set the rate limit for this task type, Examples: ``None`` (no rate
-        limit), ``"100/s"`` (hundred tasks a second), ``"100/m"`` (hundred
-        tasks a minute), ``"100/h"`` (hundred tasks an hour)
+        Set the rate limit for this task type, Examples: :const:`None` (no
+        rate limit), ``"100/s"`` (hundred tasks a second), ``"100/m"``
+        (hundred tasks a minute), ``"100/h"`` (hundred tasks an hour)
 
     .. attribute:: ignore_result
 
@@ -186,12 +186,12 @@ class BaseTask(object):
 
     .. attribute:: autoregister
 
-        If ``True`` the task is automatically registered in the task
+        If :const:`True` the task is automatically registered in the task
         registry, which is the default behaviour.
 
     .. attribute:: track_started
 
-        If ``True`` the task will report its status as "started"
+        If :const:`True` the task will report its status as "started"
         when the task is executed by a worker.
         The default value is ``False`` as the normal behaviour is to not
         report that level of granularity. Tasks are either pending,
@@ -202,11 +202,11 @@ class BaseTask(object):
         currently running.
 
         The global default can be overridden with the
-        ``CELERY_TRACK_STARTED`` setting.
+        :setting:`CELERY_TRACK_STARTED` setting.
 
     .. attribute:: acks_late
 
-        If set to ``True`` messages for this task will be acknowledged
+        If set to :vonst:`True` messages for this task will be acknowledged
         **after** the task has been executed, not *just before*, which is
         the default behavior.
 
@@ -214,7 +214,7 @@ class BaseTask(object):
         crashes in the middle of execution, which may be acceptable for some
         applications.
 
-        The global default can be overriden by the ``CELERY_ACKS_LATE``
+        The global default can be overriden by the :setting:`CELERY_ACKS_LATE`
         setting.
 
     """
@@ -536,7 +536,7 @@ class BaseTask(object):
         :param args: positional arguments passed on to the task.
         :param kwargs: keyword arguments passed on to the task.
         :keyword throw: Re-raise task exceptions. Defaults to
-            the ``CELERY_EAGER_PROPAGATES_EXCEPTIONS`` setting.
+            the :setting:`CELERY_EAGER_PROPAGATES_EXCEPTIONS` setting.
 
         :rtype :class:`celery.result.EagerResult`:
 
@@ -733,7 +733,7 @@ class PeriodicTask(Task):
 
     .. attribute:: relative
 
-        If set to ``True``, run times are relative to the time when the
+        If set to :const:`True`, run times are relative to the time when the
         server was started. This was the previous behaviour, periodic tasks
         are now scheduled by the clock.
 
@@ -824,13 +824,14 @@ class PeriodicTask(Task):
         * ``(False, 12)``, means the task should be run in 12 seconds.
 
         You can override this to decide the interval at runtime,
-        but keep in mind the value of ``CELERYBEAT_MAX_LOOP_INTERVAL``, which
-        decides the maximum number of seconds celerybeat can sleep between
-        re-checking the periodic task intervals. So if you dynamically change
-        the next run at value, and the max interval is set to 5 minutes, it
-        will take 5 minutes for the change to take effect, so you may
-        consider lowering the value of ``CELERYBEAT_MAX_LOOP_INTERVAL`` if
-        responsiveness if of importance to you.
+        but keep in mind the value of :setting:`CELERYBEAT_MAX_LOOP_INTERVAL`,
+        which decides the maximum number of seconds celerybeat can sleep
+        between re-checking the periodic task intervals.  So if you
+        dynamically change the next run at value, and the max interval is
+        set to 5 minutes, it will take 5 minutes for the change to take
+        effect, so you may consider lowering the value of
+        :setting:`CELERYBEAT_MAX_LOOP_INTERVAL` if responsiveness is of
+        importance to you.
 
         """
         return self.run_every.is_due(last_run_at)

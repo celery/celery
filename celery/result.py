@@ -54,8 +54,9 @@ class BaseAsyncResult(object):
         :keyword timeout: How long to wait, in seconds, before the
             operation times out.
 
-        :raises celery.exceptions.TimeoutError: if ``timeout`` is not ``None``
-            and the result does not arrive within ``timeout`` seconds.
+        :raises celery.exceptions.TimeoutError: if ``timeout`` is not
+            :const:`None` and the result does not arrive within ``timeout``
+            seconds.
 
         If the remote call raised an exception then that
         exception will be re-raised.
@@ -68,21 +69,21 @@ class BaseAsyncResult(object):
         return self.wait(timeout=timeout)
 
     def ready(self):
-        """Returns ``True`` if the task executed successfully, or raised
+        """Returns :const:`True` if the task executed successfully, or raised
         an exception.
 
         If the task is still running, pending, or is waiting
-        for retry then ``False`` is returned.
+        for retry then :const:`False` is returned.
 
         """
         return self.status not in self.backend.UNREADY_STATES
 
     def successful(self):
-        """Returns ``True`` if the task executed successfully."""
+        """Returns :const:`True` if the task executed successfully."""
         return self.status == states.SUCCESS
 
     def failed(self):
-        """Returns ``True`` if the task failed by exception."""
+        """Returns :const:`True` if the task failed by exception."""
         return self.status == states.FAILURE
 
     def __str__(self):
@@ -210,7 +211,7 @@ class TaskSetResult(object):
     def successful(self):
         """Was the taskset successful?
 
-        :returns: ``True`` if all of the tasks in the taskset finished
+        :returns: :const:`True` if all of the tasks in the taskset finished
             successfully (i.e. did not raise an exception).
 
         """
@@ -220,7 +221,7 @@ class TaskSetResult(object):
     def failed(self):
         """Did the taskset fail?
 
-        :returns: ``True`` if any of the tasks in the taskset failed.
+        :returns: :const:`True` if any of the tasks in the taskset failed.
             (i.e., raised an exception)
 
         """
@@ -230,7 +231,7 @@ class TaskSetResult(object):
     def waiting(self):
         """Is the taskset waiting?
 
-        :returns: ``True`` if any of the tasks in the taskset is still
+        :returns: :const:`True` if any of the tasks in the taskset is still
             waiting for execution.
 
         """
@@ -240,7 +241,7 @@ class TaskSetResult(object):
     def ready(self):
         """Is the task ready?
 
-        :returns: ``True`` if all of the tasks in the taskset has been
+        :returns: :const:`True` if all of the tasks in the taskset has been
             executed.
 
         """
@@ -308,8 +309,9 @@ class TaskSetResult(object):
         :keyword timeout: The time in seconds, how long
             it will wait for results, before the operation times out.
 
-        :raises celery.exceptions.TimeoutError: if ``timeout`` is not ``None``
-            and the operation takes longer than ``timeout`` seconds.
+        :raises celery.exceptions.TimeoutError: if ``timeout`` is not
+            :const:`None` and the operation takes longer than ``timeout``
+            seconds.
 
         If any of the tasks raises an exception, the exception
         will be reraised by :meth:`join`.
@@ -377,11 +379,11 @@ class EagerResult(BaseAsyncResult):
         self._traceback = traceback
 
     def successful(self):
-        """Returns ``True`` if the task executed without failure."""
+        """Returns :const:`True` if the task executed without failure."""
         return self.status == states.SUCCESS
 
     def ready(self):
-        """Returns ``True`` if the task has been executed."""
+        """Returns :const:`True` if the task has been executed."""
         return True
 
     def wait(self, timeout=None):

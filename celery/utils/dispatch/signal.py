@@ -45,8 +45,8 @@ class Signal(object):
         :param receiver: A function or an instance method which is to
             receive signals. Receivers must be hashable objects.
 
-            if weak is ``True``, then receiver must be weak-referencable (more
-            precisely :func:`saferef.safe_ref()` must be able to create a
+            if weak is :const:`True`, then receiver must be weak-referencable
+            (more precisely :func:`saferef.safe_ref()` must be able to create a
             reference to the receiver).
 
             Receivers must be able to accept keyword arguments.
@@ -56,7 +56,7 @@ class Signal(object):
             ``dispatch_uid``.
 
         :keyword sender: The sender to which the receiver should respond.
-            Must either be of type :class:`Signal`, or ``None`` to receive
+            Must either be of type :class:`Signal`, or :const:`None` to receive
             events from any sender.
 
         :keyword weak: Whether to use weak references to the receiver.
@@ -121,7 +121,7 @@ class Signal(object):
         have all receivers called if a raises an error.
 
         :param sender: The sender of the signal. Either a specific
-            object or ``None``.
+            object or :const:`None`.
 
         :keyword \*\*named: Named arguments which will be passed to receivers.
 
