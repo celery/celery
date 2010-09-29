@@ -275,6 +275,8 @@ General
     The global default can be overriden by the :setting:`CELERY_ACKS_LATE`
     setting.
 
+.. _task-track-started:
+
 .. attribute:: Task.track_started
 
     If :const:`True` the task will report its status as "started"
@@ -338,138 +340,94 @@ Message and routing options
     :ref:`executing-routing` for more information about message options,
     and :ref:`guide-routing`.
 
-.. _task-example:
+.. _task-states:
 
-Example
-=======
+Task States
+===========
 
-Let's take a real wold example; A blog where comments posted needs to be
-filtered for spam. When the comment is created, the spam filter runs in the
-background, so the user doesn't have to wait for it to finish.
+A task can be in several states, and each state can have arbitrary metadata
+attached to it. When a task moves into another state the previous state is
+forgotten about, but some transitions can be deducted, e.g. if a task is now
+in the :state:`FAILED` state, it's implied that it was at some point in the
+:state:`STARTED` state.
 
-We have a Django blog application allowing comments
-on blog posts. We'll describe parts of the models/views and tasks for this
-application.
+There are also sets of states, like the set of
+:state:`failure states <FAILURE_STATES>`, and the set of
+:state:`ready states <READY_STATES>`.
 
-blog/models.py
---------------
-
-The comment model looks like this:
-
-.. code-block:: python
-
-    from django.db import models
-    from django.utils.translation import ugettext_lazy as _
+The client uses the membership of these sets to decide whether
+the exception should be re-raised (:state:`PROPAGATE_STATES`), or if the result can
+be cached (which it can if the state is ready).
 
 
-    class Comment(models.Model):
-        name = models.CharField(_("name"), max_length=64)
-        email_address = models.EmailField(_("e-mail address"))
-        homepage = models.URLField(_("home page"),
-                                   blank=True, verify_exists=False)
-        comment = models.TextField(_("comment"))
-        pub_date = models.DateTimeField(_("Published date"),
-                                        editable=False, auto_add_now=True)
-        is_spam = models.BooleanField(_("spam?"),
-                                      default=False, editable=False)
+.. _task-builtin-states:
 
-        class Meta:
-            verbose_name = _("comment")
-            verbose_name_plural = _("comments")
+Built-in States
+---------------
 
+.. state:: PENDING
 
-In the view where the comment is posted, we first write the comment
-to the database, then we launch the spam filter task in the background.
+PENDING
+~~~~~~~
 
-.. _task-example-blog-views:
+Task is waiting for execution or unknown.
+Any task id that is not know is implied to be in the pending state.
 
-blog/views.py
--------------
+.. state:: STARTED
 
-.. code-block:: python
+STARTED
+~~~~~~~
 
-    from django import forms
-    from django.http import HttpResponseRedirect
-    from django.template.context import RequestContext
-    from django.shortcuts import get_object_or_404, render_to_response
+Task has been started.
+Not reported by default, to enable please see :ref:`task-track-started`.
 
-    from blog import tasks
-    from blog.models import Comment
+:metadata: ``pid`` and ``hostname`` of the worker process executing
+           the task.
 
+.. state:: SUCCESS
 
-    class CommentForm(forms.ModelForm):
+SUCCESS
+~~~~~~~
 
-        class Meta:
-            model = Comment
+Task has been successfully executed.
 
+:metadata: ``result`` contains the return value of the task.
+:propagates: Yes
+:ready: Yes
 
-    def add_comment(request, slug, template_name="comments/create.html"):
-        post = get_object_or_404(Entry, slug=slug)
-        remote_addr = request.META.get("REMOTE_ADDR")
+.. state:: FAILURE
 
-        if request.method == "post":
-            form = CommentForm(request.POST, request.FILES)
-            if form.is_valid():
-                comment = form.save()
-                # Check spam asynchronously.
-                tasks.spam_filter.delay(comment_id=comment.id,
-                                        remote_addr=remote_addr)
-                return HttpResponseRedirect(post.get_absolute_url())
-        else:
-            form = CommentForm()
+FAILURE
+~~~~~~~
 
-        context = RequestContext(request, {"form": form})
-        return render_to_response(template_name, context_instance=context)
+Task execution resulted in failure.
 
+:metadata: ``result`` contains the exception occured, and ``traceback``
+           contains the backtrace of the stack at the point when the
+           exception was raised.
+:propagates: Yes
 
-To filter spam in comments we use `Akismet`_, the service
-used to filter spam in comments posted to the free weblog platform
-`Wordpress`. `Akismet`_ is free for personal use, but for commercial use you
-need to pay. You have to sign up to their service to get an API key.
+.. state:: RETRY
 
-To make API calls to `Akismet`_ we use the `akismet.py`_ library written by
-Michael Foord.
+RETRY
+~~~~~
 
-.. _task-example-blog-tasks:
+Task is being retried.
 
-blog/tasks.py
--------------
+:metadata: ``result`` contains the exception that caused the retry,
+           and ``traceback`` contains the backtrace of the stack at the point
+           when the exceptions was raised.
+:propagates: No
 
-.. code-block:: python
+.. state:: REVOKED
 
-    from akismet import Akismet
-    from celery.decorators import task
+REVOKED
+~~~~~~~
 
-    from django.core.exceptions import ImproperlyConfigured
-    from django.contrib.sites.models import Site
+Task has been revoked.
 
-    from blog.models import Comment
+:propagates: Yes
 
-
-    @task
-    def spam_filter(comment_id, remote_addr=None, **kwargs):
-            logger = spam_filter.get_logger(**kwargs)
-            logger.info("Running spam filter for comment %s" % comment_id)
-
-            comment = Comment.objects.get(pk=comment_id)
-            current_domain = Site.objects.get_current().domain
-            akismet = Akismet(settings.AKISMET_KEY, "http://%s" % domain)
-            if not akismet.verify_key():
-                raise ImproperlyConfigured("Invalid AKISMET_KEY")
-
-
-            is_spam = akismet.comment_check(user_ip=remote_addr,
-                                comment_content=comment.comment,
-                                comment_author=comment.name,
-                                comment_author_email=comment.email_address)
-            if is_spam:
-                comment.is_spam = True
-                comment.save()
-
-            return is_spam
-
-.. _`Akismet`: http://akismet.com/faq/
-.. _`akismet.py`: http://www.voidspace.org.uk/downloads/akismet.py
 
 .. _task-how-they-work:
 
@@ -788,3 +746,136 @@ that depends on state from the current transaction**:
         else:
             transaction.commit()
             expand_abbreviations.delay(article.pk)
+
+.. _task-example:
+
+Example
+=======
+
+Let's take a real wold example; A blog where comments posted needs to be
+filtered for spam. When the comment is created, the spam filter runs in the
+background, so the user doesn't have to wait for it to finish.
+
+We have a Django blog application allowing comments
+on blog posts. We'll describe parts of the models/views and tasks for this
+application.
+
+blog/models.py
+--------------
+
+The comment model looks like this:
+
+.. code-block:: python
+
+    from django.db import models
+    from django.utils.translation import ugettext_lazy as _
+
+
+    class Comment(models.Model):
+        name = models.CharField(_("name"), max_length=64)
+        email_address = models.EmailField(_("e-mail address"))
+        homepage = models.URLField(_("home page"),
+                                   blank=True, verify_exists=False)
+        comment = models.TextField(_("comment"))
+        pub_date = models.DateTimeField(_("Published date"),
+                                        editable=False, auto_add_now=True)
+        is_spam = models.BooleanField(_("spam?"),
+                                      default=False, editable=False)
+
+        class Meta:
+            verbose_name = _("comment")
+            verbose_name_plural = _("comments")
+
+
+In the view where the comment is posted, we first write the comment
+to the database, then we launch the spam filter task in the background.
+
+.. _task-example-blog-views:
+
+blog/views.py
+-------------
+
+.. code-block:: python
+
+    from django import forms
+    from django.http import HttpResponseRedirect
+    from django.template.context import RequestContext
+    from django.shortcuts import get_object_or_404, render_to_response
+
+    from blog import tasks
+    from blog.models import Comment
+
+
+    class CommentForm(forms.ModelForm):
+
+        class Meta:
+            model = Comment
+
+
+    def add_comment(request, slug, template_name="comments/create.html"):
+        post = get_object_or_404(Entry, slug=slug)
+        remote_addr = request.META.get("REMOTE_ADDR")
+
+        if request.method == "post":
+            form = CommentForm(request.POST, request.FILES)
+            if form.is_valid():
+                comment = form.save()
+                # Check spam asynchronously.
+                tasks.spam_filter.delay(comment_id=comment.id,
+                                        remote_addr=remote_addr)
+                return HttpResponseRedirect(post.get_absolute_url())
+        else:
+            form = CommentForm()
+
+        context = RequestContext(request, {"form": form})
+        return render_to_response(template_name, context_instance=context)
+
+
+To filter spam in comments we use `Akismet`_, the service
+used to filter spam in comments posted to the free weblog platform
+`Wordpress`. `Akismet`_ is free for personal use, but for commercial use you
+need to pay. You have to sign up to their service to get an API key.
+
+To make API calls to `Akismet`_ we use the `akismet.py`_ library written by
+Michael Foord.
+
+.. _task-example-blog-tasks:
+
+blog/tasks.py
+-------------
+
+.. code-block:: python
+
+    from akismet import Akismet
+    from celery.decorators import task
+
+    from django.core.exceptions import ImproperlyConfigured
+    from django.contrib.sites.models import Site
+
+    from blog.models import Comment
+
+
+    @task
+    def spam_filter(comment_id, remote_addr=None, **kwargs):
+            logger = spam_filter.get_logger(**kwargs)
+            logger.info("Running spam filter for comment %s" % comment_id)
+
+            comment = Comment.objects.get(pk=comment_id)
+            current_domain = Site.objects.get_current().domain
+            akismet = Akismet(settings.AKISMET_KEY, "http://%s" % domain)
+            if not akismet.verify_key():
+                raise ImproperlyConfigured("Invalid AKISMET_KEY")
+
+
+            is_spam = akismet.comment_check(user_ip=remote_addr,
+                                comment_content=comment.comment,
+                                comment_author=comment.name,
+                                comment_author_email=comment.email_address)
+            if is_spam:
+                comment.is_spam = True
+                comment.save()
+
+            return is_spam
+
+.. _`Akismet`: http://akismet.com/faq/
+.. _`akismet.py`: http://www.voidspace.org.uk/downloads/akismet.py

@@ -5,47 +5,8 @@
 States
 ------
 
-.. state:: PENDING
+See :ref:`task-states`.
 
-PENDING
-~~~~~~~
-
-Task is waiting for execution or unknown.
-
-.. state:: STARTED
-
-STARTED
-~~~~~~~
-
-Task has been started.
-
-.. state:: SUCCESS
-
-SUCCESS
-~~~~~~~
-
-Task has been successfully executed.
-
-.. state:: FAILURE
-
-FAILURE
-~~~~~~~
-
-Task execution resulted in failure.
-
-.. state:: RETRY
-
-RETRY
-~~~~~
-
-Task is being retried.
-
-.. state:: REVOKED
-
-REVOKED
-~~~~~~~
-
-Task has been revoked.
 
 Sets
 ----
