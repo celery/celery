@@ -71,7 +71,7 @@ world-wide state.</p>
 
 <dl class="class">
 <dt id="celery.worker.job.TaskRequest">
-<em class="property">class </em><tt class="descclassname">celery.worker.job.</tt><tt class="descname">TaskRequest</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>args</em>, <em>kwargs</em>, <em>on_ack=&lt;function noop at 0x103f080c8&gt;</em>, <em>retries=0</em>, <em>delivery_info=None</em>, <em>hostname=None</em>, <em>email_subject=None</em>, <em>email_body=None</em>, <em>logger=None</em>, <em>eventer=None</em>, <em>eta=None</em>, <em>expires=None</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">celery.worker.job.</tt><tt class="descname">TaskRequest</tt><big>(</big><em>task_name</em>, <em>task_id</em>, <em>args</em>, <em>kwargs</em>, <em>on_ack=&lt;function noop at 0x1039f52a8&gt;</em>, <em>retries=0</em>, <em>delivery_info=None</em>, <em>hostname=None</em>, <em>email_subject=None</em>, <em>email_body=None</em>, <em>logger=None</em>, <em>eventer=None</em>, <em>eta=None</em>, <em>expires=None</em>, <em>**opts</em><big>)</big><a class="headerlink" href="#celery.worker.job.TaskRequest" title="Permalink to this definition">¶</a></dt>
 <dd><p>A request for task execution.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -126,7 +126,7 @@ world-wide state.</p>
 <dl class="attribute">
 <dt id="celery.worker.job.TaskRequest.executed">
 <tt class="descname">executed</tt><a class="headerlink" href="#celery.worker.job.TaskRequest.executed" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set to <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task has been executed.
+<dd><p>Set to <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> if the task has been executed.
 A task should only be executed once.</p>
 </dd></dl>
 
@@ -140,7 +140,7 @@ from producer to consumer.</p>
 <dl class="attribute">
 <dt id="celery.worker.job.TaskRequest.acknowledged">
 <tt class="descname">acknowledged</tt><a class="headerlink" href="#celery.worker.job.TaskRequest.acknowledged" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set to <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task has been acknowledged.</p>
+<dd><p>Set to <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> if the task has been acknowledged.</p>
 </dd></dl>
 
 <dl class="method">

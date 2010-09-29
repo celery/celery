@@ -25,7 +25,7 @@
     <link rel="top" title="Celery v2.1.0rc1 documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
     <link rel="next" title="Executing Tasks" href="executing.html" />
-    <link rel="prev" title="User Guide" href="index.html" /> 
+    <link rel="prev" title="Overview" href="overview.html" /> 
   </head>
   <body>
     <div class="related">
@@ -41,7 +41,7 @@
           <a href="executing.html" title="Executing Tasks"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="index.html" title="User Guide"
+          <a href="overview.html" title="Overview"
              accesskey="P">previous</a> |</li>
         <li><a href="../index.html">Celery v2.1.0rc1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User Guide</a> &raquo;</li> 
@@ -300,11 +300,25 @@ or get its return value.</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="Task.store_errors_even_if_ignored">
+<tt class="descclassname">Task.</tt><tt class="descname">store_errors_even_if_ignored</tt><a class="headerlink" href="#Task.store_errors_even_if_ignored" title="Permalink to this definition">¶</a></dt>
+<dd><p>If true, errors will be stored even if the task is configured
+to ignore results.</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="Task.send_error_emails">
 <tt class="descclassname">Task.</tt><tt class="descname">send_error_emails</tt><a class="headerlink" href="#Task.send_error_emails" title="Permalink to this definition">¶</a></dt>
 <dd><p>Send an e-mail whenever a task of this type fails.
 Defaults to the <tt class="xref std std-setting docutils literal"><span class="pre">CELERY_SEND_TASK_ERROR_EMAILS</span></tt> setting.
 See <a class="reference internal" href="../configuration.html#conf-error-mails"><em>Error E-Mails</em></a> for more information.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Task.error_whitelist">
+<tt class="descclassname">Task.</tt><tt class="descname">error_whitelist</tt><a class="headerlink" href="#Task.error_whitelist" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the sending of error e-emails is enabled for this task, then
+this is a whitelist of exceptions to actually send e-mails about.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -318,6 +332,44 @@ serialization methods that have been registered with
 <p>Please see <a class="reference internal" href="executing.html#executing-serializers"><em>Serializers</em></a> for more information.</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="Task.backend">
+<tt class="descclassname">Task.</tt><tt class="descname">backend</tt><a class="headerlink" href="#Task.backend" title="Permalink to this definition">¶</a></dt>
+<dd><p>The result store backend to use for this task. Defaults to the
+<a class="reference internal" href="../configuration.html#std:setting-CELERY_RESULT_BACKEND"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_RESULT_BACKEND</span></tt></a> setting.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Task.acks_late">
+<tt class="descclassname">Task.</tt><tt class="descname">acks_late</tt><a class="headerlink" href="#Task.acks_late" title="Permalink to this definition">¶</a></dt>
+<dd><p>If set to <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> messages for this task will be acknowledged
+<strong>after</strong> the task has been executed, not <em>just before</em>, which is
+the default behavior.</p>
+<p>Note that this means the task may be executed twice if the worker
+crashes in the middle of execution, which may be acceptable for some
+applications.</p>
+<p>The global default can be overriden by the <a class="reference internal" href="../configuration.html#std:setting-CELERY_ACKS_LATE"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_ACKS_LATE</span></tt></a>
+setting.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="Task.track_started">
+<tt class="descclassname">Task.</tt><tt class="descname">track_started</tt><a class="headerlink" href="#Task.track_started" title="Permalink to this definition">¶</a></dt>
+<dd><p>If <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> the task will report its status as &#8220;started&#8221;
+when the task is executed by a worker.
+The default value is <tt class="xref docutils literal"><span class="pre">False</span></tt> as the normal behaviour is to not
+report that level of granularity. Tasks are either pending, finished,
+or waiting to be retried. Having a &#8220;started&#8221; status can be useful for
+when there are long running tasks and there is a need to report which
+task is currently running.</p>
+<p>The global default can be overridden by the
+<a class="reference internal" href="../configuration.html#std:setting-CELERY_TRACK_STARTED"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_TRACK_STARTED</span></tt></a> setting.</p>
+</dd></dl>
+
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last">The API reference for <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.Task" title="celery.task.base.Task"><tt class="xref py py-class docutils literal"><span class="pre">Task</span></tt></a>.</p>
+</div>
 </div>
 <div class="section" id="message-and-routing-options">
 <span id="task-message-options"></span><h3><a class="toc-backref" href="#id9">Message and routing options</a><a class="headerlink" href="#message-and-routing-options" title="Permalink to this headline">¶</a></h3>
@@ -740,8 +792,8 @@ that depends on state from the current transaction</strong>:</p>
   <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png" alt="Logo"/>
 </a></p>
   <h4>Previous topic</h4>
-  <p class="topless"><a href="index.html"
-                        title="previous chapter">User Guide</a></p>
+  <p class="topless"><a href="overview.html"
+                        title="previous chapter">Overview</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="executing.html"
                         title="next chapter">Executing Tasks</a></p>
@@ -780,7 +832,7 @@ that depends on state from the current transaction</strong>:</p>
           <a href="executing.html" title="Executing Tasks"
              >next</a> |</li>
         <li class="right" >
-          <a href="index.html" title="User Guide"
+          <a href="overview.html" title="Overview"
              >previous</a> |</li>
         <li><a href="../index.html">Celery v2.1.0rc1 documentation</a> &raquo;</li>
           <li><a href="index.html" >User Guide</a> &raquo;</li> 

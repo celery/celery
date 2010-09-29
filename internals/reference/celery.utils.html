@@ -87,7 +87,7 @@
 <dt id="celery.utils.first">
 <tt class="descclassname">celery.utils.</tt><tt class="descname">first</tt><big>(</big><em>predicate</em>, <em>iterable</em><big>)</big><a class="headerlink" href="#celery.utils.first" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the first element in <tt class="docutils literal"><span class="pre">iterable</span></tt> that <tt class="docutils literal"><span class="pre">predicate</span></tt> returns a
-<tt class="xref docutils literal"><span class="pre">True</span></tt> value for.</p>
+<tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> value for.</p>
 </dd></dl>
 
 <dl class="function">
@@ -202,7 +202,7 @@ True</p>
 <dl class="function">
 <dt id="celery.utils.mattrgetter">
 <tt class="descclassname">celery.utils.</tt><tt class="descname">mattrgetter</tt><big>(</big><em>*attrs</em><big>)</big><a class="headerlink" href="#celery.utils.mattrgetter" title="Permalink to this definition">¶</a></dt>
-<dd><p>Like <tt class="xref py py-func docutils literal"><span class="pre">operator.itemgetter()</span></tt> but returns <tt class="xref docutils literal"><span class="pre">None</span></tt> on missing
+<dd><p>Like <tt class="xref py py-func docutils literal"><span class="pre">operator.itemgetter()</span></tt> but returns <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt> on missing
 attributes instead of raising <tt class="xref py py-exc docutils literal"><span class="pre">AttributeError</span></tt>.</p>
 </dd></dl>
 
@@ -221,8 +221,8 @@ attributes instead of raising <tt class="xref py py-exc docutils literal"><span 
 <dl class="function">
 <dt id="celery.utils.mitemgetter">
 <tt class="descclassname">celery.utils.</tt><tt class="descname">mitemgetter</tt><big>(</big><em>*items</em><big>)</big><a class="headerlink" href="#celery.utils.mitemgetter" title="Permalink to this definition">¶</a></dt>
-<dd><p>Like <tt class="xref py py-func docutils literal"><span class="pre">operator.itemgetter()</span></tt> but returns <tt class="xref docutils literal"><span class="pre">None</span></tt> on missing items
-instead of raising <tt class="xref py py-exc docutils literal"><span class="pre">KeyError</span></tt>.</p>
+<dd><p>Like <tt class="xref py py-func docutils literal"><span class="pre">operator.itemgetter()</span></tt> but returns <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt>
+on missing items instead of raising <tt class="xref py py-exc docutils literal"><span class="pre">KeyError</span></tt>.</p>
 </dd></dl>
 
 <dl class="class">
@@ -294,7 +294,7 @@ yield the last value infinitely.</p>
 
 <dl class="function">
 <dt id="celery.utils.retry_over_time">
-<tt class="descclassname">celery.utils.</tt><tt class="descname">retry_over_time</tt><big>(</big><em>fun</em>, <em>catch</em>, <em>args=</em><span class="optional">[</span><span class="optional">]</span>, <em>kwargs={}</em>, <em>errback=&lt;function noop at 0x103f080c8&gt;</em>, <em>max_retries=None</em>, <em>interval_start=2</em>, <em>interval_step=2</em>, <em>interval_max=30</em><big>)</big><a class="headerlink" href="#celery.utils.retry_over_time" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.utils.</tt><tt class="descname">retry_over_time</tt><big>(</big><em>fun</em>, <em>catch</em>, <em>args=</em><span class="optional">[</span><span class="optional">]</span>, <em>kwargs={}</em>, <em>errback=&lt;function noop at 0x1039f52a8&gt;</em>, <em>max_retries=None</em>, <em>interval_start=2</em>, <em>interval_step=2</em>, <em>interval_max=30</em><big>)</big><a class="headerlink" href="#celery.utils.retry_over_time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retry the function over and over until max retries is exceeded.</p>
 <p>For each retry we sleep a for a while before we try again, this interval
 is increased for every retry until the max seconds is reached.</p>

@@ -121,7 +121,7 @@
 <dl class="method">
 <dt id="celery.result.BaseAsyncResult.failed">
 <tt class="descclassname">BaseAsyncResult.</tt><tt class="descname">failed</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult.failed" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task failed by exception.</p>
+<dd><p>Returns <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> if the task failed by exception.</p>
 </dd></dl>
 
 <dl class="method">
@@ -139,10 +139,10 @@
 <dl class="method">
 <dt id="celery.result.BaseAsyncResult.ready">
 <tt class="descclassname">BaseAsyncResult.</tt><tt class="descname">ready</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult.ready" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task executed successfully, or raised
+<dd><p>Returns <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> if the task executed successfully, or raised
 an exception.</p>
 <p>If the task is still running, pending, or is waiting
-for retry then <tt class="xref docutils literal"><span class="pre">False</span></tt> is returned.</p>
+for retry then <tt class="xref py py-const xref docutils literal"><span class="pre">False</span></tt> is returned.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -189,7 +189,7 @@ contains the resulting value.</blockquote>
 <dl class="method">
 <dt id="celery.result.BaseAsyncResult.successful">
 <tt class="descclassname">BaseAsyncResult.</tt><tt class="descname">successful</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.BaseAsyncResult.successful" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task executed successfully.</p>
+<dd><p>Returns <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> if the task executed successfully.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -213,8 +213,9 @@ operation times out.</li>
 </td>
 </tr>
 <tr class="field"><th class="field-name" colspan="2">Raises <a class="reference internal" href="celery.exceptions.html#celery.exceptions.TimeoutError" title="celery.exceptions.TimeoutError">celery.exceptions.TimeoutError</a>:</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first last">if <tt class="docutils literal"><span class="pre">timeout</span></tt> is not <tt class="xref docutils literal"><span class="pre">None</span></tt>
-and the result does not arrive within <tt class="docutils literal"><span class="pre">timeout</span></tt> seconds.</p>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first last">if <tt class="docutils literal"><span class="pre">timeout</span></tt> is not
+<tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt> and the result does not arrive within <tt class="docutils literal"><span class="pre">timeout</span></tt>
+seconds.</p>
 </td>
 </tr>
 </tbody>
@@ -238,7 +239,7 @@ exception will be re-raised.</p>
 <dl class="method">
 <dt id="celery.result.EagerResult.ready">
 <tt class="descclassname">EagerResult.</tt><tt class="descname">ready</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.EagerResult.ready" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task has been executed.</p>
+<dd><p>Returns <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> if the task has been executed.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -261,7 +262,7 @@ exception will be re-raised.</p>
 <dl class="method">
 <dt id="celery.result.EagerResult.successful">
 <tt class="descclassname">EagerResult.</tt><tt class="descname">successful</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.result.EagerResult.successful" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns <tt class="xref docutils literal"><span class="pre">True</span></tt> if the task executed without failure.</p>
+<dd><p>Returns <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> if the task executed without failure.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -331,7 +332,7 @@ inspection of the subtasks status and return values as a single entity.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><tt class="xref docutils literal"><span class="pre">True</span></tt> if any of the tasks in the taskset failed.
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> if any of the tasks in the taskset failed.
 (i.e., raised an exception)</td>
 </tr>
 </tbody>
@@ -392,8 +393,9 @@ it will wait for results, before the operation times out.</li>
 </td>
 </tr>
 <tr class="field"><th class="field-name" colspan="2">Raises <a class="reference internal" href="celery.exceptions.html#celery.exceptions.TimeoutError" title="celery.exceptions.TimeoutError">celery.exceptions.TimeoutError</a>:</th></tr>
-<tr><td>&nbsp;</td><td class="field-body"><p class="first last">if <tt class="docutils literal"><span class="pre">timeout</span></tt> is not <tt class="xref docutils literal"><span class="pre">None</span></tt>
-and the operation takes longer than <tt class="docutils literal"><span class="pre">timeout</span></tt> seconds.</p>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first last">if <tt class="docutils literal"><span class="pre">timeout</span></tt> is not
+<tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt> and the operation takes longer than <tt class="docutils literal"><span class="pre">timeout</span></tt>
+seconds.</p>
 </td>
 </tr>
 </tbody>
@@ -418,7 +420,7 @@ will be reraised by <a class="reference internal" href="#celery.result.TaskSetRe
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><tt class="xref docutils literal"><span class="pre">True</span></tt> if all of the tasks in the taskset has been
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> if all of the tasks in the taskset has been
 executed.</td>
 </tr>
 </tbody>
@@ -427,7 +429,7 @@ executed.</td>
 
 <dl class="classmethod">
 <dt id="celery.result.TaskSetResult.restore">
-<em class="property">classmethod </em><tt class="descname">restore</tt><big>(</big><em>taskset_id</em>, <em>backend=&lt;celery.backends.amqp.AMQPBackend object at 0x103f94e50&gt;</em><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult.restore" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><tt class="descname">restore</tt><big>(</big><em>taskset_id</em>, <em>backend=&lt;celery.backends.amqp.AMQPBackend object at 0x103973bd0&gt;</em><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult.restore" title="Permalink to this definition">¶</a></dt>
 <dd><p>Restore previously saved taskset result.</p>
 </dd></dl>
 
@@ -438,7 +440,7 @@ executed.</td>
 
 <dl class="method">
 <dt id="celery.result.TaskSetResult.save">
-<tt class="descname">save</tt><big>(</big><em>backend=&lt;celery.backends.amqp.AMQPBackend object at 0x103f94e50&gt;</em><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult.save" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">save</tt><big>(</big><em>backend=&lt;celery.backends.amqp.AMQPBackend object at 0x103973bd0&gt;</em><big>)</big><a class="headerlink" href="#celery.result.TaskSetResult.save" title="Permalink to this definition">¶</a></dt>
 <dd><p>Save taskset result for later retrieval using <a class="reference internal" href="#celery.result.TaskSetResult.restore" title="celery.result.TaskSetResult.restore"><tt class="xref py py-meth docutils literal"><span class="pre">restore()</span></tt></a>.</p>
 <p>Example:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
@@ -455,7 +457,7 @@ executed.</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><tt class="xref docutils literal"><span class="pre">True</span></tt> if all of the tasks in the taskset finished
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> if all of the tasks in the taskset finished
 successfully (i.e. did not raise an exception).</td>
 </tr>
 </tbody>
@@ -476,7 +478,7 @@ successfully (i.e. did not raise an exception).</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><tt class="xref docutils literal"><span class="pre">True</span></tt> if any of the tasks in the taskset is still
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> if any of the tasks in the taskset is still
 waiting for execution.</td>
 </tr>
 </tbody>

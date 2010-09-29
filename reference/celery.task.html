@@ -75,7 +75,7 @@ as listed in the <a class="reference internal" href="#celery.task.Task.run" titl
 <dl class="attribute">
 <dt id="celery.task.Task.abstract">
 <tt class="descname">abstract</tt><a class="headerlink" href="#celery.task.Task.abstract" title="Permalink to this definition">¶</a></dt>
-<dd><p>If <tt class="xref docutils literal"><span class="pre">True</span></tt> the task is an abstract base class.</p>
+<dd><p>If <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> the task is an abstract base class.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -90,7 +90,7 @@ however if you want a periodic task, you should subclass
 <dt id="celery.task.Task.queue">
 <tt class="descname">queue</tt><a class="headerlink" href="#celery.task.Task.queue" title="Permalink to this definition">¶</a></dt>
 <dd><p>Select a destination queue for this task. The queue needs to exist
-in <tt class="docutils literal"><span class="pre">CELERY_QUEUES</span></tt>. The <tt class="docutils literal"><span class="pre">routing_key</span></tt>, <tt class="docutils literal"><span class="pre">exchange</span></tt> and
+in <a class="reference internal" href="../configuration.html#std:setting-CELERY_QUEUES"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_QUEUES</span></tt></a>. The <tt class="docutils literal"><span class="pre">routing_key</span></tt>, <tt class="docutils literal"><span class="pre">exchange</span></tt> and
 <tt class="docutils literal"><span class="pre">exchange_type</span></tt> attributes will be ignored if this is set.</p>
 </dd></dl>
 
@@ -146,7 +146,7 @@ highest. Note that RabbitMQ doesn&#8217;t support priorities yet.</p>
 <dt id="celery.task.Task.max_retries">
 <tt class="descname">max_retries</tt><a class="headerlink" href="#celery.task.Task.max_retries" title="Permalink to this definition">¶</a></dt>
 <dd><p>Maximum number of retries before giving up.
-If set to <tt class="xref docutils literal"><span class="pre">None</span></tt>, it will never stop retrying.</p>
+If set to <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt>, it will never stop retrying.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -159,9 +159,9 @@ executed. Default is a 3 minute delay.</p>
 <dl class="attribute">
 <dt id="celery.task.Task.rate_limit">
 <tt class="descname">rate_limit</tt><a class="headerlink" href="#celery.task.Task.rate_limit" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set the rate limit for this task type, Examples: <tt class="xref docutils literal"><span class="pre">None</span></tt> (no rate
-limit), <tt class="docutils literal"><span class="pre">&quot;100/s&quot;</span></tt> (hundred tasks a second), <tt class="docutils literal"><span class="pre">&quot;100/m&quot;</span></tt> (hundred
-tasks a minute), <tt class="docutils literal"><span class="pre">&quot;100/h&quot;</span></tt> (hundred tasks an hour)</p>
+<dd><p>Set the rate limit for this task type, Examples: <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt> (no
+rate limit), <tt class="docutils literal"><span class="pre">&quot;100/s&quot;</span></tt> (hundred tasks a second), <tt class="docutils literal"><span class="pre">&quot;100/m&quot;</span></tt>
+(hundred tasks a minute), <tt class="docutils literal"><span class="pre">&quot;100/h&quot;</span></tt> (hundred tasks an hour)</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -206,34 +206,34 @@ a task of this type raises an exception.</p>
 <dl class="attribute">
 <dt id="celery.task.Task.autoregister">
 <tt class="descname">autoregister</tt><a class="headerlink" href="#celery.task.Task.autoregister" title="Permalink to this definition">¶</a></dt>
-<dd><p>If <tt class="xref docutils literal"><span class="pre">True</span></tt> the task is automatically registered in the task
+<dd><p>If <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> the task is automatically registered in the task
 registry, which is the default behaviour.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.task.Task.track_started">
 <tt class="descname">track_started</tt><a class="headerlink" href="#celery.task.Task.track_started" title="Permalink to this definition">¶</a></dt>
-<dd><p>If <tt class="xref docutils literal"><span class="pre">True</span></tt> the task will report its status as &#8220;started&#8221;
+<dd><p>If <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt> the task will report its status as &#8220;started&#8221;
 when the task is executed by a worker.
 The default value is <tt class="xref docutils literal"><span class="pre">False</span></tt> as the normal behaviour is to not
 report that level of granularity. Tasks are either pending, finished,
 or waiting to be retried. Having a &#8220;started&#8221; status can be useful for
 when there are long running tasks and there is a need to report which
 task is currently running.</p>
-<p>The global default can be overridden by the <tt class="docutils literal"><span class="pre">CELERY_TRACK_STARTED</span></tt>
-setting.</p>
+<p>The global default can be overridden by the
+<a class="reference internal" href="../configuration.html#std:setting-CELERY_TRACK_STARTED"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_TRACK_STARTED</span></tt></a> setting.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="celery.task.Task.acks_late">
 <tt class="descname">acks_late</tt><a class="headerlink" href="#celery.task.Task.acks_late" title="Permalink to this definition">¶</a></dt>
-<dd><p>If set to <tt class="xref docutils literal"><span class="pre">True</span></tt> messages for this task will be acknowledged
+<dd><p>If set to <a href="#id1"><span class="problematic" id="id2">:vonst:`True`</span></a> messages for this task will be acknowledged
 <strong>after</strong> the task has been executed, not <em>just before</em>, which is
 the default behavior.</p>
 <p>Note that this means the task may be executed twice if the worker
 crashes in the middle of execution, which may be acceptable for some
 applications.</p>
-<p>The global default can be overriden by the <tt class="docutils literal"><span class="pre">CELERY_ACKS_LATE</span></tt>
+<p>The global default can be overriden by the <a class="reference internal" href="../configuration.html#std:setting-CELERY_ACKS_LATE"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_ACKS_LATE</span></tt></a>
 setting.</p>
 </dd></dl>
 
@@ -297,7 +297,7 @@ has finished executing.</p>
 <li><strong>args</strong> &#8211; positional arguments passed on to the task.</li>
 <li><strong>kwargs</strong> &#8211; keyword arguments passed on to the task.</li>
 <li><strong>throw</strong> &#8211; Re-raise task exceptions. Defaults to
-the <tt class="docutils literal"><span class="pre">CELERY_EAGER_PROPAGATES_EXCEPTIONS</span></tt> setting.</li>
+the <a class="reference internal" href="../configuration.html#std:setting-CELERY_EAGER_PROPAGATES_EXCEPTIONS"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_EAGER_PROPAGATES_EXCEPTIONS</span></tt></a> setting.</li>
 </ul>
 </td>
 </tr>
@@ -690,7 +690,7 @@ specifying the time in seconds.</p>
 <dl class="attribute">
 <dt id="celery.task.PeriodicTask.relative">
 <tt class="descname">relative</tt><a class="headerlink" href="#celery.task.PeriodicTask.relative" title="Permalink to this definition">¶</a></dt>
-<dd><p>If set to <tt class="xref docutils literal"><span class="pre">True</span></tt>, run times are relative to the time when the
+<dd><p>If set to <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt>, run times are relative to the time when the
 server was started. This was the previous behaviour, periodic tasks
 are now scheduled by the clock.</p>
 </dd></dl>
@@ -761,13 +761,14 @@ where next time to run is in seconds.</p>
 </li>
 </ul>
 <p>You can override this to decide the interval at runtime,
-but keep in mind the value of <tt class="docutils literal"><span class="pre">CELERYBEAT_MAX_LOOP_INTERVAL</span></tt>, which
-decides the maximum number of seconds celerybeat can sleep between
-re-checking the periodic task intervals. So if you dynamically change
-the next run at value, and the max interval is set to 5 minutes, it
-will take 5 minutes for the change to take effect, so you may
-consider lowering the value of <tt class="docutils literal"><span class="pre">CELERYBEAT_MAX_LOOP_INTERVAL</span></tt> if
-responsiveness if of importance to you.</p>
+but keep in mind the value of <a class="reference internal" href="../configuration.html#std:setting-CELERYBEAT_MAX_LOOP_INTERVAL"><tt class="xref std std-setting docutils literal"><span class="pre">CELERYBEAT_MAX_LOOP_INTERVAL</span></tt></a>,
+which decides the maximum number of seconds celerybeat can sleep
+between re-checking the periodic task intervals.  So if you
+dynamically change the next run at value, and the max interval is
+set to 5 minutes, it will take 5 minutes for the change to take
+effect, so you may consider lowering the value of
+<a class="reference internal" href="../configuration.html#std:setting-CELERYBEAT_MAX_LOOP_INTERVAL"><tt class="xref std std-setting docutils literal"><span class="pre">CELERYBEAT_MAX_LOOP_INTERVAL</span></tt></a> if responsiveness is of
+importance to you.</p>
 </dd></dl>
 
 <dl class="method">

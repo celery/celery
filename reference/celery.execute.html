@@ -65,7 +65,7 @@
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>throw</strong> &#8211; Re-raise task exceptions. Defaults to
-the <tt class="docutils literal"><span class="pre">CELERY_EAGER_PROPAGATES_EXCEPTIONS</span></tt> setting.</li>
+the <a class="reference internal" href="../configuration.html#std:setting-CELERY_EAGER_PROPAGATES_EXCEPTIONS"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_EAGER_PROPAGATES_EXCEPTIONS</span></tt></a> setting.</li>
 </ul>
 </td>
 </tr>
@@ -124,7 +124,7 @@ no running workers able to take on this task. Defaults to the tasks
 <li><strong>priority</strong> &#8211; The task priority, a number between <tt class="docutils literal"><span class="pre">0</span></tt> and <tt class="docutils literal"><span class="pre">9</span></tt>.
 Defaults to the tasks <tt class="xref py py-attr docutils literal"><span class="pre">priority</span></tt> attribute.</li>
 <li><strong>serializer</strong> &#8211; A string identifying the default serialization
-method to use. Defaults to the <tt class="docutils literal"><span class="pre">CELERY_TASK_SERIALIZER</span></tt> setting.
+method to use. Defaults to the <a class="reference internal" href="../configuration.html#std:setting-CELERY_TASK_SERIALIZER"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_TASK_SERIALIZER</span></tt></a> setting.
 Can be <tt class="docutils literal"><span class="pre">pickle</span></tt> <tt class="docutils literal"><span class="pre">json</span></tt>, <tt class="docutils literal"><span class="pre">yaml</span></tt>, or any custom serialization
 methods that have been registered with
 <tt class="xref py py-mod docutils literal"><span class="pre">carrot.serialization.registry</span></tt>. Defaults to the tasks
@@ -134,7 +134,7 @@ methods that have been registered with
 </tr>
 </tbody>
 </table>
-<p><strong>Note</strong>: If the <tt class="docutils literal"><span class="pre">CELERY_ALWAYS_EAGER</span></tt> setting is set, it will be
+<p><strong>Note</strong>: If the <a class="reference internal" href="../configuration.html#std:setting-CELERY_ALWAYS_EAGER"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_ALWAYS_EAGER</span></tt></a> setting is set, it will be
 replaced by a local <a class="reference internal" href="#celery.execute.apply" title="celery.execute.apply"><tt class="xref py py-func docutils literal"><span class="pre">apply()</span></tt></a> call instead.</p>
 </dd></dl>
 

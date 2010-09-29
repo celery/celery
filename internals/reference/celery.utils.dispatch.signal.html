@@ -81,8 +81,8 @@
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>receiver</strong> &#8211; <p>A function or an instance method which is to
 receive signals. Receivers must be hashable objects.</p>
-<p>if weak is <tt class="xref docutils literal"><span class="pre">True</span></tt>, then receiver must be weak-referencable (more
-precisely <tt class="xref py py-func docutils literal"><span class="pre">saferef.safe_ref()</span></tt> must be able to create a
+<p>if weak is <tt class="xref py py-const xref docutils literal"><span class="pre">True</span></tt>, then receiver must be weak-referencable
+(more precisely <tt class="xref py py-func docutils literal"><span class="pre">saferef.safe_ref()</span></tt> must be able to create a
 reference to the receiver).</p>
 <p>Receivers must be able to accept keyword arguments.</p>
 <p>If receivers have a <tt class="docutils literal"><span class="pre">dispatch_uid</span></tt> attribute, the receiver will
@@ -90,7 +90,7 @@ not be added if another receiver already exists with that
 <tt class="docutils literal"><span class="pre">dispatch_uid</span></tt>.</p>
 </li>
 <li><strong>sender</strong> &#8211; The sender to which the receiver should respond.
-Must either be of type <a class="reference internal" href="#celery.utils.dispatch.signal.Signal" title="celery.utils.dispatch.signal.Signal"><tt class="xref py py-class docutils literal"><span class="pre">Signal</span></tt></a>, or <tt class="xref docutils literal"><span class="pre">None</span></tt> to receive
+Must either be of type <a class="reference internal" href="#celery.utils.dispatch.signal.Signal" title="celery.utils.dispatch.signal.Signal"><tt class="xref py py-class docutils literal"><span class="pre">Signal</span></tt></a>, or <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt> to receive
 events from any sender.</li>
 <li><strong>weak</strong> &#8211; Whether to use weak references to the receiver.
 By default, the module will attempt to use weak references to the
@@ -143,7 +143,7 @@ have all receivers called if a raises an error.</p>
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>sender</strong> &#8211; The sender of the signal. Either a specific
-object or <tt class="xref docutils literal"><span class="pre">None</span></tt>.</li>
+object or <tt class="xref py py-const xref docutils literal"><span class="pre">None</span></tt>.</li>
 <li><strong>**named</strong> &#8211; Named arguments which will be passed to receivers.</li>
 </ul>
 </td>

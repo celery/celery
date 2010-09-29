@@ -144,6 +144,7 @@
       <dt><a href="reference/celery.task.html#celery.task.Task.acks_late">(celery.task.Task attribute)</a></dt>
   </dl></dd>
     <dt><a href="reference/celery.conf.html#celery.conf.ACKS_LATE">ACKS_LATE (in module celery.conf)</a></dt>
+    <dt><a href="userguide/tasks.html#Task.acks_late">acks_late (Task attribute)</a></dt>
     <dt><a href="reference/celery.task.control.html#celery.task.control.inspect.active">active() (celery.task.control.inspect method)</a></dt>
     <dt><a href="internals/reference/celery.worker.state.html#celery.worker.state.active_requests">active_requests (in module celery.worker.state)</a></dt>
     <dt><a href="internals/reference/celery.beat.html#celery.beat.Scheduler.add">add() (celery.beat.Scheduler method)</a></dt>
@@ -237,6 +238,7 @@
   <td width="33%" valign="top"><dl>
     <dt><a href="reference/celery.result.html#celery.result.AsyncResult.backend">backend (celery.result.AsyncResult attribute)</a></dt>
     <dd><dl>
+      <dt><a href="userguide/tasks.html#Task.backend">(Task attribute)</a></dt>
       <dt><a href="reference/celery.result.html#celery.result.BaseAsyncResult.backend">(celery.result.BaseAsyncResult attribute)</a></dt>
       <dt><a href="reference/celery.task.html#celery.task.Task.backend">(celery.task.Task attribute)</a></dt>
       <dt><a href="reference/celery.task.base.html#celery.task.base.Task.backend">(celery.task.base.Task attribute)</a></dt>
@@ -974,6 +976,7 @@
     <dt><a href="reference/celery.bin.celeryctl.html#celery.bin.celeryctl.Command.error">error() (celery.bin.celeryctl.Command method)</a></dt>
     <dt><a href="reference/celery.task.base.html#celery.task.base.Task.error_whitelist">error_whitelist (celery.task.base.Task attribute)</a></dt>
     <dd><dl>
+      <dt><a href="userguide/tasks.html#Task.error_whitelist">(Task attribute)</a></dt>
       <dt><a href="reference/celery.task.html#celery.task.Task.error_whitelist">(celery.task.Task attribute)</a></dt>
   </dl></dd>
     <dt><a href="reference/celery.task.base.html#celery.task.base.Task.establish_connection">establish_connection() (celery.task.base.Task class method)</a></dt>
@@ -2155,9 +2158,9 @@
       <dt><a href="configuration.html#std:setting-TT_HOST">TT_HOST</a></dt>
       <dt><a href="configuration.html#std:setting-TT_PORT">TT_PORT</a></dt>
   </dl></dd>
+    <dt><a href="reference/celery.loaders.html#celery.loaders.setup_loader">setup_loader() (in module celery.loaders)</a></dt>
 </dl></td>
   <td width="33%" valign="top"><dl>
-    <dt><a href="reference/celery.loaders.html#celery.loaders.setup_loader">setup_loader() (in module celery.loaders)</a></dt>
     <dt><a href="internals/reference/celery.log.html#celery.log.setup_logger">setup_logger() (in module celery.log)</a></dt>
     <dt><a href="reference/celery.apps.beat.html#celery.apps.beat.Beat.setup_logging">setup_logging() (celery.apps.beat.Beat method)</a></dt>
     <dt><a href="internals/reference/celery.log.html#celery.log.setup_logging_subsystem">setup_logging_subsystem() (in module celery.log)</a></dt>
@@ -2245,6 +2248,7 @@
       <dt><a href="reference/celery.task.html#celery.task.Task.store_errors_even_if_ignored">(celery.task.Task attribute)</a></dt>
   </dl></dd>
     <dt><a href="reference/celery.conf.html#celery.conf.STORE_ERRORS_EVEN_IF_IGNORED">STORE_ERRORS_EVEN_IF_IGNORED (in module celery.conf)</a></dt>
+    <dt><a href="userguide/tasks.html#Task.store_errors_even_if_ignored">store_errors_even_if_ignored (Task attribute)</a></dt>
     <dt><a href="internals/reference/celery.backends.amqp.html#celery.backends.amqp.AMQPBackend.store_result">store_result() (celery.backends.amqp.AMQPBackend method)</a></dt>
     <dd><dl>
       <dt><a href="internals/reference/celery.backends.base.html#celery.backends.base.BaseBackend.store_result">(celery.backends.base.BaseBackend method)</a></dt>
@@ -2339,13 +2343,13 @@
     <dt><a href="reference/celery.events.state.html#celery.events.state.State.tasks_by_timestamp">tasks_by_timestamp() (celery.events.state.State method)</a></dt>
     <dt><a href="reference/celery.events.state.html#celery.events.state.State.tasks_by_type">tasks_by_type() (celery.events.state.State method)</a></dt>
     <dt><a href="reference/celery.events.state.html#celery.events.state.State.tasks_by_worker">tasks_by_worker() (celery.events.state.State method)</a></dt>
-</dl></td>
-  <td width="33%" valign="top"><dl>
     <dt><a href="internals/reference/celery.db.models.html#celery.db.models.TaskSet">TaskSet (class in celery.db.models)</a></dt>
     <dd><dl>
       <dt><a href="reference/celery.task.html#celery.task.TaskSet">(class in celery.task)</a></dt>
       <dt><a href="reference/celery.task.sets.html#celery.task.sets.TaskSet">(class in celery.task.sets)</a></dt>
   </dl></dd>
+</dl></td>
+  <td width="33%" valign="top"><dl>
     <dt><a href="internals/reference/celery.db.models.html#celery.db.models.TaskSet.taskset_id">taskset_id (celery.db.models.TaskSet attribute)</a></dt>
     <dd><dl>
       <dt><a href="reference/celery.result.html#celery.result.TaskSetResult.taskset_id">(celery.result.TaskSetResult attribute)</a></dt>
@@ -2403,6 +2407,7 @@
       <dt><a href="reference/celery.task.html#celery.task.Task.track_started">(celery.task.Task attribute)</a></dt>
   </dl></dd>
     <dt><a href="reference/celery.conf.html#celery.conf.TRACK_STARTED">TRACK_STARTED (in module celery.conf)</a></dt>
+    <dt><a href="userguide/tasks.html#Task.track_started">track_started (Task attribute)</a></dt>
     <dt><a href="internals/reference/celery.utils.html#celery.utils.truncate_text">truncate_text() (in module celery.utils)</a></dt>
     <dt>TT_HOST</dt>
     <dd><dl>
