@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Change history &mdash; Celery v2.1.0a6 documentation</title>
+    <title>Change history &mdash; Celery v2.1.0rc1 documentation</title>
     <link rel="stylesheet" href="static/celery.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '2.1.0a6',
+        VERSION:     '2.1.0rc1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.0a6 documentation" href="index.html" />
+    <link rel="top" title="Celery v2.1.0rc1 documentation" href="index.html" />
     <link rel="next" title="Interesting Links" href="links.html" />
     <link rel="prev" title="Platform Specific - celery.platforms" href="internals/reference/celery.platforms.html" /> 
   </head>
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="internals/reference/celery.platforms.html" title="Platform Specific - celery.platforms"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Celery v2.1.0a6 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v2.1.0rc1 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -2114,7 +2114,7 @@ can easily be traced.</p>
 </li>
 <li><p class="first">Unittests: Don&#8217;t disable the django test database teardown,
 instead fixed the underlying issue which was caused by modifications
-to the <tt class="docutils literal"><span class="pre">DATABASE_NAME</span></tt> setting (Issue #82).</p>
+to the <tt class="docutils literal"><span class="pre">DATABASE_NAME</span></tt> setting (<a class="issue-closed reference-issue reference external" href="http://github.com/ask/celery/issues/82">Issue #82</a>).</p>
 </li>
 <li><p class="first">Django Loader: New config <tt class="xref std std-setting docutils literal"><span class="pre">CELERY_DB_REUSE_MAX</span></tt> (max number of
 tasks to reuse the same database connection)</p>
@@ -2143,7 +2143,7 @@ twisted/eventlet pool?</p>
 <p>Consider the competition for the first pool plug-in started!</p>
 </blockquote>
 </li>
-<li><p class="first">Debian init scripts: Use <tt class="docutils literal"><span class="pre">-a</span></tt> not <tt class="docutils literal"><span class="pre">&amp;&amp;</span></tt> (Issue #82).</p>
+<li><p class="first">Debian init scripts: Use <tt class="docutils literal"><span class="pre">-a</span></tt> not <tt class="docutils literal"><span class="pre">&amp;&amp;</span></tt> (<a class="issue-closed reference-issue reference external" href="http://github.com/ask/celery/issues/82">Issue #82</a>).</p>
 </li>
 <li><p class="first">Debian init scripts: Now always preserves <tt class="docutils literal"><span class="pre">$CELERYD_OPTS</span></tt> from the
 <tt class="docutils literal"><span class="pre">/etc/default/celeryd</span></tt> and <tt class="docutils literal"><span class="pre">/etc/default/celerybeat</span></tt>.</p>
@@ -2160,7 +2160,7 @@ and <tt class="docutils literal"><span class="pre">SIGINT</span></tt> signals.</
 when trying to log that a task had been revoked.</p>
 </li>
 <li><p class="first">management.commands.camqadm: Fixed typo <tt class="docutils literal"><span class="pre">camqpadm</span></tt> -&gt; <tt class="docutils literal"><span class="pre">camqadm</span></tt>
-(Issue #83).</p>
+(<a class="issue-closed reference-issue reference external" href="http://github.com/ask/celery/issues/83">Issue #83</a>).</p>
 </li>
 <li><p class="first">PeriodicTask.delta_resolution: Was not working for days and hours, now fixed
 by rounding to the nearest day/hour.</p>
@@ -2883,7 +2883,7 @@ be sure to initialize tables (django: <tt class="docutils literal"><span class="
 <blockquote>
 <p>It uses messages to publish task return value and status. And it&#8217;s
 incredibly fast!</p>
-<p>See issue #6 for more info!</p>
+<p>See <a class="issue-closed reference-issue reference external" href="http://github.com/ask/celery/issues/6">issue #6</a> for more info!</p>
 </blockquote>
 </li>
 <li><p class="first">AMQP QoS (prefetch count) implemented:</p>
@@ -3850,7 +3850,7 @@ the name change request is in <tt class="docutils literal"><span class="pre">doc
         <li class="right" >
           <a href="internals/reference/celery.platforms.html" title="Platform Specific - celery.platforms"
              >previous</a> |</li>
-        <li><a href="index.html">Celery v2.1.0a6 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v2.1.0rc1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
