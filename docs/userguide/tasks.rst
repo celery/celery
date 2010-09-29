@@ -230,11 +230,21 @@ General
     :class:`~celery.result.AsyncResult` to check if the task is ready,
     or get its return value.
 
+.. attribute:: Task.store_errors_even_if_ignored
+
+    If true, errors will be stored even if the task is configured
+    to ignore results.
+
 .. attribute:: Task.send_error_emails
 
     Send an e-mail whenever a task of this type fails.
     Defaults to the :setting:`CELERY_SEND_TASK_ERROR_EMAILS` setting.
     See :ref:`conf-error-mails` for more information.
+
+.. attribute:: Task.error_whitelist
+
+    If the sending of error e-emails is enabled for this task, then
+    this is a whitelist of exceptions to actually send e-mails about.
 
 .. attribute:: Task.serializer
 
@@ -245,6 +255,42 @@ General
     :mod:`carrot.serialization.registry`.
 
     Please see :ref:`executing-serializers` for more information.
+
+.. attribute:: Task.backend
+
+    The result store backend to use for this task. Defaults to the
+    :setting:`CELERY_RESULT_BACKEND` setting.
+
+.. attribute:: Task.acks_late
+
+    If set to :const:`True` messages for this task will be acknowledged
+    **after** the task has been executed, not *just before*, which is
+    the default behavior.
+
+    Note that this means the task may be executed twice if the worker
+    crashes in the middle of execution, which may be acceptable for some
+    applications.
+
+    The global default can be overriden by the :setting:`CELERY_ACKS_LATE`
+    setting.
+
+.. attribute:: Task.track_started
+
+    If :const:`True` the task will report its status as "started"
+    when the task is executed by a worker.
+    The default value is ``False`` as the normal behaviour is to not
+    report that level of granularity. Tasks are either pending, finished,
+    or waiting to be retried. Having a "started" status can be useful for
+    when there are long running tasks and there is a need to report which
+    task is currently running.
+
+    The global default can be overridden by the
+    :setting:`CELERY_TRACK_STARTED` setting.
+
+
+.. seealso::
+
+    The API reference for :class:`~celery.task.base.Task`.
 
 .. _task-message-options:
 
