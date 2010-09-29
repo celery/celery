@@ -44,7 +44,7 @@ your Redis database::
 
     BROKER_HOST = "localhost"  # Maps to redis host.
     BROKER_PORT = 6379         # Maps to redis port.
-    BROKER_VHOST = "celery"    # Maps to database name.
+    BROKER_VHOST = "0"         # Maps to database number.
 
 .. _otherqueues-database:
 
