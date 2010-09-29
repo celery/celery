@@ -175,6 +175,10 @@ Now that the camera has been started, and events have been enabled
 you should be able to see your workers and the tasks in the admin interface
 (it may take some time for workers to show up).
 
+The admin interface shows tasks, worker nodes, and even
+lets you perform some actions, like revoking and rate limiting tasks,
+and shutting down worker nodes.
+
 .. _monitoring-django-frequency:
 
 Shutter frequency
