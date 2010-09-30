@@ -47,6 +47,7 @@ class TaskPool(object):
         self.timeout = timeout
         self.soft_timeout = soft_timeout
         self.putlocks = putlocks
+        self.initargs = None
         self._pool = None
 
     def start(self):
