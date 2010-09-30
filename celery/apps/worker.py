@@ -1,3 +1,4 @@
+import atexit
 import logging
 import multiprocessing
 import os
@@ -36,7 +37,7 @@ class Worker(object):
             hostname=None, discard=False, run_clockservice=False,
             schedule=None, task_time_limit=None, task_soft_time_limit=None,
             max_tasks_per_child=None, queues=None, events=False, db=None,
-            include=None, app=None, **kwargs):
+            include=None, app=None, pidfile=None, **kwargs):
         self.app = app = app_or_default(app)
         self.concurrency = (concurrency or
                             app.conf.CELERYD_CONCURRENCY or
@@ -58,6 +59,7 @@ class Worker(object):
         self.use_queues = queues or []
         self.queues = None
         self.include = include or []
+        self.pidfile = pidfile
         self._isatty = sys.stdout.isatty()
 
         if isinstance(self.use_queues, basestring):
@@ -81,7 +83,7 @@ class Worker(object):
         # Dump configuration to screen so we have some basic information
         # for when users sends bug reports.
         print(self.startup_info())
-        set_process_status("Running...")
+        self.set_process_status("Running...")
 
         self.run_worker()
 
@@ -155,6 +157,9 @@ class Worker(object):
         }
 
     def run_worker(self):
+        if self.pidfile:
+            pidlock = platforms.create_pidlock(self.pidfile).__enter__()
+            atexit.register(pidlock.release)
         worker = self.WorkController(app=self.app,
                                 concurrency=self.concurrency,
                                 loglevel=self.loglevel,
@@ -195,6 +200,15 @@ class Worker(object):
     def osx_proxy_detection_workaround(self):
         """See http://github.com/ask/celery/issues#issue/161"""
         os.environ.setdefault("celery_dummy_proxy", "set_by_celeryd")
+
+    def set_process_status(self, info):
+        arg_start = "manage" in sys.argv[0] and 2 or 1
+        if sys.argv[arg_start:]:
+            info = "%s (%s)" % (info, " ".join(sys.argv[arg_start:]))
+        return platforms.set_mp_process_title("celeryd", info=info,
+                                              hostname=self.hostname)
+
+
 
 
 def install_worker_int_handler(worker):
@@ -259,13 +273,6 @@ def install_HUP_not_supported_handler(worker):
             "Restarting with HUP is unstable on this platform!")
 
     platforms.install_signal_handler("SIGHUP", warn_on_HUP_handler)
-
-
-def set_process_status(info):
-    arg_start = "manage" in sys.argv[0] and 2 or 1
-    if sys.argv[arg_start:]:
-        info = "%s (%s)" % (info, " ".join(sys.argv[arg_start:]))
-    return platforms.set_mp_process_title("celeryd", info=info)
 
 
 def run_worker(*args, **kwargs):

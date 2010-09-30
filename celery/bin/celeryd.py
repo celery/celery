@@ -145,6 +145,10 @@ class WorkerCommand(Command):
                 action="store", dest="include",
                 help="Comma separated list of additional modules to import. "
                  "Example: -I foo.tasks,bar.tasks"),
+            Option('--pidfile', default=None,
+                help="Optional file used to store the workers pid. "
+                     "The worker will not start if this file already exists "
+                     "and the pid is still alive."),
         )
 
 
