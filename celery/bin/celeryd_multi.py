@@ -1,5 +1,7 @@
+import errno
 import os
 import shlex
+import signal
 import socket
 import sys
 
@@ -205,6 +207,7 @@ class MultiTool(object):
 
     def __init__(self):
         self.commands = {"start": self.start,
+                         "stop": self.stop,
                          "detach": self.detach,
                          "names": self.names,
                          "expand": self.expand,
@@ -245,8 +248,50 @@ class MultiTool(object):
         p = NamespacedOptionParser(argv)
         p.options.setdefault("--pidfile", "celeryd@%n.pid")
         p.options.setdefault("--logfile", "celeryd@%n.log")
-        for argv in [argv for _, argv, _ in multi_args(p, cmd)]:
+        for nodename, argv, _ in multi_args(p, cmd):
+            print("> Starting node %s..." % (nodename, ))
+            print(argv)
             detach_worker(shlex.split(argv))
+
+    def stop(self, argv, cmd):
+        from celery import platforms
+        signames = set(sig for sig in dir(signal)
+                            if sig.startswith("SIG") and "_" not in sig)
+
+        def findsig(args, default=signal.SIGTERM):
+            for arg in reversed(args):
+                if len(arg) == 2 and arg[0] == "-" and arg[1].isdigit():
+                    try:
+                        return int(arg[1])
+                    except ValueError:
+                        pass
+                if arg[0] == "-":
+                    maybe_sig = "SIG" + arg[1:]
+                    if maybe_sig in signames:
+                        return getattr(signal, maybe_sig)
+            return default
+
+        p = NamespacedOptionParser(argv)
+        restargs = p.args[len(p.values):]
+        sig = findsig(restargs)
+        pidfile_template = p.options.setdefault("--pidfile", "celeryd@%n.pid")
+
+        for nodename, _, expander in multi_args(p, cmd):
+            pidfile = expander(pidfile_template)
+            try:
+                pid = platforms.read_pid_from_pidfile(pidfile)
+            except ValueError:
+                pass
+            if pid:
+                print("> Stopping node %s (%s)..." % (nodename, pid))
+                try:
+                    os.kill(pid, sig)
+                except OSError, exc:
+                    if exc.errno != errno.ESRCH:
+                        raise
+                    print("Could not stop pid %s: No such process." % pid)
+            else:
+                print("> Skipping node %s: not alive." % (nodename, ))
 
     def expand(self, argv, cmd=None):
         template = argv[0]
