@@ -141,7 +141,6 @@ class detached_celeryd(object):
             parser.leftovers.append("--logfile=%s" % (options.logfile, ))
         if options.pidfile:
             parser.leftovers.append("--pidfile=%s" % (options.pidfile, ))
-        print("LEFTOVERS: %r" % (parser.leftovers, ))
         return options, values, parser.leftovers
 
     def execute_from_commandline(self, argv=None):
