@@ -21,8 +21,61 @@ DAEMON_WORKDIR = "/"
 DAEMON_REDIRECT_TO = getattr(os, "devnull", "/dev/nulll")
 
 
+def get_fdmax(default=None):
+    fdmax = resource.getrlimit(resource.RLIMIT_NOFILE)[1]
+    if fdmax == resource.RLIM_INFINITY:
+        return default
+    return fdmax
+
+def remove_pidfile(path):
+    try:
+        os.unlink(path)
+    except OSError, exc:
+        if exc.errno in (errno.ENOENT, errno.EACCES):
+            return
+        raise
+
+
+def read_pid_from_pidfile(path):
+    try:
+        fh = open(path, "r")
+    except IOError, exc:
+        if exc.errno == errno.ENOENT:
+            return
+        raise
+
+    line = fh.readline().strip()
+    fh.close()
+
+    try:
+        return int(line)
+    except ValueError:
+        raise ValueError("PID file %r contents invalid." % path)
+
+
+def remove_pidfile_if_stale(path):
+    try:
+        pid = read_pid_from_pidfile(path)
+    except ValueError, exc:
+        sys.stderr.write("Broken pidfile found. Removing it.\n")
+        remove_pidfile(path)
+        return True
+    if not pid:
+        remove_pidfile(path)
+        return True
+
+    try:
+        os.kill(pid, 0)
+    except os.error, exc:
+        if exc.errno == errno.ESRCH:
+            sys.stderr.write("Stale pidfile exists. Removing it.\n")
+            remove_pidfile(path)
+            return True
+    return False
+
+
 def create_pidlock(pidfile):
-    """Create a pidfile to be used with python-daemon.
+    """Create or verify pidfile.
 
     If the pidfile already exists the program exits with an error message,
     however if the process it refers to is not running anymore, the pidfile
@@ -30,16 +83,29 @@ def create_pidlock(pidfile):
 
     """
 
-    from lockfile import pidlockfile, LockFailed
+    class LockFailed(Exception):
+        pass
+
 
     class PIDFile(object):
 
         def __init__(self, path):
             self.path = os.path.abspath(path)
 
+        def write_pid(self):
+            open_flags = (os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            open_mode = (((os.R_OK | os.W_OK) << 6) |
+                         ((os.R_OK) << 3) |
+                         ((os.R_OK)))
+            pidfile_fd = os.open(self.path, open_flags, open_mode)
+            pidfile = os.fdopen(pidfile_fd, "w")
+            pid = os.getpid()
+            pidfile.write("%d\n" % (pid, ))
+            pidfile.close()
+
         def __enter__(self):
             try:
-                pidlockfile.write_pid_to_pidfile(self.path)
+                self.write_pid()
             except OSError, exc:
                 raise LockFailed(str(exc))
             return self
@@ -51,30 +117,14 @@ def create_pidlock(pidfile):
             return os.path.exists(self.path)
 
         def release(self):
-            try:
-                os.unlink(self.path)
-            except OSError, exc:
-                if exc.errno in (errno.ENOENT, errno.EACCES):
-                    return
-                raise
+            remove_pidfile(self.path)
 
         def read_pid(self):
-            return pidlockfile.read_pid_from_pidfile(self.path)
+            return read_pid_from_pidfile(self.path)
 
         def is_stale(self):
-            pid = self.read_pid()
-            try:
-                os.kill(pid, 0)
-            except os.error, exc:
-                if exc.errno == errno.ESRCH:
-                    sys.stderr.write("Stale pidfile exists. Removing it.\n")
-                    self.release()
-                    return True
-            except TypeError, exc:
-                sys.stderr.write("Broken pidfile found. Removing it.\n")
-                self.release()
-                return True
-            return False
+            return remove_pidfile_if_stale(self.path)
+
 
     pidlock = PIDFile(pidfile)
     if pidlock.is_locked() and not pidlock.is_stale():
@@ -103,18 +153,23 @@ class DaemonContext(object):
             os._exit(0)
 
     def open(self):
-        from daemon import daemon
         if self._is_open:
             return
 
         self.detach()
 
         if self.chroot_directory is not None:
-            daemon.change_root_directory(self.chroot_directory)
+            os.chdir(self.chroot_directory)
+            os.chroot(self.chroot_directory)
         os.chdir(self.working_directory)
         os.umask(self.umask)
 
-        daemon.close_all_open_files()
+        for fd in reversed(range(get_fdmax(default=2048))):
+            try:
+                os.close(fd)
+            except OSError, exc:
+                if exc.errno != errno.EBADF:
+                    raise
 
         os.open(DAEMON_REDIRECT_TO, os.O_RDWR)
         os.dup2(0, 1)
@@ -131,9 +186,7 @@ def create_daemon_context(logfile=None, pidfile=None, **options):
         raise RuntimeError(
                 "This platform does not support detach.")
 
-    # set SIGCLD back to the default SIG_DFL (before python-daemon overrode
-    # it) lets the parent wait() for the terminated child process and stops
-    # the 'OSError: [Errno 10] No child processes' problem.
+    # Make sure SIGCLD is using the default handler.
     reset_signal("SIGCLD")
 
     # Since without stderr any errors will be silently suppressed,
@@ -141,7 +194,9 @@ def create_daemon_context(logfile=None, pidfile=None, **options):
     if logfile:
         open(logfile, "a").close()
     if pidfile:
-        open(pidfile, "a").close()
+        # Doesn't actually create the pidfile, but makes sure it's
+        # not stale.
+        create_pidlock(pidfile)
 
     defaults = {"umask": lambda: 0,
                 "chroot_directory": lambda: None,
