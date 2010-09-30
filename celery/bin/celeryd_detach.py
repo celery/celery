@@ -119,7 +119,7 @@ class PartialOptionParser(OptionParser):
 
 class detached_celeryd(object):
     option_list = OPTION_LIST
-    usage = "%%prog [options] [celeryd options]"
+    usage = "%prog [options] [celeryd options]"
     version = __version__
     description = ("Detaches Celery worker nodes.  See `celeryd --help` "
                    "for the list of supported worker arguments.")
