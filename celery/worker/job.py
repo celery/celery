@@ -139,11 +139,13 @@ def execute_and_trace(task_name, *args, **kwargs):
         >>> WorkerTaskTrace(task_name, *args, **kwargs).execute_safe()
 
     """
-    platforms.set_mp_process_title("celeryd", info=task_name)
+    hostname = kwargs.get("hostname")
+    platforms.set_mp_process_title("celeryd", info=task_name,
+                                   hostname=hostname)
     try:
         return WorkerTaskTrace(task_name, *args, **kwargs).execute_safe()
     finally:
-        platforms.set_mp_process_title("celeryd")
+        platforms.set_mp_process_title("celeryd", hostname=hostname)
 
 
 class TaskRequest(object):
