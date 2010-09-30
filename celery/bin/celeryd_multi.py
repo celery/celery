@@ -164,8 +164,13 @@ def multi_args(p, cmd="celeryd", append="", prefix="", suffix=""):
     options = dict(p.options)
     ranges = len(names) == 1
     if ranges:
-        names = map(str, range(1, int(names[0]) + 1))
-        prefix = "celery"
+        try:
+            noderange = int(names[0])
+        except ValueError:
+            pass
+        else:
+            names = map(str, range(1, int(names[0]) + 1))
+            prefix = "celery"
     cmd = options.pop("--cmd", cmd)
     append = options.pop("--append", append)
     hostname = options.pop("--hostname",
@@ -195,12 +200,9 @@ def say(m):
     sys.stderr.write("%s\n" % (m, ))
 
 
-def detach_worker(argv):
-    path = sys.executable
-    argv = [sys.executable, "-m", "celery.bin.celeryd_detach"] + argv
-
+def detach_worker(argv, path=sys.executable):
     if os.fork() == 0:
-        os.execv(path, argv)
+        os.execv(path, [path] + argv)
 
 
 class MultiTool(object):
@@ -215,7 +217,7 @@ class MultiTool(object):
                          "help": self.help}
 
     def __call__(self, argv, cmd="celeryd"):
-        if len(argv) == 0:
+        if len(argv) == 0 or argv[0][0] == "-":
             self.usage()
             sys.exit(0)
 
@@ -248,6 +250,7 @@ class MultiTool(object):
         p = NamespacedOptionParser(argv)
         p.options.setdefault("--pidfile", "celeryd@%n.pid")
         p.options.setdefault("--logfile", "celeryd@%n.log")
+        p.options.setdefault("--cmd", "-m celery.bin.celeryd_detach")
         for nodename, argv, _ in multi_args(p, cmd):
             print("> Starting node %s..." % (nodename, ))
             print(argv)
