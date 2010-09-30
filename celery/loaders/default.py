@@ -23,11 +23,7 @@ DEFAULT_UNCONFIGURED_SETTINGS = {
 
 
 def wanted_module_item(item):
-<<<<<<< HEAD
     return item[0].isupper() and not item.startswith("_")
-=======
-    return not item.startswith("_")
->>>>>>> 6a78496... 90% coverage
 
 
 class Loader(BaseLoader):
