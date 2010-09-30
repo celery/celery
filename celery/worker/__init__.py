@@ -30,7 +30,7 @@ WORKER_SIGRESET = frozenset(["SIGTERM",
 WORKER_SIGIGNORE = frozenset(["SIGINT"])
 
 
-def process_initializer():
+def process_initializer(hostname):
     """Initializes the process so it can be used to process tasks.
 
     Used for multiprocessing environments.
@@ -38,7 +38,7 @@ def process_initializer():
     """
     map(platforms.reset_signal, WORKER_SIGRESET)
     map(platforms.ignore_signal, WORKER_SIGIGNORE)
-    platforms.set_mp_process_title("celeryd")
+    platforms.set_mp_process_title("celeryd", hostname=hostname)
 
     # This is for windows and other platforms not supporting
     # fork(). Note that init_worker makes sure it's only
@@ -161,6 +161,7 @@ class WorkController(object):
         self.pool = instantiate(pool_cls, self.concurrency,
                                 logger=self.logger,
                                 initializer=process_initializer,
+                                initargs=(self.hostname, ),
                                 maxtasksperchild=self.max_tasks_per_child,
                                 timeout=self.task_time_limit,
                                 soft_timeout=self.task_soft_time_limit,
