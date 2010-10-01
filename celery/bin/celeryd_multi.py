@@ -259,7 +259,7 @@ class MultiTool(object):
         for nodename, argv, expander in multi_args(p, cmd):
             pidfile = expander(pidfile_template)
             try:
-                pid = platforms.read_pid_from_pidfile(pidfile)
+                pid = platforms.PIDFile(pidfile).read_pid()
             except ValueError:
                 pass
             if pid:

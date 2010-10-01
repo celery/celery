@@ -158,7 +158,7 @@ class Worker(object):
 
     def run_worker(self):
         if self.pidfile:
-            pidlock = platforms.create_pidlock(self.pidfile).__enter__()
+            pidlock = platforms.create_pidlock(self.pidfile).acquire()
             atexit.register(pidlock.release)
         worker = self.WorkController(app=self.app,
                                 concurrency=self.concurrency,
