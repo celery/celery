@@ -226,8 +226,6 @@ class Worker(object):
                                               hostname=self.hostname)
 
 
-
-
 def install_worker_int_handler(worker):
 
     def _stop(signum, frame):
