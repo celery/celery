@@ -292,6 +292,12 @@ News
 
     See issue #184.
 
+* :meth:`TaskSetResult.join <celery.result.TaskSetResult.join>`:
+  Added 'propagate=True' argument.
+
+  When set to :const:`False` exceptions occuring in subtasks will
+  not be re-raised.
+
 * Added ``Task.update_state(task_id, state, meta)``
   as a shortcut to ``task.backend.store_result(task_id, meta, state)``.
 
@@ -370,6 +376,32 @@ Fixes
     Also added support for several new methods:
     ``fatal``, ``makeRecord``, ``_log``, ``log``, ``isEnabledFor``,
     ``addHandler``, ``removeHandler``.
+
+.. _v210-experimental:
+
+Experimental
+------------
+
+* celeryd-multi: Added daemonization support.
+
+    celeryd-multi can now be used to start, stop and restart worker nodes.
+
+        $ celeryd-multi start jerry elaine george kramer
+        $ celeryd-multi stop jerry elaine george kramer
+        $ celeryd-multi restart jerry elaine george kramer
+        $ celeryd-multi kill jerry elaine george kramer
+
+    See ``celeryd-multi help`` for help.
+
+* celeryd-multi: ``start`` command renamed to ``show``.
+
+    ``celeryd-multi start`` will now actually start and detach worker nodes.
+    To just generate the commands you have to use ``celeryd-multi show``.
+
+* celeryd: Added ``--pidfile`` argument.
+
+   The worker will write its pid when it starts.  The worker will
+   not be started if this file exists and the pid contained is still alive.
 
 
 .. _v210-documentation:

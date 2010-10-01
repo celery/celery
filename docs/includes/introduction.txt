@@ -1,4 +1,4 @@
-:Version: 2.1.0rc1
+:Version: 2.1.0rc2
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
 :Source: http://github.com/ask/celery/
@@ -25,8 +25,8 @@ language. It can also `operate with other languages using webhooks`_.
 The recommended message broker is `RabbitMQ`_, but support for `Redis`_ and
 databases (`SQLAlchemy`_) is also available.
 
-Celery can be easily used with Django and Pylons using
-`django-celery`_ and `celery-pylons`_.
+Celery can be used with Django and Pylons using
+the `django-celery`_ and `celery-pylons`_ add-on packages.
 
 You may also be pleased to know that full Django integration exists,
 delivered by the `django-celery`_ package.
