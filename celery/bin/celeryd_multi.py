@@ -91,7 +91,7 @@ usage: %(prog_name)s start <node1 node2 nodeN|range> [celeryd options]
        %(prog_name)s show <n1 n2 nN|range> [celeryd options]
        %(prog_name)s get hostname <n1 n2 nN|range> [-qv] [celeryd options]
        %(prog_name)s names <n1 n2 nN|range>
-       %(prog_name)s expand template <n1 n2 nN|range> 
+       %(prog_name)s expand template <n1 n2 nN|range>
        %(prog_name)s help
 
 additional options (must appear after command name):
@@ -110,7 +110,7 @@ class MultiTool(object):
     retcode = 0  # Final exit code.
 
     def __init__(self):
-        self.commands = {"start": self.start, # XXX Deprecate
+        self.commands = {"start": self.start,
                          "show": self.show,
                          "stop": self.stop,
                          "restart": self.restart,

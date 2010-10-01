@@ -27,6 +27,7 @@ def get_fdmax(default=None):
         return default
     return fdmax
 
+
 def remove_pidfile(path):
     try:
         os.unlink(path)
@@ -86,7 +87,6 @@ def create_pidlock(pidfile):
     class LockFailed(Exception):
         pass
 
-
     class PIDFile(object):
 
         def __init__(self, path):
@@ -124,7 +124,6 @@ def create_pidlock(pidfile):
 
         def is_stale(self):
             return remove_pidfile_if_stale(self.path)
-
 
     pidlock = PIDFile(pidfile)
     if pidlock.is_locked() and not pidlock.is_stale():
@@ -181,6 +180,7 @@ class DaemonContext(object):
         if self._is_open:
             self._is_open = False
 
+
 def create_daemon_context(logfile=None, pidfile=None, **options):
     if not CAN_DETACH:
         raise RuntimeError(
@@ -209,7 +209,6 @@ def create_daemon_context(logfile=None, pidfile=None, **options):
     context = DaemonContext(**options)
 
     return context, context.close
-
 
 
 def parse_uid(uid):

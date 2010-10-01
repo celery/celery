@@ -110,7 +110,7 @@ class PartialOptionParser(OptionParser):
     def _process_short_opts(self, rargs, values):
         arg = rargs[0]
         try:
-           OptionParser._process_short_opts(self, rargs, values)
+            OptionParser._process_short_opts(self, rargs, values)
         except BadOptionError:
             self.leftovers.append(arg)
             if rargs and not rargs[0][0] == "-":
