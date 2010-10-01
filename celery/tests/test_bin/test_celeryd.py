@@ -40,7 +40,7 @@ def disable_stdouts(fun):
 class _WorkController(object):
 
     def __init__(self, *args, **kwargs):
-        pass
+        self.logger = log.get_default_logger()
 
     def start(self):
         pass
@@ -169,15 +169,18 @@ class test_funs(unittest.TestCase):
 
     @disable_stdouts
     def test_set_process_status(self):
+        worker = Worker(hostname="xyzza")
         prev1, sys.argv = sys.argv, ["Arg0"]
         try:
-            st = cd.set_process_status("Running")
+            st = worker.set_process_status("Running")
             self.assertIn("celeryd", st)
+            self.assertIn("xyzza", st)
             self.assertIn("Running", st)
             prev2, sys.argv = sys.argv, ["Arg0", "Arg1"]
             try:
-                st = cd.set_process_status("Running")
+                st = worker.set_process_status("Running")
                 self.assertIn("celeryd", st)
+                self.assertIn("xyzza", st)
                 self.assertIn("Running", st)
                 self.assertIn("Arg1", st)
             finally:
