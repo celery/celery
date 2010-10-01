@@ -2,33 +2,32 @@
 
 Some examples:
 
-    # The "show" command just prints the commands needed to start the workers.
-    # Advanced example with 10 workers:
+    # Advanced example starting 10 workers in the background:
     #   * Three of the workers processes the images and video queue
     #   * Two of the workers processes the data queue with loglevel DEBUG
     #   * the rest processes the default' queue.
+    $ celeryd-multi start 10 -l INFO -Q:1-3 images,video -Q:4,5:data
+        -Q default -L:4,5 DEBUG
+
+    # You can show the commands necessary to start the workers with
+    # the "show" command:
     $ celeryd-multi show 10 -l INFO -Q:1-3 images,video -Q:4,5:data
         -Q default -L:4,5 DEBUG
 
-    # To actually start the workers into the background you need to
-    # use the "detach" command:
-    $ celeryd-multi detach 10 -l INFO -Q:1-3 images,video -Q:4,5:data
-        -Q default -L:4,5 DEBUG
-
-    # get commands to start 10 workers, with 3 processes each
-    $ celeryd-multi detach 3 -c 3
+    # 3 workers, with 3 processes each
+    $ celeryd-multi start 3 -c 3
     celeryd -n celeryd1.myhost -c 3
     celeryd -n celeryd2.myhost -c 3
     celeryd- n celeryd3.myhost -c 3
 
     # start 3 named workers
-    $ celeryd-multi detach image video data -c 3
+    $ celeryd-multi start image video data -c 3
     celeryd -n image.myhost -c 3
     celeryd -n video.myhost -c 3
     celeryd -n data.myhost -c 3
 
     # specify custom hostname
-    $ celeryd-multi detach 2 -n worker.example.com -c 3
+    $ celeryd-multi start 2 -n worker.example.com -c 3
     celeryd -n celeryd1.worker.example.com -c 3
     celeryd -n celeryd2.worker.example.com -c 3
 
@@ -36,20 +35,20 @@ Some examples:
     # but you can also modify the options for ranges of or single workers
 
     # 3 workers: Two with 3 processes, and one with 10 processes.
-    $ celeryd-multi detach 3 -c 3 -c:1 10
+    $ celeryd-multi start 3 -c 3 -c:1 10
     celeryd -n celeryd1.myhost -c 10
     celeryd -n celeryd2.myhost -c 3
     celeryd -n celeryd3.myhost -c 3
 
     # can also specify options for named workers
-    $ celeryd-multi detach image video data -c 3 -c:image 10
+    $ celeryd-multi start image video data -c 3 -c:image 10
     celeryd -n image.myhost -c 10
     celeryd -n video.myhost -c 3
     celeryd -n data.myhost -c 3
 
     # ranges and lists of workers in options is also allowed:
     # (-c:1-3 can also be written as -c:1,2,3)
-    $ celeryd-multi detach 5 -c 3  -c:1-3 10
+    $ celeryd-multi start 5 -c 3  -c:1-3 10
     celeryd -n celeryd1.myhost -c 10
     celeryd -n celeryd2.myhost -c 10
     celeryd -n celeryd3.myhost -c 10
@@ -57,7 +56,7 @@ Some examples:
     celeryd -n celeryd5.myhost -c 3
 
     # lists also works with named workers
-    $ celeryd-multi detach foo bar baz xuzzy -c 3 -c:foo,bar,baz 10
+    $ celeryd-multi start foo bar baz xuzzy -c 3 -c:foo,bar,baz 10
     celeryd -n foo.myhost -c 10
     celeryd -n bar.myhost -c 10
     celeryd -n baz.myhost -c 10
@@ -84,7 +83,7 @@ SIGMAP = dict((getattr(signal, name), name) for name in SIGNAMES)
 
 
 USAGE = """\
-usage: %(prog_name)s detach <node1 node2 nodeN|range> [celeryd options]
+usage: %(prog_name)s start <node1 node2 nodeN|range> [celeryd options]
        %(prog_name)s stop <n1 n2 nN|range> [-SIG (default: -TERM)]
        %(prog_name)s restart <n1 n2 nN|range> [-SIG] [celeryd options]
        %(prog_name)s kill <n1 n2 nN|range>
@@ -111,9 +110,8 @@ class MultiTool(object):
     retcode = 0  # Final exit code.
 
     def __init__(self):
-        self.commands = {"start": self.show, # XXX Deprecate
+        self.commands = {"start": self.start, # XXX Deprecate
                          "show": self.show,
-                         "detach": self.detach,
                          "stop": self.stop,
                          "restart": self.restart,
                          "kill": self.kill,
@@ -174,7 +172,7 @@ class MultiTool(object):
         print("\n".join(" ".join(worker)
                         for _, worker, _ in multi_args(p, cmd)))
 
-    def detach(self, argv, cmd):
+    def start(self, argv, cmd):
         self.splash()
         p = NamespacedOptionParser(argv)
         self.with_detacher_default_options(p)
@@ -196,7 +194,7 @@ class MultiTool(object):
         try:
             os.kill(pid, sig)
         except OSError, exc:
-            if os.errno != errno.ESRCH:
+            if exc.errno != errno.ESRCH:
                 raise
             self.note("Could not signal %s (%s): No such process" % (
                         nodename, pid))
