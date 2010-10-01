@@ -21,6 +21,10 @@ DAEMON_WORKDIR = "/"
 DAEMON_REDIRECT_TO = getattr(os, "devnull", "/dev/nulll")
 
 
+class LockFailed(Exception):
+    pass
+
+
 def get_fdmax(default=None):
     fdmax = resource.getrlimit(resource.RLIMIT_NOFILE)[1]
     if fdmax == resource.RLIM_INFINITY:
@@ -28,55 +32,82 @@ def get_fdmax(default=None):
     return fdmax
 
 
-def remove_pidfile(path):
-    try:
-        os.unlink(path)
-    except OSError, exc:
-        if exc.errno in (errno.ENOENT, errno.EACCES):
-            return
-        raise
+class PIDFile(object):
 
+    def __init__(self, path):
+        self.path = os.path.abspath(path)
 
-def read_pid_from_pidfile(path):
-    try:
-        fh = open(path, "r")
-    except IOError, exc:
-        if exc.errno == errno.ENOENT:
-            return
-        raise
+    def write_pid(self):
+        open_flags = (os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        open_mode = (((os.R_OK | os.W_OK) << 6) |
+                        ((os.R_OK) << 3) |
+                        ((os.R_OK)))
+        pidfile_fd = os.open(self.path, open_flags, open_mode)
+        pidfile = os.fdopen(pidfile_fd, "w")
+        pid = os.getpid()
+        pidfile.write("%d\n" % (pid, ))
+        pidfile.close()
 
-    line = fh.readline().strip()
-    fh.close()
+    def acquire(self):
+        try:
+            self.write_pid()
+        except OSError, exc:
+            raise LockFailed(str(exc))
+        return self
 
-    try:
-        return int(line)
-    except ValueError:
-        raise ValueError("PID file %r contents invalid." % path)
+    def is_locked(self):
+        return os.path.exists(self.path)
 
+    def release(self):
+        self.remove()
 
-def remove_pidfile_if_stale(path):
-    try:
-        pid = read_pid_from_pidfile(path)
-    except ValueError, exc:
-        sys.stderr.write("Broken pidfile found. Removing it.\n")
-        remove_pidfile(path)
-        return True
-    if not pid:
-        remove_pidfile(path)
-        return True
+    def read_pid(self):
+        try:
+            fh = open(self.path, "r")
+        except IOError, exc:
+            if exc.errno == errno.ENOENT:
+                return
+            raise
 
-    try:
-        os.kill(pid, 0)
-    except os.error, exc:
-        if exc.errno == errno.ESRCH:
-            sys.stderr.write("Stale pidfile exists. Removing it.\n")
-            remove_pidfile(path)
+        line = fh.readline().strip()
+        fh.close()
+
+        try:
+            return int(line)
+        except ValueError:
+            raise ValueError("PID file %r contents invalid." % path)
+
+    def remove(self):
+        try:
+            os.unlink(self.path)
+        except OSError, exc:
+            if exc.errno in (errno.ENOENT, errno.EACCES):
+                return
+            raise
+
+    def remove_if_stale(self):
+        try:
+            pid = self.read_pid()
+        except ValueError, exc:
+            sys.stderr.write("Broken pidfile found. Removing it.\n")
+            self.remove()
             return True
-    return False
+        if not pid:
+            self.remove()
+            return True
+
+        try:
+            os.kill(pid, 0)
+        except os.error, exc:
+            if exc.errno == errno.ESRCH:
+                sys.stderr.write("Stale pidfile exists. Removing it.\n")
+                self.remove()
+                return True
+        return False
 
 
 def create_pidlock(pidfile):
-    """Create or verify pidfile.
+    """Create and verify pidfile.
 
     If the pidfile already exists the program exits with an error message,
     however if the process it refers to is not running anymore, the pidfile
@@ -84,49 +115,8 @@ def create_pidlock(pidfile):
 
     """
 
-    class LockFailed(Exception):
-        pass
-
-    class PIDFile(object):
-
-        def __init__(self, path):
-            self.path = os.path.abspath(path)
-
-        def write_pid(self):
-            open_flags = (os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-            open_mode = (((os.R_OK | os.W_OK) << 6) |
-                         ((os.R_OK) << 3) |
-                         ((os.R_OK)))
-            pidfile_fd = os.open(self.path, open_flags, open_mode)
-            pidfile = os.fdopen(pidfile_fd, "w")
-            pid = os.getpid()
-            pidfile.write("%d\n" % (pid, ))
-            pidfile.close()
-
-        def __enter__(self):
-            try:
-                self.write_pid()
-            except OSError, exc:
-                raise LockFailed(str(exc))
-            return self
-
-        def __exit__(self, *_exc):
-            self.release()
-
-        def is_locked(self):
-            return os.path.exists(self.path)
-
-        def release(self):
-            remove_pidfile(self.path)
-
-        def read_pid(self):
-            return read_pid_from_pidfile(self.path)
-
-        def is_stale(self):
-            return remove_pidfile_if_stale(self.path)
-
     pidlock = PIDFile(pidfile)
-    if pidlock.is_locked() and not pidlock.is_stale():
+    if pidlock.is_locked() and not pidlock.remove_if_stale():
         raise SystemExit(
                 "ERROR: Pidfile (%s) already exists.\n"
                 "Seems we're already running? (PID: %s)" % (
