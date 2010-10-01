@@ -25,16 +25,13 @@ OPTION_LIST = (
         Option('--workdir', default=None,
                action="store", dest="working_directory",
                help="Directory to change to when detached."),
-        Option('--chroot', default=None,
-               action="store", dest="chroot_directory",
-               help="Change root directory to this path when detached."),
 )
 
 
 class detached(object):
 
     def __init__(self, path, argv, logfile=None, pidfile=None, uid=None,
-            gid=None, umask=0, working_directory=None, chroot_directory=None):
+            gid=None, umask=0, working_directory=None):
         self.path = path
         self.argv = argv
         self.logfile = logfile
@@ -43,7 +40,6 @@ class detached(object):
         self.gid = gid
         self.umask = umask
         self.working_directory = working_directory
-        self.chroot_directory = chroot_directory
 
     def start(self):
         context, on_stop = create_daemon_context(
@@ -52,8 +48,7 @@ class detached(object):
                                 uid=self.uid,
                                 gid=self.gid,
                                 umask=self.umask,
-                                working_directory=self.working_directory,
-                                chroot_directory=self.chroot_directory)
+                                working_directory=self.working_directory)
         context.open()
         try:
             os.execv(self.path, [self.path] + self.argv)

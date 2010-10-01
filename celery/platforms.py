@@ -137,9 +137,8 @@ def create_pidlock(pidfile):
 class DaemonContext(object):
     _is_open = False
 
-    def __init__(self, pidfile=None, chroot_directory=None,
+    def __init__(self, pidfile=None,
             working_directory=DAEMON_WORKDIR, umask=DAEMON_UMASK, **kwargs):
-        self.chroot_directory = chroot_directory
         self.working_directory = working_directory
         self.umask = umask
 
@@ -157,9 +156,6 @@ class DaemonContext(object):
 
         self.detach()
 
-        if self.chroot_directory is not None:
-            os.chdir(self.chroot_directory)
-            os.chroot(self.chroot_directory)
         os.chdir(self.working_directory)
         os.umask(self.umask)
 
@@ -199,7 +195,6 @@ def create_daemon_context(logfile=None, pidfile=None, **options):
         create_pidlock(pidfile)
 
     defaults = {"umask": lambda: 0,
-                "chroot_directory": lambda: None,
                 "working_directory": lambda: os.getcwd()}
 
     for opt_name, opt_default_gen in defaults.items():
