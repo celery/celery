@@ -82,9 +82,9 @@
 
 set -e
 
-CELERYBEAT_PID_FILE="/var/run/celerybeat.pid"
-CELERYBEAT_LOG_FILE="/var/log/celerybeat.log"
-CELERYBEAT_LOG_LEVEL="INFO"
+DEFAULT_PID_FILE="/var/run/celerybeat.pid"
+DEFAULT_LOG_FILE="/var/log/celerybeat.log"
+DEFAULT_LOG_LEVEL="INFO"
 DEFAULT_CELERYBEAT="celerybeat"
 
 # /etc/init.d/ssh: start and stop the celery task worker daemon.
@@ -94,6 +94,9 @@ if test -f /etc/default/celeryd; then
 fi
 
 CELERYBEAT=${CELERYBEAT:-$DEFAULT_CELERYBEAT}
+CELERYBEAT_PID_FILE=${CELERYBEAT_PID_FILE:-${CELERYBEAT_PIDFILE:-$DEFAULT_PID_FILE}}
+CELERYBEAT_LOG_FILE=${CELERYBEAT_LOG_FILE:-${CELERYBEAT_LOGFILE:-$DEFAULT_LOG_FILE}}
+CELERYBEAT_LOG_LEVEL=${CELERYBEAT_LOG_LEVEL:-${CELERYBEAT_LOGLEVEL:-$DEFAULT_LOG_LEVEL}}
 
 export CELERY_LOADER
 
