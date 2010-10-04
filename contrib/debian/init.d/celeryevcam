@@ -52,10 +52,10 @@
 #   * CELERYD_CHDIR
 #       Path to chdir at start. Default is to stay in the current directory.
 #
-#   * CELERYEV_PIDFILE
+#   * CELERYEV_PID_FILE
 #       Full path to the pidfile. Default is /var/run/celeryd.pid.
 #
-#   * CELERYEV_LOGFILE
+#   * CELERYEV_LOG_FILE
 #       Full path to the celeryd logfile. Default is /var/log/celeryd.log
 #
 #   * CELERYEV_LOG_LEVEL
@@ -83,9 +83,9 @@
 
 set -e
 
-CELERYEV_PID_FILE="/var/run/celeryev.pid"
-CELERYEV_LOG_FILE="/var/log/celeryev.log"
-CELERYEV_LOG_LEVEL="INFO"
+DEFAULT_PID_FILE="/var/run/celeryev.pid"
+DEFAULT_LOG_FILE="/var/log/celeryev.log"
+DEFAULT_LOG_LEVEL="INFO"
 DEFAULT_CELERYEV="/usr/bin/celeryev"
 
 if test -f /etc/default/celeryd; then
@@ -97,6 +97,9 @@ if test -f /etc/default/celeryev; then
 fi
 
 CELERYEV=${CELERYEV:-$DEFAULT_CELERYEV}
+CELERYEV_PID_FILE=${CELERYEV_PID_FILE:-${CELERYEV_PIDFILE:-$DEFAULT_PID_FILE}}
+CELERYEV_LOG_FILE=${CELERYEV_LOG_FILE:-${CELERYEV_LOGFILE:-$DEFAULT_LOG_FILE}}
+CELERYEV_LOG_LEVEL=${CELERYEV_LOG_LEVEL:-${CELERYEV_LOG_LEVEL:-$DEFAULT_LOG_LEVEL}}
 
 export CELERY_LOADER
 
