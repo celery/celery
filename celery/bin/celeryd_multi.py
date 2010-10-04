@@ -321,7 +321,7 @@ class MultiTool(object):
 
     def splash(self):
         c = self.colored
-        self.note(c.cyan("%s v%s" % (self.prog_name, __version__)))
+        self.note(c.cyan("celeryd-multi v%s" % __version__))
 
     def waitexec(self, argv, path=sys.executable):
         argstr = shlex.split(" ".join([path] + list(argv)))
