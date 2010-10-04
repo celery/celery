@@ -181,6 +181,10 @@ def broadcast(command, arguments=None, destination=None, connection=None,
     if limit is None and destination:
         limit = destination and len(destination) or None
 
+    crq = None
+    if reply_ticket:
+        crq = ControlReplyConsumer(connection, reply_ticket)
+
     broadcast = BroadcastPublisher(connection)
     try:
         broadcast.send(command, arguments, destination=destination,
@@ -188,8 +192,7 @@ def broadcast(command, arguments=None, destination=None, connection=None,
     finally:
         broadcast.close()
 
-    if reply_ticket:
-        crq = ControlReplyConsumer(connection, reply_ticket)
+    if crq:
         try:
             return crq.collect(limit=limit, timeout=timeout,
                                callback=callback)
