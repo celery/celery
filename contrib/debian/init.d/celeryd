@@ -46,10 +46,10 @@
 #   * CELERYD_CHDIR
 #       Path to chdir at start. Default is to stay in the current directory.
 #
-#   * CELERYD_PIDFILE
+#   * CELERYD_PID_FILE
 #       Full path to the pidfile. Default is /var/run/celeryd.pid.
 #
-#   * CELERYD_LOGFILE
+#   * CELERYD_LOG_FILE
 #       Full path to the celeryd logfile. Default is /var/log/celeryd.log
 #
 #   * CELERYD_LOG_LEVEL
@@ -77,7 +77,6 @@
 
 set -e
 
-CELERYD_LOG_LEVEL="INFO"
 DEFAULT_CELERYD="/usr/bin/celeryd"
 
 # /etc/init.d/ssh: start and stop the celery task worker daemon.
@@ -88,6 +87,7 @@ fi
 
 CELERYD_LOG_FILE=${CELERYD_LOG_FILE:-${CELERYD_LOGFILE:-"/var/log/celeryd.log"}}
 CELERYD_PID_FILE=${CELERYD_PID_FILE:-${CELERYD_PIDFILE:-"/var/run/celeryd.pid"}}
+CELERYD_LOG_LEVEL=${CELERYD_LOG_LEVEL:-${CELERYD_LOGLEVEL:-"INFO"}}
 
 CELERYD=${CELERYD:-$DEFAULT_CELERYD}
 
