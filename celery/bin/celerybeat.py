@@ -29,7 +29,7 @@ class BeatCommand(Command):
 
     def run(self, *args, **kwargs):
         kwargs.pop("app", None)
-        return self.app.Beat(*args, **kwargs).run()
+        return self.app.Beat(**kwargs).run()
 
     def get_options(self):
         conf = self.app.conf
