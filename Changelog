@@ -213,6 +213,11 @@ News
 * celeryd: Added command-line option :option:`-I`/:option:`--include`:
   Additional (task) modules to be imported
 
+* celeryd: now emits a warning if running as root (euid is 0).
+
+* Fixed timing issue when declaring the remote control command reply queue
+  which meant replies could be lost.
+
 * :func:`celery.messaging.establish_connection`: Ability to override defaults
   used using kwarg "defaults".
 
@@ -387,8 +392,27 @@ Experimental
     celeryd-multi can now be used to start, stop and restart worker nodes.
 
         $ celeryd-multi start jerry elaine george kramer
+
+    This also creates pidfiles and logfiles (:file:`celeryd@jerry.pid`,
+    ..., :file:`celeryd@jerry.log`. To specify a location for these files
+    use the ``--pidfile`` and ``--logfile`` arguments with the ``%n``
+    format::
+
+        $ celeryd-multi start jerry elaine george kramer \
+                        --logfile=/var/log/celeryd@%n.log \
+                        --pidfile=/var/run/celeryd@%n.pid
+
+    Stopping::
+
         $ celeryd-multi stop jerry elaine george kramer
+
+    Restarting. The nodes will be restarted one by one as the old ones
+    are shutdown::
+
         $ celeryd-multi restart jerry elaine george kramer
+
+    Killing the nodes (**WARNING**: Will discard currently executing tasks)::
+
         $ celeryd-multi kill jerry elaine george kramer
 
     See ``celeryd-multi help`` for help.
@@ -403,6 +427,9 @@ Experimental
    The worker will write its pid when it starts.  The worker will
    not be started if this file exists and the pid contained is still alive.
 
+* Added generic init.d script using ``celeryd-multi``
+
+    http://github.com/ask/celery/tree/master/contrib/generic-init.d/celeryd
 
 .. _v210-documentation:
 
