@@ -193,6 +193,10 @@ class Control(object):
 
         def _do_broadcast(connection=None, connect_timeout=None):
 
+            crq = None
+            if reply_ticket:
+                crq = ControlReplyConsumer(connection, reply_ticket)
+
             broadcaster = BroadcastPublisher(connection, app=self.app)
             try:
                 broadcaster.send(command, arguments, destination=destination,
@@ -200,8 +204,7 @@ class Control(object):
             finally:
                 broadcaster.close()
 
-            if reply_ticket:
-                crq = ControlReplyConsumer(connection, reply_ticket)
+            if crq:
                 try:
                     return crq.collect(limit=limit, timeout=timeout,
                                        callback=callback)
