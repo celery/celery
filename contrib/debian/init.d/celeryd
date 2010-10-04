@@ -77,8 +77,6 @@
 
 set -e
 
-CELERYD_PID_FILE="/var/run/celeryd.pid"
-CELERYD_LOG_FILE="/var/log/celeryd.log"
 CELERYD_LOG_LEVEL="INFO"
 DEFAULT_CELERYD="/usr/bin/celeryd"
 
@@ -87,6 +85,9 @@ DEFAULT_CELERYD="/usr/bin/celeryd"
 if test -f /etc/default/celeryd; then
     . /etc/default/celeryd
 fi
+
+CELERYD_LOG_FILE=${CELERYD_LOG_FILE:-${CELERYD_LOGFILE:-"/var/log/celeryd.log"}}
+CELERYD_PID_FILE=${CELERYD_PID_FILE:-${CELERYD_PIDFILE:-"/var/run/celeryd.pid"}}
 
 CELERYD=${CELERYD:-$DEFAULT_CELERYD}
 
