@@ -181,7 +181,7 @@ stop_worker () {
 }
 
 start_worker () {
-    cmd="celeryd-multi detach $CELERYD_NODES $DAEMON_OPTS \
+    cmd="celeryd-multi start $CELERYD_NODES $DAEMON_OPTS \
                               --pidfile=$CELERYD_PID_FILE \
                               --cmd="$CELERYD" \
                               $CELERYD_OPTS"
