@@ -167,13 +167,16 @@ class DaemonContext(object):
             self._is_open = False
 
 
-def create_daemon_context(logfile=None, pidfile=None, **options):
+def create_daemon_context(logfile=None, pidfile=None, uid=None, gid=None,
+        **options):
     if not CAN_DETACH:
         raise RuntimeError(
                 "This platform does not support detach.")
 
     # Make sure SIGCLD is using the default handler.
     reset_signal("SIGCLD")
+
+    set_effective_user(uid=uid, gid=gid)
 
     # Since without stderr any errors will be silently suppressed,
     # we need to know that we have access to the logfile.
