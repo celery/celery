@@ -30,7 +30,7 @@ class BeatCommand(Command):
     def run(self, *args, **kwargs):
         from celery.apps.beat import Beat
         kwargs["defaults"] = self.defaults
-        return Beat(*args, **kwargs).run()
+        return Beat(**kwargs).run()
 
     def get_options(self):
         conf = self.defaults
