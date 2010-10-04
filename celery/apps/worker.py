@@ -77,6 +77,10 @@ class Worker(object):
         self.redirect_stdouts_to_logger()
         print("celery@%s v%s is starting." % (self.hostname, __version__))
 
+        if getattr(os, "geteuid", None) and os.geteuid() == 0:
+            warnings.warn(
+                "Running celeryd with superuser privileges is not encouraged!")
+
         if self.discard:
             self.purge_messages()
 
