@@ -94,43 +94,28 @@
 # Short-Description: celery task worker daemon
 ### END INIT INFO
 
-# OS X Debug replacements to lsb-functions.
-log_action_msg () {
-    echo $*
-}
-log_daemon_msg () {
-    echo $*
-}
-log_end_msg () {
-    if [ $1 -eq 0 ]; then
-        echo "ok"
-    else
-        echo "failed!"
-    fi
-}
-
-
 set -e
 
-CELERYD_PID_FILE="celeryd@%n.pid"
-CELERYD_LOG_FILE="celeryd@%n.log"
-CELERYD_LOG_LEVEL="INFO"
+DEFAULT_PID_FILE="/var/run/celeryd@%n.pid"
+DEFAULT_LOG_FILE="/var/log/celeryd@%n.log"
 DEFAULT_CELERYD="celeryd"
+DEFAULT_LOG_LEVEL="INFO"
+DEFAULT_NODES="celery"
 
-# /etc/init.d/ssh: start and stop the celery task worker daemon.
+# /etc/init.d/celeryd: start and stop the celery task worker daemon.
 
 if test -f /etc/default/celeryd; then
     . /etc/default/celeryd
 fi
 
+CELERYD_PID_FILE=${CELERYD_PID_FILE:-${CELERYD_PIDFILE:-$DEFAULT_PID_FILE}}
+CELERYD_LOG_FILE=${CELERYD_LOG_FILE:-${CELERYD_LOGFILE:-$DEFAULT_LOG_FILE}}
+CELERYD_LOG_LEVEL=${CELERYD_LOG_LEVEL:-${CELERYD_LOGLEVEL:-$DEFAULT_LOG_LEVEL}}
 CELERYD_MULTI=${CELERYD_MULTI:-"celeryd-multi"}
 CELERYD=${CELERYD:-$DEFAULT_CELERYD}
-CELERYD_NODES=${CELERYD_NODES:-"celery"}
+CELERYD_NODES=${CELERYD_NODES:-$DEFAULT_NODES}
 
 export CELERY_LOADER
-
-CELERYD_OPTS="$CELERYD_OPTS --logfile=$CELERYD_LOG_FILE \
-                            --loglevel=$CELERYD_LOG_LEVEL"
 
 if [ -n "$2" ]; then
     CELERYD_OPTS="$CELERYD_OPTS $2"
@@ -145,25 +130,14 @@ if [ -n "$CELERYD_GROUP" ]; then
 fi
 
 if [ -n "$CELERYD_CHDIR" ]; then
-    DAEMON_OPTS="$DAEMON_OPTS --chdir=$CELERYD_CHDIR"
+    DAEMON_OPTS="$DAEMON_OPTS --workdir=\"$CELERYD_CHDIR\""
 fi
-
-
-# Are we running from init?
-run_by_init() {
-    ([ "$previous" ] && [ "$runlevel" ]) || [ "$runlevel" = S ]
-}
 
 
 check_dev_null() {
     if [ ! -c /dev/null ]; then
-    if [ "$1" = log_end_msg ]; then
-        log_end_msg 1 || true
-    fi
-    if ! run_by_init; then
-        log_action_msg "/dev/null is not a character device!"
-    fi
-    exit 1
+        echo "/dev/null is not a character device!"
+        exit 1
     fi
 }
 
@@ -171,79 +145,65 @@ check_dev_null() {
 export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
 
 
-stop_worker () {
-    cmd="celeryd-multi stop $CELERYD_NODES --pidfile=$CELERYD_PID_FILE"
-    if $cmd; then
-        log_end_msg 0
-    else
-        log_end_msg 1
-    fi
+stop_workers () {
+    $CELERYD_MULTI stop $CELERYD_NODES --pidfile="$CELERYD_PID_FILE"
 }
 
-start_worker () {
-    cmd="celeryd-multi start $CELERYD_NODES $DAEMON_OPTS \
-                              --pidfile=$CELERYD_PID_FILE \
-                              --cmd="$CELERYD" \
-                              $CELERYD_OPTS"
-    if $cmd; then
-        log_end_msg 0
-    else
-        log_end_msg 1
-    fi
+
+start_workers () {
+    $CELERYD_MULTI start $CELERYD_NODES $DAEMON_OPTS        \
+                         --pidfile="$CELERYD_PID_FILE"      \
+                         --logfile="$CELERYD_LOG_FILE"      \
+                         --loglevel="$CELERYD_LOG_LEVEL"    \
+                         --cmd="$CELERYD"                   \
+                         $CELERYD_OPTS
+}
+
+
+restart_workers () {
+    $CELERYD_MULTI restart $CELERYD_NODES $DAEMON_OPTS      \
+                           --pidfile="$CELERYD_PID_FILE"    \
+                           --logfile="$CELERYD_LOG_FILE"    \
+                           --loglevel="$CELERYD_LOG_LEVEL"  \
+                           --cmd="$CELERYD"                 \
+                           $CELERYD_OPTS
 }
 
 
 
 case "$1" in
-  start)
-    check_dev_null
-    log_daemon_msg "Starting celery worker nodes" "celeryd-multi"
-    start_worker
-    ;;
-  stop)
-    log_daemon_msg "Stopping celery worker nodes" "celeryd-multi"
-    stop_worker
+    start)
+        check_dev_null
+        start_workers
     ;;
 
-  reload|force-reload)
-    echo "Use start+stop"
+    stop)
+        check_dev_null
+        stop_workers
     ;;
 
-  restart)
-    log_daemon_msg "Restarting celery worker nodes" "celeryd-multi"
-    stop_worker
-    check_dev_null log_end_msg
-    start_worker
+    reload|force-reload)
+        echo "Use restart"
     ;;
 
-  try-restart)
-    log_daemon_msg "Restarting celery worker nodes" "celeryd-multi"
-    set +e
-    stop_worker
-    RET="$?"
-    set -e
-    case $RET in
-        0)
-        # old daemon stopped
-        check_dev_null log_end_msg
-        start_worker
-        ;;
-        1)
-        # daemon not running
-        log_progress_msg "(not running)"
-        log_end_msg 0
-        ;;
-        *)
-        # failed to stop
-        log_progress_msg "(failed to stop)"
-        log_end_msg 1
-        ;;
-    esac
+    status)
+        celeryctl status
     ;;
 
-  *)
-    log_action_msg "Usage: /etc/init.d/celeryd {start|stop|force-reload|restart|try-restart|status}"
-    exit 1
+    restart)
+        check_dev_null
+        restart_workers
+    ;;
+
+    try-restart)
+        check_dev_null
+        restart_workers
+    ;;
+
+    *)
+        echo "Usage: /etc/init.d/celeryd {start|stop|restart|try-restart|kill}"
+        exit 1
+    ;;
 esac
 
 exit 0
