@@ -23,7 +23,7 @@ OPTION_LIST = (
         action="store", dest="maxrate", default=None,
         help="Recording: Shutter rate limit (e.g. 10/m)"),
     Option('-l', '--loglevel',
-        action="store", dest="loglevel", default="WARNING",
+        action="store", dest="loglevel", default="INFO",
         help="Loglevel. Default is WARNING."),
     Option('-f', '--logfile',
         action="store", dest="logfile", default=None,
