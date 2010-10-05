@@ -38,15 +38,16 @@ def set_process_status(prog, info=""):
 
 
 def run_celeryev(dump=False, camera=None, frequency=1.0, maxrate=None,
-        loglevel=logging.WARNING, logfile=None, **kwargs):
+        loglevel=logging.WARNING, logfile=None, prog_name="celeryev",
+        **kwargs):
     if dump:
-        set_process_status("celeryev:dump")
+        set_process_status("%s:dump" % prog_name)
         return evdump()
     if camera:
-        set_process_status("celeryev:cam")
+        set_process_status("%s:cam" % prog_name)
         return evcam(camera, frequency, maxrate,
                      loglevel=loglevel, logfile=logfile)
-    set_process_status("celeryev:top")
+    set_process_status("%s:top" % prog_name)
     return evtop()
 
 
