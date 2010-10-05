@@ -11,9 +11,6 @@ DEFAULT_CONFIG_MODULE = "celeryconfig"
 DEFAULT_SETTINGS = {
     "DEBUG": False,
     "ADMINS": (),
-    "DATABASE_ENGINE": "sqlite3",
-    "DATABASE_NAME": "celery.sqlite",
-    "INSTALLED_APPS": ("celery", ),
     "CELERY_IMPORTS": (),
     "CELERY_TASK_ERROR_WHITELIST": (),
 }
@@ -36,9 +33,6 @@ class Loader(BaseLoader):
 
     def setup_settings(self, settingsdict):
         settings = AttributeDict(DEFAULT_SETTINGS, **settingsdict)
-        installed_apps = set(list(DEFAULT_SETTINGS["INSTALLED_APPS"]) + \
-                             list(settings.INSTALLED_APPS))
-        settings.INSTALLED_APPS = tuple(installed_apps)
         settings.CELERY_TASK_ERROR_WHITELIST = tuple(
                 getattr(import_module(mod), cls)
                     for fqn in settings.CELERY_TASK_ERROR_WHITELIST
