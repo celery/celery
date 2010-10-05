@@ -1,3 +1,4 @@
+from celery import platforms
 from celery.bin.base import Command, Option
 
 
@@ -14,16 +15,23 @@ class EvCommand(Command):
 
     def run_evdump(self):
         from celery.events.dumper import evdump
+        self.set_process_status("celeryev:dump")
         return evdump(app=self.app)
 
     def run_evtop(self):
         from celery.events.cursesmon import evtop
+        self.set_process_status("celeryev:top")
         return evtop(app=self.app)
 
     def run_evcam(self, *args, **kwargs):
         from celery.events.snapshot import evcam
+        self.set_process_status("celeryev:cam")
         kwargs["app"] = self.app
         return evcam(*args, **kwargs)
+
+    def set_process_status(self, prog, info=""):
+        info = "%s %s" % (info, platforms.strargv(sys.argv))
+        return platform.set_process_title(prog, info=info)
 
     def get_options(self):
         return (
