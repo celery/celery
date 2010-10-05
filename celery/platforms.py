@@ -3,7 +3,6 @@ import sys
 import pwd
 import grp
 import errno
-import atexit
 import signal
 try:
     from setproctitle import setproctitle as _setproctitle
@@ -75,7 +74,7 @@ class PIDFile(object):
         try:
             return int(line)
         except ValueError:
-            raise ValueError("PID file %r contents invalid." % path)
+            raise ValueError("PID file %r contents invalid." % self.path)
 
     def remove(self):
         try:

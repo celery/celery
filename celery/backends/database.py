@@ -90,7 +90,6 @@ class DatabaseBackend(BaseDictBackend):
     def _forget(self, task_id):
         """Forget about result."""
         session = self.ResultSession()
-        expires = self.result_expires
         try:
             session.query(Task).filter(Task.task_id == task_id).delete()
             session.commit()

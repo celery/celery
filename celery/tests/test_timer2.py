@@ -27,7 +27,6 @@ class test_Entry(unittest.TestCase):
 class test_Schedule(unittest.TestCase):
 
     def test_handle_error(self):
-        import time
         from datetime import datetime
         mktime = timer2.mktime
         scratch = [None]

@@ -1,9 +1,7 @@
-from datetime import timedelta
-
 from celery import conf
 from celery.schedules import crontab
 from celery.serialization import pickle
-from celery.task.base import Task, PeriodicTask
+from celery.task.base import Task
 from celery.task.sets import TaskSet
 
 

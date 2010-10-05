@@ -84,10 +84,10 @@ class PartialOptionParser(OptionParser):
                 nargs = option.nargs
                 if len(rargs) < nargs:
                     if nargs == 1:
-                        self.error(_("%s option requires an argument") % opt)
+                        self.error("%s option requires an argument" % opt)
                     else:
-                        self.error(_("%s option requires %d arguments")
-                                % (opt, nargs))
+                        self.error("%s option requires %d arguments" % (
+                                    opt, nargs))
                 elif nargs == 1:
                     value = rargs.pop(0)
                 else:
@@ -95,7 +95,7 @@ class PartialOptionParser(OptionParser):
                     del rargs[0:nargs]
 
             elif had_explicit_value:
-                self.error(_("%s option does not take a value") % opt)
+                self.error("%s option does not take a value" % opt)
             else:
                 value = None
             option.process(opt, value, values, self)
