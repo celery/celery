@@ -171,6 +171,7 @@ class WorkController(object):
         # Queues
         if disable_rate_limits:
             self.ready_queue = FastQueue()
+            self.ready_queue.put = self.process_task
         else:
             self.ready_queue = TaskBucket(task_registry=registry.tasks)
 
@@ -185,14 +186,17 @@ class WorkController(object):
                                 timeout=self.task_time_limit,
                                 soft_timeout=self.task_soft_time_limit,
                                 putlocks=self.pool_putlocks)
-        self.mediator = instantiate(self.mediator_cls, self.ready_queue,
-                                    app=self.app,
-                                    callback=self.process_task,
-                                    logger=self.logger)
+
+        self.mediator = None
+        if not disable_rate_limits:
+            self.mediator = instantiate(self.mediator_cls, self.ready_queue,
+                                        app=self.app,
+                                        callback=self.process_task,
+                                        logger=self.logger)
         self.scheduler = instantiate(self.eta_scheduler_cls,
-                               precision=eta_scheduler_precision,
-                               on_error=self.on_timer_error,
-                               on_tick=self.on_timer_tick)
+                                     precision=eta_scheduler_precision,
+                                     on_error=self.on_timer_error,
+                                     on_tick=self.on_timer_tick)
 
         self.beat = None
         if self.embed_clockservice:
