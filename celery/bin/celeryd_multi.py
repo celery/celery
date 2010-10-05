@@ -1,6 +1,9 @@
 """
 
-Some examples:
+Examples
+========
+
+::
 
     # Advanced example starting 10 workers in the background:
     #   * Three of the workers processes the images and video queue

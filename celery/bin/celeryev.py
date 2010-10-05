@@ -5,7 +5,9 @@ from celery.bin.base import Command, Option
 class EvCommand(Command):
 
     def run(self, dump=False, camera=None, frequency=1.0, maxrate=None,
-        loglevel="INFO", logfile=None, **kwargs):
+            loglevel="INFO", logfile=None, prog_name="celeryev", **kwargs):
+        self.prog_name = prog_name
+
         if dump:
             return self.run_evdump()
         if camera:
@@ -15,21 +17,22 @@ class EvCommand(Command):
 
     def run_evdump(self):
         from celery.events.dumper import evdump
-        self.set_process_status("celeryev:dump")
+        self.set_process_status("dump")
         return evdump(app=self.app)
 
     def run_evtop(self):
         from celery.events.cursesmon import evtop
-        self.set_process_status("celeryev:top")
+        self.set_process_status("top")
         return evtop(app=self.app)
 
     def run_evcam(self, *args, **kwargs):
         from celery.events.snapshot import evcam
-        self.set_process_status("celeryev:cam")
+        self.set_process_status("cam")
         kwargs["app"] = self.app
         return evcam(*args, **kwargs)
 
     def set_process_status(self, prog, info=""):
+        prog = "%s:%s" % (self.prog_name, prog)
         info = "%s %s" % (info, platforms.strargv(sys.argv))
         return platform.set_process_title(prog, info=info)
 
