@@ -5,7 +5,7 @@ from celery.bin.base import Command, Option
 class EvCommand(Command):
 
     def run(self, dump=False, camera=None, frequency=1.0, maxrate=None,
-        loglevel="WARNING", logfile=None, **kwargs):
+        loglevel="INFO", logfile=None, **kwargs):
         if dump:
             return self.run_evdump()
         if camera:
@@ -49,7 +49,7 @@ class EvCommand(Command):
                    action="store", dest="maxrate", default=None,
                    help="Recording: Shutter rate limit (e.g. 10/m)"),
             Option('-l', '--loglevel',
-                   action="store", dest="loglevel", default="WARNING",
+                   action="store", dest="loglevel", default="INFO",
                    help="Loglevel. Default is WARNING."),
             Option('-f', '--logfile',
                    action="store", dest="logfile", default=None,
