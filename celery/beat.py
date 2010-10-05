@@ -177,7 +177,7 @@ class Scheduler(UserDict):
         return min(remaining_times + [self.max_interval])
 
     def reserve(self, entry):
-        new_entry = self[entry.name] = entry.next()
+        new_entry = self.schedule[entry.name] = entry.next()
         return new_entry
 
     def apply_async(self, entry, connection=None, **kwargs):
@@ -208,7 +208,7 @@ class Scheduler(UserDict):
 
     def add(self, **kwargs):
         entry = self.Entry(**kwargs)
-        self[entry.name] = entry
+        self.schedule[entry.name] = entry
         return entry
 
     def update_from_dict(self, dict_):
