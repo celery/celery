@@ -18,7 +18,12 @@ class AMQResultWarning(UserWarning):
 
 
 class ResultPublisher(Publisher):
-    auto_delete = False
+    exchange = conf.RESULT_EXCHANGE
+    exchange_type = conf.RESULT_EXCHANGE_TYPE
+    delivery_mode = conf.RESULT_PERSISTENT and 2 or 1
+    serializer = conf.RESULT_SERIALIZER
+    durable = conf.RESULT_PERSISTENT
+    auto_delete = True
 
     def __init__(self, connection, task_id, **kwargs):
         super(ResultPublisher, self).__init__(connection,
@@ -28,7 +33,7 @@ class ResultPublisher(Publisher):
 
 class ResultConsumer(Consumer):
     no_ack = True
-    auto_delete = False
+    auto_delete = True
 
     def __init__(self, connection, task_id, **kwargs):
         routing_key = task_id.replace("-", "")
