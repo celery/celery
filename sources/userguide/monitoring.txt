@@ -211,7 +211,62 @@ and tasks in other states after 5 days.
 Using outside of Django
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-TODO
+``django-celery`` also installs the :program:`djcelerymon` program. This
+can be used by non-Django users, and runs both a webserver and a snapshot
+camera in the same process.
+
+**Installing**
+
+Using :program:`pip`::
+
+    $ pip install -U django-celery
+
+or using :program:`easy_install`::
+
+    $ easy_install -U django-celery
+
+**Running**
+
+:program:`djcelerymon` reads configuration from your Celery config module,
+and sets up the Django environment using the same settings::
+
+    $ djcelerymon
+
+Database tables will be created the first time the monitor is run.
+By default an ``sqlite3`` database file named
+:file:`djcelerymon.db` is used, so make sure this file is writeable by the
+user running the monitor.
+
+If you want to store the events in a different database, e.g. MySQL,
+then you can configure the ``DATABASE*`` settings in your Celery
+config module. See http://docs.djangoproject.com/en/dev/ref/settings/#databases.
+
+You will also be asked to create a superuser (and you need to create one
+to be able to log into the admin later)::
+
+    Creating table auth_permission
+    Creating table auth_group_permissions
+    [...]
+
+    You just installed Django's auth system, which means you don't
+    have any superusers defined.  Would you like to create
+    one now? (yes/no): yes
+    Username (Leave blank to use 'username'): username
+    E-mail address: me@example.com
+    Password: ******
+    Password (again): ******
+    Superuser created successfully.
+
+    [...]
+    Django version 1.2.1, using settings 'celeryconfig'
+    Development server is running at http://127.0.0.1:8000/
+    Quit the server with CONTROL-C.
+
+Now that the service is started you can visit the monitor
+at http://127.0.0.1:8000, and log in using the user you created.
+
+For a list of the command line options supported by :program:`djcelerymon`,
+please see ``djcelerymon --help``.
 
 .. _monitoring-celeryev:
 

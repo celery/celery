@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Monitoring Guide &mdash; Celery v2.1.0rc1 documentation</title>
+    <title>Monitoring Guide &mdash; Celery v2.1.0rc3 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.1.0rc1',
+        VERSION:     '2.1.0rc3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.0rc1 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.1.0rc3 documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
     <link rel="next" title="Configuration and defaults" href="../configuration.html" />
     <link rel="prev" title="Routing Tasks" href="routing.html" /> 
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="routing.html" title="Routing Tasks"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.0rc3 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User Guide</a> &raquo;</li> 
       </ul>
     </div>  
@@ -280,7 +280,52 @@ and tasks in other states after 5 days.</p>
 </div>
 <div class="section" id="using-outside-of-django">
 <span id="monitoring-nodjango"></span><h4><a class="toc-backref" href="#id10">Using outside of Django</a><a class="headerlink" href="#using-outside-of-django" title="Permalink to this headline">¶</a></h4>
-<p>TODO</p>
+<p><tt class="docutils literal"><span class="pre">django-celery</span></tt> also installs the <strong class="program">djcelerymon</strong> program. This
+can be used by non-Django users, and runs both a webserver and a snapshot
+camera in the same process.</p>
+<p><strong>Installing</strong></p>
+<p>Using <strong class="program">pip</strong>:</p>
+<div class="highlight-python"><pre>$ pip install -U django-celery</pre>
+</div>
+<p>or using <strong class="program">easy_install</strong>:</p>
+<div class="highlight-python"><pre>$ easy_install -U django-celery</pre>
+</div>
+<p><strong>Running</strong></p>
+<p><strong class="program">djcelerymon</strong> reads configuration from your Celery config module,
+and sets up the Django environment using the same settings:</p>
+<div class="highlight-python"><pre>$ djcelerymon</pre>
+</div>
+<p>Database tables will be created the first time the monitor is run.
+By default an <tt class="docutils literal"><span class="pre">sqlite3</span></tt> database file named
+<tt class="file docutils literal"><span class="pre">djcelerymon.db</span></tt> is used, so make sure this file is writeable by the
+user running the monitor.</p>
+<p>If you want to store the events in a different database, e.g. MySQL,
+then you can configure the <tt class="docutils literal"><span class="pre">DATABASE*</span></tt> settings in your Celery
+config module. See <a class="reference external" href="http://docs.djangoproject.com/en/dev/ref/settings/#databases">http://docs.djangoproject.com/en/dev/ref/settings/#databases</a>.</p>
+<p>You will also be asked to create a superuser (and you need to create one
+to be able to log into the admin later):</p>
+<div class="highlight-python"><pre>Creating table auth_permission
+Creating table auth_group_permissions
+[...]
+
+You just installed Django's auth system, which means you don't
+have any superusers defined.  Would you like to create
+one now? (yes/no): yes
+Username (Leave blank to use 'username'): username
+E-mail address: me@example.com
+Password: ******
+Password (again): ******
+Superuser created successfully.
+
+[...]
+Django version 1.2.1, using settings 'celeryconfig'
+Development server is running at http://127.0.0.1:8000/
+Quit the server with CONTROL-C.</pre>
+</div>
+<p>Now that the service is started you can visit the monitor
+at <a class="reference external" href="http://127.0.0.1:8000">http://127.0.0.1:8000</a>, and log in using the user you created.</p>
+<p>For a list of the command line options supported by <strong class="program">djcelerymon</strong>,
+please see <tt class="docutils literal"><span class="pre">djcelerymon</span> <span class="pre">--help</span></tt>.</p>
 </div>
 </div>
 <div class="section" id="celeryev-curses-monitor">
@@ -570,7 +615,7 @@ it is considered to be offline.</p>
         <li class="right" >
           <a href="routing.html" title="Routing Tasks"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.0rc3 documentation</a> &raquo;</li>
           <li><a href="index.html" >User Guide</a> &raquo;</li> 
       </ul>
     </div>

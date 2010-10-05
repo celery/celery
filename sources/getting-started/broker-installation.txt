@@ -17,6 +17,14 @@ see `Installing RabbitMQ on OS X`_.
 
 .. _`Installing RabbitMQ`: http://www.rabbitmq.com/install.html
 
+.. note::
+
+    If you're getting ``nodedown`` errors after installing and using
+    :program:`rabbitmqctl` then this blog post can help you identify
+    the source of the problem:
+
+        http://somic.org/2009/02/19/on-rabbitmqctl-and-badrpcnodedown/
+
 .. _rabbitmq-configuration:
 
 Setting up RabbitMQ

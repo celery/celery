@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Platform Specific - celery.platforms &mdash; Celery v2.1.0rc1 documentation</title>
+    <title>Platform Specific - celery.platforms &mdash; Celery v2.1.0rc3 documentation</title>
     <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.1.0rc1',
+        VERSION:     '2.1.0rc3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.0rc1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.1.0rc3 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="Change history" href="../../changelog.html" />
     <link rel="prev" title="Signals: Safe References - celery.utils.dispatch.saferef" href="celery.utils.dispatch.saferef.html" /> 
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="celery.utils.dispatch.saferef.html" title="Signals: Safe References - celery.utils.dispatch.saferef"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.1.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.1.0rc3 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -56,7 +56,91 @@
             
   <div class="section" id="platform-specific-celery-platforms">
 <h1>Platform Specific - celery.platforms<a class="headerlink" href="#platform-specific-celery-platforms" title="Permalink to this headline">¶</a></h1>
-<span class="target" id="module-celery.platforms"></span><dl class="function">
+<span class="target" id="module-celery.platforms"></span><dl class="class">
+<dt id="celery.platforms.DaemonContext">
+<em class="property">class </em><tt class="descclassname">celery.platforms.</tt><tt class="descname">DaemonContext</tt><big>(</big><em>pidfile=None</em>, <em>working_directory='/'</em>, <em>umask=0</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#celery.platforms.DaemonContext" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.platforms.DaemonContext.close">
+<tt class="descname">close</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.platforms.DaemonContext.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.platforms.DaemonContext.detach">
+<tt class="descname">detach</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.platforms.DaemonContext.detach" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.platforms.DaemonContext.open">
+<tt class="descname">open</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.platforms.DaemonContext.open" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="celery.platforms.LockFailed">
+<em class="property">exception </em><tt class="descclassname">celery.platforms.</tt><tt class="descname">LockFailed</tt><a class="headerlink" href="#celery.platforms.LockFailed" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="celery.platforms.PIDFile">
+<em class="property">class </em><tt class="descclassname">celery.platforms.</tt><tt class="descname">PIDFile</tt><big>(</big><em>path</em><big>)</big><a class="headerlink" href="#celery.platforms.PIDFile" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="celery.platforms.PIDFile.acquire">
+<tt class="descname">acquire</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.platforms.PIDFile.acquire" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.platforms.PIDFile.is_locked">
+<tt class="descname">is_locked</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.platforms.PIDFile.is_locked" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.platforms.PIDFile.read_pid">
+<tt class="descname">read_pid</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.platforms.PIDFile.read_pid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.platforms.PIDFile.release">
+<tt class="descname">release</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.platforms.PIDFile.release" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.platforms.PIDFile.remove">
+<tt class="descname">remove</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.platforms.PIDFile.remove" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.platforms.PIDFile.remove_if_stale">
+<tt class="descname">remove_if_stale</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.platforms.PIDFile.remove_if_stale" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="celery.platforms.PIDFile.write_pid">
+<tt class="descname">write_pid</tt><big>(</big><big>)</big><a class="headerlink" href="#celery.platforms.PIDFile.write_pid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.platforms.create_daemon_context">
+<tt class="descclassname">celery.platforms.</tt><tt class="descname">create_daemon_context</tt><big>(</big><em>logfile=None</em>, <em>pidfile=None</em>, <em>uid=None</em>, <em>gid=None</em>, <em>**options</em><big>)</big><a class="headerlink" href="#celery.platforms.create_daemon_context" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="celery.platforms.create_pidlock">
+<tt class="descclassname">celery.platforms.</tt><tt class="descname">create_pidlock</tt><big>(</big><em>pidfile</em><big>)</big><a class="headerlink" href="#celery.platforms.create_pidlock" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create and verify pidfile.</p>
+<p>If the pidfile already exists the program exits with an error message,
+however if the process it refers to is not running anymore, the pidfile
+is just deleted.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.platforms.get_fdmax">
+<tt class="descclassname">celery.platforms.</tt><tt class="descname">get_fdmax</tt><big>(</big><em>default=None</em><big>)</big><a class="headerlink" href="#celery.platforms.get_fdmax" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
 <dt id="celery.platforms.ignore_signal">
 <tt class="descclassname">celery.platforms.</tt><tt class="descname">ignore_signal</tt><big>(</big><em>signal_name</em><big>)</big><a class="headerlink" href="#celery.platforms.ignore_signal" title="Permalink to this definition">¶</a></dt>
 <dd><p>Ignore signal using <tt class="xref py py-const docutils literal"><span class="pre">SIG_IGN</span></tt>.</p>
@@ -73,6 +157,22 @@ or the specified signal in particular.</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="celery.platforms.parse_gid">
+<tt class="descclassname">celery.platforms.</tt><tt class="descname">parse_gid</tt><big>(</big><em>gid</em><big>)</big><a class="headerlink" href="#celery.platforms.parse_gid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse group id.</p>
+<p>gid can be an integer (gid) or a string (group name), if a group name
+the gid is taken from the password file.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.platforms.parse_uid">
+<tt class="descclassname">celery.platforms.</tt><tt class="descname">parse_uid</tt><big>(</big><em>uid</em><big>)</big><a class="headerlink" href="#celery.platforms.parse_uid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse user id.</p>
+<p>uid can be an interger (uid) or a string (username), if a username
+the uid is taken from the password file.</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="celery.platforms.reset_signal">
 <tt class="descclassname">celery.platforms.</tt><tt class="descname">reset_signal</tt><big>(</big><em>signal_name</em><big>)</big><a class="headerlink" href="#celery.platforms.reset_signal" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reset signal to the default signal handler.</p>
@@ -81,8 +181,18 @@ or the specified signal in particular.</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="celery.platforms.set_effective_user">
+<tt class="descclassname">celery.platforms.</tt><tt class="descname">set_effective_user</tt><big>(</big><em>uid=None</em>, <em>gid=None</em><big>)</big><a class="headerlink" href="#celery.platforms.set_effective_user" title="Permalink to this definition">¶</a></dt>
+<dd><p>Change process privileges to new user/group.</p>
+<p>If uid and gid is set the effective user/group is set.</p>
+<p>If only uid is set, the effective uer is set, and the group is
+set to the users primary group.</p>
+<p>If only gid is set, the effective group is set.</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="celery.platforms.set_mp_process_title">
-<tt class="descclassname">celery.platforms.</tt><tt class="descname">set_mp_process_title</tt><big>(</big><em>progname</em>, <em>info=None</em><big>)</big><a class="headerlink" href="#celery.platforms.set_mp_process_title" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">celery.platforms.</tt><tt class="descname">set_mp_process_title</tt><big>(</big><em>progname</em>, <em>info=None</em>, <em>hostname=None</em><big>)</big><a class="headerlink" href="#celery.platforms.set_mp_process_title" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the ps name using the multiprocessing process name.</p>
 <p>Only works if <tt class="xref py py-mod docutils literal"><span class="pre">setproctitle</span></tt> is installed.</p>
 </dd></dl>
@@ -93,6 +203,23 @@ or the specified signal in particular.</p>
 <dd><p>Set the ps name for the currently running process.</p>
 <p>Only works if <tt class="xref py py-mod docutils literal"><span class="pre">setproctitle</span></tt> is installed.</p>
 </dd></dl>
+
+<dl class="function">
+<dt id="celery.platforms.setegid">
+<tt class="descclassname">celery.platforms.</tt><tt class="descname">setegid</tt><big>(</big><em>gid</em><big>)</big><a class="headerlink" href="#celery.platforms.setegid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set effective group id.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.platforms.seteuid">
+<tt class="descclassname">celery.platforms.</tt><tt class="descname">seteuid</tt><big>(</big><em>uid</em><big>)</big><a class="headerlink" href="#celery.platforms.seteuid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set effective user id.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="celery.platforms.strargv">
+<tt class="descclassname">celery.platforms.</tt><tt class="descname">strargv</tt><big>(</big><em>argv</em><big>)</big><a class="headerlink" href="#celery.platforms.strargv" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </div>
 
@@ -147,7 +274,7 @@ or the specified signal in particular.</p>
         <li class="right" >
           <a href="celery.utils.dispatch.saferef.html" title="Signals: Safe References - celery.utils.dispatch.saferef"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.1.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.1.0rc3 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>

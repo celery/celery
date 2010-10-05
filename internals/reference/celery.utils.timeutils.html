@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Time and Date Utilities - celery.utils.timeutils &mdash; Celery v2.1.0rc1 documentation</title>
+    <title>Time and Date Utilities - celery.utils.timeutils &mdash; Celery v2.1.0rc3 documentation</title>
     <link rel="stylesheet" href="../../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.1.0rc1',
+        VERSION:     '2.1.0rc3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../../static/jquery.js"></script>
     <script type="text/javascript" src="../../static/underscore.js"></script>
     <script type="text/javascript" src="../../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.0rc1 documentation" href="../../index.html" />
+    <link rel="top" title="Celery v2.1.0rc3 documentation" href="../../index.html" />
     <link rel="up" title="Internal Module Reference" href="index.html" />
     <link rel="next" title="Debugging Info - celery.utils.info" href="celery.utils.info.html" />
     <link rel="prev" title="Terminal Utilities - celery.utils.term" href="celery.utils.term.html" /> 
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="celery.utils.term.html" title="Terminal Utilities - celery.utils.term"
              accesskey="P">previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.1.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.1.0rc3 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Internal Module Reference</a> &raquo;</li> 
       </ul>
@@ -85,12 +85,11 @@ and converts them to seconds.</p>
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>start</strong> &#8211; Start <tt class="xref py py-class docutils literal"><span class="pre">datetime</span></tt>.</li>
 <li><strong>ends_in</strong> &#8211; The end delta as a <tt class="xref py py-class docutils literal"><span class="pre">timedelta</span></tt>.</li>
-<li><strong>relative</strong> &#8211; <p>If set to <tt class="xref py py-const xref docutils literal"><span class="pre">False</span></tt>, the end time will be calculated
-using <a class="reference internal" href="#celery.utils.timeutils.delta_resolution" title="celery.utils.timeutils.delta_resolution"><tt class="xref py py-func docutils literal"><span class="pre">delta_resolution()</span></tt></a> (i.e. rounded to the resolution</p>
-<blockquote>
-of <tt class="docutils literal"><span class="pre">ends_in</span></tt>).</blockquote>
-</li>
-<li><strong>now</strong> &#8211; The current time, defaults to <tt class="xref py py-func docutils literal"><span class="pre">datetime.now()</span></tt>.</li>
+<li><strong>relative</strong> &#8211; If set to <tt class="xref py py-const xref docutils literal"><span class="pre">False</span></tt>, the end time will be
+calculated using <a class="reference internal" href="#celery.utils.timeutils.delta_resolution" title="celery.utils.timeutils.delta_resolution"><tt class="xref py py-func docutils literal"><span class="pre">delta_resolution()</span></tt></a> (i.e. rounded to the
+resolution of <tt class="docutils literal"><span class="pre">ends_in</span></tt>).</li>
+<li><strong>now</strong> &#8211; Function returning the current time and date,
+defaults to <tt class="xref py py-func docutils literal"><span class="pre">datetime.now()</span></tt>.</li>
 </ul>
 </td>
 </tr>
@@ -169,7 +168,7 @@ of <tt class="docutils literal"><span class="pre">ends_in</span></tt>).</blockqu
         <li class="right" >
           <a href="celery.utils.term.html" title="Terminal Utilities - celery.utils.term"
              >previous</a> |</li>
-        <li><a href="../../index.html">Celery v2.1.0rc1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Celery v2.1.0rc3 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Internals</a> &raquo;</li>
           <li><a href="index.html" >Internal Module Reference</a> &raquo;</li> 
       </ul>
