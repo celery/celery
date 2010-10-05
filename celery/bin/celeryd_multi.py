@@ -364,7 +364,7 @@ def multi_args(p, cmd="celeryd", append="", prefix="", suffix=""):
         except ValueError:
             pass
         else:
-            names = map(str, range(1, int(names[0]) + 1))
+            names = map(str, range(1, noderange + 1))
             prefix = "celery"
     cmd = options.pop("--cmd", cmd)
     append = options.pop("--append", append)

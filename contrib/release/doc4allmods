@@ -2,7 +2,9 @@
 
 PACKAGE="$1"
 SKIP_PACKAGES="$PACKAGE tests management urls"
-SKIP_FILES="celery.bin.rst celery.contrib.rst
+SKIP_FILES="celery.bin.rst
+            celery.bin.celeryd_detach.rst
+            celery.contrib.rst
             celery.contrib.batches.rst
             celery.task.schedules.rst
             celery.models.rst
