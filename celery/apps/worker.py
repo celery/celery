@@ -223,10 +223,9 @@ class Worker(object):
         os.environ.setdefault("celery_dummy_proxy", "set_by_celeryd")
 
     def set_process_status(self, info):
-        arg_start = "manage" in sys.argv[0] and 2 or 1
-        if sys.argv[arg_start:]:
-            info = "%s (%s)" % (info, " ".join(sys.argv[arg_start:]))
-        return platforms.set_mp_process_title("celeryd", info=info,
+        info = "%s (%s)" % (info, platforms.strargv(sys.argv))
+        return platforms.set_mp_process_title("celeryd",
+                                              info=info,
                                               hostname=self.hostname)
 
 

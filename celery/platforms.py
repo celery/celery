@@ -303,6 +303,13 @@ def install_signal_handler(signal_name, handler):
         pass
 
 
+def strargv(argv):
+    arg_start = "manage" in argv[0] and 2 or 1
+    if len(argv) > arg_start:
+        return " ".join(argv[arg_start:])
+    return ""
+
+
 def set_process_title(progname, info=None):
     """Set the ps name for the currently running process.
 
