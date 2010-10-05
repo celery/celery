@@ -163,8 +163,9 @@ class AMQPBackend(BaseDictBackend):
     def consume(self, task_id, timeout=None):
         results = []
 
-        def callback(message_data, message):
-            results.append(message_data)
+        def callback(meta, message):
+            if meta["status"] in states.READY_STATES:
+                results.append(meta)
 
         wait = self.connection.drain_events
         consumer = self._create_consumer(task_id, self.connection)
