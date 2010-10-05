@@ -77,7 +77,7 @@ class BaseAsyncResult(object):
         for retry then :const:`False` is returned.
 
         """
-        return self.status not in self.backend.UNREADY_STATES
+        return self.status in self.backend.READY_STATES
 
     def successful(self):
         """Returns :const:`True` if the task executed successfully."""
