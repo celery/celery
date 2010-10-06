@@ -4,6 +4,7 @@ import unittest2 as unittest
 from datetime import datetime, timedelta
 
 from celery import beat
+from celery.app import app_or_default
 from celery.result import AsyncResult
 from celery.schedules import schedule
 from celery.utils import gen_unique_id
@@ -237,7 +238,9 @@ class test_Service(unittest.TestCase):
         s = beat.Service(scheduler_cls=PersistentScheduler)
         self.assertIsInstance(s.schedule, dict)
         self.assertIsInstance(s.scheduler, beat.Scheduler)
-        self.assertListEqual(s.schedule.keys(), sh.keys())
+        scheduled = s.schedule.keys()
+        for task_name in sh.keys():
+            self.assertIn(task_name, scheduled)
 
         s.sync()
         self.assertTrue(sh.closed)

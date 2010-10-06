@@ -22,13 +22,6 @@ class MockCommand(Command):
 
 class test_Command(unittest.TestCase):
 
-    def test_defaults(self):
-        cmd1 = Command(defaults=None)
-        self.assertTrue(cmd1.defaults)
-
-        cmd2 = Command(defaults=AttributeDict({"foo": "bar"}))
-        self.assertTrue(cmd2.defaults)
-
     def test_get_options(self):
         cmd = Command()
         cmd.option_list = (1, 2, 3)

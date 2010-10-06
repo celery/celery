@@ -8,7 +8,6 @@ from pyparsing import ParseException
 from celery import task
 from celery.app import app_or_default
 from celery import messaging
-from celery.backends import default_backend
 from celery.decorators import task as task_dec
 from celery.exceptions import RetryTaskError
 from celery.execute import send_task
@@ -360,13 +359,10 @@ class TestCeleryTasks(unittest.TestCase):
             p = IncrementCounterTask.get_publisher(exchange="foo",
                                                    connection="bar")
             self.assertEqual(p.kwargs["exchange"], "foo")
-<<<<<<< HEAD
             self.assertTrue(p._declared)
-=======
             p = IncrementCounterTask.get_publisher(exchange_type="fanout",
                                                    connection="bar")
             self.assertEqual(p.kwargs["exchange_type"], "fanout")
->>>>>>> 503136a... 91% coverage
         finally:
             amqp.TaskPublisher = old_pub
 
