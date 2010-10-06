@@ -436,7 +436,7 @@ class Pool(object):
         self._worker_handler = self.Supervisor(self)
         self._worker_handler.start()
 
-        self._putlock = threading.BoundedSemaphore(self._processes)
+        self._putlock = threading.BoundedSemaphore(self._processes, True)
 
         self._task_handler = self.TaskHandler(self._taskqueue,
                                               self._quick_put,
@@ -510,6 +510,38 @@ class Pool(object):
                         job._set(None, (False, err))
                         continue
             return True
+        return False
+
+    def shrink(self, n=1):
+        for i, worker in enumerate(self._iterinactive()):
+            self._processes -= 1
+            if self._putlock:
+                self._putlock._initial_value -= 1
+                self._putlock._Semaphore__value -= 1
+            worker.terminate()
+            if i == n - 1:
+                return
+        raise ValueError("Can't shrink pool. All processes busy!")
+
+    def grow(self, n=1):
+        for i in xrange(n):
+            self._processes += 1
+            if self._putlock:
+                self._putlock._initial_value += 1
+                self._putlock._Semaphore__value += 1
+            self._create_worker_process()
+
+    def _iterinactive(self):
+        for worker in self._pool:
+            if not self._worker_active(worker):
+                yield worker
+        raise
+
+    def _worker_active(self, worker):
+        jobs = []
+        for job in self._cache.values():
+            if worker.pid in job.worker_pids():
+                return True
         return False
 
     def _repopulate_pool(self):

@@ -128,6 +128,12 @@ class TaskPool(object):
                                       error_callback=on_worker_error,
                                       waitforslot=self.putlocks)
 
+    def grow(self, n=1):
+        return self._pool.grow(n)
+
+    def shrink(self, n=1):
+        return self._pool.shrink(n)
+
     def on_worker_error(self, errbacks, exc):
         einfo = ExceptionInfo((exc.__class__, exc, None))
         [errback(einfo) for errback in errbacks]
