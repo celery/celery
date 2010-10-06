@@ -479,7 +479,7 @@ class test_WorkController(unittest.TestCase):
     def test_with_rate_limits_disabled(self):
         worker = WorkController(concurrency=1, loglevel=0,
                                 disable_rate_limits=True)
-        self.assertIsInstance(worker.ready_queue, FastQueue)
+        self.assertTrue(hasattr(worker.ready_queue, "put"))
 
     def test_attrs(self):
         worker = self.worker
