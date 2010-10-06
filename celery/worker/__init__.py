@@ -126,7 +126,9 @@ class WorkController(object):
             max_tasks_per_child=conf.CELERYD_MAX_TASKS_PER_CHILD,
             pool_putlocks=conf.CELERYD_POOL_PUTLOCKS,
             disable_rate_limits=conf.DISABLE_RATE_LIMITS,
-            db=conf.CELERYD_STATE_DB):
+            db=conf.CELERYD_STATE_DB,
+            autoscale=None,
+            autoscaler_cls=conf.CELERYD_AUTOSCALER):
 
         # Options
         self.loglevel = loglevel or self.loglevel
@@ -160,7 +162,13 @@ class WorkController(object):
         self.logger.debug("Instantiating thread components...")
 
         # Threads + Pool + Consumer
-        self.pool = instantiate(pool_cls, self.concurrency,
+        self.autoscaler = None
+        max_concurrency = None
+        min_concurrency = concurrency
+        if autoscale:
+            max_concurrency, min_concurrency = autoscale
+
+        self.pool = instantiate(pool_cls, min_concurrency,
                                 logger=self.logger,
                                 initializer=process_initializer,
                                 initargs=(self.hostname, ),
@@ -168,6 +176,12 @@ class WorkController(object):
                                 timeout=self.task_time_limit,
                                 soft_timeout=self.task_soft_time_limit,
                                 putlocks=self.pool_putlocks)
+
+        if autoscale:
+            self.autoscaler = instantiate(autoscaler_cls, self.pool,
+                                          max_concurrency=max_concurrency,
+                                          min_concurrency=min_concurrency,
+                                          logger=self.logger)
 
         self.mediator = None
         if not disable_rate_limits:
@@ -202,6 +216,7 @@ class WorkController(object):
                                         self.mediator,
                                         self.scheduler,
                                         self.beat,
+                                        self.autoscaler,
                                         self.listener))
 
     def start(self):

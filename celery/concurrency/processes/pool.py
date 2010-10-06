@@ -81,10 +81,23 @@ def soft_timeout_sighandler(signum, frame):
 
 
 def worker(inqueue, outqueue, initializer=None, initargs=(), maxtasks=None):
-    assert maxtasks is None or (type(maxtasks) == int and maxtasks > 0)
     pid = os.getpid()
+    assert maxtasks is None or (type(maxtasks) == int and maxtasks > 0)
     put = outqueue.put
     get = inqueue.get
+
+    if hasattr(inqueue, '_reader'):
+        def poll(timeout):
+            if inqueue._reader.poll(timeout):
+                return True, get()
+            return False, None
+    else:
+        def poll(timeout):
+            try:
+                return True, get(timeout=timeout)
+            except Queue.Empty:
+                return False, None
+
     if hasattr(inqueue, '_writer'):
         inqueue._writer.close()
         outqueue._reader.close()
@@ -95,10 +108,13 @@ def worker(inqueue, outqueue, initializer=None, initargs=(), maxtasks=None):
     if SIG_SOFT_TIMEOUT is not None:
         signal.signal(SIG_SOFT_TIMEOUT, soft_timeout_sighandler)
 
+
     completed = 0
     while maxtasks is None or (maxtasks and completed < maxtasks):
         try:
-            task = get()
+            ready, task = poll(1.0)
+            if not ready:
+                continue
         except (EOFError, IOError):
             debug('worker got EOFError or IOError -- exiting')
             break
@@ -121,7 +137,6 @@ def worker(inqueue, outqueue, initializer=None, initargs=(), maxtasks=None):
 
         completed += 1
     debug('worker exiting after %d tasks' % completed)
-
 
 #
 # Class representing a process pool
@@ -436,7 +451,7 @@ class Pool(object):
         self._worker_handler = self.Supervisor(self)
         self._worker_handler.start()
 
-        self._putlock = threading.BoundedSemaphore(self._processes, True)
+        self._putlock = threading.BoundedSemaphore(self._processes)
 
         self._task_handler = self.TaskHandler(self._taskqueue,
                                               self._quick_put,
@@ -517,7 +532,7 @@ class Pool(object):
             self._processes -= 1
             if self._putlock:
                 self._putlock._initial_value -= 1
-                self._putlock._Semaphore__value -= 1
+                self._putlock.acquire()
             worker.terminate()
             if i == n - 1:
                 return
@@ -525,11 +540,17 @@ class Pool(object):
 
     def grow(self, n=1):
         for i in xrange(n):
+            #assert len(self._pool) == self._processes
             self._processes += 1
             if self._putlock:
-                self._putlock._initial_value += 1
-                self._putlock._Semaphore__value += 1
-            self._create_worker_process()
+                cond = self._putlock._Semaphore__cond
+                cond.acquire()
+                try:
+                    self._putlock._initial_value += 1
+                    self._putlock._Semaphore__value += 1
+                    cond.notify()
+                finally:
+                    cond.release()
 
     def _iterinactive(self):
         for worker in self._pool:
@@ -558,8 +579,8 @@ class Pool(object):
     def _maintain_pool(self):
         """"Clean up any exited workers and start replacements for them.
         """
-        if self._join_exited_workers():
-            self._repopulate_pool()
+        self._join_exited_workers()
+        self._repopulate_pool()
 
     def _setup_queues(self):
         from multiprocessing.queues import SimpleQueue

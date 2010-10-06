@@ -24,9 +24,14 @@ Count of tasks executed by the worker, sorted by type.
 The list of currently revoked tasks. (PERSISTENT if statedb set).
 
 """
+reserved_requests = set()
 active_requests = set()
 total_count = defaultdict(lambda: 0)
 revoked = LimitedSet(maxlen=REVOKES_MAX, expires=REVOKE_EXPIRES)
+
+
+def task_reserved(request):
+    reserved_requests.add(request)
 
 
 def task_accepted(request):
@@ -38,6 +43,7 @@ def task_accepted(request):
 def task_ready(request):
     """Updates global state when a task is ready."""
     active_requests.discard(request)
+    reserved_requests.discard(request)
 
 
 class Persistent(object):

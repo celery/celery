@@ -7,6 +7,8 @@ import socket
 import sys
 import warnings
 
+from carrot.utils import partition
+
 from celery import __version__
 from celery import platforms
 from celery import signals
@@ -43,7 +45,8 @@ class Worker(object):
             hostname=None, discard=False, run_clockservice=False,
             schedule=None, task_time_limit=None, task_soft_time_limit=None,
             max_tasks_per_child=None, queues=None, events=False, db=None,
-            include=None, defaults=None, pidfile=None, **kwargs):
+            include=None, defaults=None, pidfile=None, autoscale=None,
+            **kwargs):
         if defaults is None:
             from celery import conf
             defaults = conf
@@ -68,6 +71,10 @@ class Worker(object):
         self.queues = queues or []
         self.include = include or []
         self.pidfile = pidfile
+        self.autoscale = None
+        if autoscale:
+            max_c, _, min_c = partition(autoscale, ",")
+            self.autoscale = [int(max_c), min_c and int(min_c) or 0]
         self._isatty = sys.stdout.isatty()
 
         if isinstance(self.queues, basestring):
@@ -194,7 +201,8 @@ class Worker(object):
                                 db=self.db,
                                 max_tasks_per_child=self.max_tasks_per_child,
                                 task_time_limit=self.task_time_limit,
-                                task_soft_time_limit=self.task_soft_time_limit)
+                                task_soft_time_limit=self.task_soft_time_limit,
+                                autoscale=self.autoscale)
         self.install_platform_tweaks(worker)
         worker.start()
 

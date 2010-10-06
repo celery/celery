@@ -148,6 +148,11 @@ class WorkerCommand(Command):
                 help="Optional file used to store the workers pid. "
                      "The worker will not start if this file already exists "
                      "and the pid is still alive."),
+            Option('--autoscale', default=None,
+                help="Enable autoscaling by providing "
+                     "max_concurrency,min_concurrency. Example: "
+                     "--autoscale=10,3 (always keep 3 processes, "
+                     "but grow to 10 if necessary)."),
         )
 
 

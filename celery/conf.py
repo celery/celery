@@ -54,6 +54,7 @@ _DEFAULTS = {
     "CELERY_ACKS_LATE": False,
     "CELERYD_POOL_PUTLOCKS": True,
     "CELERYD_POOL": "celery.concurrency.processes.TaskPool",
+    "CELERYD_AUTOSCALER": "celery.worker.controllers.Autoscaler",
     "CELERYD_MEDIATOR": "celery.worker.controllers.Mediator",
     "CELERYD_ETA_SCHEDULER": "celery.utils.timer2.Timer",
     "CELERYD_LISTENER": "celery.worker.listener.CarrotListener",
@@ -184,6 +185,7 @@ def prepare(m, source=settings, defaults=_DEFAULTS):
     m.CELERYD_POOL_PUTLOCKS = _get("CELERYD_POOL_PUTLOCKS")
 
     m.CELERYD_POOL = _get("CELERYD_POOL")
+    m.CELERYD_AUTOSCALER = _get("CELERYD_AUTOSCALER")
     m.CELERYD_LISTENER = _get("CELERYD_LISTENER")
     m.CELERYD_MEDIATOR = _get("CELERYD_MEDIATOR")
     m.CELERYD_ETA_SCHEDULER = _get("CELERYD_ETA_SCHEDULER")
