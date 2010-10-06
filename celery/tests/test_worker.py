@@ -480,7 +480,7 @@ class test_WorkController(unittest.TestCase):
         conf.DISABLE_RATE_LIMITS = True
         try:
             worker = WorkController(concurrency=1, loglevel=0)
-            self.assertIsInstance(worker.ready_queue, FastQueue)
+            self.assertTrue(hasattr(worker.ready_queue, "put"))
         finally:
             conf.DISABLE_RATE_LIMITS = False
 
