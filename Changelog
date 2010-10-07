@@ -27,7 +27,7 @@ Important Notes
     can be found at `Wiki: Release Cycle`_.
 
 .. _`semver`: http://semver.org
-.. _`Wiki: Release Cycle`: http://wiki.github.com/ask/celery/release-cycle.
+.. _`Wiki: Release Cycle`: http://wiki.github.com/ask/celery/release-cycle
 
 * Now depends on Carrot 0.10.7.
 
