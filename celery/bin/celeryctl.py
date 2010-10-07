@@ -177,7 +177,7 @@ result = command(result)
 
 
 class inspect(Command):
-    choices = {"active": 10,
+    choices = {"active": 1.0,
                "scheduled": 1.0,
                "reserved": 1.0,
                "stats": 1.0,
@@ -185,7 +185,6 @@ class inspect(Command):
                "registered_tasks": 1.0,
                "enable_events": 1.0,
                "disable_events": 1.0,
-               "diagnose": 2.0,
                "ping": 0.2}
     option_list = Command.option_list + (
                 Option("--timeout", "-t", type="float", dest="timeout",

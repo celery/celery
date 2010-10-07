@@ -130,14 +130,6 @@ News
 * :func:`celery.task.control.broadcast`: Added callback argument, this can be
   used to process replies immediately as they arrive.
 
-* New remote control command: ``diagnose``.
-
-    Verifies that the pool workers are able to accept and perform tasks.
-
-    .. warning::
-        This is only reliable as long as the worker node is not
-        processing tasks.
-
 * celeryctl: New command-line utility to manage and inspect worker nodes,
   and also apply tasks and inspect the results of tasks.
 
