@@ -101,11 +101,10 @@ a &#8220;task&#8221;.</p>
 <p class="caption"><em>Figure 2:</em> Worker bindings.</p>
 </div>
 <p>Go to <a class="reference internal" href="routing.html#guide-routing"><em>Routing Tasks</em></a>.</p>
-<p>Celery takes advantage of AMQPs flexible routing model. Tasks can be routed
+<p>Celery takes advantage of AMQPs flexible routing model.  Tasks can be routed
 to specific servers, or a cluster of servers by binding workers to different
 queues. A single worker node can be bound to one or more queues.
-is for this to be as simple as possiblealso several
-messaging scenarios are supported, for example round robin, point-to-point,
+Multiple messaging scenarios are supported: round robin, point-to-point,
 broadcast (one-to-many), and more.</p>
 <p>Celery aims to hide the complexity of AMQP through features like
 <a class="reference internal" href="routing.html#routing-automatic"><em>Automatic routing</em></a>, while still preserving the ability to go
