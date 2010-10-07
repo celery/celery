@@ -137,7 +137,7 @@ This can also be used if you're not using Celery with a Django project.
 
 *Screenshot*
 
-.. image:: http://celeryproject.org/beta/djangoceleryadmin2.jpg
+.. figure:: ../images/djangoceleryadmin2.jpg
 
 .. _`django-celery`: http://pypi.python.org/pypi/django-celery
 
@@ -274,7 +274,7 @@ task and worker history.  You can inspect the result and traceback of tasks,
 and it also supports some management commands like rate limiting and shutting
 down workers.
 
-.. image:: http://celeryproject.org/img/celeryevshotsm.jpg
+.. figure:: ../images/celeryevshotsm.jpg
 
 
 :mod:`~celery.bin.celeryev` is also used to start snapshot cameras (see
@@ -412,7 +412,7 @@ write it to a database, send it by e-mail or something else entirely.
 
 :program:`celeryev` is then used to take snapshots with the camera,
 for example if you want to capture state every 2 seconds using the
-camera ``myapp.Camera`` you run :pogram:`celeryev` with the following
+camera ``myapp.Camera`` you run :program:`celeryev` with the following
 arguments::
 
     $ celeryev -c myapp.Camera --frequency=2.0

@@ -47,6 +47,29 @@ Important Notes
   if the database backend is used (does not apply to users of
   `django-celery`_).
 
+* If you get an error after upgrading saying:
+  ``AttributeError: 'module' object has no attribute 'system'``,
+
+    Then this is because the ``celery.platform`` module has been
+    renamed to ``celery.platforms`` to not collide with the built-in
+    :mod:`platform` module.
+
+    You have to remove the old :file:`platform.py` (and maybe
+    :file:`platform.pyc`) file from your previous Celery installation.
+
+    To do this use :program:`python` to find the location
+    of this module::
+
+        $ python
+        >>> import celery.platform
+        >>> celery.platform
+        <module 'celery.platform' from '/opt/devel/celery/celery/platform.pyc'>
+
+    Here the compiled module is in :file:`/opt/devel/celery/celery/`,
+    to remove the offending files do::
+
+        $ rm -f /opt/devel/celery/celery/platform.py*
+
 .. _v210-news:
 
 News
@@ -1019,7 +1042,7 @@ News
 
     Screenshot:
 
-    .. image:: http://celeryproject.org/img/celeryevshotsm.jpg
+    .. figure:: images/celeryevshotsm.jpg
 
     If you run ``celeryev`` with the ``-d`` switch it will act as an event
     dumper, simply dumping the events it receives to standard out::
