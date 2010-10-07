@@ -54,7 +54,7 @@ Important Notes
         >>> celery.platform
         <module 'celery.platform' from '/opt/devel/celery/celery/platform.pyc'>
 
-    Here the compiled module is in :file:`/opt/devel/celery/celery/",
+    Here the compiled module is in :file:`/opt/devel/celery/celery/`,
     to remove the offending files do::
 
         $ rm -f /opt/devel/celery/celery/platform.py*
@@ -1103,7 +1103,7 @@ News
 
     Screenshot:
 
-    .. image:: http://celeryproject.org/img/celeryevshotsm.jpg
+    .. figure:: images/celeryevshotsm.jpg
 
     If you run ``celeryev`` with the ``-d`` switch it will act as an event
     dumper, simply dumping the events it receives to standard out::

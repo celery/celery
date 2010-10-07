@@ -546,7 +546,7 @@ Router classes can also be added by name::
 
 
 For simple task name -> route mappings like the router example above, you can simply
-drop a dict into :setting:`CELERY_ROUTES` to get the same behavior::
+drop a dict into :setting:`CELERY_ROUTES` to get the same behavior:
 
 .. code-block:: python
 

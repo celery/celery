@@ -187,7 +187,7 @@ to use when sending a task:
     3. The default :setting:`CELERY_TASK_SERIALIZER` setting.
 
 
-*Using the ``serializer`` argument to ``apply_async``:
+*Using the ``serializer`` argument to ``apply_async``*:
 
 .. code-block:: python
 
@@ -204,7 +204,7 @@ it is called.  This is something you need to be aware of when sending
 more than one task at a time.
 
 You handle the connection manually by creating a
-publisher::
+publisher:
 
 .. code-block:: python
 

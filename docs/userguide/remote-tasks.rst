@@ -112,4 +112,4 @@ Since applying tasks can be done via HTTP using the
 ``djcelery.views.apply`` view, executing tasks from other languages is easy.
 For an example service exposing tasks via HTTP you should have a look at
 ``examples/celery_http_gateway`` in the Celery distribution:
-    http://github.com/ask/celery/tree/master/examples/celery_http_gateway/
+http://github.com/ask/celery/tree/master/examples/celery_http_gateway/
