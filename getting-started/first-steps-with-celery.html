@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>First steps with Celery &mdash; Celery v2.1.0rc3 documentation</title>
+    <title>First steps with Celery &mdash; Celery v2.1.0rc4 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.1.0rc3',
+        VERSION:     '2.1.0rc4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.0rc3 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.1.0rc4 documentation" href="../index.html" />
     <link rel="up" title="Getting Started" href="index.html" />
     <link rel="next" title="Resources" href="resources.html" />
     <link rel="prev" title="Broker Installation" href="broker-installation.html" /> 
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="broker-installation.html" title="Broker Installation"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.0rc3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.0rc4 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Getting Started</a> &raquo;</li> 
       </ul>
     </div>  
@@ -66,12 +66,10 @@
 </div>
 <div class="section" id="creating-a-simple-task">
 <span id="celerytut-simple-tasks"></span><h2><a class="toc-backref" href="#id1">Creating a simple task</a><a class="headerlink" href="#creating-a-simple-task" title="Permalink to this headline">¶</a></h2>
-<p>In this example we are creating a simple task that adds two
-numbers. Tasks are defined in a normal python module. The module can
-be named whatever you like, but the convention is to call it
-<tt class="file docutils literal"><span class="pre">tasks.py</span></tt>.</p>
-<p>Our addition task looks like this:</p>
-<p><tt class="file docutils literal"><span class="pre">tasks.py</span></tt>:</p>
+<p>In this tutorial we are creating a simple task that adds two
+numbers.  Tasks are defined in normal Python modules.</p>
+<p>By convention we will call our moudule <tt class="file docutils literal"><span class="pre">tasks.py</span></tt>, and it looks</p>
+<p><strong>:file:`tasks.py`:</strong></p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">celery.decorators</span> <span class="kn">import</span> <span class="n">task</span>
 
 <span class="nd">@task</span>
@@ -79,26 +77,27 @@ be named whatever you like, but the convention is to call it
     <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
 </pre></div>
 </div>
-<p>All celery tasks are classes that inherit from the <tt class="docutils literal"><span class="pre">Task</span></tt>
-class. In this case we&#8217;re using a decorator that wraps the add
-function in an appropriate class for us automatically. The full
-documentation on how to create tasks and task classes is in the
+<p>All Celery tasks are classes that inherits from the
+<tt class="xref py py-class docutils literal"><span class="pre">Task</span></tt> class.  In this example we&#8217;re using a
+decorator that wraps the add function in an appropriate class for us
+automatically.</p>
+<div class="admonition-see-also admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last">The full documentation on how to create tasks and task classes is in the
 <a class="reference internal" href="../userguide/tasks.html"><em>Tasks</em></a> part of the user guide.</p>
+</div>
 </div>
 <div class="section" id="configuration">
 <span id="celerytut-conf"></span><h2><a class="toc-backref" href="#id2">Configuration</a><a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h2>
-<p>Celery is configured by using a configuration module. By default
+<p>Celery is configured by using a configuration module.  By default
 this module is called <tt class="file docutils literal"><span class="pre">celeryconfig.py</span></tt>.</p>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p>The configuration module must be on the Python path so it
-can be imported.</p>
-<p class="last">You can also set a custom name for the configuration module using
+<p>The configuration module must either be in the current directory
+or on the Python path, so that it can be imported.</p>
+<p>You can also set a custom name for the configuration module by using
 the <span class="target" id="index-0"></span><tt class="xref std std-envvar docutils literal"><span class="pre">CELERY_CONFIG_MODULE</span></tt> environment variable.</p>
-</div>
 <p>Let&#8217;s create our <tt class="file docutils literal"><span class="pre">celeryconfig.py</span></tt>.</p>
 <ol class="arabic">
-<li><p class="first">Configure how we communicate with the broker:</p>
+<li><p class="first">Configure how we communicate with the broker (RabbitMQ in this example):</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">BROKER_HOST</span> <span class="o">=</span> <span class="s">&quot;localhost&quot;</span>
 <span class="n">BROKER_PORT</span> <span class="o">=</span> <span class="mi">5672</span>
 <span class="n">BROKER_USER</span> <span class="o">=</span> <span class="s">&quot;myuser&quot;</span>
@@ -107,17 +106,17 @@ the <span class="target" id="index-0"></span><tt class="xref std std-envvar docu
 </pre></div>
 </div>
 </li>
-<li><p class="first">In this example we don&#8217;t want to store the results of the tasks, so
-we&#8217;ll use the simplest backend available; the AMQP backend:</p>
+<li><p class="first">Define the backend used to store task metadata and return values:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_RESULT_BACKEND</span> <span class="o">=</span> <span class="s">&quot;amqp&quot;</span>
 </pre></div>
 </div>
 <p>The AMQP backend is non-persistent by default, and you can only
 fetch the result of a task once (as it&#8217;s sent as a message).</p>
+<p>For list of backends available and related options see
+<a class="reference internal" href="../configuration.html#conf-result-backend"><em>Task result backend settings</em></a>.</p>
 </li>
-<li><p class="first">Finally, we list the modules to import, that is, all the modules
-that contain tasks. This is so Celery knows about what tasks it can
-be asked to perform.</p>
+<li><p class="first">Finally we list the modules the worker should import.  This includes
+the modules containing your tasks.</p>
 <p>We only have a single task module, <tt class="file docutils literal"><span class="pre">tasks.py</span></tt>, which we added earlier:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_IMPORTS</span> <span class="o">=</span> <span class="p">(</span><span class="s">&quot;tasks&quot;</span><span class="p">,</span> <span class="p">)</span>
 </pre></div>
@@ -126,17 +125,17 @@ be asked to perform.</p>
 </ol>
 <p>That&#8217;s it.</p>
 <p>There are more options available, like how many processes you want to
-process work in parallel (the <tt class="xref std std-setting docutils literal"><span class="pre">CELERY_CONCURRENCY</span></tt> setting), and we
-could use a persistent result store backend, but for now, this should
-do. For all of the options available, see <a class="reference internal" href="../configuration.html#configuration"><em>Configuration and defaults</em></a>.</p>
+use to process work in parallel (the <tt class="xref std std-setting docutils literal"><span class="pre">CELERY_CONCURRENCY</span></tt> setting),
+and we could use a persistent result store backend, but for now, this should
+do.  For all of the options available, see <a class="reference internal" href="../configuration.html#configuration"><em>Configuration and defaults</em></a>.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p>You can also specify modules to import using the <em class="xref std std-option">-I</em> option to
 <a class="reference internal" href="../reference/celery.bin.celeryd.html#module-celery.bin.celeryd"><tt class="xref py py-mod docutils literal"><span class="pre">celeryd</span></tt></a>:</p>
 <div class="highlight-python"><pre>$ celeryd -l info -I tasks,handlers</pre>
 </div>
-<p class="last">This can be a single, or a comma separated list of task modules to import when
-<a class="reference internal" href="../reference/celery.bin.celeryd.html#module-celery.bin.celeryd"><tt class="xref py py-mod docutils literal"><span class="pre">celeryd</span></tt></a> starts.</p>
+<p class="last">This can be a single, or a comma separated list of task modules to import
+when <strong class="program">celeryd</strong> starts.</p>
 </div>
 </div>
 <div class="section" id="running-the-celery-worker-server">
@@ -145,42 +144,37 @@ do. For all of the options available, see <a class="reference internal" href="..
 see what&#8217;s going on in the terminal:</p>
 <div class="highlight-python"><pre>$ celeryd --loglevel=INFO</pre>
 </div>
-<p>However, in production you probably want to run the worker in the
-background as a daemon. To do this you need to use to tools provided
-by your platform, or something like <a class="reference external" href="http://supervisord.org">supervisord</a>.</p>
-<p>For a complete listing of the command line options available, use the
-help command:</p>
+<p>In production you will probably want to run the worker in the
+background as a daemon.  To do this you need to use the tools provided
+by your platform, or something like <a class="reference external" href="http://supervisord.org">supervisord</a> (see <em class="xref std std-ref">daemonization</em>
+for more information).</p>
+<p>For a complete listing of the command line options available, do:</p>
 <div class="highlight-python"><pre>$  celeryd --help</pre>
 </div>
-<p>For info on how to run celery as standalone daemon, see <a class="reference internal" href="../cookbook/daemonizing.html#daemonizing"><em>Running celeryd as a daemon</em></a>.</p>
 </div>
 <div class="section" id="executing-the-task">
 <span id="celerytut-executing-task"></span><h2><a class="toc-backref" href="#id4">Executing the task</a><a class="headerlink" href="#executing-the-task" title="Permalink to this headline">¶</a></h2>
-<p>Whenever we want to execute our task, we can use the
+<p>Whenever we want to execute our task, we use the
 <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.Task.delay" title="celery.task.base.Task.delay"><tt class="xref py py-meth docutils literal"><span class="pre">delay()</span></tt></a> method of the task class.</p>
 <p>This is a handy shortcut to the <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.Task.apply_async" title="celery.task.base.Task.apply_async"><tt class="xref py py-meth docutils literal"><span class="pre">apply_async()</span></tt></a>
-method which gives greater control of the task execution. Read the
-<a class="reference internal" href="../userguide/executing.html"><em>Executing Tasks</em></a> part of the user guide
-for more information about executing tasks.</p>
+method which gives greater control of the task execution (see
+<a class="reference internal" href="../userguide/executing.html#guide-executing"><em>Executing Tasks</em></a>).</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">tasks</span> <span class="kn">import</span> <span class="n">add</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">add</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
 <span class="go">&lt;AsyncResult: 889143a6-39a2-4e52-837b-d80d33efb22d&gt;</span>
 </pre></div>
 </div>
 <p>At this point, the task has been sent to the message broker. The message
-broker will hold on to the task until a worker server has successfully
-picked it up.</p>
-<p><em>Note:</em> If everything is just hanging when you execute <tt class="docutils literal"><span class="pre">delay</span></tt>, please check
-that RabbitMQ is running, and that the user/password combination does have access to the
-virtual host you configured earlier.</p>
+broker will hold on to the task until a worker server has consumed and
+executed it.</p>
 <p>Right now we have to check the worker log files to know what happened
-with the task. This is because we didn&#8217;t keep the <a class="reference internal" href="../reference/celery.result.html#celery.result.AsyncResult" title="celery.result.AsyncResult"><tt class="xref py py-class docutils literal"><span class="pre">AsyncResult</span></tt></a>
-object returned by <a class="reference internal" href="../reference/celery.task.base.html#celery.task.base.Task.delay" title="celery.task.base.Task.delay"><tt class="xref py py-meth docutils literal"><span class="pre">delay()</span></tt></a>.</p>
-<p>The <a class="reference internal" href="../reference/celery.result.html#celery.result.AsyncResult" title="celery.result.AsyncResult"><tt class="xref py py-class docutils literal"><span class="pre">AsyncResult</span></tt></a> lets us find the state of the task, wait for
-the task to finish, get its return value (or exception + traceback if the task failed),
-and more.</p>
-<p>So, let&#8217;s execute the task again, but this time we&#8217;ll keep track of the task
-by keeping the <a class="reference internal" href="../reference/celery.result.html#celery.result.AsyncResult" title="celery.result.AsyncResult"><tt class="xref py py-class docutils literal"><span class="pre">AsyncResult</span></tt></a>:</p>
+with the task.  This is because we didn&#8217;t keep the
+<a class="reference internal" href="../reference/celery.result.html#celery.result.AsyncResult" title="celery.result.AsyncResult"><tt class="xref py py-class docutils literal"><span class="pre">AsyncResult</span></tt></a> object returned.</p>
+<p>The <a class="reference internal" href="../reference/celery.result.html#celery.result.AsyncResult" title="celery.result.AsyncResult"><tt class="xref py py-class docutils literal"><span class="pre">AsyncResult</span></tt></a> lets us check the state of the task,
+wait for the task to finish, get its return value or exception/traceback
+if the task failed, and more.</p>
+<p>Let&#8217;s execute the task again &#8211; but this time we&#8217;ll keep track of the task
+by holding on to the <a class="reference internal" href="../reference/celery.result.html#celery.result.AsyncResult" title="celery.result.AsyncResult"><tt class="xref py py-class docutils literal"><span class="pre">AsyncResult</span></tt></a>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">add</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
 
 <span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">ready</span><span class="p">()</span> <span class="c"># returns True if the task has finished processing.</span>
@@ -261,7 +255,7 @@ raised by the task.</p>
         <li class="right" >
           <a href="broker-installation.html" title="Broker Installation"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.0rc3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.0rc4 documentation</a> &raquo;</li>
           <li><a href="index.html" >Getting Started</a> &raquo;</li> 
       </ul>
     </div>

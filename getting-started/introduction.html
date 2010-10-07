@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Introduction &mdash; Celery v2.1.0rc3 documentation</title>
+    <title>Introduction &mdash; Celery v2.1.0rc4 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.1.0rc3',
+        VERSION:     '2.1.0rc4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.0rc3 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.1.0rc4 documentation" href="../index.html" />
     <link rel="up" title="Getting Started" href="index.html" />
     <link rel="next" title="Broker Installation" href="broker-installation.html" />
     <link rel="prev" title="Getting Started" href="index.html" /> 
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="index.html" title="Getting Started"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.0rc3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.0rc4 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Getting Started</a> &raquo;</li> 
       </ul>
     </div>  
@@ -59,7 +59,7 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Version:</th><td class="field-body">2.1.0rc3</td>
+<tr class="field"><th class="field-name">Version:</th><td class="field-body">2.1.0rc4</td>
 </tr>
 <tr class="field"><th class="field-name">Web:</th><td class="field-body"><a class="reference external" href="http://celeryproject.org/">http://celeryproject.org/</a></td>
 </tr>
@@ -74,20 +74,18 @@ python, webhooks, queue, distributed</td>
 </table>
 <p>&#8211;</p>
 <p id="celery-synopsis">Celery is an open source asynchronous task queue/job queue based on
-distributed message passing. It is focused on real-time operation,
+distributed message passing.  It is focused on real-time operation,
 but supports scheduling as well.</p>
 <p>The execution units, called tasks, are executed concurrently on one or
-more worker nodes. Tasks can execute asynchronously (in the background) or
+more worker nodes.  Tasks can execute asynchronously (in the background) or
 synchronously (wait until ready).</p>
 <p>Celery is already used in production to process millions of tasks a day.</p>
 <p>Celery is written in Python, but the protocol can be implemented in any
-language. It can also <a class="reference external" href="http://ask.github.com/celery/userguide/remote-tasks.html">operate with other languages using webhooks</a>.</p>
+language.  It can also <a class="reference external" href="http://ask.github.com/celery/userguide/remote-tasks.html">operate with other languages using webhooks</a>.</p>
 <p>The recommended message broker is <a class="reference external" href="http://www.rabbitmq.com/">RabbitMQ</a>, but support for <a class="reference external" href="http://code.google.com/p/redis/">Redis</a> and
 databases (<a class="reference external" href="http://www.sqlalchemy.org/">SQLAlchemy</a>) is also available.</p>
-<p>Celery can be used with Django and Pylons using
+<p>Celery is easy to integrate with Django and Pylons, using
 the <a class="reference external" href="http://pypi.python.org/pypi/django-celery">django-celery</a> and <a class="reference external" href="http://bitbucket.org/ianschenck/celery-pylons">celery-pylons</a> add-on packages.</p>
-<p>You may also be pleased to know that full Django integration exists,
-delivered by the <a class="reference external" href="http://pypi.python.org/pypi/django-celery">django-celery</a> package.</p>
 <div class="contents local topic" id="contents">
 <ul class="simple">
 <li><a class="reference external" href="#overview" id="id1">Overview</a></li>
@@ -105,8 +103,8 @@ delivered by the <a class="reference external" href="http://pypi.python.org/pypi
 <span id="celery-overview"></span><h2><a class="toc-backref" href="#id1">Overview</a><a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
 <p>This is a high level overview of the architecture.</p>
 <img alt="http://cloud.github.com/downloads/ask/celery/Celery-Overview-v4.jpg" src="http://cloud.github.com/downloads/ask/celery/Celery-Overview-v4.jpg" />
-<p>The broker pushes tasks to the worker servers.
-A worker server is a networked machine running <tt class="docutils literal"><span class="pre">celeryd</span></tt>. This can be one or
+<p>The broker delivers tasks to the worker servers.
+A worker server is a networked machine running <tt class="docutils literal"><span class="pre">celeryd</span></tt>.  This can be one or
 more machines depending on the workload.</p>
 <p>The result of the task can be stored for later retrieval (called its
 &#8220;tombstone&#8221;).</p>
@@ -327,7 +325,7 @@ $ python setup.py build
         <li class="right" >
           <a href="index.html" title="Getting Started"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.0rc3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.0rc4 documentation</a> &raquo;</li>
           <li><a href="index.html" >Getting Started</a> &raquo;</li> 
       </ul>
     </div>

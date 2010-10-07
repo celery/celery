@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Monitoring Guide &mdash; Celery v2.1.0rc3 documentation</title>
+    <title>Monitoring Guide &mdash; Celery v2.1.0rc4 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.1.0rc3',
+        VERSION:     '2.1.0rc4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.0rc3 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.1.0rc4 documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
     <link rel="next" title="Configuration and defaults" href="../configuration.html" />
     <link rel="prev" title="Routing Tasks" href="routing.html" /> 
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="routing.html" title="Routing Tasks"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.0rc3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.0rc4 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User Guide</a> &raquo;</li> 
       </ul>
     </div>  
@@ -95,8 +95,8 @@
 </div>
 <div class="section" id="introduction">
 <h2><a class="toc-backref" href="#id2">Introduction</a><a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
-<p>There are several tools available to monitor and inspect Celery clusters.
-This document describes some of these, as as well as
+<p>There are several tools available to monitor and inspect Celery clusters.</p>
+<p>This document describes some of these, as as well as
 features related to monitoring, like events and broadcast commands.</p>
 </div>
 <div class="section" id="workers">
@@ -107,7 +107,7 @@ features related to monitoring, like events and broadcast commands.</p>
 <span class="versionmodified">New in version 2.1.</span></p>
 <p><a class="reference internal" href="../reference/celery.bin.celeryctl.html#module-celery.bin.celeryctl"><tt class="xref py py-mod docutils literal"><span class="pre">celeryctl</span></tt></a> is a command line utility to inspect
 and manage worker nodes (and to some degree tasks).</p>
-<p>To list all the commands from the command line do:</p>
+<p>To list all the commands avaialble do:</p>
 <div class="highlight-python"><pre>$ celeryctl help</pre>
 </div>
 <p>or to get help for a specific command do:</p>
@@ -181,15 +181,6 @@ with an eta).</p>
 </dl>
 </li>
 <li><dl class="first docutils">
-<dt><strong>inspect diagnose</strong>: Diagnose the pool processes.</dt>
-<dd><div class="first highlight-python"><pre>$ celeryctl inspect diagnose</pre>
-</div>
-<p class="last">This will verify that the workers pool processes are available
-to do work.  Note that this will not work if the worker is busy.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
 <dt><strong>inspect enable_events</strong>: Enable events</dt>
 <dd><div class="first last highlight-python"><pre>$ celeryctl inspect enable_events</pre>
 </div>
@@ -229,7 +220,9 @@ You can specify a single, or a list of workers by using the
 automatically get a monitor section as part of the Django admin interface.</p>
 <p>This can also be used if you&#8217;re not using Celery with a Django project.</p>
 <p><em>Screenshot</em></p>
-<img alt="http://celeryproject.org/beta/djangoceleryadmin2.jpg" src="http://celeryproject.org/beta/djangoceleryadmin2.jpg" />
+<div class="figure">
+<img alt="../images/djangoceleryadmin2.jpg" src="../images/djangoceleryadmin2.jpg" />
+</div>
 <div class="section" id="starting-the-monitor">
 <span id="monitoring-django-starting"></span><h4><a class="toc-backref" href="#id8">Starting the monitor</a><a class="headerlink" href="#starting-the-monitor" title="Permalink to this headline">¶</a></h4>
 <p>The Celery section will already be present in your admin interface,
@@ -256,12 +249,12 @@ you should be able to see your workers and the tasks in the admin interface
 (it may take some time for workers to show up).</p>
 <p>The admin interface shows tasks, worker nodes, and even
 lets you perform some actions, like revoking and rate limiting tasks,
-and shutting down worker nodes.</p>
+or shutting down worker nodes.</p>
 </div>
 <div class="section" id="shutter-frequency">
 <span id="monitoring-django-frequency"></span><h4><a class="toc-backref" href="#id9">Shutter frequency</a><a class="headerlink" href="#shutter-frequency" title="Permalink to this headline">¶</a></h4>
 <p>By default the camera takes a snapshot every second, if this is too frequent
-or you want higher precision then you can change this using the
+or you want to have higher precision, then you can change this using the
 <tt class="docutils literal"><span class="pre">--frequency</span></tt> argument.  This is a float describing how often, in seconds,
 it should wake up to check if there are any new events:</p>
 <div class="highlight-python"><pre>$ python manage.py celerycam --frequency=3.0</pre>
@@ -300,8 +293,9 @@ By default an <tt class="docutils literal"><span class="pre">sqlite3</span></tt>
 <tt class="file docutils literal"><span class="pre">djcelerymon.db</span></tt> is used, so make sure this file is writeable by the
 user running the monitor.</p>
 <p>If you want to store the events in a different database, e.g. MySQL,
-then you can configure the <tt class="docutils literal"><span class="pre">DATABASE*</span></tt> settings in your Celery
-config module. See <a class="reference external" href="http://docs.djangoproject.com/en/dev/ref/settings/#databases">http://docs.djangoproject.com/en/dev/ref/settings/#databases</a>.</p>
+then you can configure the <tt class="docutils literal"><span class="pre">DATABASE*</span></tt> settings directly in your Celery
+config module.  See <a class="reference external" href="http://docs.djangoproject.com/en/dev/ref/settings/#databases">http://docs.djangoproject.com/en/dev/ref/settings/#databases</a>
+for more information about the database options avaialble.</p>
 <p>You will also be asked to create a superuser (and you need to create one
 to be able to log into the admin later):</p>
 <div class="highlight-python"><pre>Creating table auth_permission
@@ -333,10 +327,12 @@ please see <tt class="docutils literal"><span class="pre">djcelerymon</span> <sp
 <p class="versionadded">
 <span class="versionmodified">New in version 2.0.</span></p>
 <p><a class="reference internal" href="../reference/celery.bin.celeryev.html#module-celery.bin.celeryev"><tt class="xref py py-mod docutils literal"><span class="pre">celeryev</span></tt></a> is a simple curses monitor displaying
-task and worker history. You can inspect the result and traceback of tasks,
-and it also supports some management commands like rate limiting and shutdown
-of workers.</p>
-<img alt="http://celeryproject.org/img/celeryevshotsm.jpg" src="http://celeryproject.org/img/celeryevshotsm.jpg" />
+task and worker history.  You can inspect the result and traceback of tasks,
+and it also supports some management commands like rate limiting and shutting
+down workers.</p>
+<div class="figure">
+<img alt="../images/celeryevshotsm.jpg" src="../images/celeryevshotsm.jpg" />
+</div>
 <p><a class="reference internal" href="../reference/celery.bin.celeryev.html#module-celery.bin.celeryev"><tt class="xref py py-mod docutils literal"><span class="pre">celeryev</span></tt></a> is also used to start snapshot cameras (see
 <a class="reference internal" href="#monitoring-snapshots"><em>Snapshots</em></a>:</p>
 <div class="highlight-python"><pre>$ celeryev --camera=&lt;camera-class&gt; --frequency=1.0</pre>
@@ -352,15 +348,15 @@ of workers.</p>
 <span id="monitoring-celerymon"></span><h3><a class="toc-backref" href="#id12">celerymon: Web monitor</a><a class="headerlink" href="#celerymon-web-monitor" title="Permalink to this headline">¶</a></h3>
 <p><a class="reference external" href="http://github.com/ask/celerymon/">celerymon</a> is the ongoing work to create a web monitor.
 It&#8217;s far from complete yet, and does currently only support
-a JSON API. Help is desperately needed for this project, so if you,
-or someone you knowi, would like to contribute templates, design, code
+a JSON API.  Help is desperately needed for this project, so if you,
+or someone you know would like to contribute templates, design, code
 or help this project in any way, please get in touch!</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Tip:</th><td class="field-body">The Django admin monitor can be used even though you&#8217;re not using
-Celery with a Django project. See <a class="reference internal" href="#monitoring-nodjango"><em>Using outside of Django</em></a>.</td>
+Celery with a Django project.  See <a class="reference internal" href="#monitoring-nodjango"><em>Using outside of Django</em></a>.</td>
 </tr>
 </tbody>
 </table>
@@ -436,29 +432,31 @@ been executed (requires <tt class="docutils literal"><span class="pre">celerymon
 <div class="section" id="events">
 <span id="monitoring-events"></span><h2><a class="toc-backref" href="#id16">Events</a><a class="headerlink" href="#events" title="Permalink to this headline">¶</a></h2>
 <p>The worker has the ability to send a message whenever some event
-happens. These events are then captured by tools like <tt class="docutils literal"><span class="pre">celerymon</span></tt> and
-<tt class="docutils literal"><span class="pre">celeryev</span></tt> to monitor the cluster.</p>
+happens.  These events are then captured by tools like <strong class="program">celerymon</strong>
+and <strong class="program">celeryev</strong> to monitor the cluster.</p>
 <div class="section" id="snapshots">
 <span id="monitoring-snapshots"></span><h3><a class="toc-backref" href="#id17">Snapshots</a><a class="headerlink" href="#snapshots" title="Permalink to this headline">¶</a></h3>
 <p>Even a single worker can produce a huge amount of events, so storing
-history of events on disk may be very expensive.</p>
+the history of all events on disk may be very expensive.</p>
 <p>A sequence of events describes the cluster state in that time period,
 by taking periodic snapshots of this state we can keep all history, but
 still only periodically write it to disk.</p>
 <p>To take snapshots you need a Camera class, with this you can define
-what should happen every time the state is captured. You can
-write it to a database, send it by e-mail or something else entirely).</p>
-<p><tt class="docutils literal"><span class="pre">celeryev</span></tt> is then used to take snapshots with the camera,
+what should happen every time the state is captured;  You can
+write it to a database, send it by e-mail or something else entirely.</p>
+<p><strong class="program">celeryev</strong> is then used to take snapshots with the camera,
 for example if you want to capture state every 2 seconds using the
-camera <tt class="docutils literal"><span class="pre">myapp.Camera</span></tt> you run <tt class="docutils literal"><span class="pre">celeryev</span></tt> with the following arguments:</p>
+camera <tt class="docutils literal"><span class="pre">myapp.Camera</span></tt> you run <strong class="program">celeryev</strong> with the following
+arguments:</p>
 <div class="highlight-python"><pre>$ celeryev -c myapp.Camera --frequency=2.0</pre>
 </div>
 <div class="section" id="custom-camera">
 <span id="monitoring-camera"></span><h4><a class="toc-backref" href="#id18">Custom Camera</a><a class="headerlink" href="#custom-camera" title="Permalink to this headline">¶</a></h4>
-<p>Here is an example camera, dumping the snapshot to the screen:</p>
+<p>Here is an example camera, dumping the snapshot to screen:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pformat</span>
 
 <span class="kn">from</span> <span class="nn">celery.events.snapshot</span> <span class="kn">import</span> <span class="n">Polaroid</span>
+
 
 <span class="k">class</span> <span class="nc">DumpCam</span><span class="p">(</span><span class="n">Polaroid</span><span class="p">):</span>
 
@@ -472,6 +470,8 @@ camera <tt class="docutils literal"><span class="pre">myapp.Camera</span></tt> y
             <span class="n">state</span><span class="o">.</span><span class="n">event_count</span><span class="p">,</span> <span class="n">state</span><span class="o">.</span><span class="n">task_count</span><span class="p">))</span>
 </pre></div>
 </div>
+<p>See the API reference for <a class="reference internal" href="../reference/celery.events.state.html#module-celery.events.state"><tt class="xref py py-mod docutils literal"><span class="pre">celery.events.state</span></tt></a> to read more
+about state objects.</p>
 <p>Now you can use this cam with <tt class="docutils literal"><span class="pre">celeryev</span></tt> by specifying
 it with the <tt class="docutils literal"><span class="pre">-c</span></tt> option:</p>
 <div class="highlight-python"><pre>$ celeryev -c myapp.DumpCam --frequency=2.0</pre>
@@ -514,10 +514,10 @@ it with the <tt class="docutils literal"><span class="pre">-c</span></tt> option
 </li>
 <li><p class="first"><tt class="docutils literal"><span class="pre">task-succeeded(uuid,</span> <span class="pre">result,</span> <span class="pre">runtime,</span> <span class="pre">hostname,</span> <span class="pre">timestamp)</span></tt></p>
 <blockquote>
-<p>Sent if the task executed successfully.
-Runtime is the time it took to execute the task using the pool.
-(Time starting from the task is sent to the pool, and ending when the
-pool result handlers callback is called).</p>
+<p>Sent if the task executed successfully.</p>
+<p>Runtime is the time it took to execute the task using the pool.
+(Starting from the task is sent to the worker pool, and ending when the
+pool result handler callback is called).</p>
 </blockquote>
 </li>
 <li><p class="first"><tt class="docutils literal"><span class="pre">task-failed(uuid,</span> <span class="pre">exception,</span> <span class="pre">traceback,</span> <span class="pre">hostname,</span> <span class="pre">timestamp)</span></tt></p>
@@ -528,7 +528,7 @@ pool result handlers callback is called).</p>
 <li><p class="first"><tt class="docutils literal"><span class="pre">task-revoked(uuid)</span></tt></p>
 <blockquote>
 <p>Sent if the task has been revoked (Note that this is likely
-to be sent by more than one worker)</p>
+to be sent by more than one worker).</p>
 </blockquote>
 </li>
 <li><p class="first"><tt class="docutils literal"><span class="pre">task-retried(uuid,</span> <span class="pre">exception,</span> <span class="pre">traceback,</span> <span class="pre">hostname,</span> <span class="pre">delay,</span> <span class="pre">timestamp)</span></tt></p>
@@ -615,7 +615,7 @@ it is considered to be offline.</p>
         <li class="right" >
           <a href="routing.html" title="Routing Tasks"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.0rc3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.0rc4 documentation</a> &raquo;</li>
           <li><a href="index.html" >User Guide</a> &raquo;</li> 
       </ul>
     </div>

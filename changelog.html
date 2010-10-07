@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Change history &mdash; Celery v2.1.0rc3 documentation</title>
+    <title>Change history &mdash; Celery v2.1.0rc4 documentation</title>
     <link rel="stylesheet" href="static/celery.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '2.1.0rc3',
+        VERSION:     '2.1.0rc4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.0rc3 documentation" href="index.html" />
+    <link rel="top" title="Celery v2.1.0rc4 documentation" href="index.html" />
     <link rel="next" title="Interesting Links" href="links.html" />
     <link rel="prev" title="Platform Specific - celery.platforms" href="internals/reference/celery.platforms.html" /> 
   </head>
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="internals/reference/celery.platforms.html" title="Platform Specific - celery.platforms"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Celery v2.1.0rc3 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v2.1.0rc4 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -159,12 +159,6 @@
 <tbody valign="top">
 <tr class="field"><th class="field-name">release-date:</th><td class="field-body">2010-10-08 12:00 PM CEST</td>
 </tr>
-<tr class="field"><th class="field-name">status:</th><td class="field-body">FREEZE</td>
-</tr>
-<tr class="field"><th class="field-name">branch:</th><td class="field-body">master</td>
-</tr>
-<tr class="field"><th class="field-name">roadmap:</th><td class="field-body"><a class="reference external" href="http://wiki.github.com/ask/celery/roadmap">http://wiki.github.com/ask/celery/roadmap</a></td>
-</tr>
 </tbody>
 </table>
 <div class="section" id="important-notes">
@@ -181,11 +175,34 @@ can be found at <a class="reference external" href="http://wiki.github.com/ask/c
 </blockquote>
 </li>
 </ul>
-<ul class="simple">
-<li>Now depends on Carrot 0.10.6.</li>
-<li>No longer depends on SQLAlchemy, this needs to be installed separately
+<ul>
+<li><p class="first">Now depends on Carrot 0.10.7.</p>
+</li>
+<li><p class="first">No longer depends on SQLAlchemy, this needs to be installed separately
 if the database backend is used (does not apply to users of
-<a class="reference external" href="http://pypi.python.org/pypi/django-celery">django-celery</a>).</li>
+<a class="reference external" href="http://pypi.python.org/pypi/django-celery">django-celery</a>).</p>
+</li>
+<li><p class="first">If you get an error after upgrading saying:
+<tt class="docutils literal"><span class="pre">AttributeError:</span> <span class="pre">'module'</span> <span class="pre">object</span> <span class="pre">has</span> <span class="pre">no</span> <span class="pre">attribute</span> <span class="pre">'system'</span></tt>,</p>
+<blockquote>
+<p>Then this is because the <tt class="docutils literal"><span class="pre">celery.platform</span></tt> module has been
+renamed to <tt class="docutils literal"><span class="pre">celery.platforms</span></tt> to not collide with the built-in
+<tt class="xref py py-mod docutils literal"><span class="pre">platform</span></tt> module.</p>
+<p>You have to remove the old <tt class="file docutils literal"><span class="pre">platform.py</span></tt> (and maybe
+<tt class="file docutils literal"><span class="pre">platform.pyc</span></tt>) file from your previous Celery installation.</p>
+<p>To do this use <strong class="program">python</strong> to find the location
+of this module:</p>
+<div class="highlight-python"><pre>$ python
+&gt;&gt;&gt; import celery.platform
+&gt;&gt;&gt; celery.platform
+&lt;module 'celery.platform' from '/opt/devel/celery/celery/platform.pyc'&gt;</pre>
+</div>
+<p>Here the compiled module is in <tt class="file docutils literal"><span class="pre">/opt/devel/celery/celery/</span></tt>,
+to remove the offending files do:</p>
+<div class="highlight-python"><pre>$ rm -f /opt/devel/celery/celery/platform.py*</pre>
+</div>
+</blockquote>
+</li>
 </ul>
 </div>
 <div class="section" id="news">
@@ -270,24 +287,11 @@ and tasks in other states after 5 days.</p>
 <p class="last"><a class="reference internal" href="userguide/monitoring.html#monitoring-django-admin"><em>Django Admin Monitor</em></a> and <a class="reference internal" href="userguide/monitoring.html#monitoring-snapshots"><em>Snapshots</em></a>.</p>
 </div>
 <ul>
-<li><p class="first">celeryd: Now emits a warning if there is already a worker node using the same
-name running on the current virtual host.</p>
-</li>
 <li><p class="first"><a class="reference internal" href="reference/celery.task.control.html#celery.task.control.broadcast" title="celery.task.control.broadcast"><tt class="xref py py-func docutils literal"><span class="pre">celery.task.control.broadcast()</span></tt></a>: Added callback argument, this can be
 used to process replies immediately as they arrive.</p>
 </li>
-<li><p class="first">New remote control command: <tt class="docutils literal"><span class="pre">diagnose</span></tt>.</p>
-<blockquote>
-<p>Verifies that the pool workers are able to accept and perform tasks.</p>
-<div class="admonition warning">
-<p class="first admonition-title">Warning</p>
-<p class="last">This is only reliable as long as the worker node is not
-processing tasks.</p>
-</div>
-</blockquote>
-</li>
 <li><p class="first">celeryctl: New command-line utility to manage and inspect worker nodes,
-and also apply tasks and inspect the results of tasks.</p>
+apply tasks and inspect the results of tasks.</p>
 <blockquote>
 <div class="admonition-see-also admonition seealso">
 <p class="first admonition-title">See also</p>
@@ -314,8 +318,8 @@ $ celeryctl apply --help</pre>
 <span class="gp">... </span>                 <span class="n">expires</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>When a worker receives a task that has been expired it will mark
-the task as revoked (<a class="reference internal" href="reference/celery.exceptions.html#celery.exceptions.TaskRevokedError" title="celery.exceptions.TaskRevokedError"><tt class="xref py py-exc docutils literal"><span class="pre">celery.exceptions.TaskRevokedError</span></tt></a>).</p>
+<p>When a worker receives a task that has been expired it will be
+marked as revoked (<a class="reference internal" href="reference/celery.exceptions.html#celery.exceptions.TaskRevokedError" title="celery.exceptions.TaskRevokedError"><tt class="xref py py-exc docutils literal"><span class="pre">celery.exceptions.TaskRevokedError</span></tt></a>).</p>
 </blockquote>
 </li>
 <li><p class="first">Changed the way logging is configured.</p>
@@ -325,9 +329,39 @@ our custom logger. In addition we don&#8217;t hijack
 the multiprocessing logger anymore, but instead use a custom logger name
 (celeryd uses &#8220;celery&#8221;, celerybeat uses &#8220;celery.beat&#8221;, celeryev uses
 &#8220;celery.ev&#8221;).</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head"><p class="first last"><strong>Application</strong></p>
+</th>
+<th class="head"><p class="first last"><strong>Logger Name</strong></p>
+</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><p class="first last"><tt class="docutils literal"><span class="pre">celeryd</span></tt></p>
+</td>
+<td><p class="first last">&#8220;celery&#8221;</p>
+</td>
+</tr>
+<tr><td><p class="first last"><tt class="docutils literal"><span class="pre">celerybeat</span></tt></p>
+</td>
+<td><p class="first last">&#8220;celery.beat&#8221;</p>
+</td>
+</tr>
+<tr><td><p class="first last"><tt class="docutils literal"><span class="pre">celeryev</span></tt></p>
+</td>
+<td><p class="first last">&#8220;celery.ev&#8221;</p>
+</td>
+</tr>
+</tbody>
+</table>
 <p>This means that the <tt class="docutils literal"><span class="pre">loglevel</span></tt> and <tt class="docutils literal"><span class="pre">logfile</span></tt> arguments will
 affect all registered loggers (even those from 3rd party libraries).
-That is unless you configure the loggers manually as show below.</p>
+That is unless you configure the loggers manually as shown below.</p>
 <p>Users can choose to configure logging by subscribing to the
 <tt class="xref py py-data docutils literal"><span class="pre">setup_logging</span></tt> signal:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">logging.config</span> <span class="kn">import</span> <span class="n">fileConfig</span>
@@ -358,10 +392,12 @@ def setup_logging(**kwargs):
 <li><p class="first">celeryd: Added command-line option <em class="xref std std-option">-I</em>/<em class="xref std std-option">--include</em>:
 Additional (task) modules to be imported</p>
 </li>
-<li><p class="first">celeryd: now emits a warning if running as root (euid is 0).</p>
+<li><p class="first">celeryd: now emits a warning if running as the root user (euid is 0).</p>
 </li>
-<li><p class="first">Fixed timing issue when declaring the remote control command reply queue
-which meant replies could be lost.</p>
+<li><p class="first">Fixed timing issue when declaring the remote control command reply queue</p>
+<blockquote>
+<p>This issue could result in replies being lost, but have now been fixed.</p>
+</blockquote>
 </li>
 <li><p class="first"><a class="reference internal" href="reference/celery.messaging.html#celery.messaging.establish_connection" title="celery.messaging.establish_connection"><tt class="xref py py-func docutils literal"><span class="pre">celery.messaging.establish_connection()</span></tt></a>: Ability to override defaults
 used using kwarg &#8220;defaults&#8221;.</p>
@@ -387,6 +423,9 @@ hostname of the worker that started the task.</p>
 </div>
 <p>See <a class="issue-closed reference-issue reference external" href="http://github.com/ask/celery/issues/182">issue #182</a>.</p>
 </blockquote>
+</li>
+<li><p class="first">celeryd: Now emits a warning if there is already a worker node using the same
+name running on the current virtual host.</p>
 </li>
 <li><p class="first">AMQP result backend: Sending of results are now retried if the connection
 is down.</p>
@@ -526,6 +565,10 @@ and replays the buffer when the function returns.</p>
 <li><p class="first"><a class="reference internal" href="reference/celery.events.html#celery.events.EventReceiver.capture" title="celery.events.EventReceiver.capture"><tt class="xref py py-meth docutils literal"><span class="pre">EventReceiver.capture</span></tt></a>
 Now supports a timeout keyword argument.</p>
 </li>
+<li><p class="first">Optimization: The mediator thread is now disabled if
+<tt class="xref std std-setting docutils literal"><span class="pre">CELERY_RATE_LIMTS</span></tt> is enabled, and tasks sent directly to the
+pool without going through the ready queue.</p>
+</li>
 </ul>
 </div>
 <div class="section" id="fixes">
@@ -541,6 +584,25 @@ so don&#8217;t remove it from self._pool</p>
 overriden when sending tasks in bulk using the same publisher</p>
 <blockquote>
 <p>See <a class="issue-closed reference-issue reference external" href="http://github.com/ask/celery/issues/187">issue #187</a>.</p>
+</blockquote>
+</li>
+<li><p class="first">celeryd no longer marks tasks as revoked if <a class="reference internal" href="configuration.html#std:setting-CELERY_IGNORE_RESULT"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_IGNORE_RESULT</span></tt></a>
+is enabled.</p>
+<blockquote>
+<p>See <a class="issue-closed reference-issue reference external" href="http://github.com/ask/celery/issues/207">issue #207</a>.</p>
+</blockquote>
+</li>
+<li><p class="first">AMQP Result backend: Fixed bug with <tt class="docutils literal"><span class="pre">result.get()</span></tt> if
+<a class="reference internal" href="configuration.html#std:setting-CELERY_TRACK_STARTED"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_TRACK_STARTED</span></tt></a> enabled.</p>
+<blockquote>
+<p><tt class="docutils literal"><span class="pre">result.get()</span></tt> would stop consuming after receiving the
+<a class="reference internal" href="userguide/tasks.html#std:state-STARTED"><tt class="xref std std-state docutils literal"><span class="pre">STARTED</span></tt></a> state.</p>
+</blockquote>
+</li>
+<li><p class="first">Fixed bug where new processes created by the pool supervisor becomes stuck
+while reading from the task Queue.</p>
+<blockquote>
+<p>See <a class="reference external" href="http://bugs.python.org/issue10037">http://bugs.python.org/issue10037</a></p>
 </blockquote>
 </li>
 <li><p class="first">Compat <tt class="docutils literal"><span class="pre">LoggerAdapter</span></tt> implementation: Now works for Python 2.4.</p>
@@ -1329,7 +1391,9 @@ it is the only safe option for older Python versions.</p>
 executing in real-time and investigate tracebacks and results of ready
 tasks. It also enables you to set new rate limits and revoke tasks.</p>
 <p>Screenshot:</p>
-<img alt="http://celeryproject.org/img/celeryevshotsm.jpg" src="http://celeryproject.org/img/celeryevshotsm.jpg" />
+<div class="figure">
+<img alt="images/celeryevshotsm.jpg" src="images/celeryevshotsm.jpg" />
+</div>
 <p>If you run <tt class="docutils literal"><span class="pre">celeryev</span></tt> with the <tt class="docutils literal"><span class="pre">-d</span></tt> switch it will act as an event
 dumper, simply dumping the events it receives to standard out:</p>
 <div class="highlight-python"><pre>$ celeryev -d
@@ -3910,7 +3974,7 @@ the name change request is in <tt class="docutils literal"><span class="pre">doc
         <li class="right" >
           <a href="internals/reference/celery.platforms.html" title="Platform Specific - celery.platforms"
              >previous</a> |</li>
-        <li><a href="index.html">Celery v2.1.0rc3 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v2.1.0rc4 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

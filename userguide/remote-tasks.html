@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>HTTP Callback Tasks (Webhooks) &mdash; Celery v2.1.0rc3 documentation</title>
+    <title>HTTP Callback Tasks (Webhooks) &mdash; Celery v2.1.0rc4 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.1.0rc3',
+        VERSION:     '2.1.0rc4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.0rc3 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.1.0rc4 documentation" href="../index.html" />
     <link rel="up" title="User Guide" href="index.html" />
     <link rel="next" title="Routing Tasks" href="routing.html" />
     <link rel="prev" title="Sets of tasks, Subtasks and Callbacks" href="tasksets.html" /> 
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="tasksets.html" title="Sets of tasks, Subtasks and Callbacks"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.0rc3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.0rc4 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User Guide</a> &raquo;</li> 
       </ul>
     </div>  
@@ -67,15 +67,18 @@
 <span id="webhook-basics"></span><h2><a class="toc-backref" href="#id1">Basics</a><a class="headerlink" href="#basics" title="Permalink to this headline">¶</a></h2>
 <p>If you need to call into another language, framework or similar, you can
 do so by using HTTP callback tasks.</p>
-<p>The HTTP callback tasks use GET/POST arguments and a simple JSON response
-to return results. The scheme to call a task is:</p>
+<p>The HTTP callback tasks uses GET/POST data to pass arguments and returns
+result as a JSON response. The scheme to call a task is:</p>
 <div class="highlight-python"><pre>GET http://example.com/mytask/?arg1=a&amp;arg2=b&amp;arg3=c</pre>
 </div>
 <p>or using POST:</p>
 <div class="highlight-python"><pre>POST http://example.com/mytask</pre>
 </div>
-<p><strong>Note:</strong> POST data has to be form encoded.
-Whether to use GET or POST is up to you and your requirements.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">POST data needs to be form encoded.</p>
+</div>
+<p>Whether to use GET or POST is up to you and your requirements.</p>
 <p>The web page should then return a response in the following format
 if the execution was successful:</p>
 <div class="highlight-python"><pre>{"status": "success", "retval": ....}</pre>
@@ -131,14 +134,16 @@ functionality.</p>
 <span class="go">100</span>
 </pre></div>
 </div>
-<p>The output of celeryd (or the logfile if you&#8217;ve enabled it) should show the task being processed:</p>
+<p>The output of <strong class="program">celeryd</strong> (or the logfile if enabled) should show the
+task being executed:</p>
 <div class="highlight-python"><pre>[INFO/MainProcess] Task celery.task.http.HttpDispatchTask
         [f2cc8efc-2a14-40cd-85ad-f1c77c94beeb] processed: 100</pre>
 </div>
 <p>Since applying tasks can be done via HTTP using the
-<tt class="docutils literal"><span class="pre">celery.views.apply</span></tt> view, executing tasks from other languages is easy.
+<tt class="docutils literal"><span class="pre">djcelery.views.apply</span></tt> view, executing tasks from other languages is easy.
 For an example service exposing tasks via HTTP you should have a look at
-<tt class="docutils literal"><span class="pre">examples/celery_http_gateway</span></tt>.</p>
+<tt class="docutils literal"><span class="pre">examples/celery_http_gateway</span></tt> in the Celery distribution:
+<a class="reference external" href="http://github.com/ask/celery/tree/master/examples/celery_http_gateway/">http://github.com/ask/celery/tree/master/examples/celery_http_gateway/</a></p>
 </div>
 </div>
 
@@ -193,7 +198,7 @@ For an example service exposing tasks via HTTP you should have a look at
         <li class="right" >
           <a href="tasksets.html" title="Sets of tasks, Subtasks and Callbacks"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.0rc3 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.0rc4 documentation</a> &raquo;</li>
           <li><a href="index.html" >User Guide</a> &raquo;</li> 
       </ul>
     </div>

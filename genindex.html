@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Index &mdash; Celery v2.1.0rc3 documentation</title>
+    <title>Index &mdash; Celery v2.1.0rc4 documentation</title>
     <link rel="stylesheet" href="static/celery.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '2.1.0rc3',
+        VERSION:     '2.1.0rc4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.0rc3 documentation" href="index.html" /> 
+    <link rel="top" title="Celery v2.1.0rc4 documentation" href="index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -34,7 +34,7 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">Celery v2.1.0rc3 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v2.1.0rc4 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -1294,6 +1294,7 @@
     <dt><a href="reference/celery.bin.celeryctl.html#celery.bin.celeryctl.indent">indent() (in module celery.bin.celeryctl)</a></dt>
     <dt><a href="internals/reference/celery.concurrency.processes.html#celery.concurrency.processes.TaskPool.info">info (celery.concurrency.processes.TaskPool attribute)</a></dt>
     <dd><dl>
+      <dt><a href="reference/celery.result.html#celery.result.BaseAsyncResult.info">(celery.result.BaseAsyncResult attribute)</a></dt>
       <dt><a href="internals/reference/celery.worker.listener.html#celery.worker.listener.CarrotListener.info">(celery.worker.listener.CarrotListener attribute)</a></dt>
   </dl></dd>
     <dt><a href="reference/celery.bin.celeryd_multi.html#celery.bin.celeryd_multi.MultiTool.info">info() (celery.bin.celeryd_multi.MultiTool method)</a></dt>
@@ -1695,9 +1696,9 @@
     <dt><a href="internals/reference/celery.concurrency.processes.pool.html#celery.concurrency.processes.pool.Pool.Process">Pool.Process (class in celery.concurrency.processes.pool)</a></dt>
     <dt><a href="internals/reference/celery.concurrency.processes.pool.html#celery.concurrency.processes.pool.Pool.ResultHandler">Pool.ResultHandler (class in celery.concurrency.processes.pool)</a></dt>
     <dt><a href="internals/reference/celery.concurrency.processes.pool.html#celery.concurrency.processes.pool.Pool.SoftTimeLimitExceeded">Pool.SoftTimeLimitExceeded</a></dt>
+    <dt><a href="internals/reference/celery.concurrency.processes.pool.html#celery.concurrency.processes.pool.Pool.Supervisor">Pool.Supervisor (class in celery.concurrency.processes.pool)</a></dt>
 </dl></td>
   <td width="33%" valign="top"><dl>
-    <dt><a href="internals/reference/celery.concurrency.processes.pool.html#celery.concurrency.processes.pool.Pool.Supervisor">Pool.Supervisor (class in celery.concurrency.processes.pool)</a></dt>
     <dt><a href="internals/reference/celery.concurrency.processes.pool.html#celery.concurrency.processes.pool.Pool.TaskHandler">Pool.TaskHandler (class in celery.concurrency.processes.pool)</a></dt>
     <dt><a href="internals/reference/celery.concurrency.processes.pool.html#celery.concurrency.processes.pool.Pool.TimeoutHandler">Pool.TimeoutHandler (class in celery.concurrency.processes.pool)</a></dt>
     <dt><a href="reference/celery.registry.html#celery.registry.TaskRegistry.pop">pop() (celery.registry.TaskRegistry method)</a></dt>
@@ -1737,6 +1738,10 @@
     <dt>PROPAGATE_STATES</dt>
     <dd><dl>
       <dt><a href="reference/celery.states.html#std:state-PROPAGATE_STATES">state</a></dt>
+  </dl></dd>
+    <dt><a href="reference/celery.task.sets.html#celery.task.sets.TaskSet.Publisher">Publisher (celery.task.sets.TaskSet attribute)</a></dt>
+    <dd><dl>
+      <dt><a href="reference/celery.task.html#celery.task.TaskSet.Publisher">(celery.task.TaskSet attribute)</a></dt>
   </dl></dd>
     <dt><a href="reference/celery.apps.worker.html#celery.apps.worker.Worker.purge_messages">purge_messages() (celery.apps.worker.Worker method)</a></dt>
     <dt><a href="internals/reference/celery.worker.buckets.html#celery.worker.buckets.TaskBucket.put">put() (celery.worker.buckets.TaskBucket method)</a></dt>
@@ -2611,7 +2616,7 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">Celery v2.1.0rc3 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v2.1.0rc4 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
