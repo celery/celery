@@ -116,6 +116,15 @@ class BaseAsyncResult(object):
         return self.backend.get_result(self.task_id)
 
     @property
+    def info(self):
+        """Get state metadata.
+
+        Alias to :meth:`result`.
+
+        """
+        return self.result
+
+    @property
     def traceback(self):
         """Get the traceback of a failed task."""
         return self.backend.get_traceback(self.task_id)

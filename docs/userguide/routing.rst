@@ -7,8 +7,9 @@
 .. warning::
 
     This document refers to functionality only available in brokers
-    using AMQP. Other brokers may implement some functionality, see their
-    respective documenation for more information, or contact the :ref:`mailing-list`.
+    using AMQP.  Other brokers may implement some functionality, see their
+    respective documentation for more information, or contact the
+    :ref:`mailing-list`.
 
 .. contents::
     :local:
@@ -28,11 +29,11 @@ The simplest way to do routing is to use the
 :setting:`CELERY_CREATE_MISSING_QUEUES` setting (on by default).
 
 With this setting on, a named queue that is not already defined in
-:setting:`CELERY_QUEUES` will be created automatically. This makes it easy to
+:setting:`CELERY_QUEUES` will be created automatically.  This makes it easy to
 perform simple routing tasks.
 
 Say you have two servers, ``x``, and ``y`` that handles regular tasks,
-and one server ``z``, that only handles feed related tasks. You can use this
+and one server ``z``, that only handles feed related tasks.  You can use this
 configuration::
 
     CELERY_ROUTES = {"feed.tasks.import_feed": {"queue": "feeds"}}
@@ -70,8 +71,8 @@ How the queues are defined
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The point with this feature is to hide the complex AMQP protocol for users
-with only basic needs. However — you may still be interested in how these queues
-are defined.
+with only basic needs. However -- you may still be interested in how these queues
+are declared.
 
 A queue named ``"video"`` will be created with the following settings:
 
@@ -170,7 +171,7 @@ just specify a custom exchange and exchange type:
             },
         }
 
-If you're confused about these terms, you should read up on AMQP concepts.
+If you're confused about these terms, you should read up on AMQP.
 
 .. seealso::
 
@@ -193,12 +194,12 @@ AMQP Primer
 Messages
 --------
 
-A message consists of headers and a body. Celery uses headers to store
-the content type of the message and its content encoding. In Celery the
+A message consists of headers and a body.  Celery uses headers to store
+the content type of the message and its content encoding.  The
 content type is usually the serialization format used to serialize the
-message, and the body contains the name of the task to execute, the
+message. The body contains the name of the task to execute, the
 task id (UUID), the arguments to execute it with and some additional
-metadata - like the number of retries and its ETA (if any).
+metadata -- like the number of retries or an ETA.
 
 This is an example task message represented as a Python dictionary:
 
@@ -229,9 +230,10 @@ Exchanges, queues and routing keys.
 -----------------------------------
 
 1. Messages are sent to exchanges.
-2. An exchange routes messages to one or more queues. Several exchange types
-   exists, providing different ways to do routing.
-3. The message waits in the queue until someone consumes from it.
+2. An exchange routes messages to one or more queues.  Several exchange types
+   exists, providing different ways to do routing, or implementing
+   different messaging scenarios.
+3. The message waits in the queue until someone consumes it.
 4. The message is deleted from the queue when it has been acknowledged.
 
 The steps required to send and receive messages are:
@@ -245,7 +247,7 @@ Celery automatically creates the entities necessary for the queues in
 setting is set to :const:`False`).
 
 Here's an example queue configuration with three queues;
-One for video, one for images and finally, one default queue for everything else:
+One for video, one for images and one default queue for everything else:
 
 .. code-block:: python
 
@@ -269,7 +271,7 @@ One for video, one for images and finally, one default queue for everything else
 .. note::
 
     In Celery the ``routing_key`` is the key used to send the message,
-    while ``binding_key`` is the key the queue is bound with. In the AMQP API
+    while ``binding_key`` is the key the queue is bound with.  In the AMQP API
     they are both referred to as the routing key.
 
 .. _amqp-exchange-types:
@@ -279,9 +281,9 @@ Exchange types
 
 The exchange type defines how the messages are routed through the exchange.
 The exchange types defined in the standard are ``direct``, ``topic``,
-``fanout`` and ``headers``. Also non-standard exchange types are available
+``fanout`` and ``headers``.  Also non-standard exchange types are available
 as plugins to RabbitMQ, like the `last-value-cache plug-in`_ by Michael
-Bridgen. 
+Bridgen.
 
 .. _`last-value-cache plug-in`:
     http://github.com/squaremo/rabbitmq-lvc-plugin
@@ -291,17 +293,17 @@ Bridgen.
 Direct exchanges
 ~~~~~~~~~~~~~~~~
 
-Direct exchanges match by exact routing keys, so a queue bound with
-the routing key ``video`` only receives messages with the same routing key.
+Direct exchanges match by exact routing keys, so a queue bound by
+the routing key ``video`` only receives messages with that routing key.
 
 .. _amqp-exchange-type-topic:
 
 Topic exchanges
 ~~~~~~~~~~~~~~~
 
-Topic exchanges matches routing keys using dot-separated words, and can
-include wildcard characters: ``*`` matches a single word, ``#`` matches
-zero or more words.
+Topic exchanges matches routing keys using dot-separated words, and the
+wildcard characters: ``*`` (matches a single word), and ``#`` (matches
+zero or more words).
 
 With routing keys like ``usa.news``, ``usa.weather``, ``norway.news`` and
 ``norway.weather``, bindings could be ``*.news`` (all news), ``usa.#`` (all
@@ -320,7 +322,7 @@ Related API commands
     :keyword passive: Passive means the exchange won't be created, but you
         can use this to check if the exchange already exists.
 
-    :keyword durable: Durable exchanges are persistent. That is - they survive
+    :keyword durable: Durable exchanges are persistent.  That is - they survive
         a broker restart.
 
     :keyword auto_delete: This means the queue will be deleted by the broker
@@ -349,10 +351,10 @@ Related API commands
 
 .. note::
 
-    Declaring does not necessarily mean "create". When you declare you
-    *assert* that the entity exists and that it's operable. There is no
+    Declaring does not necessarily mean "create".  When you declare you
+    *assert* that the entity exists and that it's operable.  There is no
     rule as to whom should initially create the exchange/queue/binding,
-    whether consumer or producer. Usually the first one to need it will
+    whether consumer or producer.  Usually the first one to need it will
     be the one to create it.
 
 .. _amqp-api-hands-on:
@@ -360,10 +362,10 @@ Related API commands
 Hands-on with the API
 ---------------------
 
-Celery comes with a tool called ``camqadm`` (short for celery AMQP admin).
-It's used for simple admnistration tasks like creating/deleting queues and
-exchanges, purging queues and sending messages. In short it's for simple
-command-line access to the AMQP API.
+Celery comes with a tool called :program:`camqadm` (short for Celery AMQ Admin).
+It's used for command-line access to the AMQP API, enabling access to
+administration tasks like creating/deleting queues and exchanges, purging
+queues or sending messages.
 
 You can write commands directly in the arguments to ``camqadm``, or just start
 with no arguments to start it in shell-mode::
@@ -373,12 +375,12 @@ with no arguments to start it in shell-mode::
     -> connected.
     1>
 
-Here ``1>`` is the prompt. The number is counting the number of commands you
-have executed. Type ``help`` for a list of commands. It also has
-autocompletion, so you can start typing a command and then hit the
-``tab`` key to show a list of possible matches.
+Here ``1>`` is the prompt.  The number 1, is the number of commands you
+have executed so far.  Type ``help`` for a list of commands available.
+It also supports autocompletion, so you can start typing a command and then
+hit the ``tab`` key to show a list of possible matches.
 
-Now let's create a queue we can send messages to::
+Let's create a queue we can send messages to::
 
     1> exchange.declare testexchange direct
     ok.
@@ -392,13 +394,13 @@ named ``testqueue``.  The queue is bound to the exchange using
 the routing key ``testkey``.
 
 From now on all messages sent to the exchange ``testexchange`` with routing
-key ``testkey`` will be moved to this queue. We can send a message by
+key ``testkey`` will be moved to this queue.  We can send a message by
 using the ``basic.publish`` command::
 
     4> basic.publish "This is a message!" testexchange testkey
     ok.
 
-Now that the message is sent we can retrieve it again. We use the
+Now that the message is sent we can retrieve it again.  We use the
 ``basic.get`` command here, which pops a single message off the queue,
 this command is not recommended for production as it implies polling, any
 real application would declare consumers instead.
@@ -416,12 +418,13 @@ Pop a message off the queue::
 
 
 AMQP uses acknowledgment to signify that a message has been received
-and processed successfully. The message is sent to the next receiver
-if it has not been acknowledged before the client connection is closed.
+and processed successfully.  If the message has not been acknowledged
+and consumer channel is closed, the message will be delivered to
+another consumer.
 
 Note the delivery tag listed in the structure above; Within a connection channel,
 every received message has a unique delivery tag,
-This tag is used to acknowledge the message. Also note that
+This tag is used to acknowledge the message.  Also note that
 delivery tags are not unique across connections, so in another client
 the delivery tag ``1`` might point to a different message than in this channel.
 
@@ -448,10 +451,10 @@ Routing Tasks
 Defining queues
 ---------------
 
-In Celery the queues are defined by the :setting:`CELERY_QUEUES` setting.
+In Celery available queues are defined by the :setting:`CELERY_QUEUES` setting.
 
 Here's an example queue configuration with three queues;
-One for video, one for images and finally, one default queue for everything else:
+One for video, one for images and one default queue for everything else:
 
 .. code-block:: python
 
@@ -533,7 +536,7 @@ that queue in :setting:`CELERY_QUEUES`::
          "routing_key": "video.compress"}
 
 
-You install router classes by adding it to the :setting:`CELERY_ROUTES` setting::
+You install router classes by adding them to the :setting:`CELERY_ROUTES` setting::
 
     CELERY_ROUTES = (MyRouter, )
 
@@ -543,11 +546,14 @@ Router classes can also be added by name::
 
 
 For simple task name -> route mappings like the router example above, you can simply
-drop a dict into :setting:`CELERY_ROUTES` to get the same result::
+drop a dict into :setting:`CELERY_ROUTES` to get the same behavior::
+
+.. code-block:: python
 
     CELERY_ROUTES = ({"myapp.tasks.compress_video": {
-                        "queue": "video",
-                        "routing_key": "video.compress"}}, )
+                            "queue": "video",
+                            "routing_key": "video.compress"
+                     }}, )
 
 The routers will then be traversed in order, it will stop at the first router
-returning a value and use that as the final route for the task.
+returning a true value, and use that as the final route for the task.

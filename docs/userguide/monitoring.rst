@@ -11,6 +11,7 @@ Introduction
 ============
 
 There are several tools available to monitor and inspect Celery clusters.
+
 This document describes some of these, as as well as
 features related to monitoring, like events and broadcast commands.
 
@@ -29,7 +30,7 @@ celeryctl: Management Utility
 :mod:`~celery.bin.celeryctl` is a command line utility to inspect
 and manage worker nodes (and to some degree tasks).
 
-To list all the commands from the command line do::
+To list all the commands avaialble do::
 
     $ celeryctl help
 
@@ -91,14 +92,6 @@ Commands
     ::
 
         $ celeryctl inspect stats
-
-* **inspect diagnose**: Diagnose the pool processes.
-    ::
-
-        $ celeryctl inspect diagnose
-
-    This will verify that the workers pool processes are available
-    to do work.  Note that this will not work if the worker is busy.
 
 * **inspect enable_events**: Enable events
     ::
@@ -177,7 +170,7 @@ you should be able to see your workers and the tasks in the admin interface
 
 The admin interface shows tasks, worker nodes, and even
 lets you perform some actions, like revoking and rate limiting tasks,
-and shutting down worker nodes.
+or shutting down worker nodes.
 
 .. _monitoring-django-frequency:
 
@@ -185,7 +178,7 @@ Shutter frequency
 ~~~~~~~~~~~~~~~~~
 
 By default the camera takes a snapshot every second, if this is too frequent
-or you want higher precision then you can change this using the
+or you want to have higher precision, then you can change this using the
 ``--frequency`` argument.  This is a float describing how often, in seconds,
 it should wake up to check if there are any new events::
 
@@ -200,7 +193,7 @@ by appending ``/s``, ``/m`` or ``/h`` to the value.
 Example: ``--maxrate=100/m``, means "hundred writes a minute".
 
 The rate limit is off by default, which means it will take a snapshot
-for every ``--frequency`` seconds. 
+for every ``--frequency`` seconds.
 
 The events also expire after some time, so the database doesn't fill up.
 Successful tasks are deleted after 1 day, failed tasks after 3 days,
@@ -238,8 +231,9 @@ By default an ``sqlite3`` database file named
 user running the monitor.
 
 If you want to store the events in a different database, e.g. MySQL,
-then you can configure the ``DATABASE*`` settings in your Celery
-config module. See http://docs.djangoproject.com/en/dev/ref/settings/#databases.
+then you can configure the ``DATABASE*`` settings directly in your Celery
+config module.  See http://docs.djangoproject.com/en/dev/ref/settings/#databases
+for more information about the database options avaialble.
 
 You will also be asked to create a superuser (and you need to create one
 to be able to log into the admin later)::
@@ -276,9 +270,9 @@ celeryev: Curses Monitor
 .. versionadded:: 2.0
 
 :mod:`~celery.bin.celeryev` is a simple curses monitor displaying
-task and worker history. You can inspect the result and traceback of tasks,
-and it also supports some management commands like rate limiting and shutdown
-of workers.
+task and worker history.  You can inspect the result and traceback of tasks,
+and it also supports some management commands like rate limiting and shutting
+down workers.
 
 .. image:: http://celeryproject.org/img/celeryevshotsm.jpg
 
@@ -304,12 +298,12 @@ celerymon: Web monitor
 
 `celerymon`_ is the ongoing work to create a web monitor.
 It's far from complete yet, and does currently only support
-a JSON API. Help is desperately needed for this project, so if you,
-or someone you knowi, would like to contribute templates, design, code
+a JSON API.  Help is desperately needed for this project, so if you,
+or someone you know would like to contribute templates, design, code
 or help this project in any way, please get in touch!
 
 :Tip: The Django admin monitor can be used even though you're not using
-      Celery with a Django project. See :ref:`monitoring-nodjango`.
+      Celery with a Django project.  See :ref:`monitoring-nodjango`.
 
 .. _`celerymon`: http://github.com/ask/celerymon/
 
@@ -395,8 +389,8 @@ Events
 ======
 
 The worker has the ability to send a message whenever some event
-happens. These events are then captured by tools like ``celerymon`` and 
-``celeryev`` to monitor the cluster.
+happens.  These events are then captured by tools like :program:`celerymon`
+and :program:`celeryev` to monitor the cluster.
 
 .. _monitoring-snapshots:
 
@@ -406,19 +400,20 @@ Snapshots
 .. versionadded: 2.1
 
 Even a single worker can produce a huge amount of events, so storing
-history of events on disk may be very expensive.
+the history of all events on disk may be very expensive.
 
 A sequence of events describes the cluster state in that time period,
 by taking periodic snapshots of this state we can keep all history, but
 still only periodically write it to disk.
 
 To take snapshots you need a Camera class, with this you can define
-what should happen every time the state is captured. You can
-write it to a database, send it by e-mail or something else entirely).
+what should happen every time the state is captured;  You can
+write it to a database, send it by e-mail or something else entirely.
 
-``celeryev`` is then used to take snapshots with the camera,
+:program:`celeryev` is then used to take snapshots with the camera,
 for example if you want to capture state every 2 seconds using the
-camera ``myapp.Camera`` you run ``celeryev`` with the following arguments::
+camera ``myapp.Camera`` you run :pogram:`celeryev` with the following
+arguments::
 
     $ celeryev -c myapp.Camera --frequency=2.0
 
@@ -428,13 +423,14 @@ camera ``myapp.Camera`` you run ``celeryev`` with the following arguments::
 Custom Camera
 ~~~~~~~~~~~~~
 
-Here is an example camera, dumping the snapshot to the screen:
+Here is an example camera, dumping the snapshot to screen:
 
 .. code-block:: python
 
     from pprint import pformat
 
     from celery.events.snapshot import Polaroid
+
 
     class DumpCam(Polaroid):
 
@@ -446,6 +442,9 @@ Here is an example camera, dumping the snapshot to the screen:
             print("Tasks: %s" % (pformat(state.tasks, indent=4), ))
             print("Total: %s events, %s tasks" % (
                 state.event_count, state.task_count))
+
+See the API reference for :mod:`celery.events.state` to read more
+about state objects.
 
 Now you can use this cam with ``celeryev`` by specifying
 it with the ``-c`` option::
@@ -494,9 +493,10 @@ Task Events
 * ``task-succeeded(uuid, result, runtime, hostname, timestamp)``
 
     Sent if the task executed successfully.
+
     Runtime is the time it took to execute the task using the pool.
-    (Time starting from the task is sent to the pool, and ending when the
-    pool result handlers callback is called).
+    (Starting from the task is sent to the worker pool, and ending when the
+    pool result handler callback is called).
 
 * ``task-failed(uuid, exception, traceback, hostname, timestamp)``
 
@@ -505,7 +505,7 @@ Task Events
 * ``task-revoked(uuid)``
 
     Sent if the task has been revoked (Note that this is likely
-    to be sent by more than one worker)
+    to be sent by more than one worker).
 
 * ``task-retried(uuid, exception, traceback, hostname, delay, timestamp)``
 
