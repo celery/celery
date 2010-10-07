@@ -131,7 +131,7 @@ News
   used to process replies immediately as they arrive.
 
 * celeryctl: New command-line utility to manage and inspect worker nodes,
-  and also apply tasks and inspect the results of tasks.
+  apply tasks and inspect the results of tasks.
 
     .. seealso::
         The :ref:`monitoring-celeryctl` section in the :ref:`guide`.
@@ -156,8 +156,8 @@ News
         >>> task.apply_async(args, kwargs,
         ...                  expires=datetime.now() + timedelta(days=1)
 
-    When a worker receives a task that has been expired it will mark
-    the task as revoked (:exc:`celery.exceptions.TaskRevokedError`).
+    When a worker receives a task that has been expired it will be
+    marked as revoked (:exc:`celery.exceptions.TaskRevokedError`).
 
 * Changed the way logging is configured.
 
@@ -167,9 +167,17 @@ News
     (celeryd uses "celery", celerybeat uses "celery.beat", celeryev uses
     "celery.ev").
 
+    =====================================  =====================================
+    **Application**                        **Logger Name**
+    =====================================  =====================================
+    ``celeryd``                            "celery"
+    ``celerybeat``                         "celery.beat"
+    ``celeryev``                           "celery.ev"
+    =====================================  =====================================
+
     This means that the ``loglevel`` and ``logfile`` arguments will
     affect all registered loggers (even those from 3rd party libraries).
-    That is unless you configure the loggers manually as show below.
+    That is unless you configure the loggers manually as shown below.
 
     Users can choose to configure logging by subscribing to the
     :data:`~celery.signals.setup_logging` signal:
