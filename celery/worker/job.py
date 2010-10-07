@@ -234,11 +234,15 @@ class TaskRequest(object):
         self.email_body = email_body or self.email_body
 
         self.task = tasks[self.task_name]
+        self._store_errors = True
+        if self.task.ignore_result:
+            self._store_errors = self.task.store_errors_even_if_ignored
 
     def maybe_expire(self):
         if self.expires and datetime.now() > self.expires:
             state.revoked.add(self.task_id)
-            self.task.backend.mark_as_revoked(self.task_id)
+            if self._store_errors:
+                self.task.backend.mark_as_revoked(self.task_id)
 
     def revoked(self):
         if self._already_revoked:
