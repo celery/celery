@@ -4,7 +4,7 @@
 
 .. image:: http://cloud.github.com/downloads/ask/celery/celery_favicon_128.png
 
-:Version: 2.1.0rc3
+:Version: 2.1.0rc4
 :Web: http://celeryproject.org/
 :Download: http://pypi.python.org/pypi/celery/
 :Source: http://github.com/ask/celery/
@@ -16,26 +16,23 @@
 .. _celery-synopsis:
 
 Celery is an open source asynchronous task queue/job queue based on
-distributed message passing. It is focused on real-time operation,
+distributed message passing.  It is focused on real-time operation,
 but supports scheduling as well.
 
 The execution units, called tasks, are executed concurrently on one or
-more worker nodes. Tasks can execute asynchronously (in the background) or
+more worker nodes.  Tasks can execute asynchronously (in the background) or
 synchronously (wait until ready).
 
 Celery is already used in production to process millions of tasks a day.
 
 Celery is written in Python, but the protocol can be implemented in any
-language. It can also `operate with other languages using webhooks`_.
+language.  It can also `operate with other languages using webhooks`_.
 
 The recommended message broker is `RabbitMQ`_, but support for `Redis`_ and
 databases (`SQLAlchemy`_) is also available.
 
-Celery can be used with Django and Pylons using
+Celery is easy to integrate with Django and Pylons, using
 the `django-celery`_ and `celery-pylons`_ add-on packages.
-
-You may also be pleased to know that full Django integration exists,
-delivered by the `django-celery`_ package.
 
 .. _`RabbitMQ`: http://www.rabbitmq.com/
 .. _`Redis`: http://code.google.com/p/redis/
@@ -57,8 +54,8 @@ This is a high level overview of the architecture.
 
 .. image:: http://cloud.github.com/downloads/ask/celery/Celery-Overview-v4.jpg
 
-The broker pushes tasks to the worker servers.
-A worker server is a networked machine running ``celeryd``. This can be one or
+The broker delivers tasks to the worker servers.
+A worker server is a networked machine running ``celeryd``.  This can be one or
 more machines depending on the workload.
 
 The result of the task can be stored for later retrieval (called its
