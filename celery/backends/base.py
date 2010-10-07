@@ -231,7 +231,7 @@ class KeyValueStoreBackend(BaseDictBackend):
         return "celery-taskset-meta-%s" % task_id
 
     def _forget(self, task_id):
-        self.delete(task_id)
+        self.delete(self.get_key_for_task(task_id))
 
     def _store_result(self, task_id, result, status, traceback=None):
         meta = {"status": status, "result": result, "traceback": traceback}
