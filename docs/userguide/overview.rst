@@ -56,11 +56,10 @@ Routing
 
 Go to :ref:`guide-routing`.
 
-Celery takes advantage of AMQPs flexible routing model. Tasks can be routed
+Celery takes advantage of AMQPs flexible routing model.  Tasks can be routed
 to specific servers, or a cluster of servers by binding workers to different
 queues. A single worker node can be bound to one or more queues.
-is for this to be as simple as possiblealso several
-messaging scenarios are supported, for example round robin, point-to-point,
+Multiple messaging scenarios are supported: round robin, point-to-point,
 broadcast (one-to-many), and more.
 
 Celery aims to hide the complexity of AMQP through features like
