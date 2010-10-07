@@ -10,9 +10,6 @@
 2.1.0
 =====
 :release-date: 2010-10-08 12:00 PM CEST
-:status: FREEZE
-:branch: master
-:roadmap: http://wiki.github.com/ask/celery/roadmap
 
 .. _v210-important:
 
@@ -32,11 +29,35 @@ Important Notes
 .. _`semver`: http://semver.org
 .. _`Wiki: Release Cycle`: http://wiki.github.com/ask/celery/release-cycle.
 
-* Now depends on Carrot 0.10.6.
+* Now depends on Carrot 0.10.7.
 
 * No longer depends on SQLAlchemy, this needs to be installed separately
   if the database backend is used (does not apply to users of
   `django-celery`_).
+
+
+* If you get an error after upgrading saying:
+  ``AttributeError: 'module' object has no attribute 'system'``,
+
+    Then this is because the ``celery.platform`` module has been
+    renamed to ``celery.platforms`` to not collide with the built-in
+    :mod:`platform` module.
+
+    You have to remove the old :file:`platform.py` (and maybe
+    :file:`platform.pyc`) file from your previous Celery installation.
+
+    To do this use :program:`python` to find the location
+    of this module::
+
+        $ python
+        >>> import celery.platform
+        >>> celery.platform
+        <module 'celery.platform' from '/opt/devel/celery/celery/platform.pyc'>
+
+    Here the compiled module is in :file:`/opt/devel/celery/celery/",
+    to remove the offending files do::
+
+        $ rm -f /opt/devel/celery/celery/platform.py*
 
 .. _v210-news:
 
@@ -122,10 +143,6 @@ News
 .. seealso::
 
     :ref:`monitoring-django-admin` and :ref:`monitoring-snapshots`.
-
-
-* celeryd: Now emits a warning if there is already a worker node using the same
-  name running on the current virtual host.
 
 * :func:`celery.task.control.broadcast`: Added callback argument, this can be
   used to process replies immediately as they arrive.
@@ -213,10 +230,11 @@ News
 * celeryd: Added command-line option :option:`-I`/:option:`--include`:
   Additional (task) modules to be imported
 
-* celeryd: now emits a warning if running as root (euid is 0).
+* celeryd: now emits a warning if running as the root user (euid is 0).
 
 * Fixed timing issue when declaring the remote control command reply queue
-  which meant replies could be lost.
+
+    This issue could result in replies being lost, but have now been fixed.
 
 * :func:`celery.messaging.establish_connection`: Ability to override defaults
   used using kwarg "defaults".
@@ -241,6 +259,9 @@ News
 
     See issue #182.
 
+* celeryd: Now emits a warning if there is already a worker node using the same
+  name running on the current virtual host.
+
 * AMQP result backend: Sending of results are now retried if the connection
   is down.
 
@@ -253,8 +274,6 @@ News
 
         >>> res = TaskSet(tasks).apply_async()
         >>> res[0].get()
-
-
 
 * Added ``Task.send_error_emails`` + ``Task.error_whitelist``, so these can
   be configured per task instead of just globally
@@ -361,6 +380,10 @@ News
 * :meth:`EventReceiver.capture <celery.events.EventReceiver.capture>`
   Now supports a timeout keyword argument.
 
+* Optimization: The mediator thread is now disabled if
+  :setting:`CELERY_RATE_LIMTS` is enabled, and tasks sent directly to the
+  pool without going through the ready queue.
+
 .. _v210-fixes:
 
 Fixes
@@ -375,6 +398,22 @@ Fixes
   overriden when sending tasks in bulk using the same publisher
 
     See issue #187.
+
+* celeryd no longer marks tasks as revoked if :setting:`CELERY_IGNORE_RESULT`
+  is enabled.
+
+    See issue #207.
+
+* AMQP Result backend: Fixed bug with ``result.get()`` if
+  :setting:`CELERY_TRACK_STARTED` enabled.
+
+    ``result.get()`` would stop consuming after receiving the
+    :state:`STARTED` state.
+
+* Fixed bug where new processes created by the pool supervisor becomes stuck
+  while reading from the task Queue.
+
+    See http://bugs.python.org/issue10037
 
 * Compat ``LoggerAdapter`` implementation: Now works for Python 2.4.
 
