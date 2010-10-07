@@ -14,16 +14,16 @@ Subtasks
 
 .. versionadded:: 2.0
 
-The :class:`~celery.task.sets.subtask` class is used to wrap the arguments and
+The :class:`~celery.task.sets.subtask` type is used to wrap the arguments and
 execution options for a single task invocation::
 
     subtask(task_name_or_cls, args, kwargs, options)
 
-For convenience every task also has a shortcut to create subtask instances::
+For convenience every task also has a shortcut to create subtasks::
 
     task.subtask(args, kwargs, options)
 
-:class:`~celery.task.sets.subtask` is actually a subclass of :class:`dict`,
+:class:`~celery.task.sets.subtask` is actually a :class:`dict` subclass,
 which means it can be serialized with JSON or other encodings that doesn't
 support complex Python objects.
 
@@ -53,20 +53,22 @@ takes the result as an argument::
             subtask(callback).delay(result)
         return result
 
-See? :class:`~celery.task.sets.subtask` also knows how it should be applied,
+:class:`~celery.task.sets.subtask` also knows how it should be applied,
 asynchronously by :meth:`~celery.task.sets.subtask.delay`, and
 eagerly by :meth:`~celery.task.sets.subtask.apply`.
 
 The best thing is that any arguments you add to ``subtask.delay``,
 will be prepended to the arguments specified by the subtask itself!
 
-So if you have the subtask::
+If you have the subtask::
 
     >>> add.subtask(args=(10, ))
 
 ``subtask.delay(result)`` becomes::
 
     >>> add.apply_async(args=(result, 10))
+
+...
 
 Now let's execute our new ``add`` task with a callback::
 

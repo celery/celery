@@ -17,8 +17,8 @@ Basics
 If you need to call into another language, framework or similar, you can
 do so by using HTTP callback tasks.
 
-The HTTP callback tasks use GET/POST arguments and a simple JSON response
-to return results. The scheme to call a task is::
+The HTTP callback tasks uses GET/POST data to pass arguments and returns
+result as a JSON response. The scheme to call a task is::
 
     GET http://example.com/mytask/?arg1=a&arg2=b&arg3=c
 
@@ -26,7 +26,10 @@ or using POST::
 
     POST http://example.com/mytask
 
-**Note:** POST data has to be form encoded.
+.. note::
+
+    POST data needs to be form encoded.
+
 Whether to use GET or POST is up to you and your requirements.
 
 The web page should then return a response in the following format
@@ -99,12 +102,14 @@ functionality.
     >>> res.get()
     100
 
-The output of celeryd (or the logfile if you've enabled it) should show the task being processed::
+The output of :program:`celeryd` (or the logfile if enabled) should show the
+task being executed::
 
     [INFO/MainProcess] Task celery.task.http.HttpDispatchTask
             [f2cc8efc-2a14-40cd-85ad-f1c77c94beeb] processed: 100
 
 Since applying tasks can be done via HTTP using the
-``celery.views.apply`` view, executing tasks from other languages is easy.
+``djcelery.views.apply`` view, executing tasks from other languages is easy.
 For an example service exposing tasks via HTTP you should have a look at
-``examples/celery_http_gateway``.
+``examples/celery_http_gateway`` in the Celery distribution:
+    http://github.com/ask/celery/tree/master/examples/celery_http_gateway/

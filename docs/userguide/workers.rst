@@ -17,15 +17,15 @@ You can start celeryd to run in the foreground by executing the command::
     $ celeryd --loglevel=INFO
 
 You probably want to use a daemonization tool to start
-``celeryd`` in the background. See :ref:`daemonizing` for help
+``celeryd`` in the background.  See :ref:`daemonizing` for help
 using ``celeryd`` with popular daemonization tools.
 
 For a full list of available command line options see
-:mod:`~celery.bin.celeryd`, or simply execute the command::
+:mod:`~celery.bin.celeryd`, or simply do::
 
     $ celeryd --help
 
-You can also start multiple celeryd's on the same machine. If you do so
+You can also start multiple workers on the same machine. If you do so
 be sure to give a unique name to each individual worker by specifying a
 hostname with the ``--hostname|-n`` argument::
 
@@ -40,8 +40,8 @@ Stopping the worker
 
 Shutdown should be accomplished using the :sig:`TERM` signal.
 
-When shutdown is initiated the worker will finish any tasks it's currently
-executing before it terminates, so if these tasks are important you should
+When shutdown is initiated the worker will finish all currently executing
+tasks before it actually terminates, so if these tasks are important you should
 wait for it to finish before doing anything drastic (like sending the :sig:`KILL`
 signal).
 
@@ -51,8 +51,8 @@ force terminate the worker, but be aware that currently executing tasks will
 be lost (unless the tasks have the :attr:`~celery.task.base.Task.acks_late`
 option set).
 
-Also, since the :sig:`KILL` signal can't be catched by processes the worker will
-not be able to reap its children so make sure you do it manually. This
+Also as processes can't override the :sig:`KILL` signal, the worker will
+not be able to reap its children, so make sure to do so manually.  This
 command usually does the trick::
 
     $ ps auxww | grep celeryd | awk '{print $2}' | xargs kill -9
@@ -75,16 +75,16 @@ arguments as it was started with.
 Concurrency
 ===========
 
-Multiprocessing is used to perform concurrent execution of tasks. The number
+Multiprocessing is used to perform concurrent execution of tasks.  The number
 of worker processes can be changed using the ``--concurrency`` argument and
-defaults to the number of CPUs available.
+defaults to the number of CPUs available on the machine.
 
 More worker processes are usually better, but there's a cut-off point where
 adding more processes affects performance in negative ways.
 There is even some evidence to support that having multiple celeryd's running,
-may perform better than having a single worker. For example 3 celeryd's with
-10 worker processes each, but you need to experiment to find the values that
-works best for you as this varies based on application, work load, task
+may perform better than having a single worker.  For example 3 celeryd's with
+10 worker processes each.  You need to experiment to find the numbers that
+works best for you, as this varies based on application, work load, task
 run times and other factors.
 
 .. _worker-persistent-revokes:
@@ -98,7 +98,7 @@ the workers then keep a list of revoked tasks in memory.
 If you want tasks to remain revoked after worker restart you need to
 specify a file for these to be stored in, either by using the ``--statedb``
 argument to :mod:`~celery.bin.celeryd` or the :setting:`CELERYD_STATE_DB`
-setting. See :setting:`CELERYD_STATE_DB` for more information.
+setting.  See :setting:`CELERYD_STATE_DB` for more information.
 
 .. _worker-time-limits:
 
@@ -109,12 +109,12 @@ Time limits
 
 A single task can potentially run forever, if you have lots of tasks
 waiting for some event that will never happen you will block the worker
-from processing new tasks indefinitely. The best way to defend against
+from processing new tasks indefinitely.  The best way to defend against
 this scenario happening is enabling time limits.
 
 The time limit (``--time-limit``) is the maximum number of seconds a task
 may run before the process executing it is terminated and replaced by a
-new process. You can also enable a soft time limit (``--soft-time-limit``),
+new process.  You can also enable a soft time limit (``--soft-time-limit``),
 this raises an exception the task can catch to clean up before the hard
 time limit kills it:
 
@@ -161,22 +161,28 @@ Remote control
 .. versionadded:: 2.0
 
 Workers have the ability to be remote controlled using a high-priority
-broadcast message queue. The commands can be directed to all, or a specific
+broadcast message queue.  The commands can be directed to all, or a specific
 list of workers.
 
-Commands can also have replies. The client can then wait for and collect
-those replies, but since there's no central authority to know how many
+Commands can also have replies.  The client can then wait for and collect
+those replies.  Since there's no central authority to know how many
 workers are available in the cluster, there is also no way to estimate
-how many workers may send a reply. Therefore the client has a configurable
-timeout — the deadline in seconds for replies to arrive in. This timeout
-defaults to one second. If the worker doesn't reply within the deadline
+how many workers may send a reply, so the client has a configurable
+timeout — the deadline in seconds for replies to arrive in.  This timeout
+defaults to one second.  If the worker doesn't reply within the deadline
 it doesn't necessarily mean the worker didn't reply, or worse is dead, but
 may simply be caused by network latency or the worker being slow at processing
 commands, so adjust the timeout accordingly.
 
 In addition to timeouts, the client can specify the maximum number
-of replies to wait for. If a destination is specified this limit is set
+of replies to wait for.  If a destination is specified, this limit is set
 to the number of destination hosts.
+
+.. seealso::
+
+    The :program:`celeryctl` program is used to execute remote control
+    commands from the commandline.  It supports all of the commands
+    listed below.  See :ref:`monitoring-celeryctl` for more information.
 
 .. _worker-broadcast-fun:
 
@@ -284,8 +290,10 @@ Enable/disable events
 ---------------------
 
 You can enable/disable events by using the ``enable_events``,
-``disable_events`` commands. This is useful to temporarily monitor
-a worker using celeryev/celerymon.
+``disable_events`` commands.  This is useful to temporarily monitor
+a worker using :program:`celeryev`/:program:`celerymon`.
+
+.. code-block:: python
 
     >>> broadcast("enable_events")
     >>> broadcast("disable_events")
@@ -324,8 +332,8 @@ then import them using the :setting:`CELERY_IMPORTS` setting::
 Inspecting workers
 ==================
 
-:class:`celery.task.control.inspect` lets you inspect running workers. It uses
-remote control commands under the hood.
+:class:`celery.task.control.inspect` lets you inspect running workers.  It
+uses remote control commands under the hood.
 
 .. code-block:: python
 

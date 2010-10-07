@@ -180,7 +180,6 @@ You can also provide the ``countdown`` argument to
                            countdown=60) # override the default and
                                          # - retry in 1 minute
 
-
 .. _task-options:
 
 Task options
@@ -196,7 +195,8 @@ General
     The name the task is registered as.
 
     You can set this name manually, or just use the default which is
-    automatically generated using the module and class name.
+    automatically generated using the module and class name.  See
+    :ref:`task-names`.
 
 .. attribute:: Task.abstract
 
@@ -207,13 +207,13 @@ General
 
     The maximum number of attempted retries before giving up.
     If this exceeds the :exc:`~celery.exceptions.MaxRetriesExceeded`
-    an exception will be raised. *NOTE:* You have to :meth:`retry`
+    an exception will be raised.  *NOTE:* You have to :meth:`retry`
     manually, it's not something that happens automatically.
 
 .. attribute:: Task.default_retry_delay
 
     Default time in seconds before a retry of the task
-    should be executed. Can be either an ``int`` or a ``float``.
+    should be executed.  Can be either :class:`int` or :class:`float`.
     Default is a 3 minute delay.
 
 .. attribute:: Task.rate_limit
@@ -226,19 +226,19 @@ General
 
     The rate limits can be specified in seconds, minutes or hours
     by appending ``"/s"``, ``"/m"`` or ``"/h"`` to the value.
-    Example: ``"100/m"`` (hundred tasks a minute). Default is the
+    Example: ``"100/m"`` (hundred tasks a minute).  Default is the
     :setting:`CELERY_DEFAULT_RATE_LIMIT` setting, which if not specified means
-    rate limiting for tasks is turned off by default.
+    rate limiting for tasks is disabled by default.
 
 .. attribute:: Task.ignore_result
 
-    Don't store task state. This means you can't use the
+    Don't store task state.    Note that this means you can't use
     :class:`~celery.result.AsyncResult` to check if the task is ready,
     or get its return value.
 
 .. attribute:: Task.store_errors_even_if_ignored
 
-    If true, errors will be stored even if the task is configured
+    If :const:`True`, errors will be stored even if the task is configured
     to ignore results.
 
 .. attribute:: Task.send_error_emails
@@ -264,7 +264,7 @@ General
 
 .. attribute:: Task.backend
 
-    The result store backend to use for this task. Defaults to the
+    The result store backend to use for this task.  Defaults to the
     :setting:`CELERY_RESULT_BACKEND` setting.
 
 .. attribute:: Task.acks_late
@@ -286,11 +286,14 @@ General
 
     If :const:`True` the task will report its status as "started"
     when the task is executed by a worker.
-    The default value is ``False`` as the normal behaviour is to not
+    The default value is :const:`False` as the normal behaviour is to not
     report that level of granularity. Tasks are either pending, finished,
-    or waiting to be retried. Having a "started" status can be useful for
+    or waiting to be retried.  Having a "started" status can be useful for
     when there are long running tasks and there is a need to report which
     task is currently running.
+
+    The hostname and pid of the worker executing the task
+    will be avaiable in the state metadata (e.g. ``result.info["pid"]``)
 
     The global default can be overridden by the
     :setting:`CELERY_TRACK_STARTED` setting.
@@ -326,6 +329,8 @@ Message and routing options
     However -- If the task is mandatory, an exception will be raised
     instead.
 
+    Not supported by amqplib.
+
 .. attribute:: Task.immediate
 
     Request immediate delivery.  If the task cannot be routed to a
@@ -334,27 +339,115 @@ Message and routing options
     queue the task, but with no guarantee that the task will ever
     be executed.
 
+    Not supported by amqplib.
+
 .. attribute:: Task.priority
 
     The message priority. A number from 0 to 9, where 0 is the
-    highest priority. **Note:** At the time writing this, RabbitMQ did not yet support
-    priorities
+    highest priority.
+
+    Not supported by RabbitMQ.
 
 .. seealso::
 
     :ref:`executing-routing` for more information about message options,
     and :ref:`guide-routing`.
 
+.. _task-names:
+
+Task names
+==========
+
+The task type is identified by the *task name*.
+
+If not provided a name will be automatically generated using the module
+and class name.
+
+For example:
+
+.. code-block:: python
+
+    >>> @task(name="sum-of-two-numbers")
+    >>> def add(x, y):
+    ...     return x + y
+
+    >>> add.name
+    'sum-of-two-numbers'
+
+
+The best practice is to use the module name as a prefix to classify the
+tasks using namespaces.  This way the name won't collide with the name from
+another module::
+
+.. code-block:: python
+
+    >>> @task(name="tasks.add")
+    >>> def add(x, y):
+    ...     return x + y
+
+    >>> add.name
+    'tasks.add'
+
+
+Which is exactly the name that is automatically generated for this
+task if the module name is "tasks.py":
+
+.. code-block:: python
+
+    >>> @task()
+    >>> def add(x, y):
+    ...     return x + y
+
+    >>> add.name
+    'tasks.add'
+
+.. _task-naming-relative-imports:
+
+Automatic naming and relative imports
+-------------------------------------
+
+Relative imports and automatic name generation does not go well together,
+so if you're using relative imports you should set the name explicitly.
+
+For example if the client imports the module "myapp.tasks" as ".tasks", and
+the worker imports the module as "myapp.tasks", the generated names won't match
+and an :exc:`~celery.exceptions.NotRegistered` error will be raised by the worker.
+
+This is also the case if using Django and using ``project.myapp``::
+
+    INSTALLED_APPS = ("project.myapp", )
+
+The worker will have the tasks registered as "project.myapp.tasks.*", 
+while this is what happens in the client if the module is imported as
+"myapp.tasks":
+
+.. code-block:: python
+
+    >>> from myapp.tasks import add
+    >>> add.name
+    'myapp.tasks.add'
+
+For this reason you should never use "project.app", but rather
+add the project directory to the Python path::
+
+    import os
+    import sys
+    sys.path.append(os.getcwd())
+
+    INSTALLED_APPS = ("myapp", )
+
+This makes more sense from the reusable app perspective anyway.
+
 .. _task-states:
 
 Task States
 ===========
 
-During its lifetime a task will transition through several states,
+During its lifetime a task will transition through several possible states,
 and each state may have arbitrary metadata attached to it.  When a task
-moves into another state the previous state is
-forgotten, but some transitions can be deducted, (e.g. a task now
-in the :state:`FAILED` state, is implied to have, been in the
+moves into a new state the previous state is
+forgotten about, but some transitions can be deducted, (e.g. a task now
+in the :state:`FAILED` state, is implied to have been in the
 :state:`STARTED` state at some point).
 
 There are also sets of states, like the set of
@@ -362,8 +455,8 @@ There are also sets of states, like the set of
 :state:`ready states <READY_STATES>`.
 
 The client uses the membership of these sets to decide whether
-the exception should be re-raised (:state:`PROPAGATE_STATES`), or if the result can
-be cached (it can if the task is ready).
+the exception should be re-raised (:state:`PROPAGATE_STATES`), or whether
+the result can be cached (it can if the task is ready).
 
 You can also define :ref:`custom-states`.
 
@@ -439,13 +532,12 @@ Custom states
 -------------
 
 You can easily define your own states, all you need is a unique name.
-The name of the state is usually an uppercase string.
-As an example you could have a look at
-:mod:`abortable tasks <~celery.contrib.abortable>` wich defines
-the :state:`ABORTED` state.
+The name of the state is usually an uppercase string.  As an example
+you could have a look at :mod:`abortable tasks <~celery.contrib.abortable>`
+wich defines its own custom :state:`ABORTED` state.
 
-To set the state of a task you use :meth:`Task.update_state
-<celery.task.base.Task.update_state>`::
+Use :meth:`Task.update_state <celery.task.base.Task.update_state>` to
+update a tasks state::
 
     @task
     def upload_files(filenames, **kwargs):
@@ -456,9 +548,9 @@ To set the state of a task you use :meth:`Task.update_state
 
 
 Here we created the state ``"PROGRESS"``, which tells any application
-aware of this state that the task is currently in progress, and where it is
-in the process by having ``current`` and ``total`` counts as part of the
-state metadata. This can then be used to create progressbars or similar.
+aware of this state that the task is currently in progress, and also where
+it is in the process by having ``current`` and ``total`` counts as part of the
+state metadata.  This can then be used to create e.g. progress bars.
 
 .. _task-how-they-work:
 
@@ -468,8 +560,8 @@ How it works
 Here comes the technical details, this part isn't something you need to know,
 but you may be interested.
 
-All defined tasks are listed in a registry. The registry contains
-a list of task names and their task classes. You can investigate this registry
+All defined tasks are listed in a registry.  The registry contains
+a list of task names and their task classes.  You can investigate this registry
 yourself:
 
 .. code-block:: python
@@ -488,32 +580,33 @@ yourself:
      'celery.ping':
         <Task: celery.ping (regular)>}
 
-This is the list of tasks built-in to celery. Note that we had to import
-``celery.task`` first for these to show up. This is because the tasks will
+This is the list of tasks built-in to celery.  Note that we had to import
+``celery.task`` first for these to show up.  This is because the tasks will
 only be registered when the module they are defined in is imported.
 
 The default loader imports any modules listed in the
-:setting:`CELERY_IMPORTS` setting. 
+:setting:`CELERY_IMPORTS` setting.
 
 The entity responsible for registering your task in the registry is a
-meta class, :class:`~celery.task.base.TaskType`. This is the default
-meta class for :class:`~celery.task.base.Task`. If you want to register
-your task manually you can set the :attr:`~celery.task.base.Task.abstract`
-attribute:
+meta class, :class:`~celery.task.base.TaskType`.  This is the default
+meta class for :class:`~celery.task.base.Task`.
+
+If you want to register your task manually you can set mark the
+task as :attr:`~celery.task.base.Task.abstract`:
 
 .. code-block:: python
 
     class MyTask(Task):
         abstract = True
 
-This way the task won't be registered, but any task subclassing it will.
+This way the task won't be registered, but any task subclassing it will be.
 
-When tasks are sent, we don't send the function code, just the name
-of the task. When the worker receives the message it can just look it up in
-the task registry to find the execution code.
+When tasks are sent, we don't send any actual function code, just the name
+of the task to execute.  When the worker then receives the message it can look
+up th ename in its task registry to find the execution code.
 
 This means that your workers should always be updated with the same software
-as the client. This is a drawback, but the alternative is a technical
+as the client.  This is a drawback, but the alternative is a technical
 challenge that has yet to be solved.
 
 .. _task-best-practices:
@@ -536,8 +629,8 @@ wastes time and resources.
     def mytask(...)
         something()
 
-Results can even be disabled globally using the
-:setting:`CELERY_IGNORE_RESULT` setting.
+Results can even be disabled globally using the :setting:`CELERY_IGNORE_RESULT`
+setting.
 
 .. _task-disable-rate-limits:
 
@@ -545,7 +638,7 @@ Disable rate limits if they're not used
 ---------------------------------------
 
 Disabling rate limits altogether is recommended if you don't have
-any tasks using them. This is because the rate limit subsystem introduces
+any tasks using them.  This is because the rate limit subsystem introduces
 quite a lot of complexity.
 
 Set the :setting:`CELERY_DISABLE_RATE_LIMITS` setting to globally disable
@@ -565,8 +658,7 @@ and may even cause a deadlock if the worker pool is exhausted.
 
 Make your design asynchronous instead, for example by using *callbacks*.
 
-
-Bad:
+**Bad**:
 
 .. code-block:: python
 
@@ -589,7 +681,7 @@ Bad:
         return PageInfo.objects.create(url, info)
 
 
-Good:
+**Good**:
 
 .. code-block:: python
 
@@ -620,7 +712,7 @@ Good:
 
 
 We use :class:`~celery.task.sets.subtask` here to safely pass
-around the callback task. :class:`~celery.task.sets.subtask` is a 
+around the callback task.  :class:`~celery.task.sets.subtask` is a
 subclass of dict used to wrap the arguments and execution options
 for a single task invocation.
 
@@ -640,8 +732,8 @@ Granularity
 -----------
 
 The task granularity is the amount of computation needed by each subtask.
-It's generally better to split your problem up in many small tasks, than
-having a few long running ones.
+In general it is better to split the problem up into many small tasks, than
+have a few long running tasks.
 
 With smaller tasks you can process more tasks in parallel and the tasks
 won't run long enough to block the worker from processing other waiting tasks.
@@ -663,14 +755,14 @@ Data locality
 -------------
 
 The worker processing the task should be as close to the data as
-possible. The best would be to have a copy in memory, the worst being a
+possible.  The best would be to have a copy in memory, the worst would be a
 full transfer from another continent.
 
 If the data is far away, you could try to run another worker at location, or
-if that's not possible, cache often used data, or preload data you know
+if that's not possible - cache often used data, or preload data you know
 is going to be used.
 
-The easiest way to share data between workers is to use a distributed caching
+The easiest way to share data between workers is to use a distributed cache
 system, like `memcached`_.
 
 .. seealso::
@@ -688,24 +780,25 @@ system, like `memcached`_.
 State
 -----
 
-Since celery is a distributed system, you can't know in which process, or even
-on what machine the task will run. Indeed you can't even know if the task will
-run in a timely manner, so please be wary of the state you pass on to tasks.
+Since celery is a distributed system, you can't know in which process, or
+on what machine the task will be executed.  You can't even know if the task will
+run in a timely manner.
 
 The ancient async sayings tells us that “asserting the world is the
 responsibility of the task”.  What this means is that the world view may
 have changed since the task was requested, so the task is responsible for
-making sure the world is how it should be.  For example if you have a task
+making sure the world is how it should be;  If you have a task
 that reindexes a search engine, and the search engine should only be reindexed
 at maximum every 5 minutes, then it must be the tasks responsibility to assert
 that, not the callers.
 
-Another gotcha is Django model objects. They shouldn't be passed on as arguments
-to task classes, it's almost always better to re-fetch the object from the
-database instead, as there are possible race conditions involved.
+Another gotcha is Django model objects.  They shouldn't be passed on as arguments
+to tasks.  It's almost always better to re-fetch the object from the
+database when the task is running instead,  as using old data may lead
+to race conditions.
 
 Imagine the following scenario where you have an article and a task
-that automatically expands some abbreviations in it.
+that automatically expands some abbreviations in it:
 
 .. code-block:: python
 
@@ -724,10 +817,10 @@ clicks on a button that initiates the abbreviation task.
     >>> article = Article.objects.get(id=102)
     >>> expand_abbreviations.delay(model_object)
 
-Now, the queue is very busy, so the task won't be run for another 2 minutes,
-in the meantime another author makes some changes to the article,
+Now, the queue is very busy, so the task won't be run for another 2 minutes.
+In the meantime another author makes changes to the article, so
 when the task is finally run, the body of the article is reverted to the old
-version, because the task had the old body in its argument.
+version because the task had the old body in its argument.
 
 Fixing the race condition is easy, just use the article id instead, and
 re-fetch the article in the task body:
@@ -750,7 +843,7 @@ messages may be expensive.
 Database transactions
 ---------------------
 
-Let's look at another example:
+Let's have a look at another example:
 
 .. code-block:: python
 
@@ -762,16 +855,16 @@ Let's look at another example:
         expand_abbreviations.delay(article.pk)
 
 This is a Django view creating an article object in the database,
-then passing its primary key to a task. It uses the `commit_on_success`
+then passing the primary key to a task.  It uses the `commit_on_success`
 decorator, which will commit the transaction when the view returns, or
 roll back if the view raises an exception.
 
 There is a race condition if the task starts executing
-before the transaction has been committed: the database object does not exist
+before the transaction has been committed; The database object does not exist
 yet!
 
-The solution is to **always commit transactions before applying tasks
-that depends on state from the current transaction**:
+The solution is to *always commit transactions before sending tasks
+depending on state from the current transaction*:
 
 .. code-block:: python
 
@@ -792,11 +885,11 @@ Example
 =======
 
 Let's take a real wold example; A blog where comments posted needs to be
-filtered for spam. When the comment is created, the spam filter runs in the
+filtered for spam.  When the comment is created, the spam filter runs in the
 background, so the user doesn't have to wait for it to finish.
 
 We have a Django blog application allowing comments
-on blog posts. We'll describe parts of the models/views and tasks for this
+on blog posts.  We'll describe parts of the models/views and tasks for this
 application.
 
 blog/models.py
@@ -872,11 +965,11 @@ blog/views.py
 
 To filter spam in comments we use `Akismet`_, the service
 used to filter spam in comments posted to the free weblog platform
-`Wordpress`. `Akismet`_ is free for personal use, but for commercial use you
-need to pay. You have to sign up to their service to get an API key.
+`Wordpress`.  `Akismet`_ is free for personal use, but for commercial use you
+need to pay.  You have to sign up to their service to get an API key.
 
 To make API calls to `Akismet`_ we use the `akismet.py`_ library written by
-Michael Foord.
+`Michael Foord`_.
 
 .. _task-example-blog-tasks:
 
@@ -918,3 +1011,4 @@ blog/tasks.py
 
 .. _`Akismet`: http://akismet.com/faq/
 .. _`akismet.py`: http://www.voidspace.org.uk/downloads/akismet.py
+.. _`Michael Foord`: http://www.voidspace.org.uk/
