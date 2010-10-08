@@ -19,22 +19,19 @@ Important Notes
 * Celery is now following the versioning semantics defined by `semver`_.
 
     This means we are no longer allowed to use odd/even versioning semantics
-    (see http://github.com/mojombo/semver.org/issues#issue/8).
     By our previous versioning scheme this stable release should have
     been version 2.2.
 
-    The document describing our release cycle and versioning scheme
-    can be found at `Wiki: Release Cycle`_.
-
 .. _`semver`: http://semver.org
-.. _`Wiki: Release Cycle`: http://wiki.github.com/ask/celery/release-cycle
 
 * Now depends on Carrot 0.10.7.
 
 * No longer depends on SQLAlchemy, this needs to be installed separately
-  if the database backend is used (does not apply to users of
-  `django-celery`_).
+  if the database result backend is used.
 
+* django-celery now comes with a monitor for the Django Admin interface.
+  This can also be used if you're not a Django user.  See
+  :ref:`monitoring-django-admin` and :ref:`monitoring-nodjango` for more information.
 
 * If you get an error after upgrading saying:
   ``AttributeError: 'module' object has no attribute 'system'``,
@@ -76,19 +73,20 @@ News
 
 * celeryev: Event Snapshots
 
-    If enabled, celeryd can send messages every time something
-    happens in the worker. These messages are called "events".
+    If enabled, :program:`celeryd` sends messages about what the worker is doing.
+    These messages are called "events".
     The events are used by real-time monitors to show what the
     cluster is doing, but they are not very useful for monitoring
-    over time. That's where the snapshots comes in. Snapshots
+    over a longer period of time.  Snapshots
     lets you take "pictures" of the clusters state at regular intervals.
-    These can then be stored in the database to generate statistics
-    with, or even monitoring.
+    This can then be stored in a database to generate statistics
+    with, or even monitoring over longer time periods.
 
-    Django-celery now comes with a Celery monitor for the Django
+    django-celery now comes with a Celery monitor for the Django
     Admin interface. To use this you need to run the django-celery
     snapshot camera, which stores snapshots to the database at configurable
-    intervals.
+    intervals.  See :ref:`monitoring-nodjango` for information about using
+    this monitor if you're not using Django.
 
     To use the Django admin monitor you need to do the following:
 
@@ -136,15 +134,11 @@ News
     The rate limit is off by default, which means it will take a snapshot
     for every :option:`--frequency` seconds.
 
-    The django-celery camera also automatically deletes old events.
-    It deletes successful tasks after 1 day, failed tasks after 3 days,
-    and tasks in other states after 5 days.
-
 .. seealso::
 
     :ref:`monitoring-django-admin` and :ref:`monitoring-snapshots`.
 
-* :func:`celery.task.control.broadcast`: Added callback argument, this can be
+* :func:`~celery.task.control.broadcast`: Added callback argument, this can be
   used to process replies immediately as they arrive.
 
 * celeryctl: New command-line utility to manage and inspect worker nodes,
@@ -181,8 +175,7 @@ News
     We now configure the root logger instead of only configuring
     our custom logger. In addition we don't hijack
     the multiprocessing logger anymore, but instead use a custom logger name
-    (celeryd uses "celery", celerybeat uses "celery.beat", celeryev uses
-    "celery.ev").
+    for different apps:
 
     =====================================  =====================================
     **Application**                        **Logger Name**
@@ -194,10 +187,10 @@ News
 
     This means that the ``loglevel`` and ``logfile`` arguments will
     affect all registered loggers (even those from 3rd party libraries).
-    That is unless you configure the loggers manually as shown below.
+    Unless you configure the loggers manually as shown below, that is.
 
-    Users can choose to configure logging by subscribing to the
-    :data:`~celery.signals.setup_logging` signal:
+    *Users can choose to configure logging by subscribing to the
+    :data:`~celery.signals.setup_logging` signal:*
 
     .. code-block:: python
 
@@ -212,9 +205,9 @@ News
     will be configured using the :option:`--loglevel`/:option:`--logfile`
     argument, this will be used for *all defined loggers*.
 
-    Remember that celeryd also redirects stdout and stderr 
-    to the celery logger, if you want to manually configure logging
-    ands redirect stdouts, you need to enable this manually:
+    Remember that celeryd also redirects stdout and stderr
+    to the celery logger, if manually configure logging
+    you also need to redirect the stdouts manually:
 
     .. code-block:: python
 
@@ -228,21 +221,22 @@ News
             log.redirect_stdouts_to_logger(stdouts, loglevel=logging.WARNING)
 
 * celeryd: Added command-line option :option:`-I`/:option:`--include`:
-  Additional (task) modules to be imported
+
+    A comma separated list of (task) modules to be imported.
+
+    Example::
+
+        $ celeryd -I app1.tasks,app2.tasks
 
 * celeryd: now emits a warning if running as the root user (euid is 0).
-
-* Fixed timing issue when declaring the remote control command reply queue
-
-    This issue could result in replies being lost, but have now been fixed.
 
 * :func:`celery.messaging.establish_connection`: Ability to override defaults
   used using kwarg "defaults".
 
-* celeryd: Now uses ``multiprocessing.freeze_support()`` so it should work
-  with py2exe and similar tools.
+* celeryd: Now uses ``multiprocessing.freeze_support()`` so that it should work
+  with **py2exe**, **PyInstaller**, **cx_Freeze**, etc.
 
-* celeryd: Now includes more metadata for the STARTED state: pid and
+* celeryd: Now includes more metadata for the :state:`STARTED` state: PID and
   hostname of the worker that started the task.
 
     See issue #181
@@ -260,15 +254,15 @@ News
     See issue #182.
 
 * celeryd: Now emits a warning if there is already a worker node using the same
-  name running on the current virtual host.
+  name running on the same virtual host.
 
 * AMQP result backend: Sending of results are now retried if the connection
   is down.
 
 * AMQP result backend: ``result.get()``: Wait for next state if state is not
-  in :data:`~celery.states.READY_STATES`.
+    in :data:`~celery.states.READY_STATES`.
 
-* TaskSetResult now supports ``__getitem__``
+* TaskSetResult now supports subscription.
 
     ::
 
@@ -276,13 +270,13 @@ News
         >>> res[0].get()
 
 * Added ``Task.send_error_emails`` + ``Task.error_whitelist``, so these can
-  be configured per task instead of just globally
+  be configured per task instead of just by the global setting.
 
 * Added ``Task.store_errors_even_if_ignored``, so it can be changed per Task,
-  not just globally.
+  not just by the global setting.
 
-* The crontab schedule no longer wakes up every second, but implements
-  ``remaining_estimate``.
+* The crontab scheduler no longer wakes up every second, but implements
+  ``remaining_estimate`` (*Optimization*).
 
 * celeryd:  Store :state:`FAILURE` result if the
    :exc:`~celery.exceptions.WorkerLostError` exception occurs (worker process
@@ -300,8 +294,9 @@ News
       "celery.backend_cleanup" it won't change it, so the behavior of the
       backend cleanup task can be easily changed.
 
-    * The task is now run by every day at 4:00 AM, instead of every day since
-      fist run (using crontab schedule instead of run_every)
+    * The task is now run every day at 4:00 AM, rather than every day since
+      the first time it was run (using crontab schedule instead of
+      ``run_every``)
 
     * Renamed ``celery.task.builtins.DeleteExpiredTaskMetaTask``
         -> :class:`celery.task.builtins.backend_cleanup`
@@ -349,7 +344,7 @@ News
 * celeryd: Task results shown in logs are now truncated to 46 chars.
 
 * ``Task.__name__`` is now an alias to ``self.__class__.__name__``.
-   This way it introspects more like a regular function.
+   This way tasks introspects more like regular functions.
 
 * ``Task.retry``: Now raises :exc:`TypeError` if kwargs argument is empty.
 
@@ -359,30 +354,34 @@ News
 
 * :class:`~celery.datastructures.TokenBucket`: Generic Token Bucket algorithm
 
-* :class:`celery.events.state.State`: Recording of cluster state can now
-  be paused.
+* :mod:`celery.events.state`: Recording of cluster state can now
+  be paused and resumed, including support for buffering.
 
-    * ``State.freeze(buffer=True)``
 
-    Pauses recording of the stream. If buffer is true, then events received
-    while being frozen will be kept, so it can be replayed later.
+    .. method:: State.freeze(buffer=True)
 
-    * ``State.thaw(replay=True)``
+        Pauses recording of the stream.
 
-    Resumes recording of the stream. If replay is true, then the buffer
-    will be applied.
+        If ``buffer`` is true, events received while being frozen will be
+        buffered, and may be replayed later.
 
-    * ``State.freeze_while(fun)``
+    .. method:: State.thaw(replay=True)
 
-    Apply function. Freezes the stream before the function,
-    and replays the buffer when the function returns.
+        Resumes recording of the stream.
+
+        If ``replay`` is true, then the recorded buffer will be applied.
+
+    .. method:: State.freeze_while(fun)
+
+        With a function to apply, freezes the stream before,
+        and replays the buffer after the function returns.
 
 * :meth:`EventReceiver.capture <celery.events.EventReceiver.capture>`
   Now supports a timeout keyword argument.
 
-* Optimization: The mediator thread is now disabled if
-  :setting:`CELERY_RATE_LIMTS` is enabled, and tasks sent directly to the
-  pool without going through the ready queue.
+* celeryd: The mediator thread is now disabled if
+  :setting:`CELERY_RATE_LIMTS` is enabled, and tasks are directly sent to the
+  pool without going through the ready queue (*Optimization*).
 
 .. _v210-fixes:
 
@@ -414,6 +413,10 @@ Fixes
   while reading from the task Queue.
 
     See http://bugs.python.org/issue10037
+
+* Fixed timing issue when declaring the remote control command reply queue
+
+    This issue could result in replies being lost, but have now been fixed.
 
 * Compat ``LoggerAdapter`` implementation: Now works for Python 2.4.
 

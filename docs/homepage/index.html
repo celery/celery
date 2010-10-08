@@ -55,11 +55,12 @@ pageTracker._trackPageview();
 
     <div class="column">
         <h2>Distributed Task Queue</h2>
-        <p> Celery is an asynchronous task queue/job queue based on distributed message passing.
-        It is focused on real-time operation, but supports scheduling as well.</p>
+        <p>Celery is an open source asynchronous task queue/job queue based on
+        distributed message passing.  It is focused on real-time operation,
+        but supports scheduling as well.</p>
 
-        <p>The execution units, called tasks, are executed concurrently on a single or
-        more worker servers. Tasks can execute asynchronously (in the background) or synchronously
+        <p>The execution units, called tasks, are executed concurrently on one or
+        more worker nodes. Tasks can execute asynchronously (in the background) or synchronously
         (wait until ready).</p>
 
         <p>Celery is already used in production to process millions of tasks a day.</p>
@@ -73,9 +74,9 @@ pageTracker._trackPageview();
         but support for <a href="http://redisdb.com/">Redis</a> and databases
         is also available.</p>
 
-        <p>You may also be pleased to know that full
-        <a href="http://pypi.python.org/pypi/django-celery">Django integration</a>exists,
-        delivered by the django-celery package.</p>
+        Celery is easy to integrate with Django and Pylons, using
+        the <a href="http://pypi.python.org/pypi/django-celery">django-celery</a> and
+        <a href="http://bitbucket.org/ianschenck/celery-pylons">celery-pylons</a> add-on packages.
 
         <h3>Example</h3>
         <p>This is a simple task adding two numbers:</p>
@@ -135,6 +136,13 @@ pageTracker._trackPageview();
     </div>
 
     <div class="column side">
+
+      <span class="newsitem">
+      <h2>Celery 2.1 released!</h2>
+      <h4>By <a href="http://twitter.com/asksol">@asksol</a> on 2010-10-08.</h4>
+      <p>This new version is now available at PyPI.  Be sure to read the
+      <a href="http://celeryq.org/docs/changelog.html">Changelog</a> before upgrading.</p>
+      </span>
 
       <span class="newsitem">
       <h2>Celery 2.0 released!</h2>
