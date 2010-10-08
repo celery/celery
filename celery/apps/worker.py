@@ -68,8 +68,13 @@ class Worker(object):
             self.include = self.include.split(",")
 
         if not isinstance(self.loglevel, int):
-            self.loglevel = LOG_LEVELS[self.loglevel.upper()]
-
+            try:
+                self.loglevel = LOG_LEVELS[self.loglevel.upper()]
+            except KeyError:
+                self.die("Unknown level %r. Please use one of %s." % (
+                            self.loglevel,
+                            "|".join(l for l in LOG_LEVELS.keys()
+                                        if isinstance(l, basestring))))
     def run(self):
         self.init_loader()
         self.init_queues()
@@ -210,6 +215,10 @@ class Worker(object):
         return platforms.set_mp_process_title("celeryd",
                                               info=info,
                                               hostname=self.hostname)
+
+    def die(self, msg, exitcode=1):
+        sys.stderr.write("Error: %s\n" % (msg, ))
+        sys.exit(exitcode)
 
 
 def install_worker_int_handler(worker):
