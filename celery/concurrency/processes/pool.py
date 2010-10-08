@@ -329,6 +329,11 @@ class ResultHandler(PoolThread):
                 pass
 
         def on_ready(job, i, obj):
+            if putlock is not None:
+                try:
+                    putlock.release()
+                except ValueError:
+                    pass
             try:
                 cache[job]._set(i, obj)
             except KeyError:
@@ -361,14 +366,9 @@ class ResultHandler(PoolThread):
                     debug('result handler got sentinel')
                     break
 
-                if putlock is not None:
-                    try:
-                        putlock.release()
-                    except ValueError:
-                        pass
-
                 on_state_change(task)
 
+        # Notify waiting threads
         if putlock is not None:
             try:
                 putlock.release()
