@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Change history &mdash; Celery v2.1.0rc4 documentation</title>
+    <title>Change history &mdash; Celery v2.1.0 documentation</title>
     <link rel="stylesheet" href="static/celery.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '2.1.0rc4',
+        VERSION:     '2.1.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.0rc4 documentation" href="index.html" />
+    <link rel="top" title="Celery v2.1.0 documentation" href="index.html" />
     <link rel="next" title="Interesting Links" href="links.html" />
     <link rel="prev" title="Platform Specific - celery.platforms" href="internals/reference/celery.platforms.html" /> 
   </head>
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="internals/reference/celery.platforms.html" title="Platform Specific - celery.platforms"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Celery v2.1.0rc4 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v2.1.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -167,11 +167,8 @@
 <li><p class="first">Celery is now following the versioning semantics defined by <a class="reference external" href="http://semver.org">semver</a>.</p>
 <blockquote>
 <p>This means we are no longer allowed to use odd/even versioning semantics
-(see <a class="reference external" href="http://github.com/mojombo/semver.org/issues#issue/8">http://github.com/mojombo/semver.org/issues#issue/8</a>).
 By our previous versioning scheme this stable release should have
 been version 2.2.</p>
-<p>The document describing our release cycle and versioning scheme
-can be found at <a class="reference external" href="http://wiki.github.com/ask/celery/release-cycle.">Wiki: Release Cycle</a>.</p>
 </blockquote>
 </li>
 </ul>
@@ -179,8 +176,11 @@ can be found at <a class="reference external" href="http://wiki.github.com/ask/c
 <li><p class="first">Now depends on Carrot 0.10.7.</p>
 </li>
 <li><p class="first">No longer depends on SQLAlchemy, this needs to be installed separately
-if the database backend is used (does not apply to users of
-<a class="reference external" href="http://pypi.python.org/pypi/django-celery">django-celery</a>).</p>
+if the database result backend is used.</p>
+</li>
+<li><p class="first">django-celery now comes with a monitor for the Django Admin interface.
+This can also be used if you&#8217;re not a Django user.  See
+<a class="reference internal" href="userguide/monitoring.html#monitoring-django-admin"><em>Django Admin Monitor</em></a> and <a class="reference internal" href="userguide/monitoring.html#monitoring-nodjango"><em>Using outside of Django</em></a> for more information.</p>
 </li>
 <li><p class="first">If you get an error after upgrading saying:
 <tt class="docutils literal"><span class="pre">AttributeError:</span> <span class="pre">'module'</span> <span class="pre">object</span> <span class="pre">has</span> <span class="pre">no</span> <span class="pre">attribute</span> <span class="pre">'system'</span></tt>,</p>
@@ -220,18 +220,19 @@ sets the expiry time in seconds (can be int or float):</p>
 </li>
 <li><p class="first">celeryev: Event Snapshots</p>
 <blockquote>
-<p>If enabled, celeryd can send messages every time something
-happens in the worker. These messages are called &#8220;events&#8221;.
+<p>If enabled, <strong class="program">celeryd</strong> sends messages about what the worker is doing.
+These messages are called &#8220;events&#8221;.
 The events are used by real-time monitors to show what the
 cluster is doing, but they are not very useful for monitoring
-over time. That&#8217;s where the snapshots comes in. Snapshots
+over a longer period of time.  Snapshots
 lets you take &#8220;pictures&#8221; of the clusters state at regular intervals.
-These can then be stored in the database to generate statistics
-with, or even monitoring.</p>
-<p>Django-celery now comes with a Celery monitor for the Django
+This can then be stored in a database to generate statistics
+with, or even monitoring over longer time periods.</p>
+<p>django-celery now comes with a Celery monitor for the Django
 Admin interface. To use this you need to run the django-celery
 snapshot camera, which stores snapshots to the database at configurable
-intervals.</p>
+intervals.  See <a class="reference internal" href="userguide/monitoring.html#monitoring-nodjango"><em>Using outside of Django</em></a> for information about using
+this monitor if you&#8217;re not using Django.</p>
 <p>To use the Django admin monitor you need to do the following:</p>
 <ol class="arabic">
 <li><p class="first">Create the new database tables.</p>
@@ -276,9 +277,6 @@ used to control how often the thread wakes up to check if there&#8217;s
 anything new.</p>
 <p>The rate limit is off by default, which means it will take a snapshot
 for every <em class="xref std std-option">--frequency</em> seconds.</p>
-<p>The django-celery camera also automatically deletes old events.
-It deletes successful tasks after 1 day, failed tasks after 3 days,
-and tasks in other states after 5 days.</p>
 </blockquote>
 </li>
 </ul>
@@ -287,7 +285,7 @@ and tasks in other states after 5 days.</p>
 <p class="last"><a class="reference internal" href="userguide/monitoring.html#monitoring-django-admin"><em>Django Admin Monitor</em></a> and <a class="reference internal" href="userguide/monitoring.html#monitoring-snapshots"><em>Snapshots</em></a>.</p>
 </div>
 <ul>
-<li><p class="first"><a class="reference internal" href="reference/celery.task.control.html#celery.task.control.broadcast" title="celery.task.control.broadcast"><tt class="xref py py-func docutils literal"><span class="pre">celery.task.control.broadcast()</span></tt></a>: Added callback argument, this can be
+<li><p class="first"><a class="reference internal" href="reference/celery.task.control.html#celery.task.control.broadcast" title="celery.task.control.broadcast"><tt class="xref py py-func docutils literal"><span class="pre">broadcast()</span></tt></a>: Added callback argument, this can be
 used to process replies immediately as they arrive.</p>
 </li>
 <li><p class="first">celeryctl: New command-line utility to manage and inspect worker nodes,
@@ -327,8 +325,7 @@ marked as revoked (<a class="reference internal" href="reference/celery.exceptio
 <p>We now configure the root logger instead of only configuring
 our custom logger. In addition we don&#8217;t hijack
 the multiprocessing logger anymore, but instead use a custom logger name
-(celeryd uses &#8220;celery&#8221;, celerybeat uses &#8220;celery.beat&#8221;, celeryev uses
-&#8220;celery.ev&#8221;).</p>
+for different apps:</p>
 <table border="1" class="docutils">
 <colgroup>
 <col width="50%" />
@@ -361,9 +358,9 @@ the multiprocessing logger anymore, but instead use a custom logger name
 </table>
 <p>This means that the <tt class="docutils literal"><span class="pre">loglevel</span></tt> and <tt class="docutils literal"><span class="pre">logfile</span></tt> arguments will
 affect all registered loggers (even those from 3rd party libraries).
-That is unless you configure the loggers manually as shown below.</p>
-<p>Users can choose to configure logging by subscribing to the
-<tt class="xref py py-data docutils literal"><span class="pre">setup_logging</span></tt> signal:</p>
+Unless you configure the loggers manually as shown below, that is.</p>
+<p><em>Users can choose to configure logging by subscribing to the
+:data:`~celery.signals.setup_logging` signal:</em></p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">logging.config</span> <span class="kn">import</span> <span class="n">fileConfig</span>
 <span class="kn">from</span> <span class="nn">celery</span> <span class="kn">import</span> <span class="n">signals</span>
 
@@ -376,8 +373,8 @@ That is unless you configure the loggers manually as shown below.</p>
 will be configured using the <em class="xref std std-option">--loglevel</em>/<em class="xref std std-option">--logfile</em>
 argument, this will be used for <em>all defined loggers</em>.</p>
 <p>Remember that celeryd also redirects stdout and stderr
-to the celery logger, if you want to manually configure logging
-ands redirect stdouts, you need to enable this manually:</p>
+to the celery logger, if manually configure logging
+you also need to redirect the stdouts manually:</p>
 <div class="highlight-python"><pre> from logging.config import fileConfig
  from celery import log
 
@@ -389,23 +386,23 @@ def setup_logging(**kwargs):
 </div>
 </blockquote>
 </li>
-<li><p class="first">celeryd: Added command-line option <em class="xref std std-option">-I</em>/<em class="xref std std-option">--include</em>:
-Additional (task) modules to be imported</p>
+<li><p class="first">celeryd: Added command-line option <em class="xref std std-option">-I</em>/<em class="xref std std-option">--include</em>:</p>
+<blockquote>
+<p>A comma separated list of (task) modules to be imported.</p>
+<p>Example:</p>
+<div class="highlight-python"><pre>$ celeryd -I app1.tasks,app2.tasks</pre>
+</div>
+</blockquote>
 </li>
 <li><p class="first">celeryd: now emits a warning if running as the root user (euid is 0).</p>
-</li>
-<li><p class="first">Fixed timing issue when declaring the remote control command reply queue</p>
-<blockquote>
-<p>This issue could result in replies being lost, but have now been fixed.</p>
-</blockquote>
 </li>
 <li><p class="first"><a class="reference internal" href="reference/celery.messaging.html#celery.messaging.establish_connection" title="celery.messaging.establish_connection"><tt class="xref py py-func docutils literal"><span class="pre">celery.messaging.establish_connection()</span></tt></a>: Ability to override defaults
 used using kwarg &#8220;defaults&#8221;.</p>
 </li>
-<li><p class="first">celeryd: Now uses <tt class="docutils literal"><span class="pre">multiprocessing.freeze_support()</span></tt> so it should work
-with py2exe and similar tools.</p>
+<li><p class="first">celeryd: Now uses <tt class="docutils literal"><span class="pre">multiprocessing.freeze_support()</span></tt> so that it should work
+with <strong>py2exe</strong>, <strong>PyInstaller</strong>, <strong>cx_Freeze</strong>, etc.</p>
 </li>
-<li><p class="first">celeryd: Now includes more metadata for the STARTED state: pid and
+<li><p class="first">celeryd: Now includes more metadata for the <a class="reference internal" href="userguide/tasks.html#std:state-STARTED"><tt class="xref std std-state docutils literal"><span class="pre">STARTED</span></tt></a> state: PID and
 hostname of the worker that started the task.</p>
 <blockquote>
 <p>See <a class="issue-closed reference-issue reference external" href="http://github.com/ask/celery/issues/181">issue #181</a></p>
@@ -425,15 +422,18 @@ hostname of the worker that started the task.</p>
 </blockquote>
 </li>
 <li><p class="first">celeryd: Now emits a warning if there is already a worker node using the same
-name running on the current virtual host.</p>
+name running on the same virtual host.</p>
 </li>
 <li><p class="first">AMQP result backend: Sending of results are now retried if the connection
 is down.</p>
 </li>
-<li><p class="first">AMQP result backend: <tt class="docutils literal"><span class="pre">result.get()</span></tt>: Wait for next state if state is not
-in <tt class="xref py py-data docutils literal"><span class="pre">READY_STATES</span></tt>.</p>
+<li><dl class="first docutils">
+<dt>AMQP result backend: <tt class="docutils literal"><span class="pre">result.get()</span></tt>: Wait for next state if state is not</dt>
+<dd><p class="first last">in <tt class="xref py py-data docutils literal"><span class="pre">READY_STATES</span></tt>.</p>
+</dd>
+</dl>
 </li>
-<li><p class="first">TaskSetResult now supports <tt class="docutils literal"><span class="pre">__getitem__</span></tt></p>
+<li><p class="first">TaskSetResult now supports subscription.</p>
 <blockquote>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">res</span> <span class="o">=</span> <span class="n">TaskSet</span><span class="p">(</span><span class="n">tasks</span><span class="p">)</span><span class="o">.</span><span class="n">apply_async</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
@@ -442,13 +442,13 @@ in <tt class="xref py py-data docutils literal"><span class="pre">READY_STATES</
 </blockquote>
 </li>
 <li><p class="first">Added <tt class="docutils literal"><span class="pre">Task.send_error_emails</span></tt> + <tt class="docutils literal"><span class="pre">Task.error_whitelist</span></tt>, so these can
-be configured per task instead of just globally</p>
+be configured per task instead of just by the global setting.</p>
 </li>
 <li><p class="first">Added <tt class="docutils literal"><span class="pre">Task.store_errors_even_if_ignored</span></tt>, so it can be changed per Task,
-not just globally.</p>
+not just by the global setting.</p>
 </li>
-<li><p class="first">The crontab schedule no longer wakes up every second, but implements
-<tt class="docutils literal"><span class="pre">remaining_estimate</span></tt>.</p>
+<li><p class="first">The crontab scheduler no longer wakes up every second, but implements
+<tt class="docutils literal"><span class="pre">remaining_estimate</span></tt> (<em>Optimization</em>).</p>
 </li>
 <li><dl class="first docutils">
 <dt>celeryd:  Store <a class="reference internal" href="userguide/tasks.html#std:state-FAILURE"><tt class="xref std std-state docutils literal"><span class="pre">FAILURE</span></tt></a> result if the</dt>
@@ -473,8 +473,9 @@ exceptions occurs.</p>
 &#8220;celery.backend_cleanup&#8221; it won&#8217;t change it, so the behavior of the
 backend cleanup task can be easily changed.</p>
 </li>
-<li><p class="first">The task is now run by every day at 4:00 AM, instead of every day since
-fist run (using crontab schedule instead of run_every)</p>
+<li><p class="first">The task is now run every day at 4:00 AM, rather than every day since
+the first time it was run (using crontab schedule instead of
+<tt class="docutils literal"><span class="pre">run_every</span></tt>)</p>
 </li>
 <li><dl class="first docutils">
 <dt>Renamed <tt class="docutils literal"><span class="pre">celery.task.builtins.DeleteExpiredTaskMetaTask</span></tt></dt>
@@ -529,7 +530,7 @@ instead of taking down the worker.</p>
 </li>
 <li><dl class="first docutils">
 <dt><tt class="docutils literal"><span class="pre">Task.__name__</span></tt> is now an alias to <tt class="docutils literal"><span class="pre">self.__class__.__name__</span></tt>.</dt>
-<dd><p class="first last">This way it introspects more like a regular function.</p>
+<dd><p class="first last">This way tasks introspects more like regular functions.</p>
 </dd>
 </dl>
 </li>
@@ -542,32 +543,39 @@ instead of taking down the worker.</p>
 </li>
 <li><p class="first"><a class="reference internal" href="internals/reference/celery.datastructures.html#celery.datastructures.TokenBucket" title="celery.datastructures.TokenBucket"><tt class="xref py py-class docutils literal"><span class="pre">TokenBucket</span></tt></a>: Generic Token Bucket algorithm</p>
 </li>
-<li><p class="first"><a class="reference internal" href="reference/celery.events.state.html#celery.events.state.State" title="celery.events.state.State"><tt class="xref py py-class docutils literal"><span class="pre">celery.events.state.State</span></tt></a>: Recording of cluster state can now
-be paused.</p>
+<li><p class="first"><a class="reference internal" href="reference/celery.events.state.html#module-celery.events.state"><tt class="xref py py-mod docutils literal"><span class="pre">celery.events.state</span></tt></a>: Recording of cluster state can now
+be paused and resumed, including support for buffering.</p>
 <blockquote>
-<ul class="simple">
-<li><tt class="docutils literal"><span class="pre">State.freeze(buffer=True)</span></tt></li>
-</ul>
-<p>Pauses recording of the stream. If buffer is true, then events received
-while being frozen will be kept, so it can be replayed later.</p>
-<ul class="simple">
-<li><tt class="docutils literal"><span class="pre">State.thaw(replay=True)</span></tt></li>
-</ul>
-<p>Resumes recording of the stream. If replay is true, then the buffer
-will be applied.</p>
-<ul class="simple">
-<li><tt class="docutils literal"><span class="pre">State.freeze_while(fun)</span></tt></li>
-</ul>
-<p>Apply function. Freezes the stream before the function,
-and replays the buffer when the function returns.</p>
+<dl class="method">
+<dt id="State.freeze">
+<tt class="descclassname">State.</tt><tt class="descname">freeze</tt><big>(</big><em>buffer=True</em><big>)</big><a class="headerlink" href="#State.freeze" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pauses recording of the stream.</p>
+<p>If <tt class="docutils literal"><span class="pre">buffer</span></tt> is true, events received while being frozen will be
+buffered, and may be replayed later.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="State.thaw">
+<tt class="descclassname">State.</tt><tt class="descname">thaw</tt><big>(</big><em>replay=True</em><big>)</big><a class="headerlink" href="#State.thaw" title="Permalink to this definition">¶</a></dt>
+<dd><p>Resumes recording of the stream.</p>
+<p>If <tt class="docutils literal"><span class="pre">replay</span></tt> is true, then the recorded buffer will be applied.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="State.freeze_while">
+<tt class="descclassname">State.</tt><tt class="descname">freeze_while</tt><big>(</big><em>fun</em><big>)</big><a class="headerlink" href="#State.freeze_while" title="Permalink to this definition">¶</a></dt>
+<dd><p>With a function to apply, freezes the stream before,
+and replays the buffer after the function returns.</p>
+</dd></dl>
+
 </blockquote>
 </li>
 <li><p class="first"><a class="reference internal" href="reference/celery.events.html#celery.events.EventReceiver.capture" title="celery.events.EventReceiver.capture"><tt class="xref py py-meth docutils literal"><span class="pre">EventReceiver.capture</span></tt></a>
 Now supports a timeout keyword argument.</p>
 </li>
-<li><p class="first">Optimization: The mediator thread is now disabled if
-<tt class="xref std std-setting docutils literal"><span class="pre">CELERY_RATE_LIMTS</span></tt> is enabled, and tasks sent directly to the
-pool without going through the ready queue.</p>
+<li><p class="first">celeryd: The mediator thread is now disabled if
+<tt class="xref std std-setting docutils literal"><span class="pre">CELERY_RATE_LIMTS</span></tt> is enabled, and tasks are directly sent to the
+pool without going through the ready queue (<em>Optimization</em>).</p>
 </li>
 </ul>
 </div>
@@ -603,6 +611,11 @@ is enabled.</p>
 while reading from the task Queue.</p>
 <blockquote>
 <p>See <a class="reference external" href="http://bugs.python.org/issue10037">http://bugs.python.org/issue10037</a></p>
+</blockquote>
+</li>
+<li><p class="first">Fixed timing issue when declaring the remote control command reply queue</p>
+<blockquote>
+<p>This issue could result in replies being lost, but have now been fixed.</p>
 </blockquote>
 </li>
 <li><p class="first">Compat <tt class="docutils literal"><span class="pre">LoggerAdapter</span></tt> implementation: Now works for Python 2.4.</p>
@@ -3974,7 +3987,7 @@ the name change request is in <tt class="docutils literal"><span class="pre">doc
         <li class="right" >
           <a href="internals/reference/celery.platforms.html" title="Platform Specific - celery.platforms"
              >previous</a> |</li>
-        <li><a href="index.html">Celery v2.1.0rc4 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v2.1.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
