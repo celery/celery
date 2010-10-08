@@ -22,16 +22,10 @@ def diagnose(panel, timeout=None, **kwargs):
 
 
 @Panel.register
-def revoke(panel, task_id, task_name=None, **kwargs):
+def revoke(panel, task_id, **kwargs):
     """Revoke task by task id."""
     app = panel.app
     revoked.add(task_id)
-    backend = app.backend
-    if task_name:                           # use custom task backend (if any)
-        try:
-            backend = tasks[task_name].backend
-        except KeyError:
-            pass
     panel.logger.warn("Task %s revoked" % (task_id, ))
     return {"ok": "task %s revoked" % (task_id, )}
 
