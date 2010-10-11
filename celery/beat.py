@@ -11,6 +11,7 @@ from datetime import datetime
 from UserDict import UserDict
 
 from celery import platforms
+from celery import registry
 from celery.app import app_or_default
 from celery.log import SilenceRepeated
 from celery.schedules import maybe_schedule
