@@ -1,7 +1,5 @@
 import os
 import sys
-import pwd
-import grp
 import errno
 import signal
 try:
@@ -14,6 +12,16 @@ try:
     import resource
 except ImportError:
     CAN_DETACH = False
+
+try:
+    import pwd
+except ImportError:
+    pwd = None
+
+try:
+    import grp
+except ImportError:
+    grp = None
 
 DAEMON_UMASK = 0
 DAEMON_WORKDIR = "/"
@@ -208,7 +216,9 @@ def parse_uid(uid):
     try:
         return int(uid)
     except ValueError:
-        return pwd.getpwnam(uid).pw_uid
+        if pwd:
+            return pwd.getpwnam(uid).pw_uid
+        raise
 
 
 def parse_gid(gid):
@@ -221,7 +231,9 @@ def parse_gid(gid):
     try:
         return int(gid)
     except ValueError:
-        return grp.getgrnam(gid).gr_gid
+        if grp:
+            return grp.getgrnam(gid).gr_gid
+        raise
 
 
 def setegid(gid):
@@ -254,7 +266,9 @@ def set_effective_user(uid=None, gid=None):
 
     if uid:
         # If gid isn't defined, get the primary gid of the uer.
-        setegid(gid or pwd.getpwuid(uid).pw_gid)
+        if not gid and pwd:
+            gid = pwd.getpwuid(uid).pw_gid
+        setegid(gid)
         seteuid(uid)
     else:
         gid and setegid(gid)
