@@ -23,7 +23,7 @@ from celery.worker import state
 # says "trailing whitespace" ;)
 EMAIL_SIGNATURE_SEP = "-- "
 TASK_ERROR_EMAIL_BODY = """
-Task %%(name)s with id %%(id)s raised exception: %%(exc)s
+Task %%(name)s with id %%(id)s raised exception:\n%%(exc)s
 
 
 Task was called with args: %%(args)s kwargs: %%(kwargs)s.
