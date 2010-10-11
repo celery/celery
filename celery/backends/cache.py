@@ -53,13 +53,14 @@ class CacheBackend(KeyValueStoreBackend):
     def __init__(self, expires=None, backend=None, options={}, **kwargs):
         super(CacheBackend, self).__init__(self, **kwargs)
 
-        if isinstance(expires, timedelta):
-            expires = timeutils.timedelta_seconds(expires)
         self.expires = expires or self.app.conf.CELERY_TASK_RESULT_EXPIRES
+        if isinstance(self.expires, timedelta):
+            self.expires = timeutils.timedelta_seconds(self.expires)
         self.options = dict(self.app.conf.CELERY_CACHE_BACKEND_OPTIONS,
                             **options)
 
         backend = backend or self.app.conf.CELERY_CACHE_BACKEND
+        self.expires = int(self.expires)
         self.backend, _, servers = partition(backend, "://")
         self.servers = servers.split(";")
         try:
