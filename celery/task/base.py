@@ -211,6 +211,10 @@ class Task(object):
         The global default can be overriden by the :setting:`CELERY_ACKS_LATE`
         setting.
 
+    .. attribute:: expires
+
+        Default task expiry time in seconds or a :class:`~datetime.datetime`.
+
     """
     __metaclass__ = TaskType
 
