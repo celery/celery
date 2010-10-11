@@ -13,6 +13,7 @@ from UserDict import UserDict
 from celery import log
 from celery import conf
 from celery import platforms
+from celery import registry
 from celery.execute import send_task
 from celery.schedules import maybe_schedule
 from celery.messaging import establish_connection, TaskPublisher
