@@ -235,6 +235,7 @@ class Task(object):
     disable_error_emails = False                                    # FIXME
     max_retries = 5
     default_retry_delay = 3 * 60
+    expires = None
     serializer = conf.TASK_SERIALIZER
     rate_limit = conf.DEFAULT_RATE_LIMIT
     backend = default_backend
