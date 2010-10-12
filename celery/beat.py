@@ -6,6 +6,7 @@ Periodic Task Scheduler
 import time
 import shelve
 import threading
+import traceback
 import multiprocessing
 from datetime import datetime
 from UserDict import UserDict
@@ -150,8 +151,9 @@ class Scheduler(UserDict):
             self.logger.debug("Scheduler: Sending due task %s" % entry.task)
             try:
                 result = self.apply_async(entry, publisher=publisher)
-            except SchedulingError, exc:
-                self.logger.error("Scheduler: %s" % exc)
+            except Exception, exc:
+                self.logger.error("Message Error:\n%s" % (exc,
+                    traceback.format_stack()))
             else:
                 self.logger.debug("%s sent. id->%s" % (entry.task,
                                                        result.task_id))
