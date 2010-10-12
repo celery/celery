@@ -1,4 +1,5 @@
 import logging
+import socket
 import sys
 import traceback
 
@@ -20,7 +21,8 @@ class Beat(object):
     Service = beat.Service
 
     def __init__(self, loglevel=None, logfile=None, schedule=None,
-            max_interval=None, scheduler_cls=None, defaults=None, **kwargs):
+            max_interval=None, scheduler_cls=None, defaults=None,
+            socket_timeout=30, **kwargs):
         """Starts the celerybeat task scheduler."""
 
         if defaults is None:
@@ -32,6 +34,7 @@ class Beat(object):
         self.schedule = schedule or defaults.CELERYBEAT_SCHEDULE_FILENAME
         self.scheduler_cls = scheduler_cls
         self.max_interval = max_interval
+        self.socket_timeout = socket_timeout
 
         if not isinstance(self.loglevel, int):
             self.loglevel = LOG_LEVELS[self.loglevel.upper()]
@@ -42,6 +45,10 @@ class Beat(object):
         self.init_loader()
         print(self.startup_info())
         self.set_process_title()
+        if self.socket_timeout:
+            logger.debug("Setting default socket timeout to %r" % (
+                self.socket_timeout))
+            socket.setdefaulttimeout(self.socket_timeout)
         print("celerybeat has started.")
         self.start_scheduler(logger)
 
