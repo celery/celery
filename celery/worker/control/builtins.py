@@ -182,3 +182,25 @@ def ping(panel, **kwargs):
 def shutdown(panel, **kwargs):
     panel.logger.critical("Got shutdown from remote.")
     raise SystemExit("Got shutdown from remote")
+
+
+@Panel.register
+def add_consumer(panel, queue=None, exchange=None, exchange_type="direct",
+        routing_key=None, **options):
+    cset = panel.listener.task_consumer
+    declaration = dict(queue=queue,
+                       exchange=exchange,
+                       exchange_type=exchange_type,
+                       routing_key=routing_key,
+                       **options)
+    cset.add_consumer_from_dict(**declaration)
+    cset.consume()
+    panel.logger.info("Started consuming from %r" % (declaration, ))
+    return {"ok": "started consuming from %s" % (queue, )}
+
+
+@Panel.register
+def cancel_consumer(panel, queue=None, **_):
+    cset = panel.listener.task_consumer
+    cset.cancel_by_queue(queue)
+    return {"ok": "no longer consuming from %s" % (queue, )}
