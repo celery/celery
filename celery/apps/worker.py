@@ -83,6 +83,7 @@ class Worker(object):
                             self.loglevel,
                             "|".join(l for l in LOG_LEVELS.keys()
                                         if isinstance(l, basestring))))
+
     def run(self):
         self.init_loader()
         self.init_queues()
