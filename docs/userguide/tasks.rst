@@ -374,10 +374,9 @@ For example:
     >>> add.name
     'sum-of-two-numbers'
 
-
 The best practice is to use the module name as a prefix to classify the
 tasks using namespaces.  This way the name won't collide with the name from
-another module::
+another module:
 
 .. code-block:: python
 
