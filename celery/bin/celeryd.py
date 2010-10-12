@@ -77,7 +77,7 @@ class WorkerCommand(Command):
     def run(self, *args, **kwargs):
         from celery.apps.worker import Worker
         kwargs["defaults"] = self.defaults
-        return Worker(*args, **kwargs).run()
+        return Worker(**kwargs).run()
 
     def get_options(self):
         conf = self.defaults
