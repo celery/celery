@@ -58,10 +58,6 @@ class Inspect(object):
     def disable_events(self):
         return self._request("disable_events")
 
-    def diagnose(self):
-        diagnose_timeout = self.timeout * 0.85              # 15% of timeout
-        return self._request("diagnose", timeout=diagnose_timeout)
-
     def ping(self):
         return self._request("ping")
 
