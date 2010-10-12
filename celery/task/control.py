@@ -144,6 +144,15 @@ class inspect(object):
     def ping(self):
         return self._request("ping")
 
+    def add_consumer(self, queue, exchange=None, exchange_type="direct",
+            routing_key=None, **options):
+        return self._request("add_consumer", queue=queue, exchange=exchange,
+                             exchange_type=exchange_type,
+                             routing_key=routing_key, **options)
+
+    def cancel_consumer(self, queue, **kwargs):
+        return self._request("cancel_consumer", queue=queue, **kwargs)
+
 
 @with_connection
 def broadcast(command, arguments=None, destination=None, connection=None,

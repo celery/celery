@@ -185,7 +185,9 @@ class inspect(Command):
                "registered_tasks": 1.0,
                "enable_events": 1.0,
                "disable_events": 1.0,
-               "ping": 0.2}
+               "ping": 0.2,
+               "add_consumer": 1.0,
+               "cancel_consumer": 1.0,}
     option_list = Command.option_list + (
                 Option("--timeout", "-t", type="float", dest="timeout",
                     default=None,
@@ -224,7 +226,7 @@ class inspect(Command):
         i = inspect(destination=destination,
                     timeout=timeout,
                     callback=on_reply)
-        replies = getattr(i, command)()
+        replies = getattr(i, command)(*args[1:])
         if not replies:
             raise Error("No nodes replied within time constraint.")
         return replies
