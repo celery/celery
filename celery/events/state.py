@@ -44,6 +44,10 @@ class Worker(Element):
             if len(self.heartbeats) > self.heartbeat_max:
                 self.heartbeats = self.heartbeats[:self.heartbeat_max]
 
+    def __repr__(self):
+        return "<Worker: %s (%s)" % (self.hostname,
+                                     self.alive and "ONLINE" or "OFFLINE")
+
     @property
     def alive(self):
         return (self.heartbeats and
@@ -91,10 +95,6 @@ class Task(Element):
                         for key in fields
                             if getattr(self, key, None) is not None)
 
-    @property
-    def ready(self):
-        return self.state in states.READY_STATES
-
     def update(self, state, timestamp, fields):
         if self.worker:
             self.worker.on_heartbeat(timestamp=timestamp)
@@ -134,6 +134,13 @@ class Task(Element):
     def on_revoked(self, timestamp=None, **fields):
         self.revoked = timestamp
         self.update(states.REVOKED, timestamp, fields)
+
+    def __repr__(self):
+        return "<Task: %s(%s) %s>" % (self.name, self.uuid, self.state)
+
+    @property
+    def ready(self):
+        return self.state in states.READY_STATES
 
 
 class State(object):
