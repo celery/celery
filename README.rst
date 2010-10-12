@@ -31,14 +31,18 @@ language.  It can also `operate with other languages using webhooks`_.
 The recommended message broker is `RabbitMQ`_, but support for `Redis`_ and
 databases (`SQLAlchemy`_) is also available.
 
-Celery is easy to integrate with Django and Pylons, using
-the `django-celery`_ and `celery-pylons`_ add-on packages.
+Celery is easy to integrate with `Django`_, `Pylons`_ and `Flask`_, using
+the `django-celery`_, `celery-pylons`_ and `Flask-Celery`_ add-on packages.
 
 .. _`RabbitMQ`: http://www.rabbitmq.com/
 .. _`Redis`: http://code.google.com/p/redis/
 .. _`SQLAlchemy`: http://www.sqlalchemy.org/
+.. _`Django`: http://djangoproject.org/
+.. _`Pylons`: http://pylonshq.com/
+.. _`Flask`: http://flask.pocoo.org/
 .. _`django-celery`: http://pypi.python.org/pypi/django-celery
 .. _`celery-pylons`: http://bitbucket.org/ianschenck/celery-pylons
+.. _`Flask-Celery`: http://github.com/ask/flask-celery/
 .. _`operate with other languages using webhooks`:
     http://ask.github.com/celery/userguide/remote-tasks.html
 
