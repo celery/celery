@@ -225,11 +225,14 @@ class MultiTool(object):
                 callback(*node)
 
         self.note(self.colored.blue("> Stopping nodes..."))
-        for node in P:
-            nodename, _, pid = node
-            self.note("\t> %s: %s -> %s" % (nodename, SIGMAP[sig][3:], pid))
-            if not self.signal_node(nodename, pid, sig):
-                on_down(node)
+        for node in list(P):
+            if node in P:
+                nodename, _, pid = node
+                self.note("\t> %s: %s -> %s" % (nodename,
+                                                SIGMAP[sig][3:],
+                                                pid))
+                if not self.signal_node(nodename, pid, sig):
+                    on_down(node)
 
         def note_waiting():
             left = len(P)
