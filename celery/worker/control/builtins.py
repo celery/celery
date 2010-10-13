@@ -2,7 +2,6 @@ from datetime import datetime
 
 from celery import conf
 from celery import log
-from celery.backends import default_backend
 from celery.registry import tasks
 from celery.utils import timeutils
 from celery.worker import state

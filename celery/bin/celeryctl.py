@@ -187,7 +187,7 @@ class inspect(Command):
                "disable_events": 1.0,
                "ping": 0.2,
                "add_consumer": 1.0,
-               "cancel_consumer": 1.0,}
+               "cancel_consumer": 1.0}
     option_list = Command.option_list + (
                 Option("--timeout", "-t", type="float", dest="timeout",
                     default=None,
