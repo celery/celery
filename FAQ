@@ -267,7 +267,7 @@ I've discarded messages, but there are still messages left in the queue?
 as they are actually executed. After the worker has received a task, it will
 take some time until it is actually executed, especially if there are a lot
 of tasks already waiting for execution. Messages that are not acknowledged are
-hold on to by the worker until it closes the connection to the broker (AMQP
+held on to by the worker until it closes the connection to the broker (AMQP
 server). When that connection is closed (e.g because the worker was stopped)
 the tasks will be re-sent by the broker to the next available worker (or the
 same worker when it has been restarted), so to properly purge the queue of
