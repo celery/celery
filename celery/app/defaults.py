@@ -114,6 +114,7 @@ NAMESPACES = {
     },
     "CELERYBEAT": {
         "SCHEDULE": Option({}, type="dict"),
+        "SCHEDULER": Option("celery.beat.PersistentScheduler"),
         "SCHEDULE_FILENAME": Option("celerybeat-schedule"),
         "MAX_LOOP_INTERVAL": Option(5 * 60, type="int"),
         "LOG_LEVEL": Option("INFO"),

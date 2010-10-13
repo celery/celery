@@ -1084,14 +1084,25 @@ CELERYBEAT_SCHEDULE
 The periodic task schedule used by :mod:`~celery.bin.celerybeat`.
 See :ref:`beat-entries`.
 
+.. setting:: CELERYBEAT_SCHEDULER
+
+CELERYBEAT_SCHEDULER
+~~~~~~~~~~~~~~~~~~~~
+
+The default scheduler class.  Default is
+``"celery.beat.PersistentScheduler"``.
+
+Can also be set via the :option:`-S` argument to
+:mod:`~celery.bin.celerybeat`.
+
 .. setting:: CELERYBEAT_SCHEDULE_FILENAME
 
 CELERYBEAT_SCHEDULE_FILENAME
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Name of the file used to stores the last run times.
-Can be a relative or absolute path, but be aware that the suffix ``.db``
-may be appended to the file name (depending on Python version).
+Name of the file used by ``PersistentScheduler`` to store the last run times
+of periodic tasks.  Can be a relative or absolute path, but be aware that the
+suffix ``.db`` may be appended to the file name (depending on Python version).
 
 Can also be set via the :option:`--schedule` argument to
 :mod:`~celery.bin.celerybeat`.
