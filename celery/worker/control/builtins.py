@@ -118,7 +118,8 @@ def dump_schedule(panel, safe=False, **kwargs):
     for item in schedule.info():
         scheduled_tasks.append({"eta": item["eta"],
                                 "priority": item["priority"],
-                                "request": item["item"].info(safe=safe)})
+                                "request":
+                                    item["item"].args[0].info(safe=safe)})
     return scheduled_tasks
 
 
