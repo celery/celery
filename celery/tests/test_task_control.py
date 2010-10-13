@@ -103,11 +103,6 @@ class test_inspect(unittest.TestCase):
         self.assertIn("disable_events", MockBroadcastPublisher.sent)
 
     @with_mock_broadcast
-    def test_diagnose(self):
-        self.i.diagnose()
-        self.assertIn("diagnose", MockBroadcastPublisher.sent)
-
-    @with_mock_broadcast
     def test_ping(self):
         self.i.ping()
         self.assertIn("ping", MockBroadcastPublisher.sent)

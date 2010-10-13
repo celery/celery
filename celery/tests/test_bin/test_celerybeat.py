@@ -46,10 +46,6 @@ class test_Beat(unittest.TestCase):
         b = beatapp.Beat()
         b.init_loader()
 
-    def test_startup_info(self):
-        b = beatapp.Beat()
-        self.assertIn("@stderr", b.startup_info())
-
     def test_process_title(self):
         b = beatapp.Beat()
         b.set_process_title()
