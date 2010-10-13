@@ -153,7 +153,7 @@ class Scheduler(UserDict):
             try:
                 result = self.apply_async(entry, publisher=publisher)
             except Exception, exc:
-                self.logger.error("Message Error:\n%s" % (exc,
+                self.logger.error("Message Error: %s\n%s" % (exc,
                     traceback.format_stack()))
             else:
                 self.logger.debug("%s sent. id->%s" % (entry.task,
