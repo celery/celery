@@ -254,6 +254,10 @@ class Scheduler(UserDict):
     def schedule(self):
         return self.get_schedule()
 
+    @property
+    def info(self):
+        return ""
+
 
 class PersistentScheduler(Scheduler):
     persistence = shelve
@@ -279,6 +283,10 @@ class PersistentScheduler(Scheduler):
     def close(self):
         self.sync()
         self._store.close()
+
+    @property
+    def info(self):
+        return "    . db -> %s" % (self.schedule_filename, )
 
 
 class Service(object):
