@@ -998,7 +998,7 @@ The default is :const:`None` (``stderr``)
 CELERYD_LOG_LEVEL
 ~~~~~~~~~~~~~~~~~
 
-Worker log level, can be any of :const:`DEBUG`, :const:`INFO`, :const:`WARNING`,
+Worker log level, can be one of :const:`DEBUG`, :const:`INFO`, :const:`WARNING`,
 :const:`ERROR` or :const:`CRITICAL`.
 
 Can also be set via the :option:`--loglevel` argument to
@@ -1033,6 +1033,28 @@ Default is::
 
 See the Python :mod:`logging` module for more information about log
 formats.
+
+.. setting:: CELERY_REDIRECT_STDOUTS
+
+CELERY_REDIRECT_STDOUTS
+~~~~~~~~~~~~~~~~~~~~~~~
+
+If enabled ``stdout`` and ``stderr`` will be redirected
+to the current logger.
+
+Enabled by default.
+Used by :program:`celeryd` and :program:`celerybeat`.
+
+.. setting:: CELERY_REDIRECT_STDOUTS_LEVEL
+
+CELERY_REDIRECT_STDOUTS_LEVEL
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The loglevel output to ``stdout`` and ``stderr`` is logged as.
+Can be one of :const:`DEBUG`, :const:`INFO`, :const:`WARNING`,
+:const:`ERROR` or :const:`CRITICAL`.
+
+Default is :const:`WARNING`.
 
 .. _conf-custom-components:
 

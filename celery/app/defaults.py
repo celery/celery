@@ -92,6 +92,8 @@ NAMESPACES = {
         "TASK_ERROR_WHITELIST": Option((), type="tuple"),
         "TASK_SERIALIZER": Option("pickle"),
         "TRACK_STARTED": Option(False, type="bool"),
+        "REDIRECT_STDOUTS": Option(True, type="bool"),
+        "REDIRECT_STDOUTS_LEVEL": Option("WARNING"),
     },
     "CELERYD": {
         "CONCURRENCY": Option(0, type="int"),

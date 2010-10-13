@@ -27,7 +27,8 @@ class Beat(object):
 
     def __init__(self, loglevel=None, logfile=None, schedule=None,
             max_interval=None, scheduler_cls=None, app=None,
-            socket_timeout=30, **kwargs):
+            socket_timeout=30, redirect_stdouts=None,
+            redirect_stdouts_level=None, **kwargs):
         """Starts the celerybeat task scheduler."""
         self.app = app = app_or_default(app)
 
@@ -38,13 +39,17 @@ class Beat(object):
         self.max_interval = max_interval
         self.socket_timeout = socket_timeout
         self.colored = term.colored(enabled=app.conf.CELERYD_LOG_COLOR)
+        self.redirect_stdouts = (redirect_stdouts or
+                                 app.conf.CELERY_REDIRECT_STDOUTS)
+        self.redirect_stdouts_level = (redirect_stdouts_level or
+                                       app.conf.CELERY_REDIRECT_STDOUTS_LEVEL)
 
         if not isinstance(self.loglevel, int):
             self.loglevel = LOG_LEVELS[self.loglevel.upper()]
 
     def run(self):
         logger = self.setup_logging()
-        print(str(self.colored.magenta(
+        print(str(self.colored.cyan(
                     "celerybeat v%s is starting." % __version__)))
         self.init_loader()
         self.set_process_title()
@@ -55,8 +60,9 @@ class Beat(object):
                                                        logfile=self.logfile)
         if not handled:
             logger = self.app.log.get_default_logger(name="celery.beat")
-            self.app.log.redirect_stdouts_to_logger(logger,
-                                                    loglevel=logging.WARNING)
+            if self.redirect_stdouts:
+                self.app.log.redirect_stdouts_to_logger(logger,
+                        loglevel=self.redirect_stdouts_level)
         return logger
 
     def start_scheduler(self, logger=None):
@@ -67,8 +73,8 @@ class Beat(object):
                             scheduler_cls=self.scheduler_cls,
                             schedule_filename=self.schedule)
 
-        print(str(c.blue("__    ", c.red("-"),
-                  c.blue("    ... __   "), c.red("-"),
+        print(str(c.blue("__    ", c.magenta("-"),
+                  c.blue("    ... __   "), c.magenta("-"),
                   c.blue("        _\n"),
                   c.reset(self.startup_info(beat)))))
         if self.socket_timeout:
