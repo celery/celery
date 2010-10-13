@@ -198,20 +198,6 @@ class test_State(unittest.TestCase):
         self.assertEqual(task.result, "4")
         self.assertEqual(task.runtime, 0.1234)
 
-    def test_freeze_thaw__buffering(self):
-        s = State()
-        r = ev_snapshot(s)
-        s.freeze(buffer=True)
-        self.assertTrue(s._buffering)
-
-        r.play()
-        self.assertStateEmpty(s)
-        self.assertTrue(s.buffer)
-
-        s.thaw()
-        self.assertState(s)
-        self.assertFalse(s.buffer)
-
     def assertStateEmpty(self, state):
         self.assertFalse(state.tasks)
         self.assertFalse(state.workers)
@@ -224,37 +210,17 @@ class test_State(unittest.TestCase):
         self.assertTrue(state.event_count)
         self.assertTrue(state.task_count)
 
-    def test_thaw__no_replay(self):
-        s = State()
-        r = ev_snapshot(s)
-        s.freeze(buffer=True)
-
-        r.play()
-        s.thaw(replay=False)
-        self.assertFalse(s.buffer)
-        self.assertStateEmpty(s)
 
     def test_freeze_while(self):
         s = State()
         r = ev_snapshot(s)
+        r.play()
 
         def work():
-            r.play()
-            self.assertStateEmpty(s)
+            pass
 
-        s.freeze_while(work)
-        self.assertState(s)
-
-    def test_freeze_thaw__not_buffering(self):
-        s = State()
-        r = ev_snapshot(s)
-        s.freeze(buffer=False)
-        self.assertFalse(s._buffering)
-
-        r.play()
-        s.thaw(replay=True)
-        self.assertFalse(s.buffer)
-        self.assertStateEmpty(s)
+        s.freeze_while(work, clear_after=True)
+        self.assertFalse(s.event_count)
 
     def test_clear(self):
         r = ev_snapshot(State())
