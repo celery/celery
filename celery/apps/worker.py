@@ -13,7 +13,9 @@ from celery import signals
 from celery.exceptions import ImproperlyConfigured
 from celery.routes import Router
 from celery.task import discard_all
-from celery.utils import info, get_full_cls_name, LOG_LEVELS
+from celery.utils import get_full_cls_name, LOG_LEVELS
+from celery.utils import info
+from celery.utils import term
 from celery.worker import WorkController
 
 
@@ -43,7 +45,8 @@ class Worker(object):
             hostname=None, discard=False, run_clockservice=False,
             schedule=None, task_time_limit=None, task_soft_time_limit=None,
             max_tasks_per_child=None, queues=None, events=False, db=None,
-            include=None, defaults=None, pidfile=None, **kwargs):
+            include=None, defaults=None, pidfile=None,
+            redirect_stdouts=None, redirect_stdouts_level=None, **kwargs):
         if defaults is None:
             from celery import conf
             defaults = conf
@@ -64,11 +67,16 @@ class Worker(object):
                                      defaults.CELERYD_TASK_SOFT_TIME_LIMIT)
         self.max_tasks_per_child = (max_tasks_per_child or
                                     defaults.CELERYD_MAX_TASKS_PER_CHILD)
+        self.redirect_stdouts = (redirect_stdouts or
+                                 defaults.REDIRECT_STDOUTS)
+        self.redirect_stdouts_level = (redirect_stdouts_level or
+                                       defaults.REDIRECT_STDOUTS_LEVEL)
         self.db = db
         self.queues = queues or []
         self.include = include or []
         self.pidfile = pidfile
         self._isatty = sys.stdout.isatty()
+        self.colored = term.colored(enabled=defaults.CELERYD_LOG_COLOR)
 
         if isinstance(self.queues, basestring):
             self.queues = self.queues.split(",")
@@ -89,7 +97,8 @@ class Worker(object):
         self.init_queues()
         self.worker_init()
         self.redirect_stdouts_to_logger()
-        print("celery@%s v%s is starting." % (self.hostname, __version__))
+        print(str(self.colored.cyan(
+                "celery@%s v%s is starting." % (self.hostname, __version__))))
 
         if getattr(os, "geteuid", None) and os.geteuid() == 0:
             warnings.warn(
@@ -104,7 +113,7 @@ class Worker(object):
 
         # Dump configuration to screen so we have some basic information
         # for when users sends bug reports.
-        print(self.startup_info())
+        print(str(self.colored.reset(" \n", self.startup_info())))
         self.set_process_status("Running...")
 
         self.run_worker()
@@ -143,7 +152,9 @@ class Worker(object):
         # Redirect stdout/stderr to our logger.
         if not handled:
             logger = log.get_default_logger()
-            log.redirect_stdouts_to_logger(logger, loglevel=logging.WARNING)
+            if self.redirect_stdouts:
+                log.redirect_stdouts_to_logger(logger,
+                        loglevel=self.redirect_stdouts_level)
 
     def purge_messages(self):
         discarded_count = discard_all()

@@ -31,6 +31,8 @@ _DEFAULTS = {
     "BROKER_USER": "guest",
     "BROKER_PASSWORD": "guest",
     "BROKER_VHOST": "/",
+    "CELERY_REDIRECT_STDOUTS": True,
+    "CELERY_REDIRECT_STDOUTS_LEVEL": "WARNING",
     "CELERY_RESULT_BACKEND": "database",
     "CELERY_ALWAYS_EAGER": False,
     "CELERY_EAGER_PROPAGATES_EXCEPTIONS": False,
@@ -139,6 +141,8 @@ def prepare(m, source=settings, defaults=_DEFAULTS):
     m.IGNORE_RESULT = _get("CELERY_IGNORE_RESULT")
     m.TRACK_STARTED = _get("CELERY_TRACK_STARTED")
     m.ACKS_LATE = _get("CELERY_ACKS_LATE")
+    m.REDIRECT_STDOUTS = _get("CELERY_REDIRECT_STDOUTS")
+    m.REDIRECT_STDOUTS_LEVEL = _get("CELERY_REDIRECT_STDOUTS_LEVEL")
 
     # Make sure TASK_RESULT_EXPIRES is a timedelta.
     if isinstance(m.TASK_RESULT_EXPIRES, int):

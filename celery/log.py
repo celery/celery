@@ -11,7 +11,7 @@ from multiprocessing import util as mputil
 
 from celery import conf
 from celery import signals
-from celery.utils import noop
+from celery.utils import noop, LOG_LEVELS
 from celery.utils.compat import LoggerAdapter
 from celery.utils.patch import ensure_process_aware_logger
 from celery.utils.term import colored
@@ -196,6 +196,8 @@ class LoggingProxy(object):
     def __init__(self, logger, loglevel=None):
         self.logger = logger
         self.loglevel = loglevel or self.logger.level or self.loglevel
+        if not isinstance(self.loglevel, int):
+            self.loglevel = LOG_LEVELS[self.loglevel.upper()]
         self._safewrap_handlers()
 
     def _safewrap_handlers(self):
