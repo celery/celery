@@ -14,6 +14,7 @@ from celery.utils.timeutils import rate
 class Polaroid(object):
     shutter_signal = Signal(providing_args=("state", ))
     cleanup_signal = Signal()
+    clear_after = False
 
     _tref = None
 
@@ -51,10 +52,9 @@ class Polaroid(object):
             self.debug("Shutter: %s" % (self.state, ))
             self.shutter_signal.send(self.state)
             self.on_shutter(self.state)
-            self.state.clear()
 
     def capture(self):
-        return self.state.freeze_while(self.shutter)
+        self.state.freeze_while(self.shutter, clear_after=self.clear_after)
 
     def cancel(self):
         if self._tref:
