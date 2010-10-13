@@ -32,7 +32,7 @@ class Beat(object):
         self.loglevel = loglevel or defaults.CELERYBEAT_LOG_LEVEL
         self.logfile = logfile or defaults.CELERYBEAT_LOG_FILE
         self.schedule = schedule or defaults.CELERYBEAT_SCHEDULE_FILENAME
-        self.scheduler_cls = scheduler_cls
+        self.scheduler_cls = scheduler_cls or defaults.CELERYBEAT_SCHEDULER
         self.max_interval = max_interval
         self.socket_timeout = socket_timeout
 
