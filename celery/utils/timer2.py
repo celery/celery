@@ -44,6 +44,12 @@ class Entry(object):
         self.tref.cancelled = True
 
 
+def to_timestamp(d):
+    if isinstance(d, datetime):
+        return mktime(d.timetuple())
+    return d
+
+
 class Schedule(object):
     """ETA scheduler."""
     on_error = None
@@ -66,12 +72,16 @@ class Schedule(object):
         :keyword priority: Unused.
 
         """
-        if isinstance(eta, datetime):
-            try:
-                eta = mktime(eta.timetuple())
-            except OverflowError:
-                self.handle_error(sys.exc_info())
-        eta = eta or time()
+        try:
+            eta = to_timestamp(eta)
+        except OverflowError:
+            self.handle_error(sys.exc_info())
+            return
+
+        if eta is None:
+            # schedule now.
+            eta = time()
+
         heapq.heappush(self._queue, (eta, priority, entry))
         return entry
 
