@@ -248,7 +248,7 @@ class TimeoutHandler(PoolThread):
             if time.time() >= start + timeout:
                 return True
 
-        def _on_soft_timeout(job, i):
+        def _on_soft_timeout(job, i, soft_timeout):
             debug('soft time limit exceeded for %i' % i)
             process, _index = _process_by_pid(job._worker_pid)
             if not process:
@@ -256,7 +256,7 @@ class TimeoutHandler(PoolThread):
 
             # Run timeout callback
             if job._timeout_callback is not None:
-                job._timeout_callback(soft=True)
+                job._timeout_callback(soft=True, timeout=soft_timeout)
 
             try:
                 os.kill(job._worker_pid, SIG_SOFT_TIMEOUT)
@@ -268,15 +268,15 @@ class TimeoutHandler(PoolThread):
 
             dirty.add(i)
 
-        def _on_hard_timeout(job, i):
+        def _on_hard_timeout(job, i, hard_timeout):
             debug('hard time limit exceeded for %i', i)
             # Remove from _pool
             process, _index = _process_by_pid(job._worker_pid)
             # Remove from cache and set return value to an exception
-            job._set(i, (False, TimeLimitExceeded()))
+            job._set(i, (False, TimeLimitExceeded(hard_timeout)))
             # Run timeout callback
             if job._timeout_callback is not None:
-                job._timeout_callback(soft=False)
+                job._timeout_callback(soft=False, timeout=hard_timeout)
             if not process:
                 return
             # Terminate the process
@@ -291,10 +291,16 @@ class TimeoutHandler(PoolThread):
 
             for i, job in cache.items():
                 ack_time = job._time_accepted
-                if _timed_out(ack_time, t_hard):
-                    _on_hard_timeout(job, i)
-                elif i not in dirty and _timed_out(ack_time, t_soft):
-                    _on_soft_timeout(job, i)
+                soft_timeout = job._soft_timeout
+                if soft_timeout is None:
+                    soft_timeout = t_soft
+                hard_timeout = job._timeout
+                if hard_timeout is None:
+                    hard_timeout = t_hard
+                if _timed_out(ack_time, hard_timeout):
+                    _on_hard_timeout(job, i, hard_timeout)
+                elif i not in dirty and _timed_out(ack_time, soft_timeout):
+                    _on_soft_timeout(job, i, soft_timeout)
 
             time.sleep(0.5)                     # Don't waste CPU cycles.
 
@@ -460,7 +466,7 @@ class Pool(object):
         self._task_handler.start()
 
         # Thread killing timedout jobs.
-        if self.timeout or self.soft_timeout:
+        if self.timeout is not None or self.soft_timeout is not None:
             self._timeout_handler = self.TimeoutHandler(
                     self._pool, self._cache,
                     self.soft_timeout, self.timeout)
@@ -610,7 +616,8 @@ class Pool(object):
 
     def apply_async(self, func, args=(), kwds={},
             callback=None, accept_callback=None, timeout_callback=None,
-            waitforslot=False, error_callback=None):
+            waitforslot=False, error_callback=None,
+            soft_timeout=None, timeout=None):
         '''
         Asynchronous equivalent of `apply()` builtin.
 
@@ -629,7 +636,7 @@ class Pool(object):
         assert self._state == RUN
         result = ApplyResult(self._cache, callback,
                              accept_callback, timeout_callback,
-                             error_callback)
+                             error_callback, soft_timeout, timeout)
         if waitforslot:
             self._putlock.acquire()
         self._taskqueue.put(([(result._job, None, func, args, kwds)], None))
@@ -763,7 +770,8 @@ DynamicPool = Pool
 class ApplyResult(object):
 
     def __init__(self, cache, callback, accept_callback=None,
-            timeout_callback=None, error_callback=None):
+            timeout_callback=None, error_callback=None, soft_timeout=None,
+            timeout=None):
         self._cond = threading.Condition(threading.Lock())
         self._job = job_counter.next()
         self._cache = cache
@@ -772,6 +780,8 @@ class ApplyResult(object):
         self._accept_callback = accept_callback
         self._errback = error_callback
         self._timeout_callback = timeout_callback
+        self._timeout = timeout
+        self._soft_timeout = soft_timeout
 
         self._accepted = False
         self._worker_pid = None

@@ -103,7 +103,7 @@ class TaskPool(object):
 
     def apply_async(self, target, args=None, kwargs=None, callbacks=None,
             errbacks=None, accept_callback=None, timeout_callback=None,
-            **compat):
+            soft_timeout=None, timeout=None, **compat):
         """Equivalent of the :func:``apply`` built-in function.
 
         All ``callbacks`` and ``errbacks`` should complete immediately since
@@ -126,7 +126,9 @@ class TaskPool(object):
                                       accept_callback=accept_callback,
                                       timeout_callback=timeout_callback,
                                       error_callback=on_worker_error,
-                                      waitforslot=self.putlocks)
+                                      waitforslot=self.putlocks,
+                                      soft_timeout=soft_timeout,
+                                      timeout=timeout)
 
     def on_worker_error(self, errbacks, exc):
         einfo = ExceptionInfo((exc.__class__, exc, None))

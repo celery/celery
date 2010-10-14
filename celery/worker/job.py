@@ -378,7 +378,9 @@ class TaskRequest(object):
                                   accept_callback=self.on_accepted,
                                   timeout_callback=self.on_timeout,
                                   callbacks=[self.on_success],
-                                  errbacks=[self.on_failure])
+                                  errbacks=[self.on_failure],
+                                  soft_timeout=self.task.soft_time_limit,
+                                  timeout=self.task.time_limit)
         return result
 
     def on_accepted(self):
@@ -389,16 +391,16 @@ class TaskRequest(object):
         self.logger.debug("Task accepted: %s[%s]" % (
             self.task_name, self.task_id))
 
-    def on_timeout(self, soft):
+    def on_timeout(self, soft, timeout):
         state.task_ready(self)
         if soft:
-            self.logger.warning("Soft time limit exceeded for %s[%s]" % (
-                self.task_name, self.task_id))
-            exc = SoftTimeLimitExceeded()
+            self.logger.warning("Soft time limit (%s) exceeded for %s[%s]" % (
+                timeout, self.task_name, self.task_id))
+            exc = SoftTimeLimitExceeded(timeout)
         else:
-            self.logger.error("Hard time limit exceeded for %s[%s]" % (
-                self.task_name, self.task_id))
-            exc = TimeLimitExceeded()
+            self.logger.error("Hard time limit (%s) exceeded for %s[%s]" % (
+                timeout, self.task_name, self.task_id))
+            exc = TimeLimitExceeded(timeout)
 
         self.task.backend.mark_as_failure(self.task_id, exc)
 

@@ -215,6 +215,16 @@ class Task(object):
 
         Default task expiry time in seconds or a :class:`~datetime.datetime`.
 
+    .. attribute:: time_limit
+
+        Hard time limit.  Defaults to the :setting:`CELERY_TASK_TIME_LIMIT`
+        setting.
+
+    .. attribute:: soft_time_limit
+
+        Soft time limit.  Defaults to the
+        :setting:`CELERY_TASK_SOFT_TIME_LIMIT` setting.
+
     """
     __metaclass__ = TaskType
 
@@ -245,6 +255,8 @@ class Task(object):
     backend = default_backend
     track_started = conf.TRACK_STARTED
     acks_late = conf.ACKS_LATE
+    time_limit = None
+    soft_time_limit = None
 
     MaxRetriesExceededError = MaxRetriesExceededError
 
