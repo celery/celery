@@ -67,6 +67,7 @@
     terminated and replaced by a new worker.
 
 """
+import sys
 import multiprocessing
 
 from celery.bin.base import Command, Option
@@ -155,7 +156,6 @@ def main():
     multiprocessing.freeze_support()
     worker = WorkerCommand()
     worker.execute_from_commandline()
-
 
 
 def windows_main():

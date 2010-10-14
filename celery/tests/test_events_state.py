@@ -210,7 +210,6 @@ class test_State(unittest.TestCase):
         self.assertTrue(state.event_count)
         self.assertTrue(state.task_count)
 
-
     def test_freeze_while(self):
         s = State()
         r = ev_snapshot(s)

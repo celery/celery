@@ -1,7 +1,6 @@
 import time
 import heapq
 
-from collections import deque
 from threading import Lock
 
 from carrot.utils import partition
