@@ -35,4 +35,4 @@ def get_consumer_set(connection, queues=None, **options):
 
     """
     # FIXME: Deprecate!
-    return default_app.amqp.get_consumer_set(connection, queues, **options)
+    return default_app.amqp.get_task_consumer(connection, queues, **options)

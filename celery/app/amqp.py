@@ -206,14 +206,13 @@ class AMQP(object):
         # Make sure all queues are declared.
         global _queues_declared
         if not _queues_declared:
-            consumers = self.get_consumer_set(publisher.connection)
-            consumers.close()
+            self.get_task_consumer(publisher.connection).close()
             _queues_declared = True
         publisher.declare()
 
         return publisher
 
-    def get_consumer_set(self, connection, queues=None, **options):
+    def get_task_consumer(self, connection, queues=None, **options):
         queues = queues or self.queues
 
         cset = self.ConsumerSet(connection)

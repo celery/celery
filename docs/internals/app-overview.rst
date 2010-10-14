@@ -77,7 +77,7 @@ Other interesting attributes::
     >>> celery.amqp
     >>> celery.amqp.Router
     >>> celery.amqp.get_queues()
-    >>> celery.amqp.get_consumer_set()
+    >>> celery.amqp.get_task_consumer()
 
     # Loader
     >>> celery.loader
@@ -118,7 +118,7 @@ Aliases (Pending deprecation)
 * celery.messaging
     * .establish_connection -> {app.broker_connection}
     * .with_connection -> {app.with_connection}
-    * .get_consumer_set -> {app.amqp.get_consumer_set}
+    * .get_consumer_set -> {app.amqp.get_task_consumer}
     * .TaskPublisher -> {app.amqp.TaskPublisher}
     * .TaskConsumer -> {app.amqp.TaskConsumer}
     * .ConsumerSet -> {app.amqp.ConsumerSet}

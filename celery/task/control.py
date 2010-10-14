@@ -86,11 +86,11 @@ class Control(object):
         """
 
         def _do_discard(connection=None, connect_timeout=None):
-            consumers = self.app.amqp.get_consumer_set(connection=connection)
+            consumer = self.app.amqp.get_task_consumer(connection=connection)
             try:
-                return consumers.discard_all()
+                return consumer.discard_all()
             finally:
-                consumers.close()
+                consumer.close()
 
         return self.app.with_default_connection(_do_discard)(
                 connection=connection, connect_timeout=connect_timeout)
