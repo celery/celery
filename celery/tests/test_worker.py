@@ -371,6 +371,7 @@ class test_CarrotListener(unittest.TestCase):
         l.qos = QoS(l.task_consumer, l.initial_prefetch_count, l.logger)
         l.event_dispatcher = MockEventDispatcher()
         l.receive_message(m.decode(), m)
+        l.eta_schedule.stop()
 
         items = [entry[2] for entry in self.eta_schedule.queue]
         found = 0
@@ -431,7 +432,7 @@ class test_CarrotListener(unittest.TestCase):
         self.assertTrue(dispatcher.flushed)
         l.event_dispatcher = MockEventDispatcher()
         l.receive_message(m.decode(), m)
-
+        l.eta_schedule.stop()
         in_hold = self.eta_schedule.queue[0]
         self.assertEqual(len(in_hold), 3)
         eta, priority, entry = in_hold
