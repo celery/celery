@@ -1,31 +1,7 @@
 #!/usr/bin/env python
-import sys
-
-from celery.bin import celeryd
-
-WINDOWS_MESSAGE = """
-
-The celeryd command does not work on Windows.
-
-Instead, please use:
-
-    ..> python -m celery.bin.celeryd
-
-You can also supply arguments:
-
-    ..> python -m celery.bin.celeryd --concurrency=10 --loglevel=DEBUG
-
-
-"""
-
-def main():
-    if sys.platform == "win32":
-        sys.stderr.write(WINDOWS_MESSAGE)
-        sys.exit()
-
-    celeryd.main()
 
 if __name__ == "__main__":
-    import multiprocessing
-    multiprocessing.freeze_support()
-    main()
+    from celery.bin import celeryd
+    from multiprocessing import freeze_support
+    freeze_support()
+    celeryd.main()

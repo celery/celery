@@ -156,5 +156,24 @@ def main():
     worker = WorkerCommand()
     worker.execute_from_commandline()
 
+
+
+def windows_main():
+    sys.stderr.write("""
+
+The celeryd command does not work on Windows.
+
+Instead, please use:
+
+    ..> python -m celery.bin.celeryd
+
+You can also supply arguments:
+
+    ..> python -m celery.bin.celeryd --concurrency=10 --loglevel=DEBUG
+
+
+    """.strip())
+
+
 if __name__ == "__main__":          # pragma: no cover
     main()
