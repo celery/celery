@@ -17,6 +17,7 @@ from celery.utils import gen_unique_id
 from celery.worker import WorkController
 from celery.worker.buckets import FastQueue
 from celery.worker.job import TaskRequest
+from celery.worker import listener
 from celery.worker.listener import CarrotListener, QoS, RUN
 
 from celery.tests.compat import catch_warnings
@@ -279,6 +280,31 @@ class test_CarrotListener(unittest.TestCase):
         context = catch_warnings(record=True)
         execute_context(context, with_catch_warnings)
 
+    def test_receive_message_eta_OverflowError(self):
+        l = MyCarrotListener(self.ready_queue, self.eta_schedule, self.logger,
+                             send_events=False)
+        backend = MockBackend()
+        called = [False]
+
+        def to_timestamp(d):
+            called[0] = True
+            raise OverflowError()
+
+        m = create_message(backend, task=foo_task.name,
+                                    args=("2, 2"),
+                                    kwargs={},
+                                    eta=datetime.now().isoformat())
+        l.event_dispatcher = MockEventDispatcher()
+        l.control_dispatch = MockControlDispatch()
+
+        prev, listener.to_timestamp = listener.to_timestamp, to_timestamp
+        try:
+            l.receive_message(m.decode(), m)
+            self.assertTrue(m.acknowledged)
+            self.assertTrue(called[0])
+        finally:
+            listener.to_timestamp = prev
+
     def test_receive_message_InvalidTaskError(self):
         logger = MockLogger()
         l = MyCarrotListener(self.ready_queue, self.eta_schedule, logger,
@@ -336,7 +362,7 @@ class test_CarrotListener(unittest.TestCase):
                 self.prefetch_count_incremented = True
 
         l = MyCarrotListener(self.ready_queue, self.eta_schedule, self.logger,
-                           send_events=False)
+                             send_events=False)
         backend = MockBackend()
         m = create_message(backend, task=foo_task.name,
                            eta=datetime.now().isoformat(),

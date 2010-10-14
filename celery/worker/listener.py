@@ -91,6 +91,7 @@ from celery.messaging import get_consumer_set, BroadcastConsumer
 from celery.exceptions import NotRegistered
 from celery.datastructures import SharedCounter
 from celery.utils.info import get_broker_info
+from celery.utils.timer2 import to_timestamp
 
 RUN = 0x1
 CLOSE = 0x2
@@ -269,9 +270,17 @@ class CarrotListener(object):
                 expires=task.expires and task.expires.isoformat())
 
         if task.eta:
-            self.qos.increment()
-            self.eta_schedule.apply_at(task.eta,
-                                       self.apply_eta_task, (task, ))
+            try:
+                eta = to_timestamp(task.eta)
+            except OverflowError, exc:
+                self.logger.error(
+                    "Couldn't convert eta %s to timestamp: %r. Task: %r" % (
+                        task.eta, exc, task.info(safe=True)))
+                task.acknowledge()
+            else:
+                self.qos.increment()
+                self.eta_schedule.apply_at(eta,
+                                           self.apply_eta_task, (task, ))
         else:
             self.ready_queue.put(task)
 
