@@ -135,14 +135,15 @@ class Scheduler(UserDict):
     Publisher = TaskPublisher
 
     def __init__(self, schedule=None, logger=None, max_interval=None,
-            **kwargs):
+            lazy=False, **kwargs):
         UserDict.__init__(self)
         if schedule is None:
             schedule = {}
         self.data = schedule
         self.logger = logger or log.get_default_logger(name="celery.beat")
         self.max_interval = max_interval or conf.CELERYBEAT_MAX_LOOP_INTERVAL
-        self.setup_schedule()
+        if not lazy:
+            self.setup_schedule()
 
     def maybe_due(self, entry, publisher=None):
         is_due, next_time_to_run = entry.is_due()
@@ -340,15 +341,21 @@ class Service(object):
         self._shutdown.set()
         wait and self._stopped.wait()           # block until shutdown done.
 
+    def get_scheduler(self, lazy=False):
+        filename = self.schedule_filename
+        scheduler = instantiate(self.scheduler_cls,
+                                      schedule_filename=filename,
+                                      logger=self.logger,
+                                      max_interval=self.max_interval,
+                                      lazy=lazy)
+        if not lazy:
+            scheduler.update_from_dict(self.schedule)
+        return scheduler
+
     @property
     def scheduler(self):
         if self._scheduler is None:
-            filename = self.schedule_filename
-            self._scheduler = instantiate(self.scheduler_cls,
-                                          schedule_filename=filename,
-                                          logger=self.logger,
-                                          max_interval=self.max_interval)
-            self._scheduler.update_from_dict(self.schedule)
+            self._scheduler = self.get_scheduler()
         return self._scheduler
 
 

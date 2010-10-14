@@ -7,8 +7,6 @@ from celery.concurrency import processes as mp
 from celery.datastructures import ExceptionInfo
 from celery.utils import noop
 
-from celery.tests.utils import skip_if_quick
-
 
 class Object(object):   # for writeable attributes.
 

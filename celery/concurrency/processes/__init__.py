@@ -5,8 +5,6 @@ Process Pools.
 """
 import traceback
 
-from time import sleep, time
-
 from celery import log
 from celery.datastructures import ExceptionInfo
 from celery.utils.functional import curry
