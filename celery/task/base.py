@@ -439,7 +439,7 @@ class BaseTask(object):
         options = router.route(options, self.name, args, kwargs)
         exchange = options.get("exchange")
         exchange_type = options.get("exchange_type")
-        expires = expires or task.expires
+        expires = expires or self.expires
 
         publish = publisher or self.get_publisher(connection,
                                                   exchange=exchange,

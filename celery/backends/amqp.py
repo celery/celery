@@ -18,11 +18,6 @@ class AMQResultWarning(UserWarning):
 
 
 class ResultPublisher(Publisher):
-    exchange = conf.RESULT_EXCHANGE
-    exchange_type = conf.RESULT_EXCHANGE_TYPE
-    delivery_mode = conf.RESULT_PERSISTENT and 2 or 1
-    serializer = conf.RESULT_SERIALIZER
-    durable = conf.RESULT_PERSISTENT
     auto_delete = True
 
     def __init__(self, connection, task_id, **kwargs):

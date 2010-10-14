@@ -40,7 +40,7 @@ def disable_stdouts(fun):
 class _WorkController(object):
 
     def __init__(self, *args, **kwargs):
-        self.logger = log.get_default_logger()
+        self.logger = app_or_default().log.get_default_logger()
 
     def start(self):
         pass

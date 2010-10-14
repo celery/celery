@@ -37,7 +37,7 @@ class Beat(object):
         self.scheduler_cls = scheduler_cls or app.conf.CELERYBEAT_SCHEDULER
         self.max_interval = max_interval
         self.socket_timeout = socket_timeout
-        self.colored = term.colored(enabled=defaults.CELERYD_LOG_COLOR)
+        self.colored = term.colored(enabled=app.conf.CELERYD_LOG_COLOR)
 
         if not isinstance(self.loglevel, int):
             self.loglevel = LOG_LEVELS[self.loglevel.upper()]
