@@ -67,7 +67,7 @@ class Worker(object):
         self.include = include or []
         self.pidfile = pidfile
         self._isatty = sys.stdout.isatty()
-        self.colored = term.colored(enabled=defaults.CELERYD_LOG_COLOR)
+        self.colored = term.colored(enabled=app.conf.CELERYD_LOG_COLOR)
 
         if isinstance(self.use_queues, basestring):
             self.use_queues = self.use_queues.split(",")

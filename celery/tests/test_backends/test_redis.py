@@ -7,6 +7,7 @@ from nose import SkipTest
 from celery.exceptions import ImproperlyConfigured
 
 from celery import states
+from celery.app import app_or_default
 from celery.utils import gen_unique_id
 from celery.backends import pyredis
 from celery.backends.pyredis import RedisBackend
@@ -141,16 +142,3 @@ class TestTyrantBackendNoTyrant(unittest.TestCase):
             self.assertRaises(ImproperlyConfigured, pyredis.RedisBackend)
         finally:
             pyredis.redis = prev
-
-    def test_constructor_raises_if_not_host_or_port(self):
-        from celery.backends import pyredis
-        from celery.loaders import load_settings
-
-        settings = load_settings()
-        prev_host, settings.REDIS_HOST = settings.REDIS_HOST, None
-        prev_port, settings.REDIS_PORT = settings.REDIS_PORT, None
-        try:
-            self.assertRaises(ImproperlyConfigured, pyredis.RedisBackend)
-        finally:
-            settings.REDIS_HOST = prev_host
-            settings.REDIS_PORT = prev_port

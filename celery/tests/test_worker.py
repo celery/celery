@@ -154,7 +154,7 @@ class test_QoS(unittest.TestCase):
 
     def test_decrement(self):
         consumer = self.MockConsumer()
-        qos = QoS(consumer, 10, app_or_default().get_default_logger())
+        qos = QoS(consumer, 10, app_or_default().log.get_default_logger())
         qos.update()
         self.assertEqual(int(qos.value), 10)
         self.assertEqual(consumer.prefetch_count, 10)
