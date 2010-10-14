@@ -7,11 +7,21 @@ from celery import platforms
 from celery.app import app_or_default
 from celery.bin import celerybeat as celerybeat_bin
 from celery.apps import beat as beatapp
+from celery.utils.compat import defaultdict
+
+
+class MockedShelveModule(object):
+    shelves = defaultdict(lambda: {})
+
+    def open(self, filename, *args, **kwargs):
+        return self.shelves[filename]
+mocked_shelve = MockedShelveModule()
 
 
 class MockService(beat.Service):
     started = False
     in_sync = False
+    persistence = mocked_shelve
 
     def start(self):
         self.__class__.started = True
