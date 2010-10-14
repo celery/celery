@@ -76,32 +76,6 @@ class TaskPool(object):
             self._pool.terminate()
             self._pool = None
 
-    def diagnose(self, timeout=None):
-        pids = set(worker.pid for worker in self._pool._pool)
-        seen = set()
-        results = {}
-        time_start = time()
-
-        def callback(i):
-            for pid in results[i].worker_pids():
-                seen.add(pid)
-
-        i = 0
-        while pids ^ seen:
-            print("%r > %r" % (time() - time_start, timeout))
-            if timeout and time() - time_start > timeout:
-                print("TIMED OUT i==%r" % (i, ))
-                break
-            results[i] = self._pool.apply_async(pingback,
-                                                args=(i, ),
-                                                callback=callback)
-            sleep(0.1)
-            i += 1
-
-        return {"active": list(seen),
-                "waiting": list(pids ^ seen),
-                "iterations": i}
-
     def apply_async(self, target, args=None, kwargs=None, callbacks=None,
             errbacks=None, accept_callback=None, timeout_callback=None,
             **compat):
