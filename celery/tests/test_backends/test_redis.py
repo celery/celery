@@ -144,12 +144,13 @@ class TestTyrantBackendNoTyrant(unittest.TestCase):
 
     def test_constructor_raises_if_not_host_or_port(self):
         from celery.backends import pyredis
-        prev_host = pyredis.RedisBackend.redis_host
-        prev_port = pyredis.RedisBackend.redis_port
-        pyredis.RedisBackend.redis_host = None
-        pyredis.RedisBackend.redis_port = None
+        from celery.loaders import load_settings
+
+        settings = load_settings()
+        prev_host, settings.REDIS_HOST = settings.REDIS_HOST, None
+        prev_port, settings.REDIS_PORT = settings.REDIS_PORT, None
         try:
             self.assertRaises(ImproperlyConfigured, pyredis.RedisBackend)
         finally:
-            pyredis.RedisBackend.redis_host = prev_host
-            pyredis.RedisBackend.redis_port = prev_port
+            settings.REDIS_HOST = prev_host
+            settings.REDIS_PORT = prev_port
