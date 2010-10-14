@@ -2,7 +2,6 @@ import socket
 import unittest2 as unittest
 
 from datetime import datetime, timedelta
-from multiprocessing import get_logger
 from Queue import Empty
 
 from carrot.backends.base import BaseMessage
@@ -10,6 +9,7 @@ from carrot.connection import BrokerConnection
 from celery.utils.timer2 import Timer
 
 from celery import conf
+from celery import log
 from celery.decorators import task as task_dec
 from celery.decorators import periodic_task as periodic_task_dec
 from celery.serialization import pickle
@@ -155,7 +155,7 @@ class test_QoS(unittest.TestCase):
 
     def test_decrement(self):
         consumer = self.MockConsumer()
-        qos = QoS(consumer, 10, get_logger())
+        qos = QoS(consumer, 10, log.get_default_logger())
         qos.update()
         self.assertEqual(int(qos.value), 10)
         self.assertEqual(consumer.prefetch_count, 10)
@@ -172,7 +172,7 @@ class test_CarrotListener(unittest.TestCase):
     def setUp(self):
         self.ready_queue = FastQueue()
         self.eta_schedule = Timer()
-        self.logger = get_logger()
+        self.logger = log.get_default_logger()
         self.logger.setLevel(0)
 
     def tearDown(self):

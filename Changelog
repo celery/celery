@@ -58,6 +58,8 @@ Fixes
   to ``cache.set`` is deprecated by the memcached libraries,
   so we now automatically cast to :class:`int`.
 
+* unittests: No longer emits logging and warnings in test output.
+
 News
 ----
 
