@@ -176,13 +176,3 @@ class test_TaskPool(unittest.TestCase):
         info = pool.info
         self.assertEqual(info["max-concurrency"], pool.limit)
         self.assertEqual(len(info["processes"]), pool.limit)
-
-    @skip_if_quick
-    def test_diagnose(self):
-        pool = ExeMockTaskPool(10)
-        pool.start()
-
-        r = pool.diagnose(timeout=None)
-        self.assertEqual(len(r["active"]), pool.limit)
-        self.assertFalse(r["waiting"])
-        self.assertTrue(r["iterations"])
