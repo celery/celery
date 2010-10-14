@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 
@@ -9,6 +10,9 @@ os.environ["CELERY_LOADER"] = "default"
 
 
 def teardown():
+    # Don't want SUBDEBUG log messages at finalization.
+    from multiprocessing.util import get_logger
+    get_logger().setLevel(logging.WARNING)
     import threading
     import os
     if os.path.exists("test.db"):
