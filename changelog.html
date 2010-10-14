@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Change history &mdash; Celery v2.1.0 documentation</title>
+    <title>Change history &mdash; Celery v2.1.1 documentation</title>
     <link rel="stylesheet" href="static/celery.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '2.1.0',
+        VERSION:     '2.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.0 documentation" href="index.html" />
+    <link rel="top" title="Celery v2.1.1 documentation" href="index.html" />
     <link rel="next" title="Interesting Links" href="links.html" />
     <link rel="prev" title="Platform Specific - celery.platforms" href="internals/reference/celery.platforms.html" /> 
   </head>
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="internals/reference/celery.platforms.html" title="Platform Specific - celery.platforms"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Celery v2.1.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v2.1.1 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -55,104 +55,253 @@
 <h1>Change history<a class="headerlink" href="#change-history" title="Permalink to this headline">¶</a></h1>
 <div class="contents local topic" id="contents">
 <ul class="simple">
-<li><a class="reference external" href="#version-2-1-0" id="id54">2.1.0</a><ul>
-<li><a class="reference external" href="#important-notes" id="id55">Important Notes</a></li>
-<li><a class="reference external" href="#news" id="id56">News</a></li>
-<li><a class="reference external" href="#fixes" id="id57">Fixes</a></li>
-<li><a class="reference external" href="#experimental" id="id58">Experimental</a></li>
-<li><a class="reference external" href="#documentation" id="id59">Documentation</a></li>
+<li><a class="reference external" href="#version-2-1-1" id="id57">2.1.1</a><ul>
+<li><a class="reference external" href="#fixes" id="id58">Fixes</a></li>
+<li><a class="reference external" href="#news" id="id59">News</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#version-2-0-3" id="id60">2.0.3</a><ul>
-<li><a class="reference external" href="#v203-fixes" id="id61">Fixes</a></li>
-<li><a class="reference external" href="#v203-documentation" id="id62">Documentation</a></li>
+<li><a class="reference external" href="#version-2-1-0" id="id60">2.1.0</a><ul>
+<li><a class="reference external" href="#important-notes" id="id61">Important Notes</a></li>
+<li><a class="reference external" href="#v210-news" id="id62">News</a></li>
+<li><a class="reference external" href="#v210-fixes" id="id63">Fixes</a></li>
+<li><a class="reference external" href="#experimental" id="id64">Experimental</a></li>
+<li><a class="reference external" href="#documentation" id="id65">Documentation</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#version-2-0-2" id="id63">2.0.2</a></li>
-<li><a class="reference external" href="#version-2-0-1" id="id64">2.0.1</a></li>
-<li><a class="reference external" href="#version-2-0-0" id="id65">2.0.0</a><ul>
-<li><a class="reference external" href="#foreword" id="id66">Foreword</a></li>
-<li><a class="reference external" href="#upgrading-for-django-users" id="id67">Upgrading for Django-users</a></li>
-<li><a class="reference external" href="#upgrading-for-others" id="id68">Upgrading for others</a><ul>
-<li><a class="reference external" href="#database-result-backend" id="id69">Database result backend</a></li>
-<li><a class="reference external" href="#cache-result-backend" id="id70">Cache result backend</a></li>
+<li><a class="reference external" href="#version-2-0-3" id="id66">2.0.3</a><ul>
+<li><a class="reference external" href="#v203-fixes" id="id67">Fixes</a></li>
+<li><a class="reference external" href="#v203-documentation" id="id68">Documentation</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#backward-incompatible-changes" id="id71">Backward incompatible changes</a></li>
-<li><a class="reference external" href="#v200-news" id="id72">News</a></li>
+<li><a class="reference external" href="#version-2-0-2" id="id69">2.0.2</a></li>
+<li><a class="reference external" href="#version-2-0-1" id="id70">2.0.1</a></li>
+<li><a class="reference external" href="#version-2-0-0" id="id71">2.0.0</a><ul>
+<li><a class="reference external" href="#foreword" id="id72">Foreword</a></li>
+<li><a class="reference external" href="#upgrading-for-django-users" id="id73">Upgrading for Django-users</a></li>
+<li><a class="reference external" href="#upgrading-for-others" id="id74">Upgrading for others</a><ul>
+<li><a class="reference external" href="#database-result-backend" id="id75">Database result backend</a></li>
+<li><a class="reference external" href="#cache-result-backend" id="id76">Cache result backend</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#version-1-0-6" id="id73">1.0.6</a></li>
-<li><a class="reference external" href="#version-1-0-5" id="id74">1.0.5</a><ul>
-<li><a class="reference external" href="#critical" id="id75">Critical</a></li>
-<li><a class="reference external" href="#changes" id="id76">Changes</a></li>
+<li><a class="reference external" href="#backward-incompatible-changes" id="id77">Backward incompatible changes</a></li>
+<li><a class="reference external" href="#v200-news" id="id78">News</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#version-1-0-4" id="id77">1.0.4</a></li>
-<li><a class="reference external" href="#version-1-0-3" id="id78">1.0.3</a><ul>
-<li><a class="reference external" href="#v103-important" id="id79">Important notes</a></li>
-<li><a class="reference external" href="#v103-news" id="id80">News</a></li>
-<li><a class="reference external" href="#remote-control-commands" id="id81">Remote control commands</a></li>
-<li><a class="reference external" href="#v103-fixes" id="id82">Fixes</a></li>
+<li><a class="reference external" href="#version-1-0-6" id="id79">1.0.6</a></li>
+<li><a class="reference external" href="#version-1-0-5" id="id80">1.0.5</a><ul>
+<li><a class="reference external" href="#critical" id="id81">Critical</a></li>
+<li><a class="reference external" href="#changes" id="id82">Changes</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#version-1-0-2" id="id83">1.0.2</a></li>
-<li><a class="reference external" href="#version-1-0-1" id="id84">1.0.1</a></li>
-<li><a class="reference external" href="#version-1-0-0" id="id85">1.0.0</a><ul>
-<li><a class="reference external" href="#v100-incompatible" id="id86">Backward incompatible changes</a></li>
-<li><a class="reference external" href="#deprecations" id="id87">Deprecations</a></li>
-<li><a class="reference external" href="#id20" id="id88">News</a></li>
-<li><a class="reference external" href="#v100-changes" id="id89">Changes</a></li>
-<li><a class="reference external" href="#bugs" id="id90">Bugs</a></li>
-<li><a class="reference external" href="#v100-documentation" id="id91">Documentation</a></li>
+<li><a class="reference external" href="#version-1-0-4" id="id83">1.0.4</a></li>
+<li><a class="reference external" href="#version-1-0-3" id="id84">1.0.3</a><ul>
+<li><a class="reference external" href="#v103-important" id="id85">Important notes</a></li>
+<li><a class="reference external" href="#v103-news" id="id86">News</a></li>
+<li><a class="reference external" href="#remote-control-commands" id="id87">Remote control commands</a></li>
+<li><a class="reference external" href="#v103-fixes" id="id88">Fixes</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#version-0-8-4" id="id92">0.8.4</a></li>
-<li><a class="reference external" href="#version-0-8-3" id="id93">0.8.3</a></li>
-<li><a class="reference external" href="#version-0-8-2" id="id94">0.8.2</a></li>
-<li><a class="reference external" href="#version-0-8-1" id="id95">0.8.1</a><ul>
-<li><a class="reference external" href="#very-important-note" id="id96">Very important note</a></li>
-<li><a class="reference external" href="#important-changes" id="id97">Important changes</a></li>
-<li><a class="reference external" href="#v081-changes" id="id98">Changes</a></li>
+<li><a class="reference external" href="#version-1-0-2" id="id89">1.0.2</a></li>
+<li><a class="reference external" href="#version-1-0-1" id="id90">1.0.1</a></li>
+<li><a class="reference external" href="#version-1-0-0" id="id91">1.0.0</a><ul>
+<li><a class="reference external" href="#v100-incompatible" id="id92">Backward incompatible changes</a></li>
+<li><a class="reference external" href="#deprecations" id="id93">Deprecations</a></li>
+<li><a class="reference external" href="#id23" id="id94">News</a></li>
+<li><a class="reference external" href="#v100-changes" id="id95">Changes</a></li>
+<li><a class="reference external" href="#bugs" id="id96">Bugs</a></li>
+<li><a class="reference external" href="#v100-documentation" id="id97">Documentation</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#version-0-8-0" id="id99">0.8.0</a><ul>
-<li><a class="reference external" href="#v080-incompatible" id="id100">Backward incompatible changes</a></li>
-<li><a class="reference external" href="#v080-important" id="id101">Important changes</a></li>
-<li><a class="reference external" href="#v080-news" id="id102">News</a></li>
+<li><a class="reference external" href="#version-0-8-4" id="id98">0.8.4</a></li>
+<li><a class="reference external" href="#version-0-8-3" id="id99">0.8.3</a></li>
+<li><a class="reference external" href="#version-0-8-2" id="id100">0.8.2</a></li>
+<li><a class="reference external" href="#version-0-8-1" id="id101">0.8.1</a><ul>
+<li><a class="reference external" href="#very-important-note" id="id102">Very important note</a></li>
+<li><a class="reference external" href="#important-changes" id="id103">Important changes</a></li>
+<li><a class="reference external" href="#v081-changes" id="id104">Changes</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#version-0-6-0" id="id103">0.6.0</a><ul>
-<li><a class="reference external" href="#v060-important" id="id104">Important changes</a></li>
-<li><a class="reference external" href="#v060-news" id="id105">News</a></li>
+<li><a class="reference external" href="#version-0-8-0" id="id105">0.8.0</a><ul>
+<li><a class="reference external" href="#v080-incompatible" id="id106">Backward incompatible changes</a></li>
+<li><a class="reference external" href="#v080-important" id="id107">Important changes</a></li>
+<li><a class="reference external" href="#v080-news" id="id108">News</a></li>
 </ul>
 </li>
-<li><a class="reference external" href="#version-0-4-1" id="id106">0.4.1</a></li>
-<li><a class="reference external" href="#version-0-4-0" id="id107">0.4.0</a></li>
-<li><a class="reference external" href="#version-0-3-20" id="id108">0.3.20</a></li>
-<li><a class="reference external" href="#version-0-3-7" id="id109">0.3.7</a></li>
-<li><a class="reference external" href="#version-0-3-3" id="id110">0.3.3</a></li>
-<li><a class="reference external" href="#version-0-3-2" id="id111">0.3.2</a></li>
-<li><a class="reference external" href="#version-0-3-1" id="id112">0.3.1</a></li>
-<li><a class="reference external" href="#version-0-3-0" id="id113">0.3.0</a></li>
-<li><a class="reference external" href="#version-0-2-0" id="id114">0.2.0</a></li>
-<li><a class="reference external" href="#pre3" id="id115">0.2.0-pre3</a></li>
-<li><a class="reference external" href="#pre2" id="id116">0.2.0-pre2</a></li>
-<li><a class="reference external" href="#pre1" id="id117">0.2.0-pre1</a></li>
-<li><a class="reference external" href="#version-0-1-15" id="id118">0.1.15</a></li>
-<li><a class="reference external" href="#version-0-1-14" id="id119">0.1.14</a></li>
-<li><a class="reference external" href="#version-0-1-13" id="id120">0.1.13</a></li>
-<li><a class="reference external" href="#version-0-1-12" id="id121">0.1.12</a></li>
-<li><a class="reference external" href="#version-0-1-11" id="id122">0.1.11</a></li>
-<li><a class="reference external" href="#version-0-1-10" id="id123">0.1.10</a></li>
-<li><a class="reference external" href="#version-0-1-8" id="id124">0.1.8</a></li>
-<li><a class="reference external" href="#version-0-1-7" id="id125">0.1.7</a></li>
-<li><a class="reference external" href="#version-0-1-6" id="id126">0.1.6</a></li>
-<li><a class="reference external" href="#version-0-1-0" id="id127">0.1.0</a></li>
+<li><a class="reference external" href="#version-0-6-0" id="id109">0.6.0</a><ul>
+<li><a class="reference external" href="#v060-important" id="id110">Important changes</a></li>
+<li><a class="reference external" href="#v060-news" id="id111">News</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#version-0-4-1" id="id112">0.4.1</a></li>
+<li><a class="reference external" href="#version-0-4-0" id="id113">0.4.0</a></li>
+<li><a class="reference external" href="#version-0-3-20" id="id114">0.3.20</a></li>
+<li><a class="reference external" href="#version-0-3-7" id="id115">0.3.7</a></li>
+<li><a class="reference external" href="#version-0-3-3" id="id116">0.3.3</a></li>
+<li><a class="reference external" href="#version-0-3-2" id="id117">0.3.2</a></li>
+<li><a class="reference external" href="#version-0-3-1" id="id118">0.3.1</a></li>
+<li><a class="reference external" href="#version-0-3-0" id="id119">0.3.0</a></li>
+<li><a class="reference external" href="#version-0-2-0" id="id120">0.2.0</a></li>
+<li><a class="reference external" href="#pre3" id="id121">0.2.0-pre3</a></li>
+<li><a class="reference external" href="#pre2" id="id122">0.2.0-pre2</a></li>
+<li><a class="reference external" href="#pre1" id="id123">0.2.0-pre1</a></li>
+<li><a class="reference external" href="#version-0-1-15" id="id124">0.1.15</a></li>
+<li><a class="reference external" href="#version-0-1-14" id="id125">0.1.14</a></li>
+<li><a class="reference external" href="#version-0-1-13" id="id126">0.1.13</a></li>
+<li><a class="reference external" href="#version-0-1-12" id="id127">0.1.12</a></li>
+<li><a class="reference external" href="#version-0-1-11" id="id128">0.1.11</a></li>
+<li><a class="reference external" href="#version-0-1-10" id="id129">0.1.10</a></li>
+<li><a class="reference external" href="#version-0-1-8" id="id130">0.1.8</a></li>
+<li><a class="reference external" href="#version-0-1-7" id="id131">0.1.7</a></li>
+<li><a class="reference external" href="#version-0-1-6" id="id132">0.1.6</a></li>
+<li><a class="reference external" href="#version-0-1-0" id="id133">0.1.0</a></li>
 </ul>
 </div>
+<div class="section" id="version-2-1-1">
+<span id="id1"></span><h2><a class="toc-backref" href="#id57">2.1.1</a><a class="headerlink" href="#version-2-1-1" title="Permalink to this headline">¶</a></h2>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">release-date:</th><td class="field-body">2010-10-14 14:00 PM CEST</td>
+</tr>
+</tbody>
+</table>
+<div class="section" id="fixes">
+<span id="v211-fixes"></span><h3><a class="toc-backref" href="#id58">Fixes</a><a class="headerlink" href="#fixes" title="Permalink to this headline">¶</a></h3>
+<ul>
+<li><p class="first">Now working on Windows again.</p>
+<blockquote>
+<p>Removed dependency on the pwd/grp modules.</p>
+</blockquote>
+</li>
+<li><p class="first">snapshots: Fixed race condition leading to loss of events.</p>
+</li>
+<li><p class="first">celeryd: Reject tasks with an eta that cannot be converted to timestamp.</p>
+<blockquote>
+<p>See <a class="issue-closed reference-issue reference external" href="http://github.com/ask/celery/issues/209">issue #209</a></p>
+</blockquote>
+</li>
+<li><p class="first">concurrency.processes.pool: The semaphore was released twice for each task
+(both at ACK and result ready).</p>
+<blockquote>
+<p>This has been fixed, and it is now released only once per task.</p>
+</blockquote>
+</li>
+<li><p class="first">docs/configuration: Fixed typo <tt class="docutils literal"><span class="pre">CELERYD_SOFT_TASK_TIME_LIMIT</span></tt> -&gt;
+<a class="reference internal" href="configuration.html#std:setting-CELERYD_TASK_SOFT_TIME_LIMIT"><tt class="xref std std-setting docutils literal"><span class="pre">CELERYD_TASK_SOFT_TIME_LIMIT</span></tt></a>.</p>
+<blockquote>
+<p>See <a class="issue-closed reference-issue reference external" href="http://github.com/ask/celery/issues/214">issue #214</a></p>
+</blockquote>
+</li>
+<li><p class="first">control command <tt class="docutils literal"><span class="pre">dump_scheduled</span></tt>: was using old .info attribute</p>
+</li>
+<li><dl class="first docutils">
+<dt><strong class="program">celeryd-multi</strong>: Fixed <tt class="docutils literal"><span class="pre">set</span> <span class="pre">changed</span> <span class="pre">size</span> <span class="pre">during</span> <span class="pre">iteration</span></tt> bug</dt>
+<dd><p class="first last">occuring in the restart command.</p>
+</dd>
+</dl>
+</li>
+<li><p class="first">celeryd: Accidentally tried to use additional command line arguments.</p>
+<blockquote>
+<p>This would lead to an error like:</p>
+<blockquote>
+<p><tt class="docutils literal"><span class="pre">got</span> <span class="pre">multiple</span> <span class="pre">values</span> <span class="pre">for</span> <span class="pre">keyword</span> <span class="pre">argument</span> <span class="pre">'concurrency'</span></tt>.</p>
+<p>Additional command line arguments are now ignored, and does not
+produce this error.  However &#8211; we do reserve the right to use
+positional arguments in the future, so please do not depend on this
+behavior.</p>
+</blockquote>
+</blockquote>
+</li>
+<li><p class="first">celerybeat: Now respects routers and task execution options again.</p>
+</li>
+<li><p class="first">celerybeat: Now reuses the publisher instead of the connection.</p>
+</li>
+<li><p class="first">Cache result backend: Using <tt class="xref py py-class docutils literal"><span class="pre">float</span></tt> as the expires argument
+to <tt class="docutils literal"><span class="pre">cache.set</span></tt> is deprecated by the memcached libraries,
+so we now automatically cast to <tt class="xref py py-class docutils literal"><span class="pre">int</span></tt>.</p>
+</li>
+<li><p class="first">unittests: No longer emits logging and warnings in test output.</p>
+</li>
+</ul>
+</div>
+<div class="section" id="news">
+<span id="v211-news"></span><h3><a class="toc-backref" href="#id59">News</a><a class="headerlink" href="#news" title="Permalink to this headline">¶</a></h3>
+<ul>
+<li><p class="first">Now depends on carrot version 0.10.7.</p>
+</li>
+<li><p class="first">Added <a class="reference internal" href="configuration.html#std:setting-CELERY_REDIRECT_STDOUTS"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_REDIRECT_STDOUTS</span></tt></a>, and
+<tt class="xref std std-setting docutils literal"><span class="pre">CELERYD_REDIRECT_STDOUTS_LEVEL</span></tt> settings.</p>
+<blockquote>
+<p><a class="reference internal" href="configuration.html#std:setting-CELERY_REDIRECT_STDOUTS"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_REDIRECT_STDOUTS</span></tt></a> is used by <strong class="program">celeryd</strong> and
+<strong class="program">celerybeat</strong>.  All output to <tt class="docutils literal"><span class="pre">stdout</span></tt> and <tt class="docutils literal"><span class="pre">stderr</span></tt> will be
+redirected to the current logger if enabled.</p>
+<p><a class="reference internal" href="configuration.html#std:setting-CELERY_REDIRECT_STDOUTS_LEVEL"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_REDIRECT_STDOUTS_LEVEL</span></tt></a> decides the loglevel used and is
+<tt class="xref py py-const docutils literal"><span class="pre">WARNING</span></tt> by default.</p>
+</blockquote>
+</li>
+<li><p class="first">Added <a class="reference internal" href="configuration.html#std:setting-CELERYBEAT_SCHEDULER"><tt class="xref std std-setting docutils literal"><span class="pre">CELERYBEAT_SCHEDULER</span></tt></a> setting.</p>
+<blockquote>
+<p>This setting is used to define the default for the -S option to
+<strong class="program">celerybeat</strong>.</p>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">CELERYBEAT_SCHEDULER</span> <span class="o">=</span> <span class="s">&quot;djcelery.schedulers.DatabaseScheduler&quot;</span>
+</pre></div>
+</div>
+</blockquote>
+</li>
+<li><p class="first">Added Task.expires: Used to set default expiry time for tasks.</p>
+</li>
+<li><p class="first">New remote control commands: <tt class="docutils literal"><span class="pre">add_consumer</span></tt> and <tt class="docutils literal"><span class="pre">cancel_consumer</span></tt>.</p>
+<blockquote>
+<dl class="method">
+<dt>
+<tt class="descname">add_consumer(queue, exchange, exchange_type, routing_key,</tt></dt>
+<dt>
+<tt class="descname">**options)</tt></dt>
+<dd><p>Tells the worker to declare and consume from the specified
+declaration.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cancel_consumer">
+<tt class="descname">cancel_consumer</tt><big>(</big><em>queue_name</em><big>)</big><a class="headerlink" href="#cancel_consumer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tells the worker to stop consuming from queue (by queue name).</p>
+</dd></dl>
+
+<p>Commands also added to <strong class="program">celeryctl</strong> and
+<a class="reference internal" href="reference/celery.task.control.html#celery.task.control.inspect" title="celery.task.control.inspect"><tt class="xref py py-class docutils literal"><span class="pre">inspect</span></tt></a>.</p>
+<p>Example using celeryctl to start consuming from queue &#8220;queue&#8221;, in
+exchange &#8220;exchange&#8221;, of type &#8220;direct&#8221; using binding key &#8220;key&#8221;:</p>
+<div class="highlight-python"><pre>$ celeryctl inspect add_consumer queue exchange direct key
+$ celeryctl inspect cancel_consumer queue</pre>
+</div>
+<p>See <a class="reference internal" href="userguide/monitoring.html#monitoring-celeryctl"><em>celeryctl: Management Utility</em></a> for more information about the
+<strong class="program">celeryctl</strong> program.</p>
+<p>Another example using <a class="reference internal" href="reference/celery.task.control.html#celery.task.control.inspect" title="celery.task.control.inspect"><tt class="xref py py-class docutils literal"><span class="pre">inspect</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">celery.task.control</span> <span class="kn">import</span> <span class="n">inspect</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inspect</span><span class="o">.</span><span class="n">add_consumer</span><span class="p">(</span><span class="n">queue</span><span class="o">=</span><span class="s">&quot;queue&quot;</span><span class="p">,</span> <span class="n">exchange</span><span class="o">=</span><span class="s">&quot;exchange&quot;</span><span class="p">,</span>
+<span class="gp">... </span>                     <span class="n">exchange_type</span><span class="o">=</span><span class="s">&quot;direct&quot;</span><span class="p">,</span>
+<span class="gp">... </span>                     <span class="n">routing_key</span><span class="o">=</span><span class="s">&quot;key&quot;</span><span class="p">,</span>
+<span class="gp">... </span>                     <span class="n">durable</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+<span class="gp">... </span>                     <span class="n">auto_delete</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inspect</span><span class="o">.</span><span class="n">cancel_consumer</span><span class="p">(</span><span class="s">&quot;queue&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</blockquote>
+</li>
+<li><p class="first">celerybeat: Now logs the traceback if a message can&#8217;t be sent.</p>
+</li>
+<li><p class="first">celerybeat: Now enables a default socket timeout of 30 seconds.</p>
+</li>
+<li><p class="first">README/introduction/homepage: Added link to <a class="reference external" href="http://github.com/ask/flask-celery">Flask-Celery</a>.</p>
+</li>
+</ul>
+</div>
+</div>
 <div class="section" id="version-2-1-0">
-<span id="id1"></span><h2><a class="toc-backref" href="#id54">2.1.0</a><a class="headerlink" href="#version-2-1-0" title="Permalink to this headline">¶</a></h2>
+<span id="id2"></span><h2><a class="toc-backref" href="#id60">2.1.0</a><a class="headerlink" href="#version-2-1-0" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -162,7 +311,7 @@
 </tbody>
 </table>
 <div class="section" id="important-notes">
-<span id="v210-important"></span><h3><a class="toc-backref" href="#id55">Important Notes</a><a class="headerlink" href="#important-notes" title="Permalink to this headline">¶</a></h3>
+<span id="v210-important"></span><h3><a class="toc-backref" href="#id61">Important Notes</a><a class="headerlink" href="#important-notes" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first">Celery is now following the versioning semantics defined by <a class="reference external" href="http://semver.org">semver</a>.</p>
 <blockquote>
@@ -205,8 +354,8 @@ to remove the offending files do:</p>
 </li>
 </ul>
 </div>
-<div class="section" id="news">
-<span id="v210-news"></span><h3><a class="toc-backref" href="#id56">News</a><a class="headerlink" href="#news" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="v210-news">
+<span id="id3"></span><h3><a class="toc-backref" href="#id62">News</a><a class="headerlink" href="#v210-news" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first">Added support for expiration of AMQP results (requires RabbitMQ 2.1.0)</p>
 <blockquote>
@@ -579,8 +728,8 @@ pool without going through the ready queue (<em>Optimization</em>).</p>
 </li>
 </ul>
 </div>
-<div class="section" id="fixes">
-<span id="v210-fixes"></span><h3><a class="toc-backref" href="#id57">Fixes</a><a class="headerlink" href="#fixes" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="v210-fixes">
+<span id="id4"></span><h3><a class="toc-backref" href="#id63">Fixes</a><a class="headerlink" href="#v210-fixes" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first">Pool: Process timed out by TimeoutHandler must be joined by the Supervisor,
 so don&#8217;t remove it from self._pool</p>
@@ -628,7 +777,7 @@ while reading from the task Queue.</p>
 </ul>
 </div>
 <div class="section" id="experimental">
-<span id="v210-experimental"></span><h3><a class="toc-backref" href="#id58">Experimental</a><a class="headerlink" href="#experimental" title="Permalink to this headline">¶</a></h3>
+<span id="v210-experimental"></span><h3><a class="toc-backref" href="#id64">Experimental</a><a class="headerlink" href="#experimental" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first">celeryd-multi: Added daemonization support.</p>
 <blockquote>
@@ -677,7 +826,7 @@ not be started if this file exists and the pid contained is still alive.</p>
 </ul>
 </div>
 <div class="section" id="documentation">
-<span id="v210-documentation"></span><h3><a class="toc-backref" href="#id59">Documentation</a><a class="headerlink" href="#documentation" title="Permalink to this headline">¶</a></h3>
+<span id="v210-documentation"></span><h3><a class="toc-backref" href="#id65">Documentation</a><a class="headerlink" href="#documentation" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first">Added User guide section: Monitoring</p>
 </li>
@@ -697,7 +846,7 @@ not be started if this file exists and the pid contained is still alive.</p>
 </div>
 </div>
 <div class="section" id="version-2-0-3">
-<span id="id2"></span><h2><a class="toc-backref" href="#id60">2.0.3</a><a class="headerlink" href="#version-2-0-3" title="Permalink to this headline">¶</a></h2>
+<span id="id5"></span><h2><a class="toc-backref" href="#id66">2.0.3</a><a class="headerlink" href="#version-2-0-3" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -707,7 +856,7 @@ not be started if this file exists and the pid contained is still alive.</p>
 </tbody>
 </table>
 <div class="section" id="v203-fixes">
-<span id="id3"></span><h3><a class="toc-backref" href="#id61">Fixes</a><a class="headerlink" href="#v203-fixes" title="Permalink to this headline">¶</a></h3>
+<span id="id6"></span><h3><a class="toc-backref" href="#id67">Fixes</a><a class="headerlink" href="#v203-fixes" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first">celeryd: Properly handle connection errors happening while
 closing consumers.</p>
@@ -812,7 +961,7 @@ See <a class="issue-closed reference-issue reference external" href="http://gith
 </ul>
 </div>
 <div class="section" id="v203-documentation">
-<span id="id4"></span><h3><a class="toc-backref" href="#id62">Documentation</a><a class="headerlink" href="#v203-documentation" title="Permalink to this headline">¶</a></h3>
+<span id="id7"></span><h3><a class="toc-backref" href="#id68">Documentation</a><a class="headerlink" href="#v203-documentation" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first">getting-started/broker-installation: Fixed typo</p>
 <blockquote>
@@ -851,7 +1000,7 @@ and <a class="reference internal" href="configuration.html#std:setting-CELERYD_P
 </div>
 </div>
 <div class="section" id="version-2-0-2">
-<span id="id5"></span><h2><a class="toc-backref" href="#id63">2.0.2</a><a class="headerlink" href="#version-2-0-2" title="Permalink to this headline">¶</a></h2>
+<span id="id8"></span><h2><a class="toc-backref" href="#id69">2.0.2</a><a class="headerlink" href="#version-2-0-2" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -982,7 +1131,7 @@ and stop an embedded celeryd process, for use in functional testing.</p>
 </ul>
 </div>
 <div class="section" id="version-2-0-1">
-<span id="id6"></span><h2><a class="toc-backref" href="#id64">2.0.1</a><a class="headerlink" href="#version-2-0-1" title="Permalink to this headline">¶</a></h2>
+<span id="id9"></span><h2><a class="toc-backref" href="#id70">2.0.1</a><a class="headerlink" href="#version-2-0-1" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1118,7 +1267,7 @@ as the <tt class="docutils literal"><span class="pre">shelve</span></tt> module 
 </ul>
 </div>
 <div class="section" id="version-2-0-0">
-<span id="id7"></span><h2><a class="toc-backref" href="#id65">2.0.0</a><a class="headerlink" href="#version-2-0-0" title="Permalink to this headline">¶</a></h2>
+<span id="id10"></span><h2><a class="toc-backref" href="#id71">2.0.0</a><a class="headerlink" href="#version-2-0-0" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1128,7 +1277,7 @@ as the <tt class="docutils literal"><span class="pre">shelve</span></tt> module 
 </tbody>
 </table>
 <div class="section" id="foreword">
-<h3><a class="toc-backref" href="#id66">Foreword</a><a class="headerlink" href="#foreword" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id72">Foreword</a><a class="headerlink" href="#foreword" title="Permalink to this headline">¶</a></h3>
 <p>Celery 2.0 contains backward incompatible changes, the most important
 being that the Django dependency has been removed so Celery no longer
 supports Django out of the box, but instead as an add-on package
@@ -1142,7 +1291,7 @@ well.</p>
 <p>Big thanks to all contributors, testers and users!</p>
 </div>
 <div class="section" id="upgrading-for-django-users">
-<span id="v200-django-upgrade"></span><h3><a class="toc-backref" href="#id67">Upgrading for Django-users</a><a class="headerlink" href="#upgrading-for-django-users" title="Permalink to this headline">¶</a></h3>
+<span id="v200-django-upgrade"></span><h3><a class="toc-backref" href="#id73">Upgrading for Django-users</a><a class="headerlink" href="#upgrading-for-django-users" title="Permalink to this headline">¶</a></h3>
 <p>Django integration has been moved to a separate package: <a class="reference external" href="http://pypi.python.org/pypi/django-celery">django-celery</a>.</p>
 <ul>
 <li><p class="first">To upgrade you need to install the <a class="reference external" href="http://pypi.python.org/pypi/django-celery">django-celery</a> module and change:</p>
@@ -1229,9 +1378,9 @@ aliases will point to the <tt class="xref py py-mod docutils literal"><span clas
 and configuration will be read from the Django settings.</p>
 </div>
 <div class="section" id="upgrading-for-others">
-<span id="v200-upgrade"></span><h3><a class="toc-backref" href="#id68">Upgrading for others</a><a class="headerlink" href="#upgrading-for-others" title="Permalink to this headline">¶</a></h3>
+<span id="v200-upgrade"></span><h3><a class="toc-backref" href="#id74">Upgrading for others</a><a class="headerlink" href="#upgrading-for-others" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="database-result-backend">
-<span id="v200-upgrade-database"></span><h4><a class="toc-backref" href="#id69">Database result backend</a><a class="headerlink" href="#database-result-backend" title="Permalink to this headline">¶</a></h4>
+<span id="v200-upgrade-database"></span><h4><a class="toc-backref" href="#id75">Database result backend</a><a class="headerlink" href="#database-result-backend" title="Permalink to this headline">¶</a></h4>
 <p>The database result backend is now using <a class="reference external" href="http://www.sqlalchemy.org">SQLAlchemy</a> instead of the
 Django ORM, see <a class="reference external" href="http://www.sqlalchemy.org/docs/dbengine.html#supported-databases">Supported Databases</a> for a table of supported databases.</p>
 <p>The <tt class="docutils literal"><span class="pre">DATABASE_*</span></tt> settings has been replaced by a single setting:
@@ -1260,7 +1409,7 @@ the <a class="reference internal" href="configuration.html#std:setting-CELERY_RE
 </div>
 </div>
 <div class="section" id="cache-result-backend">
-<span id="v200-upgrade-cache"></span><h4><a class="toc-backref" href="#id70">Cache result backend</a><a class="headerlink" href="#cache-result-backend" title="Permalink to this headline">¶</a></h4>
+<span id="v200-upgrade-cache"></span><h4><a class="toc-backref" href="#id76">Cache result backend</a><a class="headerlink" href="#cache-result-backend" title="Permalink to this headline">¶</a></h4>
 <p>The cache result backend is no longer using the Django cache framework,
 but it supports mostly the same configuration syntax:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">CELERY_CACHE_BACKEND</span> <span class="o">=</span> <span class="s">&quot;memcached://A.example.com:11211;B.example.com&quot;</span>
@@ -1275,7 +1424,7 @@ provided by Django.</p>
 </div>
 </div>
 <div class="section" id="backward-incompatible-changes">
-<span id="v200-incompatible"></span><h3><a class="toc-backref" href="#id71">Backward incompatible changes</a><a class="headerlink" href="#backward-incompatible-changes" title="Permalink to this headline">¶</a></h3>
+<span id="v200-incompatible"></span><h3><a class="toc-backref" href="#id77">Backward incompatible changes</a><a class="headerlink" href="#backward-incompatible-changes" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first">Default (python) loader now prints warning on missing <tt class="docutils literal"><span class="pre">celeryconfig.py</span></tt>
 instead of raising <tt class="xref py py-exc docutils literal"><span class="pre">ImportError</span></tt>.</p>
@@ -1396,7 +1545,7 @@ it is the only safe option for older Python versions.</p>
 </ul>
 </div>
 <div class="section" id="v200-news">
-<span id="id8"></span><h3><a class="toc-backref" href="#id72">News</a><a class="headerlink" href="#v200-news" title="Permalink to this headline">¶</a></h3>
+<span id="id11"></span><h3><a class="toc-backref" href="#id78">News</a><a class="headerlink" href="#v200-news" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first"><strong>celeryev</strong>: Curses Celery Monitor and Event Viewer.</p>
 <blockquote>
@@ -1560,7 +1709,7 @@ will be ignored</p>
 replaced with a new one when this is exceeded.</p>
 </blockquote>
 </li>
-<li><p class="first"><a class="reference internal" href="configuration.html#std:setting-CELERYD_SOFT_TASK_TIME_LIMIT"><tt class="xref std std-setting docutils literal"><span class="pre">CELERYD_SOFT_TASK_TIME_LIMIT</span></tt></a></p>
+<li><p class="first"><tt class="xref std std-setting docutils literal"><span class="pre">CELERYD_SOFT_TASK_TIME_LIMIT</span></tt></p>
 <blockquote>
 <p>Soft time limit. The celery.exceptions.SoftTimeLimitExceeded exception
 will be raised when this is exceeded. The task can catch this to
@@ -1827,7 +1976,7 @@ celeryd-multi -n xuzzy.myhost -c 3</pre>
 </div>
 </div>
 <div class="section" id="version-1-0-6">
-<span id="id9"></span><h2><a class="toc-backref" href="#id73">1.0.6</a><a class="headerlink" href="#version-1-0-6" title="Permalink to this headline">¶</a></h2>
+<span id="id12"></span><h2><a class="toc-backref" href="#id79">1.0.6</a><a class="headerlink" href="#version-1-0-6" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1850,7 +1999,7 @@ delete the previous definitions:</p>
 </ul>
 </div>
 <div class="section" id="version-1-0-5">
-<span id="id10"></span><h2><a class="toc-backref" href="#id74">1.0.5</a><a class="headerlink" href="#version-1-0-5" title="Permalink to this headline">¶</a></h2>
+<span id="id13"></span><h2><a class="toc-backref" href="#id80">1.0.5</a><a class="headerlink" href="#version-1-0-5" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1860,7 +2009,7 @@ delete the previous definitions:</p>
 </tbody>
 </table>
 <div class="section" id="critical">
-<span id="v105-critical"></span><h3><a class="toc-backref" href="#id75">Critical</a><a class="headerlink" href="#critical" title="Permalink to this headline">¶</a></h3>
+<span id="v105-critical"></span><h3><a class="toc-backref" href="#id81">Critical</a><a class="headerlink" href="#critical" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first">SIGINT/Ctrl+C killed the pool, abrubtly terminating the currently executing
 tasks.</p>
@@ -1885,7 +2034,7 @@ so celeryd can&#8217;t slurp in all the messages at start-up.</p>
 </ul>
 </div>
 <div class="section" id="changes">
-<span id="v105-changes"></span><h3><a class="toc-backref" href="#id76">Changes</a><a class="headerlink" href="#changes" title="Permalink to this headline">¶</a></h3>
+<span id="v105-changes"></span><h3><a class="toc-backref" href="#id82">Changes</a><a class="headerlink" href="#changes" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first"><a class="reference internal" href="reference/celery.contrib.abortable.html#module-celery.contrib.abortable"><tt class="xref py py-mod docutils literal"><span class="pre">celery.contrib.abortable</span></tt></a>: Abortable tasks.</p>
 <blockquote>
@@ -1924,7 +2073,7 @@ on error.</p>
 </div>
 </div>
 <div class="section" id="version-1-0-4">
-<span id="id11"></span><h2><a class="toc-backref" href="#id77">1.0.4</a><a class="headerlink" href="#version-1-0-4" title="Permalink to this headline">¶</a></h2>
+<span id="id14"></span><h2><a class="toc-backref" href="#id83">1.0.4</a><a class="headerlink" href="#version-1-0-4" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1938,7 +2087,7 @@ on error.</p>
 </ul>
 </div>
 <div class="section" id="version-1-0-3">
-<span id="id12"></span><h2><a class="toc-backref" href="#id78">1.0.3</a><a class="headerlink" href="#version-1-0-3" title="Permalink to this headline">¶</a></h2>
+<span id="id15"></span><h2><a class="toc-backref" href="#id84">1.0.3</a><a class="headerlink" href="#version-1-0-3" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1948,7 +2097,7 @@ on error.</p>
 </tbody>
 </table>
 <div class="section" id="v103-important">
-<span id="id13"></span><h3><a class="toc-backref" href="#id79">Important notes</a><a class="headerlink" href="#v103-important" title="Permalink to this headline">¶</a></h3>
+<span id="id16"></span><h3><a class="toc-backref" href="#id85">Important notes</a><a class="headerlink" href="#v103-important" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first">Messages are now acked <em>just before</em> the task function is executed.</p>
 <blockquote>
@@ -1986,7 +2135,7 @@ and made it harder to refactor some parts.</p>
 </ul>
 </div>
 <div class="section" id="v103-news">
-<span id="id14"></span><h3><a class="toc-backref" href="#id80">News</a><a class="headerlink" href="#v103-news" title="Permalink to this headline">¶</a></h3>
+<span id="id17"></span><h3><a class="toc-backref" href="#id86">News</a><a class="headerlink" href="#v103-news" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first">AMQP backend: Added timeout support for <tt class="docutils literal"><span class="pre">result.get()</span></tt> /
 <tt class="docutils literal"><span class="pre">result.wait()</span></tt>.</p>
@@ -2071,7 +2220,7 @@ setting.</p>
 </ul>
 </div>
 <div class="section" id="remote-control-commands">
-<span id="v103-remote-control"></span><h3><a class="toc-backref" href="#id81">Remote control commands</a><a class="headerlink" href="#remote-control-commands" title="Permalink to this headline">¶</a></h3>
+<span id="v103-remote-control"></span><h3><a class="toc-backref" href="#id87">Remote control commands</a><a class="headerlink" href="#remote-control-commands" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first">Remote control commands can now send replies back to the caller.</p>
 <blockquote>
@@ -2192,7 +2341,7 @@ waiting to be executed by the worker.</p>
 </ul>
 </div>
 <div class="section" id="v103-fixes">
-<span id="id15"></span><h3><a class="toc-backref" href="#id82">Fixes</a><a class="headerlink" href="#v103-fixes" title="Permalink to this headline">¶</a></h3>
+<span id="id18"></span><h3><a class="toc-backref" href="#id88">Fixes</a><a class="headerlink" href="#v103-fixes" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first">Mediator thread no longer blocks for more than 1 second.</p>
 <blockquote>
@@ -2213,7 +2362,7 @@ not empty string.</p>
 </div>
 </div>
 <div class="section" id="version-1-0-2">
-<span id="id16"></span><h2><a class="toc-backref" href="#id83">1.0.2</a><a class="headerlink" href="#version-1-0-2" title="Permalink to this headline">¶</a></h2>
+<span id="id19"></span><h2><a class="toc-backref" href="#id89">1.0.2</a><a class="headerlink" href="#version-1-0-2" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -2311,7 +2460,7 @@ emitting an error message.</p>
 </ul>
 </div>
 <div class="section" id="version-1-0-1">
-<span id="id17"></span><h2><a class="toc-backref" href="#id84">1.0.1</a><a class="headerlink" href="#version-1-0-1" title="Permalink to this headline">¶</a></h2>
+<span id="id20"></span><h2><a class="toc-backref" href="#id90">1.0.1</a><a class="headerlink" href="#version-1-0-1" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -2483,7 +2632,7 @@ virtualenv.</p>
 </ul>
 </div>
 <div class="section" id="version-1-0-0">
-<span id="id18"></span><h2><a class="toc-backref" href="#id85">1.0.0</a><a class="headerlink" href="#version-1-0-0" title="Permalink to this headline">¶</a></h2>
+<span id="id21"></span><h2><a class="toc-backref" href="#id91">1.0.0</a><a class="headerlink" href="#version-1-0-0" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -2493,7 +2642,7 @@ virtualenv.</p>
 </tbody>
 </table>
 <div class="section" id="v100-incompatible">
-<span id="id19"></span><h3><a class="toc-backref" href="#id86">Backward incompatible changes</a><a class="headerlink" href="#v100-incompatible" title="Permalink to this headline">¶</a></h3>
+<span id="id22"></span><h3><a class="toc-backref" href="#id92">Backward incompatible changes</a><a class="headerlink" href="#v100-incompatible" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first">Celery does not support detaching anymore, so you have to use the tools
 available on your platform, or something like supervisord to make
@@ -2639,7 +2788,7 @@ a function, returning the current loader.</p>
 </ul>
 </div>
 <div class="section" id="deprecations">
-<span id="v100-deprecations"></span><h3><a class="toc-backref" href="#id87">Deprecations</a><a class="headerlink" href="#deprecations" title="Permalink to this headline">¶</a></h3>
+<span id="v100-deprecations"></span><h3><a class="toc-backref" href="#id93">Deprecations</a><a class="headerlink" href="#deprecations" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first">The following configuration variables has been renamed and will be
 deprecated in v2.0:</p>
@@ -2673,8 +2822,8 @@ removal in v2.0.</p>
 </li>
 </ul>
 </div>
-<div class="section" id="id20">
-<h3><a class="toc-backref" href="#id88">News</a><a class="headerlink" href="#id20" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id23">
+<h3><a class="toc-backref" href="#id94">News</a><a class="headerlink" href="#id23" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first">Rate limiting support (per task type, or globally).</p>
 </li>
@@ -2740,7 +2889,7 @@ backend.</p>
 </ul>
 </div>
 <div class="section" id="v100-changes">
-<span id="id21"></span><h3><a class="toc-backref" href="#id89">Changes</a><a class="headerlink" href="#v100-changes" title="Permalink to this headline">¶</a></h3>
+<span id="id24"></span><h3><a class="toc-backref" href="#id95">Changes</a><a class="headerlink" href="#v100-changes" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first">Now depends on carrot &gt;= 0.8.1</p>
 </li>
@@ -2813,14 +2962,14 @@ acknowledging the message, instead of crashing.</p>
 </ul>
 </div>
 <div class="section" id="bugs">
-<span id="v100-bugs"></span><h3><a class="toc-backref" href="#id90">Bugs</a><a class="headerlink" href="#bugs" title="Permalink to this headline">¶</a></h3>
+<span id="v100-bugs"></span><h3><a class="toc-backref" href="#id96">Bugs</a><a class="headerlink" href="#bugs" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li>Fixed a race condition that could happen while storing task results in the
 database.</li>
 </ul>
 </div>
 <div class="section" id="v100-documentation">
-<span id="id22"></span><h3><a class="toc-backref" href="#id91">Documentation</a><a class="headerlink" href="#v100-documentation" title="Permalink to this headline">¶</a></h3>
+<span id="id25"></span><h3><a class="toc-backref" href="#id97">Documentation</a><a class="headerlink" href="#v100-documentation" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li>Reference now split into two sections; API reference and internal module
 reference.</li>
@@ -2828,7 +2977,7 @@ reference.</li>
 </div>
 </div>
 <div class="section" id="version-0-8-4">
-<span id="id23"></span><h2><a class="toc-backref" href="#id92">0.8.4</a><a class="headerlink" href="#version-0-8-4" title="Permalink to this headline">¶</a></h2>
+<span id="id26"></span><h2><a class="toc-backref" href="#id98">0.8.4</a><a class="headerlink" href="#version-0-8-4" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -2847,7 +2996,7 @@ supervisord or launchd (os x).</li>
 </ul>
 </div>
 <div class="section" id="version-0-8-3">
-<span id="id24"></span><h2><a class="toc-backref" href="#id93">0.8.3</a><a class="headerlink" href="#version-0-8-3" title="Permalink to this headline">¶</a></h2>
+<span id="id27"></span><h2><a class="toc-backref" href="#id99">0.8.3</a><a class="headerlink" href="#version-0-8-3" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -2864,7 +3013,7 @@ buildout will correctly install the programs celerybin and celeryinit.</li>
 </ul>
 </div>
 <div class="section" id="version-0-8-2">
-<span id="id25"></span><h2><a class="toc-backref" href="#id94">0.8.2</a><a class="headerlink" href="#version-0-8-2" title="Permalink to this headline">¶</a></h2>
+<span id="id28"></span><h2><a class="toc-backref" href="#id100">0.8.2</a><a class="headerlink" href="#version-0-8-2" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -2880,7 +3029,7 @@ set when our wanted value changed.</li>
 </ul>
 </div>
 <div class="section" id="version-0-8-1">
-<span id="id26"></span><h2><a class="toc-backref" href="#id95">0.8.1</a><a class="headerlink" href="#version-0-8-1" title="Permalink to this headline">¶</a></h2>
+<span id="id29"></span><h2><a class="toc-backref" href="#id101">0.8.1</a><a class="headerlink" href="#version-0-8-1" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -2890,14 +3039,14 @@ set when our wanted value changed.</li>
 </tbody>
 </table>
 <div class="section" id="very-important-note">
-<span id="v081-very-important"></span><h3><a class="toc-backref" href="#id96">Very important note</a><a class="headerlink" href="#very-important-note" title="Permalink to this headline">¶</a></h3>
+<span id="v081-very-important"></span><h3><a class="toc-backref" href="#id102">Very important note</a><a class="headerlink" href="#very-important-note" title="Permalink to this headline">¶</a></h3>
 <p>This release (with carrot 0.8.0) enables AMQP QoS (quality of service), which
 means the workers will only receive as many messages as it can handle at a
 time. As with any release, you should test this version upgrade on your
 development servers before rolling it out to production!</p>
 </div>
 <div class="section" id="important-changes">
-<span id="v081-important"></span><h3><a class="toc-backref" href="#id97">Important changes</a><a class="headerlink" href="#important-changes" title="Permalink to this headline">¶</a></h3>
+<span id="v081-important"></span><h3><a class="toc-backref" href="#id103">Important changes</a><a class="headerlink" href="#important-changes" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first">If you&#8217;re using Python &lt; 2.6 and you use the multiprocessing backport, then
 multiprocessing version 2.6.2.1 is required.</p>
@@ -2937,7 +3086,7 @@ that was the previously implied name.</p>
 </ul>
 </div>
 <div class="section" id="v081-changes">
-<span id="id27"></span><h3><a class="toc-backref" href="#id98">Changes</a><a class="headerlink" href="#v081-changes" title="Permalink to this headline">¶</a></h3>
+<span id="id30"></span><h3><a class="toc-backref" href="#id104">Changes</a><a class="headerlink" href="#v081-changes" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li>Incorporated the multiprocessing backport patch that fixes the
 <tt class="docutils literal"><span class="pre">processName</span></tt> error.</li>
@@ -2962,7 +3111,7 @@ is used.</li>
 </div>
 </div>
 <div class="section" id="version-0-8-0">
-<span id="id28"></span><h2><a class="toc-backref" href="#id99">0.8.0</a><a class="headerlink" href="#version-0-8-0" title="Permalink to this headline">¶</a></h2>
+<span id="id31"></span><h2><a class="toc-backref" href="#id105">0.8.0</a><a class="headerlink" href="#version-0-8-0" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -2972,7 +3121,7 @@ is used.</li>
 </tbody>
 </table>
 <div class="section" id="v080-incompatible">
-<span id="id29"></span><h3><a class="toc-backref" href="#id100">Backward incompatible changes</a><a class="headerlink" href="#v080-incompatible" title="Permalink to this headline">¶</a></h3>
+<span id="id32"></span><h3><a class="toc-backref" href="#id106">Backward incompatible changes</a><a class="headerlink" href="#v080-incompatible" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first">Add traceback to result value on failure.</p>
 <blockquote>
@@ -3000,7 +3149,7 @@ be sure to initialize tables (django: <tt class="docutils literal"><span class="
 </ul>
 </div>
 <div class="section" id="v080-important">
-<span id="id30"></span><h3><a class="toc-backref" href="#id101">Important changes</a><a class="headerlink" href="#v080-important" title="Permalink to this headline">¶</a></h3>
+<span id="id33"></span><h3><a class="toc-backref" href="#id107">Important changes</a><a class="headerlink" href="#v080-important" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first">Celery can now be used in pure Python (outside of a Django project).</p>
 <blockquote>
@@ -3089,7 +3238,7 @@ is encouraged to improve this situation.</p>
 </ul>
 </div>
 <div class="section" id="v080-news">
-<span id="id31"></span><h3><a class="toc-backref" href="#id102">News</a><a class="headerlink" href="#v080-news" title="Permalink to this headline">¶</a></h3>
+<span id="id34"></span><h3><a class="toc-backref" href="#id108">News</a><a class="headerlink" href="#v080-news" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><dl class="first docutils">
 <dt>Fix an incompatibility between python-daemon and multiprocessing,</dt>
@@ -3174,7 +3323,7 @@ detaching.</p>
 </div>
 </div>
 <div class="section" id="version-0-6-0">
-<span id="id32"></span><h2><a class="toc-backref" href="#id103">0.6.0</a><a class="headerlink" href="#version-0-6-0" title="Permalink to this headline">¶</a></h2>
+<span id="id35"></span><h2><a class="toc-backref" href="#id109">0.6.0</a><a class="headerlink" href="#version-0-6-0" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -3184,7 +3333,7 @@ detaching.</p>
 </tbody>
 </table>
 <div class="section" id="v060-important">
-<span id="id33"></span><h3><a class="toc-backref" href="#id104">Important changes</a><a class="headerlink" href="#v060-important" title="Permalink to this headline">¶</a></h3>
+<span id="id36"></span><h3><a class="toc-backref" href="#id110">Important changes</a><a class="headerlink" href="#v060-important" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><dl class="first docutils">
 <dt>Fixed a bug where tasks raising unpickleable exceptions crashed pool</dt>
@@ -3214,7 +3363,7 @@ specify a task name.</p>
 </ul>
 </div>
 <div class="section" id="v060-news">
-<span id="id34"></span><h3><a class="toc-backref" href="#id105">News</a><a class="headerlink" href="#v060-news" title="Permalink to this headline">¶</a></h3>
+<span id="id37"></span><h3><a class="toc-backref" href="#id111">News</a><a class="headerlink" href="#v060-news" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first">Tested with Django 1.1</p>
 </li>
@@ -3296,7 +3445,7 @@ includes the ETA for the task (if any).</p>
 </div>
 </div>
 <div class="section" id="version-0-4-1">
-<span id="id35"></span><h2><a class="toc-backref" href="#id106">0.4.1</a><a class="headerlink" href="#version-0-4-1" title="Permalink to this headline">¶</a></h2>
+<span id="id38"></span><h2><a class="toc-backref" href="#id112">0.4.1</a><a class="headerlink" href="#version-0-4-1" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -3311,7 +3460,7 @@ includes the ETA for the task (if any).</p>
 </ul>
 </div>
 <div class="section" id="version-0-4-0">
-<span id="id36"></span><h2><a class="toc-backref" href="#id107">0.4.0</a><a class="headerlink" href="#version-0-4-0" title="Permalink to this headline">¶</a></h2>
+<span id="id39"></span><h2><a class="toc-backref" href="#id113">0.4.0</a><a class="headerlink" href="#version-0-4-0" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -3331,7 +3480,7 @@ celery to always run tasks locally by setting the
 </ul>
 </div>
 <div class="section" id="version-0-3-20">
-<span id="id37"></span><h2><a class="toc-backref" href="#id108">0.3.20</a><a class="headerlink" href="#version-0-3-20" title="Permalink to this headline">¶</a></h2>
+<span id="id40"></span><h2><a class="toc-backref" href="#id114">0.3.20</a><a class="headerlink" href="#version-0-3-20" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -3429,7 +3578,7 @@ shortcuts, plus imports objects from <tt class="docutils literal"><span class="p
 </ul>
 </div>
 <div class="section" id="version-0-3-7">
-<span id="id38"></span><h2><a class="toc-backref" href="#id109">0.3.7</a><a class="headerlink" href="#version-0-3-7" title="Permalink to this headline">¶</a></h2>
+<span id="id41"></span><h2><a class="toc-backref" href="#id115">0.3.7</a><a class="headerlink" href="#version-0-3-7" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -3504,7 +3653,7 @@ executed.</p>
 </ul>
 </div>
 <div class="section" id="version-0-3-3">
-<span id="id39"></span><h2><a class="toc-backref" href="#id110">0.3.3</a><a class="headerlink" href="#version-0-3-3" title="Permalink to this headline">¶</a></h2>
+<span id="id42"></span><h2><a class="toc-backref" href="#id116">0.3.3</a><a class="headerlink" href="#version-0-3-3" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -3519,7 +3668,7 @@ for periodic tasks to execute.</li>
 </ul>
 </div>
 <div class="section" id="version-0-3-2">
-<span id="id40"></span><h2><a class="toc-backref" href="#id111">0.3.2</a><a class="headerlink" href="#version-0-3-2" title="Permalink to this headline">¶</a></h2>
+<span id="id43"></span><h2><a class="toc-backref" href="#id117">0.3.2</a><a class="headerlink" href="#version-0-3-2" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -3535,7 +3684,7 @@ messages in the queue.</li>
 </ul>
 </div>
 <div class="section" id="version-0-3-1">
-<span id="id41"></span><h2><a class="toc-backref" href="#id112">0.3.1</a><a class="headerlink" href="#version-0-3-1" title="Permalink to this headline">¶</a></h2>
+<span id="id44"></span><h2><a class="toc-backref" href="#id118">0.3.1</a><a class="headerlink" href="#version-0-3-1" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -3551,7 +3700,7 @@ of blocking the <tt class="docutils literal"><span class="pre">TaskController</s
 </ul>
 </div>
 <div class="section" id="version-0-3-0">
-<span id="id42"></span><h2><a class="toc-backref" href="#id113">0.3.0</a><a class="headerlink" href="#version-0-3-0" title="Permalink to this headline">¶</a></h2>
+<span id="id45"></span><h2><a class="toc-backref" href="#id119">0.3.0</a><a class="headerlink" href="#version-0-3-0" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -3622,7 +3771,7 @@ stability.</li>
 </ul>
 </div>
 <div class="section" id="version-0-2-0">
-<span id="id43"></span><h2><a class="toc-backref" href="#id114">0.2.0</a><a class="headerlink" href="#version-0-2-0" title="Permalink to this headline">¶</a></h2>
+<span id="id46"></span><h2><a class="toc-backref" href="#id120">0.2.0</a><a class="headerlink" href="#version-0-2-0" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -3639,7 +3788,7 @@ from the database backend.</li>
 </ul>
 </div>
 <div class="section" id="pre3">
-<span id="version-0-2-0-pre3"></span><h2><a class="toc-backref" href="#id115">0.2.0-pre3</a><a class="headerlink" href="#pre3" title="Permalink to this headline">¶</a></h2>
+<span id="version-0-2-0-pre3"></span><h2><a class="toc-backref" href="#id121">0.2.0-pre3</a><a class="headerlink" href="#pre3" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -3655,7 +3804,7 @@ original exception.</li>
 </ul>
 </div>
 <div class="section" id="pre2">
-<span id="version-0-2-0-pre2"></span><h2><a class="toc-backref" href="#id116">0.2.0-pre2</a><a class="headerlink" href="#pre2" title="Permalink to this headline">¶</a></h2>
+<span id="version-0-2-0-pre2"></span><h2><a class="toc-backref" href="#id122">0.2.0-pre2</a><a class="headerlink" href="#pre2" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -3670,7 +3819,7 @@ subclasses of <tt class="docutils literal"><span class="pre">django.core.excepti
 </ul>
 </div>
 <div class="section" id="pre1">
-<span id="version-0-2-0-pre1"></span><h2><a class="toc-backref" href="#id117">0.2.0-pre1</a><a class="headerlink" href="#pre1" title="Permalink to this headline">¶</a></h2>
+<span id="version-0-2-0-pre1"></span><h2><a class="toc-backref" href="#id123">0.2.0-pre1</a><a class="headerlink" href="#pre1" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -3688,7 +3837,7 @@ and <tt class="docutils literal"><span class="pre">celery.backends.default_backe
 </ul>
 </div>
 <div class="section" id="version-0-1-15">
-<span id="id44"></span><h2><a class="toc-backref" href="#id118">0.1.15</a><a class="headerlink" href="#version-0-1-15" title="Permalink to this headline">¶</a></h2>
+<span id="id47"></span><h2><a class="toc-backref" href="#id124">0.1.15</a><a class="headerlink" href="#version-0-1-15" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -3704,7 +3853,7 @@ errors in <tt class="docutils literal"><span class="pre">rabbit.log</span></tt>,
 </ul>
 </div>
 <div class="section" id="version-0-1-14">
-<span id="id45"></span><h2><a class="toc-backref" href="#id119">0.1.14</a><a class="headerlink" href="#version-0-1-14" title="Permalink to this headline">¶</a></h2>
+<span id="id48"></span><h2><a class="toc-backref" href="#id125">0.1.14</a><a class="headerlink" href="#version-0-1-14" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -3719,7 +3868,7 @@ errors in <tt class="docutils literal"><span class="pre">rabbit.log</span></tt>,
 </ul>
 </div>
 <div class="section" id="version-0-1-13">
-<span id="id46"></span><h2><a class="toc-backref" href="#id120">0.1.13</a><a class="headerlink" href="#version-0-1-13" title="Permalink to this headline">¶</a></h2>
+<span id="id49"></span><h2><a class="toc-backref" href="#id126">0.1.13</a><a class="headerlink" href="#version-0-1-13" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -3749,7 +3898,7 @@ $ make html</pre>
 </ul>
 </div>
 <div class="section" id="version-0-1-12">
-<span id="id47"></span><h2><a class="toc-backref" href="#id121">0.1.12</a><a class="headerlink" href="#version-0-1-12" title="Permalink to this headline">¶</a></h2>
+<span id="id50"></span><h2><a class="toc-backref" href="#id127">0.1.12</a><a class="headerlink" href="#version-0-1-12" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -3800,7 +3949,7 @@ settings file. e.g:</p>
 </ul>
 </div>
 <div class="section" id="version-0-1-11">
-<span id="id48"></span><h2><a class="toc-backref" href="#id122">0.1.11</a><a class="headerlink" href="#version-0-1-11" title="Permalink to this headline">¶</a></h2>
+<span id="id51"></span><h2><a class="toc-backref" href="#id128">0.1.11</a><a class="headerlink" href="#version-0-1-11" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -3815,7 +3964,7 @@ servers stopping with the EMFILES (too many open files) error. (fixed)</li>
 </ul>
 </div>
 <div class="section" id="version-0-1-10">
-<span id="id49"></span><h2><a class="toc-backref" href="#id123">0.1.10</a><a class="headerlink" href="#version-0-1-10" title="Permalink to this headline">¶</a></h2>
+<span id="id52"></span><h2><a class="toc-backref" href="#id129">0.1.10</a><a class="headerlink" href="#version-0-1-10" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -3831,7 +3980,7 @@ servers stopping with the EMFILES (too many open files) error. (fixed)</li>
 </ul>
 </div>
 <div class="section" id="version-0-1-8">
-<span id="id50"></span><h2><a class="toc-backref" href="#id124">0.1.8</a><a class="headerlink" href="#version-0-1-8" title="Permalink to this headline">¶</a></h2>
+<span id="id53"></span><h2><a class="toc-backref" href="#id130">0.1.8</a><a class="headerlink" href="#version-0-1-8" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -3848,7 +3997,7 @@ servers stopping with the EMFILES (too many open files) error. (fixed)</li>
 </ul>
 </div>
 <div class="section" id="version-0-1-7">
-<span id="id51"></span><h2><a class="toc-backref" href="#id125">0.1.7</a><a class="headerlink" href="#version-0-1-7" title="Permalink to this headline">¶</a></h2>
+<span id="id54"></span><h2><a class="toc-backref" href="#id131">0.1.7</a><a class="headerlink" href="#version-0-1-7" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -3869,7 +4018,7 @@ and <tt class="docutils literal"><span class="pre">settings.CELERY_AMQP_CONSUMER
 </ul>
 </div>
 <div class="section" id="version-0-1-6">
-<span id="id52"></span><h2><a class="toc-backref" href="#id126">0.1.6</a><a class="headerlink" href="#version-0-1-6" title="Permalink to this headline">¶</a></h2>
+<span id="id55"></span><h2><a class="toc-backref" href="#id132">0.1.6</a><a class="headerlink" href="#version-0-1-6" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -3921,7 +4070,7 @@ the name change request is in <tt class="docutils literal"><span class="pre">doc
 </ul>
 </div>
 <div class="section" id="version-0-1-0">
-<span id="id53"></span><h2><a class="toc-backref" href="#id127">0.1.0</a><a class="headerlink" href="#version-0-1-0" title="Permalink to this headline">¶</a></h2>
+<span id="id56"></span><h2><a class="toc-backref" href="#id133">0.1.0</a><a class="headerlink" href="#version-0-1-0" title="Permalink to this headline">¶</a></h2>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -3987,7 +4136,7 @@ the name change request is in <tt class="docutils literal"><span class="pre">doc
         <li class="right" >
           <a href="internals/reference/celery.platforms.html" title="Platform Specific - celery.platforms"
              >previous</a> |</li>
-        <li><a href="index.html">Celery v2.1.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v2.1.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

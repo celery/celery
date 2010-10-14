@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Defining Tasks - celery.task.base &mdash; Celery v2.1.0 documentation</title>
+    <title>Defining Tasks - celery.task.base &mdash; Celery v2.1.1 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.1.0',
+        VERSION:     '2.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.0 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.1.1 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="Task Sets, Subtasks and Callbacks - celery.task.sets" href="celery.task.sets.html" />
     <link rel="prev" title="Task Decorators - celery.decorators" href="celery.decorators.html" /> 
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="celery.decorators.html" title="Task Decorators - celery.decorators"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -234,6 +234,12 @@ crashes in the middle of execution, which may be acceptable for some
 applications.</p>
 <p>The global default can be overriden by the <a class="reference internal" href="../configuration.html#std:setting-CELERY_ACKS_LATE"><tt class="xref std std-setting docutils literal"><span class="pre">CELERY_ACKS_LATE</span></tt></a>
 setting.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="celery.task.base.Task.expires">
+<tt class="descname">expires</tt><a class="headerlink" href="#celery.task.base.Task.expires" title="Permalink to this definition">¶</a></dt>
+<dd><p>Default task expiry time in seconds or a <tt class="xref py py-class docutils literal"><span class="pre">datetime</span></tt>.</p>
 </dd></dl>
 
 <dl class="classmethod">
@@ -740,7 +746,7 @@ set to the name of the module it was defined in, and the class name.</p>
         <li class="right" >
           <a href="celery.decorators.html" title="Task Decorators - celery.decorators"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>

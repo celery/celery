@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>In-memory Representation of Cluster State - celery.events.state &mdash; Celery v2.1.0 documentation</title>
+    <title>In-memory Representation of Cluster State - celery.events.state &mdash; Celery v2.1.1 documentation</title>
     <link rel="stylesheet" href="../static/celery.css" type="text/css" />
     <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.1.0',
+        VERSION:     '2.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../static/jquery.js"></script>
     <script type="text/javascript" src="../static/underscore.js"></script>
     <script type="text/javascript" src="../static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.0 documentation" href="../index.html" />
+    <link rel="top" title="Celery v2.1.1 documentation" href="../index.html" />
     <link rel="up" title="API Reference" href="index.html" />
     <link rel="next" title="App: Worker Node - celery.apps.worker" href="celery.apps.worker.html" />
     <link rel="prev" title="Events - celery.events" href="celery.events.html" /> 
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="celery.events.html" title="Events - celery.events"
              accesskey="P">previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
       </ul>
     </div>  
@@ -84,28 +84,7 @@
 <dl class="method">
 <dt id="celery.events.state.State.event">
 <tt class="descname">event</tt><big>(</big><em>event</em><big>)</big><a class="headerlink" href="#celery.events.state.State.event" title="Permalink to this definition">¶</a></dt>
-<dd><p>Process event.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.events.state.State.freeze">
-<tt class="descname">freeze</tt><big>(</big><em>buffer=True</em><big>)</big><a class="headerlink" href="#celery.events.state.State.freeze" title="Permalink to this definition">¶</a></dt>
-<dd><p>Stop recording the event stream.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>buffer</strong> &#8211; If true, any events received while frozen
-will be buffered, you can use <tt class="docutils literal"><span class="pre">thaw(replay=True)</span></tt> to apply
-this buffer. <a class="reference internal" href="../changelog.html#State.thaw" title="State.thaw"><tt class="xref py py-meth docutils literal"><span class="pre">thaw()</span></tt></a> will clear the buffer and resume
-recording the stream.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="celery.events.state.State.freeze_while">
@@ -155,26 +134,6 @@ recording the stream.</li>
 <tt class="descname">tasks_by_worker</tt><big>(</big><em>hostname</em>, <em>limit=None</em><big>)</big><a class="headerlink" href="#celery.events.state.State.tasks_by_worker" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get all tasks by worker.</p>
 <p>Returns a list of <tt class="docutils literal"><span class="pre">(uuid,</span> <span class="pre">task)</span></tt> tuples.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="celery.events.state.State.thaw">
-<tt class="descname">thaw</tt><big>(</big><em>replay=True</em><big>)</big><a class="headerlink" href="#celery.events.state.State.thaw" title="Permalink to this definition">¶</a></dt>
-<dd><p>Resume recording of the event stream.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>replay</strong> &#8211; Will replay buffered events received while
-the stream was frozen.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-<p>This will always clear the buffer, deleting any events collected
-while the stream was frozen.</p>
 </dd></dl>
 
 <dl class="method">
@@ -320,7 +279,7 @@ while the stream was frozen.</p>
         <li class="right" >
           <a href="celery.events.html" title="Events - celery.events"
              >previous</a> |</li>
-        <li><a href="../index.html">Celery v2.1.0 documentation</a> &raquo;</li>
+        <li><a href="../index.html">Celery v2.1.1 documentation</a> &raquo;</li>
           <li><a href="index.html" >API Reference</a> &raquo;</li> 
       </ul>
     </div>

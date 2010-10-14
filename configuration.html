@@ -6,14 +6,14 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Configuration and defaults &mdash; Celery v2.1.0 documentation</title>
+    <title>Configuration and defaults &mdash; Celery v2.1.1 documentation</title>
     <link rel="stylesheet" href="static/celery.css" type="text/css" />
     <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="static/issuetracker.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '2.1.0',
+        VERSION:     '2.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="static/jquery.js"></script>
     <script type="text/javascript" src="static/underscore.js"></script>
     <script type="text/javascript" src="static/doctools.js"></script>
-    <link rel="top" title="Celery v2.1.0 documentation" href="index.html" />
+    <link rel="top" title="Celery v2.1.1 documentation" href="index.html" />
     <link rel="next" title="Cookbook" href="cookbook/index.html" />
     <link rel="prev" title="Monitoring Guide" href="userguide/monitoring.html" /> 
   </head>
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="userguide/monitoring.html" title="Monitoring Guide"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Celery v2.1.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v2.1.1 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -623,8 +623,8 @@ it&#8217;s replaced with a new one.  Default is no limit.</p>
 <p>Task hard time limit in seconds.  The worker processing the task will
 be killed and replaced with a new one when this is exceeded.</p>
 </div>
-<div class="section" id="celeryd-soft-task-time-limit">
-<span id="std:setting-CELERYD_SOFT_TASK_TIME_LIMIT"></span><h4>CELERYD_SOFT_TASK_TIME_LIMIT<a class="headerlink" href="#celeryd-soft-task-time-limit" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="celeryd-task-soft-time-limit">
+<span id="std:setting-CELERYD_TASK_SOFT_TIME_LIMIT"></span><h4>CELERYD_TASK_SOFT_TIME_LIMIT<a class="headerlink" href="#celeryd-task-soft-time-limit" title="Permalink to this headline">¶</a></h4>
 <p>Task soft time limit in seconds.</p>
 <p>The <a class="reference internal" href="reference/celery.exceptions.html#celery.exceptions.SoftTimeLimitExceeded" title="celery.exceptions.SoftTimeLimitExceeded"><tt class="xref py py-exc docutils literal"><span class="pre">SoftTimeLimitExceeded</span></tt></a> exception will be
 raised when this is exceeded.  The task can catch this to
@@ -786,7 +786,7 @@ using the <em class="xref std std-option">--logfile</em> option to <a class="ref
 </div>
 <div class="section" id="celeryd-log-level">
 <span id="std:setting-CELERYD_LOG_LEVEL"></span><h4>CELERYD_LOG_LEVEL<a class="headerlink" href="#celeryd-log-level" title="Permalink to this headline">¶</a></h4>
-<p>Worker log level, can be any of <tt class="xref py py-const docutils literal"><span class="pre">DEBUG</span></tt>, <tt class="xref py py-const docutils literal"><span class="pre">INFO</span></tt>, <tt class="xref py py-const docutils literal"><span class="pre">WARNING</span></tt>,
+<p>Worker log level, can be one of <tt class="xref py py-const docutils literal"><span class="pre">DEBUG</span></tt>, <tt class="xref py py-const docutils literal"><span class="pre">INFO</span></tt>, <tt class="xref py py-const docutils literal"><span class="pre">WARNING</span></tt>,
 <tt class="xref py py-const docutils literal"><span class="pre">ERROR</span></tt> or <tt class="xref py py-const docutils literal"><span class="pre">CRITICAL</span></tt>.</p>
 <p>Can also be set via the <em class="xref std std-option">--loglevel</em> argument to
 <a class="reference internal" href="reference/celery.bin.celeryd.html#module-celery.bin.celeryd"><tt class="xref py py-mod docutils literal"><span class="pre">celeryd</span></tt></a>.</p>
@@ -809,6 +809,20 @@ the <em class="xref std std-option">--loglevel</em> option to <a class="referenc
 </div>
 <p>See the Python <tt class="xref py py-mod docutils literal"><span class="pre">logging</span></tt> module for more information about log
 formats.</p>
+</div>
+<div class="section" id="celery-redirect-stdouts">
+<span id="std:setting-CELERY_REDIRECT_STDOUTS"></span><h4>CELERY_REDIRECT_STDOUTS<a class="headerlink" href="#celery-redirect-stdouts" title="Permalink to this headline">¶</a></h4>
+<p>If enabled <tt class="docutils literal"><span class="pre">stdout</span></tt> and <tt class="docutils literal"><span class="pre">stderr</span></tt> will be redirected
+to the current logger.</p>
+<p>Enabled by default.
+Used by <strong class="program">celeryd</strong> and <strong class="program">celerybeat</strong>.</p>
+</div>
+<div class="section" id="celery-redirect-stdouts-level">
+<span id="std:setting-CELERY_REDIRECT_STDOUTS_LEVEL"></span><h4>CELERY_REDIRECT_STDOUTS_LEVEL<a class="headerlink" href="#celery-redirect-stdouts-level" title="Permalink to this headline">¶</a></h4>
+<p>The loglevel output to <tt class="docutils literal"><span class="pre">stdout</span></tt> and <tt class="docutils literal"><span class="pre">stderr</span></tt> is logged as.
+Can be one of <tt class="xref py py-const docutils literal"><span class="pre">DEBUG</span></tt>, <tt class="xref py py-const docutils literal"><span class="pre">INFO</span></tt>, <tt class="xref py py-const docutils literal"><span class="pre">WARNING</span></tt>,
+<tt class="xref py py-const docutils literal"><span class="pre">ERROR</span></tt> or <tt class="xref py py-const docutils literal"><span class="pre">CRITICAL</span></tt>.</p>
+<p>Default is <tt class="xref py py-const docutils literal"><span class="pre">WARNING</span></tt>.</p>
 </div>
 </div>
 <div class="section" id="custom-component-classes-advanced">
@@ -841,11 +855,18 @@ Default is <tt class="xref py py-class docutils literal"><span class="pre">celer
 <p>The periodic task schedule used by <a class="reference internal" href="reference/celery.bin.celerybeat.html#module-celery.bin.celerybeat"><tt class="xref py py-mod docutils literal"><span class="pre">celerybeat</span></tt></a>.
 See <a class="reference internal" href="userguide/periodic-tasks.html#beat-entries"><em>Entries</em></a>.</p>
 </div>
+<div class="section" id="celerybeat-scheduler">
+<span id="std:setting-CELERYBEAT_SCHEDULER"></span><h4>CELERYBEAT_SCHEDULER<a class="headerlink" href="#celerybeat-scheduler" title="Permalink to this headline">¶</a></h4>
+<p>The default scheduler class.  Default is
+<tt class="docutils literal"><span class="pre">&quot;celery.beat.PersistentScheduler&quot;</span></tt>.</p>
+<p>Can also be set via the <em class="xref std std-option">-S</em> argument to
+<a class="reference internal" href="reference/celery.bin.celerybeat.html#module-celery.bin.celerybeat"><tt class="xref py py-mod docutils literal"><span class="pre">celerybeat</span></tt></a>.</p>
+</div>
 <div class="section" id="celerybeat-schedule-filename">
 <span id="std:setting-CELERYBEAT_SCHEDULE_FILENAME"></span><h4>CELERYBEAT_SCHEDULE_FILENAME<a class="headerlink" href="#celerybeat-schedule-filename" title="Permalink to this headline">¶</a></h4>
-<p>Name of the file used to stores the last run times.
-Can be a relative or absolute path, but be aware that the suffix <tt class="docutils literal"><span class="pre">.db</span></tt>
-may be appended to the file name (depending on Python version).</p>
+<p>Name of the file used by <tt class="docutils literal"><span class="pre">PersistentScheduler</span></tt> to store the last run times
+of periodic tasks.  Can be a relative or absolute path, but be aware that the
+suffix <tt class="docutils literal"><span class="pre">.db</span></tt> may be appended to the file name (depending on Python version).</p>
 <p>Can also be set via the <em class="xref std std-option">--schedule</em> argument to
 <a class="reference internal" href="reference/celery.bin.celerybeat.html#module-celery.bin.celerybeat"><tt class="xref py py-mod docutils literal"><span class="pre">celerybeat</span></tt></a>.</p>
 </div>
@@ -938,7 +959,7 @@ the <em class="xref std std-option">--logfile</em> argument to <tt class="docuti
         <li class="right" >
           <a href="userguide/monitoring.html" title="Monitoring Guide"
              >previous</a> |</li>
-        <li><a href="index.html">Celery v2.1.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Celery v2.1.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

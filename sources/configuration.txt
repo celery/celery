@@ -745,9 +745,9 @@ CELERYD_TASK_TIME_LIMIT
 Task hard time limit in seconds.  The worker processing the task will
 be killed and replaced with a new one when this is exceeded.
 
-.. setting:: CELERYD_SOFT_TASK_TIME_LIMIT
+.. setting:: CELERYD_TASK_SOFT_TIME_LIMIT
 
-CELERYD_SOFT_TASK_TIME_LIMIT
+CELERYD_TASK_SOFT_TIME_LIMIT
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Task soft time limit in seconds.
@@ -998,7 +998,7 @@ The default is :const:`None` (``stderr``)
 CELERYD_LOG_LEVEL
 ~~~~~~~~~~~~~~~~~
 
-Worker log level, can be any of :const:`DEBUG`, :const:`INFO`, :const:`WARNING`,
+Worker log level, can be one of :const:`DEBUG`, :const:`INFO`, :const:`WARNING`,
 :const:`ERROR` or :const:`CRITICAL`.
 
 Can also be set via the :option:`--loglevel` argument to
@@ -1033,6 +1033,28 @@ Default is::
 
 See the Python :mod:`logging` module for more information about log
 formats.
+
+.. setting:: CELERY_REDIRECT_STDOUTS
+
+CELERY_REDIRECT_STDOUTS
+~~~~~~~~~~~~~~~~~~~~~~~
+
+If enabled ``stdout`` and ``stderr`` will be redirected
+to the current logger.
+
+Enabled by default.
+Used by :program:`celeryd` and :program:`celerybeat`.
+
+.. setting:: CELERY_REDIRECT_STDOUTS_LEVEL
+
+CELERY_REDIRECT_STDOUTS_LEVEL
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The loglevel output to ``stdout`` and ``stderr`` is logged as.
+Can be one of :const:`DEBUG`, :const:`INFO`, :const:`WARNING`,
+:const:`ERROR` or :const:`CRITICAL`.
+
+Default is :const:`WARNING`.
 
 .. _conf-custom-components:
 
@@ -1084,14 +1106,25 @@ CELERYBEAT_SCHEDULE
 The periodic task schedule used by :mod:`~celery.bin.celerybeat`.
 See :ref:`beat-entries`.
 
+.. setting:: CELERYBEAT_SCHEDULER
+
+CELERYBEAT_SCHEDULER
+~~~~~~~~~~~~~~~~~~~~
+
+The default scheduler class.  Default is
+``"celery.beat.PersistentScheduler"``.
+
+Can also be set via the :option:`-S` argument to
+:mod:`~celery.bin.celerybeat`.
+
 .. setting:: CELERYBEAT_SCHEDULE_FILENAME
 
 CELERYBEAT_SCHEDULE_FILENAME
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Name of the file used to stores the last run times.
-Can be a relative or absolute path, but be aware that the suffix ``.db``
-may be appended to the file name (depending on Python version).
+Name of the file used by ``PersistentScheduler`` to store the last run times
+of periodic tasks.  Can be a relative or absolute path, but be aware that the
+suffix ``.db`` may be appended to the file name (depending on Python version).
 
 Can also be set via the :option:`--schedule` argument to
 :mod:`~celery.bin.celerybeat`.
