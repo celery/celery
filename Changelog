@@ -5,6 +5,139 @@
 .. contents::
     :local:
 
+.. _version-2.1.1:
+
+2.1.1
+=====
+:release-date: 2010-10-14 14:00 PM CEST
+
+Fixes
+-----
+
+* Now working on Windows again.
+
+   Removed dependency on the pwd/grp modules.
+
+* snapshots: Fixed race condition leading to loss of events.
+
+* celeryd: Reject tasks with an eta that cannot be converted to timestamp.
+
+    See issue #209
+
+* concurrency.processes.pool: The semaphore was released twice for each task
+  (both at ACK and result ready).
+
+    This has been fixed, and it is now released only once per task.
+
+* docs/configuration: Fixed typo ``CELERYD_SOFT_TASK_TIME_LIMIT`` ->
+  :setting:`CELERYD_TASK_SOFT_TIME_LIMIT`.
+
+    See issue #214
+
+* control command ``dump_scheduled``: was using old .info attribute
+
+* :program:`celeryd-multi`: Fixed ``set changed size during iteration`` bug
+    occuring in the restart command.
+
+* celeryd: Accidentally tried to use additional command line arguments.
+
+   This would lead to an error like:
+
+    ``got multiple values for keyword argument 'concurrency'``.
+
+    Additional command line arguments are now ignored, and does not
+    produce this error.  However -- we do reserve the right to use
+    positional arguments in the future, so please do not depend on this
+    behavior.
+
+* celerybeat: Now respects routers and task execution options again.
+
+* celerybeat: Now reuses the publisher instead of the connection.
+
+* Cache result backend: Using :class:`float` as the expires argument
+  to ``cache.set`` is deprecated by the memcached libraries,
+  so we now automatically cast to :class:`int`.
+
+News
+----
+
+* Now depends on carrot version 0.10.7.
+
+* Added :setting:`CELERY_REDIRECT_STDOUTS`, and
+  :setting:`CELERYD_REDIRECT_STDOUTS_LEVEL` settings.
+
+    :setting:`CELERY_REDIRECT_STDOUTS` is used by :program:`celeryd` and
+    :program:`celerybeat`.  All output to ``stdout`` and ``stderr`` will be
+    redirected to the current logger if enabled.
+
+    :setting:`CELERY_REDIRECT_STDOUTS_LEVEL` decides the loglevel used and is
+    :const:`WARNING` by default.
+
+* Added :setting:`CELERYBEAT_SCHEDULER` setting.
+
+    This setting is used to define the default for the -S option to
+    :program:`celerybeat`.
+
+    Example:
+
+    .. code-block:: python
+
+        CELERYBEAT_SCHEDULER = "djcelery.schedulers.DatabaseScheduler"
+
+* Added Task.expires: Used to set default expiry time for tasks.
+
+* New remote control commands: ``add_consumer`` and ``cancel_consumer``.
+
+    .. method:: add_consumer(queue, exchange, exchange_type, routing_key,
+                             **options)
+        :module:
+
+        Tells the worker to declare and consume from the specified
+        declaration.
+
+    .. method:: cancel_consumer(queue_name)
+        :module:
+
+        Tells the worker to stop consuming from queue (by queue name).
+
+
+    Commands also added to :program:`celeryctl` and
+    :class:`~celery.task.control.inspect`.
+
+
+    Example using celeryctl to start consuming from queue "queue", in 
+    exchange "exchange", of type "direct" using binding key "key"::
+
+        $ celeryctl inspect add_consumer queue exchange direct key
+        $ celeryctl inspect cancel_consumer queue
+
+    See :ref:`monitoring-celeryctl` for more information about the
+    :program:`celeryctl` program.
+
+
+    Another example using :class:`~celery.task.control.inspect`:
+
+    .. code-block:: python
+
+        >>> from celery.task.control import inspect
+        >>> inspect.add_consumer(queue="queue", exchange="exchange",
+        ...                      exchange_type="direct",
+        ...                      routing_key="key",
+        ...                      durable=False,
+        ...                      auto_delete=True)
+
+        >>> inspect.cancel_consumer("queue")
+
+* celerybeat: Now logs the traceback if a message can't be sent.
+
+* celerybeat: Now enables a default socket timeout of 30 seconds.
+
+* README/introduction/homepage: Added link to `Flask-Celery`_.
+
+.. _`Flask-Celery`: http://github.com/ask/flask-celery
+
+
+
 .. _version-2.1.0:
 
 2.1.0
