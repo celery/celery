@@ -164,7 +164,6 @@ class MultiTool(object):
         wanted = argv[0]
         p = NamespacedOptionParser(argv[1:])
         for name, worker, _ in multi_args(p, cmd):
-            print("NAME: %s WANTED: %s" % (name, wanted))
             if name == wanted:
                 print(" ".join(worker))
                 return
