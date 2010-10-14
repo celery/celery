@@ -144,6 +144,22 @@ if os.path.exists("README.rst"):
 else:
     long_description = "See http://pypi.python.org/pypi/celery"
 
+
+console_scripts = [
+        'celerybeat = celery.bin.celerybeat:main',
+        'camqadm = celery.bin.camqadm:main',
+        'celeryev = celery.bin.celeryev:main',
+        'celeryctl = celery.bin.celeryctl:main',
+        'celeryd-multi = celery.bin.celeryd_multi:main',
+]
+
+import platform
+if platform.system() == "Windows":
+    console_scripts.append('celeryd = celery.bin.celeryd:windows_main')
+else:
+    console_scripts.append('celeryd = celery.bin.celeryd:main')
+
+
 setup(
     name="celery",
     version=distmeta.__version__,
@@ -183,14 +199,7 @@ setup(
         "Programming Language :: Python :: 2.7",
     ],
     entry_points={
-        'console_scripts': [
-            'celeryd = celery.bin.celeryd:main',
-            'celerybeat = celery.bin.celerybeat:main',
-            'camqadm = celery.bin.camqadm:main',
-            'celeryev = celery.bin.celeryev:main',
-            'celeryctl = celery.bin.celeryctl:main',
-            'celeryd-multi = celery.bin.celeryd_multi:main',
-            ],
+        'console_scripts': console_scripts,
     },
     long_description=long_description,
 )
