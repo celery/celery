@@ -85,7 +85,8 @@ class Beat(object):
             beat.start()
         except Exception, exc:
             logger.critical("celerybeat raised exception %s: %r\n%s" % (
-                            exc.__class__, exc, traceback.format_exc()))
+                            exc.__class__, exc, traceback.format_exc()),
+                            exc_info=sys.exc_info())
 
     def init_loader(self):
         # Run the worker init handler.
