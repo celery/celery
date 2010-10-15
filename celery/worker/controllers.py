@@ -3,6 +3,7 @@
 Worker Controller Threads
 
 """
+import sys
 import threading
 import traceback
 from Queue import Empty as QueueEmpty
@@ -52,7 +53,7 @@ class Mediator(threading.Thread):
             self.callback(task)
         except Exception, exc:
             self.logger.error("Mediator callback raised exception %r\n%s" % (
-                exc, traceback.format_exc()))
+                exc, traceback.format_exc()), exc_info=sys.exc_info())
 
     def run(self):
         while not self._shutdown.isSet():

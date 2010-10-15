@@ -454,7 +454,7 @@ class TaskRequest(object):
                    "traceback": unicode(exc_info.traceback, 'utf-8'),
                    "args": self.args,
                    "kwargs": self.kwargs}
-        self.logger.error(self.error_msg.strip() % context)
+        self.logger.error(self.error_msg.strip() % context, exc_info=exc_info)
 
         task_obj = tasks.get(self.task_name, object)
         self.send_error_email(task_obj, context, exc_info.exception,

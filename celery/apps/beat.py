@@ -86,9 +86,9 @@ class Beat(object):
             self.install_sync_handler(beat)
             beat.start()
         except Exception, exc:
-            emergency_error(self.logfile,
-                    "celerybeat raised exception %s: %s\n%s" % (
-                            exc.__class__, exc, traceback.format_exc()))
+            logger.critical("celerybeat raised exception: %r\n%s" % (
+                            exc, traceback.format_exc()),
+                            exc_info=sys.exc_info())
 
     def init_loader(self):
         # Run the worker init handler.
