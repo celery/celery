@@ -1,5 +1,7 @@
 from __future__ import generators
 
+import os
+import sys
 import time
 import operator
 try:
@@ -300,7 +302,7 @@ def fun_takes_kwargs(fun, kwlist=[]):
     return filter(partial(operator.contains, args), kwlist)
 
 
-def get_cls_by_name(name, aliases={}):
+def get_cls_by_name(name, aliases={}, imp=None):
     """Get class by name.
 
     The name should be the full dot-separated path to the class::
@@ -330,13 +332,15 @@ def get_cls_by_name(name, aliases={}):
         True
 
     """
+    if imp is None:
+        imp = importlib.import_module
 
     if not isinstance(name, basestring):
         return name                                 # already a class
 
     name = aliases.get(name) or name
     module_name, _, cls_name = rpartition(name, ".")
-    module = importlib.import_module(module_name)
+    module = imp(module_name)
     return getattr(module, cls_name)
 
 get_symbol_by_name = get_cls_by_name
@@ -385,3 +389,27 @@ def isatty(fh):
 def textindent(t, indent=0):
         """Indent text."""
         return "\n".join(" " * indent + p for p in t.split("\n"))
+
+
+
+def import_from_cwd(module, imp=None):
+    """Import module, but make sure it finds modules
+    located in the current directory.
+
+    Modules located in the current directory has
+    precedence over modules located in ``sys.path``.
+    """
+    if imp is None:
+        imp = importlib.import_module
+    cwd = os.getcwd()
+    if cwd in sys.path:
+        return imp(module)
+    sys.path.insert(0, cwd)
+    try:
+        return imp(module)
+    finally:
+        try:
+            sys.path.remove(cwd)
+        except ValueError:
+            pass
+

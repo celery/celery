@@ -4,6 +4,7 @@ import sys
 from optparse import OptionParser, make_option as Option
 
 import celery
+from celery.utils import import_from_cwd
 
 
 class Command(object):
@@ -85,8 +86,8 @@ class Command(object):
         return argv
 
     def get_cls_by_name(self, name):
-        from celery.utils import get_cls_by_name
-        return get_cls_by_name(name)
+        from celery.utils import get_cls_by_name, import_from_cwd
+        return get_cls_by_name(name, imp=import_from_cwd)
 
     def process_cmdline_config(self, argv):
         try:

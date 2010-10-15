@@ -1,10 +1,9 @@
-import os
+import importlib
 import re
-import sys
 
 import anyjson
 
-from importlib import import_module as _import_module
+from celery.utils import import_from_cwd as _import_from_cwd
 
 BUILTIN_MODULES = ["celery.task"]
 
@@ -50,7 +49,12 @@ class BaseLoader(object):
         return self.import_from_cwd(module)
 
     def import_module(self, module):
-        return _import_module(module)
+        return importlib.import_module(module)
+
+    def import_from_cwd(self, module, imp=None):
+        if imp is None:
+            imp = self.import_module
+        return _import_from_cwd(module, imp)
 
     def import_default_modules(self):
         imports = self.conf.get("CELERY_IMPORTS") or []
@@ -107,27 +111,6 @@ class BaseLoader(object):
             return ns_key, value
 
         return dict(map(getarg, args))
-
-    def import_from_cwd(self, module, imp=None):
-        """Import module, but make sure it finds modules
-        located in the current directory.
-
-        Modules located in the current directory has
-        precedence over modules located in ``sys.path``.
-        """
-        if imp is None:
-            imp = self.import_module
-        cwd = os.getcwd()
-        if cwd in sys.path:
-            return imp(module)
-        sys.path.insert(0, cwd)
-        try:
-            return imp(module)
-        finally:
-            try:
-                sys.path.remove(cwd)
-            except ValueError:
-                pass
 
     @property
     def conf(self):
