@@ -11,7 +11,10 @@ from celery.schedules import maybe_schedule
 from celery.utils import mattrgetter, gen_unique_id, fun_takes_kwargs
 from celery.utils.timeutils import timedelta_seconds
 
-from celery.task.sets import TaskSet, subtask
+from celery.task import sets
+
+TaskSet = sets.TaskSet
+subtask = sets.subtask
 
 PERIODIC_DEPRECATION_TEXT = """\
 Periodic task classes has been deprecated and will be removed

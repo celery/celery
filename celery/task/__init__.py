@@ -3,9 +3,8 @@
 Working with tasks and task sets.
 
 """
+import warnings
 
-from celery.execute import apply_async
-from celery.registry import tasks
 from celery.serialization import pickle
 from celery.task.base import Task, PeriodicTask
 from celery.task.sets import TaskSet
@@ -14,8 +13,8 @@ from celery.task.builtins import AsynchronousMapTask, _dmap
 from celery.task.control import discard_all
 from celery.task.http import HttpDispatchTask
 
-__all__ = ["Task", "TaskSet", "PeriodicTask", "tasks", "discard_all",
-           "dmap", "dmap_async", "execute_remote", "ping", "HttpDispatchTask"]
+__all__ = ["Task", "TaskSet", "PeriodicTask", "discard_all",
+           "dmap", "dmap_async", "execute_remote", "HttpDispatchTask"]
 
 
 def dmap(fun, args, timeout=None):
@@ -71,12 +70,12 @@ def execute_remote(fun, *args, **kwargs):
 
 
 def ping():
-    """Test if the server is alive.
+    """Deprecated and scheduled for removal in Celery 2.3.
 
-    Example:
+    Please use :meth:`celery.task.control.ping` instead.
 
-        >>> from celery.task import ping
-        >>> ping()
-        'pong'
     """
+    warnings.warn(DeprecationWarning(
+        "The ping task has been deprecated and will be removed in Celery "
+        "v2.3.  Please use inspect.ping instead."))
     return PingTask.apply_async().get()

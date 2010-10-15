@@ -86,14 +86,10 @@ from celery.events import EventDispatcher
 from celery.exceptions import NotRegistered
 from celery.pidbox import BroadcastConsumer
 from celery.utils import noop, retry_over_time
-
+from celery.utils.timer2 import to_timestamp
 from celery.worker.job import TaskRequest, InvalidTaskError
 from celery.worker.control import ControlDispatch
 from celery.worker.heartbeat import Heart
-from celery.events import EventDispatcher
-from celery.exceptions import NotRegistered
-from celery.datastructures import SharedCounter
-from celery.utils.timer2 import to_timestamp
 
 RUN = 0x1
 CLOSE = 0x2

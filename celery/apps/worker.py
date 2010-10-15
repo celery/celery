@@ -4,6 +4,7 @@ import multiprocessing
 import os
 import socket
 import sys
+import warnings
 
 from celery import __version__
 from celery import platforms

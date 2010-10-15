@@ -1,7 +1,8 @@
 from itertools import count
-from collections import deque, defaultdict
+from collections import deque
 
 from celery.task.base import Task
+from celery.utils.compat import defaultdict
 
 
 class Batches(Task):

@@ -9,7 +9,7 @@ from celery import states
 from celery.app import app_or_default
 from celery.datastructures import PositionQueue
 from celery.exceptions import TimeoutError
-from celery.utils import any, all
+from celery.utils.compat import any, all
 
 
 class BaseAsyncResult(object):

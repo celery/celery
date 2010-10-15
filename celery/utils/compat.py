@@ -6,6 +6,7 @@ try:
     from urlparse import parse_qsl
 except ImportError:
     from cgi import parse_qsl
+parse_sql = parse_qsl
 
 ############## __builtin__.all ##############################################
 

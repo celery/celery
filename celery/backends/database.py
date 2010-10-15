@@ -5,12 +5,16 @@ from celery.db.models import Task, TaskSet
 from celery.db.session import ResultSession
 from celery.exceptions import ImproperlyConfigured
 
-try:
-    import sqlalchemy as _
-except ImportError:
-    raise ImproperlyConfigured(
-        "The database result backend requires SQLAlchemy to be installed."
-        "See http://pypi.python.org/pypi/SQLAlchemy")
+
+def _sqlalchemy_installed():
+    try:
+        import sqlalchemy
+    except ImportError:
+        raise ImproperlyConfigured(
+            "The database result backend requires SQLAlchemy to be installed."
+            "See http://pypi.python.org/pypi/SQLAlchemy")
+    return sqlalchemy
+_sqlalchemy_installed()
 
 
 class DatabaseBackend(BaseDictBackend):

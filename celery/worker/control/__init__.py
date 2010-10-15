@@ -2,7 +2,8 @@ from celery.app import app_or_default
 from celery.pidbox import ControlReplyPublisher
 from celery.utils import kwdict
 from celery.worker.control.registry import Panel
-from celery.worker.control import builtins
+
+__import__("celery.worker.control.builtins")
 
 
 class ControlDispatch(object):

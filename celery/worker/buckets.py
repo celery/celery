@@ -5,9 +5,8 @@ from collections import deque
 from Queue import Queue, Empty as QueueEmpty
 
 from celery.datastructures import TokenBucket
-from celery.utils import all
 from celery.utils import timeutils
-from celery.utils.compat import izip_longest, chain_from_iterable
+from celery.utils.compat import all, izip_longest, chain_from_iterable
 
 
 class RateLimitExceeded(Exception):

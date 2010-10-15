@@ -4,7 +4,6 @@ import unittest2 as unittest
 from datetime import datetime, timedelta
 
 from celery import beat
-from celery.app import app_or_default
 from celery.result import AsyncResult
 from celery.schedules import schedule
 from celery.utils import gen_unique_id

@@ -7,7 +7,6 @@ from pyparsing import ParseException
 
 from celery import task
 from celery.app import app_or_default
-from celery import messaging
 from celery.decorators import task as task_dec
 from celery.exceptions import RetryTaskError
 from celery.execute import send_task
@@ -17,10 +16,6 @@ from celery.utils import timeutils
 from celery.utils import gen_unique_id
 from celery.utils.functional import wraps
 from celery.utils.timeutils import parse_iso8601
-from celery.result import EagerResult
-from celery.execute import send_task
-from celery.decorators import task as task_dec
-from celery.exceptions import RetryTaskError
 
 from celery.tests.utils import with_eager_tasks
 

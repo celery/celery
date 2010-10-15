@@ -7,7 +7,6 @@ from nose import SkipTest
 from celery.exceptions import ImproperlyConfigured
 
 from celery import states
-from celery.app import app_or_default
 from celery.utils import gen_unique_id
 from celery.backends import pyredis
 from celery.backends.pyredis import RedisBackend

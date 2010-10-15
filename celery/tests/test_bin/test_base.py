@@ -1,7 +1,6 @@
 import unittest2 as unittest
 
 from celery.bin.base import Command
-from celery.datastructures import AttributeDict
 
 
 class Object(object):

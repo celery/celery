@@ -12,7 +12,6 @@ TASK_INFO_FIELDS = ("exchange", "routing_key", "rate_limit")
 @Panel.register
 def revoke(panel, task_id, **kwargs):
     """Revoke task by task id."""
-    app = panel.app
     revoked.add(task_id)
     panel.logger.warn("Task %s revoked" % (task_id, ))
     return {"ok": "task %s revoked" % (task_id, )}

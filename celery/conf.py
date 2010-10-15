@@ -7,7 +7,9 @@ Use :mod:`celery.defaults` instead.
 
 """
 from celery.app import app_or_default
-from celery.app.defaults import DEFAULTS as _DEFAULTS
+from celery.app import defaults
+
+_DEFAULTS = defaults.DEFAULTS
 
 conf = app_or_default().conf
 
