@@ -40,12 +40,14 @@ class TraceInfo(object):
 
 class TaskTrace(object):
 
-    def __init__(self, task_name, task_id, args, kwargs, task=None, **_):
+    def __init__(self, task_name, task_id, args, kwargs, task=None,
+            request=None, **_):
         self.task_id = task_id
         self.task_name = task_name
         self.args = args
         self.kwargs = kwargs
         self.task = task or tasks[self.task_name]
+        self.request = request or {}
         self.status = states.PENDING
         self.strtb = None
         self._trace_handlers = {states.FAILURE: self.handle_failure,
@@ -56,6 +58,8 @@ class TaskTrace(object):
         return self.execute()
 
     def execute(self):
+        self.task.request.update(self.request, args=self.args,
+                                               kwargs=self.kwargs)
         signals.task_prerun.send(sender=self.task, task_id=self.task_id,
                                  task=self.task, args=self.args,
                                  kwargs=self.kwargs)
@@ -64,6 +68,7 @@ class TaskTrace(object):
         signals.task_postrun.send(sender=self.task, task_id=self.task_id,
                                   task=self.task, args=self.args,
                                   kwargs=self.kwargs, retval=retval)
+        self.task.request.clear()
         return retval
 
     def _trace(self):

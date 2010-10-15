@@ -291,6 +291,14 @@ class TaskRequest(object):
                    eventer=eventer, hostname=hostname,
                    eta=eta, expires=expires, app=app)
 
+    def get_instance_attrs(self, loglevel, logfile):
+        return {"logfile": logfile,
+                "loglevel": loglevel,
+                "id": self.task_id,
+                "retries": self.retries,
+                "is_eager": False,
+                "delivery_info": self.delivery_info}
+
     def extend_with_default_kwargs(self, loglevel, logfile):
         """Extend the tasks keyword arguments with standard task arguments.
 
@@ -300,6 +308,8 @@ class TaskRequest(object):
         See :meth:`celery.task.base.Task.run` for more information.
 
         """
+        if not self.task.accept_magic_kwargs:
+            return self.kwargs
         kwargs = dict(self.kwargs)
         default_kwargs = {"logfile": logfile,
                           "loglevel": loglevel,
@@ -345,9 +355,11 @@ class TaskRequest(object):
         if not self.task.acks_late:
             self.acknowledge()
 
+        instance_attrs = self.get_instance_attrs(loglevel, logfile)
         tracer = WorkerTaskTrace(*self._get_tracer_args(loglevel, logfile),
                                  **{"hostname": self.hostname,
-                                    "loader": self.app.loader})
+                                    "loader": self.app.loader,
+                                    "request": instance_attrs})
         retval = tracer.execute()
         self.acknowledge()
         return retval
@@ -372,10 +384,12 @@ class TaskRequest(object):
         self._set_executed_bit()
 
         args = self._get_tracer_args(loglevel, logfile)
+        instance_attrs = self.get_instance_attrs(loglevel, logfile)
         self.time_start = time.time()
         result = pool.apply_async(execute_and_trace,
                                   args=args,
-                                  kwargs={"hostname": self.hostname},
+                                  kwargs={"hostname": self.hostname,
+                                          "request": instance_attrs},
                                   accept_callback=self.on_accepted,
                                   timeout_callback=self.on_timeout,
                                   callbacks=[self.on_success],

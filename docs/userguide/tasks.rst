@@ -10,7 +10,7 @@
 
 This guide gives an overview of how tasks are defined. For a complete
 listing of task attributes and methods, please see the
-:class:`API reference <celery.task.base.Task>`.
+:class:`API reference <celery.task.base.BaseTask>`.
 
 .. _task-basics:
 
@@ -23,69 +23,63 @@ Given a function ``create_user``, that takes two arguments: ``username`` and
 
 .. code-block:: python
 
-    from celery.task import Task
     from django.contrib.auth import User
 
-    class CreateUserTask(Task):
-        def run(self, username, password):
-            User.objects.create(username=username, password=password)
-
-For convenience there is a shortcut decorator that turns any function into
-a task:
-
-.. code-block:: python
-
-    from celery.decorators import task
-    from django.contrib.auth import User
-
-    @task
+    @celery.task()
     def create_user(username, password):
         User.objects.create(username=username, password=password)
 
-The task decorator takes the same execution options as the
-:class:`~celery.task.base.Task` class does:
+
+Task options are added as arguments to ``task``::
 
 .. code-block:: python
 
-    @task(serializer="json")
+    @celery.task(serializer="json")
     def create_user(username, password):
         User.objects.create(username=username, password=password)
 
-.. _task-keyword-arguments:
+.. _task-request-info:
 
-Default keyword arguments
-=========================
+Task Request Info
+=================
 
-Celery supports a set of default arguments that can be forwarded to any task.
-Tasks can choose not to take these, or list the ones they want.
-The worker will do the right thing.
+The ``task.request`` attribute contains information about
+the task being executed, and contains the following attributes:
 
-The current default keyword arguments are:
+:id: The unique id of the executing task.
 
-:task_id: The unique id of the executing task.
+:args: Positional arguments.
 
-:task_name: Name of the currently executing task.
+:kwargs: Keyword arguments.
 
-:task_retries: How many times the current task has been retried.
-               An integer starting at ``0``.
+:retries: How many times the current task has been retried.
+          An integer starting at ``0``.
 
-:task_is_eager: Set to :const:`True` if the task is executed locally in
-                the client, kand not by a worker.
+:is_eager: Set to :const:`True` if the task is executed locally in
+           the client, kand not by a worker.
 
-:logfile: The log file, can be passed on to
-          :meth:`~celery.task.base.Task.get_logger` to gain access to
-          the workers log file. See `Logging`_.
+:logfile: The file the worker logs to.  See `Logging`_.
 
 :loglevel: The current loglevel used.
 
-
 :delivery_info: Additional message delivery information. This is a mapping
                 containing the exchange and routing key used to deliver this
-                task. It's used by e.g. :meth:`~celery.task.base.Task.retry`
+                task.  Used by e.g. :meth:`~celery.task.base.BaseTask.retry`
                 to resend the task to the same destination queue.
 
   **NOTE** As some messaging backends doesn't have advanced routing
   capabilities, you can't trust the availability of keys in this mapping.
+
+
+Example Usage
+-------------
+
+::
+
+    @celery.task
+    def add(x, y):
+        print("Executing task id %r, args: %r kwargs: %r" % (
+            add.request.id, add.request.args, add.request.kwargs))
 
 .. _task-logging:
 
@@ -97,20 +91,9 @@ the worker log:
 
 .. code-block:: python
 
-    class AddTask(Task):
-
-        def run(self, x, y, **kwargs):
-            logger = self.get_logger(**kwargs)
-            logger.info("Adding %s + %s" % (x, y))
-            return x + y
-
-or using the decorator syntax:
-
-.. code-block:: python
-
-    @task()
-    def add(x, y, **kwargs):
-        logger = add.get_logger(**kwargs)
+    @celery.task()
+    def add(x, y):
+        logger = add.get_logger()
         logger.info("Adding %s + %s" % (x, y))
         return x + y
 
@@ -125,33 +108,26 @@ out/-err will be written to the logfile as well.
 Retrying a task if something fails
 ==================================
 
-Simply use :meth:`~celery.task.base.Task.retry` to re-send the task.
+Simply use :meth:`~celery.task.base.BaseTask.retry` to re-send the task.
 It will do the right thing, and respect the
-:attr:`~celery.task.base.Task.max_retries` attribute:
+:attr:`~celery.task.base.BaseTask.max_retries` attribute:
 
 .. code-block:: python
 
-    @task()
-    def send_twitter_status(oauth, tweet, **kwargs):
+    @celery.task()
+    def send_twitter_status(oauth, tweet):
         try:
             twitter = Twitter(oauth)
             twitter.update_status(tweet)
         except (Twitter.FailWhaleError, Twitter.LoginError), exc:
-            send_twitter_status.retry(args=[oauth, tweet], kwargs=kwargs, exc=exc)
+            send_twitter_status.retry(exc=exc)
 
 Here we used the ``exc`` argument to pass the current exception to
-:meth:`~celery.task.base.Task.retry`. At each step of the retry this exception
+:meth:`~celery.task.base.BaseTask.retry`. At each step of the retry this exception
 is available as the tombstone (result) of the task. When
-:attr:`~celery.task.base.Task.max_retries` has been exceeded this is the
-exception raised. However, if an ``exc`` argument is not provided the
+:attr:`~celery.task.base.BaseTask.max_retries` has been exceeded this is the
+exception raised.  However, if an ``exc`` argument is not provided the
 :exc:`~celery.exceptions.RetryTaskError` exception is raised instead.
-
-**Important note:** The task has to take the magic keyword arguments
-in order for max retries to work properly, this is because it keeps track
-of the current number of retries using the ``task_retries`` keyword argument
-passed on to the task. In addition, it also uses the ``task_id`` keyword
-argument to use the same task id, and ``delivery_info`` to route the
-retried task to the same destination.
 
 .. _task-retry-custom-delay:
 
@@ -160,25 +136,22 @@ Using a custom retry delay
 
 When a task is to be retried, it will wait for a given amount of time
 before doing so. The default delay is in the
-:attr:`~celery.task.base.Task.default_retry_delay` 
+:attr:`~celery.task.base.BaseTask.default_retry_delay` 
 attribute on the task. By default this is set to 3 minutes. Note that the
 unit for setting the delay is in seconds (int or float).
 
 You can also provide the ``countdown`` argument to
-:meth:`~celery.task.base.Task.retry` to override this default.
+:meth:`~celery.task.base.BaseTask.retry` to override this default.
 
 .. code-block:: python
 
-    class MyTask(Task):
-        default_retry_delay = 30 * 60 # retry in 30 minutes
-
-        def run(self, x, y, **kwargs):
-            try:
-                ...
-            except Exception, exc:
-                self.retry([x, y], kwargs, exc=exc,
-                           countdown=60) # override the default and
-                                         # - retry in 1 minute
+    @celery.task(default_retry_delay=30 * 60)  # retry in 30 minutes.
+    def add(x, y):
+        try:
+            ...
+        except Exception, exc:
+            self.retry(exc=exc, countdown=60)  # override the default and
+                                               # retry in 1 minute
 
 .. _task-options:
 
@@ -197,6 +170,13 @@ General
     You can set this name manually, or just use the default which is
     automatically generated using the module and class name.  See
     :ref:`task-names`.
+
+.. attribute Task.request
+
+    If the task is being executed this will contain information
+    about the current request.  Thread local storage is used.
+
+    See :ref:`task-request-info`.
 
 .. attribute:: Task.abstract
 
@@ -301,7 +281,7 @@ General
 
 .. seealso::
 
-    The API reference for :class:`~celery.task.base.Task`.
+    The API reference for :class:`~celery.task.base.BaseTask`.
 
 .. _task-message-options:
 
@@ -367,7 +347,7 @@ For example:
 
 .. code-block:: python
 
-    >>> @task(name="sum-of-two-numbers")
+    >>> @celery.task(name="sum-of-two-numbers")
     >>> def add(x, y):
     ...     return x + y
 
@@ -380,7 +360,7 @@ another module:
 
 .. code-block:: python
 
-    >>> @task(name="tasks.add")
+    >>> @celery.task(name="tasks.add")
     >>> def add(x, y):
     ...     return x + y
 
@@ -393,7 +373,7 @@ task if the module name is "tasks.py":
 
 .. code-block:: python
 
-    >>> @task()
+    >>> @celery.task()
     >>> def add(x, y):
     ...     return x + y
 
@@ -535,15 +515,14 @@ The name of the state is usually an uppercase string.  As an example
 you could have a look at :mod:`abortable tasks <~celery.contrib.abortable>`
 wich defines its own custom :state:`ABORTED` state.
 
-Use :meth:`Task.update_state <celery.task.base.Task.update_state>` to
+Use :meth:`Task.update_state <celery.task.base.BaseTask.update_state>` to
 update a tasks state::
 
-    @task
-    def upload_files(filenames, **kwargs):
-
+    @celery.task
+    def upload_files(filenames):
         for i, file in enumerate(filenames):
-            upload_files.update_state(kwargs["task_id"], "PROGRESS",
-                {"current": i, "total": len(filenames)})
+            upload_files.update_state(state="PROGRESS",
+                meta={"current": i, "total": len(filenames)})
 
 
 Here we created the state ``"PROGRESS"``, which tells any application
@@ -588,10 +567,10 @@ The default loader imports any modules listed in the
 
 The entity responsible for registering your task in the registry is a
 meta class, :class:`~celery.task.base.TaskType`.  This is the default
-meta class for :class:`~celery.task.base.Task`.
+meta class for :class:`~celery.task.base.BaseTask`.
 
 If you want to register your task manually you can set mark the
-task as :attr:`~celery.task.base.Task.abstract`:
+task as :attr:`~celery.task.base.BaseTask.abstract`:
 
 .. code-block:: python
 
@@ -619,12 +598,12 @@ Ignore results you don't want
 -----------------------------
 
 If you don't care about the results of a task, be sure to set the
-:attr:`~celery.task.base.Task.ignore_result` option, as storing results
+:attr:`~celery.task.base.BaseTask.ignore_result` option, as storing results
 wastes time and resources.
 
 .. code-block:: python
 
-    @task(ignore_result=True)
+    @celery.task(ignore_result=True)
     def mytask(...)
         something()
 
@@ -661,21 +640,21 @@ Make your design asynchronous instead, for example by using *callbacks*.
 
 .. code-block:: python
 
-    @task()
+    @celery.task()
     def update_page_info(url):
         page = fetch_page.delay(url).get()
         info = parse_page.delay(url, page).get()
         store_page_info.delay(url, info)
 
-    @task()
+    @celery.task()
     def fetch_page(url):
         return myhttplib.get(url)
 
-    @task()
+    @celery.task()
     def parse_page(url, page):
         return myparser.parse_document(page)
 
-    @task()
+    @celery.task()
     def store_page_info(url, info):
         return PageInfo.objects.create(url, info)
 
@@ -684,13 +663,13 @@ Make your design asynchronous instead, for example by using *callbacks*.
 
 .. code-block:: python
 
-    @task(ignore_result=True)
+    @celery.task(ignore_result=True)
     def update_page_info(url):
         # fetch_page -> parse_page -> store_page
         fetch_page.delay(url, callback=subtask(parse_page,
                                     callback=subtask(store_page_info)))
 
-    @task(ignore_result=True)
+    @celery.task(ignore_result=True)
     def fetch_page(url, callback=None):
         page = myhttplib.get(url)
         if callback:
@@ -699,13 +678,13 @@ Make your design asynchronous instead, for example by using *callbacks*.
             # into a subtask object.
             subtask(callback).delay(url, page)
 
-    @task(ignore_result=True)
+    @celery.task(ignore_result=True)
     def parse_page(url, page, callback=None):
         info = myparser.parse_document(page)
         if callback:
             subtask(callback).delay(url, info)
 
-    @task(ignore_result=True)
+    @celery.task(ignore_result=True)
     def store_page_info(url, info):
         PageInfo.objects.create(url, info)
 
@@ -805,7 +784,7 @@ that automatically expands some abbreviations in it:
         title = models.CharField()
         body = models.TextField()
 
-    @task
+    @celery.task
     def expand_abbreviations(article):
         article.body.replace("MyCorp", "My Corporation")
         article.save()
@@ -826,7 +805,7 @@ re-fetch the article in the task body:
 
 .. code-block:: python
 
-    @task
+    @celery.task
     def expand_abbreviations(article_id):
         article = Article.objects.get(id=article_id)
         article.body.replace("MyCorp", "My Corporation")
@@ -987,26 +966,26 @@ blog/tasks.py
 
 
     @task
-    def spam_filter(comment_id, remote_addr=None, **kwargs):
-            logger = spam_filter.get_logger(**kwargs)
-            logger.info("Running spam filter for comment %s" % comment_id)
+    def spam_filter(comment_id, remote_addr=None):
+        logger = spam_filter.get_logger()
+        logger.info("Running spam filter for comment %s" % comment_id)
 
-            comment = Comment.objects.get(pk=comment_id)
-            current_domain = Site.objects.get_current().domain
-            akismet = Akismet(settings.AKISMET_KEY, "http://%s" % domain)
-            if not akismet.verify_key():
-                raise ImproperlyConfigured("Invalid AKISMET_KEY")
+        comment = Comment.objects.get(pk=comment_id)
+        current_domain = Site.objects.get_current().domain
+        akismet = Akismet(settings.AKISMET_KEY, "http://%s" % domain)
+        if not akismet.verify_key():
+            raise ImproperlyConfigured("Invalid AKISMET_KEY")
 
 
-            is_spam = akismet.comment_check(user_ip=remote_addr,
-                                comment_content=comment.comment,
-                                comment_author=comment.name,
-                                comment_author_email=comment.email_address)
-            if is_spam:
-                comment.is_spam = True
-                comment.save()
+        is_spam = akismet.comment_check(user_ip=remote_addr,
+                            comment_content=comment.comment,
+                            comment_author=comment.name,
+                            comment_author_email=comment.email_address)
+        if is_spam:
+            comment.is_spam = True
+            comment.save()
 
-            return is_spam
+        return is_spam
 
 .. _`Akismet`: http://akismet.com/faq/
 .. _`akismet.py`: http://www.voidspace.org.uk/downloads/akismet.py

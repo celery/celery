@@ -1,4 +1,5 @@
 import sys
+import threading
 import warnings
 
 from celery.app import app_or_default
@@ -32,10 +33,32 @@ extract_exec_options = mattrgetter("queue", "routing_key",
                                    "exchange", "immediate",
                                    "mandatory", "priority",
                                    "serializer", "delivery_mode")
-
+_default_context = {"logfile": None,
+                    "loglevel": None,
+                    "id": None,
+                    "args": None,
+                    "kwargs": None,
+                    "retries": 0,
+                    "is_eager": False,
+                    "delivery_info": None}
 
 def _unpickle_task(name):
     return tasks[name]
+
+
+
+
+class Context(threading.local):
+
+    def update(self, d, **kwargs):
+        self.__dict__.update(d, **kwargs)
+
+    def clear(self):
+        self.__dict__.clear()
+        self.update(_default_context)
+
+    def get(self, key, default=None):
+        return self.__dict__.get(key, default)
 
 
 class TaskType(type):
@@ -235,6 +258,8 @@ class BaseTask(object):
     abstract = True
     autoregister = True
     type = "regular"
+    accept_magic_kwargs = True
+    request = Context()
 
     queue = None
     routing_key = None
@@ -297,9 +322,13 @@ class BaseTask(object):
         See :func:`celery.log.setup_task_logger`.
 
         """
+        if loglevel is None:
+            loglevel = self.request.loglevel
+        if logfile is None:
+            logfile = self.request.logfile
         return self.app.log.setup_task_logger(loglevel=loglevel,
                                               logfile=logfile,
-                                              task_kwargs=kwargs)
+                                              task_kwargs=self.request.kwargs)
 
     @classmethod
     def establish_connection(self, connect_timeout=None):
@@ -506,16 +535,17 @@ class BaseTask(object):
             ...                        countdown=60 * 5, exc=exc)
 
         """
-        if not kwargs:
-            raise TypeError(
-                    "kwargs argument to retries can't be empty. "
-                    "Task must accept **kwargs, see http://bit.ly/cAx3Bg")
+        request = self.request
+        if args is None:
+            args = request.args
+        if kwargs is None:
+            kwargs = request.kwargs
 
-        delivery_info = kwargs.pop("delivery_info", {})
+        delivery_info = request.delivery_info
         options.setdefault("exchange", delivery_info.get("exchange"))
         options.setdefault("routing_key", delivery_info.get("routing_key"))
 
-        options["retries"] = kwargs.pop("task_retries", 0) + 1
+        options["retries"] = request.retries + 1
         options["task_id"] = kwargs.pop("task_id", None)
         options["countdown"] = options.get("countdown",
                                         self.default_retry_delay)
@@ -528,7 +558,7 @@ class BaseTask(object):
 
         # If task was executed eagerly using apply(),
         # then the retry must also be executed eagerly.
-        if kwargs.get("task_is_eager", False):
+        if request.is_eager:
             result = self.apply(args=args, kwargs=kwargs, **options)
             if isinstance(result, EagerResult):
                 return result.get()             # propogates exceptions.
@@ -565,19 +595,28 @@ class BaseTask(object):
         # Make sure we get the task instance, not class.
         task = tasks[self.name]
 
-        default_kwargs = {"task_name": task.name,
-                          "task_id": task_id,
-                          "task_retries": retries,
-                          "task_is_eager": True,
-                          "logfile": options.get("logfile"),
-                          "delivery_info": {"is_eager": True},
-                          "loglevel": options.get("loglevel", 0)}
-        supported_keys = fun_takes_kwargs(task.run, default_kwargs)
-        extend_with = dict((key, val) for key, val in default_kwargs.items()
-                            if key in supported_keys)
-        kwargs.update(extend_with)
+        request = {"id": task_id,
+                   "retries": retries,
+                   "is_eager": True,
+                   "logfile": options.get("logfile"),
+                   "loglevel": options.get("loglevel", 0),
+                   "delivery_info": {"is_eager": True}}
+        if self.accept_magic_kwargs:
+            default_kwargs = {"task_name": task.name,
+                              "task_id": task_id,
+                              "task_retries": retries,
+                              "task_is_eager": True,
+                              "logfile": options.get("logfile"),
+                              "loglevel": options.get("loglevel", 0),
+                              "delivery_info": {"is_eager": True}}
+            supported_keys = fun_takes_kwargs(task.run, default_kwargs)
+            extend_with = dict((key, val)
+                                    for key, val in default_kwargs.items()
+                                        if key in supported_keys)
+            kwargs.update(extend_with)
 
-        trace = TaskTrace(task.name, task_id, args, kwargs, task=task)
+        trace = TaskTrace(task.name, task_id, args, kwargs,
+                          task=task, request=request)
         retval = trace.execute()
         if isinstance(retval, ExceptionInfo):
             if throw:
@@ -595,7 +634,7 @@ class BaseTask(object):
         """
         return self.app.AsyncResult(task_id, backend=self.backend)
 
-    def update_state(self, task_id, state, meta=None):
+    def update_state(self, task_id=None, state=None, meta=None):
         """Update task state.
 
         :param task_id: Id of the task to update.
@@ -603,6 +642,8 @@ class BaseTask(object):
         :param meta: State metadata (:class:`dict`).
 
         """
+        if task_id is None:
+            task_id = self.request.id
         self.backend.store_result(task_id, meta, state)
 
     def on_retry(self, exc, task_id, args, kwargs, einfo=None):
