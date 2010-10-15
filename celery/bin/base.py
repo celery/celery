@@ -30,6 +30,7 @@ class Command(object):
     Parser = OptionParser
 
     def __init__(self, app=None, get_app=None):
+        self.app = app
         self.get_app = get_app or self._get_default_app
 
     def usage(self):
@@ -75,8 +76,10 @@ class Command(object):
         config_module = preload_options.pop("config_module", None)
         if config_module:
             os.environ["CELERY_CONFIG_MODULE"] = config_module
-        self.app = (app and self.get_cls_by_name(app) or
-                            self.get_app(loader=loader))
+        if app:
+            self.app = self.get_cls_by_name(app)
+        elif not self.app:
+            self.app = self.get_app(loader=loader)
         if self.enable_config_from_cmdline:
             argv = self.process_cmdline_config(argv)
         return argv

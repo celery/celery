@@ -79,7 +79,9 @@ class BaseApp(object):
     IS_OSX = SYSTEM == "Darwin"
     IS_WINDOWS = SYSTEM == "Windows"
 
-    def __init__(self, loader=None, backend=None, set_as_current=True):
+    def __init__(self, main=None, loader=None, backend=None,
+            set_as_current=True):
+        self.main = main
         self.loader_cls = loader or "app"
         self.backend_cls = backend
         self._amqp = None

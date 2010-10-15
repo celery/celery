@@ -60,8 +60,7 @@ class TaskType(type):
 
         # Automatically generate missing name.
         if not attrs.get("name"):
-            task_module = sys.modules[task_module]
-            task_name = ".".join([task_module.__name__, name])
+            task_name = ".".join([sys.modules[task_module].__name__, name])
             attrs["name"] = task_name
 
         # Because of the way import happens (recursively)
@@ -72,8 +71,12 @@ class TaskType(type):
         task_name = attrs["name"]
         if task_name not in tasks:
             task_cls = super_new(cls, name, bases, attrs)
+            if task_module == "__main__" and task_cls.app.main:
+                task_name = task_cls.name = ".".join([task_cls.app.main,
+                                                      name])
             tasks.register(task_cls)
-        return tasks[task_name].__class__
+        task = tasks[task_name].__class__
+        return task
 
 
 class BaseTask(object):

@@ -74,6 +74,10 @@ class App(base.BaseApp):
         kwargs["app"] = self
         return TaskSet(*args, **kwargs)
 
+    def worker_main(self, argv=None):
+        from celery.bin.celeryd import WorkerCommand
+        return WorkerCommand(app=self).execute_from_commandline(argv)
+
     def task(self, *args, **options):
         """Decorator to create a task class out of any callable.
 

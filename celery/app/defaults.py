@@ -77,7 +77,7 @@ NAMESPACES = {
         "IMPORTS": Option((), type="tuple"),
         "IGNORE_RESULT": Option(False, type="bool"),
         "MAX_CACHED_RESULTS": Option(5000, type="int"),
-        "RESULT_BACKEND": Option("database"),
+        "RESULT_BACKEND": Option("amqp"),
         "RESULT_DBURI": Option(),
         "RESULT_ENGINE_OPTIONS": Option(None, type="dict"),
         "RESULT_EXCHANGE": Option("celeryresults"),

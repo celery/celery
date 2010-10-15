@@ -49,7 +49,7 @@ class AMQPBackend(BaseDictBackend):
     _connection = None
 
     def __init__(self, connection=None, exchange=None, exchange_type=None,
-            persistent=None, serializer=None, auto_delete=False,
+            persistent=None, serializer=None, auto_delete=True,
             expires=None, **kwargs):
         super(AMQPBackend, self).__init__(**kwargs)
         conf = self.app.conf
