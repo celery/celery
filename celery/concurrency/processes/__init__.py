@@ -3,6 +3,7 @@
 Process Pools.
 
 """
+import sys
 import traceback
 
 from celery import log
@@ -124,7 +125,8 @@ class TaskPool(object):
             fun(*args)
         except:
             self.logger.error("Pool callback raised exception: %s" % (
-                traceback.format_exc(), ))
+                traceback.format_exc(), ),
+                exc_info=sys.exc_info())
 
     @property
     def info(self):
