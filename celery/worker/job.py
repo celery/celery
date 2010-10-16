@@ -101,9 +101,10 @@ class WorkerTaskTrace(TaskTrace):
         """Execute, trace and store the result of the task."""
         self.loader.on_task_init(self.task_id, self.task)
         if self.task.track_started:
-            self.task.backend.mark_as_started(self.task_id,
-                                              pid=os.getpid(),
-                                              hostname=self.hostname)
+            if not self.task.ignore_result:
+                self.task.backend.mark_as_started(self.task_id,
+                                                  pid=os.getpid(),
+                                                  hostname=self.hostname)
         try:
             return super(WorkerTaskTrace, self).execute()
         finally:
@@ -400,7 +401,8 @@ class TaskRequest(object):
                 self.task_name, self.task_id))
             exc = TimeLimitExceeded()
 
-        self.task.backend.mark_as_failure(self.task_id, exc)
+        if self._store_errors:
+            self.task.backend.mark_as_failure(self.task_id, exc)
 
     def acknowledge(self):
         if not self.acknowledged:
@@ -444,8 +446,9 @@ class TaskRequest(object):
         # This is a special case as the process would not have had
         # time to write the result.
         if isinstance(exc_info.exception, WorkerLostError):
-            self.task.backend.mark_as_failure(self.task_id,
-                                              exc_info.exception)
+            if self._store_errors:
+                self.task.backend.mark_as_failure(self.task_id,
+                                                  exc_info.exception)
 
         context = {"hostname": self.hostname,
                    "id": self.task_id,
