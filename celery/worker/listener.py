@@ -22,11 +22,6 @@ up and running.
 
   Both the task consumer and the broadcast consumer uses the same
   callback: :meth:`~CarrotListener.receive_message`.
-  The reason is that some carrot backends doesn't support consuming
-  from several channels simultaneously, so we use a little nasty trick
-  (:meth:`~CarrotListener._detect_wait_method`) to select the best
-  possible channel distribution depending on the functionality supported
-  by the carrot backend.
 
 * So for each message received the :meth:`~CarrotListener.receive_message`
   method is called, this checks the payload of the message for either
@@ -78,14 +73,12 @@ from __future__ import generators
 import socket
 import warnings
 
-from carrot.connection import AMQPConnectionException
-
 from celery.app import app_or_default
 from celery.datastructures import SharedCounter
 from celery.events import EventDispatcher
 from celery.exceptions import NotRegistered
 from celery.pidbox import BroadcastConsumer
-from celery.utils import noop, retry_over_time
+from celery.utils import noop
 from celery.utils.timer2 import to_timestamp
 from celery.worker.job import TaskRequest, InvalidTaskError
 from celery.worker.control import ControlDispatch
@@ -100,7 +93,7 @@ class QoS(object):
 
     For thread-safe increment/decrement of a channels prefetch count value.
 
-    :param consumer: A :class:`carrot.messaging.Consumer` instance.
+    :param consumer: A :class:`kombu.messaging.Consumer` instance.
     :param initial_value: Initial prefetch count value.
     :param logger: Logger used to log debug messages.
 
@@ -221,6 +214,8 @@ class CarrotListener(object):
                                                 logger=logger,
                                                 hostname=self.hostname,
                                                 listener=self)
+        self.connection_errors = \
+                self.app.broker_connection().connection_errors
         self.queues = queues
 
     def start(self):
@@ -237,14 +232,14 @@ class CarrotListener(object):
             self.reset_connection()
             try:
                 self.consume_messages()
-            except (socket.error, AMQPConnectionException, IOError):
+            except self.connection_errors:
                 self.logger.error("CarrotListener: Connection to broker lost."
                                 + " Trying to re-establish connection...")
 
     def consume_messages(self):
         """Consume messages forever (or until an exception is raised)."""
         self.logger.debug("CarrotListener: Starting message consumer...")
-        wait_for_message = self._detect_wait_method()(limit=None).next
+        wait_for_message = self._mainloop().next
         self.logger.debug("CarrotListener: Ready to accept tasks!")
 
         while 1:
@@ -420,45 +415,28 @@ class CarrotListener(object):
         self.heart = Heart(self.event_dispatcher)
         self.heart.start()
 
-    def _mainloop(self, **kwargs):
+    def _mainloop(self):
+        elf.broadcast_consumer.register_callback(self.receive_message)
+        self.task_consumer.consume()
+        self.broadcast_consumer.consume()
         while 1:
             yield self.connection.drain_events()
 
-    def _detect_wait_method(self):
-        if hasattr(self.connection.connection, "drain_events"):
-            self.broadcast_consumer.register_callback(self.receive_message)
-            self.task_consumer.iterconsume()
-            self.broadcast_consumer.iterconsume()
-            return self._mainloop
-        else:
-            self.task_consumer.add_consumer(self.broadcast_consumer)
-            return self.task_consumer.iterconsume
-
     def _open_connection(self):
-        """Retries connecting to the AMQP broker over time.
-
-        See :func:`celery.utils.retry_over_time`.
-
-        """
+        """Open connection.  May retry opening the connection if configuration
+        allows that."""
 
         def _connection_error_handler(exc, interval):
             """Callback handler for connection errors."""
             self.logger.error("CarrotListener: Connection Error: %s. " % exc
                      + "Trying again in %d seconds..." % interval)
 
-        def _establish_connection():
-            """Establish a connection to the broker."""
-            conn = self.app.broker_connection()
-            conn.connect()                      # evaluate connection
-            return conn
-
+        conn = self.app.broker_connection()
         if not self.app.conf.BROKER_CONNECTION_RETRY:
-            return _establish_connection()
+            return conn.connect()
 
-        conn = retry_over_time(_establish_connection, (socket.error, IOError),
-                    errback=_connection_error_handler,
-                    max_retries=self.app.conf.BROKER_CONNECTION_MAX_RETRIES)
-        return conn
+        return conn.ensure_connection(_connection_error_handler,
+                    self.app.conf.BROKER_CONNECTION_MAX_RETRIES)
 
     def stop(self):
         """Stop consuming.

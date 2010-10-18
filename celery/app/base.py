@@ -187,7 +187,7 @@ class BaseApp(object):
 
     def broker_connection(self, hostname=None, userid=None,
             password=None, virtual_host=None, port=None, ssl=None,
-            insist=None, connect_timeout=None, backend_cls=None):
+            insist=None, connect_timeout=None, transport=None, **kwargs):
         """Establish a connection to the message broker.
 
         :keyword hostname: defaults to the ``BROKER_HOST`` setting.
@@ -210,7 +210,7 @@ class BaseApp(object):
                     password or self.conf.BROKER_PASSWORD,
                     virtual_host or self.conf.BROKER_VHOST,
                     port or self.conf.BROKER_PORT,
-                    backend_cls=backend_cls or self.conf.BROKER_BACKEND,
+                    transport=transport or self.conf.BROKER_BACKEND,
                     insist=self.either("BROKER_INSIST", insist),
                     ssl=self.either("BROKER_USE_SSL", ssl),
                     connect_timeout=self.either(

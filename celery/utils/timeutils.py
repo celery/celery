@@ -3,7 +3,7 @@ import math
 from datetime import datetime, timedelta
 from dateutil.parser import parse as parse_iso8601
 
-from carrot.utils import partition
+from kombu.utils import partition
 
 DAYNAMES = "sun", "mon", "tue", "wed", "thu", "fri", "sat"
 WEEKDAYS = dict((name, dow) for name, dow in zip(DAYNAMES, range(7)))

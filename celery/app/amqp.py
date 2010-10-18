@@ -1,21 +1,24 @@
+import os
 
 from datetime import datetime, timedelta
 from UserDict import UserDict
 
-from carrot.connection import BrokerConnection
-from carrot import messaging
 
 from celery import routes
 from celery import signals
 from celery.utils import gen_unique_id, mitemgetter, textindent
 
+from kombu.connection import BrokerConnection
+from kombu import compat as messaging
+
 MSG_OPTIONS = ("mandatory", "priority", "immediate",
-               "routing_key", "serializer", "delivery_mode")
+               "routing_key", "serializer", "delivery_mode",
+               "compression")
 QUEUE_FORMAT = """
 . %(name)s -> exchange:%(exchange)s (%(exchange_type)s) \
 binding:%(binding_key)s
 """
-BROKER_FORMAT = "%(carrot_backend)s://%(userid)s@%(host)s%(port)s%(vhost)s"
+BROKER_FORMAT = "%(transport)s://%(userid)s@%(host)s%(port)s%(vhost)s"
 
 get_msg_options = mitemgetter(*MSG_OPTIONS)
 extract_msg_options = lambda d: dict(zip(MSG_OPTIONS, get_msg_options(d)))
@@ -136,40 +139,11 @@ class TaskPublisher(messaging.Publisher):
         return task_id
 
 
-class ConsumerSet(messaging.ConsumerSet):
-    """ConsumerSet with an optional decode error callback.
-
-    For more information see :class:`carrot.messaging.ConsumerSet`.
-
-    .. attribute:: on_decode_error
-
-        Callback called if a message had decoding errors.
-        The callback is called with the signature::
-
-            callback(message, exception)
-
-    """
-    on_decode_error = None
-
-    def _receive_callback(self, raw_message):
-        message = self.backend.message_to_python(raw_message)
-        if self.auto_ack and not message.acknowledged:
-            message.ack()
-        try:
-            decoded = message.decode()
-        except Exception, exc:
-            if self.on_decode_error:
-                return self.on_decode_error(message, exc)
-            else:
-                raise
-        self.receive(decoded, message)
-
-
 class AMQP(object):
     BrokerConnection = BrokerConnection
     Publisher = messaging.Publisher
     Consumer = messaging.Consumer
-    ConsumerSet = ConsumerSet
+    ConsumerSet = messaging.ConsumerSet
     _queues = None
 
     def __init__(self, app):
@@ -212,18 +186,9 @@ class AMQP(object):
 
         return publisher
 
-    def get_task_consumer(self, connection, queues=None, **options):
-        queues = queues or self.queues
-
-        cset = self.ConsumerSet(connection)
-        for queue_name, queue_options in queues.items():
-            queue_options = dict(queue_options)
-            queue_options["routing_key"] = queue_options.pop("binding_key",
-                                                             None)
-            consumer = self.Consumer(connection, queue=queue_name,
-                                     backend=cset.backend, **queue_options)
-            cset.consumers.append(consumer)
-        return cset
+    def get_task_consumer(self, connection, queues=None, **kwargs):
+        return self.ConsumerSet(connection, from_dict=queues or self.queues,
+                                **kwargs)
 
     def get_default_queue(self):
         q = self.app.conf.CELERY_DEFAULT_QUEUE
@@ -232,10 +197,10 @@ class AMQP(object):
     def get_broker_info(self, broker_connection=None):
         if broker_connection is None:
             broker_connection = self.app.broker_connection()
-        carrot_backend = broker_connection.backend_cls
-        if carrot_backend and not isinstance(carrot_backend, str):
-            carrot_backend = carrot_backend.__name__
-        carrot_backend = carrot_backend or "amqp"
+        transport = broker_connection.transport_cls
+        if transport and not isinstance(transport, basestring):
+            transport = transport.__name__
+        transport = transport or "amqp"
 
         port = broker_connection.port or \
                     broker_connection.get_backend_cls().default_port
@@ -245,7 +210,7 @@ class AMQP(object):
         if not vhost.startswith("/"):
             vhost = "/" + vhost
 
-        return {"carrot_backend": carrot_backend,
+        return {"transport": transport,
                 "userid": broker_connection.userid,
                 "host": broker_connection.hostname,
                 "port": port,

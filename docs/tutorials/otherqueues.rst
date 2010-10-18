@@ -4,13 +4,6 @@
  Using Celery with Redis/Database as the messaging queue.
 ==========================================================
 
-There's a plug-in for celery that enables the use of Redis or an SQL database
-as the messaging queue. This is not part of celery itself, but exists as
-an extension to `carrot`_.
-
-.. _`carrot`: http://pypi.python.org/pypi/carrot
-.. _`ghettoq`: http://pypi.python.org/pypi/ghettoq
-
 .. contents::
     :local:
 
@@ -18,10 +11,6 @@ an extension to `carrot`_.
 
 Installation
 ============
-
-You need to install the `ghettoq`_ library::
-
-    $ pip install -U ghettoq
 
 .. _otherqueues-redis:
 
@@ -40,7 +29,7 @@ Configuration
 Configuration is easy, set the carrot backend, and configure the location of
 your Redis database::
 
-    CARROT_BACKEND = "ghettoq.taproot.Redis"
+    BROKER_BACKEND = "redis"
 
     BROKER_HOST = "localhost"  # Maps to redis host.
     BROKER_PORT = 6379         # Maps to redis port.
@@ -86,26 +75,3 @@ configuration values.
     When using Django::
 
         $ python manage.py syncdb
-
-.. _otherqueues-notes:
-
-Important notes
----------------
-
-These message queues does not have the concept of exchanges and routing keys,
-there's only the queue entity. As a result of this you need to set the
-name of the exchange to be the same as the queue::
-
-    CELERY_DEFAULT_EXCHANGE = "tasks"
-
-or in a custom queue-mapping:
-
-.. code-block:: python
-
-    CELERY_QUEUES = {
-        "tasks": {"exchange": "tasks"},
-        "feeds": {"exchange": "feeds"},
-    }
-
-This isn't a problem if you use the default queue setting, as the default is
-already using the same name for queue/exchange.
