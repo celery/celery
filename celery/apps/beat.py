@@ -60,11 +60,10 @@ class Beat(object):
         from celery import log
         handled = log.setup_logging_subsystem(loglevel=self.loglevel,
                                               logfile=self.logfile)
-        if not handled:
-            logger = log.get_default_logger(name="celery.beat")
-            if self.redirect_stdouts:
-                log.redirect_stdouts_to_logger(logger,
-                        loglevel=self.redirect_stdouts_level)
+        logger = log.get_default_logger(name="celery.beat")
+        if self.redirect_stdouts and not handled:
+            log.redirect_stdouts_to_logger(logger,
+                    loglevel=self.redirect_stdouts_level)
         return logger
 
     def start_scheduler(self, logger=None):
