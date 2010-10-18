@@ -486,9 +486,8 @@ class BaseTask(object):
                                          eta=eta, expires=expires,
                                          **options)
         finally:
-            publisher or publish.close()
-            if not connection:
-                # close automatically created connection
+            if not publisher:
+                publish.close()
                 publish.connection.close()
 
         return self.AsyncResult(task_id)

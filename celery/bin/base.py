@@ -31,7 +31,8 @@ class Command(object):
     Parser = OptionParser
 
     def __init__(self, app=None, get_app=None):
-        self.app = app
+        from celery.app import app_or_default
+        self.app = app_or_default(app)
         self.get_app = get_app or self._get_default_app
 
     def usage(self):
