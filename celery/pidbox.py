@@ -19,11 +19,13 @@ class Mailbox(object):
         self.exchange = Exchange("%s.pidbox" % (self.namespace, ),
                                  type="fanout",
                                  durable=False,
-                                 auto_delete=True)
+                                 auto_delete=True,
+                                 delivery_mode="transient")
         self.reply_exchange = Exchange("reply.%s.pidbox" % (self.namespace, ),
                                  type="direct",
                                  durable=False,
-                                 auto_delete=True)
+                                 auto_delete=True,
+                                 delivery_mode="transient")
 
     def publish_reply(self, reply, exchange, routing_key, channel=None):
         chan = channel or self.connection.channel()
@@ -80,18 +82,38 @@ class Mailbox(object):
             arguments["reply_to"] = {"exchange": self.reply_exchange.name,
                                      "routing_key": reply_ticket}
         chan = channel or self.connection.channel()
-        producer = Producer(exchange=self.exchange, delivery_mode="transient")
+        producer = Producer(chan, exchange=self.exchange)
         try:
             producer.publish({"control": arguments})
         finally:
             channel or chan.close()
 
-    def get_consumer(self, hostname, channel=None):
+    def Node(self, hostname, channel=None):
         return Consumer(channel or self.connection.channel(),
                         [self.get_queue(hostname)],
                         no_ack=True)
 
-    def broadcast(self, command, arguments=None, destination=None,
+    def call(self, destination, command, kwargs={}, timeout=None,
+            callback=None, channel=None):
+        return self._broadcast(command, kwargs, destination,
+                               reply=True, timeout=timeout,
+                               callback=callback,
+                               channel=channel)
+
+    def cast(self, destination, command, kwargs={}):
+        return self._broadcast(command, kwargs, destination, reply=False)
+
+    def abcast(self, command, kwargs={}):
+        return self._broadcast(command, kwargs, reply=False)
+
+    def multi_call(self, command, kwargs={}, timeout=1,
+            limit=None, callback=None, channel=None):
+        return self._broadcast(command, kwargs, reply=True,
+                               timeout=timeout, limit=limit,
+                               callback=callback,
+                               channel=channel)
+
+    def _broadcast(self, command, arguments=None, destination=None,
             reply=False, timeout=1, limit=None, callback=None, channel=None):
         arguments = arguments or {}
         reply_ticket = reply and gen_unique_id() or None

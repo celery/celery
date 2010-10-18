@@ -401,8 +401,7 @@ class CarrotListener(object):
         self.task_consumer.on_decode_error = self.on_decode_error
         self.task_consumer.register_callback(self.receive_message)
 
-        self.broadcast_consumer = mailbox(self.connection).get_consumer(
-                                        self.hostname)
+        self.broadcast_consumer = mailbox(self.connection).Node(self.hostname)
         self.broadcast_consumer.register_callback(self.receive_message)
 
         # Flush events sent while connection was down.

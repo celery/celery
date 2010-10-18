@@ -185,9 +185,9 @@ class Control(object):
 
         """
         def _do_broadcast(connection=None, connect_timeout=None):
-            return mailbox(connection).broadcast(command, arguments,
-                                                 destination, reply,
-                                                 timeout, limit, callback)
+            return mailbox(connection)._broadcast(command, arguments,
+                                                  destination, reply,
+                                                  timeout, limit, callback)
 
         return self.app.with_default_connection(_do_broadcast)(
                 connection=connection, connect_timeout=connect_timeout)
