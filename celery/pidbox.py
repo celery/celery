@@ -3,28 +3,56 @@ import warnings
 
 from itertools import count
 
-from carrot.messaging import Consumer, Publisher
+from kombu.entity import Exchange, Queue
+from kombu.messaging import Consumer, Producer
 
 from celery.app import app_or_default
+from celery.utils import gen_unique_id
 
 
-class ControlReplyConsumer(Consumer):
-    exchange = "celerycrq"
-    exchange_type = "direct"
-    durable = False
-    exclusive = False
-    auto_delete = True
-    no_ack = True
 
-    def __init__(self, connection, ticket, **kwargs):
-        self.ticket = ticket
-        queue = "%s.%s" % (self.exchange, ticket)
-        super(ControlReplyConsumer, self).__init__(connection,
-                                                   queue=queue,
-                                                   routing_key=ticket,
-                                                   **kwargs)
+class Mailbox(object):
 
-    def collect(self, limit=None, timeout=1, callback=None):
+    def __init__(self, namespace, connection):
+        self.namespace = namespace
+        self.connection = connection
+        self.exchange = Exchange("%s.pidbox" % (self.namespace, ),
+                                 type="fanout",
+                                 durable=False,
+                                 auto_delete=True)
+        self.reply_exchange = Exchange("reply.%s.pidbox" % (self.namespace, ),
+                                 type="direct",
+                                 durable=False,
+                                 auto_delete=True)
+
+    def publish_reply(self, reply, exchange, routing_key, channel=None):
+        chan = channel or self.connection.channel()
+        try:
+            exchange = Exchange(exchange, exchange_type="direct",
+                                          delivery_mode="transient",
+                                          durable=False,
+                                          auto_delete=True)
+            producer = Producer(chan, exchange=exchange)
+            producer.publish(reply, routing_key=routing_key)
+        finally:
+            channel or chan.close()
+
+    def get_reply_queue(self, ticket):
+        return Queue("%s.%s" % (ticket, self.reply_exchange.name),
+                     exchange=self.reply_exchange,
+                     routing_key=ticket,
+                     durable=False,
+                     auto_delete=True)
+
+    def get_queue(self, hostname):
+        return Queue("%s.%s.pidbox" % (hostname, self.namespace),
+                     exchange=self.exchange)
+
+    def collect_reply(self, ticket, limit=None, timeout=1,
+            callback=None, channel=None):
+        chan = channel or self.connection.channel()
+        queue = self.get_reply_queue(ticket)
+        consumer = Consumer(channel, [queue], no_ack=True)
         responses = []
 
         def on_message(message_data, message):
@@ -32,82 +60,68 @@ class ControlReplyConsumer(Consumer):
                 callback(message_data)
             responses.append(message_data)
 
-        self.callbacks = [on_message]
-        self.consume()
-        for i in limit and range(limit) or count():
-            try:
-                self.connection.drain_events(timeout=timeout)
-            except socket.timeout:
-                break
+        try:
+            consumer.register_callback(on_message)
+            consumer.consume()
+            for i in limit and range(limit) or count():
+                try:
+                    self.connection.drain_events(timeout=timeout)
+                except socket.timeout:
+                    break
+            return responses
+        finally:
+            channel or chan.close()
 
-        return responses
-
-
-class ControlReplyPublisher(Publisher):
-    exchange = "celerycrq"
-    exchange_type = "direct"
-    delivery_mode = "non-persistent"
-    durable = False
-    auto_delete = True
-
-
-class BroadcastPublisher(Publisher):
-    """Publish broadcast commands"""
-
-    ReplyTo = ControlReplyConsumer
-
-    def __init__(self, *args, **kwargs):
-        app = self.app = app_or_default(kwargs.get("app"))
-        kwargs["exchange"] = kwargs.get("exchange") or \
-                                app.conf.CELERY_BROADCAST_EXCHANGE
-        kwargs["exchange_type"] = kwargs.get("exchange_type") or \
-                                app.conf.CELERY_BROADCAST_EXCHANGE_TYPE
-        super(BroadcastPublisher, self).__init__(*args, **kwargs)
-
-    def send(self, type, arguments, destination=None, reply_ticket=None):
-        """Send broadcast command."""
+    def publish(self, type, arguments, destination=None, reply_ticket=None,
+            channel=None):
         arguments["command"] = type
         arguments["destination"] = destination
-        reply_to = self.ReplyTo(self.connection, None, app=self.app,
-                                auto_declare=False)
         if reply_ticket:
-            arguments["reply_to"] = {"exchange": reply_to.exchange,
+            arguments["reply_to"] = {"exchange": self.reply_exchange.name,
                                      "routing_key": reply_ticket}
-        super(BroadcastPublisher, self).send({"control": arguments})
+        chan = channel or self.connection.channel()
+        producer = Producer(exchange=self.exchange, delivery_mode="transient")
+        try:
+            producer.publish({"control": arguments})
+        finally:
+            channel or chan.close()
+
+    def get_consumer(self, hostname, channel=None):
+        return Consumer(channel or self.connection.channel(),
+                        [self.get_queue(hostname)],
+                        no_ack=True)
+
+    def broadcast(self, command, arguments=None, destination=None,
+            reply=False, timeout=1, limit=None, callback=None, channel=None):
+        arguments = arguments or {}
+        reply_ticket = reply and gen_unique_id() or None
+
+        if destination is not None and \
+                not isinstance(destination, (list, tuple)):
+            raise ValueError("destination must be a list/tuple not %s" % (
+                    type(destination)))
+
+        # Set reply limit to number of destinations (if specificed)
+        if limit is None and destination:
+            limit = destination and len(destination) or None
+
+        chan = channel or self.connection.channel()
+        try:
+            if reply_ticket:
+                self.get_reply_queue(reply_ticket)(chan).declare()
+
+            self.publish(command, arguments, destination=destination,
+                                             reply_ticket=reply_ticket,
+                                             channel=chan)
+
+            if reply_ticket:
+                return self.collect_reply(reply_ticket, limit=limit,
+                                                        timeout=timeout,
+                                                        callback=callback,
+                                                        channel=chan)
+        finally:
+            channel or chan.close()
 
 
-class BroadcastConsumer(Consumer):
-    """Consume broadcast commands"""
-    no_ack = True
-
-    def __init__(self, *args, **kwargs):
-        self.app = app = app_or_default(kwargs.get("app"))
-        kwargs["queue"] = kwargs.get("queue") or \
-                            app.conf.CELERY_BROADCAST_QUEUE
-        kwargs["exchange"] = kwargs.get("exchange") or \
-                            app.conf.CELERY_BROADCAST_EXCHANGE
-        kwargs["exchange_type"] = kwargs.get("exchange_type") or \
-                            app.conf.CELERY_BROADCAST_EXCHANGE_TYPE
-        self.hostname = kwargs.pop("hostname", None) or socket.gethostname()
-        self.queue = "%s_%s" % (self.queue, self.hostname)
-        super(BroadcastConsumer, self).__init__(*args, **kwargs)
-
-    def verify_exclusive(self):
-        # XXX Kombu material
-        channel = getattr(self.backend, "channel")
-        if channel and hasattr(channel, "queue_declare"):
-            try:
-                _, _, consumers = channel.queue_declare(self.queue,
-                                                        passive=True)
-            except ValueError:
-                pass
-            else:
-                if consumers:
-                    warnings.warn(UserWarning(
-                        "A node named %s is already using this process "
-                        "mailbox. Maybe you should specify a custom name "
-                        "for this node with the -n argument?" % self.hostname))
-
-    def consume(self, *args, **kwargs):
-        self.verify_exclusive()
-        return super(BroadcastConsumer, self).consume(*args, **kwargs)
+def mailbox(connection):
+    return Mailbox("celeryd", connection)

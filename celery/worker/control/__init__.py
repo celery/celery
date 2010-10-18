@@ -1,5 +1,7 @@
+import socket
+
 from celery.app import app_or_default
-from celery.pidbox import ControlReplyPublisher
+from celery.pidbox import mailbox
 from celery.utils import kwdict
 from celery.worker.control.registry import Panel
 
@@ -9,12 +11,11 @@ __import__("celery.worker.control.builtins")
 class ControlDispatch(object):
     """Execute worker control panel commands."""
     Panel = Panel
-    ReplyPublisher = ControlReplyPublisher
 
     def __init__(self, logger=None, hostname=None, listener=None, app=None):
         self.app = app_or_default(app)
         self.logger = logger or self.app.log.get_default_logger()
-        self.hostname = hostname
+        self.hostname = hostname or socket.gethostname()
         self.listener = listener
         self.panel = self.Panel(self.logger, self.listener, self.hostname,
                                 app=self.app)
@@ -22,11 +23,7 @@ class ControlDispatch(object):
     def reply(self, data, exchange, routing_key, **kwargs):
 
         def _do_reply(connection=None, connect_timeout=None):
-            crq = self.ReplyPublisher(connection, exchange=exchange)
-            try:
-                crq.send(data, routing_key=routing_key)
-            finally:
-                crq.close()
+            mailbox(connection).publish_reply(data, exchange, routing_key)
 
         self.app.with_default_connection(_do_reply)(**kwargs)
 

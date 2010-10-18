@@ -1,5 +1,5 @@
 from celery.app import app_or_default
-from celery.pidbox import BroadcastPublisher, ControlReplyConsumer
+from celery.pidbox import mailbox
 from celery.utils import gen_unique_id
 
 
@@ -184,37 +184,10 @@ class Control(object):
             received.
 
         """
-        arguments = arguments or {}
-        reply_ticket = reply and gen_unique_id() or None
-
-        if destination is not None and \
-                not isinstance(destination, (list, tuple)):
-            raise ValueError("destination must be a list/tuple not %s" % (
-                    type(destination)))
-
-        # Set reply limit to number of destinations (if specificed)
-        if limit is None and destination:
-            limit = destination and len(destination) or None
-
         def _do_broadcast(connection=None, connect_timeout=None):
-
-            crq = None
-            if reply_ticket:
-                crq = ControlReplyConsumer(connection, reply_ticket)
-
-            broadcaster = BroadcastPublisher(connection, app=self.app)
-            try:
-                broadcaster.send(command, arguments, destination=destination,
-                                 reply_ticket=reply_ticket)
-            finally:
-                broadcaster.close()
-
-            if crq:
-                try:
-                    return crq.collect(limit=limit, timeout=timeout,
-                                       callback=callback)
-                finally:
-                    crq.close()
+            return mailbox(connection).broadcast(command, arguments,
+                                                 destination, reply,
+                                                 timeout, limit, callback)
 
         return self.app.with_default_connection(_do_broadcast)(
                 connection=connection, connect_timeout=connect_timeout)

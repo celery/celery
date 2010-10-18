@@ -143,11 +143,13 @@ class AMQP(object):
     BrokerConnection = BrokerConnection
     Publisher = messaging.Publisher
     Consumer = messaging.Consumer
-    ConsumerSet = messaging.ConsumerSet
     _queues = None
 
     def __init__(self, app):
         self.app = app
+
+    def ConsumerSet(self, *args, **kwargs):
+        return messaging.ConsumerSet(*args, **kwargs)
 
     def Queues(self, queues):
         return Queues.with_defaults(queues,
@@ -203,7 +205,7 @@ class AMQP(object):
         transport = transport or "amqp"
 
         port = broker_connection.port or \
-                    broker_connection.get_backend_cls().default_port
+                    broker_connection.get_transport_cls().default_port
         port = port and ":%s" % port or ""
 
         vhost = broker_connection.virtual_host

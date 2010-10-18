@@ -77,7 +77,7 @@ from celery.app import app_or_default
 from celery.datastructures import SharedCounter
 from celery.events import EventDispatcher
 from celery.exceptions import NotRegistered
-from celery.pidbox import BroadcastConsumer
+from celery.pidbox import mailbox
 from celery.utils import noop
 from celery.utils.timer2 import to_timestamp
 from celery.worker.job import TaskRequest, InvalidTaskError
@@ -239,6 +239,8 @@ class CarrotListener(object):
     def consume_messages(self):
         """Consume messages forever (or until an exception is raised)."""
         self.logger.debug("CarrotListener: Starting message consumer...")
+        self.task_consumer.consume()
+        self.broadcast_consumer.consume()
         wait_for_message = self._mainloop().next
         self.logger.debug("CarrotListener: Ready to accept tasks!")
 
@@ -358,6 +360,9 @@ class CarrotListener(object):
             self.event_dispatcher = \
                     self.maybe_conn_error(self.event_dispatcher.close)
 
+        if self.broadcast_consumer:
+            self.broadcast_consumer.channel.close()
+
         if close:
             self.close_connection()
 
@@ -386,19 +391,19 @@ class CarrotListener(object):
 
         self.connection = self._open_connection()
         self.logger.debug("CarrotListener: Connection Established.")
-        self.task_consumer = self.app.amqp.get_task_consumer(
-                                        connection=self.connection,
-                                        queues=self.queues)
+        self.task_consumer = self.app.amqp.get_task_consumer(self.connection,
+                                                          queues=self.queues)
         # QoS: Reset prefetch window.
         self.qos = QoS(self.task_consumer,
                        self.initial_prefetch_count, self.logger)
         self.qos.update()                   # enable prefetch_count
 
         self.task_consumer.on_decode_error = self.on_decode_error
-        self.broadcast_consumer = BroadcastConsumer(self.connection,
-                                                    app=self.app,
-                                                    hostname=self.hostname)
         self.task_consumer.register_callback(self.receive_message)
+
+        self.broadcast_consumer = mailbox(self.connection).get_consumer(
+                                        self.hostname)
+        self.broadcast_consumer.register_callback(self.receive_message)
 
         # Flush events sent while connection was down.
         if self.event_dispatcher:
@@ -416,9 +421,6 @@ class CarrotListener(object):
         self.heart.start()
 
     def _mainloop(self):
-        elf.broadcast_consumer.register_callback(self.receive_message)
-        self.task_consumer.consume()
-        self.broadcast_consumer.consume()
         while 1:
             yield self.connection.drain_events()
 
@@ -433,7 +435,8 @@ class CarrotListener(object):
 
         conn = self.app.broker_connection()
         if not self.app.conf.BROKER_CONNECTION_RETRY:
-            return conn.connect()
+            conn.connect()
+            return conn
 
         return conn.ensure_connection(_connection_error_handler,
                     self.app.conf.BROKER_CONNECTION_MAX_RETRIES)

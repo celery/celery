@@ -541,7 +541,7 @@ class BaseTask(object):
         if kwargs is None:
             kwargs = request.kwargs
 
-        delivery_info = request.delivery_info
+        delivery_info = request.delivery_info or {}
         options.setdefault("exchange", delivery_info.get("exchange"))
         options.setdefault("routing_key", delivery_info.get("routing_key"))
 
