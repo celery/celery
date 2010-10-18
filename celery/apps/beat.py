@@ -57,8 +57,8 @@ class Beat(object):
     def setup_logging(self):
         handled = self.app.log.setup_logging_subsystem(loglevel=self.loglevel,
                                                        logfile=self.logfile)
+        logger = self.app.log.get_default_logger(name="celery.beat")
         if not handled:
-            logger = self.app.log.get_default_logger(name="celery.beat")
             if self.redirect_stdouts:
                 self.app.log.redirect_stdouts_to_logger(logger,
                         loglevel=self.redirect_stdouts_level)
