@@ -56,6 +56,10 @@ http://botland.oebfare.com/logger/celery/
 News
 ====
 
+Celery, RabbitMQ and sending messages directly.
+-----------------------------------------------
+http://blog.timc3.com/2010/10/17/celery-rabbitmq-and-sending-messages-directly/
+
 RabbitMQとCeleryを使ってDjangoでジョブキューしてみる (Japanese)
 ---------------------------------------------------------------
 http://d.hatena.ne.jp/yuku_t/
@@ -75,7 +79,6 @@ http://www.slideshare.net/shawnrider/massaging-the-pony-message-queues-and-you
 "Large problems, Mostly Solved" (Djangocon 2010)
 ------------------------------------------------
 http://www.slideshare.net/ericholscher/large-problems
-
 
 Django and asynchronous jobs
 ----------------------------
