@@ -200,19 +200,10 @@ class test_ControlPanel(unittest.TestCase):
 
         replies = []
 
-        class MockReplyPublisher(object):
-
-            def __init__(self, *args, **kwargs):
-                pass
-
-            def send(self, reply, **kwargs):
-                replies.append(reply)
-
-            def close(self):
-                pass
-
         class _Dispatch(control.ControlDispatch):
-            ReplyPublisher = MockReplyPublisher
+
+            def reply(self, data, exchange, routing_key, **kwargs):
+                replies.append(data)
 
         panel = _Dispatch(hostname, listener=Listener())
 

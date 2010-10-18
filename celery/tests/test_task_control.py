@@ -1,50 +1,40 @@
 import unittest2 as unittest
 
+from celery.pidbox import Mailbox
 from celery.task import control
 from celery.task.builtins import PingTask
 from celery.utils import gen_unique_id
 from celery.utils.functional import wraps
 
 
-class MockBroadcastPublisher(object):
+class MockMailbox(Mailbox):
     sent = []
 
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def send(self, command, *args, **kwargs):
+    def publish(self, command, *args, **kwargs):
         self.__class__.sent.append(command)
 
     def close(self):
         pass
 
-
-class MockControlReplyConsumer(object):
-
-    def __init__(self, *args, **kwarg):
+    def collect_reply(self, *args, **kwargs):
         pass
 
-    def collect(self, *args, **kwargs):
-        pass
 
-    def close(self):
-        pass
+def mock_mailbox(connection):
+    return MockMailbox("celeryd", connection)
 
 
 def with_mock_broadcast(fun):
 
     @wraps(fun)
     def _mocked(*args, **kwargs):
-        old_pub = control.BroadcastPublisher
-        old_rep = control.ControlReplyConsumer
-        control.BroadcastPublisher = MockBroadcastPublisher
-        control.ControlReplyConsumer = MockControlReplyConsumer
+        old_box = control.mailbox
+        control.mailbox = mock_mailbox
         try:
             return fun(*args, **kwargs)
         finally:
-            MockBroadcastPublisher.sent = []
-            control.BroadcastPublisher = old_pub
-            control.ControlReplyConsumer = old_rep
+            MockMailbox.sent = []
+            control.mailbox = old_box
     return _mocked
 
 
@@ -65,47 +55,47 @@ class test_inspect(unittest.TestCase):
     @with_mock_broadcast
     def test_active(self):
         self.i.active()
-        self.assertIn("dump_active", MockBroadcastPublisher.sent)
+        self.assertIn("dump_active", MockMailbox.sent)
 
     @with_mock_broadcast
     def test_scheduled(self):
         self.i.scheduled()
-        self.assertIn("dump_schedule", MockBroadcastPublisher.sent)
+        self.assertIn("dump_schedule", MockMailbox.sent)
 
     @with_mock_broadcast
     def test_reserved(self):
         self.i.reserved()
-        self.assertIn("dump_reserved", MockBroadcastPublisher.sent)
+        self.assertIn("dump_reserved", MockMailbox.sent)
 
     @with_mock_broadcast
     def test_stats(self):
         self.i.stats()
-        self.assertIn("stats", MockBroadcastPublisher.sent)
+        self.assertIn("stats", MockMailbox.sent)
 
     @with_mock_broadcast
     def test_revoked(self):
         self.i.revoked()
-        self.assertIn("dump_revoked", MockBroadcastPublisher.sent)
+        self.assertIn("dump_revoked", MockMailbox.sent)
 
     @with_mock_broadcast
     def test_registered_tasks(self):
         self.i.registered_tasks()
-        self.assertIn("dump_tasks", MockBroadcastPublisher.sent)
+        self.assertIn("dump_tasks", MockMailbox.sent)
 
     @with_mock_broadcast
     def test_enable_events(self):
         self.i.enable_events()
-        self.assertIn("enable_events", MockBroadcastPublisher.sent)
+        self.assertIn("enable_events", MockMailbox.sent)
 
     @with_mock_broadcast
     def test_disable_events(self):
         self.i.disable_events()
-        self.assertIn("disable_events", MockBroadcastPublisher.sent)
+        self.assertIn("disable_events", MockMailbox.sent)
 
     @with_mock_broadcast
     def test_ping(self):
         self.i.ping()
-        self.assertIn("ping", MockBroadcastPublisher.sent)
+        self.assertIn("ping", MockMailbox.sent)
 
 
 class test_Broadcast(unittest.TestCase):
@@ -116,13 +106,13 @@ class test_Broadcast(unittest.TestCase):
     @with_mock_broadcast
     def test_broadcast(self):
         control.broadcast("foobarbaz", arguments=[])
-        self.assertIn("foobarbaz", MockBroadcastPublisher.sent)
+        self.assertIn("foobarbaz", MockMailbox.sent)
 
     @with_mock_broadcast
     def test_broadcast_limit(self):
         control.broadcast("foobarbaz1", arguments=[], limit=None,
                 destination=[1, 2, 3])
-        self.assertIn("foobarbaz1", MockBroadcastPublisher.sent)
+        self.assertIn("foobarbaz1", MockMailbox.sent)
 
     @with_mock_broadcast
     def test_broadcast_validate(self):
@@ -132,23 +122,23 @@ class test_Broadcast(unittest.TestCase):
     @with_mock_broadcast
     def test_rate_limit(self):
         control.rate_limit(PingTask.name, "100/m")
-        self.assertIn("rate_limit", MockBroadcastPublisher.sent)
+        self.assertIn("rate_limit", MockMailbox.sent)
 
     @with_mock_broadcast
     def test_revoke(self):
         control.revoke("foozbaaz")
-        self.assertIn("revoke", MockBroadcastPublisher.sent)
+        self.assertIn("revoke", MockMailbox.sent)
 
     @with_mock_broadcast
     def test_ping(self):
         control.ping()
-        self.assertIn("ping", MockBroadcastPublisher.sent)
+        self.assertIn("ping", MockMailbox.sent)
 
     @with_mock_broadcast
     def test_revoke_from_result(self):
         from celery.result import AsyncResult
         AsyncResult("foozbazzbar").revoke()
-        self.assertIn("revoke", MockBroadcastPublisher.sent)
+        self.assertIn("revoke", MockMailbox.sent)
 
     @with_mock_broadcast
     def test_revoke_from_resultset(self):
@@ -156,4 +146,4 @@ class test_Broadcast(unittest.TestCase):
         r = TaskSetResult(gen_unique_id(), map(AsyncResult, [gen_unique_id()
                                                         for i in range(10)]))
         r.revoke()
-        self.assertIn("revoke", MockBroadcastPublisher.sent)
+        self.assertIn("revoke", MockMailbox.sent)

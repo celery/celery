@@ -4,7 +4,7 @@ import unittest2 as unittest
 from datetime import datetime, timedelta
 from Queue import Empty
 
-from kombu.backends.base import BaseMessage
+from kombu.transport.base import Message
 from kombu.connection import BrokerConnection
 from celery.utils.timer2 import Timer
 
@@ -23,11 +23,31 @@ from celery.tests.compat import catch_warnings
 from celery.tests.utils import execute_context
 
 
+class MockConsumer(object):
+
+    class Channel(object):
+
+        def close(self):
+            pass
+
+    def register_callback(self, cb):
+        pass
+
+    def consume(self):
+        pass
+
+    @property
+    def channel(self):
+        return self.Channel()
+
+
 class PlaceHolder(object):
         pass
 
 
 class MyCarrotListener(CarrotListener):
+    broadcast_consumer = MockConsumer()
+    task_consumer = MockConsumer()
 
     def restart_heartbeat(self):
         self.heart = None
@@ -139,9 +159,9 @@ class MockController(object):
 
 def create_message(backend, **data):
     data.setdefault("id", gen_unique_id())
-    return BaseMessage(backend, body=pickle.dumps(dict(**data)),
-                       content_type="application/x-python-serialize",
-                       content_encoding="binary")
+    return Message(backend, body=pickle.dumps(dict(**data)),
+                   content_type="application/x-python-serialize",
+                   content_encoding="binary")
 
 
 class test_QoS(unittest.TestCase):
@@ -176,47 +196,6 @@ class test_CarrotListener(unittest.TestCase):
 
     def tearDown(self):
         self.eta_schedule.stop()
-
-    def test_mainloop(self):
-        l = MyCarrotListener(self.ready_queue, self.eta_schedule, self.logger,
-                           send_events=False)
-
-        class MockConnection(object):
-
-            def drain_events(self):
-                return "draining"
-
-        l.connection = MockConnection()
-        l.connection.connection = MockConnection()
-
-        it = l._mainloop()
-        self.assertTrue(it.next(), "draining")
-        records = {}
-
-        def create_recorder(key):
-            def _recorder(*args, **kwargs):
-                records[key] = True
-            return _recorder
-
-        l.task_consumer = PlaceHolder()
-        l.task_consumer.iterconsume = create_recorder("consume_tasks")
-        l.broadcast_consumer = PlaceHolder()
-        l.broadcast_consumer.register_callback = create_recorder(
-                                                    "broadcast_callback")
-        l.broadcast_consumer.iterconsume = create_recorder(
-                                             "consume_broadcast")
-        l.task_consumer.add_consumer = create_recorder("consumer_add")
-
-        records.clear()
-        self.assertEqual(l._detect_wait_method(), l._mainloop)
-        for record in ("broadcast_callback", "consume_broadcast",
-                "consume_tasks"):
-            self.assertTrue(records.get(record))
-
-        records.clear()
-        l.connection.connection = PlaceHolder()
-        self.assertIs(l._detect_wait_method(), l.task_consumer.iterconsume)
-        self.assertTrue(records.get("consumer_add"))
 
     def test_connection(self):
         l = MyCarrotListener(self.ready_queue, self.eta_schedule, self.logger,
@@ -459,9 +438,6 @@ class test_CarrotListener(unittest.TestCase):
                 if self.iterations >= 1:
                     raise KeyError("foo")
 
-            def _detect_wait_method(self):
-                return self.wait_method
-
         called_back = [False]
 
         def init_callback(listener):
@@ -469,6 +445,7 @@ class test_CarrotListener(unittest.TestCase):
 
         l = _Listener(self.ready_queue, self.eta_schedule, self.logger,
                       send_events=False, init_callback=init_callback)
+        l.task_consumer = MockConsumer()
         l.qos = _QoS()
         l.connection = BrokerConnection()
 
@@ -477,7 +454,7 @@ class test_CarrotListener(unittest.TestCase):
             l.iterations = 1
             raise KeyError("foo")
 
-        l.wait_method = raises_KeyError
+        l._mainloop = raises_KeyError
         self.assertRaises(KeyError, l.start)
         self.assertTrue(called_back[0])
         self.assertEqual(l.iterations, 1)
@@ -486,6 +463,7 @@ class test_CarrotListener(unittest.TestCase):
         l = _Listener(self.ready_queue, self.eta_schedule, self.logger,
                       send_events=False, init_callback=init_callback)
         l.qos = _QoS()
+        l.task_consumer = MockConsumer()
         l.connection = BrokerConnection()
 
         def raises_socket_error(limit=None):
@@ -493,8 +471,8 @@ class test_CarrotListener(unittest.TestCase):
             l.iterations = 1
             raise socket.error("foo")
 
-        l.wait_method = raises_socket_error
-        self.assertRaises(KeyError, l.start)
+        l._mainloop = raises_socket_error
+        self.assertRaises(socket.error, l.start)
         self.assertTrue(called_back[0])
         self.assertEqual(l.iterations, 1)
 
