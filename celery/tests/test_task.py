@@ -9,7 +9,7 @@ from celery import task
 from celery.app import app_or_default
 from celery.decorators import task as task_dec
 from celery.exceptions import RetryTaskError
-from celery.execute import send_task
+from celery.execute import send_task, apply_async
 from celery.result import EagerResult
 from celery.task.schedules import crontab, crontab_parser
 from celery.utils import timeutils
@@ -322,20 +322,20 @@ class TestCeleryTasks(unittest.TestCase):
                 name="Elaine M. Benes")
 
         # With eta.
-        presult2 = task.apply_async(t1, kwargs=dict(name="George Costanza"),
+        presult2 = apply_async(t1, kwargs=dict(name="George Costanza"),
                                     eta=datetime.now() + timedelta(days=1))
         self.assertNextTaskDataEqual(consumer, presult2, t1.name,
                 name="George Costanza", test_eta=True)
 
         # With countdown.
-        presult2 = task.apply_async(t1, kwargs=dict(name="George Costanza"),
+        presult2 = apply_async(t1, kwargs=dict(name="George Costanza"),
                                     countdown=10)
         self.assertNextTaskDataEqual(consumer, presult2, t1.name,
                 name="George Costanza", test_eta=True)
 
         # Discarding all tasks.
         consumer.discard_all()
-        task.apply_async(t1)
+        apply_async(t1)
         self.assertEqual(consumer.discard_all(), 1)
         self.assertIsNone(consumer.fetch())
 
