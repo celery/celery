@@ -37,7 +37,7 @@ class EvCommand(Command):
     def set_process_status(self, prog, info=""):
         prog = "%s:%s" % (self.prog_name, prog)
         info = "%s %s" % (info, platforms.strargv(sys.argv))
-        return platform.set_process_title(prog, info=info)
+        return platforms.set_process_title(prog, info=info)
 
     def get_options(self):
         return (

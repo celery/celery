@@ -461,16 +461,13 @@ that has an AMQP client.
 How can I get the task id of the current task?
 ----------------------------------------------
 
-**Answer**: Celery does set some default keyword arguments if the task
-accepts them (you can accept them by either using ``**kwargs``, or list them
-specifically)::
+**Answer**: The current id and more is available in the task request::
 
     @task
-    def mytask(task_id=None):
-        cache.set(task_id, "Running")
+    def mytask():
+        cache.set(mytask.request.id, "Running")
 
-The default keyword arguments are documented here:
-http://celeryq.org/docs/userguide/tasks.html#default-keyword-arguments
+For more information see :ref:`task-request-info`.
 
 .. _faq-custom-task-ids:
 
