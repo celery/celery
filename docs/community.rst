@@ -60,6 +60,10 @@ Celery, RabbitMQ and sending messages directly.
 -----------------------------------------------
 http://blog.timc3.com/2010/10/17/celery-rabbitmq-and-sending-messages-directly/
 
+Cron dentro do Django com Celery (Portugese)
+--------------------------------------------
+http://blog.avelino.us/2010/10/cron-dentro-do-django-com-celery.html
+
 RabbitMQとCeleryを使ってDjangoでジョブキューしてみる (Japanese)
 ---------------------------------------------------------------
 http://d.hatena.ne.jp/yuku_t/
