@@ -474,6 +474,7 @@ class TaskRequest(object):
                    "kwargs": self.kwargs}
 
         self.logger.error(self.error_msg.strip() % context,
+                          exc_info=exc_info,
                           extra={
                               "data": {
                                   "hostname": self.hostname,
