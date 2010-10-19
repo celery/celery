@@ -5,6 +5,27 @@
 .. contents::
     :local:
 
+.. _version-2.1.2:
+
+2.1.2
+=====
+:release-data: TBA
+
+.. _v212-fixes:
+
+Fixes
+-----
+
+* celeryd: Now sends the ``task-retried`` event for retried tasks.
+
+* celeryd: Now honors ignore result for
+  :exc:`~celery.exceptions.WorkerLostError` and timeout errors.
+
+* celerybeat: Fixed :exc:`UnboundLocalError` in celerybeat logging
+  when using logging setup signals.
+
+* celeryd: All log messages now includes ``exc_info``.
+
 .. _version-2.1.1:
 
 2.1.1
