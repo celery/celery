@@ -57,6 +57,7 @@ PRECEDENCE = ["SUCCESS",
               "REVOKED",
               "STARTED",
               "RECEIVED",
+              "RETRY",
               "PENDING"]
 
 
