@@ -1,3 +1,4 @@
+import sys
 from datetime import datetime
 
 from celery import conf
@@ -70,7 +71,7 @@ def rate_limit(panel, task_name, rate_limit, **kwargs):
         tasks[task_name].rate_limit = rate_limit
     except KeyError:
         panel.logger.error("Rate limit attempt for unknown task %s" % (
-            task_name, ))
+            task_name, ), exc_info=sys.exc_info())
         return {"error": "unknown task"}
 
     if conf.DISABLE_RATE_LIMITS:

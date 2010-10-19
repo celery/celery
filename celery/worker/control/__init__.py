@@ -1,5 +1,7 @@
+import sys
 from celery import log
 from celery.messaging import ControlReplyPublisher, with_connection
+
 from celery.utils import kwdict
 from celery.worker.control.registry import Panel
 from celery.worker.control import builtins
@@ -64,7 +66,7 @@ class ControlDispatch(object):
             except Exception, exc:
                 self.logger.error(
                         "Error running control command %s kwargs=%s: %s" % (
-                            command, kwargs, exc))
+                            command, kwargs, exc), exc_info=sys.exc_info())
                 reply = {"error": str(exc)}
             if reply_to:
                 self.reply({self.hostname: reply},
