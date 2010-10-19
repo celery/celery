@@ -56,6 +56,14 @@ http://botland.oebfare.com/logger/celery/
 News
 ====
 
+RabbitMQとCeleryを使ってDjangoでジョブキューしてみる (Japanese)
+---------------------------------------------------------------
+http://d.hatena.ne.jp/yuku_t/
+
+Celery - Eine asynchrone Task Queue (nicht nur) für Django (German)
+-------------------------------------------------------------------
+http://www.scribd.com/doc/39203296/Celery-Eine-asynchrone-Task-Queue-nicht-nur-fur-Django
+
 Asynchronous Processing Using Celery (historio.us)
 --------------------------------------------------
 http://blog.historio.us/asynchronous-processing-using-celery
