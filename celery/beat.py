@@ -5,6 +5,7 @@ Periodic Task Scheduler
 """
 import time
 import shelve
+import sys
 import threading
 import traceback
 import multiprocessing
@@ -155,7 +156,7 @@ class Scheduler(UserDict):
                 result = self.apply_async(entry, publisher=publisher)
             except Exception, exc:
                 self.logger.error("Message Error: %s\n%s" % (exc,
-                    traceback.format_stack()))
+                    traceback.format_stack()), exc_info=sys.exc_info())
             else:
                 self.logger.debug("%s sent. id->%s" % (entry.task,
                                                        result.task_id))
