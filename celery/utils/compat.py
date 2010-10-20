@@ -297,6 +297,8 @@ import sys
 
 from logging import LogRecord
 
+log_takes_extra = "extra" in inspect.getargspec(logging.Logger._log)[0]
+
 # The func argument to LogRecord was added in 2.5
 if "func" not in inspect.getargspec(LogRecord.__init__)[0]:
     def LogRecord(name, level, fn, lno, msg, args, exc_info, func):
@@ -404,6 +406,12 @@ try:
 except ImportError:
     LoggerAdapter = _CompatLoggerAdapter
 
+
+def log_with_extra(logger, level, msg, *args, **kwargs):
+    if not log_takes_extra:
+        kwargs.pop("extra", None)
+    return logger.log(level, msg, *args, **kwargs)
+
 ############## itertools.izip_longest #######################################
 
 try:
@@ -425,6 +433,7 @@ except ImportError:
                 yield tup
         except IndexError:
             pass
+
 
 ############## itertools.chain.from_iterable ################################
 from itertools import chain
