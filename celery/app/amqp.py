@@ -18,7 +18,9 @@ QUEUE_FORMAT = """
 . %(name)s -> exchange:%(exchange)s (%(exchange_type)s) \
 binding:%(binding_key)s
 """
-BROKER_FORMAT = "%(transport)s://%(userid)s@%(host)s%(port)s%(vhost)s"
+BROKER_FORMAT = """\
+%(transport_cls)s://%(userid)s@%(hostname)s%(port)s%(virtual_host)s\
+"""
 
 get_msg_options = mitemgetter(*MSG_OPTIONS)
 extract_msg_options = lambda d: dict(zip(MSG_OPTIONS, get_msg_options(d)))
@@ -199,24 +201,14 @@ class AMQP(object):
     def get_broker_info(self, broker_connection=None):
         if broker_connection is None:
             broker_connection = self.app.broker_connection()
-        transport = broker_connection.transport_cls
-        if transport and not isinstance(transport, basestring):
-            transport = transport.__name__
-        transport = transport or "amqp"
-
-        port = broker_connection.port or \
-                    broker_connection.get_transport_cls().default_port
-        port = port and ":%s" % port or ""
-
-        vhost = broker_connection.virtual_host
+        info = broker_connection.info()
+        port = info["port"]
+        if port:
+            info["port"] = ":%s" % (port, )
+        vhost = info["virtual_host"]
         if not vhost.startswith("/"):
-            vhost = "/" + vhost
-
-        return {"transport": transport,
-                "userid": broker_connection.userid,
-                "host": broker_connection.hostname,
-                "port": port,
-                "vhost": vhost}
+            info["virtual_host"] = "/" + vhost
+        return info
 
     def format_broker_info(self, info=None):
         """Get message broker connection info string for log dumps."""
