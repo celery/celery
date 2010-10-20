@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 import time
@@ -15,6 +16,7 @@ from celery.execute.trace import TaskTrace
 from celery.registry import tasks
 from celery.utils import noop, kwdict, fun_takes_kwargs
 from celery.utils import truncate_text
+from celery.utils.compat import log_with_extra
 from celery.utils.timeutils import maybe_iso8601
 from celery.worker import state
 
@@ -489,15 +491,11 @@ class TaskRequest(object):
                    "args": self.args,
                    "kwargs": self.kwargs}
 
-        self.logger.error(self.error_msg.strip() % context,
-                          exc_info=exc_info,
-                          extra={
-                              "data": {
-                                  "hostname": self.hostname,
-                                  "id": self.task_id,
-                                  "name": self.task_name,
-                              }
-                          })
+        log_with_extra(self.logger, logging.ERROR,
+                       self.error_msg.strip() % context,
+                       extra={"data": {"hostname": self.hostname,
+                                       "id": self.task_id,
+                                       "name": self.task_name}})
 
         task_obj = tasks.get(self.task_name, object)
         self.send_error_email(task_obj, context, exc_info.exception,
