@@ -1,3 +1,5 @@
+import sys
+
 from celery.app import app_or_default
 from celery.pidbox import ControlReplyPublisher
 from celery.utils import kwdict
@@ -69,7 +71,7 @@ class ControlDispatch(object):
             except Exception, exc:
                 self.logger.error(
                         "Error running control command %s kwargs=%s: %s" % (
-                            command, kwargs, exc))
+                            command, kwargs, exc), exc_info=sys.exc_info())
                 reply = {"error": str(exc)}
             if reply_to:
                 self.reply({self.hostname: reply},

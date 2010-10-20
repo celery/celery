@@ -108,5 +108,5 @@ class test_state(StateResetCase):
             state.task_accepted(request)
         self.assertEqual(len(state.active_requests), 2)
         for request in requests:
-            state.task_ready(requests)
+            state.task_ready(request)
         self.assertEqual(len(state.active_requests), 0)

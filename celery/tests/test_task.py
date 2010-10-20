@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 
 from pyparsing import ParseException
 
-
 from celery import task
 from celery.app import app_or_default
 from celery.decorators import task as task_dec

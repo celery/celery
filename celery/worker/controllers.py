@@ -55,7 +55,13 @@ class Mediator(threading.Thread):
             self.callback(task)
         except Exception, exc:
             self.logger.error("Mediator callback raised exception %r\n%s" % (
-                exc, traceback.format_exc()), exc_info=sys.exc_info())
+                exc, traceback.format_exc()), exc_info=sys.exc_info(), extra={
+                    "data": {
+                        "hostname": task.hostname,
+                        "id": task.task_id,
+                        "name": task.task_name,
+                    }
+                })
 
     def run(self):
         while not self._shutdown.isSet():
