@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from carrot.utils import partition
+from kombu.utils import partition
 
 from celery.backends.base import KeyValueStoreBackend
 from celery.exceptions import ImproperlyConfigured

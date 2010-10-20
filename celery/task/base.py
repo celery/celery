@@ -459,7 +459,7 @@ class BaseTask(object):
             ``CELERY_TASK_SERIALIZER`` setting. Can be ``pickle``,
             ``json``, ``yaml``, or any custom serialization method
             that has been registered with
-            :mod:`carrot.serialization.registry`. Defaults to the tasks
+            :mod:`kombu.serialization.registry`.  Defaults to the tasks
             :attr:`serializer` attribute.
 
         :keyword compression: A string identifying the compression method

@@ -28,7 +28,7 @@ def with_connection(fun):
 
 
 def get_consumer_set(connection, queues=None, **options):
-    """Get the :class:`carrot.messaging.ConsumerSet`` for a queue
+    """Get the :class:`kombu.messaging.Consumer`` for a queue
     configuration.
 
     Defaults to the queues in :const:`CELERY_QUEUES`.

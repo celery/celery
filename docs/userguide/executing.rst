@@ -124,10 +124,10 @@ change this globally or for each individual task.
 There is built-in support for :mod:`pickle`, ``JSON``, ``YAML``
 and ``msgpack``, and you can also add your own custom serializers by registering
 them into the Carrot serializer registry (see
-`Carrot: Serialization of Data`_).
+`Kombu: Serialization of Data`_).
 
-.. _`Carrot: Serialization of Data`:
-    http://packages.python.org/carrot/introduction.html#serialization-of-data
+.. _`Kombu: Serialization of Data`:
+    http://packages.python.org/kombu/introduction.html#serialization-of-data
 
 Each option has its advantages and disadvantages.
 

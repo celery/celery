@@ -1,7 +1,7 @@
 .. _tut-clickcounter:
 
 ============================================================
- Tutorial: Creating a click counter using carrot and celery
+ Tutorial: Creating a click counter using Kombu and celery
 ============================================================
 
 .. contents::
@@ -18,10 +18,10 @@ you are likely to bump into problems. One database write for every click is
 not good if you have millions of clicks a day.
 
 So what can you do? In this tutorial we will send the individual clicks as
-messages using ``carrot``, and then process them later with a ``celery``
+messages using ``kombu``, and then process them later with a ``celery``
 periodic task.
 
-Celery and carrot is excellent in tandem, and while this might not be
+Celery and Kombu is excellent in tandem, and while this might not be
 the perfect example, you'll at least see one example how of they can be used
 to solve a task.
 
@@ -70,7 +70,7 @@ its count by.
             verbose_name = _(u"URL clicks")
             verbose_name_plural = _(u"URL clicks")
 
-Using carrot to send clicks as messages
+Using Kombu to send clicks as messages
 ========================================
 
 The model is normal django stuff, nothing new there. But now we get on to
@@ -111,7 +111,7 @@ On to the code...
 .. code-block:: python
 
     from celery.messaging import establish_connection
-    from carrot.messaging import Publisher, Consumer
+    from kombu.compat import Publisher, Consumer
     from clickmuncher.models import Click
 
 

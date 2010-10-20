@@ -201,7 +201,7 @@ class BaseApp(object):
             ``BROKER_CONNECTION_TIMEOUT`` setting.
         :keyword backend_cls: defaults to the ``BROKER_BACKEND`` setting.
 
-        :returns :class:`carrot.connection.BrokerConnection`:
+        :returns :class:`kombu.connection.BrokerConnection`:
 
         """
         return self.amqp.BrokerConnection(

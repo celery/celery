@@ -34,10 +34,12 @@ The ETA schedule is a heap queue sorted by time.
 Components
 ==========
 
-CarrotListener
+Listener
 --------------
 
-Receives messages from the broker using ``carrot``.
+Receives messages from the broker using `Kombu`_.
+
+.. _`Kombu`: http://pypi.python.org/pypi/kombu
 
 When a message is received it's converted into a
 :class:`celery.worker.job.TaskRequest` object.

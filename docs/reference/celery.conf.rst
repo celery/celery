@@ -162,7 +162,7 @@ Execution
     A string identifying the default serialization
     method to use. Can be ``pickle`` (default),
     ``json``, ``yaml``, or any custom serialization methods that have
-    been registered with :mod:`carrot.serialization.registry`.
+    been registered with :mod:`kombu.serialization.registry`.
 
     Default is ``pickle``.
 

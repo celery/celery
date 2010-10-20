@@ -8,8 +8,8 @@ from celery import routes
 from celery import signals
 from celery.utils import gen_unique_id, mitemgetter, textindent
 
-from kombu.connection import BrokerConnection
 from kombu import compat as messaging
+from kombu import BrokerConnection
 
 MSG_OPTIONS = ("mandatory", "priority", "immediate",
                "routing_key", "serializer", "delivery_mode",

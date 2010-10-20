@@ -5,7 +5,7 @@ import threading
 from collections import deque
 from itertools import count
 
-from carrot.messaging import Publisher, Consumer
+from kombu.compat import Publisher, Consumer
 
 from celery.app import app_or_default
 

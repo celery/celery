@@ -1,5 +1,5 @@
 python-dateutil
 sqlalchemy
 anyjson
-carrot>=0.10.7
+kombu
 pyparsing

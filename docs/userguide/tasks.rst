@@ -238,7 +238,7 @@ General
     method to use. Defaults to the :setting:`CELERY_TASK_SERIALIZER`
     setting.  Can be ``pickle`` ``json``, ``yaml``, or any custom
     serialization methods that have been registered with
-    :mod:`carrot.serialization.registry`.
+    :mod:`kombu.serialization.registry`.
 
     Please see :ref:`executing-serializers` for more information.
 

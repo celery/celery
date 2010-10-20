@@ -26,7 +26,7 @@ For the Redis support you have to install the Python redis client::
 Configuration
 -------------
 
-Configuration is easy, set the carrot backend, and configure the location of
+Configuration is easy, set the transport, and configure the location of
 your Redis database::
 
     BROKER_BACKEND = "redis"
