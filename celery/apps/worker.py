@@ -106,8 +106,8 @@ class Worker(object):
 
         self.run_worker()
 
-    def on_listener_ready(self, listener):
-        signals.worker_ready.send(sender=listener)
+    def on_consumer_ready(self, consumer):
+        signals.worker_ready.send(sender=consumer)
         print("celery@%s has started." % self.hostname)
 
     def init_queues(self):
@@ -185,7 +185,7 @@ class Worker(object):
                                 loglevel=self.loglevel,
                                 logfile=self.logfile,
                                 hostname=self.hostname,
-                                ready_callback=self.on_listener_ready,
+                                ready_callback=self.on_consumer_ready,
                                 embed_clockservice=self.run_clockservice,
                                 schedule_filename=self.schedule,
                                 send_events=self.events,

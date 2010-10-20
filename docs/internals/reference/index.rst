@@ -9,7 +9,7 @@
     :maxdepth: 2
 
     celery.worker
-    celery.worker.listener
+    celery.worker.consumer
     celery.worker.job
     celery.worker.controllers
     celery.worker.buckets

@@ -37,7 +37,7 @@ class Dispatcher(object):
         self.sent.append(event)
 
 
-class Listener(object):
+class Consumer(object):
 
     def __init__(self):
         self.ready_queue = FastQueue()
@@ -53,26 +53,26 @@ class Listener(object):
 class test_ControlPanel(unittest.TestCase):
 
     def setUp(self):
-        self.panel = self.create_panel(listener=Listener())
+        self.panel = self.create_panel(consumer=Consumer())
 
     def create_panel(self, **kwargs):
         return control.ControlDispatch(hostname=hostname, **kwargs)
 
     def test_disable_events(self):
-        listener = Listener()
-        panel = self.create_panel(listener=listener)
-        listener.event_dispatcher.enabled = True
+        consumer = Consumer()
+        panel = self.create_panel(consumer=consumer)
+        consumer.event_dispatcher.enabled = True
         panel.execute("disable_events")
-        self.assertEqual(listener.event_dispatcher.enabled, False)
-        self.assertIn("worker-offline", listener.event_dispatcher.sent)
+        self.assertEqual(consumer.event_dispatcher.enabled, False)
+        self.assertIn("worker-offline", consumer.event_dispatcher.sent)
 
     def test_enable_events(self):
-        listener = Listener()
-        panel = self.create_panel(listener=listener)
-        listener.event_dispatcher.enabled = False
+        consumer = Consumer()
+        panel = self.create_panel(consumer=consumer)
+        consumer.event_dispatcher.enabled = False
         panel.execute("enable_events")
-        self.assertEqual(listener.event_dispatcher.enabled, True)
-        self.assertIn("worker-online", listener.event_dispatcher.sent)
+        self.assertEqual(consumer.event_dispatcher.enabled, True)
+        self.assertIn("worker-online", consumer.event_dispatcher.sent)
 
     def test_dump_tasks(self):
         info = "\n".join(self.panel.execute("dump_tasks"))
@@ -80,23 +80,23 @@ class test_ControlPanel(unittest.TestCase):
         self.assertIn("rate_limit=200", info)
 
     def test_dump_schedule(self):
-        listener = Listener()
-        panel = self.create_panel(listener=listener)
+        consumer = Consumer()
+        panel = self.create_panel(consumer=consumer)
         self.assertFalse(panel.execute("dump_schedule"))
         import operator
-        listener.eta_schedule.schedule.enter(100, operator.add, (2, 2))
+        consumer.eta_schedule.schedule.enter(100, operator.add, (2, 2))
         self.assertTrue(panel.execute("dump_schedule"))
 
     def test_dump_reserved(self):
-        listener = Listener()
-        panel = self.create_panel(listener=listener)
+        consumer = Consumer()
+        panel = self.create_panel(consumer=consumer)
         response = panel.execute("dump_reserved", {"safe": True})
         self.assertDictContainsSubset({"name": mytask.name,
                                        "args": (2, 2),
                                        "kwargs": {},
                                        "hostname": socket.gethostname()},
                                        response[0])
-        listener.ready_queue = FastQueue()
+        consumer.ready_queue = FastQueue()
         self.assertFalse(panel.execute("dump_reserved"))
 
     def test_rate_limit_when_disabled(self):
@@ -116,7 +116,7 @@ class test_ControlPanel(unittest.TestCase):
 
     def test_rate_limit(self):
 
-        class Listener(object):
+        class Consumer(object):
 
             class ReadyQueue(object):
                 fresh = False
@@ -127,8 +127,8 @@ class test_ControlPanel(unittest.TestCase):
             def __init__(self):
                 self.ready_queue = self.ReadyQueue()
 
-        listener = Listener()
-        panel = self.create_panel(listener=listener)
+        consumer = Consumer()
+        panel = self.create_panel(consumer=consumer)
 
         task = tasks[PingTask.name]
         old_rate_limit = task.rate_limit
@@ -136,12 +136,12 @@ class test_ControlPanel(unittest.TestCase):
             panel.execute("rate_limit", kwargs=dict(task_name=task.name,
                                                     rate_limit="100/m"))
             self.assertEqual(task.rate_limit, "100/m")
-            self.assertTrue(listener.ready_queue.fresh)
-            listener.ready_queue.fresh = False
+            self.assertTrue(consumer.ready_queue.fresh)
+            consumer.ready_queue.fresh = False
             panel.execute("rate_limit", kwargs=dict(task_name=task.name,
                                                     rate_limit=0))
             self.assertEqual(task.rate_limit, 0)
-            self.assertTrue(listener.ready_queue.fresh)
+            self.assertTrue(consumer.ready_queue.fresh)
         finally:
             task.rate_limit = old_rate_limit
 
@@ -205,7 +205,7 @@ class test_ControlPanel(unittest.TestCase):
             def reply(self, data, exchange, routing_key, **kwargs):
                 replies.append(data)
 
-        panel = _Dispatch(hostname, listener=Listener())
+        panel = _Dispatch(hostname, consumer=Consumer())
 
         r = panel.execute("ping", reply_to={"exchange": "x",
                                             "routing_key": "x"})

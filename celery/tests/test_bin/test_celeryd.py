@@ -153,7 +153,7 @@ class test_Worker(unittest.TestCase):
             app.amqp.queues = p
 
     @disable_stdouts
-    def test_on_listener_ready(self):
+    def test_on_consumer_ready(self):
         worker_ready_sent = [False]
 
         def on_worker_ready(**kwargs):
@@ -161,7 +161,7 @@ class test_Worker(unittest.TestCase):
 
         signals.worker_ready.connect(on_worker_ready)
 
-        self.Worker().on_listener_ready(object())
+        self.Worker().on_consumer_ready(object())
         self.assertTrue(worker_ready_sent[0])
 
 

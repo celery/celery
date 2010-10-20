@@ -5,34 +5,34 @@ from the broker, processing the messages and keeping the broker connections
 up and running.
 
 
-* :meth:`~CarrotListener.start` is an infinite loop, which only iterates
+* :meth:`~Consumer.start` is an infinite loop, which only iterates
   again if the connection is lost. For each iteration (at start, or if the
-  connection is lost) it calls :meth:`~CarrotListener.reset_connection`,
-  and starts the consumer by calling :meth:`~CarrotListener.consume_messages`.
+  connection is lost) it calls :meth:`~Consumer.reset_connection`,
+  and starts the consumer by calling :meth:`~Consumer.consume_messages`.
 
-* :meth:`~CarrotListener.reset_connection`, clears the internal queues,
+* :meth:`~Consumer.reset_connection`, clears the internal queues,
   establishes a new connection to the broker, sets up the task
   consumer (+ QoS), and the broadcast remote control command consumer.
 
   Also if events are enabled it configures the event dispatcher and starts
   up the hartbeat thread.
 
-* Finally it can consume messages. :meth:`~CarrotListener.consume_messages`
+* Finally it can consume messages. :meth:`~Consumer.consume_messages`
   is simply an infinite loop waiting for events on the AMQP channels.
 
   Both the task consumer and the broadcast consumer uses the same
-  callback: :meth:`~CarrotListener.receive_message`.
+  callback: :meth:`~Consumer.receive_message`.
 
-* So for each message received the :meth:`~CarrotListener.receive_message`
+* So for each message received the :meth:`~Consumer.receive_message`
   method is called, this checks the payload of the message for either
   a ``task`` key or a ``control`` key.
 
   If the message is a task, it verifies the validity of the message
   converts it to a :class:`celery.worker.job.TaskRequest`, and sends
-  it to :meth:`~CarrotListener.on_task`.
+  it to :meth:`~Consumer.on_task`.
 
   If the message is a control command the message is passed to
-  :meth:`~CarrotListener.on_control`, which in turn dispatches
+  :meth:`~Consumer.on_control`, which in turn dispatches
   the control command using the control dispatcher.
 
   It also tries to handle malformed or invalid messages properly,
@@ -51,7 +51,7 @@ up and running.
   the prefetch count is decremented again, though this cannot happen
   immediately because amqplib doesn't support doing broker requests
   across threads. Instead the current prefetch count is kept as a
-  shared counter, so as soon as  :meth:`~CarrotListener.consume_messages`
+  shared counter, so as soon as  :meth:`~Consumer.consume_messages`
   detects that the value has changed it will send out the actual
   QoS event to the broker.
 
@@ -60,7 +60,7 @@ up and running.
   Hoever, this is not dangerous as the broker will resend them
   to another worker when the channel is closed.
 
-* **WARNING**: :meth:`~CarrotListener.stop` does not close the connection!
+* **WARNING**: :meth:`~Consumer.stop` does not close the connection!
   This is because some pre-acked messages may be in processing,
   and they need to be finished before the channel is closed.
   For celeryd this means the pool must finish the tasks it has acked
@@ -140,7 +140,7 @@ class QoS(object):
         return int(self.value)
 
 
-class CarrotListener(object):
+class Consumer(object):
     """Listen for messages received from the broker and
     move them the the ready queue for task processing.
 
@@ -213,7 +213,7 @@ class CarrotListener(object):
         self.control_dispatch = ControlDispatch(app=self.app,
                                                 logger=logger,
                                                 hostname=self.hostname,
-                                                listener=self)
+                                                consumer=self)
         self.connection_errors = \
                 self.app.broker_connection().connection_errors
         self.queues = queues
@@ -233,16 +233,16 @@ class CarrotListener(object):
             try:
                 self.consume_messages()
             except self.connection_errors:
-                self.logger.error("CarrotListener: Connection to broker lost."
+                self.logger.error("Consumer: Connection to broker lost."
                                 + " Trying to re-establish connection...")
 
     def consume_messages(self):
         """Consume messages forever (or until an exception is raised)."""
-        self.logger.debug("CarrotListener: Starting message consumer...")
+        self.logger.debug("Consumer: Starting message consumer...")
         self.task_consumer.consume()
         self.broadcast_consumer.consume()
         wait_for_message = self._mainloop().next
-        self.logger.debug("CarrotListener: Ready to accept tasks!")
+        self.logger.debug("Consumer: Ready to accept tasks!")
 
         while 1:
             if self.qos.prev != self.qos.next:
@@ -331,12 +331,12 @@ class CarrotListener(object):
             pass
 
     def close_connection(self):
-        self.logger.debug("CarrotListener: "
+        self.logger.debug("Consumer: "
                           "Closing consumer channel...")
         if self.task_consumer:
             self.task_consumer = \
                     self.maybe_conn_error(self.task_consumer.close)
-        self.logger.debug("CarrotListener: "
+        self.logger.debug("Consumer: "
                           "Closing connection to broker...")
         if self.connection:
             self.connection = self.maybe_conn_error(self.connection.close)
@@ -382,7 +382,7 @@ class CarrotListener(object):
     def reset_connection(self):
         """Re-establish connection and set up consumers."""
         self.logger.debug(
-                "CarrotListener: Re-establishing connection to the broker...")
+                "Consumer: Re-establishing connection to the broker...")
         self.stop_consumers()
 
         # Clear internal queues.
@@ -390,7 +390,7 @@ class CarrotListener(object):
         self.eta_schedule.clear()
 
         self.connection = self._open_connection()
-        self.logger.debug("CarrotListener: Connection Established.")
+        self.logger.debug("Consumer: Connection Established.")
         self.task_consumer = self.app.amqp.get_task_consumer(self.connection,
                                                           queues=self.queues)
         # QoS: Reset prefetch window.
@@ -429,7 +429,7 @@ class CarrotListener(object):
 
         def _connection_error_handler(exc, interval):
             """Callback handler for connection errors."""
-            self.logger.error("CarrotListener: Connection Error: %s. " % exc
+            self.logger.error("Consumer: Connection Error: %s. " % exc
                      + "Trying again in %d seconds..." % interval)
 
         conn = self.app.broker_connection()
@@ -446,7 +446,7 @@ class CarrotListener(object):
         Does not close connection.
 
         """
-        self.logger.debug("CarrotListener: Stopping consumers...")
+        self.logger.debug("Consumer: Stopping consumers...")
         self.stop_consumers(close=False)
 
     @property

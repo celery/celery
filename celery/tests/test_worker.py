@@ -16,8 +16,9 @@ from celery.utils import gen_unique_id
 from celery.worker import WorkController
 from celery.worker.buckets import FastQueue
 from celery.worker.job import TaskRequest
-from celery.worker import listener
-from celery.worker.listener import CarrotListener, QoS, RUN
+from celery.worker import consumer
+from celery.worker.consumer import Consumer as MainConsumer
+from celery.worker.consumer import QoS, RUN
 
 from celery.tests.compat import catch_warnings
 from celery.tests.utils import execute_context
@@ -45,7 +46,7 @@ class PlaceHolder(object):
         pass
 
 
-class MyCarrotListener(CarrotListener):
+class MyKombuConsumer(MainConsumer):
     broadcast_consumer = MockConsumer()
     task_consumer = MockConsumer()
 
@@ -186,7 +187,7 @@ class test_QoS(unittest.TestCase):
         self.assertEqual(consumer.prefetch_count, 9)
 
 
-class test_CarrotListener(unittest.TestCase):
+class test_Consumer(unittest.TestCase):
 
     def setUp(self):
         self.ready_queue = FastQueue()
@@ -198,7 +199,7 @@ class test_CarrotListener(unittest.TestCase):
         self.eta_schedule.stop()
 
     def test_connection(self):
-        l = MyCarrotListener(self.ready_queue, self.eta_schedule, self.logger,
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
                            send_events=False)
 
         l.reset_connection()
@@ -218,7 +219,7 @@ class test_CarrotListener(unittest.TestCase):
         self.assertIsNone(l.task_consumer)
 
     def test_receive_message_control_command(self):
-        l = MyCarrotListener(self.ready_queue, self.eta_schedule, self.logger,
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
                            send_events=False)
         backend = MockBackend()
         m = create_message(backend, control={"command": "shutdown"})
@@ -228,12 +229,12 @@ class test_CarrotListener(unittest.TestCase):
         self.assertIn("shutdown", l.control_dispatch.commands)
 
     def test_close_connection(self):
-        l = MyCarrotListener(self.ready_queue, self.eta_schedule, self.logger,
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
                            send_events=False)
         l._state = RUN
         l.close_connection()
 
-        l = MyCarrotListener(self.ready_queue, self.eta_schedule, self.logger,
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
                            send_events=False)
         eventer = l.event_dispatcher = MockEventDispatcher()
         heart = l.heart = MockHeart()
@@ -243,7 +244,7 @@ class test_CarrotListener(unittest.TestCase):
         self.assertTrue(heart.closed)
 
     def test_receive_message_unknown(self):
-        l = MyCarrotListener(self.ready_queue, self.eta_schedule, self.logger,
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
                            send_events=False)
         backend = MockBackend()
         m = create_message(backend, unknown={"baz": "!!!"})
@@ -259,7 +260,7 @@ class test_CarrotListener(unittest.TestCase):
         execute_context(context, with_catch_warnings)
 
     def test_receive_message_eta_OverflowError(self):
-        l = MyCarrotListener(self.ready_queue, self.eta_schedule, self.logger,
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
                              send_events=False)
         backend = MockBackend()
         called = [False]
@@ -275,17 +276,17 @@ class test_CarrotListener(unittest.TestCase):
         l.event_dispatcher = MockEventDispatcher()
         l.control_dispatch = MockControlDispatch()
 
-        prev, listener.to_timestamp = listener.to_timestamp, to_timestamp
+        prev, consumer.to_timestamp = consumer.to_timestamp, to_timestamp
         try:
             l.receive_message(m.decode(), m)
             self.assertTrue(m.acknowledged)
             self.assertTrue(called[0])
         finally:
-            listener.to_timestamp = prev
+            consumer.to_timestamp = prev
 
     def test_receive_message_InvalidTaskError(self):
         logger = MockLogger()
-        l = MyCarrotListener(self.ready_queue, self.eta_schedule, logger,
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, logger,
                            send_events=False)
         backend = MockBackend()
         m = create_message(backend, task=foo_task.name,
@@ -298,7 +299,7 @@ class test_CarrotListener(unittest.TestCase):
 
     def test_on_decode_error(self):
         logger = MockLogger()
-        l = MyCarrotListener(self.ready_queue, self.eta_schedule, logger,
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, logger,
                            send_events=False)
 
         class MockMessage(object):
@@ -316,7 +317,7 @@ class test_CarrotListener(unittest.TestCase):
         self.assertIn("Message decoding error", logger.logged[0])
 
     def test_receieve_message(self):
-        l = MyCarrotListener(self.ready_queue, self.eta_schedule, self.logger,
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
                            send_events=False)
         backend = MockBackend()
         m = create_message(backend, task=foo_task.name,
@@ -339,7 +340,7 @@ class test_CarrotListener(unittest.TestCase):
             def qos(self, **kwargs):
                 self.prefetch_count_incremented = True
 
-        l = MyCarrotListener(self.ready_queue, self.eta_schedule, self.logger,
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
                              send_events=False)
         backend = MockBackend()
         m = create_message(backend, task=foo_task.name,
@@ -363,7 +364,7 @@ class test_CarrotListener(unittest.TestCase):
 
     def test_revoke(self):
         ready_queue = FastQueue()
-        l = MyCarrotListener(ready_queue, self.eta_schedule, self.logger,
+        l = MyKombuConsumer(ready_queue, self.eta_schedule, self.logger,
                            send_events=False)
         backend = MockBackend()
         id = gen_unique_id()
@@ -380,7 +381,7 @@ class test_CarrotListener(unittest.TestCase):
         self.assertTrue(ready_queue.empty())
 
     def test_receieve_message_not_registered(self):
-        l = MyCarrotListener(self.ready_queue, self.eta_schedule, self.logger,
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
                           send_events=False)
         backend = MockBackend()
         m = create_message(backend, task="x.X.31x", args=[2, 4, 8], kwargs={})
@@ -391,7 +392,7 @@ class test_CarrotListener(unittest.TestCase):
         self.assertTrue(self.eta_schedule.empty())
 
     def test_receieve_message_eta(self):
-        l = MyCarrotListener(self.ready_queue, self.eta_schedule, self.logger,
+        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
                           send_events=False)
         dispatcher = l.event_dispatcher = MockEventDispatcher()
         backend = MockBackend()
@@ -430,7 +431,7 @@ class test_CarrotListener(unittest.TestCase):
             def update(self):
                 self.prev = self.next
 
-        class _Listener(MyCarrotListener):
+        class _Consumer(MyKombuConsumer):
             iterations = 0
             wait_method = None
 
@@ -440,10 +441,10 @@ class test_CarrotListener(unittest.TestCase):
 
         called_back = [False]
 
-        def init_callback(listener):
+        def init_callback(consumer):
             called_back[0] = True
 
-        l = _Listener(self.ready_queue, self.eta_schedule, self.logger,
+        l = _Consumer(self.ready_queue, self.eta_schedule, self.logger,
                       send_events=False, init_callback=init_callback)
         l.task_consumer = MockConsumer()
         l.qos = _QoS()
@@ -460,7 +461,7 @@ class test_CarrotListener(unittest.TestCase):
         self.assertEqual(l.iterations, 1)
         self.assertEqual(l.qos.prev, l.qos.next)
 
-        l = _Listener(self.ready_queue, self.eta_schedule, self.logger,
+        l = _Consumer(self.ready_queue, self.eta_schedule, self.logger,
                       send_events=False, init_callback=init_callback)
         l.qos = _QoS()
         l.task_consumer = MockConsumer()
@@ -493,7 +494,7 @@ class test_WorkController(unittest.TestCase):
         self.assertIsInstance(worker.scheduler, Timer)
         self.assertTrue(worker.scheduler)
         self.assertTrue(worker.pool)
-        self.assertTrue(worker.listener)
+        self.assertTrue(worker.consumer)
         self.assertTrue(worker.mediator)
         self.assertTrue(worker.components)
 

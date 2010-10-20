@@ -19,7 +19,7 @@ def revoke(panel, task_id, **kwargs):
 
 @Panel.register
 def enable_events(panel):
-    dispatcher = panel.listener.event_dispatcher
+    dispatcher = panel.consumer.event_dispatcher
     if not dispatcher.enabled:
         dispatcher.enable()
         dispatcher.send("worker-online")
@@ -30,7 +30,7 @@ def enable_events(panel):
 
 @Panel.register
 def disable_events(panel):
-    dispatcher = panel.listener.event_dispatcher
+    dispatcher = panel.consumer.event_dispatcher
     if dispatcher.enabled:
         dispatcher.send("worker-offline")
         dispatcher.disable()
@@ -71,11 +71,11 @@ def rate_limit(panel, task_name, rate_limit, **kwargs):
             task_name, ))
         return {"error": "unknown task"}
 
-    if not hasattr(panel.listener.ready_queue, "refresh"):
+    if not hasattr(panel.consumer.ready_queue, "refresh"):
         panel.logger.error("Rate limit attempt, but rate limits disabled.")
         return {"error": "rate limits disabled"}
 
-    panel.listener.ready_queue.refresh()
+    panel.consumer.ready_queue.refresh()
 
     if not rate_limit:
         panel.logger.warn("Disabled rate limits for tasks of type %s" % (
@@ -89,7 +89,7 @@ def rate_limit(panel, task_name, rate_limit, **kwargs):
 
 @Panel.register
 def dump_schedule(panel, safe=False, **kwargs):
-    schedule = panel.listener.eta_schedule.schedule
+    schedule = panel.consumer.eta_schedule.schedule
     if not schedule.queue:
         panel.logger.info("--Empty schedule--")
         return []
@@ -112,7 +112,7 @@ def dump_schedule(panel, safe=False, **kwargs):
 
 @Panel.register
 def dump_reserved(panel, safe=False, **kwargs):
-    ready_queue = panel.listener.ready_queue
+    ready_queue = panel.consumer.ready_queue
     reserved = ready_queue.items
     if not reserved:
         panel.logger.info("--Empty queue--")
@@ -132,8 +132,8 @@ def dump_active(panel, safe=False, **kwargs):
 @Panel.register
 def stats(panel, **kwargs):
     return {"total": state.total_count,
-            "listener": panel.listener.info,
-            "pool": panel.listener.pool.info}
+            "consumer": panel.consumer.info,
+            "pool": panel.consumer.pool.info}
 
 
 @Panel.register
@@ -175,7 +175,7 @@ def shutdown(panel, **kwargs):
 @Panel.register
 def add_consumer(panel, queue=None, exchange=None, exchange_type="direct",
         routing_key=None, **options):
-    cset = panel.listener.task_consumer
+    cset = panel.consumer.task_consumer
     declaration = dict(queue=queue,
                        exchange=exchange,
                        exchange_type=exchange_type,
@@ -189,6 +189,6 @@ def add_consumer(panel, queue=None, exchange=None, exchange_type="direct",
 
 @Panel.register
 def cancel_consumer(panel, queue=None, **_):
-    cset = panel.listener.task_consumer
+    cset = panel.consumer.task_consumer
     cset.cancel_by_queue(queue)
     return {"ok": "no longer consuming from %s" % (queue, )}

@@ -225,7 +225,7 @@ App Dependency Tree
 * celery.bin.celeryd.WorkerCommand
     * celery.apps.worker.Worker
         * celery.worker.WorkerController
-            * celery.worker.listener.CarrotListener
+            * celery.worker.consumer.Consumer
                 * celery.worker.job.TaskRequest
                 * celery.events.EventDispatcher
                 * celery.worker.control.ControlDispatch

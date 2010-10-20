@@ -1,11 +1,11 @@
 ==================================================
- Worker Message Listener - celery.worker.listener
+ Worker Message Consumer - celery.worker.consumer
 ==================================================
 
 .. contents::
     :local:
-.. currentmodule:: celery.worker.listener
+.. currentmodule:: celery.worker.consumer
 
-.. automodule:: celery.worker.listener
+.. automodule:: celery.worker.consumer
     :members:
     :undoc-members:

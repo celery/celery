@@ -134,7 +134,7 @@ class crontab_parser(object):
 
     @staticmethod
     def _ignore_comma(toks):
-        return filter(lambda x: x != ',', toks)
+        return [x for x in toks if x != ',']
 
     @staticmethod
     def _join_to_set(toks):

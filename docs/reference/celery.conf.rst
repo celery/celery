@@ -289,10 +289,10 @@ Celeryd
     Name of the task pool class used by the worker.
     Default is ``"celery.concurrency.processes.TaskPool"``.
 
-.. data:: CELERYD_LISTENER
+.. data:: CELERYD_CONSUMER
 
-    Name of the listener class used by the worker.
-    Default is ``"celery.worker.listener.CarrotListener"``.
+    Name of the consumer class used by the worker.
+    Default is ``"celery.worker.consumer.Consumer"``.
 
 .. data:: CELERYD_MEDIATOR
 

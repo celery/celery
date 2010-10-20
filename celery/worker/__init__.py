@@ -103,9 +103,9 @@ class WorkController(object):
 
         Instance of :class:`celery.worker.controllers.Mediator`.
 
-    .. attribute:: listener
+    .. attribute:: consumer
 
-        Instance of :class:`CarrotListener`.
+        Instance of :class:`celery.worker.consumer.Consumer`.
 
     """
     loglevel = logging.ERROR
@@ -114,7 +114,7 @@ class WorkController(object):
 
     def __init__(self, concurrency=None, logfile=None, loglevel=None,
             send_events=None, hostname=None, ready_callback=noop,
-            embed_clockservice=False, pool_cls=None, listener_cls=None,
+            embed_clockservice=False, pool_cls=None, consumer_cls=None,
             mediator_cls=None, eta_scheduler_cls=None,
             schedule_filename=None, task_time_limit=None,
             task_soft_time_limit=None, max_tasks_per_child=None,
@@ -134,7 +134,7 @@ class WorkController(object):
             send_events = conf.CELERY_SEND_EVENTS
         self.send_events = send_events
         self.pool_cls = pool_cls or conf.CELERYD_POOL
-        self.listener_cls = listener_cls or conf.CELERYD_LISTENER
+        self.consumer_cls = consumer_cls or conf.CELERYD_CONSUMER
         self.mediator_cls = mediator_cls or conf.CELERYD_MEDIATOR
         self.eta_scheduler_cls = eta_scheduler_cls or \
                                     conf.CELERYD_ETA_SCHEDULER
@@ -205,7 +205,7 @@ class WorkController(object):
                                 schedule_filename=self.schedule_filename)
 
         prefetch_count = self.concurrency * self.prefetch_multiplier
-        self.listener = instantiate(self.listener_cls,
+        self.consumer = instantiate(self.consumer_cls,
                                     self.ready_queue,
                                     self.scheduler,
                                     logger=self.logger,
@@ -224,7 +224,7 @@ class WorkController(object):
                                         self.mediator,
                                         self.scheduler,
                                         self.beat,
-                                        self.listener))
+                                        self.consumer))
 
     def start(self):
         """Starts the workers main loop."""
@@ -275,7 +275,7 @@ class WorkController(object):
                 stop = getattr(component, "terminate", stop)
             stop()
 
-        self.listener.close_connection()
+        self.consumer.close_connection()
         self._state = TERMINATE
 
     def on_timer_error(self, exc_info):

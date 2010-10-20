@@ -100,7 +100,7 @@ NAMESPACES = {
         "CONCURRENCY": Option(0, type="int"),
         "ETA_SCHEDULER": Option("celery.utils.timer2.Timer"),
         "ETA_SCHEDULER_PRECISION": Option(1.0, type="float"),
-        "LISTENER": Option("celery.worker.listener.CarrotListener"),
+        "CONSUMER": Option("celery.worker.consumer.Consumer"),
         "LOG_FORMAT": Option(DEFAULT_PROCESS_LOG_FMT),
         "LOG_COLOR": Option(type="bool"),
         "LOG_LEVEL": Option("WARN"),

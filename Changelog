@@ -1747,7 +1747,7 @@ Remote control commands
 
         @Panel.register
         def reset_broker_connection(panel, **kwargs):
-            panel.listener.reset_connection()
+            panel.consumer.reset_connection()
             return {"ok": "connection re-established"}
 
     With this module imported in the worker, you can launch the command
@@ -1861,7 +1861,7 @@ Fixes
     See: http://bit.ly/94fwdd
 
 * celeryd: The worker components are now configurable: :setting:`CELERYD_POOL`,
-  :setting:`CELERYD_LISTENER`, :setting:`CELERYD_MEDIATOR`, and
+  :setting:`CELERYD_CONSUMER`, :setting:`CELERYD_MEDIATOR`, and
   :setting:`CELERYD_ETA_SCHEDULER`.
 
     The default configuration is as follows:
@@ -1871,7 +1871,7 @@ Fixes
         CELERYD_POOL = "celery.concurrency.processes.TaskPool"
         CELERYD_MEDIATOR = "celery.worker.controllers.Mediator"
         CELERYD_ETA_SCHEDULER = "celery.worker.controllers.ScheduleController"
-        CELERYD_LISTENER = "celery.worker.listener.CarrotListener"
+        CELERYD_CONSUMER = "celery.worker.consumer.Consumer"
 
     The :setting:`CELERYD_POOL` setting makes it easy to swap out the
     multiprocessing pool with a threaded pool, or how about a

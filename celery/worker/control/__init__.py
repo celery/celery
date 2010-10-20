@@ -12,12 +12,12 @@ class ControlDispatch(object):
     """Execute worker control panel commands."""
     Panel = Panel
 
-    def __init__(self, logger=None, hostname=None, listener=None, app=None):
+    def __init__(self, logger=None, hostname=None, consumer=None, app=None):
         self.app = app_or_default(app)
         self.logger = logger or self.app.log.get_default_logger()
         self.hostname = hostname or socket.gethostname()
-        self.listener = listener
-        self.panel = self.Panel(self.logger, self.listener, self.hostname,
+        self.consumer = consumer
+        self.panel = self.Panel(self.logger, self.consumer, self.hostname,
                                 app=self.app)
 
     def reply(self, data, exchange, routing_key, **kwargs):

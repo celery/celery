@@ -10,7 +10,7 @@
 Introduction
 ============
 
-The worker consists of 4 main components: the broker listener, the scheduler,
+The worker consists of 4 main components: the consumer, the scheduler,
 the mediator and the task pool. All these components runs in parallel working
 with two data structures: the ready queue and the ETA schedule.
 
@@ -34,8 +34,8 @@ The ETA schedule is a heap queue sorted by time.
 Components
 ==========
 
-Listener
---------------
+Consumer
+--------
 
 Receives messages from the broker using `Kombu`_.
 

@@ -307,7 +307,7 @@ Remote control commands are registered in the control panel and
 they take a single argument: the current
 :class:`~celery.worker.control.ControlDispatch` instance.
 From there you have access to the active
-:class:`celery.worker.listener.CarrotListener` if needed.
+:class:`~celery.worker.consumer.Consumer` if needed.
 
 Here's an example control command that restarts the broker connection:
 
@@ -318,7 +318,7 @@ Here's an example control command that restarts the broker connection:
     @Panel.register
     def reset_connection(panel):
         panel.logger.critical("Connection reset by remote control.")
-        panel.listener.reset_connection()
+        panel.consumer.reset_connection()
         return {"ok": "connection reset"}
 
 
