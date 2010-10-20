@@ -251,7 +251,8 @@ class LoggingProxy(object):
         This is equivalent to calling :meth:`write` for each string.
 
         """
-        map(self.write, sequence)
+        for part in sequence:
+            self.write(part)
 
     def flush(self):
         """This object is not buffered so any :meth:`flush` requests
@@ -281,7 +282,8 @@ class SilenceRepeated(object):
 
     def __call__(self, *msgs):
         if self._iterations >= self.max_iterations:
-            map(self.action, msgs)
+            for msg in msgs:
+                self.action(msg)
             self._iterations = 0
         else:
             self._iterations += 1

@@ -128,7 +128,8 @@ class Worker(object):
     def init_loader(self):
         self.loader = self.app.loader
         self.settings = self.app.conf
-        map(self.loader.import_module, self.include)
+        for module in self.include:
+            self.loader.import_module(module)
 
     def redirect_stdouts_to_logger(self):
         handled = self.app.log.setup_logging_subsystem(loglevel=self.loglevel,
