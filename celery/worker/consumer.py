@@ -403,6 +403,7 @@ class Consumer(object):
 
         self.broadcast_consumer = mailbox(self.connection).Node(self.hostname)
         self.broadcast_consumer.register_callback(self.receive_message)
+        self.control_dispatch.channel = self.broadcast_consumer.channel
 
         # Flush events sent while connection was down.
         if self.event_dispatcher:
