@@ -17,7 +17,6 @@ from celery.loaders import current_loader
 from celery.registry import tasks
 from celery.utils import noop, kwdict, fun_takes_kwargs
 from celery.utils import truncate_text, maybe_iso8601
-from celery.utils.mail import mail_admins
 from celery.utils.compat import log_with_extra
 from celery.worker import state
 
@@ -496,7 +495,8 @@ class TaskRequest(object):
                     return
             subject = self.email_subject.strip() % context
             body = self.email_body.strip() % context
-            return mail_admins(subject, body, fail_silently=fail_silently)
+            return current_loader().mail_admins(subject, body,
+                                                fail_silently=fail_silently)
 
     def __repr__(self):
         return '<%s: {name:"%s", id:"%s", args:"%s", kwargs:"%s"}>' % (

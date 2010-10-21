@@ -3,6 +3,8 @@ import sys
 
 from importlib import import_module
 
+from celery.utils.mail import mail_admins
+
 BUILTIN_MODULES = ["celery.task"]
 
 
@@ -75,7 +77,11 @@ class BaseLoader(object):
                 sys.path.remove(cwd)
             except ValueError:          # pragma: no cover
                 pass
-
+    
+    def mail_admins(self, subject, body, fail_silently=False):
+        return mail_admins(subject, body, fail_silently=fail_silently)
+    
+    
     @property
     def conf(self):
         """Loader configuration."""
