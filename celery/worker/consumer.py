@@ -74,14 +74,13 @@ import socket
 import warnings
 
 from celery.app import app_or_default
-from celery.datastructures import SharedCounter
+from celery.datastructures import AttributeDict, SharedCounter
 from celery.events import EventDispatcher
 from celery.exceptions import NotRegistered
-from celery.pidbox import mailbox
 from celery.utils import noop
 from celery.utils.timer2 import to_timestamp
 from celery.worker.job import TaskRequest, InvalidTaskError
-from celery.worker.control import ControlDispatch
+from celery.worker.control.registry import Panel
 from celery.worker.heartbeat import Heart
 
 RUN = 0x1
@@ -210,10 +209,14 @@ class Consumer(object):
         self.event_dispatcher = None
         self.heart = None
         self.pool = pool
-        self.control_dispatch = ControlDispatch(app=self.app,
-                                                logger=logger,
-                                                hostname=self.hostname,
-                                                consumer=self)
+        pidbox_state = AttributeDict(app=self.app,
+                                     logger=logger,
+                                     hostname=self.hostname,
+                                     listener=self, # pre 2.2
+                                     consumer=self)
+        self.pidbox_node = self.app.control.mailbox.Node(self.hostname,
+                                                         state=pidbox_state,
+                                                         handlers=Panel.data)
         self.connection_errors = \
                 self.app.broker_connection().connection_errors
         self.queues = queues
@@ -283,13 +286,15 @@ class Consumer(object):
         else:
             self.ready_queue.put(task)
 
+    def on_control(self, message, message_data):
+        try:
+            self.pidbox_node.handle_message(message, message_data)
+        except KeyError:
+            self.logger.error("No such control command: %s" % command)
+
     def apply_eta_task(self, task):
         self.ready_queue.put(task)
         self.qos.decrement_eventually()
-
-    def on_control(self, control):
-        """Handle received remote control command."""
-        return self.control_dispatch.dispatch_from_message(control)
 
     def receive_message(self, message_data, message):
         """The callback called when a new message is received. """
@@ -314,11 +319,6 @@ class Consumer(object):
                 self.on_task(task)
             return
 
-        # Handle control command
-        control = message_data.get("control")
-        if control:
-            return self.on_control(control)
-
         warnings.warn(RuntimeWarning(
             "Received and deleted unknown message. Wrong destination?!? \
              the message was: %s" % message_data))
@@ -327,7 +327,7 @@ class Consumer(object):
     def maybe_conn_error(self, fun):
         try:
             fun()
-        except Exception:                   # TODO kombu.connection_errors
+        except self.connection_errors:
             pass
 
     def close_connection(self):
@@ -401,9 +401,9 @@ class Consumer(object):
         self.task_consumer.on_decode_error = self.on_decode_error
         self.task_consumer.register_callback(self.receive_message)
 
-        self.broadcast_consumer = mailbox(self.connection).Node(self.hostname)
-        self.broadcast_consumer.register_callback(self.receive_message)
-        self.control_dispatch.channel = self.broadcast_consumer.channel
+        self.pidbox_node.channel = self.connection.channel()
+        self.broadcast_consumer = self.pidbox_node.listen(
+                                        callback=self.on_control)
 
         # Flush events sent while connection was down.
         if self.event_dispatcher:

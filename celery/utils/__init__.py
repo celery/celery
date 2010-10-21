@@ -4,18 +4,13 @@ import os
 import sys
 import time
 import operator
-try:
-    import ctypes
-except ImportError:
-    ctypes = None
 import importlib
 import logging
 
-from uuid import UUID, uuid4, _uuid_generate_random
 from inspect import getargspec
 from itertools import islice
 
-from kombu.utils import rpartition
+from kombu.utils import gen_unique_id, rpartition
 
 from celery.utils.functional import partial
 
@@ -161,20 +156,6 @@ def chunks(it, n):
     """
     for first in it:
         yield [first] + list(islice(it, n - 1))
-
-
-def gen_unique_id():
-    """Generate a unique id, having - hopefully - a very small chance of
-    collission.
-
-    For now this is provided by :func:`uuid.uuid4`.
-    """
-    # Workaround for http://bugs.python.org/issue4607
-    if ctypes and _uuid_generate_random:
-        buffer = ctypes.create_string_buffer(16)
-        _uuid_generate_random(buffer)
-        return str(UUID(bytes=buffer.raw))
-    return str(uuid4())
 
 
 def padlist(container, size, default=None):

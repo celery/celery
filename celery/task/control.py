@@ -1,5 +1,6 @@
+from kombu.pidbox import Mailbox
+
 from celery.app import app_or_default
-from celery.pidbox import mailbox
 from celery.utils import gen_unique_id
 
 
@@ -72,9 +73,11 @@ class Inspect(object):
 
 
 class Control(object):
+    Mailbox = Mailbox
 
     def __init__(self, app):
         self.app = app
+        self.mailbox = self.Mailbox("celeryd", type="fanout")
 
     def inspect(self, destination=None, timeout=1, callback=None):
         return Inspect(self, destination=destination, timeout=timeout,
@@ -185,9 +188,10 @@ class Control(object):
 
         """
         def _do_broadcast(connection=None, connect_timeout=None):
-            return mailbox(connection)._broadcast(command, arguments,
-                                                  destination, reply,
-                                                  timeout, limit, callback)
+            return self.mailbox(connection)._broadcast(command, arguments,
+                                                       destination, reply,
+                                                       timeout, limit,
+                                                       callback)
 
         return self.app.with_default_connection(_do_broadcast)(
                 connection=connection, connect_timeout=connect_timeout)

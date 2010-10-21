@@ -75,8 +75,8 @@ class Schedule(object):
         try:
             eta = to_timestamp(eta)
         except OverflowError:
-            self.handle_error(sys.exc_info())
-            return
+            if not self.handle_error(sys.exc_info()):
+                raise
 
         if eta is None:
             # schedule now.

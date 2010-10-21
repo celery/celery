@@ -54,10 +54,10 @@ class MyKombuConsumer(MainConsumer):
         self.heart = None
 
 
-class MockControlDispatch(object):
+class MockNode(object):
     commands = []
 
-    def dispatch_from_message(self, message):
+    def handle_message(self, message_data, message):
         self.commands.append(message.pop("command", None))
 
 
@@ -218,16 +218,6 @@ class test_Consumer(unittest.TestCase):
         self.assertIsNone(l.connection)
         self.assertIsNone(l.task_consumer)
 
-    def test_receive_message_control_command(self):
-        l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
-                           send_events=False)
-        backend = MockBackend()
-        m = create_message(backend, control={"command": "shutdown"})
-        l.event_dispatcher = MockEventDispatcher()
-        l.control_dispatch = MockControlDispatch()
-        l.receive_message(m.decode(), m)
-        self.assertIn("shutdown", l.control_dispatch.commands)
-
     def test_close_connection(self):
         l = MyKombuConsumer(self.ready_queue, self.eta_schedule, self.logger,
                            send_events=False)
@@ -249,7 +239,7 @@ class test_Consumer(unittest.TestCase):
         backend = MockBackend()
         m = create_message(backend, unknown={"baz": "!!!"})
         l.event_dispatcher = MockEventDispatcher()
-        l.control_dispatch = MockControlDispatch()
+        l.pidbox_node = MockNode()
 
         def with_catch_warnings(log):
             l.receive_message(m.decode(), m)
@@ -274,7 +264,7 @@ class test_Consumer(unittest.TestCase):
                                     kwargs={},
                                     eta=datetime.now().isoformat())
         l.event_dispatcher = MockEventDispatcher()
-        l.control_dispatch = MockControlDispatch()
+        l.pidbox_node = MockNode()
 
         prev, consumer.to_timestamp = consumer.to_timestamp, to_timestamp
         try:
@@ -292,7 +282,7 @@ class test_Consumer(unittest.TestCase):
         m = create_message(backend, task=foo_task.name,
             args=(1, 2), kwargs="foobarbaz", id=1)
         l.event_dispatcher = MockEventDispatcher()
-        l.control_dispatch = MockControlDispatch()
+        l.pidbox_node = MockNode()
 
         l.receive_message(m.decode(), m)
         self.assertIn("Invalid task ignored", logger.logged[0])
@@ -368,14 +358,10 @@ class test_Consumer(unittest.TestCase):
                            send_events=False)
         backend = MockBackend()
         id = gen_unique_id()
-        c = create_message(backend, control={"command": "revoke",
-                                             "task_id": id})
         t = create_message(backend, task=foo_task.name, args=[2, 4, 8],
                            kwargs={}, id=id)
-        l.event_dispatcher = MockEventDispatcher()
-        l.receive_message(c.decode(), c)
         from celery.worker.state import revoked
-        self.assertIn(id, revoked)
+        revoked.add(id)
 
         l.receive_message(t.decode(), t)
         self.assertTrue(ready_queue.empty())
