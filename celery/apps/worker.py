@@ -11,7 +11,7 @@ from celery import platforms
 from celery import signals
 from celery.app import app_or_default
 from celery.exceptions import ImproperlyConfigured
-from celery.utils import get_full_cls_name, LOG_LEVELS
+from celery.utils import get_full_cls_name, LOG_LEVELS, isatty
 from celery.utils import term
 from celery.worker import WorkController
 
@@ -47,6 +47,8 @@ class Worker(object):
                             multiprocessing.cpu_count())
         self.loglevel = loglevel or app.conf.CELERYD_LOG_LEVEL
         self.logfile = logfile or app.conf.CELERYD_LOG_FILE
+        app.conf.CELERYD_LOG_COLOR = not self.logfile and isatty(sys.stderr)
+
         self.hostname = hostname or socket.gethostname()
         self.discard = discard
         self.run_clockservice = run_clockservice
@@ -68,6 +70,7 @@ class Worker(object):
         self.include = include or []
         self.pidfile = pidfile
         self._isatty = sys.stdout.isatty()
+
         self.colored = term.colored(enabled=app.conf.CELERYD_LOG_COLOR)
 
         if isinstance(self.use_queues, basestring):
