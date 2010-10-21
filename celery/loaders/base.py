@@ -112,6 +112,15 @@ class BaseLoader(object):
 
         return dict(map(getarg, args))
 
+    def mail_admins(self, subject, message, fail_silently=False,
+            sender=None, to=None, host=None, port=None, 
+            user=None, password=None):
+        from celery.utils import mail
+        message = mail.Message(sender=sender,
+                               to=to, subject=subject, body=message)
+        mailer = mail.Mailer(host, port, user, password)
+        mailer.send(message, fail_silently=fail_silently)
+
     @property
     def conf(self):
         """Loader configuration."""

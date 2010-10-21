@@ -272,22 +272,17 @@ class BaseApp(object):
                     seconds=c.CELERY_TASK_RESULT_EXPIRES)
         return c
 
-    def mail_admins(self, subject, message, fail_silently=False):
+    def mail_admins(self, subject, body, fail_silently=False):
         """Send an e-mail to the admins in conf.ADMINS."""
-        from celery.utils import mail
-
         if not self.conf.ADMINS:
             return
-
         to = [admin_email for _, admin_email in self.conf.ADMINS]
-        message = mail.Message(sender=self.conf.SERVER_EMAIL,
-                               to=to, subject=subject, body=message)
-
-        mailer = mail.Mailer(self.conf.EMAIL_HOST,
-                             self.conf.EMAIL_PORT,
-                             self.conf.EMAIL_HOST_USER,
-                             self.conf.EMAIL_HOST_PASSWORD)
-        mailer.send(message, fail_silently=fail_silently)
+        self.loader.mail_admins(subject, body, fail_silently,
+                                to=to, sender=self.conf.SERVER_EMAIL,
+                                host=self.conf.EMAIL_HOST,
+                                port=self.conf.EMAIL_PORT,
+                                user=self.conf.EMAIL_USER,
+                                password=self.conf.EMAIL_PASSWORD)
 
     def AsyncResult(self, task_id, backend=None):
         """Create :class:`celery.result.BaseAsyncResult` instance."""
