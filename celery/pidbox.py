@@ -22,10 +22,10 @@ class Mailbox(object):
                                  auto_delete=True,
                                  delivery_mode="transient")
         self.reply_exchange = Exchange("reply.%s.pidbox" % (self.namespace, ),
-                                 type="direct",
-                                 durable=False,
-                                 auto_delete=True,
-                                 delivery_mode="transient")
+                                       type="direct",
+                                       durable=False,
+                                       auto_delete=True,
+                                       delivery_mode="transient")
 
     def publish_reply(self, reply, exchange, routing_key, channel=None):
         chan = channel or self.connection.channel()
