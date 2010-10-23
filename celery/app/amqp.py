@@ -19,7 +19,7 @@ QUEUE_FORMAT = """
 binding:%(binding_key)s
 """
 BROKER_FORMAT = """\
-%(transport_cls)s://%(userid)s@%(hostname)s%(port)s%(virtual_host)s\
+%(transport)s://%(userid)s@%(hostname)s%(port)s%(virtual_host)s\
 """
 
 get_msg_options = mitemgetter(*MSG_OPTIONS)
@@ -131,7 +131,7 @@ class TaskPublisher(messaging.Publisher):
         if exchange and exchange not in _exchanges_declared:
             exchange_type = exchange_type or self.exchange_type
             self.backend.exchange_declare(exchange=exchange,
-                                          exchange_type=exchange_type,
+                                          type=exchange_type,
                                           durable=self.durable,
                                           auto_delete=self.auto_delete)
         self.send(message_data, exchange=exchange,
