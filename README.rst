@@ -41,7 +41,7 @@ the `django-celery`_, `celery-pylons`_ and `Flask-Celery`_ add-on packages.
 .. _`Pylons`: http://pylonshq.com/
 .. _`Flask`: http://flask.pocoo.org/
 .. _`django-celery`: http://pypi.python.org/pypi/django-celery
-.. _`celery-pylons`: http://bitbucket.org/ianschenck/celery-pylons
+.. _`celery-pylons`: http://pypi.python.org/pypi/celery-pylons
 .. _`Flask-Celery`: http://github.com/ask/flask-celery/
 .. _`operate with other languages using webhooks`:
     http://ask.github.com/celery/userguide/remote-tasks.html
