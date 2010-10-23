@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 import time
@@ -10,11 +11,12 @@ from celery import platforms
 from celery.app import app_or_default
 from celery.datastructures import ExceptionInfo
 from celery.exceptions import SoftTimeLimitExceeded, TimeLimitExceeded
-from celery.exceptions import WorkerLostError
+from celery.exceptions import WorkerLostError, RetryTaskError
 from celery.execute.trace import TaskTrace
 from celery.registry import tasks
 from celery.utils import noop, kwdict, fun_takes_kwargs
 from celery.utils import truncate_text
+from celery.utils.compat import log_with_extra
 from celery.utils.timeutils import maybe_iso8601
 from celery.worker import state
 
@@ -121,7 +123,7 @@ class WorkerTaskTrace(TaskTrace):
         message, orig_exc = exc.args
         if self._store_errors:
             self.task.backend.mark_as_retry(self.task_id, orig_exc, strtb)
-        self.super.handle_retry(exc, type_, tb, strtb)
+        return self.super.handle_retry(exc, type_, tb, strtb)
 
     def handle_failure(self, exc, type_, tb, strtb):
         """Handle exception."""
@@ -200,6 +202,9 @@ class TaskRequest(object):
     success_msg = "Task %(name)s[%(id)s] processed: %(return_value)s"
     error_msg = """
         Task %(name)s[%(id)s] raised exception: %(exc)s\n%(traceback)s
+    """
+    retry_msg = """
+        Task %(name)s[%(id)s] retry: %(exc)s
     """
 
     # E-mails
@@ -447,6 +452,16 @@ class TaskRequest(object):
         #     "the quick brown fox jumps over the lazy dog" :)
         return truncate_text(repr(result), maxlen)
 
+    def on_retry(self, exc_info):
+        self.send_event("task-retried", uuid=self.task_id,
+                                        exception=repr(exc_info.exception.exc),
+                                        traceback=repr(exc_info.traceback))
+        msg = self.retry_msg.strip() % {
+                "id": self.task_id,
+                "name": self.task_name,
+                "exc": repr(exc_info.exception.exc)}
+        self.logger.info(msg)
+
     def on_failure(self, exc_info):
         """The handler used if the task raised an exception."""
         state.task_ready(self)
@@ -454,9 +469,8 @@ class TaskRequest(object):
         if self.task.acks_late:
             self.acknowledge()
 
-        self.send_event("task-failed", uuid=self.task_id,
-                                       exception=repr(exc_info.exception),
-                                       traceback=exc_info.traceback)
+        if isinstance(exc_info.exception, RetryTaskError):
+            return self.on_retry(exc_info)
 
         # This is a special case as the process would not have had
         # time to write the result.
@@ -465,6 +479,10 @@ class TaskRequest(object):
                 self.task.backend.mark_as_failure(self.task_id,
                                                   exc_info.exception)
 
+        self.send_event("task-failed", uuid=self.task_id,
+                                       exception=repr(exc_info.exception),
+                                       traceback=exc_info.traceback)
+
         context = {"hostname": self.hostname,
                    "id": self.task_id,
                    "name": self.task_name,
@@ -472,7 +490,12 @@ class TaskRequest(object):
                    "traceback": unicode(exc_info.traceback, 'utf-8'),
                    "args": self.args,
                    "kwargs": self.kwargs}
-        self.logger.error(self.error_msg.strip() % context, exc_info=exc_info)
+
+        log_with_extra(self.logger, logging.ERROR,
+                       self.error_msg.strip() % context,
+                       extra={"data": {"hostname": self.hostname,
+                                       "id": self.task_id,
+                                       "name": self.task_name}})
 
         task_obj = tasks.get(self.task_name, object)
         self.send_error_email(task_obj, context, exc_info.exception,

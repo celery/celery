@@ -118,7 +118,8 @@ class test_LimitedSet(unittest.TestCase):
     def test_iter(self):
         s = LimitedSet(maxlen=2)
         items = "foo", "bar"
-        map(s.add, items)
+        for item in items:
+            s.add(item)
         l = list(iter(s))
         for item in items:
             self.assertIn(item, l)
@@ -126,7 +127,8 @@ class test_LimitedSet(unittest.TestCase):
     def test_repr(self):
         s = LimitedSet(maxlen=2)
         items = "foo", "bar"
-        map(s.add, items)
+        for item in items:
+            s.add(item)
         self.assertIn("LimitedSet(", repr(s))
 
 

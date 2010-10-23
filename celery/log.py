@@ -3,6 +3,7 @@ import logging
 import threading
 import sys
 import traceback
+import types
 
 from multiprocessing import current_process
 from multiprocessing import util as mputil
@@ -31,18 +32,27 @@ class ColorFormatter(logging.Formatter):
         logging.Formatter.__init__(self, msg)
         self.use_color = use_color
 
+    def formatException(self, ei):
+        r = logging.Formatter.formatException(self, ei)
+        if type(r) in [types.StringType]:
+            r = r.decode('utf-8', 'replace') # Convert to unicode
+        return r
+
     def format(self, record):
         levelname = record.levelname
 
         if self.use_color and levelname in COLORS:
-            record.msg = str(colored().names[COLORS[levelname]](record.msg))
+            record.msg = unicode(colored().names[COLORS[levelname]](record.msg))
 
         # Very ugly, but have to make sure processName is supported
         # by foreign logger instances.
         # (processName is always supported by Python 2.7)
         if "processName" not in record.__dict__:
             record.__dict__["processName"] = current_process()._name
-        return logging.Formatter.format(self, record)
+        t = logging.Formatter.format(self, record)
+        if type(t) in [types.UnicodeType]:
+            t = t.encode('utf-8', 'replace')
+        return t
 
 
 class Logging(object):
@@ -251,7 +261,8 @@ class LoggingProxy(object):
         This is equivalent to calling :meth:`write` for each string.
 
         """
-        map(self.write, sequence)
+        for part in sequence:
+            self.write(part)
 
     def flush(self):
         """This object is not buffered so any :meth:`flush` requests
@@ -281,7 +292,8 @@ class SilenceRepeated(object):
 
     def __call__(self, *msgs):
         if self._iterations >= self.max_iterations:
-            map(self.action, msgs)
+            for msg in msgs:
+                self.action(msg)
             self._iterations = 0
         else:
             self._iterations += 1

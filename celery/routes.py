@@ -4,6 +4,12 @@ from celery.utils import instantiate, firstmethod, mpromise
 _first_route = firstmethod("route_for_task")
 
 
+def merge(a, b):
+    """Like ``dict(a, **b)`` except it will keep values from ``a``,
+    if the value in ``b`` is :const:`None`."""
+    return dict(a, **dict((k, v) for k, v in b.iteritems() if v is not None))
+
+
 class MapRoute(object):
     """Makes a router out of a :class:`dict`."""
 
@@ -37,7 +43,7 @@ class Router(object):
             route = self.lookup_route(task, args, kwargs)
             if route:
                 # Also expand "queue" keys in route.
-                return dict(options, **self.expand_destination(route))
+                return merge(options, self.expand_destination(route))
         return options
 
     def expand_destination(self, route):
@@ -60,7 +66,7 @@ class Router(object):
                     raise QueueNotFound(
                         "Queue '%s' is not defined in CELERY_QUEUES" % queue)
             dest.setdefault("routing_key", dest.get("binding_key"))
-            return dict(dest, **route)
+            return merge(dest, route)
 
         return route
 

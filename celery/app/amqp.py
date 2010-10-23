@@ -73,14 +73,11 @@ class Queues(UserDict):
     @classmethod
     def with_defaults(cls, queues, default_exchange, default_exchange_type):
 
-        def _defaults(opts):
+        for opts in queues.values():
             opts.setdefault("exchange", default_exchange),
             opts.setdefault("exchange_type", default_exchange_type)
             opts.setdefault("binding_key", default_exchange)
             opts.setdefault("routing_key", opts.get("binding_key"))
-            return opts
-
-        map(_defaults, queues.values())
         return cls(queues)
 
 

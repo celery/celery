@@ -507,10 +507,9 @@ Task Events
     Sent if the task has been revoked (Note that this is likely
     to be sent by more than one worker).
 
-* ``task-retried(uuid, exception, traceback, hostname, delay, timestamp)``
+* ``task-retried(uuid, exception, traceback, hostname, timestamp)``
 
     Sent if the task failed, but will be retried in the future.
-    (**NOT IMPLEMENTED**)
 
 .. _event-reference-worker:
 

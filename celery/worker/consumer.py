@@ -71,6 +71,7 @@ up and running.
 from __future__ import generators
 
 import socket
+import sys
 import warnings
 
 from celery.app import app_or_default
@@ -277,7 +278,7 @@ class Consumer(object):
             except OverflowError, exc:
                 self.logger.error(
                     "Couldn't convert eta %s to timestamp: %r. Task: %r" % (
-                        task.eta, exc, task.info(safe=True)))
+                        task.eta, exc, task.info(safe=True)), exc_info=sys.exc_info())
                 task.acknowledge()
             else:
                 self.qos.increment()
@@ -309,11 +310,11 @@ class Consumer(object):
                                                 eventer=self.event_dispatcher)
             except NotRegistered, exc:
                 self.logger.error("Unknown task ignored: %s: %s" % (
-                        str(exc), message_data))
+                        str(exc), message_data), exc_info=sys.exc_info())
                 message.ack()
             except InvalidTaskError, exc:
                 self.logger.error("Invalid task ignored: %s: %s" % (
-                        str(exc), message_data))
+                        str(exc), message_data), exc_info=sys.exc_info())
                 message.ack()
             else:
                 self.on_task(task)

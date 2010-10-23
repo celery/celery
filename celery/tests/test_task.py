@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 
 from pyparsing import ParseException
 
-
 from celery import task
 from celery.app import app_or_default
 from celery.decorators import task as task_dec
@@ -146,6 +145,10 @@ class TestTaskRetries(unittest.TestCase):
         result = RetryTaskNoArgs.apply()
         self.assertEqual(result.get(), 42)
         self.assertEqual(RetryTaskNoArgs.iterations, 4)
+
+    def test_retry_kwargs_can_be_empty(self):
+        self.assertRaises(RetryTaskError, RetryTaskMockApply.retry,
+                            args=[4, 4], kwargs=None)
 
     def test_retry_not_eager(self):
         exc = Exception("baz")

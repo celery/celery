@@ -98,8 +98,8 @@ class PositionQueue(UserList):
     @property
     def filled(self):
         """Returns the filled slots as a list."""
-        return filter(lambda v: not isinstance(v, self.UnfilledPosition),
-                      self.data)
+        return [slot for slot in self.data
+                    if not isinstance(slot, self.UnfilledPosition)]
 
 
 class ExceptionInfo(object):

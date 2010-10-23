@@ -109,6 +109,9 @@ class AMQPBackend(BaseDictBackend):
         return result
 
     def get_task_meta(self, task_id, cache=True):
+        if cache and task_id in self._cache:
+            return self._cache[task_id]
+
         return self.poll(task_id)
 
     def wait_for(self, task_id, timeout=None, cache=True):
@@ -133,6 +136,7 @@ class AMQPBackend(BaseDictBackend):
         binding = self._create_binding(task_id)(self.channel)
         result = binding.get()
         if result:
+            binding.delete(if_unused=True, if_empty=True, nowait=True)
             payload = self._cache[task_id] = result.payload
             return payload
         elif task_id in self._cache:
