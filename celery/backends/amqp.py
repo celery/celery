@@ -151,7 +151,9 @@ class AMQPBackend(BaseDictBackend):
         result = consumer.fetch()
         try:
             if result:
-                consumer.queue_delete(True, True)
+                consumer.backend.queue_delete(queue=consumer.queue,
+                                              if_unused=True,
+                                              if_empty=True)
                 payload = self._cache[task_id] = result.payload
                 return payload
             else:
