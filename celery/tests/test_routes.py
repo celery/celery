@@ -79,7 +79,8 @@ class test_lookup_route(unittest.TestCase):
     @with_queues()
     def test_expands_queue_in_options(self):
         R = routes.prepare(())
-        router = routes.Router(R, conf.QUEUES, create_missing=True)
+        router = routes.Router(R, app_or_default().conf.CELERY_QUEUES,
+                               create_missing=True)
         # apply_async forwards all arguments, even exchange=None etc,
         # so need to make sure it's merged correctly.
         route = router.route({"queue": "testq",
