@@ -6,6 +6,8 @@ import socket
 import sys
 import warnings
 
+from carrot.utils import partition
+
 from celery import __version__
 from celery import platforms
 from celery import signals
@@ -40,7 +42,8 @@ class Worker(object):
             schedule=None, task_time_limit=None, task_soft_time_limit=None,
             max_tasks_per_child=None, queues=None, events=False, db=None,
             include=None, app=None, pidfile=None,
-            redirect_stdouts=None, redirect_stdouts_level=None, **kwargs):
+            redirect_stdouts=None, redirect_stdouts_level=None,
+            autoscale=None, **kwargs):
         self.app = app = app_or_default(app)
         self.concurrency = (concurrency or
                             app.conf.CELERYD_CONCURRENCY or
@@ -67,6 +70,10 @@ class Worker(object):
         self.queues = None
         self.include = include or []
         self.pidfile = pidfile
+        self.autoscale = None
+        if autoscale:
+            max_c, _, min_c = partition(autoscale, ",")
+            self.autoscale = [int(max_c), min_c and int(min_c) or 0]
         self._isatty = sys.stdout.isatty()
         self.colored = term.colored(enabled=app.conf.CELERYD_LOG_COLOR)
 
@@ -194,7 +201,8 @@ class Worker(object):
                                 queues=self.queues,
                                 max_tasks_per_child=self.max_tasks_per_child,
                                 task_time_limit=self.task_time_limit,
-                                task_soft_time_limit=self.task_soft_time_limit)
+                                task_soft_time_limit=self.task_soft_time_limit,
+                                autoscale=self.autoscale)
         self.install_platform_tweaks(worker)
         worker.start()
 

@@ -88,6 +88,7 @@ from celery.exceptions import NotRegistered
 from celery.pidbox import BroadcastConsumer
 from celery.utils import noop, retry_over_time
 from celery.utils.timer2 import to_timestamp
+from celery.worker import state
 from celery.worker.job import TaskRequest, InvalidTaskError
 from celery.worker.control import ControlDispatch
 from celery.worker.heartbeat import Heart
@@ -285,9 +286,11 @@ class CarrotListener(object):
                 self.eta_schedule.apply_at(eta,
                                            self.apply_eta_task, (task, ))
         else:
+            state.task_reserved(task)
             self.ready_queue.put(task)
 
     def apply_eta_task(self, task):
+        state.task_reserved(task)
         self.ready_queue.put(task)
         self.qos.decrement_eventually()
 

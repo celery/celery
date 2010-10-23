@@ -120,7 +120,8 @@ class WorkController(object):
             task_soft_time_limit=None, max_tasks_per_child=None,
             pool_putlocks=None, db=None, prefetch_multiplier=None,
             eta_scheduler_precision=None, queues=None,
-            disable_rate_limits=None, app=None):
+            disable_rate_limits=None, autoscale=None,
+            autoscaler_cls=None, app=None):
 
         self.app = app_or_default(app)
         conf = self.app.conf
@@ -138,6 +139,8 @@ class WorkController(object):
         self.mediator_cls = mediator_cls or conf.CELERYD_MEDIATOR
         self.eta_scheduler_cls = eta_scheduler_cls or \
                                     conf.CELERYD_ETA_SCHEDULER
+        self.autoscaler_cls = autoscaler_cls or \
+                                    conf.CELERYD_AUTOSCALER
         self.schedule_filename = schedule_filename or \
                                     conf.CELERYBEAT_SCHEDULE_FILENAME
         self.hostname = hostname or socket.gethostname()
@@ -178,7 +181,13 @@ class WorkController(object):
         self.logger.debug("Instantiating thread components...")
 
         # Threads + Pool + Consumer
-        self.pool = instantiate(self.pool_cls, self.concurrency,
+        self.autoscaler = None
+        max_concurrency = None
+        min_concurrency = concurrency
+        if autoscale:
+            max_concurrency, min_concurrency = autoscale
+
+        self.pool = instantiate(self.pool_cls, min_concurrency,
                                 logger=self.logger,
                                 initializer=process_initializer,
                                 initargs=(self.app, self.hostname),
@@ -186,6 +195,12 @@ class WorkController(object):
                                 timeout=self.task_time_limit,
                                 soft_timeout=self.task_soft_time_limit,
                                 putlocks=self.pool_putlocks)
+
+        if autoscale:
+            self.autoscaler = instantiate(self.autoscaler_cls, self.pool,
+                                          max_concurrency=max_concurrency,
+                                          min_concurrency=min_concurrency,
+                                          logger=self.logger)
 
         self.mediator = None
         if not disable_rate_limits:
@@ -224,6 +239,7 @@ class WorkController(object):
                                         self.mediator,
                                         self.scheduler,
                                         self.beat,
+                                        self.autoscaler,
                                         self.listener))
 
     def start(self):
