@@ -46,7 +46,8 @@ class Worker(object):
             schedule=None, task_time_limit=None, task_soft_time_limit=None,
             max_tasks_per_child=None, queues=None, events=False, db=None,
             include=None, defaults=None, pidfile=None,
-            redirect_stdouts=None, redirect_stdouts_level=None, **kwargs):
+            redirect_stdouts=None, redirect_stdouts_level=None,
+            scheduler_cls=None, **kwargs):
         if defaults is None:
             from celery import conf
             defaults = conf
@@ -60,6 +61,7 @@ class Worker(object):
         self.discard = discard
         self.run_clockservice = run_clockservice
         self.schedule = schedule or defaults.CELERYBEAT_SCHEDULE_FILENAME
+        self.scheduler_cls = scheduler_cls or defaults.CELERYBEAT_SCHEDULER
         self.events = events
         self.task_time_limit = (task_time_limit or
                                 defaults.CELERYD_TASK_TIME_LIMIT)
@@ -207,6 +209,7 @@ class Worker(object):
                                 ready_callback=self.on_listener_ready,
                                 embed_clockservice=self.run_clockservice,
                                 schedule_filename=self.schedule,
+                                scheduler_cls=self.scheduler_cls,
                                 send_events=self.events,
                                 db=self.db,
                                 max_tasks_per_child=self.max_tasks_per_child,

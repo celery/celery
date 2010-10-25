@@ -126,7 +126,8 @@ class WorkController(object):
             max_tasks_per_child=conf.CELERYD_MAX_TASKS_PER_CHILD,
             pool_putlocks=conf.CELERYD_POOL_PUTLOCKS,
             disable_rate_limits=conf.DISABLE_RATE_LIMITS,
-            db=conf.CELERYD_STATE_DB):
+            db=conf.CELERYD_STATE_DB,
+            scheduler_cls=conf.CELERYBEAT_SCHEDULER):
 
         # Options
         self.loglevel = loglevel or self.loglevel
@@ -182,7 +183,8 @@ class WorkController(object):
         self.beat = None
         if self.embed_clockservice:
             self.beat = beat.EmbeddedService(logger=self.logger,
-                                    schedule_filename=schedule_filename)
+                                    schedule_filename=schedule_filename,
+                                    scheduler_cls=scheduler_cls)
 
         prefetch_count = self.concurrency * conf.CELERYD_PREFETCH_MULTIPLIER
         self.listener = instantiate(listener_cls,
