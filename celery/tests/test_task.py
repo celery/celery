@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 
 from pyparsing import ParseException
 
-
 from celery import task
 from celery.app import app_or_default
 from celery.decorators import task as task_dec
@@ -147,9 +146,9 @@ class TestTaskRetries(unittest.TestCase):
         self.assertEqual(result.get(), 42)
         self.assertEqual(RetryTaskNoArgs.iterations, 4)
 
-    def test_retry_kwargs_can_not_be_empty(self):
-        self.assertRaises(TypeError, RetryTaskMockApply.retry,
-                            args=[4, 4], kwargs={})
+    def test_retry_kwargs_can_be_empty(self):
+        self.assertRaises(RetryTaskError, RetryTaskMockApply.retry,
+                            args=[4, 4], kwargs=None)
 
     def test_retry_not_eager(self):
         exc = Exception("baz")
@@ -322,20 +321,20 @@ class TestCeleryTasks(unittest.TestCase):
                 name="Elaine M. Benes")
 
         # With eta.
-        presult2 = task.apply_async(t1, kwargs=dict(name="George Costanza"),
-                                    eta=datetime.now() + timedelta(days=1))
+        presult2 = t1.apply_async(kwargs=dict(name="George Costanza"),
+                                  eta=datetime.now() + timedelta(days=1))
         self.assertNextTaskDataEqual(consumer, presult2, t1.name,
                 name="George Costanza", test_eta=True)
 
         # With countdown.
-        presult2 = task.apply_async(t1, kwargs=dict(name="George Costanza"),
-                                    countdown=10)
+        presult2 = t1.apply_async(kwargs=dict(name="George Costanza"),
+                                  countdown=10)
         self.assertNextTaskDataEqual(consumer, presult2, t1.name,
                 name="George Costanza", test_eta=True)
 
         # Discarding all tasks.
         consumer.discard_all()
-        task.apply_async(t1)
+        t1.apply_async()
         self.assertEqual(consumer.discard_all(), 1)
         self.assertIsNone(consumer.fetch())
 

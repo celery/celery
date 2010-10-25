@@ -1,3 +1,4 @@
+import sys
 from datetime import datetime
 
 from celery.registry import tasks
@@ -68,7 +69,7 @@ def rate_limit(panel, task_name, rate_limit, **kwargs):
         tasks[task_name].rate_limit = rate_limit
     except KeyError:
         panel.logger.error("Rate limit attempt for unknown task %s" % (
-            task_name, ))
+            task_name, ), exc_info=sys.exc_info())
         return {"error": "unknown task"}
 
     if not hasattr(panel.listener.ready_queue, "refresh"):
@@ -164,6 +165,17 @@ def dump_tasks(panel, **kwargs):
 @Panel.register
 def ping(panel, **kwargs):
     return "pong"
+
+
+@Panel.register
+def pool_grow(panel, n=1, **kwargs):
+    panel.listener.pool.grow(n)
+    return {"ok": "spawned worker processes"}
+
+@Panel.register
+def pool_shrink(panel, n=1, **kwargs):
+    panel.listener.pool.shrink(n)
+    return {"ok": "terminated worker processes"}
 
 
 @Panel.register

@@ -138,11 +138,13 @@ class TaskBucket(object):
 
     def init_with_registry(self):
         """Initialize with buckets for all the task types in the registry."""
-        map(self.add_bucket_for_type, self.task_registry.keys())
+        for task in self.task_registry.keys():
+            self.add_bucket_for_type(task)
 
     def refresh(self):
         """Refresh rate limits for all task types in the registry."""
-        map(self.update_bucket_for_type, self.task_registry.keys())
+        for task in self.task_registry.keys():
+            self.update_bucket_for_type(task)
 
     def get_bucket_for_type(self, task_name):
         """Get the bucket for a particular task type."""

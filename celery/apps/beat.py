@@ -58,10 +58,9 @@ class Beat(object):
         handled = self.app.log.setup_logging_subsystem(loglevel=self.loglevel,
                                                        logfile=self.logfile)
         logger = self.app.log.get_default_logger(name="celery.beat")
-        if not handled:
-            if self.redirect_stdouts:
-                self.app.log.redirect_stdouts_to_logger(logger,
-                        loglevel=self.redirect_stdouts_level)
+        if self.redirect_stdouts and not handled:
+            self.app.log.redirect_stdouts_to_logger(logger,
+                    loglevel=self.redirect_stdouts_level)
         return logger
 
     def start_scheduler(self, logger=None):

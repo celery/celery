@@ -46,8 +46,6 @@ def _unpickle_task(name):
     return tasks[name]
 
 
-
-
 class Context(threading.local):
 
     def update(self, d, **kwargs):
@@ -542,11 +540,12 @@ class BaseTask(object):
             kwargs = request.kwargs
 
         delivery_info = request.delivery_info
-        options.setdefault("exchange", delivery_info.get("exchange"))
-        options.setdefault("routing_key", delivery_info.get("routing_key"))
+        if delivery_info:
+            options.setdefault("exchange", delivery_info.get("exchange"))
+            options.setdefault("routing_key", delivery_info.get("routing_key"))
 
         options["retries"] = request.retries + 1
-        options["task_id"] = kwargs.pop("task_id", None)
+        options["task_id"] = request.id
         options["countdown"] = options.get("countdown",
                                         self.default_retry_delay)
         max_exc = exc or self.MaxRetriesExceededError(

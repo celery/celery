@@ -232,7 +232,8 @@ class test_TaskBucket(unittest.TestCase):
         ajobs = [cjob(i, TaskA) for i in xrange(10)]
         bjobs = [cjob(i, TaskB) for i in xrange(20)]
         jobs = list(chain(*izip(bjobs, ajobs)))
-        map(b.put, jobs)
+        for job in jobs:
+            b.put(job)
 
         got_ajobs = 0
         for job in (b.get() for i in xrange(20)):

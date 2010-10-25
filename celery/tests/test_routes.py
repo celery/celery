@@ -76,6 +76,26 @@ class test_lookup_route(unittest.TestCase):
                 router.route({}, "celery.ping",
                     args=[1, 2], kwargs={}))
 
+    @with_queues()
+    def test_expands_queue_in_options(self):
+        R = routes.prepare(())
+        router = routes.Router(R, app_or_default().conf.CELERY_QUEUES,
+                               create_missing=True)
+        # apply_async forwards all arguments, even exchange=None etc,
+        # so need to make sure it's merged correctly.
+        route = router.route({"queue": "testq",
+                              "exchange": None,
+                              "routing_key": None,
+                              "immediate": False},
+                             "celery.ping",
+                             args=[1, 2], kwargs={})
+        self.assertDictContainsSubset({"exchange": "testq",
+                                       "routing_key": "testq",
+                                       "immediate": False},
+                                       route)
+        self.assertNotIn("queue", route)
+
+
     @with_queues(foo=a_queue, bar=b_queue)
     def test_lookup_paths_traversed(self):
         R = routes.prepare(({"celery.xaza": {"queue": "bar"}},
