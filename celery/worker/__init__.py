@@ -121,7 +121,7 @@ class WorkController(object):
             pool_putlocks=None, db=None, prefetch_multiplier=None,
             eta_scheduler_precision=None, queues=None,
             disable_rate_limits=None, autoscale=None,
-            autoscaler_cls=None, app=None):
+            autoscaler_cls=None, scheduler_cls=None, app=None):
 
         self.app = app_or_default(app)
         conf = self.app.conf
@@ -143,6 +143,7 @@ class WorkController(object):
                                     conf.CELERYD_AUTOSCALER
         self.schedule_filename = schedule_filename or \
                                     conf.CELERYBEAT_SCHEDULE_FILENAME
+        self.scheduler_cls = scheduler_cls or conf.CELERYBEAT_SCHEDULER
         self.hostname = hostname or socket.gethostname()
         self.embed_clockservice = embed_clockservice
         self.ready_callback = ready_callback
@@ -217,7 +218,8 @@ class WorkController(object):
         if self.embed_clockservice:
             self.beat = beat.EmbeddedService(app=self.app,
                                 logger=self.logger,
-                                schedule_filename=self.schedule_filename)
+                                schedule_filename=self.schedule_filename,
+                                scheduler_cls=self.scheduler_cls)
 
         prefetch_count = self.concurrency * self.prefetch_multiplier
         self.listener = instantiate(self.listener_cls,

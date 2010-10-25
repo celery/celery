@@ -43,6 +43,10 @@
     Defaults to ``celerybeat-schedule``. The extension ".db" will be
     appended to the filename.
 
+.. cmdoption:: --scheduler
+
+    Scheduler class to use. Default is celery.beat.PersistentScheduler
+
 .. cmdoption:: -E, --events
 
     Send events that can be captured by monitors like ``celerymon``.
@@ -114,7 +118,11 @@ class WorkerCommand(Command):
                      "option. The extension '.db' will be appended to the "
                     "filename. Default: %s" % (
                         conf.CELERYBEAT_SCHEDULE_FILENAME, )),
-
+            Option('--scheduler',
+                default=None,
+                action="store", dest="scheduler_cls",
+                help="Scheduler class. Default is "
+                     "celery.beat.PersistentScheduler"),
             Option('-S', '--statedb', default=conf.CELERYD_STATE_DB,
                 action="store", dest="db",
                 help="Path to the state database. The extension '.db' will "

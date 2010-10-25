@@ -43,7 +43,7 @@ class Worker(object):
             max_tasks_per_child=None, queues=None, events=False, db=None,
             include=None, app=None, pidfile=None,
             redirect_stdouts=None, redirect_stdouts_level=None,
-            autoscale=None, **kwargs):
+            autoscale=None, scheduler_cls=None, **kwargs):
         self.app = app = app_or_default(app)
         self.concurrency = (concurrency or
                             app.conf.CELERYD_CONCURRENCY or
@@ -54,6 +54,7 @@ class Worker(object):
         self.discard = discard
         self.run_clockservice = run_clockservice
         self.schedule = schedule or app.conf.CELERYBEAT_SCHEDULE_FILENAME
+        self.scheduler_cls = scheduler_cls or app.conf.CELERYBEAT_SCHEDULER
         self.events = events
         self.task_time_limit = (task_time_limit or
                                 app.conf.CELERYD_TASK_TIME_LIMIT)
@@ -196,6 +197,7 @@ class Worker(object):
                                 ready_callback=self.on_listener_ready,
                                 embed_clockservice=self.run_clockservice,
                                 schedule_filename=self.schedule,
+                                scheduler_cls=self.scheduler_cls,
                                 send_events=self.events,
                                 db=self.db,
                                 queues=self.queues,
