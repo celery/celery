@@ -474,10 +474,16 @@ For more information see :ref:`task-request-info`.
 Can I specify a custom task_id?
 -------------------------------
 
-**Answer**: Yes. Use the ``task_id`` argument to
+**Answer**: Yes.  Use the ``task_id`` argument to
 :meth:`~celery.execute.apply_async`::
 
     >>> task.apply_async(args, kwargs, task_id="...")
+
+
+Can I use decorators with tasks?
+--------------------------------
+
+**Answer**: Yes.  But please see note at :ref:`tasks-decorating`.
 
 .. _faq-natural-task-ids:
 
