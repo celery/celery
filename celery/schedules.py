@@ -251,6 +251,9 @@ class crontab(schedule):
     def remaining_estimate(self, last_run_at):
         """Returns when the periodic task should run next as a timedelta."""
         weekday = last_run_at.isoweekday()
+        if weekday == 7: # Sunday is day 0, not day 7.
+            weekday = 0
+
         execute_this_hour = (weekday in self.day_of_week and
                                 last_run_at.hour in self.hour and
                                 last_run_at.minute < max(self.minute))
@@ -265,8 +268,7 @@ class crontab(schedule):
             next_minute = min(self.minute)
 
             execute_today = (weekday in self.day_of_week and
-                                (last_run_at.hour < max(self.hour) or
-                                    execute_this_hour))
+                                 last_run_at.hour < max(self.hour))
 
             if execute_today:
                 next_hour = min(hour for hour in self.hour
@@ -277,13 +279,13 @@ class crontab(schedule):
                                       microsecond=0)
             else:
                 next_hour = min(self.hour)
-                iso_next_day = min([day for day in self.day_of_week
-                                        if day > weekday] or
-                                   self.day_of_week)
-                add_week = iso_next_day == weekday
+                next_day = min([day for day in self.day_of_week
+                                    if day > weekday] or
+                               self.day_of_week)
+                add_week = next_day == weekday
 
                 delta = relativedelta(weeks=add_week and 1 or 0,
-                                      weekday=(iso_next_day - 1) % 7,
+                                      weekday=(next_day - 1) % 7,
                                       hour=next_hour,
                                       minute=next_minute,
                                       second=0,
