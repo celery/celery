@@ -112,177 +112,128 @@ class BaseTask(object):
     The resulting class is callable, which if called will apply the
     :meth:`run` method.
 
-    .. attribute:: app
-
-        The application instance associated with this task class.
-
-    .. attribute:: name
-
-        Name of the task.
-
-    .. attribute:: abstract
-
-        If :const:`True` the task is an abstract base class.
-
-    .. attribute:: type
-
-        The type of task, currently unused.
-
-    .. attribute:: queue
-
-        Select a destination queue for this task. The queue needs to exist
-        in :setting:`CELERY_QUEUES`. The `routing_key`, `exchange` and
-        `exchange_type` attributes will be ignored if this is set.
-
-    .. attribute:: routing_key
-
-        Override the global default `routing_key` for this task.
-
-    .. attribute:: exchange
-
-        Override the global default `exchange` for this task.
-
-    .. attribute:: exchange_type
-
-        Override the global default exchange type for this task.
-
-    .. attribute:: delivery_mode
-
-        Override the global default delivery mode for this task.
-        By default this is set to `2` (persistent). You can change this
-        to `1` to get non-persistent behavior, which means the messages
-        are lost if the broker is restarted.
-
-    .. attribute:: mandatory
-
-        Mandatory message routing. An exception will be raised if the task
-        can't be routed to a queue.
-
-    .. attribute:: immediate:
-
-        Request immediate delivery. An exception will be raised if the task
-        can't be routed to a worker immediately.
-
-    .. attribute:: priority:
-
-        The message priority. A number from `0` to `9`, where `0`
-        is the highest. Note that RabbitMQ doesn't support priorities yet.
-
-    .. attribute:: max_retries
-
-        Maximum number of retries before giving up.
-        If set to :const:`None`, it will never stop retrying.
-
-    .. attribute:: default_retry_delay
-
-        Default time in seconds before a retry of the task should be
-        executed. Default is a 3 minute delay.
-
-    .. attribute:: rate_limit
-
-        Set the rate limit for this task type, Examples: :const:`None` (no
-        rate limit), `"100/s"` (hundred tasks a second), `"100/m"`
-        (hundred tasks a minute), `"100/h"` (hundred tasks an hour)
-
-    .. attribute:: ignore_result
-
-        Don't store the return value of this task.
-
-    .. attribute:: store_errors_even_if_ignored
-
-        If true, errors will be stored even if the task is configured
-        to ignore results.
-
-    .. attribute:: send_error_emails
-
-        If true, an e-mail will be sent to the admins whenever
-        a task of this type raises an exception.
-
-    .. attribute:: error_whitelist
-
-        List of exception types to send error e-mails for.
-
-    .. attribute:: serializer
-
-        The name of a serializer that has been registered with
-        :mod:`carrot.serialization.registry`. Example: `"json"`.
-
-    .. attribute:: backend
-
-        The result store backend used for this task.
-
-    .. attribute:: autoregister
-
-        If :const:`True` the task is automatically registered in the task
-        registry, which is the default behaviour.
-
-    .. attribute:: track_started
-
-        If :const:`True` the task will report its status as "started"
-        when the task is executed by a worker.
-        The default value is :const:`False` as the normal behaviour is to not
-        report that level of granularity. Tasks are either pending,
-        finished, or waiting to be retried.
-
-        Having a "started" status can be useful for when there are long
-        running tasks and there is a need to report which task is
-        currently running.
-
-        The global default can be overridden with the
-        :setting:`CELERY_TRACK_STARTED` setting.
-
-    .. attribute:: acks_late
-
-        If set to :const:`True` messages for this task will be acknowledged
-        **after** the task has been executed, not *just before*, which is
-        the default behavior.
-
-        Note that this means the task may be executed twice if the worker
-        crashes in the middle of execution, which may be acceptable for some
-        applications.
-
-        The global default can be overriden by the :setting:`CELERY_ACKS_LATE`
-        setting.
-
-    .. attribute:: expires
-
-        Default task expiry time in seconds or a :class:`~datetime.datetime`.
-
     """
     __metaclass__ = TaskType
 
+    MaxRetriesExceededError = MaxRetriesExceededError
+
+    #: the application instance associated with this task class.
     app = None
+
+    #: name of the task.
     name = None
+
+    #: if :const:`True` the task is an abstract base class.
     abstract = True
-    autoregister = True
-    type = "regular"
+
+    #: if disabled the worker will not forward magic keyword arguments.
     accept_magic_kwargs = True
+
+    #: current request context when task is being executed.
     request = Context()
 
+    #: select a destination queue for this task.  The queue needs to exist
+    #: in :setting:`CELERY_QUEUES`.  The `routing_key`, `exchange` and
+    #: `exchange_type` attributes will be ignored if this is set.
     queue = None
+
+    #: override the apps default `routing_key` for this task.
     routing_key = None
+
+    #: override the apps default `exchange` for this task.
     exchange = None
+
+    #: override the apps default exchange type for this task.
     exchange_type = None
+
+    #: override the apps default delivery mode for this task. Default is
+    #: `"persistent"`, but you can change this to `"transient"`, which means
+    #: messages will be lost if the broker is restarted.  Consult your broker
+    #: manual for any additional delivery modes.
     delivery_mode = None
-    immediate = False
+
+    #: mandatory message routing.
     mandatory = False
+
+    #: request immediate delivery.
+    immediate = False
+
+    #: default message priority.  A number between 0 to 9, where 0 is the
+    #: highest.  Note that RabbitMQ does not support priorities.
     priority = None
 
-    ignore_result = False
-    store_errors_even_if_ignored = False
-    send_error_emails = False
-    error_whitelist = ()
-    disable_error_emails = False                            # FIXME
+    #: maximum number of retries before giving up.  If set to :const:`None`,
+    #: it will **never** stop retrying.
     max_retries = 3
+
+    #: default time in seconds before a retry of the task should be
+    #: executed.  3 minutes by default.
     default_retry_delay = 3 * 60
-    serializer = "pickle"
+
+    #: Rate limit for this task type.  Examples: :const:`None` (no rate
+    #: limit), `"100/s"` (hundred tasks a second), `"100/m"` (hundred tasks
+    #: a minute),`"100/h"` (hundred tasks an hour)
     rate_limit = None
+
+    #: if enabled the worker will not store task state and return values
+    #: for this task.  Defaults to the :setting:`CELERY_IGNORE_RESULT`
+    #: setting.
+    ignore_result = False
+
+    #: when enabled errors will be stored even if the task is otherwise
+    #: configured to ignore results.
+    store_errors_even_if_ignored = False
+
+    #: If enabled an e-mail will be sent to :setting:`ADMINS` whenever a task
+    #: of this type fails.
+    send_error_emails = False
+
+    disable_error_emails = False                            # FIXME
+
+    #: list of exception types to send error e-mails for.
+    error_whitelist = ()
+
+    #: the name of a serializer that has been registered with
+    #: :mod:`carrot.serialization.registry`.  Example: `"json"`.
+    serializer = "pickle"
+
+    #: the result store backend used for this task.
     backend = None
+
+    #: if disabled the task will not be automatically registered
+    #: in the task registry.
+    autoregister = True
+
+    #: if enabled the task will report its status as "started" when the task
+    #: is executed by a worker.  Disabled by default as the normal behaviour
+    #: is to not report that level of granularity.  Tasks are either pending,
+    #: finished, or waiting to be retried.
+    #:
+    #: Having a "started" status can be useful for when there are long
+    #: running tasks and there is a need to report which task is currently
+    #: running.
+    #:
+    #: The application default can be overridden using the
+    #: :setting:`CELERY_TRACK_STARTED` setting.
     track_started = False
+
+    #: when enabled  messages for this task will be acknowledged **after**
+    #: the task has been executed, and not *just before* which is the
+    #: default behavior.
+    #:
+    #: Please note that this means the task may be executed twice if the
+    #: worker crashes mid execution (which may be acceptable for some
+    #: applications).
+    #:
+    #: The application default can be overriden with the
+    #: :setting:`CELERY_ACKS_LATE` setting.
     acks_late = False
+
+    #: default task expiry time.
     expires = None
 
-    MaxRetriesExceededError = MaxRetriesExceededError
+    #: the type of task *(no longer used)*.
+    type = "regular"
 
     def __call__(self, *args, **kwargs):
         return self.run(*args, **kwargs)
