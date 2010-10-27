@@ -23,6 +23,8 @@ from celery.worker import state
 # pep8.py borks on a inline signature separator and
 # says "trailing whitespace" ;)
 EMAIL_SIGNATURE_SEP = "-- "
+
+#: format string for the body of an error e-mail.
 TASK_ERROR_EMAIL_BODY = """
 Task %%(name)s with id %%(id)s raised exception:\n%%(exc)s
 
@@ -39,16 +41,20 @@ celeryd at %%(hostname)s.
 """ % {"EMAIL_SIGNATURE_SEP": EMAIL_SIGNATURE_SEP}
 
 
+#: keys to keep from the message delivery info.  The values
+#: of these keys must be pickleable.
 WANTED_DELIVERY_INFO = ("exchange", "routing_key", "consumer_tag", )
 
 
 class InvalidTaskError(Exception):
     """The task has invalid data or is not properly constructed."""
+    pass
 
 
 class AlreadyExecutedError(Exception):
     """Tasks can only be executed once, as they might change
     world-wide state."""
+    pass
 
 
 class WorkerTaskTrace(TaskTrace):
@@ -75,6 +81,12 @@ class WorkerTaskTrace(TaskTrace):
         the exception instance on failure.
 
     """
+
+    #: current loader.
+    loader = None
+
+    #: hostname to report as.
+    hostname = None
 
     def __init__(self, *args, **kwargs):
         self.loader = kwargs.get("loader") or app_or_default().loader
@@ -152,71 +164,70 @@ def execute_and_trace(task_name, *args, **kwargs):
 
 
 class TaskRequest(object):
-    """A request for task execution.
+    """A request for task execution."""
 
-    :param task_name: see :attr:`task_name`.
-    :param task_id: see :attr:`task_id`.
-    :param args: see :attr:`args`
-    :param kwargs: see :attr:`kwargs`.
+    #: kind of task.  Must be a name registered in the task registry.
+    name = None
 
-    .. attribute:: task_name
+    #: the task class (set by constructor using :attr:`task_name`).
+    task = None
 
-        Kind of task. Must be a name registered in the task registry.
+    #: UUID of the task.
+    task_id = None
 
-    .. attribute:: task_id
+    #: List of positional arguments to apply to the task.
+    args = None
 
-        UUID of the task.
+    #: Mapping of keyword arguments to apply to the task.
+    kwargs = None
 
-    .. attribute:: args
+    #: number of times the task has been retried.
+    retries = 0
 
-        List of positional arguments to apply to the task.
+    #: the tasks eta (for information only).
+    eta = None
 
-    .. attribute:: kwargs
+    #: when the task expires.
+    expires = None
 
-        Mapping of keyword arguments to apply to the task.
+    #: callback called when the task should be acknowledged.
+    on_ack = None
 
-    .. attribute:: on_ack
+    #: the message object.  Used to acknowledge the message.
+    message = None
 
-        Callback called when the task should be acknowledged.
+    #: flag set when the task has been executed.
+    executed = False
 
-    .. attribute:: message
+    #: additional delivery info, e.g. contains the path from
+    #: producer to consumer.
+    delivery_info = None
 
-        The original message sent. Used for acknowledging the message.
+    #: flag set when the task has been acknowledged.
+    acknowledged = False
 
-    .. attribute:: executed
-
-        Set to :const:`True` if the task has been executed.
-        A task should only be executed once.
-
-    .. attribute:: delivery_info
-
-        Additional delivery info, e.g. the contains the path
-        from producer to consumer.
-
-    .. attribute:: acknowledged
-
-        Set to :const:`True` if the task has been acknowledged.
-
-    """
-    # Logging output
+    #: format string used to log task success.
     success_msg = "Task %(name)s[%(id)s] processed: %(return_value)s"
-    error_msg = """
+
+    #: format string used to log task failure.
+    error_msg = """\
         Task %(name)s[%(id)s] raised exception: %(exc)s\n%(traceback)s
     """
-    retry_msg = """
-        Task %(name)s[%(id)s] retry: %(exc)s
-    """
 
-    # E-mails
-    email_subject = """
+    #: format string used to log task retry.
+    retry_msg = """Task %(name)s[%(id)s] retry: %(exc)s"""
+
+    #: format string used to generate error e-mail subjects.
+    email_subject = """\
         [celery@%(hostname)s] Error: Task %(name)s (%(id)s): %(exc)s
     """
+
+    #: format string used to generate error e-mail content.
     email_body = TASK_ERROR_EMAIL_BODY
 
-    # Internal flags
-    executed = False
-    acknowledged = False
+    #: timestamp set when the task is started.
     time_start = None
+
     _already_revoked = False
 
     def __init__(self, task_name, task_id, args, kwargs,
@@ -513,12 +524,6 @@ class TaskRequest(object):
             body = self.email_body.strip() % context
             self.app.mail_admins(subject, body, fail_silently=fail_silently)
 
-    def __repr__(self):
-        return '<%s: {name:"%s", id:"%s", args:"%s", kwargs:"%s"}>' % (
-                self.__class__.__name__,
-                self.task_name, self.task_id,
-                self.args, self.kwargs)
-
     def info(self, safe=False):
         args = self.args
         kwargs = self.kwargs
@@ -541,3 +546,10 @@ class TaskRequest(object):
                     self.task_id,
                     self.eta and " eta:[%s]" % (self.eta, ) or "",
                     self.expires and " expires:[%s]" % (self.expires, ) or "")
+
+    def __repr__(self):
+        return '<%s: {name:"%s", id:"%s", args:"%s", kwargs:"%s"}>' % (
+                self.__class__.__name__,
+                self.task_name, self.task_id,
+                self.args, self.kwargs)
+
