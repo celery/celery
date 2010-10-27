@@ -42,7 +42,8 @@ class BaseLoader(object):
         pass
 
     def on_worker_init(self):
-        """This method is called when the worker (``celeryd``) starts."""
+        """This method is called when the worker (:program:`celeryd`)
+        starts."""
         pass
 
     def import_task_module(self, module):

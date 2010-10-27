@@ -54,8 +54,8 @@ class BaseAsyncResult(object):
         :keyword timeout: How long to wait, in seconds, before the
             operation times out.
 
-        :raises celery.exceptions.TimeoutError: if ``timeout`` is not
-            :const:`None` and the result does not arrive within ``timeout``
+        :raises celery.exceptions.TimeoutError: if `timeout` is not
+            :const:`None` and the result does not arrive within `timeout`
             seconds.
 
         If the remote call raised an exception then that
@@ -87,11 +87,11 @@ class BaseAsyncResult(object):
         return self.status == states.FAILURE
 
     def __str__(self):
-        """``str(self) -> self.task_id``"""
+        """`str(self) -> self.task_id`"""
         return self.task_id
 
     def __hash__(self):
-        """``hash(self) -> hash(self.task_id)``"""
+        """`hash(self) -> hash(self.task_id)`"""
         return hash(self.task_id)
 
     def __repr__(self):
@@ -192,7 +192,7 @@ class TaskSetResult(object):
     """Working with :class:`~celery.task.TaskSet` results.
 
     An instance of this class is returned by
-    ``TaskSet``'s :meth:`~celery.task.TaskSet.apply_async()`. It enables
+    `TaskSet`'s :meth:`~celery.task.TaskSet.apply_async()`. It enables
     inspection of the subtasks status and return values as a single entity.
 
     :option taskset_id: see :attr:`taskset_id`.
@@ -287,7 +287,7 @@ class TaskSetResult(object):
                 connection=connection, connect_timeout=connect_timeout)
 
     def __iter__(self):
-        """``iter(res)`` -> ``res.iterate()``."""
+        """`iter(res)` -> `res.iterate()`."""
         return self.iterate()
 
     def __getitem__(self, index):
@@ -325,8 +325,8 @@ class TaskSetResult(object):
         :keyword propagate: If any of the subtasks raises an exception, the
             exception will be reraised.
 
-        :raises celery.exceptions.TimeoutError: if ``timeout`` is not
-            :const:`None` and the operation takes longer than ``timeout``
+        :raises celery.exceptions.TimeoutError: if `timeout` is not
+            :const:`None` and the operation takes longer than `timeout`
             seconds.
 
         :returns: list of return values for all subtasks in order.

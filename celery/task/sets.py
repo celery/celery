@@ -73,7 +73,7 @@ class subtask(AttributeDict):
                              options=options or {})
 
     def delay(self, *argmerge, **kwmerge):
-        """Shortcut to ``apply_async(argmerge, kwargs)``."""
+        """Shortcut to `apply_async(argmerge, kwargs)`."""
         return self.apply_async(args=argmerge, kwargs=kwmerge)
 
     def apply(self, args=(), kwargs={}, **options):

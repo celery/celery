@@ -30,7 +30,7 @@ up and running.
 
 * So for each message received the :meth:`~CarrotListener.receive_message`
   method is called, this checks the payload of the message for either
-  a ``task`` key or a ``control`` key.
+  a `task` key or a `control` key.
 
   If the message is a task, it verifies the validity of the message
   converts it to a :class:`celery.worker.job.TaskRequest`, and sends
@@ -45,9 +45,9 @@ up and running.
   are acknowledged immediately and logged, so the message is not resent
   again, and again.
 
-* If the task has an ETA/countdown, the task is moved to the ``eta_schedule``
+* If the task has an ETA/countdown, the task is moved to the `eta_schedule`
   so the :class:`timer2.Timer` can schedule it at its
-  deadline. Tasks without an eta are moved immediately to the ``ready_queue``,
+  deadline. Tasks without an eta are moved immediately to the `ready_queue`,
   so they can be picked up by the :class:`~celery.worker.controllers.Mediator`
   to be sent to the pool.
 
@@ -257,7 +257,7 @@ class CarrotListener(object):
     def on_task(self, task):
         """Handle received task.
 
-        If the task has an ``eta`` we enter it into the ETA schedule,
+        If the task has an `eta` we enter it into the ETA schedule,
         otherwise we move it the ready queue for immediate processing.
 
         """

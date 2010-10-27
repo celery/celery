@@ -40,7 +40,7 @@ This makes it excellent as a means to pass callbacks around to tasks.
 Callbacks
 ---------
 
-Let's improve our ``add`` task so it can accept a callback that
+Let's improve our `add` task so it can accept a callback that
 takes the result as an argument::
 
     from celery.decorators import task
@@ -57,25 +57,25 @@ takes the result as an argument::
 asynchronously by :meth:`~celery.task.sets.subtask.delay`, and
 eagerly by :meth:`~celery.task.sets.subtask.apply`.
 
-The best thing is that any arguments you add to ``subtask.delay``,
+The best thing is that any arguments you add to `subtask.delay`,
 will be prepended to the arguments specified by the subtask itself!
 
 If you have the subtask::
 
     >>> add.subtask(args=(10, ))
 
-``subtask.delay(result)`` becomes::
+`subtask.delay(result)` becomes::
 
     >>> add.apply_async(args=(result, 10))
 
 ...
 
-Now let's execute our new ``add`` task with a callback::
+Now let's execute our new `add` task with a callback::
 
     >>> add.delay(2, 2, callback=add.subtask((8, )))
 
-As expected this will first launch one task calculating ``2 + 2``, then 
-another task calculating ``4 + 8``.
+As expected this will first launch one task calculating `2 + 2`, then 
+another task calculating `4 + 8`.
 
 .. _sets-taskset:
 

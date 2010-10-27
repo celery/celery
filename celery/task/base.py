@@ -63,9 +63,9 @@ class TaskType(type):
     """Metaclass for tasks.
 
     Automatically registers the task in the task registry, except
-    if the ``abstract`` attribute is set.
+    if the `abstract` attribute is set.
 
-    If no ``name`` attribute is provided, the name is automatically
+    If no `name` attribute is provided, the name is automatically
     set to the name of the module it was defined in, and the class name.
 
     """
@@ -104,7 +104,7 @@ class BaseTask(object):
     """A celery task.
 
     All subclasses of :class:`Task` must define the :meth:`run` method,
-    which is the actual method the ``celery`` daemon executes.
+    which is the actual method the `celery` daemon executes.
 
     The :meth:`run` method can take use of the default keyword arguments,
     as listed in the :meth:`run` documentation.
@@ -131,16 +131,16 @@ class BaseTask(object):
     .. attribute:: queue
 
         Select a destination queue for this task. The queue needs to exist
-        in :setting:`CELERY_QUEUES`. The ``routing_key``, ``exchange`` and
-        ``exchange_type`` attributes will be ignored if this is set.
+        in :setting:`CELERY_QUEUES`. The `routing_key`, `exchange` and
+        `exchange_type` attributes will be ignored if this is set.
 
     .. attribute:: routing_key
 
-        Override the global default ``routing_key`` for this task.
+        Override the global default `routing_key` for this task.
 
     .. attribute:: exchange
 
-        Override the global default ``exchange`` for this task.
+        Override the global default `exchange` for this task.
 
     .. attribute:: exchange_type
 
@@ -149,8 +149,8 @@ class BaseTask(object):
     .. attribute:: delivery_mode
 
         Override the global default delivery mode for this task.
-        By default this is set to ``2`` (persistent). You can change this
-        to ``1`` to get non-persistent behavior, which means the messages
+        By default this is set to `2` (persistent). You can change this
+        to `1` to get non-persistent behavior, which means the messages
         are lost if the broker is restarted.
 
     .. attribute:: mandatory
@@ -165,7 +165,7 @@ class BaseTask(object):
 
     .. attribute:: priority:
 
-        The message priority. A number from ``0`` to ``9``, where ``0``
+        The message priority. A number from `0` to `9`, where `0`
         is the highest. Note that RabbitMQ doesn't support priorities yet.
 
     .. attribute:: max_retries
@@ -181,8 +181,8 @@ class BaseTask(object):
     .. attribute:: rate_limit
 
         Set the rate limit for this task type, Examples: :const:`None` (no
-        rate limit), ``"100/s"`` (hundred tasks a second), ``"100/m"``
-        (hundred tasks a minute), ``"100/h"`` (hundred tasks an hour)
+        rate limit), `"100/s"` (hundred tasks a second), `"100/m"`
+        (hundred tasks a minute), `"100/h"` (hundred tasks an hour)
 
     .. attribute:: ignore_result
 
@@ -205,7 +205,7 @@ class BaseTask(object):
     .. attribute:: serializer
 
         The name of a serializer that has been registered with
-        :mod:`carrot.serialization.registry`. Example: ``"json"``.
+        :mod:`carrot.serialization.registry`. Example: `"json"`.
 
     .. attribute:: backend
 
@@ -220,7 +220,7 @@ class BaseTask(object):
 
         If :const:`True` the task will report its status as "started"
         when the task is executed by a worker.
-        The default value is ``False`` as the normal behaviour is to not
+        The default value is :const:`False` as the normal behaviour is to not
         report that level of granularity. Tasks are either pending,
         finished, or waiting to be retried.
 
@@ -405,13 +405,13 @@ class BaseTask(object):
 
         :keyword countdown: Number of seconds into the future that the
             task should execute. Defaults to immediate delivery (Do not
-            confuse that with the ``immediate`` setting, they are
+            confuse that with the `immediate` setting, they are
             unrelated).
 
         :keyword eta: A :class:`~datetime.datetime` object that describes
             the absolute time and date of when the task should execute.
-            May not be specified if ``countdown`` is also supplied. (Do
-            not confuse this with the ``immediate`` setting, they are
+            May not be specified if `countdown` is also supplied. (Do
+            not confuse this with the `immediate` setting, they are
             unrelated).
 
         :keyword expires: Either a :class:`int`, describing the number of
@@ -421,7 +421,7 @@ class BaseTask(object):
             expiration time.
 
         :keyword connection: Re-use existing broker connection instead
-            of establishing a new one. The ``connect_timeout`` argument
+            of establishing a new one. The `connect_timeout` argument
             is not respected if this is set.
 
         :keyword connect_timeout: The timeout in seconds, before we give
@@ -441,7 +441,7 @@ class BaseTask(object):
         :keyword immediate: Request immediate delivery. Will raise an
             exception if the task cannot be routed to a worker
             immediately.  (Do not confuse this parameter with
-            the ``countdown`` and ``eta`` settings, as they are
+            the `countdown` and `eta` settings, as they are
             unrelated). Defaults to the tasks :attr:`immediate` attribute.
 
         :keyword mandatory: Mandatory routing. Raises an exception if
@@ -453,13 +453,13 @@ class BaseTask(object):
 
         :keyword serializer: A string identifying the default
             serialization method to use. Defaults to the
-            ``CELERY_TASK_SERIALIZER`` setting. Can be ``pickle``,
-            ``json``, ``yaml``, or any custom serialization method
+            :setting:`CELERY_TASK_SERIALIZER` setting. Can be `pickle`,
+            `json`, `yaml`, or any custom serialization method
             that has been registered with
             :mod:`carrot.serialization.registry`. Defaults to the tasks
             :attr:`serializer` attribute.
 
-        **Note**: If the ``CELERY_ALWAYS_EAGER`` setting is set, it will
+        **Note**: If the :setting:`CELERY_ALWAYS_EAGER` setting is set, it will
             be replaced by a local :func:`apply` call instead.
 
         """
@@ -506,7 +506,7 @@ class BaseTask(object):
         (must be a :class:`~datetime.datetime` instance).
         :keyword \*\*options: Any extra options to pass on to
             meth:`apply_async`. See :func:`celery.execute.apply_async`.
-        :keyword throw: If this is ``False``, do not raise the
+        :keyword throw: If this is :const:`False`, do not raise the
             :exc:`~celery.exceptions.RetryTaskError` exception,
             that tells the worker to mark the task as being retried.
             Note that this means the task will be marked as failed
@@ -515,8 +515,8 @@ class BaseTask(object):
 
         :raises celery.exceptions.RetryTaskError: To tell the worker that
             the task has been re-sent for retry. This always happens,
-            unless the ``throw`` keyword argument has been explicitly set
-            to ``False``, and is considered normal operation.
+            unless the `throw` keyword argument has been explicitly set
+            to :const:`False`, and is considered normal operation.
 
         Example
 
@@ -865,7 +865,7 @@ class PeriodicTask(Task):
         return timedelta_seconds(delta)
 
     def is_due(self, last_run_at):
-        """Returns tuple of two items ``(is_due, next_time_to_run)``,
+        """Returns tuple of two items `(is_due, next_time_to_run)`,
         where next time to run is in seconds.
 
         See :meth:`celery.schedules.schedule.is_due` for more information.

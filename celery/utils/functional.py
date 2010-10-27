@@ -53,9 +53,9 @@
 ### Begin from Python 2.5 functools.py ########################################
 
 # Summary of changes made to the Python 2.5 code below:
-#   * Wrapped the ``setattr`` call in ``update_wrapper`` with a try-except
+#   * Wrapped the `setattr` call in `update_wrapper` with a try-except
 #     block to make it compatible with Python 2.3, which doesn't allow
-#     assigning to ``__name__``.
+#     assigning to `__name__`.
 
 # Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007 Python Software
 # Foundation. All Rights Reserved.

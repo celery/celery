@@ -5,8 +5,8 @@ _first_route = firstmethod("route_for_task")
 
 
 def merge(a, b):
-    """Like ``dict(a, **b)`` except it will keep values from ``a``,
-    if the value in ``b`` is :const:`None`."""
+    """Like `dict(a, **b)` except it will keep values from `a`,
+    if the value in `b` is :const:`None`."""
     return dict(a, **dict((k, v) for k, v in b.iteritems() if v is not None))
 
 

@@ -10,12 +10,12 @@
 
 .. cmdoption:: -f, --logfile
 
-    Path to log file. If no logfile is specified, ``stderr`` is used.
+    Path to log file. If no logfile is specified, `stderr` is used.
 
 .. cmdoption:: -l, --loglevel
 
-    Logging level, choose between ``DEBUG``, ``INFO``, ``WARNING``,
-    ``ERROR``, ``CRITICAL``, or ``FATAL``.
+    Logging level, choose between `DEBUG`, `INFO`, `WARNING`,
+    `ERROR`, `CRITICAL`, or `FATAL`.
 
 .. cmdoption:: -n, --hostname
 
@@ -23,14 +23,14 @@
 
 .. cmdoption:: -B, --beat
 
-    Also run the ``celerybeat`` periodic task scheduler. Please note that
+    Also run the `celerybeat` periodic task scheduler. Please note that
     there must only be one instance of this service.
 
 .. cmdoption:: -Q, --queues
 
     List of queues to enable for this worker, separated by comma.
     By default all configured queues are enabled.
-    Example: ``-Q video,image``
+    Example: `-Q video,image`
 
 .. cmdoption:: -I, --include
 
@@ -39,8 +39,8 @@
 
 .. cmdoption:: -s, --schedule
 
-    Path to the schedule database if running with the ``-B`` option.
-    Defaults to ``celerybeat-schedule``. The extension ".db" will be
+    Path to the schedule database if running with the `-B` option.
+    Defaults to `celerybeat-schedule`. The extension ".db" will be
     appended to the filename.
 
 .. cmdoption:: --scheduler
@@ -49,7 +49,7 @@
 
 .. cmdoption:: -E, --events
 
-    Send events that can be captured by monitors like ``celerymon``.
+    Send events that can be captured by monitors like `celerymon`.
 
 .. cmdoption:: --purge, --discard
 

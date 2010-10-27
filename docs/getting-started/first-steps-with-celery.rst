@@ -166,8 +166,8 @@ by holding on to the :class:`~celery.result.AsyncResult`::
     >>> result.successful() # returns True if the task didn't end in failure.
     True
 
-If the task raises an exception, the return value of ``result.successful()``
-will be :const:`False`, and ``result.result`` will contain the exception instance
+If the task raises an exception, the return value of `result.successful()`
+will be :const:`False`, and `result.result` will contain the exception instance
 raised by the task.
 
 Where to go from here

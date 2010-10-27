@@ -33,7 +33,7 @@ class EventDispatcher(object):
     :keyword hostname: Hostname to identify ourselves as,
         by default uses the hostname returned by :func:`socket.gethostname`.
 
-    :keyword enabled: Set to ``False`` to not actually publish any events,
+    :keyword enabled: Set to :const:`False` to not actually publish any events,
         making :meth:`send` a noop operation.
 
     You need to :meth:`close` this after use.
@@ -104,8 +104,8 @@ class EventReceiver(object):
     :param connection: Carrot connection.
     :keyword handlers: Event handlers.
 
-    :attr:`handlers`` is a dict of event types and their handlers,
-    the special handler ``"*`"`` captures all events that doesn't have a
+    :attr:`handlers` is a dict of event types and their handlers,
+    the special handler `"*"` captures all events that doesn't have a
     handler.
 
     """

@@ -18,7 +18,7 @@ class App(base.BaseApp):
         Default is :class:`celery.loaders.app.AppLoader`.
     :keyword backend: The result store backend class, or the name of the
         backend class to use. Default is the value of the
-        ``CELERY_RESULT_BACKEND`` setting.
+        :setting:`CELERY_RESULT_BACKEND` setting.
 
     .. attribute:: amqp
 

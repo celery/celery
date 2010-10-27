@@ -101,7 +101,7 @@ class Logging(object):
 
     def _detect_handler(self, logfile=None):
         """Create log handler with either a filename, an open stream
-        or ``None`` (stderr)."""
+        or :const:`None` (stderr)."""
         if not logfile or hasattr(logfile, "write"):
             return logging.StreamHandler(logfile)
         return logging.FileHandler(logfile)
@@ -120,9 +120,9 @@ class Logging(object):
     def setup_logger(self, loglevel=None, logfile=None,
             format=None, colorize=None, name="celery", root=True,
             app=None, **kwargs):
-        """Setup the ``multiprocessing`` logger.
+        """Setup the :mod:`multiprocessing` logger.
 
-        If ``logfile`` is not specified, then ``sys.stderr`` is used.
+        If `logfile` is not specified, then `sys.stderr` is used.
 
         Returns logger object.
 
@@ -142,7 +142,7 @@ class Logging(object):
             colorize=None, task_kwargs=None, app=None, **kwargs):
         """Setup the task logger.
 
-        If ``logfile`` is not specified, then ``sys.stderr`` is used.
+        If `logfile` is not specified, then `sys.stderr` is used.
 
         Returns logger object.
 
@@ -215,7 +215,7 @@ class LoggingProxy(object):
 
     def _safewrap_handlers(self):
         """Make the logger handlers dump internal errors to
-        ``sys.__stderr__`` instead of ``sys.stderr`` to circumvent
+        `sys.__stderr__` instead of `sys.stderr` to circumvent
         infinite loops."""
 
         def wrap_handler(handler):                  # pragma: no cover
@@ -253,7 +253,7 @@ class LoggingProxy(object):
                 self._thread.recurse_protection = False
 
     def writelines(self, sequence):
-        """``writelines(sequence_of_strings) -> None``.
+        """`writelines(sequence_of_strings) -> None`.
 
         Write the strings to the file.
 
@@ -275,7 +275,7 @@ class LoggingProxy(object):
         self.closed = True
 
     def isatty(self):
-        """Always returns ``False``. Just here for file support."""
+        """Always returns :const:`False`. Just here for file support."""
         return False
 
     def fileno(self):

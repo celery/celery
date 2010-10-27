@@ -61,7 +61,7 @@ class WorkController(object):
     .. attribute:: concurrency
 
         The number of simultaneous processes doing work (default:
-        ``conf.CELERYD_CONCURRENCY``)
+        :setting:`CELERYD_CONCURRENCY`)
 
     .. attribute:: loglevel
 
@@ -69,8 +69,8 @@ class WorkController(object):
 
     .. attribute:: logfile
 
-        The logfile used, if no logfile is specified it uses ``stderr``
-        (default: `celery.conf.CELERYD_LOG_FILE`).
+        The logfile used, if no logfile is specified it uses `stderr`
+        (default: :setting:`CELERYD_LOG_FILE`).
 
     .. attribute:: embed_clockservice
 

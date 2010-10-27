@@ -18,8 +18,8 @@ Basics
 ======
 
 A task is a class that encapsulates a function and its execution options.
-Given a function ``create_user``, that takes two arguments: ``username`` and
-``password``, you can create a task like this:
+Given a function create_user`, that takes two arguments: `username` and
+`password`, you can create a task like this:
 
 .. code-block:: python
 
@@ -30,7 +30,7 @@ Given a function ``create_user``, that takes two arguments: ``username`` and
         User.objects.create(username=username, password=password)
 
 
-Task options are added as arguments to ``task``::
+Task options are added as arguments to `task`:
 
 .. code-block:: python
 
@@ -43,7 +43,7 @@ Task options are added as arguments to ``task``::
 Task Request Info
 =================
 
-The ``task.request`` attribute contains information about
+The `task.request` attribute contains information about
 the task being executed, and contains the following attributes:
 
 :id: The unique id of the executing task.
@@ -53,7 +53,7 @@ the task being executed, and contains the following attributes:
 :kwargs: Keyword arguments.
 
 :retries: How many times the current task has been retried.
-          An integer starting at ``0``.
+          An integer starting at `0`.
 
 :is_eager: Set to :const:`True` if the task is executed locally in
            the client, kand not by a worker.
@@ -97,10 +97,10 @@ the worker log:
         logger.info("Adding %s + %s" % (x, y))
         return x + y
 
-There are several logging levels available, and the workers ``loglevel``
+There are several logging levels available, and the workers `loglevel`
 setting decides whether or not they will be written to the log file.
 
-Of course, you can also simply use ``print`` as anything written to standard
+Of course, you can also simply use `print` as anything written to standard
 out/-err will be written to the logfile as well.
 
 .. _task-retry:
@@ -122,11 +122,11 @@ It will do the right thing, and respect the
         except (Twitter.FailWhaleError, Twitter.LoginError), exc:
             send_twitter_status.retry(exc=exc)
 
-Here we used the ``exc`` argument to pass the current exception to
+Here we used the `exc` argument to pass the current exception to
 :meth:`~celery.task.base.BaseTask.retry`. At each step of the retry this exception
 is available as the tombstone (result) of the task. When
 :attr:`~celery.task.base.BaseTask.max_retries` has been exceeded this is the
-exception raised.  However, if an ``exc`` argument is not provided the
+exception raised.  However, if an `exc` argument is not provided the
 :exc:`~celery.exceptions.RetryTaskError` exception is raised instead.
 
 .. _task-retry-custom-delay:
@@ -140,7 +140,7 @@ before doing so. The default delay is in the
 attribute on the task. By default this is set to 3 minutes. Note that the
 unit for setting the delay is in seconds (int or float).
 
-You can also provide the ``countdown`` argument to
+You can also provide the `countdown` argument to
 :meth:`~celery.task.base.BaseTask.retry` to override this default.
 
 .. code-block:: python
@@ -205,8 +205,8 @@ General
     If it is an integer, it is interpreted as "tasks per second". 
 
     The rate limits can be specified in seconds, minutes or hours
-    by appending ``"/s"``, ``"/m"`` or ``"/h"`` to the value.
-    Example: ``"100/m"`` (hundred tasks a minute).  Default is the
+    by appending `"/s"`, `"/m"` or `"/h"` to the value.
+    Example: `"100/m"` (hundred tasks a minute).  Default is the
     :setting:`CELERY_DEFAULT_RATE_LIMIT` setting, which if not specified means
     rate limiting for tasks is disabled by default.
 
@@ -236,7 +236,7 @@ General
 
     A string identifying the default serialization
     method to use. Defaults to the :setting:`CELERY_TASK_SERIALIZER`
-    setting.  Can be ``pickle`` ``json``, ``yaml``, or any custom
+    setting.  Can be `pickle` `json`, `yaml`, or any custom
     serialization methods that have been registered with
     :mod:`carrot.serialization.registry`.
 
@@ -273,7 +273,7 @@ General
     task is currently running.
 
     The hostname and pid of the worker executing the task
-    will be avaiable in the state metadata (e.g. ``result.info["pid"]``)
+    will be avaiable in the state metadata (e.g. `result.info["pid"]`)
 
     The global default can be overridden by the
     :setting:`CELERY_TRACK_STARTED` setting.
@@ -296,11 +296,11 @@ Message and routing options
 
 .. attribute:: Task.exchange
 
-    Override the global default ``exchange`` for this task.
+    Override the global default `exchange` for this task.
 
 .. attribute:: Task.routing_key
 
-    Override the global default ``routing_key`` for this task.
+    Override the global default `routing_key` for this task.
 
 .. attribute:: Task.mandatory
 
@@ -392,7 +392,7 @@ For example if the client imports the module "myapp.tasks" as ".tasks", and
 the worker imports the module as "myapp.tasks", the generated names won't match
 and an :exc:`~celery.exceptions.NotRegistered` error will be raised by the worker.
 
-This is also the case if using Django and using ``project.myapp``::
+This is also the case if using Django and using `project.myapp`::
 
     INSTALLED_APPS = ("project.myapp", )
 
@@ -478,7 +478,7 @@ this is necessary to keep the original function name and docstring.
 .. note::
 
     The magic keyword arguments will be deprecated in the future,
-    replaced by the ``task.request`` attribute in 2.2, and the
+    replaced by the `task.request` attribute in 2.2, and the
     keyword arguments will be removed in 3.0.
 
 .. _task-states:
@@ -524,7 +524,7 @@ STARTED
 Task has been started.
 Not reported by default, to enable please see :ref:`task-track-started`.
 
-:metadata: ``pid`` and ``hostname`` of the worker process executing
+:metadata: `pid` and `hostname` of the worker process executing
            the task.
 
 .. state:: SUCCESS
@@ -534,7 +534,7 @@ SUCCESS
 
 Task has been successfully executed.
 
-:metadata: ``result`` contains the return value of the task.
+:metadata: `result` contains the return value of the task.
 :propagates: Yes
 :ready: Yes
 
@@ -545,7 +545,7 @@ FAILURE
 
 Task execution resulted in failure.
 
-:metadata: ``result`` contains the exception occured, and ``traceback``
+:metadata: `result` contains the exception occured, and `traceback`
            contains the backtrace of the stack at the point when the
            exception was raised.
 :propagates: Yes
@@ -557,8 +557,8 @@ RETRY
 
 Task is being retried.
 
-:metadata: ``result`` contains the exception that caused the retry,
-           and ``traceback`` contains the backtrace of the stack at the point
+:metadata: `result` contains the exception that caused the retry,
+           and `traceback` contains the backtrace of the stack at the point
            when the exceptions was raised.
 :propagates: No
 
@@ -589,9 +589,9 @@ update a tasks state::
                 meta={"current": i, "total": len(filenames)})
 
 
-Here we created the state ``"PROGRESS"``, which tells any application
+Here we created the state `"PROGRESS"`, which tells any application
 aware of this state that the task is currently in progress, and also where
-it is in the process by having ``current`` and ``total`` counts as part of the
+it is in the process by having `current` and `total` counts as part of the
 state metadata.  This can then be used to create e.g. progress bars.
 
 .. _task-how-they-work:
@@ -623,7 +623,7 @@ yourself:
         <Task: celery.ping (regular)>}
 
 This is the list of tasks built-in to celery.  Note that we had to import
-``celery.task`` first for these to show up.  This is because the tasks will
+`celery.task` first for these to show up.  This is because the tasks will
 only be registered when the module they are defined in is imported.
 
 The default loader imports any modules listed in the

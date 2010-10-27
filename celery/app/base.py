@@ -135,15 +135,15 @@ class BaseApp(object):
 
     def either(self, default_key, *values):
         """Fallback to the value of a configuration key if none of the
-        ``*values`` are true."""
+        `*values` are true."""
         for value in values:
             if value is not None:
                 return value
         return self.conf.get(default_key)
 
     def merge(self, a, b):
-        """Like ``dict(a, **b)`` except it will keep values from ``a``
-        if the value in ``b`` is :const:`None`."""
+        """Like `dict(a, **b)` except it will keep values from `a`
+        if the value in `b` is :const:`None`."""
         b = dict(b)
         for key, value in a.items():
             if b.get(key) is None:
@@ -156,7 +156,7 @@ class BaseApp(object):
             **options):
         """Send task by name.
 
-        :param name: Name of task to execute (e.g. ``"tasks.add"``).
+        :param name: Name of task to execute (e.g. `"tasks.add"`).
         :keyword result_cls: Specify custom result class. Default is
             using :meth:`AsyncResult`.
 
@@ -190,16 +190,17 @@ class BaseApp(object):
             insist=None, connect_timeout=None, backend_cls=None):
         """Establish a connection to the message broker.
 
-        :keyword hostname: defaults to the ``BROKER_HOST`` setting.
-        :keyword userid: defaults to the ``BROKER_USER`` setting.
-        :keyword password: defaults to the ``BROKER_PASSWORD`` setting.
-        :keyword virtual_host: defaults to the ``BROKER_VHOST`` setting.
-        :keyword port: defaults to the ``BROKER_PORT`` setting.
-        :keyword ssl: defaults to the ``BROKER_USE_SSL`` setting.
-        :keyword insist: defaults to the ``BROKER_INSIST`` setting.
+        :keyword hostname: defaults to the :setting:`BROKER_HOST` setting.
+        :keyword userid: defaults to the :setting:`BROKER_USER` setting.
+        :keyword password: defaults to the :setting:`BROKER_PASSWORD` setting.
+        :keyword virtual_host: defaults to the :setting:`BROKER_VHOST` setting.
+        :keyword port: defaults to the :setting:`BROKER_PORT` setting.
+        :keyword ssl: defaults to the :setting:`BROKER_USE_SSL` setting.
+        :keyword insist: defaults to the :setting:`BROKER_INSIST` setting.
         :keyword connect_timeout: defaults to the
-            ``BROKER_CONNECTION_TIMEOUT`` setting.
-        :keyword backend_cls: defaults to the ``BROKER_BACKEND`` setting.
+            :setting:`BROKER_CONNECTION_TIMEOUT` setting.
+        :keyword backend_cls: defaults to the :setting:`BROKER_BACKEND`
+            setting.
 
         :returns :class:`carrot.connection.BrokerConnection`:
 
@@ -217,7 +218,7 @@ class BaseApp(object):
                                 "BROKER_CONNECTION_TIMEOUT", connect_timeout))
 
     def with_default_connection(self, fun):
-        """With any function accepting ``connection`` and ``connect_timeout``
+        """With any function accepting `connection` and `connect_timeout`
         keyword arguments, establishes a default connection if one is
         not already passed to it.
 

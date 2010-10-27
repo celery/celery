@@ -37,25 +37,25 @@ Components
 CarrotListener
 --------------
 
-Receives messages from the broker using ``carrot``.
+Receives messages from the broker using `carrot`.
 
 When a message is received it's converted into a
 :class:`celery.worker.job.TaskRequest` object.
 
-Tasks with an ETA are entered into the ``eta_schedule``, messages that can
-be immediately processed are moved directly to the ``ready_queue``.
+Tasks with an ETA are entered into the `eta_schedule`, messages that can
+be immediately processed are moved directly to the `ready_queue`.
 
 ScheduleController
 ------------------
 
-The schedule controller is running the ``eta_schedule``.
-If the scheduled tasks eta has passed it is moved to the ``ready_queue``,
+The schedule controller is running the `eta_schedule`.
+If the scheduled tasks eta has passed it is moved to the `ready_queue`,
 otherwise the thread sleeps until the eta is met (remember that the schedule
 is sorted by time).
 
 Mediator
 --------
-The mediator simply moves tasks in the ``ready_queue`` over to the
+The mediator simply moves tasks in the `ready_queue` over to the
 task pool for execution using
 :meth:`celery.worker.job.TaskRequest.execute_using_pool`.
 

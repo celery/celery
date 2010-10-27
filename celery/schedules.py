@@ -19,15 +19,15 @@ class schedule(object):
         return remaining(last_run_at, self.run_every, relative=self.relative)
 
     def is_due(self, last_run_at):
-        """Returns tuple of two items ``(is_due, next_time_to_run)``,
+        """Returns tuple of two items `(is_due, next_time_to_run)`,
         where next time to run is in seconds.
 
         e.g.
 
-        * ``(True, 20)``, means the task should be run now, and the next
+        * `(True, 20)`, means the task should be run now, and the next
             time to run is in 20 seconds.
 
-        * ``(False, 12)``, means the task should be run in 12 seconds.
+        * `(False, 12)`, means the task should be run in 12 seconds.
 
         You can override this to decide the interval at runtime,
         but keep in mind the value of :setting:`CELERYBEAT_MAX_LOOP_INTERVAL`,
@@ -145,7 +145,7 @@ class crontab_parser(object):
 
 
 class crontab(schedule):
-    """A crontab can be used as the ``run_every`` value of a
+    """A crontab can be used as the `run_every` value of a
     :class:`PeriodicTask` to add cron-like scheduling.
 
     Like a :manpage:`cron` job, you can specify units of time of when
@@ -292,7 +292,7 @@ class crontab(schedule):
         return remaining(last_run_at, delta, now=self.nowfun())
 
     def is_due(self, last_run_at):
-        """Returns tuple of two items ``(is_due, next_time_to_run)``,
+        """Returns tuple of two items `(is_due, next_time_to_run)`,
         where next time to run is in seconds.
 
         See :meth:`celery.schedules.schedule.is_due` for more information.

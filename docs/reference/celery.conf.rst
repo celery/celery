@@ -27,8 +27,8 @@ Queues
 
 .. data:: DEFAULT_DELIVERY_MODE
 
-    Default delivery mode (``"persistent"`` or ``"non-persistent"``).
-    Default is ``"persistent"``.
+    Default delivery mode (`"persistent"` or `"non-persistent"`).
+    Default is `"persistent"`.
 
 .. data:: DEFAULT_ROUTING_KEY
 
@@ -45,65 +45,65 @@ Queues
     broadcast messages. The workers hostname will be appended
     to the prefix to create the final queue name.
 
-    Default is ``"celeryctl"``.
+    Default is `"celeryctl"`.
 
 .. data:: BROADCAST_EXCHANGE
 
     Name of the exchange used for broadcast messages.
 
-    Default is ``"celeryctl"``.
+    Default is `"celeryctl"`.
 
 .. data:: BROADCAST_EXCHANGE_TYPE
 
-    Exchange type used for broadcast messages. Default is ``"fanout"``.
+    Exchange type used for broadcast messages. Default is `"fanout"`.
 
 .. data:: EVENT_QUEUE
 
     Name of queue used to listen for event messages. Default is
-    ``"celeryevent"``.
+    `"celeryevent"`.
 
 .. data:: EVENT_EXCHANGE
 
-    Exchange used to send event messages. Default is ``"celeryevent"``.
+    Exchange used to send event messages. Default is `"celeryevent"`.
 
 .. data:: EVENT_EXCHANGE_TYPE
 
-    Exchange type used for the event exchange. Default is ``"topic"``.
+    Exchange type used for the event exchange. Default is `"topic"`.
 
 .. data:: EVENT_ROUTING_KEY
 
-    Routing key used for events. Default is ``"celeryevent"``.
+    Routing key used for events. Default is `"celeryevent"`.
 
 .. data:: EVENT_SERIALIZER
 
     Type of serialization method used to serialize events. Default is
-    ``"json"``.
+    `"json"`.
 
 .. data:: RESULT_EXCHANGE
 
     Exchange used by the AMQP result backend to publish task results.
-    Default is ``"celeryresult"``.
+    Default is `"celeryresult"`.
 
 Sending E-Mails
 ===============
 
 .. data:: CELERY_SEND_TASK_ERROR_EMAILS
 
-    If set to ``True``, errors in tasks will be sent to :data:`ADMINS` by e-mail.
+    If set to `True`, errors in tasks will be sent to :data:`ADMINS` by e-mail.
 
 .. data:: ADMINS
 
-    List of ``(name, email_address)`` tuples for the admins that should
+    List of `(name, email_address)` tuples for the admins that should
     receive error e-mails.
 
 .. data:: SERVER_EMAIL
 
     The e-mail address this worker sends e-mails from.
-    Default is ``"celery@localhost"``.
+    Default is `"celery@localhost"`.
 
 .. data:: MAIL_HOST
 
-    The mail server to use. Default is ``"localhost"``.
+    The mail server to use. Default is `"localhost"`.
 
 .. data:: MAIL_HOST_USER
 
@@ -115,7 +115,7 @@ Sending E-Mails
 
 .. data:: MAIL_PORT
 
-    The port the mail server is listening on. Default is ``25``.
+    The port the mail server is listening on. Default is `25`.
 
 Execution
 =========
@@ -126,8 +126,8 @@ Execution
 
 .. data:: EAGER_PROPAGATES_EXCEPTIONS
 
-    If set to ``True``, :func:`celery.execute.apply` will re-raise task exceptions.
-    It's the same as always running apply with ``throw=True``.
+    If set to `True`, :func:`celery.execute.apply` will re-raise task exceptions.
+    It's the same as always running apply with `throw=True`.
 
 .. data:: TASK_RESULT_EXPIRES
 
@@ -149,7 +149,7 @@ Execution
 
 .. data:: STORE_ERRORS_EVEN_IF_IGNORED
 
-    If enabled, task errors will be stored even though ``Task.ignore_result``
+    If enabled, task errors will be stored even though `Task.ignore_result`
     is enabled.
 
 .. data:: MAX_CACHED_RESULTS
@@ -160,11 +160,11 @@ Execution
 .. data:: TASK_SERIALIZER
 
     A string identifying the default serialization
-    method to use. Can be ``pickle`` (default),
-    ``json``, ``yaml``, or any custom serialization methods that have
+    method to use. Can be `pickle` (default),
+    `json`, `yaml`, or any custom serialization methods that have
     been registered with :mod:`carrot.serialization.registry`.
 
-    Default is ``pickle``.
+    Default is `pickle`.
 
 .. data:: RESULT_BACKEND
 
@@ -177,8 +177,8 @@ Execution
 .. data:: SEND_EVENTS
 
     If set, celery will send events that can be captured by monitors like
-    ``celerymon``.
-    Default is: ``False``.
+    `celerymon`.
+    Default is: `False`.
 
 .. data:: DEFAULT_RATE_LIMIT
 
@@ -187,7 +187,7 @@ Execution
 
 .. data:: DISABLE_RATE_LIMITS
 
-    If ``True`` all rate limits will be disabled and all tasks will be executed
+    If `True` all rate limits will be disabled and all tasks will be executed
     as soon as possible.
 
 Broker
@@ -203,9 +203,9 @@ Broker
     Maximum number of retries before we give up re-establishing a connection
     to the broker.
 
-    If this is set to ``0`` or :const:`None`, we will retry forever.
+    If this is set to `0` or :const:`None`, we will retry forever.
 
-    Default is ``100`` retries.
+    Default is `100` retries.
 
 Celerybeat
 ==========
@@ -213,7 +213,7 @@ Celerybeat
 .. data:: CELERYBEAT_LOG_LEVEL
 
     Default log level for celerybeat.
-    Default is: ``INFO``.
+    Default is: `INFO`.
 
 .. data:: CELERYBEAT_LOG_FILE
 
@@ -223,7 +223,7 @@ Celerybeat
 .. data:: CELERYBEAT_SCHEDULE_FILENAME
 
     Name of the persistent schedule database file.
-    Default is: ``celerybeat-schedule``.
+    Default is: `celerybeat-schedule`.
 
 .. data:: CELERYBEAT_MAX_LOOP_INTERVAL
 
@@ -241,7 +241,7 @@ Celerymon
 .. data:: CELERYMON_LOG_LEVEL
 
     Default log level for celerymon.
-    Default is: ``INFO``.
+    Default is: `INFO`.
 
 .. data:: CELERYMON_LOG_FILE
 
@@ -275,31 +275,31 @@ Celeryd
 .. data:: CELERYD_CONCURRENCY
 
     The number of concurrent worker processes.
-    If set to ``0`` (the default), the total number of available CPUs/cores
+    If set to `0` (the default), the total number of available CPUs/cores
     will be used.
 
 .. data:: CELERYD_PREFETCH_MULTIPLIER
 
     The number of concurrent workers is multipled by this number to yield
     the wanted AMQP QoS message prefetch count.
-    Default is: ``4``
+    Default is: `4`
 
 .. data:: CELERYD_POOL
 
     Name of the task pool class used by the worker.
-    Default is ``"celery.concurrency.processes.TaskPool"``.
+    Default is `"celery.concurrency.processes.TaskPool"`.
 
 .. data:: CELERYD_LISTENER
 
     Name of the listener class used by the worker.
-    Default is ``"celery.worker.listener.CarrotListener"``.
+    Default is `"celery.worker.listener.CarrotListener"`.
 
 .. data:: CELERYD_MEDIATOR
 
     Name of the mediator class used by the worker.
-    Default is ``"celery.worker.controllers.Mediator"``.
+    Default is `"celery.worker.controllers.Mediator"`.
 
 .. data:: CELERYD_ETA_SCHEDULER
 
     Name of the ETA scheduler class used by the worker.
-    Default is ``"celery.worker.controllers.ScheduleController"``.
+    Default is `"celery.worker.controllers.ScheduleController"`.

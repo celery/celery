@@ -56,7 +56,7 @@ Database
 Configuration
 -------------
 
-The database backend uses the Django ``DATABASE_*`` settings for database
+The database backend uses the Django `DATABASE_*` settings for database
 configuration values.
 
 #. Set your carrot backend::
@@ -64,7 +64,7 @@ configuration values.
     CARROT_BACKEND = "ghettoq.taproot.Database"
 
 
-#. Add :mod:`ghettoq` to ``INSTALLED_APPS``::
+#. Add :mod:`ghettoq` to `INSTALLED_APPS`::
 
     INSTALLED_APPS = ("ghettoq", )
 

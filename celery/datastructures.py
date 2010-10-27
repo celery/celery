@@ -88,11 +88,11 @@ class PositionQueue(UserList):
         self.data = map(self.UnfilledPosition, xrange(length))
 
     def full(self):
-        """Returns ``True`` if all of the slots has been filled."""
+        """Returns :const:`True` if all of the slots has been filled."""
         return len(self) >= self.length
 
     def __len__(self):
-        """``len(self)`` -> number of slots filled with real values."""
+        """`len(self)` -> number of slots filled with real values."""
         return len(self.filled)
 
     @property
@@ -201,17 +201,17 @@ class SharedCounter(object):
         return self._value
 
     def __iadd__(self, y):
-        """``self += y``"""
+        """`self += y`"""
         self._modify_queue.put(y * +1)
         return self
 
     def __isub__(self, y):
-        """``self -= y``"""
+        """`self -= y`"""
         self._modify_queue.put(y * -1)
         return self
 
     def __int__(self):
-        """``int(self) -> int``"""
+        """`int(self) -> int`"""
         return self._update_value()
 
     def __repr__(self):
@@ -221,7 +221,7 @@ class SharedCounter(object):
 class LimitedSet(object):
     """Kind-of Set with limitations.
 
-    Good for when you need to test for membership (``a in set``),
+    Good for when you need to test for membership (`a in set`),
     but the list might become to big, so you want to limit it so it doesn't
     consume too much resources.
 
@@ -325,7 +325,7 @@ class TokenBucket(object):
 
     .. attribute:: capacity
 
-        Maximum number of tokens in the bucket. Default is ``1``.
+        Maximum number of tokens in the bucket. Default is `1`.
 
     .. attribute:: timestamp
 

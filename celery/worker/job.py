@@ -57,14 +57,14 @@ class WorkerTaskTrace(TaskTrace):
     meta backend.
 
     If the call was successful, it saves the result to the task result
-    backend, and sets the task status to ``"SUCCESS"``.
+    backend, and sets the task status to `"SUCCESS"`.
 
     If the call raises :exc:`celery.exceptions.RetryTaskError`, it extracts
     the original exception, uses that as the result and sets the task status
-    to ``"RETRY"``.
+    to `"RETRY"`.
 
     If the call results in an exception, it saves the exception as the task
-    result, and sets the task status to ``"FAILURE"``.
+    result, and sets the task status to `"FAILURE"`.
 
     :param task_name: The name of the task to execute.
     :param task_id: The unique id of the task.
@@ -308,8 +308,8 @@ class TaskRequest(object):
     def extend_with_default_kwargs(self, loglevel, logfile):
         """Extend the tasks keyword arguments with standard task arguments.
 
-        Currently these are ``logfile``, ``loglevel``, ``task_id``,
-        ``task_name``, ``task_retries``, and ``delivery_info``.
+        Currently these are `logfile`, `loglevel`, `task_id`,
+        `task_name`, `task_retries`, and `delivery_info`.
 
         See :meth:`celery.task.base.Task.run` for more information.
 

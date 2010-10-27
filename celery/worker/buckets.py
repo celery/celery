@@ -23,8 +23,8 @@ class TaskBucket(object):
     while the :meth:`get` operation iterates over the buckets and retrieves
     the first available item.
 
-    Say we have three types of tasks in the registry: ``celery.ping``,
-    ``feed.refresh`` and ``video.compress``, the TaskBucket will consist
+    Say we have three types of tasks in the registry: `celery.ping`,
+    `feed.refresh` and `video.compress`, the TaskBucket will consist
     of the following items::
 
         {"celery.ping": TokenBucketQueue(fill_rate=300),
@@ -32,7 +32,7 @@ class TaskBucket(object):
          "video.compress": TokenBucketQueue(fill_rate=2)}
 
     The get operation will iterate over these until one of the buckets
-    is able to return an item. The underlying datastructure is a ``dict``,
+    is able to return an item. The underlying datastructure is a `dict`,
     so the order is ignored here.
 
     :param task_registry: The task registry used to get the task

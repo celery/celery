@@ -51,7 +51,7 @@ class TyrantBackend(KeyValueStoreBackend):
         self._connection = None
 
     def open(self):
-        """Get :class:`pytyrant.PyTyrant`` instance with the current
+        """Get :class:`pytyrant.PyTyrant` instance with the current
         server configuration.
 
         The connection is then cached until you do an

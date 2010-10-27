@@ -23,7 +23,7 @@ class Signal(object):
 
     .. attribute:: receivers
         Internal attribute, holds a dictionary of
-        ``{receriverkey (id): weakref(receiver)}`` mappings.
+        `{receriverkey (id): weakref(receiver)}` mappings.
 
     """
 
@@ -51,9 +51,9 @@ class Signal(object):
 
             Receivers must be able to accept keyword arguments.
 
-            If receivers have a ``dispatch_uid`` attribute, the receiver will
+            If receivers have a `dispatch_uid` attribute, the receiver will
             not be added if another receiver already exists with that
-            ``dispatch_uid``.
+            `dispatch_uid`.
 
         :keyword sender: The sender to which the receiver should respond.
             Must either be of type :class:`Signal`, or :const:`None` to receive
@@ -92,7 +92,7 @@ class Signal(object):
         receiver will be removed from dispatch automatically.
 
         :keyword receiver: The registered receiver to disconnect. May be
-            none if ``dispatch_uid`` is specified.
+            none if `dispatch_uid` is specified.
 
         :keyword sender: The registered sender to disconnect.
 
@@ -125,7 +125,7 @@ class Signal(object):
 
         :keyword \*\*named: Named arguments which will be passed to receivers.
 
-        :returns: a list of tuple pairs: ``[(receiver, response), ... ]``.
+        :returns: a list of tuple pairs: `[(receiver, response), ... ]`.
 
         """
         responses = []
@@ -148,7 +148,7 @@ class Signal(object):
             These arguments must be a subset of the argument names defined in
             :attr:`providing_args`.
 
-        :returns: a list of tuple pairs: ``[(receiver, response), ... ]``.
+        :returns: a list of tuple pairs: `[(receiver, response), ... ]`.
 
         :raises DispatcherKeyError:
 

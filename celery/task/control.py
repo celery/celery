@@ -145,7 +145,7 @@ class Control(object):
 
         :param task_name: Type of task to change rate limit for.
         :param rate_limit: The rate limit as tasks per second, or a rate limit
-            string (``"100/m"``, etc.
+            string (`"100/m"`, etc.
             see :attr:`celery.task.base.Task.rate_limit` for
             more information).
         :keyword destination: If set, a list of the hosts to send the

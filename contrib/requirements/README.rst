@@ -6,19 +6,19 @@
 Index
 =====
 
-* ``requirements/default.txt``
+* `requirements/default.txt`
 
     The default requirements (Python 2.6+).
 
-* ``requirements/py25.txt``
+* `requirements/py25.txt`
 
     Extra requirements needed to run on Python 2.5.
 
-* ``requirements/py26.txt``
+* `requirements/py26.txt`
 
     Extra requirements needed to run on Python 2.4.
 
-* ``requirements/test.txt``
+* `requirements/test.txt`
 
     Requirements needed to run the full unittest suite.
 

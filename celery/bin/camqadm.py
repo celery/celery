@@ -54,12 +54,12 @@ class Spec(object):
     .. attribute args::
 
         List of arguments this command takes. Should
-        contain ``(argument_name, argument_type)`` tuples.
+        contain `(argument_name, argument_type)` tuples.
 
     .. attribute returns:
 
         Helpful human string representation of what this command returns.
-        May be ``None``, to signify the return type is unknown.
+        May be :const:`None`, to signify the return type is unknown.
 
     """
     def __init__(self, *args, **kwargs):
@@ -69,7 +69,7 @@ class Spec(object):
     def coerce(self, index, value):
         """Coerce value for argument at index.
 
-        E.g. if :attr:`args` is ``[("is_active", bool)]``:
+        E.g. if :attr:`args` is `[("is_active", bool)]`:
 
             >>> coerce(0, "False")
             False
@@ -131,7 +131,7 @@ class AMQShell(cmd.Cmd):
     :keyword connect: Function used to connect to the server, must return
         connection object.
 
-    :keyword silent: If ``True``, the commands won't have annoying output not
+    :keyword silent: If :const:`True`, the commands won't have annoying output not
         relevant when running in non-shell mode.
 
 
@@ -198,7 +198,7 @@ class AMQShell(cmd.Cmd):
         self._reconnect()
 
     def say(self, m):
-        """Say something to the user. Disabled if :attr:`silent``."""
+        """Say something to the user. Disabled if :attr:`silent`."""
         if not self.silent:
             say(m)
 
@@ -207,7 +207,7 @@ class AMQShell(cmd.Cmd):
         to Python values and find the corresponding method on the AMQP channel
         object.
 
-        :returns: tuple of ``(method, processed_args)``.
+        :returns: tuple of `(method, processed_args)`.
 
         Example:
 
@@ -225,7 +225,7 @@ class AMQShell(cmd.Cmd):
         return getattr(self.chan, attr_name), args, spec.format_response
 
     def do_exit(self, *args):
-        """The ``"exit"`` command."""
+        """The `"exit"` command."""
         self.say("\n-> please, don't leave!")
         sys.exit(0)
 
@@ -249,7 +249,7 @@ class AMQShell(cmd.Cmd):
         return set(self.builtins.keys() + self.amqp.keys())
 
     def completenames(self, text, *ignored):
-        """Return all commands starting with ``text``, for tab-completion."""
+        """Return all commands starting with `text`, for tab-completion."""
         names = self.get_names()
         first = [cmd for cmd in names
                         if cmd.startswith(text.replace("_", "."))]
@@ -274,7 +274,7 @@ class AMQShell(cmd.Cmd):
         """Parse input line.
 
         :returns: tuple of three items:
-            ``(command_name, arglist, original_line)``
+            `(command_name, arglist, original_line)`
 
         E.g::
 
@@ -327,7 +327,7 @@ class AMQShell(cmd.Cmd):
 
 
 class AMQPAdmin(object):
-    """The celery ``camqadm`` utility."""
+    """The celery :program:`camqadm` utility."""
 
     def __init__(self, *args, **kwargs):
         self.app = app_or_default(kwargs.get("app"))

@@ -59,7 +59,7 @@ This is a high level overview of the architecture.
 .. image:: http://cloud.github.com/downloads/ask/celery/Celery-Overview-v4.jpg
 
 The broker delivers tasks to the worker servers.
-A worker server is a networked machine running ``celeryd``.  This can be one or
+A worker server is a networked machine running `celeryd`.  This can be one or
 more machines depending on the workload.
 
 The result of the task can be stored for later retrieval (called its
@@ -107,7 +107,7 @@ Features
     |                 | while the queue is temporarily overloaded).        |
     +-----------------+----------------------------------------------------+
     | Concurrency     | Tasks are executed in parallel using the           |
-    |                 | ``multiprocessing`` module.                        |
+    |                 | `multiprocessing` module.                          |
     +-----------------+----------------------------------------------------+
     | Scheduling      | Supports recurring tasks like cron, or specifying  |
     |                 | an exact date or countdown for when after the task |
@@ -194,14 +194,14 @@ is hosted at Github.
 Installation
 ============
 
-You can install ``celery`` either via the Python Package Index (PyPI)
+You can install `celery` either via the Python Package Index (PyPI)
 or from source.
 
-To install using ``pip``,::
+To install using `pip`,::
 
     $ pip install celery
 
-To install using ``easy_install``,::
+To install using `easy_install`,::
 
     $ easy_install celery
 
@@ -210,7 +210,7 @@ To install using ``easy_install``,::
 Downloading and installing from source
 --------------------------------------
 
-Download the latest version of ``celery`` from
+Download the latest version of `celery` from
 http://pypi.python.org/pypi/celery/
 
 You can install it by doing the following,::
@@ -275,10 +275,10 @@ http://wiki.github.com/ask/celery/
 Contributing
 ============
 
-Development of ``celery`` happens at Github: http://github.com/ask/celery
+Development of `celery` happens at Github: http://github.com/ask/celery
 
 You are highly encouraged to participate in the development
-of ``celery``. If you don't like Github (for some reason) you're welcome
+of `celery`. If you don't like Github (for some reason) you're welcome
 to send regular patches.
 
 .. _license:
@@ -286,7 +286,7 @@ to send regular patches.
 License
 =======
 
-This software is licensed under the ``New BSD License``. See the ``LICENSE``
+This software is licensed under the `New BSD License`. See the ``LICENSE``
 file in the top distribution directory for the full license text.
 
 .. # vim: syntax=rst expandtab tabstop=4 shiftwidth=4 shiftround

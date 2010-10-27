@@ -130,8 +130,8 @@ Troubleshooting
 MySQL is throwing deadlock errors, what can I do?
 -------------------------------------------------
 
-**Answer:** MySQL has default isolation level set to ``REPEATABLE-READ``,
-if you don't really need that, set it to ``READ-COMMITTED``.
+**Answer:** MySQL has default isolation level set to `REPEATABLE-READ`,
+if you don't really need that, set it to `READ-COMMITTED`.
 You can do that by adding the following to your :file:`my.cnf`::
 
     [mysqld]
@@ -178,7 +178,7 @@ http://www.playingwithwire.com/2009/10/how-to-get-celeryd-to-work-on-freebsd/
 
 .. _faq-duplicate-key-errors:
 
-I'm having ``IntegrityError: Duplicate Key`` errors. Why?
+I'm having `IntegrityError: Duplicate Key` errors. Why?
 ---------------------------------------------------------
 
 **Answer:** See `MySQL is throwing deadlock errors, what can I do?`_.
@@ -284,7 +284,7 @@ Results
 How do I get the result of a task if I have the ID that points there?
 ----------------------------------------------------------------------
 
-**Answer**: Use ``Task.AsyncResult``::
+**Answer**: Use `Task.AsyncResult`::
 
     >>> result = MyTask.AsyncResult(task_id)
     >>> result.get()
@@ -340,7 +340,7 @@ as a message. If you don't collect these results, they will build up and
 RabbitMQ will eventually run out of memory.
 
 If you don't use the results for a task, make sure you set the
-``ignore_result`` option:
+`ignore_result` option:
 
 .. code-block python
 
@@ -383,14 +383,14 @@ The STOMP carrot backend requires the `stompy`_ library::
 
 .. _`stompy`: http://pypi.python.org/pypi/stompy
 
-In this example we will use a queue called ``celery`` which we created in
+In this example we will use a queue called `celery` which we created in
 the ActiveMQ web admin interface.
 
-**Note**: When using ActiveMQ the queue name needs to have ``"/queue/"``
-prepended to it. i.e. the queue ``celery`` becomes ``/queue/celery``.
+**Note**: When using ActiveMQ the queue name needs to have `"/queue/"`
+prepended to it. i.e. the queue `celery` becomes `/queue/celery`.
 
 Since STOMP doesn't have exchanges and the routing capabilities of AMQP,
-you need to set ``exchange`` name to the same as the queue name. This is
+you need to set `exchange` name to the same as the queue name. This is
 a minor inconvenience since carrot needs to maintain the same interface
 for both AMQP and STOMP.
 
@@ -474,7 +474,7 @@ For more information see :ref:`task-request-info`.
 Can I specify a custom task_id?
 -------------------------------
 
-**Answer**: Yes.  Use the ``task_id`` argument to
+**Answer**: Yes.  Use the `task_id` argument to
 :meth:`~celery.execute.apply_async`::
 
     >>> task.apply_async(args, kwargs, task_id="...")
@@ -529,7 +529,7 @@ See :doc:`userguide/tasksets` for more information.
 
 Can I cancel the execution of a task?
 -------------------------------------
-**Answer**: Yes. Use ``result.revoke``::
+**Answer**: Yes. Use `result.revoke`::
 
     >>> result = add.apply_async(args=[2, 2], countdown=120)
     >>> result.revoke()
@@ -572,8 +572,8 @@ See :doc:`userguide/routing` for more information.
 Can I change the interval of a periodic task at runtime?
 --------------------------------------------------------
 
-**Answer**: Yes. You can override ``PeriodicTask.is_due`` or turn
-``PeriodicTask.run_every`` into a property:
+**Answer**: Yes. You can override `PeriodicTask.is_due` or turn
+`PeriodicTask.run_every` into a property:
 
 .. code-block:: python
 
@@ -607,11 +607,11 @@ Should I use retry or acks_late?
 **Answer**: Depends. It's not necessarily one or the other, you may want
 to use both.
 
-``Task.retry`` is used to retry tasks, notably for expected errors that
-is catchable with the ``try:`` block. The AMQP transaction is not used
+`Task.retry` is used to retry tasks, notably for expected errors that
+is catchable with the `try:` block. The AMQP transaction is not used
 for these errors: **if the task raises an exception it is still acked!**.
 
-The ``acks_late`` setting would be used when you need the task to be
+The `acks_late` setting would be used when you need the task to be
 executed again if the worker (for some reason) crashes mid-execution.
 It's important to note that the worker is not known to crash, and if
 it does it is usually an unrecoverable error that requires human
@@ -637,11 +637,11 @@ It's a good default, users who require it and know what they
 are doing can still enable acks_late (and in the future hopefully
 use manual acknowledgement)
 
-In addition ``Task.retry`` has features not available in AMQP
+In addition `Task.retry` has features not available in AMQP
 transactions: delay between retries, max retries, etc.
 
 So use retry for Python errors, and if your task is reentrant
-combine that with ``acks_late`` if that level of reliability
+combine that with `acks_late` if that level of reliability
 is required.
 
 .. _faq-schedule-at-specific-time:
@@ -651,7 +651,7 @@ Can I schedule tasks to execute at a specific time?
 
 .. module:: celery.task.base
 
-**Answer**: Yes. You can use the ``eta`` argument of :meth:`Task.apply_async`.
+**Answer**: Yes. You can use the `eta` argument of :meth:`Task.apply_async`.
 
 Or to schedule a periodic task at a specific time, use the
 :class:`celery.task.schedules.crontab` schedule behavior:
@@ -668,7 +668,7 @@ Or to schedule a periodic task at a specific time, use the
 
 .. _faq-safe-worker-shutdown:
 
-How do I shut down ``celeryd`` safely?
+How do I shut down `celeryd` safely?
 --------------------------------------
 
 **Answer**: Use the :sig:`TERM` signal, and the worker will finish all currently
@@ -678,7 +678,7 @@ You should never stop :mod:`~celery.bin.celeryd` with the :sig:`KILL` signal
 (:option:`-9`), unless you've tried :sig:`TERM` a few times and waited a few
 minutes to let it get a chance to shut down.  As if you do tasks may be
 terminated mid-execution, and they will not be re-run unless you have the
-``acks_late`` option set (``Task.acks_late`` / :setting:`CELERY_ACKS_LATE`).
+`acks_late` option set (`Task.acks_late` / :setting:`CELERY_ACKS_LATE`).
 
 .. seealso::
 
@@ -711,14 +711,14 @@ See http://bit.ly/bo9RSw
 
 .. _faq-windows-worker-embedded-beat:
 
-The ``-B`` / ``--beat`` option to celeryd doesn't work?
+The `-B` / `--beat` option to celeryd doesn't work?
 ----------------------------------------------------------------
-**Answer**: That's right. Run ``celerybeat`` and ``celeryd`` as separate
+**Answer**: That's right. Run `celerybeat` and `celeryd` as separate
 services instead.
 
 .. _faq-windows-django-settings:
 
-``django-celery`` can’t find settings?
+`django-celery` can’t find settings?
 --------------------------------------
 
 **Answer**: You need to specify the :option:`--settings` argument to

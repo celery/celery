@@ -78,9 +78,9 @@ class TaskPool(object):
     def apply_async(self, target, args=None, kwargs=None, callbacks=None,
             errbacks=None, accept_callback=None, timeout_callback=None,
             **compat):
-        """Equivalent of the :func:``apply`` built-in function.
+        """Equivalent of the :func:`apply` built-in function.
 
-        All ``callbacks`` and ``errbacks`` should complete immediately since
+        All `callbacks` and `errbacks` should complete immediately since
         otherwise the thread which handles the result will get blocked.
 
         """

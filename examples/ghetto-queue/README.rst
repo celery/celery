@@ -43,14 +43,14 @@ supports `Redis`_ and relational databases via the Django ORM.
 .. _`Redis`: http://code.google.com/p/redis/
 
 
-The provided ``celeryconfig.py`` configures the settings used to drive celery.
+The provided `celeryconfig.py` configures the settings used to drive celery.
 
-Next we have to create the database tables by issuing the ``celeryinit``
+Next we have to create the database tables by issuing the `celeryinit`
 command::
 
     $ celeryinit
 
-We're using SQLite3, so this creates a database file (``celery.db`` as
+We're using SQLite3, so this creates a database file (`celery.db` as
 specified in the config file). SQLite is great, but when used in combination
 with Django it doesn't handle concurrency well. To protect your program from
 lock problems, celeryd will only spawn one worker process. With
@@ -68,7 +68,7 @@ the foreground, we have to open up another terminal to run our test program::
     $ python test.py
 
 
-The test program simply runs the ``add`` task, which is a simple task adding
+The test program simply runs the `add` task, which is a simple task adding
 numbers. You can also run the task manually if you want::
 
     >>> from tasks import add
@@ -80,7 +80,7 @@ Using Redis instead
 ===================
 
 To use redis instead, you have to configure the following directives in 
-``celeryconfig.py``::
+`celeryconfig.py`::
 
     CARROT_BACKEND = "ghettoq.taproot.Redis"
     BROKER_HOST = "localhost"
@@ -97,7 +97,7 @@ Modules
 
         Tasks are defined in this module. This module is automatically
         imported by the worker because it's listed in
-        celeryconfig's ``CELERY_IMPORTS`` directive.
+        celeryconfig's `CELERY_IMPORTS` directive.
 
     * test.py
 

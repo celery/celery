@@ -87,7 +87,7 @@ class RedisBackend(KeyValueStoreBackend):
         self._connection = None
 
     def open(self):
-        """Get :class:`redis.Redis`` instance with the current
+        """Get :class:`redis.Redis` instance with the current
         server configuration.
 
         The connection is then cached until you do an

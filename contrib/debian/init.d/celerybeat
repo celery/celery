@@ -48,7 +48,7 @@
 # =================
 #
 #   * CELERYBEAT_OPTS
-#       Additional arguments to celerybeat, see ``celerybeat --help`` for a
+#       Additional arguments to celerybeat, see `celerybeat --help` for a
 #       list.
 #
 #   * CELERYBEAT_PID_FILE
@@ -61,7 +61,7 @@
 #       Log level to use for celeryd. Default is INFO.
 #
 #   * CELERYBEAT
-#       Path to the celeryd program. Default is ``celeryd``.
+#       Path to the celeryd program. Default is `celeryd`.
 #       You can point this to an virtualenv, or even use manage.py for django.
 #
 #   * CELERYBEAT_USER

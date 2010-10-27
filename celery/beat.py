@@ -401,7 +401,7 @@ def EmbeddedService(*args, **kwargs):
     """Return embedded clock service.
 
     :keyword thread: Run threaded instead of as a separate process.
-        Default is ``False``.
+        Default is :const:`False`.
 
     """
     if kwargs.pop("thread", False):
