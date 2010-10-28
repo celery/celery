@@ -1,12 +1,12 @@
 """celery.registry"""
 import inspect
+
 from UserDict import UserDict
 
 from celery.exceptions import NotRegistered
 
 
 class TaskRegistry(UserDict):
-    """Site registry for tasks."""
 
     NotRegistered = NotRegistered
 

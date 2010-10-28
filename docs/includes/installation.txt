@@ -1,13 +1,13 @@
-You can install `celery` either via the Python Package Index (PyPI)
+You can install Celery either via the Python Package Index (PyPI)
 or from source.
 
 To install using `pip`,::
 
-    $ pip install celery
+    $ pip install Celery
 
 To install using `easy_install`,::
 
-    $ easy_install celery
+    $ easy_install Celery
 
 Downloading and installing from source
 --------------------------------------

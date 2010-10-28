@@ -35,7 +35,7 @@ class ColorFormatter(logging.Formatter):
     def formatException(self, ei):
         r = logging.Formatter.formatException(self, ei)
         if type(r) in [types.StringType]:
-            r = r.decode('utf-8', 'replace') # Convert to unicode
+            r = r.decode("utf-8", "replace") # Convert to unicode
         return r
 
     def format(self, record):

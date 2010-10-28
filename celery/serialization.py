@@ -32,6 +32,7 @@ try:
 except NameError:
     _error_bases = (SystemExit, KeyboardInterrupt)
 
+#: List of base classes we probably don't want to reduce to.
 unwanted_base_classes = (StandardError, Exception) + _error_bases + (object, )
 
 
@@ -47,15 +48,15 @@ else:
 
 def find_nearest_pickleable_exception(exc):
     """With an exception instance, iterate over its super classes (by mro)
-    and find the first super exception that is pickleable. It does
+    and find the first super exception that is pickleable.  It does
     not go below :exc:`Exception` (i.e. it skips :exc:`Exception`,
-    :class:`BaseException` and :class:`object`). If that happens
+    :class:`BaseException` and :class:`object`).  If that happens
     you should use :exc:`UnpickleableException` instead.
 
     :param exc: An exception instance.
 
     :returns: the nearest exception if it's not :exc:`Exception` or below,
-        if it is it returns :const:`None`.
+              if it is it returns :const:`None`.
 
     :rtype :exc:`Exception`:
 
@@ -98,24 +99,12 @@ class UnpickleableExceptionWrapper(Exception):
     """Wraps unpickleable exceptions.
 
     :param exc_module: see :attr:`exc_module`.
-
     :param exc_cls_name: see :attr:`exc_cls_name`.
-
     :param exc_args: see :attr:`exc_args`
 
-    .. attribute:: exc_module
+    **Example**
 
-        The module of the original exception.
-
-    .. attribute:: exc_cls_name
-
-        The name of the original exception class.
-
-    .. attribute:: exc_args
-
-        The arguments for the original exception.
-
-    Example
+    .. code-block:: python
 
         >>> try:
         ...     something_raising_unpickleable_exc()
@@ -126,6 +115,15 @@ class UnpickleableExceptionWrapper(Exception):
         ...     pickle.dumps(exc) # Works fine.
 
     """
+
+    #: The module of the original exception.
+    exc_module = None
+
+    #: The name of the original exception class.
+    exc_cls_name = None
+
+    #: The arguments for the original exception.
+    exc_args = None
 
     def __init__(self, exc_module, exc_cls_name, exc_args):
         self.exc_module = exc_module

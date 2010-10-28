@@ -9,7 +9,7 @@ import threading
 import traceback
 
 from time import sleep, time
-from Queue import Empty as QueueEmpty
+from Queue import Empty
 
 from celery.app import app_or_default
 from celery.utils.compat import log_with_extra
@@ -63,11 +63,11 @@ class Autoscaler(threading.Thread):
     def run(self):
         while not self._shutdown.isSet():
             self.scale()
-        self._stopped.set()                 # indicate that we are stopped
+        self._stopped.set()
 
     def stop(self):
         self._shutdown.set()
-        self._stopped.wait()                # block until this thread is done
+        self._stopped.wait()
         self.join(1e100)
 
     @property
@@ -80,21 +80,15 @@ class Autoscaler(threading.Thread):
 
 
 class Mediator(threading.Thread):
-    """Thread continuously sending tasks in the queue to the pool.
+    """Thread continuously moving tasks in the ready queue to the pool."""
 
-    .. attribute:: ready_queue
+    #: The task queue, a :class:`~Queue.Queue` instance.
+    ready_queue = None
 
-        The task queue, a :class:`Queue.Queue` instance.
+    #: Callback called when a task is obtained.
+    callback = None
 
-    .. attribute:: callback
-
-        The callback used to process tasks retrieved from the
-        :attr:`ready_queue`.
-
-    """
-
-    def __init__(self, ready_queue, callback, logger=None,
-            app=None):
+    def __init__(self, ready_queue, callback, logger=None, app=None):
         threading.Thread.__init__(self)
         self.app = app_or_default(app)
         self.logger = logger or self.app.log.get_default_logger()
@@ -107,9 +101,8 @@ class Mediator(threading.Thread):
 
     def move(self):
         try:
-            # This blocks until there's a message in the queue.
             task = self.ready_queue.get(timeout=1.0)
-        except QueueEmpty:
+        except Empty:
             return
 
         if task.revoked():
@@ -131,12 +124,13 @@ class Mediator(threading.Thread):
                                            "name": task.task_name}})
 
     def run(self):
+        """Move tasks forver or until :meth:`stop` is called."""
         while not self._shutdown.isSet():
             self.move()
-        self._stopped.set()                 # indicate that we are stopped
+        self._stopped.set()
 
     def stop(self):
         """Gracefully shutdown the thread."""
         self._shutdown.set()
-        self._stopped.wait()                # block until this thread is done
+        self._stopped.wait()
         self.join(1e100)

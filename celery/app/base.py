@@ -1,76 +1,23 @@
+"""
+celery.app.base
+===============
+
+Application Base Class.
+
+:copyright: (c) 2009 - 2010 by Ask Solem.
+:license: BSD, see LICENSE for more details.
+
+"""
 import sys
 import platform as _platform
 
 from datetime import timedelta
-from itertools import chain
 
 from celery import routes
 from celery.app.defaults import DEFAULTS
-from celery.datastructures import AttributeDictMixin
+from celery.datastructures import MultiDictView
 from celery.utils import noop, isatty
 from celery.utils.functional import wraps
-
-
-class MultiDictView(AttributeDictMixin):
-    """View for one more more dicts.
-
-    * When getting a key, the dicts are searched in order.
-    * When setting a key, the key is added to the first dict.
-
-    >>> d1 = {"x": 3"}
-    >>> d2 = {"x": 1, "y": 2, "z": 3}
-    >>> x = MultiDictView([d1, d2])
-
-    >>> x["x"]
-    3
-
-    >>>  x["y"]
-    2
-
-    """
-    dicts = None
-
-    def __init__(self, *dicts):
-        self.__dict__["dicts"] = dicts
-
-    def __getitem__(self, key):
-        for d in self.__dict__["dicts"]:
-            try:
-                return d[key]
-            except KeyError:
-                pass
-        raise KeyError(key)
-
-    def __setitem__(self, key, value):
-        self.__dict__["dicts"][0][key] = value
-
-    def get(self, key, default=None):
-        try:
-            return self[key]
-        except KeyError:
-            return default
-
-    def setdefault(self, key, default):
-        try:
-            return self[key]
-        except KeyError:
-            self[key] = default
-            return default
-
-    def update(self, *args, **kwargs):
-        return self.__dict__["dicts"][0].update(*args, **kwargs)
-
-    def __contains__(self, key):
-        for d in self.__dict__["dicts"]:
-            if key in d:
-                return True
-        return False
-
-    def __repr__(self):
-        return repr(dict(iter(self)))
-
-    def __iter__(self):
-        return chain(*[d.iteritems() for d in self.__dict__["dicts"]])
 
 
 class BaseApp(object):
@@ -133,23 +80,6 @@ class BaseApp(object):
         for key, value in config.items():
             self.conf[key] = value
 
-    def either(self, default_key, *values):
-        """Fallback to the value of a configuration key if none of the
-        `*values` are true."""
-        for value in values:
-            if value is not None:
-                return value
-        return self.conf.get(default_key)
-
-    def merge(self, a, b):
-        """Like `dict(a, **b)` except it will keep values from `a`
-        if the value in `b` is :const:`None`."""
-        b = dict(b)
-        for key, value in a.items():
-            if b.get(key) is None:
-                b[key] = value
-        return b
-
     def send_task(self, name, args=None, kwargs=None, countdown=None,
             eta=None, task_id=None, publisher=None, connection=None,
             connect_timeout=None, result_cls=None, expires=None,
@@ -184,6 +114,17 @@ class BaseApp(object):
 
         return self.with_default_connection(_do_publish)(
                 connection=connection, connect_timeout=connect_timeout)
+
+    def AsyncResult(self, task_id, backend=None):
+        """Create :class:`celery.result.BaseAsyncResult` instance."""
+        from celery.result import BaseAsyncResult
+        return BaseAsyncResult(task_id, app=self,
+                               backend=backend or self.backend)
+
+    def TaskSetResult(self, taskset_id, results, **kwargs):
+        """Create :class:`celery.result.TaskSetResult` instance."""
+        from celery.result import TaskSetResult
+        return TaskSetResult(taskset_id, results, app=self)
 
     def broker_connection(self, hostname=None, userid=None,
             password=None, virtual_host=None, port=None, ssl=None,
@@ -285,16 +226,22 @@ class BaseApp(object):
                                 user=self.conf.EMAIL_USER,
                                 password=self.conf.EMAIL_PASSWORD)
 
-    def AsyncResult(self, task_id, backend=None):
-        """Create :class:`celery.result.BaseAsyncResult` instance."""
-        from celery.result import BaseAsyncResult
-        return BaseAsyncResult(task_id, app=self,
-                               backend=backend or self.backend)
+    def either(self, default_key, *values):
+        """Fallback to the value of a configuration key if none of the
+        `*values` are true."""
+        for value in values:
+            if value is not None:
+                return value
+        return self.conf.get(default_key)
 
-    def TaskSetResult(self, taskset_id, results, **kwargs):
-        """Create :class:`celery.result.TaskSetResult` instance."""
-        from celery.result import TaskSetResult
-        return TaskSetResult(taskset_id, results, app=self)
+    def merge(self, a, b):
+        """Like `dict(a, **b)` except it will keep values from `a`
+        if the value in `b` is :const:`None`."""
+        b = dict(b)
+        for key, value in a.items():
+            if b.get(key) is None:
+                b[key] = value
+        return b
 
     def _get_backend(self):
         from celery.backends import get_backend_cls
@@ -308,6 +255,11 @@ class BaseApp(object):
 
     @property
     def amqp(self):
+        """Sending/receiving messages.
+
+        See :class:`~celery.app.amqp.AMQP`.
+
+        """
         if self._amqp is None:
             from celery.app.amqp import AMQP
             self._amqp = AMQP(self)
@@ -315,12 +267,18 @@ class BaseApp(object):
 
     @property
     def backend(self):
+        """Storing/retreiving task state.
+
+        See :class:`~celery.backend.base.BaseBackend`.
+
+        """
         if self._backend is None:
             self._backend = self._get_backend()
         return self._backend
 
     @property
     def loader(self):
+        """Current loader."""
         if self._loader is None:
             from celery.loaders import get_loader_cls
             self._loader = get_loader_cls(self.loader_cls)(app=self)
@@ -328,12 +286,18 @@ class BaseApp(object):
 
     @property
     def conf(self):
+        """Current configuration (dict and attribute access)."""
         if self._conf is None:
             self._conf = self._get_config()
         return self._conf
 
     @property
     def control(self):
+        """Controlling worker nodes.
+
+        See :class:`~celery.task.control.Control`.
+
+        """
         if self._control is None:
             from celery.task.control import Control
             self._control = Control(app=self)
@@ -341,6 +305,11 @@ class BaseApp(object):
 
     @property
     def log(self):
+        """Logging utilities.
+
+        See :class:`~celery.log.Logging`.
+
+        """
         if self._log is None:
             from celery.log import Logging
             self._log = Logging(app=self)

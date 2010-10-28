@@ -1,4 +1,13 @@
+"""
+celery.app.amqp
+===============
 
+AMQ related functionality.
+
+:copyright: (c) 2009 - 2010 by Ask Solem.
+:license: BSD, see LICENSE for more details.
+
+"""
 from datetime import datetime, timedelta
 from UserDict import UserDict
 
