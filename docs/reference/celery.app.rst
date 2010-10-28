@@ -22,7 +22,6 @@
             If set this will be used instead of `__main__` when automatically
             generating task names.
 
-        .. autoattribute:: main
         .. autoattribute:: amqp
         .. autoattribute:: backend
         .. autoattribute:: loader
