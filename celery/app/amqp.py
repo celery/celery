@@ -14,7 +14,7 @@ from UserDict import UserDict
 
 from celery import routes
 from celery import signals
-from celery.utils import gen_unique_id, mitemgetter, textindent
+from celery.utils import gen_unique_id, textindent
 
 from kombu import compat as messaging
 from kombu import BrokerConnection
@@ -30,12 +30,15 @@ BROKER_FORMAT = """\
 %(transport)s://%(userid)s@%(hostname)s%(port)s%(virtual_host)s\
 """
 
-get_msg_options = mitemgetter(*MSG_OPTIONS)
-extract_msg_options = lambda d: dict(zip(MSG_OPTIONS, get_msg_options(d)))
-
-
+#: Set to :cosnt:`True` when the configured queues has been declared.
 _queues_declared = False
+
+#: Set of exchange names that has already been declared.
 _exchanges_declared = set()
+
+
+def extract_msg_options(options, keep=MSG_OPTIONS):
+    return dict((name, options.get(name) for name in keep))
 
 
 class Queues(UserDict):
